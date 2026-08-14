@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import importlib
 import json
 import pickle
+import sys
+import types
+from contextlib import nullcontext
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
 import pytest
 
 from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
+from bayesian_phystwin.cli import newton_mpm_backend as newton_cli
 from bayesian_phystwin.cli.newton_mpm_backend import build_parser
 from bayesian_phystwin.newton_mpm_backend_v1 import file_sha256
 from bayesian_phystwin.newton_mpm_source_gate_v1 import (
@@ -496,3 +502,269 @@ def test_existing_newton_command_exposes_source_gate_stages() -> None:
         with pytest.raises(SystemExit) as exit_info:
             parser.parse_args([command, "--help"])
         assert exit_info.value.code == 0
+
+
+def _import_source_runtime(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
+    module_name = "bayesian_phystwin._newton_mpm_source_runtime"
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+    newton = types.ModuleType("newton")
+    newton.__version__ = "1.5.0"  # type: ignore[attr-defined]
+    solvers = types.ModuleType("newton.solvers")
+
+    class FakeSolverImplicitMpm:
+        pass
+
+    solvers.SolverImplicitMPM = FakeSolverImplicitMpm  # type: ignore[attr-defined]
+    newton.solvers = solvers  # type: ignore[attr-defined]
+    warp = types.ModuleType("warp")
+    warp.__version__ = "1.16.0"  # type: ignore[attr-defined]
+    warp.kernel = lambda function: function  # type: ignore[attr-defined]
+    warp.get_device = lambda device: SimpleNamespace(  # type: ignore[attr-defined]
+        alias=device,
+        name="synthetic-device",
+    )
+    warp.ScopedDevice = lambda _device: nullcontext()  # type: ignore[attr-defined]
+
+    monkeypatch.setitem(sys.modules, "newton", newton)
+    monkeypatch.setitem(sys.modules, "newton.solvers", solvers)
+    monkeypatch.setitem(sys.modules, "warp", warp)
+    return importlib.import_module(module_name)
+
+
+def _fake_source_trajectory(
+    _protocol: object,
+    inputs: dict[str, np.ndarray],
+    *,
+    young_modulus_pa: float,
+    damping: float,
+    driven: bool,
+    device: str,
+) -> np.ndarray:
+    del damping, device
+    points = np.asarray(inputs["frame_zero_points_m"], dtype=np.float32)
+    controllers = np.asarray(inputs["controller_points_m"], dtype=np.float32)
+    trajectory = np.repeat(points[None], len(controllers), axis=0)
+    if driven:
+        scale = np.float32(young_modulus_pa / 100_000_000.0)
+        trajectory[:, :, 0] += scale * np.arange(
+            len(trajectory), dtype=np.float32
+        )[:, None]
+    return trajectory
+
+
+def test_source_runtime_helpers_and_provenance_are_cpu_testable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = _import_source_runtime(monkeypatch)
+    paths = _source_fixture(tmp_path)
+    protocol = load_source_protocol(paths["protocol"])
+
+    assert runtime._simulation_value(protocol, "fps") == 30.0
+    assert runtime._candidate_directory(3) == "candidate-03"
+    assert runtime._candidate_parameters(
+        {"young_modulus_pa": 25_000.0, "damping": 0.002}
+    ) == (25_000.0, 0.002)
+    with pytest.raises(ValueError, match="JSON object"):
+        runtime._candidate_parameters([])
+
+    completed = iter(
+        (
+            SimpleNamespace(stdout="a" * 40 + "\n"),
+            SimpleNamespace(stdout=""),
+        )
+    )
+    monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: next(completed))
+    monkeypatch.setattr(runtime, "file_sha256", lambda _path: "b" * 64)
+    provenance = runtime._implementation_provenance()
+    assert provenance["git_head"] == "a" * 40
+    assert provenance["git_worktree_clean"] is True
+    assert set(provenance["source_files"]) == set(runtime.IMPLEMENTATION_SOURCE_PATHS)
+
+    dirty = iter(
+        (
+            SimpleNamespace(stdout="a" * 40 + "\n"),
+            SimpleNamespace(stdout=" M changed.py\n"),
+        )
+    )
+    monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: next(dirty))
+    with pytest.raises(RuntimeError, match="clean Git worktree"):
+        runtime._implementation_provenance()
+
+    def fail_git(*_args: object, **_kwargs: object) -> object:
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(runtime.subprocess, "run", fail_git)
+    with pytest.raises(RuntimeError, match="cannot bind"):
+        runtime._implementation_provenance()
+
+
+def test_source_runtime_seals_successes_and_retains_failures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = _import_source_runtime(monkeypatch)
+    paths, bundle = _prepare(tmp_path)
+    monkeypatch.setattr(
+        runtime,
+        "_implementation_provenance",
+        lambda: {
+            "git_head": "a" * 40,
+            "git_worktree_clean": True,
+            "source_files": {
+                path: "b" * 64 for path in runtime.IMPLEMENTATION_SOURCE_PATHS
+            },
+        },
+    )
+    monkeypatch.setattr(runtime, "_simulate_source", _fake_source_trajectory)
+
+    success_root = tmp_path / "runtime-success"
+    manifest = runtime.run_source_grid(
+        protocol_path=paths["protocol"],
+        source_inputs_path=bundle / SOURCE_INPUT_FILENAME,
+        output_dir=success_root,
+        device="cuda:test",
+    )
+    assert manifest["successful_candidate_count"] == 2
+    assert manifest["technical_failure_count"] == 0
+    assert manifest["final_ensemble_spread_m"] > 0.0
+    assert all(record["status"] == "success" for record in manifest["candidates"])
+    assert (success_root / GRID_MANIFEST_FILENAME).is_file()
+    with pytest.raises(FileExistsError):
+        runtime.run_source_grid(
+            protocol_path=paths["protocol"],
+            source_inputs_path=bundle / SOURCE_INPUT_FILENAME,
+            output_dir=success_root,
+            device="cuda:test",
+        )
+
+    def fail_simulation(*_args: object, **_kwargs: object) -> np.ndarray:
+        raise RuntimeError("synthetic retained failure")
+
+    monkeypatch.setattr(runtime, "_simulate_source", fail_simulation)
+    failure = runtime.run_source_grid(
+        protocol_path=paths["protocol"],
+        source_inputs_path=bundle / SOURCE_INPUT_FILENAME,
+        output_dir=tmp_path / "runtime-failure",
+        device="cuda:test",
+    )
+    assert failure["successful_candidate_count"] == 0
+    assert failure["technical_failure_count"] == 2
+    assert failure["final_ensemble_spread_m"] == 0.0
+    assert all(
+        record["error_type"] == "RuntimeError" for record in failure["candidates"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("argv", "attribute"),
+    (
+        (
+            [
+                "source-prepare",
+                "protocol",
+                "final-data",
+                "optimal",
+                "incumbent",
+                "matphys",
+                "replay",
+                "output",
+            ],
+            "prepare_source_case",
+        ),
+        (
+            ["source-run-grid", "protocol", "inputs", "output"],
+            "_run_source_grid",
+        ),
+        (
+            [
+                "source-score-prefix",
+                "protocol",
+                "bundle",
+                "grid",
+                "incumbent",
+                "matphys",
+                "output",
+            ],
+            "score_prefix_gate",
+        ),
+        (
+            [
+                "source-score-future",
+                "protocol",
+                "bundle",
+                "prefix",
+                "grid",
+                "incumbent",
+                "matphys",
+                "output.json",
+            ],
+            "score_future_if_authorized",
+        ),
+    ),
+)
+def test_source_cli_dispatches_registered_stage(
+    argv: list[str],
+    attribute: str,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_stage(*args: object, **kwargs: object) -> dict[str, object]:
+        assert len(args) <= 1
+        calls.append(kwargs)
+        return {"status": "ok"}
+
+    monkeypatch.setattr(newton_cli, attribute, fake_stage)
+    assert newton_cli.main(argv) == 0
+    assert calls
+    assert json.loads(capsys.readouterr().out) == {"status": "ok"}
+
+
+def test_source_grid_cli_reports_missing_optional_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(
+        sys.modules,
+        "bayesian_phystwin._newton_mpm_source_runtime",
+        None,
+    )
+    args = SimpleNamespace(
+        protocol=Path("protocol.json"),
+        source_inputs=Path("inputs.npz"),
+        output_dir=Path("output"),
+        device="cuda:0",
+    )
+    with pytest.raises(RuntimeError, match=r"install bayesian-phystwin\[mpm\]"):
+        newton_cli._run_source_grid(args)
+
+
+def test_source_grid_cli_delegates_to_optional_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+    runtime = types.ModuleType("bayesian_phystwin._newton_mpm_source_runtime")
+
+    def fake_run_source_grid(**kwargs: object) -> dict[str, object]:
+        calls.append(kwargs)
+        return {"status": "sealed"}
+
+    runtime.run_source_grid = fake_run_source_grid  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, runtime.__name__, runtime)
+    args = SimpleNamespace(
+        protocol=Path("protocol.json"),
+        source_inputs=Path("inputs.npz"),
+        output_dir=Path("output"),
+        device="cuda:0",
+    )
+    assert newton_cli._run_source_grid(args) == {"status": "sealed"}
+    assert calls == [
+        {
+            "protocol_path": Path("protocol.json"),
+            "source_inputs_path": Path("inputs.npz"),
+            "output_dir": Path("output"),
+            "device": "cuda:0",
+        }
+    ]
