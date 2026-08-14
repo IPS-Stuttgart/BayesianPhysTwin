@@ -167,7 +167,11 @@ def _covariance(
         principal_treatment_matches=True,
         value_certificate_certified=authorized,
         authorized=authorized,
-        reasons=("authorized",) if authorized else ("rejected",),
+        reasons=(
+            ("covariance-treatment-authorized",)
+            if authorized
+            else ("covariance-value-certificate-rejected",)
+        ),
     )
 
 
