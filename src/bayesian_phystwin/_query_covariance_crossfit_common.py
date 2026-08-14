@@ -60,9 +60,16 @@ def _immutable_array(value: object, *, dtype: np.dtype[Any]) -> np.ndarray:
     array = np.array(value, dtype=dtype, copy=True, order="C")
     if array.dtype.hasobject:
         raise TypeError("query covariance arrays must not contain Python objects")
-    return np.frombuffer(array.tobytes(order="C"), dtype=array.dtype).reshape(
-        array.shape
+    payload = bytes(array.tobytes(order="C"))
+    result = np.ndarray(
+        shape=array.shape,
+        dtype=array.dtype,
+        buffer=payload,
+        order="C",
     )
+    if result.flags.writeable:
+        raise AssertionError("bytes-backed query covariance array became writeable")
+    return result
 
 
 def _canonical_json_bytes(values: Mapping[str, Any]) -> bytes:
