@@ -163,6 +163,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "infer-phystwin-controller-bias": (
         "bayesian_phystwin.cli.phystwin_controller_inference"
     ),
+    "materialize-lagrangian-backend": (
+        "bayesian_phystwin.cli.lagrangian_backend"
+    ),
     "materialize-matphys-backend": "bayesian_phystwin.cli.matphys_backend",
     "materialize-newton-mpm-backend": ("bayesian_phystwin.cli.newton_mpm_backend"),
     "open-matphys-part-family-future": (
