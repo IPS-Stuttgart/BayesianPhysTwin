@@ -18,14 +18,16 @@ def _project_metadata() -> dict[str, Any]:
         return tomllib.load(handle)
 
 
-def test_evidence_decision_contract_is_in_wheel_and_sdist() -> None:
+def test_evidence_decision_contracts_are_in_wheel_and_sdist() -> None:
     metadata = _project_metadata()
     package_data = metadata["tool"]["setuptools"]["package-data"]["bayesian_phystwin"]
     manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
 
-    assert "contract_data/evidence_decision_v1/*.json" in package_data
-    assert "include docs/evidence_decision_v1.md" in manifest
-    assert (
-        "recursive-include "
-        "src/bayesian_phystwin/contract_data/evidence_decision_v1 *.json" in manifest
-    )
+    for version in ("v1", "v2"):
+        assert f"contract_data/evidence_decision_{version}/*.json" in package_data
+        assert f"include docs/evidence_decision_{version}.md" in manifest
+        assert (
+            "recursive-include "
+            f"src/bayesian_phystwin/contract_data/evidence_decision_{version} "
+            "*.json" in manifest
+        )
