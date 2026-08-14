@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "stage": "stage-1-causal-competence-score",
+  "locked_at_utc": "2026-08-14T04:02:42Z",
+  "implementation_revision": "4bef7408390ccd5b6533e490873ae5929366b270",
+  "prediction_seal": {
+    "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/prediction_seal.json",
+    "sha256": "a39cbc7f61a714b7da10f59d73b63fa93e9482a83fe3594be5d72ebcf425be3a"
+  },
+  "evaluator": {
+    "contract": "official released PhysTwin Chamfer and frame-zero manual-identity metrics",
+    "source_sha256": "678a2ed855b565a1d3bed91090da05139b9f36395c53695e0cfc2861cef5825e",
+    "cli_sha256": "e4544d2461d74016dfbcbcac7394682e6fdeb6cc4c156dac7475f1c931215ce3"
+  },
+  "inputs": {
+    "candidate_trajectory": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/export/cases/single_lift_zebra/trajectory.pkl",
+      "sha256": "d11e1dcd10944b4c959c87610b932e8ca4fecb399bf677f9daf8363bb472e2ca"
+    },
+    "released_phystwin_trajectory": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/inference.pkl",
+      "sha256": "49eb18a3e8a3d36022fd564e5218ee30cc26786658eb438d4f3ac197ce2aa77b"
+    },
+    "final_data_sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e",
+    "manual_tracks_sha256": "ce1da22169fce5063eff159b4ff297e2989559aa8410d30cdb8e4f2d0ee28e80",
+    "split_sha256": "c134477272286feb86e465bc02878a2311b810442e3179449bf47bce5863a681"
+  },
+  "registered_future_interval": [46, 66],
+  "gate": {
+    "minimum_improvement_percent_each_metric": 10.0,
+    "require_positive_springs": true,
+    "minimum_distinct_part_count": 2,
+    "require_zero_rejected_optimizer_steps": true
+  },
+  "outputs": {
+    "candidate": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/score/candidate.json",
+    "released_phystwin": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/score/released_phystwin.json",
+    "decision": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/score/decision.json"
+  },
+  "claim_boundary": "This is an exploratory one-case competence result on an already-open case. The 8/15 mm check is diagnostic only and no state-of-the-art claim is permitted."
+}

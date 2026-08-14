@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "seal_id": "matphys-causal-absolute-part-stage1-single-lift-zebra-v1",
+  "sealed_at_utc": "2026-08-14T04:00:04Z",
+  "case": "single_lift_zebra",
+  "claim_boundary": "One already-open development case under a prefix-only competence protocol. The sealed prediction may be scored only against the registered released future interval and cannot establish an independent, confirmatory, calibrated, or state-of-the-art result.",
+  "implementation": {
+    "repository_revision": "4bef7408390ccd5b6533e490873ae5929366b270",
+    "runner_sha256": "fff3acdb87bec6f6772d8d25530bc236f9e549a3c89d22888c78d8056502db06",
+    "bridge_sha256": "6c18ee28f80c64b01d6aeb561ffa177b9d8a5cb45002f0a5d15037febafa580d",
+    "part_model_sha256": "ea2e5e9d5401e6fdb4efaddd1e6534cc805a9875225e88bbcb718b134a1c6027",
+    "upstream_matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f"
+  },
+  "protocol": {
+    "base_sha256": "91e17a9fb4fbd5fe85b456e074d68c7e206c55f3609e5fd57d97774c6e87a616",
+    "amendment_sha256": "741dc8e71e0df7cee6158a3b67ff941b09670eb5c13aaeb0fc627b26d37239d5",
+    "stage_zero_gate_sha256": "97208c505de344c988c70819a6b1546d520ef8279e2a32b00ff055aba806724b"
+  },
+  "inputs": {
+    "final_data_sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e",
+    "split_sha256": "c134477272286feb86e465bc02878a2311b810442e3179449bf47bce5863a681",
+    "source_graph_proxy_sha256": "f900505d4443f8289ef086b7e6c31bbbfdf7f1b40c473afc300a43585f237bc9",
+    "derived_proxy_sha256": "ba64fb9b41209e28496d4b9e66e1e436b0ec4db1d32746ae2a64749d7b44272f"
+  },
+  "training": {
+    "invocation_sha256": "efb4ebd322d92ecad8edf3e77ea71f6480c03389acedce04c1195bcd1883bb43",
+    "stdout_log_sha256": "acee5dbcf20989a64ed04d84d54578cafec9b5c2d55cc1f2d536b3db80b5083d",
+    "terminal_checkpoint_sha256": "45bfd9b3cfd7ceb484a00ab65a3eecac7b17190709b28c43292c7849ece8bf54",
+    "unselected_best_checkpoint_sha256": "bd74807f9df47e569f0879650ca9d406773cf851518b7c80bf472bf549498953",
+    "selected_checkpoint_policy": "fixed-terminal-epoch-v1",
+    "causal_training_audit_sha256": "8c256e5dccd37ef6678bd0878344d89398d44a9f5f8da6c17aa0484e4fe3ce36",
+    "checkpoint_finiteness_sha256": "94bd174b956544f210c8237a0af52559380c66bce4139f547bb10d98fcc7d7f6",
+    "runtime_access_log_sha256": "7bdf3d4b78e11a661c4a3a5bbd98680eb5686a00250ea3d920474a759d7b99ef",
+    "epochs": 200,
+    "attempted_steps": 6600,
+    "accepted_steps": 6600,
+    "rejected_steps": 0,
+    "maximum_accessed_frame": 33,
+    "maximum_objective_frame": 33,
+    "evidence_end_frame_exclusive": 34
+  },
+  "prediction": {
+    "export_invocation_sha256": "b515c52c161df35f2a5130f1a194fefef931058db6fd50f4de8df61d57a021a6",
+    "export_log_sha256": "e3d2f841eed31d52ff02f46696ee5ba2cd60aab031f22b40cc581269e86a6b57",
+    "external_backbone_manifest_sha256": "a254d95bdbc25200d64ce1cf50a8d7a3f5c17f055cf3e23df3877fba7e756147",
+    "trajectory_sha256": "d11e1dcd10944b4c959c87610b932e8ca4fecb399bf677f9daf8363bb472e2ca",
+    "spring_field_sha256": "3bed0af18ea2553ae2f5aea3d3927059c2eecc02073c1fbe9b5a6396e7775947",
+    "spring_summary_sha256": "1714827bdd5ce97da38fda2af476b7f96056aafcd2a8395e87d5a167e23a0600",
+    "spring_count": 54989,
+    "spring_field_finite": true,
+    "spring_field_positive": true,
+    "distinct_part_count": 5,
+    "maximum_to_minimum_part_geometric_mean_ratio": 1.0000000000350138
+  },
+  "custody": {
+    "future_observations_used": false,
+    "future_metrics_opened_before_seal": false,
+    "fresh_target_or_confirmation_opened": false,
+    "held_v8_artifact_accessed": false,
+    "prob4d": "unused",
+    "molmomotion_beta": 0
+  }
+}

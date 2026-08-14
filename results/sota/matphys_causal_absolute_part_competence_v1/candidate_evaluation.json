@@ -1,0 +1,53 @@
+{
+  "evaluation": {
+    "test": {
+      "chamfer_distance_m": 0.031057257175955578,
+      "frame_count": 20,
+      "frame_end_exclusive": 66,
+      "frame_start": 46,
+      "track_error_m": 0.03478899847375482
+    },
+    "train": {
+      "chamfer_distance_m": 0.008260035142855882,
+      "frame_count": 45,
+      "frame_end_exclusive": 46,
+      "frame_start": 1,
+      "track_error_m": 0.012949015223163485
+    }
+  },
+  "inputs": {
+    "final_data": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/final_data.pkl",
+      "sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e"
+    },
+    "gt_track_3d": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/gt_track_3d.pkl",
+      "sha256": "ce1da22169fce5063eff159b4ff297e2989559aa8410d30cdb8e4f2d0ee28e80"
+    },
+    "split": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/split.json",
+      "sha256": "c134477272286feb86e465bc02878a2311b810442e3179449bf47bce5863a681"
+    },
+    "trajectory": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/export/cases/single_lift_zebra/trajectory.pkl",
+      "sha256": "d11e1dcd10944b4c959c87610b932e8ca4fecb399bf677f9daf8363bb472e2ca"
+    }
+  },
+  "metric_contract": {
+    "chamfer_distance_m": "Per-frame mean one-way L1 nearest-neighbor distance from visible observed object points to predicted surface points, then frame mean.",
+    "compatibility": "Matches the released PhysTwin evaluate_chamfer.py and evaluate_track.py definitions.",
+    "track_error_m": "Frame-0 nearest-vertex correspondence for finite manual tracks; per-frame mean Euclidean error, then frame mean."
+  },
+  "schema_version": 1,
+  "split": {
+    "frame_len": 66,
+    "test": [
+      46,
+      66
+    ],
+    "train": [
+      0,
+      46
+    ]
+  }
+}

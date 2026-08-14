@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "stage": "stage-1-causal-competence",
+  "locked_at_utc": "2026-08-14T03:28:19Z",
+  "implementation_revision": "4bef7408390ccd5b6533e490873ae5929366b270",
+  "authorization_revision": "235a9ce0a717da614d1d8406e60cbb99e6b7a9a7",
+  "stage_zero_gate": {
+    "path": "results/sota/matphys_causal_absolute_part_stage0_v1_1/stage0_gate.json",
+    "sha256": "97208c505de344c988c70819a6b1546d520ef8279e2a32b00ff055aba806724b",
+    "passed": true,
+    "authorize_stage_1": true
+  },
+  "protocol": {
+    "base_sha256": "91e17a9fb4fbd5fe85b456e074d68c7e206c55f3609e5fd57d97774c6e87a616",
+    "amendment_path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/code-4bef7408390ccd5b6533e490873ae5929366b270/configs/sota/matphys_causal_absolute_part_competence_v1_amendment.json",
+    "amendment_sha256": "741dc8e71e0df7cee6158a3b67ff941b09670eb5c13aaeb0fc627b26d37239d5"
+  },
+  "claim_boundary": "One already-open development case. This run can test the frozen competence gate only; it cannot establish an independent, confirmatory, calibrated, or state-of-the-art result.",
+  "gpu": 0,
+  "maximum_runs": 1,
+  "future_metrics_opened_before_prediction_seal": false,
+  "fresh_target_or_confirmation_opened": false,
+  "held_v8_artifact_accessed": false,
+  "environment": {
+    "python": "/home/florianpfaff/.venvs/bpt-gpu/bin/python",
+    "matphys_pydeps": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/pydeps",
+    "cuda_visible_devices": "0"
+  },
+  "arguments": [
+    "train",
+    "--matphys-root", "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/MatPhys",
+    "--data-root", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/data",
+    "--experiments-optimization-dir", "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization",
+    "--proxy-root", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/proxy",
+    "--cases", "single_lift_zebra",
+    "--device", "cuda:0",
+    "--output-dir", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/checkpoint",
+    "--epochs", "200",
+    "--eval-every", "10",
+    "--fit-fraction", "0.75",
+    "--graph-parts",
+    "--absolute-part-field",
+    "--protocol", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/code-4bef7408390ccd5b6533e490873ae5929366b270/configs/sota/matphys_causal_absolute_part_competence_v1_amendment.json",
+    "--dino-model", "dinov2_vitl14_reg",
+    "--dino-image-size", "518",
+    "--dino-keyframes", "4",
+    "--part-count", "5",
+    "--semantic-edge-weight", "4.0",
+    "--part-feature-scale", "1.0",
+    "--compact-unused-edge-semantics",
+    "--training-contract", "causal-prefix-only",
+    "--learning-rate", "0.0003",
+    "--random-seed", "42",
+    "--videomae-model", "MCG-NJU/videomae-base",
+    "--grad-clip", "5.0",
+    "--teacher-proximity-weight", "0.0",
+    "--finite-optimizer-guard"
+  ]
+}

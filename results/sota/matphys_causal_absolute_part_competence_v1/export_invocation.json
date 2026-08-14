@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "stage": "stage-1-causal-competence-export",
+  "locked_at_utc": "2026-08-14T03:57:58Z",
+  "implementation_revision": "4bef7408390ccd5b6533e490873ae5929366b270",
+  "future_metrics_opened": false,
+  "gpu": 0,
+  "checkpoint": {
+    "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/checkpoint/last_checkpoint.pth",
+    "sha256": "45bfd9b3cfd7ceb484a00ab65a3eecac7b17190709b28c43292c7849ece8bf54"
+  },
+  "training_audit": {
+    "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/checkpoint/causal_training_audit.json",
+    "sha256": "8c256e5dccd37ef6678bd0878344d89398d44a9f5f8da6c17aa0484e4fe3ce36"
+  },
+  "arguments": [
+    "export",
+    "--matphys-root", "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/MatPhys",
+    "--data-root", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/data",
+    "--experiments-optimization-dir", "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization",
+    "--proxy-root", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/proxy",
+    "--cases", "single_lift_zebra",
+    "--device", "cuda:0",
+    "--checkpoint", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/checkpoint/last_checkpoint.pth",
+    "--training-audit", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/checkpoint/causal_training_audit.json",
+    "--output-dir", "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/export"
+  ]
+}

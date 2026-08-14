@@ -1,0 +1,56 @@
+{
+  "claim_boundary": "This is an exploratory one-case competence result on an already-open case. The 8/15 mm check is diagnostic only and no state-of-the-art claim is permitted.",
+  "decision": "close_absolute_prefix_family_without_tuning_on_case_outcome",
+  "evaluation_inputs": {
+    "candidate": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/score/candidate.json",
+      "sha256": "89a05f59d36e4a0d0e42e36c72d54a5229f1caaf22adf54d7a291712807e3664"
+    },
+    "released_phystwin": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/score/released_phystwin.json",
+      "sha256": "7903bc2292749edb2cf07ef6244b6655cc9d527e7ac6bb7d25861a8559163220"
+    }
+  },
+  "gates": {
+    "competence_pass": false,
+    "distinct_part_count": 5,
+    "metric_gate_pass": false,
+    "minimum_improvement_percent_each_metric": 10.0,
+    "part_geometric_mean_ratio": 1.0000000000350138,
+    "physical_gate_pass": true,
+    "positive_springs": true,
+    "zero_rejected_steps": true
+  },
+  "metrics_m": {
+    "chamfer_distance_m": {
+      "candidate": 0.031057257175955578,
+      "improvement_percent": -101.00801954281074,
+      "released_phystwin": 0.015450755271652728
+    },
+    "track_error_m": {
+      "candidate": 0.03478899847375482,
+      "improvement_percent": -43.14219277419853,
+      "released_phystwin": 0.02430380434973018
+    }
+  },
+  "prediction_seal": {
+    "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/prediction_seal.json",
+    "sha256": "a39cbc7f61a714b7da10f59d73b63fa93e9482a83fe3594be5d72ebcf425be3a"
+  },
+  "registered_future_interval": [
+    46,
+    66
+  ],
+  "result_id": "matphys-causal-absolute-part-stage1-single-lift-zebra-v1",
+  "schema_version": 1,
+  "score_invocation": {
+    "path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage1/score.invocation.json",
+    "sha256": "77132c340a85407305fabceabac67fd1fc6d219cc7417de90e1ad1bcc5269bf9"
+  },
+  "sota_headroom_diagnostic": {
+    "chamfer_at_or_below_0_008_m": false,
+    "claim_permitted": false,
+    "joint_8_15_pass": false,
+    "track_at_or_below_0_015_m": false
+  }
+}

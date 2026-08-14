@@ -74,3 +74,10 @@ and produced a finite checkpoint. The validated export contains 54,989
 positive springs and five distinct part geometric means. No future metric was
 opened. This mechanical result authorizes the single registered 200-epoch
 competence run; it is not performance evidence.
+
+The competence run is complete and failed its frozen gate. See
+`docs/matphys_causal_absolute_part_competence_v1_result.md`. The causal
+candidate regressed from `15.451/24.304 mm` to `31.057/34.789 mm` future
+CD/track error, and its nominal five-part field collapsed to an effectively
+uniform stiffness. The direct absolute-prefix family is closed without tuning;
+the five-case panel is not authorized.

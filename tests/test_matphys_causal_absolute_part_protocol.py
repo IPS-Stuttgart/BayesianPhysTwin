@@ -21,6 +21,13 @@ STAGE_ZERO_GATE = (
     / "matphys_causal_absolute_part_stage0_v1_1"
     / "stage0_gate.json"
 )
+STAGE_ONE_DECISION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "matphys_causal_absolute_part_competence_v1"
+    / "decision.json"
+)
 
 
 def test_absolute_part_competence_protocol_is_causal_and_single_run() -> None:
@@ -88,3 +95,25 @@ def test_stage_zero_gate_binds_causal_mechanical_pass() -> None:
     assert gate["spring_field"]["distinct_part_count"] == 5
     assert gate["gate"]["passed"] is True
     assert gate["gate"]["authorize_stage_1"] is True
+
+
+def test_stage_one_decision_closes_failed_absolute_prefix_family() -> None:
+    decision = json.loads(STAGE_ONE_DECISION.read_text(encoding="utf-8"))
+
+    assert decision["prediction_seal"]["sha256"] == (
+        "a39cbc7f61a714b7da10f59d73b63fa93e9482a83fe3594be5d72ebcf425be3a"
+    )
+    assert decision["registered_future_interval"] == [46, 66]
+    assert decision["gates"]["physical_gate_pass"] is True
+    assert decision["gates"]["metric_gate_pass"] is False
+    assert decision["gates"]["competence_pass"] is False
+    assert decision["metrics_m"]["chamfer_distance_m"][
+        "improvement_percent"
+    ] == -101.00801954281074
+    assert decision["metrics_m"]["track_error_m"][
+        "improvement_percent"
+    ] == -43.14219277419853
+    assert decision["sota_headroom_diagnostic"]["joint_8_15_pass"] is False
+    assert decision["decision"] == (
+        "close_absolute_prefix_family_without_tuning_on_case_outcome"
+    )
