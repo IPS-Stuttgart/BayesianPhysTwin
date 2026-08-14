@@ -49,6 +49,26 @@ is migrated to this generic producer boundary. Research systems without a
 stable, versioned producer should enter through the plugin mechanism rather
 than expanding the core dependency surface.
 
+## Concrete Genesis producer
+
+`bayesian_phystwin.genesis_mpm_producer_v1` implements the first engine-facing
+producer. It deliberately does not import Genesis. A caller supplies a factory
+for a fresh, already-built Genesis scene and its MPM entity, plus separate
+driven and zero-action controls. The factory is invoked twice and must return
+distinct scene and entity objects with bit-identical initial particle positions.
+
+The producer captures particles through the public `get_particles_pos()` API,
+runs each control immediately before `scene.step()`, supports exact selection of
+one environment from a batched scene, and rejects particle-shape, dtype, or
+frame-zero identity drift. It publishes the deterministic raw archive and can
+also construct the bound runtime manifest through
+`produce_genesis_mpm_backend()`.
+
+See `genesis_mpm_producer_v1.md` for the integration skeleton, batching rules,
+and provenance requirements. The helper establishes the artifact path; a
+source-only Genesis run is still required before the profile can enter a guard
+or any target-facing comparison.
+
 ## Raw producer archive
 
 An external producer writes one no-pickle NPZ with exactly four members:
@@ -164,10 +184,11 @@ on already-open, source-only development data:
 8. a separately hashed prediction before independent future outcomes are
    opened.
 
-The producer implementation order remains Genesis MPM on one already-open
-Deform360 or PokeFlex development object, followed by JAX-FEM for differentiable
-parameter inference. Warp FEM is the next choice when custom GPU-differentiable
-mechanics are the bottleneck; PhysX is the next choice when operational contact
-throughput is the bottleneck. SOFA, MuJoCo, PositionBasedDynamics, and Drake
-provide complementary reference paths and should advance only after the first
-two producers establish the end-to-end evidence protocol.
+The Genesis replay producer is now implemented. Its next step is one
+already-open Deform360 or PokeFlex development object under the source-only
+gate. JAX-FEM should follow for differentiable parameter inference. Warp FEM is
+the next choice when custom GPU-differentiable mechanics are the bottleneck;
+PhysX is the next choice when operational contact throughput is the bottleneck.
+SOFA, MuJoCo, PositionBasedDynamics, and Drake provide complementary reference
+paths and should advance only after the first two producers establish the
+end-to-end evidence protocol.
