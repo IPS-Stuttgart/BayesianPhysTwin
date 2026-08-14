@@ -1,8 +1,12 @@
 {
   "schema_version": 1,
-  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.1",
-  "locked_at_utc": "2026-08-13T22:37:44Z",
+  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.2",
+  "locked_at_utc": "2026-08-13T23:59:21Z",
   "status": "mechanical one-epoch smoke on an already-open case",
+  "supersedes_before_execution": {
+    "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.1",
+    "reason": "The first launch stopped during import before model construction because Warp 1.15 omits the private warn helper expected by pinned MatPhys. It produced no checkpoint, metric, or scientific outcome. The failure log SHA-256 is dd4507a2ff84cdcf180ad1787f6f8718ce98fe37985a93225dfcfdcc94e0100e."
+  },
   "claim_boundary": "This smoke deliberately fits future observations from the same case. It verifies only runtime wiring, finite optimization, provenance, export, and metric plumbing; it is not accuracy evidence.",
   "case": {
     "case_id": "single_lift_sloth",
@@ -17,6 +21,7 @@
     "proxy_contract": "causal-dino-graph-parts-compact-unused-edge-semantics-v1",
     "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
     "part_feature_scale": 1.0,
+    "warp_warning_compatibility": "warp-private-warn-signature-v1",
     "checkpoint_policy": "fixed terminal epoch only",
     "epochs": 1,
     "eval_every": 1,

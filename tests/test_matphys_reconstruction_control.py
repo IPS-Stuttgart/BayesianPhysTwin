@@ -83,6 +83,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
                     "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
                     "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
                     "part_feature_scale": 1.0,
+                    "warp_warning_compatibility": "warp-private-warn-signature-v1",
                 },
             }
         )
@@ -96,6 +97,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         "video_scope": MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
+        "warp_warning_compatibility": "warp-private-warn-signature-v1",
         "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
         "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
         "part_feature_scale": 1.0,
@@ -272,3 +274,44 @@ def test_reconstruction_runner_installs_part_adapter(monkeypatch) -> None:
             and node.func.id == "_install_reconstruction_part_model"
             for node in ast.walk(tree)
         )
+
+
+def test_reconstruction_warp_warn_compatibility_preserves_once_signature(
+    monkeypatch,
+) -> None:
+    scripts = Path(__file__).parents[1] / "scripts" / "remote"
+    path = scripts / "run_matphys_reconstruction_control.py"
+    spec = importlib.util.spec_from_file_location(
+        "run_matphys_reconstruction_control_warn_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(scripts))
+    try:
+        runner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runner)
+    finally:
+        sys.path.remove(str(scripts))
+    messages = []
+    fake_utils = SimpleNamespace()
+    fake_warp = SimpleNamespace(_src=SimpleNamespace(utils=fake_utils))
+    monkeypatch.setitem(sys.modules, "warp", fake_warp)
+    monkeypatch.setitem(sys.modules, "warp._src", fake_warp._src)
+    monkeypatch.setitem(sys.modules, "warp._src.utils", fake_utils)
+    monkeypatch.setattr(
+        "warnings.warn",
+        lambda message, category=None, stacklevel=1: messages.append(
+            (str(message), category, stacklevel)
+        ),
+    )
+
+    runner._install_warp_warn_compatibility()
+    fake_utils.warn("same", category=RuntimeWarning, stacklevel=3, once=True)
+    fake_utils.warn("same", category=RuntimeWarning, stacklevel=3, once=True)
+    fake_utils.warn("repeat", once=False)
+    fake_utils.warn("repeat", once=False)
+
+    assert messages == [
+        ("same", RuntimeWarning, 4),
+        ("repeat", None, 2),
+        ("repeat", None, 2),
+    ]

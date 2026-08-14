@@ -33,6 +33,12 @@ assignments, material distributions, and graph provenance are inherited from
 the full proxy; only node/edge semantic tensors unused by the simple decoder
 are compacted. No training or outcome was produced under version 1.
 
+The v1.1 smoke then stopped during import, before model construction, because
+Warp 1.15 no longer provides the private `warp._src.utils.warn` helper expected
+by pinned MatPhys. Version 1.2 installs a signature-compatible warning adapter
+before importing MatPhys and records the failed launch log hash in the protocol.
+That launch produced no checkpoint, metric, or scientific outcome.
+
 ## Decision
 
 Run the separately locked

@@ -21,6 +21,7 @@ MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT = (
 MATPHYS_RECONSTRUCTION_VIDEO_SCOPE = "uniform-numeric-full-sequence-v1"
 MATPHYS_RECONSTRUCTION_TRAINING_SCOPE = "per-case-all-frame-transductive-v1"
 MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY = "fixed-terminal-epoch-v1"
+MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY = "warp-private-warn-signature-v1"
 MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS = frozenset(
     (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
 )
@@ -82,6 +83,9 @@ def _validate_training_configuration(value: object) -> dict[str, object]:
         "video_scope": MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
+        "warp_warning_compatibility": (
+            MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY
+        ),
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
     }
     for key, expected in required.items():
@@ -146,6 +150,9 @@ def validate_matphys_reconstruction_protocol(
         "proxy_contract": protocol_implementation.get("proxy_contract"),
         "part_model_contract": protocol_implementation.get("part_model_contract"),
         "part_feature_scale": protocol_implementation.get("part_feature_scale"),
+        "warp_warning_compatibility": protocol_implementation.get(
+            "warp_warning_compatibility"
+        ),
     }
     audited_training = {key: configuration.get(key) for key in protocol_training}
     if protocol_training != audited_training:

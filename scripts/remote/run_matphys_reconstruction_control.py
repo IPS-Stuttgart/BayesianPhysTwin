@@ -51,6 +51,7 @@ from bayesian_phystwin.matphys_reconstruction_control import (  # noqa: E402
     MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
+    MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY,
     validate_matphys_reconstruction_audit,
     validate_matphys_reconstruction_protocol,
     write_matphys_reconstruction_audit,
@@ -75,6 +76,28 @@ def _single_case(value: str) -> str:
     if len(values) != 1:
         raise ValueError("reconstruction control requires exactly one case")
     return values[0]
+
+
+def _install_warp_warn_compatibility() -> None:
+    """Restore the private warning signature expected by pinned MatPhys."""
+
+    import warnings
+
+    import warp._src.utils as warp_utils
+
+    if hasattr(warp_utils, "warn"):
+        return
+    emitted_once: set[tuple[str, object]] = set()
+
+    def warn(message, category=None, stacklevel=1, once=False):
+        key = (str(message), category)
+        if once and key in emitted_once:
+            return
+        if once:
+            emitted_once.add(key)
+        warnings.warn(message, category=category, stacklevel=stacklevel + 1)
+
+    warp_utils.warn = warn
 
 
 def _split(data_root: Path, case: str) -> dict[str, object]:
@@ -136,6 +159,9 @@ def _training_configuration(
         "video_scope": MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
+        "warp_warning_compatibility": (
+            MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY
+        ),
         "proxy_contract": str(proxy["contract"]),
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
         "part_feature_scale": float(args.part_feature_scale),
@@ -202,6 +228,7 @@ def train(args: argparse.Namespace) -> None:
     )
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
+    _install_warp_warn_compatibility()
     import train_model_video_material_simple as training
 
     _install_reconstruction_part_model(
@@ -370,12 +397,7 @@ def export(args: argparse.Namespace) -> None:
     frame_len = int(split.get("frame_len", split["test"][1]))
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
-    import warnings
-
-    import warp._src.utils as warp_utils
-
-    if not hasattr(warp_utils, "warn"):
-        warp_utils.warn = warnings.warn
+    _install_warp_warn_compatibility()
     import train_model_video_material_simple as training
     from material_param_dataset import MaterialDatasetConfig, MaterialParamDataset
 

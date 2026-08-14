@@ -29,6 +29,7 @@
     "compact_proxy_boundary": "The compact proxy preserves the full proxy's train_ready.pt, 1024-dimensional part descriptors, part assignments, material distributions, and graph provenance byte-for-byte. It replaces only node/edge semantic tensors that the simple part-aware decoder does not consume.",
     "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
     "part_feature_scale": 1.0,
+    "warp_warning_compatibility": "warp-private-warn-signature-v1",
     "proxy_boundary": "MatPhys does not release its final per-case train_ready.pt bundle. The deterministic Bayesian-PhysTwin DINO graph-part proxy and adapter are new components, not official MatPhys artifacts.",
     "fit_all_frames": true,
     "checkpoint_policy": "fixed terminal epoch only",
