@@ -131,10 +131,3 @@ no_implicit_reexport = true
 strict_equality = true
 warn_return_any = true
 warn_unused_ignores = true
-
-# The strict RunManifestV2 boundary imports the canonical content-addressing
-# helper. Follow that typed implementation instead of degrading its return value
-# to Any under the repository-wide skip policy.
-[[tool.mypy.overrides]]
-module = "bayesian_phystwin._portable_contracts"
-follow_imports = "normal"
