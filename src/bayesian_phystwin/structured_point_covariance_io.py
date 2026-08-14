@@ -495,7 +495,8 @@ def write_structured_point_covariance(
     temporary = Path(temporary_name)
     try:
         with os.fdopen(file_descriptor, "w+b") as stream:
-            np.savez_compressed(stream, **payload)
+            # NumPy's stub treats arbitrary named arrays as its bool option.
+            np.savez_compressed(stream, **payload)  # type: ignore[arg-type]
             stream.flush()
             os.fsync(stream.fileno())
         verified = load_structured_point_covariance(temporary, limits=settings)
