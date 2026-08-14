@@ -130,6 +130,16 @@ def test_volumetric_runtime_orchestration_preserves_query_identity(
     assert len(result.contact_map.material_indices) > 0
 
 
+def test_contact_targets_reach_each_frame_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = _runtime(monkeypatch)
+
+    fractions = [runtime._substep_endpoint_fraction(index, 4) for index in range(4)]
+
+    assert fractions == [0.25, 0.5, 0.75, 1.0]
+
+
 def test_volumetric_runtime_rejects_bad_invocations_and_nonfinite_solver_output(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

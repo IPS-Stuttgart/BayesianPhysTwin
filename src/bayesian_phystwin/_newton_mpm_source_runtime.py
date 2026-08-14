@@ -57,7 +57,9 @@ def _simulation_value(
     return simulation[name]
 
 
-def _implementation_provenance() -> dict[str, Any]:
+def _implementation_provenance(
+    protocol: SourceProtocol | None = None,
+) -> dict[str, Any]:
     repository = Path(__file__).resolve().parents[2]
     try:
         head = subprocess.run(
@@ -78,9 +80,14 @@ def _implementation_provenance() -> dict[str, Any]:
         raise RuntimeError("cannot bind the Newton source implementation") from error
     if status:
         raise RuntimeError("Newton source prediction requires a clean Git worktree")
+    source_paths = (
+        IMPLEMENTATION_SOURCE_PATHS
+        if protocol is None
+        else protocol.implementation_source_paths
+    )
     source_files = {
         relative: file_sha256(repository / relative)
-        for relative in sorted(IMPLEMENTATION_SOURCE_PATHS)
+        for relative in sorted(source_paths)
     }
     return {
         "git_head": head,
@@ -228,7 +235,7 @@ def run_source_grid(
 
     protocol = load_source_protocol(protocol_path)
     inputs = load_source_inputs(source_inputs_path, protocol=protocol)
-    implementation = _implementation_provenance()
+    implementation = _implementation_provenance(protocol)
     source_path = Path(source_inputs_path).resolve(strict=True)
     output = Path(output_dir).absolute()
     if output.exists():

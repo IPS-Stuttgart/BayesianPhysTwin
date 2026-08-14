@@ -305,9 +305,7 @@ def _grid_manifest(
             "git_head": "b" * 40,
             "git_worktree_clean": True,
             "source_files": {
-                "src/bayesian_phystwin/_newton_mpm_source_runtime.py": "a" * 64,
-                "src/bayesian_phystwin/newton_mpm_source_gate_v1.py": "a" * 64,
-                "src/bayesian_phystwin/cli/newton_mpm_backend.py": "a" * 64,
+                path: "a" * 64 for path in protocol.implementation_source_paths
             },
         },
         "information_boundary": {
@@ -338,6 +336,96 @@ def test_prepares_disjoint_source_artifacts_and_exact_geometry(tmp_path: Path) -
     custody = json.loads((bundle / SOURCE_CUSTODY_FILENAME).read_text(encoding="utf-8"))
     assert custody["information_boundary"]["target_or_held_out_artifact_read"] is False
     assert custody["mapping"]["controller_edge_count"] == 2
+
+
+def test_protocol_can_bind_a_versioned_implementation_roster(tmp_path: Path) -> None:
+    paths = _source_fixture(tmp_path)
+    value = json.loads(paths["protocol"].read_text(encoding="utf-8"))
+    custom = [
+        "src/bayesian_phystwin/newton_mpm_source_gate_v1.py",
+        "src/bayesian_phystwin/newton_mpm_volumetric_bridge_v2.py",
+    ]
+    value["implementation_source_paths"] = custom
+    paths["protocol"].write_text(
+        json.dumps(value, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    protocol = load_source_protocol(paths["protocol"])
+
+    assert protocol.implementation_source_paths == frozenset(custom)
+
+
+@pytest.mark.parametrize(
+    ("implementation_paths", "message"),
+    [
+        ([], "nonempty"),
+        (
+            [
+                "src/bayesian_phystwin/newton_mpm_source_gate_v1.py",
+                "src/bayesian_phystwin/newton_mpm_source_gate_v1.py",
+            ],
+            "duplicates",
+        ),
+        (["docs/not-a-module.py"], "package Python modules"),
+        (
+            ["src/bayesian_phystwin/newton_mpm_volumetric_bridge_v2.py"],
+            "bind the source gate",
+        ),
+        (["../escaped.py"], "canonical relative"),
+    ],
+)
+def test_protocol_rejects_invalid_implementation_rosters(
+    tmp_path: Path,
+    implementation_paths: object,
+    message: str,
+) -> None:
+    paths = _source_fixture(tmp_path)
+    value = json.loads(paths["protocol"].read_text(encoding="utf-8"))
+    value["implementation_source_paths"] = implementation_paths
+    paths["protocol"].write_text(json.dumps(value) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        load_source_protocol(paths["protocol"])
+
+
+def test_grid_manifest_uses_protocol_bound_implementation_roster(
+    tmp_path: Path,
+) -> None:
+    paths = _source_fixture(tmp_path)
+    value = json.loads(paths["protocol"].read_text(encoding="utf-8"))
+    custom = [
+        "src/bayesian_phystwin/newton_mpm_source_gate_v1.py",
+        "src/bayesian_phystwin/newton_mpm_volumetric_bridge_v2.py",
+    ]
+    value["implementation_source_paths"] = custom
+    paths["protocol"].write_text(
+        json.dumps(value, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    bundle = tmp_path / "source-bundle"
+    prepare_source_case(
+        protocol_path=paths["protocol"],
+        final_data_path=paths["final_data"],
+        optimal_params_path=paths["optimal"],
+        incumbent_physical_path=paths["incumbent"],
+        matphys_physical_path=paths["matphys"],
+        matphys_replay_result_path=paths["replay"],
+        output_dir=bundle,
+    )
+    grid_root = tmp_path / "grid"
+    grid_root.mkdir()
+    grid_path = _grid_manifest(
+        grid_root,
+        protocol_path=paths["protocol"],
+        source_inputs_path=bundle / SOURCE_INPUT_FILENAME,
+        successful=True,
+    )
+    protocol = load_source_protocol(paths["protocol"])
+
+    loaded = load_grid_manifest(grid_path, protocol=protocol)
+
+    assert set(loaded["implementation"]["source_files"]) == set(custom)
 
 
 def test_successful_prefix_gate_then_scores_source_future(tmp_path: Path) -> None:
@@ -584,6 +672,22 @@ def test_source_runtime_helpers_and_provenance_are_cpu_testable(
     assert provenance["git_worktree_clean"] is True
     assert set(provenance["source_files"]) == set(runtime.IMPLEMENTATION_SOURCE_PATHS)
 
+    completed_with_protocol = iter(
+        (
+            SimpleNamespace(stdout="c" * 40 + "\n"),
+            SimpleNamespace(stdout=""),
+        )
+    )
+    monkeypatch.setattr(
+        runtime.subprocess,
+        "run",
+        lambda *args, **kwargs: next(completed_with_protocol),
+    )
+    protocol_provenance = runtime._implementation_provenance(protocol)
+    assert set(protocol_provenance["source_files"]) == set(
+        protocol.implementation_source_paths
+    )
+
     dirty = iter(
         (
             SimpleNamespace(stdout="a" * 40 + "\n"),
@@ -611,7 +715,7 @@ def test_source_runtime_seals_successes_and_retains_failures(
     monkeypatch.setattr(
         runtime,
         "_implementation_provenance",
-        lambda: {
+        lambda _protocol=None: {
             "git_head": "a" * 40,
             "git_worktree_clean": True,
             "source_files": {

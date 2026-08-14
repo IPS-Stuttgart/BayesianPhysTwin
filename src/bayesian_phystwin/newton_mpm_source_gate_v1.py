@@ -184,6 +184,13 @@ class SourceProtocol:
         )
 
     @property
+    def implementation_source_paths(self) -> frozenset[str]:
+        raw = self.value.get("implementation_source_paths")
+        if raw is None:
+            return IMPLEMENTATION_SOURCE_PATHS
+        return frozenset(cast(list[str], raw))
+
+    @property
     def fit_range(self) -> tuple[int, int]:
         boundary = cast(Mapping[str, Any], self.value["information_boundary"])
         return _frame_range(boundary["fit_object_frames_half_open"], name="fit")
@@ -334,6 +341,29 @@ def load_source_protocol(path: str | Path) -> SourceProtocol:
             name=f"source_files.{name}",
         )
         sha256_digest(record.get("sha256"), name=f"source_files.{name}.sha256")
+    implementation_paths = value.get("implementation_source_paths")
+    if implementation_paths is not None:
+        if not isinstance(implementation_paths, list) or not implementation_paths:
+            raise ValueError("implementation_source_paths must be a nonempty list")
+        canonical_paths = [
+            _canonical_relative_path(item, name="implementation_source_paths")
+            for item in implementation_paths
+        ]
+        _require(
+            len(canonical_paths) == len(set(canonical_paths)),
+            "implementation_source_paths contains duplicates",
+        )
+        _require(
+            all(
+                item.startswith("src/bayesian_phystwin/") and item.endswith(".py")
+                for item in canonical_paths
+            ),
+            "implementation_source_paths must name package Python modules",
+        )
+        _require(
+            "src/bayesian_phystwin/newton_mpm_source_gate_v1.py" in canonical_paths,
+            "implementation_source_paths must bind the source gate",
+        )
     grid = value.get("parameter_grid")
     if not isinstance(grid, list) or not grid:
         raise ValueError("parameter_grid must be a nonempty list")
@@ -1052,7 +1082,7 @@ def load_grid_manifest(
     )
     require_exact_fields(
         source_files,
-        expected=IMPLEMENTATION_SOURCE_PATHS,
+        expected=protocol.implementation_source_paths,
         name="implementation source files",
     )
     for name, digest in source_files.items():

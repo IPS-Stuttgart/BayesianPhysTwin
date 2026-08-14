@@ -143,6 +143,10 @@ def _controllers(value: object) -> npt.NDArray[np.float32]:
     return np.ascontiguousarray(array, dtype=np.float32)
 
 
+def _substep_endpoint_fraction(substep: int, substeps: int) -> float:
+    return (substep + 1) / substeps
+
+
 def _build_model(
     material_points_m: npt.NDArray[np.float32],
     config: VolumetricMpmConfigV2,
@@ -233,7 +237,7 @@ def _simulate_material_v2(  # pragma: no cover - exercised on CUDA
             )
             for substep in range(config.substeps):
                 if driven:
-                    alpha = substep / config.substeps
+                    alpha = _substep_endpoint_fraction(substep, config.substeps)
                     controller_position = previous + alpha * (following - previous)
                     displacement = controller_position - controller_rest
                 else:

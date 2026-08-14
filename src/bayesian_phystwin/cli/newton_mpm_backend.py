@@ -67,6 +67,15 @@ def build_parser() -> argparse.ArgumentParser:
     run_source.add_argument("output_dir", type=Path)
     run_source.add_argument("--device", default="cuda:0")
 
+    run_volumetric_source = commands.add_parser(
+        "source-run-volumetric-grid",
+        help="run the outcome-blind volumetric Newton MPM v2 source grid",
+    )
+    run_volumetric_source.add_argument("protocol", type=Path)
+    run_volumetric_source.add_argument("source_inputs", type=Path)
+    run_volumetric_source.add_argument("output_dir", type=Path)
+    run_volumetric_source.add_argument("--device", default="cuda:0")
+
     score_source = commands.add_parser(
         "source-score-prefix",
         help="score fit/validation frames and apply the frozen source gate",
@@ -147,6 +156,23 @@ def _run_source_grid(args: argparse.Namespace) -> dict[str, object]:
     )
 
 
+def _run_volumetric_source_grid(args: argparse.Namespace) -> dict[str, object]:
+    try:
+        from bayesian_phystwin._newton_mpm_volumetric_source_runtime_v2 import (
+            run_volumetric_source_grid,
+        )
+    except ImportError as error:
+        raise RuntimeError(
+            "Newton MPM is optional; install bayesian-phystwin[mpm]"
+        ) from error
+    return run_volumetric_source_grid(
+        protocol_path=args.protocol,
+        source_inputs_path=args.source_inputs,
+        output_dir=args.output_dir,
+        device=args.device,
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "smoke":
@@ -171,6 +197,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     elif args.command == "source-run-grid":
         result = _run_source_grid(args)
+    elif args.command == "source-run-volumetric-grid":
+        result = _run_volumetric_source_grid(args)
     elif args.command == "source-score-prefix":
         result = score_prefix_gate(
             protocol_path=args.protocol,
