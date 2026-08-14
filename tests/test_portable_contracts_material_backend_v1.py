@@ -347,14 +347,15 @@ def test_legacy_cli_module_entrypoint(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    module_path = Path(material_trajectory_backend.__file__ or "")
+    module_name = "bayesian_phystwin.cli.material_trajectory_backend"
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
     monkeypatch.setattr(
         sys,
         "argv",
         ["material_trajectory_backend", "profiles"],
     )
     with pytest.raises(SystemExit) as exit_info:
-        runpy.run_path(str(module_path), run_name="__main__")
+        runpy.run_module(module_name, run_name="__main__", alter_sys=True)
     assert exit_info.value.code == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["schema"] == "bayesian-phystwin.material-backend-registry"
