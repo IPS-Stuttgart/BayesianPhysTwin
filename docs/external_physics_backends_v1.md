@@ -2,76 +2,85 @@
 
 ## Purpose
 
-Bayesian-PhysTwin now has one simulator-neutral adapter for external deformable
-physics engines. The adapter does not import an engine runtime and does not add
-heavy dependencies to the base package. Instead, an engine-specific producer
-exports persistent entity trajectories and a strict runtime manifest. The
-adapter projects stable entity indices into the existing six-array
+Bayesian-PhysTwin uses one simulator-neutral adapter for external deformable
+physics engines. Engine-specific code runs in an opt-in producer environment and
+exports persistent entity trajectories plus a strict runtime manifest. The core
+adapter then projects stable entity indices into the existing six-array
 `physical_rollout_v1` contract.
 
-This keeps the downstream boundary unchanged: Prob4D remains responsible for
-observation uncertainty, Bayesian-PhysTwin evaluates and guards a physical
-candidate, and Causal4D consumes only the selected belief. A new backend cannot
-silently alter those responsibilities.
+No engine runtime or heavy dependency is imported into the base package. The
+boundary also preserves the division of responsibility between repositories:
+Prob4D owns observation uncertainty, Bayesian-PhysTwin evaluates and guards a
+physical candidate, and Causal4D consumes only the selected belief.
 
 ## Prioritized built-in profiles
 
-The built-ins cover complementary mechanics, inference, and deployment roles
-rather than aliases for the same spring model:
+The built-ins cover complementary mechanics, inference, and deployment roles:
 
-1. `genesis-mpm-v1` — broad differentiable MPM and coupled contact. This
-   remains the first concrete producer target; it must preserve material-particle
-   identity.
-2. `jax-fem-v1` — differentiable FEM material identification and ensembles.
-   Contact and time integration remain producer-declared.
-3. `warp-fem-v1` — GPU-differentiable custom constitutive and contact
-   experiments. Warp is a toolkit, so the producer must bind the exact
-   formulation.
-4. `physx-fem-v1` — high-throughput GPU surface/volume deformable reference.
-   It has a GPU requirement and no assumed native parameter gradients.
-5. `sofa-fem-v1` — mature contact-rich FEM and soft-robotics reference. The
-   producer must bind the exact component/plugin graph and constitutive model.
-6. `mujoco-flex-v1` — fast controls-oriented flexible-body/contact baseline.
-   Fidelity is task-dependent and must pass the same source gate.
-7. `position-based-dynamics-v1` — fast rope, rod, cloth, and soft-body
-   XPBD/PBD baseline. Operational stability is not evidence of force accuracy.
+1. `genesis-mpm-v1` — broad differentiable MPM and coupled contact;
+2. `jax-fem-v1` — differentiable FEM material identification and ensembles;
+3. `warp-fem-v1` — GPU-differentiable custom constitutive and contact work;
+4. `physx-fem-v1` — high-throughput GPU surface/volume deformable reference;
+5. `sofa-fem-v1` — mature contact-rich FEM and soft-robotics reference;
+6. `mujoco-flex-v1` — fast controls-oriented flexible-body baseline;
+7. `position-based-dynamics-v1` — rope, rod, cloth, and soft-body XPBD/PBD
+   baseline; and
 8. `drake-fem-v1` — robotics systems-and-controls integration candidate.
-   Deformable support is experimental and must be revision-pinned.
 
-The profile order is a development priority, not an empirical ranking. None of
-the eight is claim-bearing until it passes the source-only advancement gate
-below. Exact engine and producer revisions are stored per runtime artifact, so
-the profile catalog never substitutes a floating package version for
-provenance.
+The order is a development priority, not an empirical ranking. A profile is a
+versioned compatibility descriptor, not evidence that an engine improves a
+target task. Exact engine and producer revisions are bound per runtime artifact.
 
-The existing dedicated Newton MPM compatibility path remains separate while it
-is migrated to this generic producer boundary. Research systems without a
-stable, versioned producer should enter through the plugin mechanism rather
-than expanding the core dependency surface.
+The dedicated Newton MPM compatibility path remains separate while it is
+migrated to the generic producer boundary. Additional research systems should
+enter through the plugin interface until they expose a stable producer with
+persistent entity identity and exact provenance.
 
-## Concrete Genesis producer
+## Implemented engine-facing producers
 
-`bayesian_phystwin.genesis_mpm_producer_v1` implements the first engine-facing
-producer. It deliberately does not import Genesis. A caller supplies a factory
-for a fresh, already-built Genesis scene and its MPM entity, plus separate
-driven and zero-action controls. The factory is invoked twice and must return
-distinct scene and entity objects with bit-identical initial particle positions.
+### Genesis MPM
 
-The producer captures particles through the public `get_particles_pos()` API,
-runs each control immediately before `scene.step()`, supports exact selection of
-one environment from a batched scene, and rejects particle-shape, dtype, or
-frame-zero identity drift. It publishes the deterministic raw archive and can
-also construct the bound runtime manifest through
-`produce_genesis_mpm_backend()`.
+`bayesian_phystwin.genesis_mpm_producer_v1` consumes a factory for fresh,
+already-built Genesis scenes and their MPM entities. It uses only the public
+`get_particles_pos()` and `scene.step()` surfaces. The producer:
 
-See `genesis_mpm_producer_v1.md` for the integration skeleton, batching rules,
-and provenance requirements. The helper establishes the artifact path; a
-source-only Genesis run is still required before the profile can enter a guard
-or any target-facing comparison.
+- creates independent driven and zero-action replays;
+- captures frame zero before either action callback;
+- supports exact selection of one environment from a batched scene;
+- requires bit-identical initial particle positions and order;
+- rejects particle shape, dtype, identity, or finite-value drift; and
+- writes the deterministic raw archive and bound runtime manifest.
+
+The module itself does not import Genesis. See `genesis_mpm_producer_v1.md` for
+an integration skeleton, batching rules, and provenance requirements.
+
+### JAX-FEM
+
+`bayesian_phystwin.jax_fem_producer_v1` consumes a factory for fresh JAX-FEM
+replay wrappers. A wrapper returns fixed reference mesh nodes and executes one
+load or time-step solve. The selected solver field must be a floating `(N,3)`
+nodal displacement relative to the fixed reference points. The producer:
+
+- supports the usual JAX-FEM list of solution fields or one direct array;
+- synchronizes JAX-like arrays through `block_until_ready()` when available;
+- calls each control callback immediately before the corresponding solve;
+- requires independent driven and zero-action solve sequences;
+- rejects reference-mesh drift, invalid field selection, and displacement
+  shape, dtype, or finite-value errors; and
+- writes the same generic raw archive and runtime manifest as every backend.
+
+The module itself does not import JAX or JAX-FEM. Native 2-D problems must be
+explicitly embedded into a frozen 3-D coordinate frame by the producer. See
+`jax_fem_producer_v1.md` for quasi-static, transient, multi-field, and
+provenance guidance.
+
+Both producers establish the software and custody path only. Neither backend is
+claim-bearing until its exact runtime passes source-only qualification and the
+separate advancement gate below.
 
 ## Raw producer archive
 
-An external producer writes one no-pickle NPZ with exactly four members:
+A producer writes one no-pickle NPZ with exactly four members:
 
 - `driven_entity_positions_m`: floating `(T,E,3)` positions;
 - `zero_action_entity_positions_m`: the same shape, dtype, and exact frame-zero
@@ -82,8 +91,8 @@ An external producer writes one no-pickle NPZ with exactly four members:
 `T` must be at least two. Positions are in metres in a producer-declared frame.
 The same entity index must denote the same material particle, mesh node,
 mechanical state, flex vertex, or PBD particle at every frame. Remeshing or
-particle resampling is allowed only if the producer first establishes a stable
-material correspondence and exports that correspondence as the entity order.
+resampling is admissible only after the producer establishes and records a
+stable material correspondence.
 
 The adapter derives:
 
@@ -102,8 +111,8 @@ List the built-in profiles:
 python -m bayesian_phystwin.cli.external_physics_backend profiles
 ```
 
-Build a content-addressed runtime manifest after an engine producer has written
-its raw archive:
+Build a content-addressed runtime manifest after an external producer has
+written its raw archive:
 
 ```bash
 python -m bayesian_phystwin.cli.external_physics_backend runtime \
@@ -121,7 +130,7 @@ python -m bayesian_phystwin.cli.external_physics_backend runtime \
   --producer-artifact configs/scene.json=<sha256>
 ```
 
-Materialize and then independently validate the self-contained bundle:
+Materialize and independently validate the self-contained bundle:
 
 ```bash
 python -m bayesian_phystwin.cli.external_physics_backend materialize \
@@ -140,9 +149,10 @@ frame-zero identity, information boundaries, or profile descriptors.
 The runtime contract requires:
 
 - exact engine and producer source revisions;
-- an engine-independent profile descriptor embedded in the artifact;
-- a topology digest and a frame-zero entity-order digest;
-- finite JSON material parameters;
+- the selected self-contained profile descriptor;
+- topology and ordered frame-zero entity digests;
+- finite JSON material and solver parameters;
+- explicit coordinate, position, and time units;
 - an explicit causal observation cutoff;
 - no future observations, target outcomes, or outcome-based backend selection;
 - an independently simulated zero-action replay; and
@@ -150,12 +160,12 @@ The runtime contract requires:
 
 ## Source-only backend qualification
 
-A valid runtime bundle is not automatically a qualified physical model. The
-separate `PhysicsBackendQualificationV1` record binds one exact runtime and one
+A valid runtime bundle is not automatically a qualified physical model.
+`PhysicsBackendQualificationV1` binds one exact candidate runtime and one exact
 incumbent runtime to a frozen source-only protocol, independent source groups,
-measured numerical diagnostics, thresholds, and exact fallback evidence.
+measured diagnostics, thresholds, and fallback evidence.
 
-A passing record requires all of the following:
+A passing record requires:
 
 - valid units, coordinate frame, persistent entity order, and query identity;
 - byte-reproducible reruns;
@@ -170,9 +180,8 @@ A passing record requires all of the following:
 - a protocol frozen before source outcomes were inspected; and
 - no target outcome use.
 
-The record is content-addressed and stores all failure reasons. A failed record
-remains useful source evidence but cannot authorize the runtime. Bind a validated
-runtime before any guarded or target-facing use:
+The record is content-addressed and retains all failure reasons. A failed record
+remains useful source evidence but cannot authorize the runtime:
 
 ```python
 from bayesian_phystwin.physics_backend_qualification_v1 import (
@@ -191,7 +200,7 @@ require_qualified_backend_runtime(
 )
 ```
 
-This qualification is still source-side mechanism evidence. Independent-object
+Qualification is still source-side mechanism evidence. Independent-object
 accuracy, calibrated uncertainty, and downstream Causal4D benefit require their
 own frozen confirmation protocols.
 
@@ -207,34 +216,32 @@ my-backend = "my_package.backend_profile:PROFILE"
 ```
 
 `PROFILE` may be a `PhysicsBackendProfileV1`, its exact JSON mapping, a sequence
-of profiles, or a zero-argument callable returning one of those forms. List or
-resolve plugin profiles with `--include-plugins`. Plugin identifiers cannot
-override built-ins, and the selected descriptor is embedded in the runtime so
-bundle validation does not later depend on the plugin remaining installed.
+of profiles, or a zero-argument callable returning one of those forms. Resolve
+plugin profiles with `--include-plugins`. Plugin identifiers cannot override a
+built-in, and the selected descriptor is embedded in the runtime so later
+validation does not depend on the plugin remaining installed.
 
 ## Advancement gate
 
-A profile is only an available producer boundary. Before it can replace or join
-the incumbent physical model on a target protocol, require all of the following
-on already-open, source-only development data:
+Before a qualified runtime can replace or join the incumbent on a target
+protocol, require all of the following on already-open source development data:
 
 1. a passing `PhysicsBackendQualificationV1` bound to the exact runtime;
 2. a fixed parameter prior or source-only posterior with non-degenerate spread;
 3. held-out source-prefix improvement or demonstrable complementarity to the
-   incumbent under the same action and metrics;
+   incumbent under the same actions and metrics;
 4. calibration checks using proper multivariate scores, not mean trajectory
    error alone;
 5. a frozen guard whose rejection path is a byte-identical incumbent artifact;
-6. no target outcome or future observation in fitting, profile choice, or
+6. no target outcome or future observation in fitting, backend choice, or
    acceptance; and
 7. a separately hashed prediction before independent future outcomes are
    opened.
 
-The Genesis replay producer is now implemented. Its next step is one
-already-open Deform360 or PokeFlex development object under the source-only
-gate. JAX-FEM should follow for differentiable parameter inference. Warp FEM is
-the next choice when custom GPU-differentiable mechanics are the bottleneck;
-PhysX is the next choice when operational contact throughput is the bottleneck.
-SOFA, MuJoCo, PositionBasedDynamics, and Drake provide complementary reference
-paths and should advance only after the first two producers establish the
-end-to-end evidence protocol.
+Genesis MPM and JAX-FEM now have concrete producer boundaries. The next
+claim-relevant step is to run both on one already-open Deform360 or PokeFlex
+source object, generate qualification records, and compare them under the same
+frozen query/action and incumbent contract. Warp FEM should follow when custom
+GPU-differentiable mechanics are the bottleneck; PhysX should follow when
+operational contact throughput is the bottleneck. SOFA, MuJoCo,
+PositionBasedDynamics, and Drake remain complementary reference paths.
