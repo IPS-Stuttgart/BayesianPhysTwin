@@ -17,7 +17,7 @@ concurrency:
 jobs:
   repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Check out PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,24 +41,37 @@ jobs:
           git fetch origin main
           git merge --no-edit origin/main
 
-      - name: Apply typing and stable-suite repairs
+      - name: Apply and commit the focused repair
         run: |
+          set -euo pipefail
           python - <<'PY'
           import json
           from pathlib import Path
 
           source_path = Path("src/bayesian_phystwin/run_manifest_v2.py")
           source = source_path.read_text(encoding="utf-8")
-          replacements = {
-              "        return content_id(self.scientific_descriptor())\n":
+          replacements = (
+              (
+                  "        return content_id(self.scientific_descriptor())\n",
                   "        return cast(str, content_id(self.scientific_descriptor()))\n",
-              "        return content_id(self.descriptor())\n":
+              ),
+              (
+                  "        return content_id(self.descriptor())\n",
                   "        return cast(str, content_id(self.descriptor()))\n",
-          }
-          for old, new in replacements.items():
-              if source.count(old) != 1:
-                  raise SystemExit(f"unexpected source occurrence count for: {old!r}")
-              source = source.replace(old, new)
+              ),
+          )
+          for old, new in replacements:
+              old_count = source.count(old)
+              new_count = source.count(new)
+              if old_count == 1 and new_count == 0:
+                  source = source.replace(old, new)
+              elif old_count == 0 and new_count == 1:
+                  pass
+              else:
+                  raise SystemExit(
+                      "unexpected RunManifestV2 return form: "
+                      f"old={old_count}, new={new_count}"
+                  )
           source_path.write_text(source, encoding="utf-8")
 
           suite_path = Path(".github/quality/test-suites.json")
@@ -76,10 +89,20 @@ jobs:
           )
           PY
 
-      - name: Install validation dependencies
-        run: python -m pip install -e ".[dev]" coverage
+          git add \
+            src/bayesian_phystwin/run_manifest_v2.py \
+            .github/quality/test-suites.json
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "Fix RunManifestV2 hardening CI"
+          fi
 
-      - name: Validate focused contracts, typing, and coverage
+      - name: Install validation dependencies
+        run: |
+          python -m pip install -e ".[dev,graph]"
+          python -m pip install "coverage==7.13.3"
+
+      - name: Validate focused contracts and strict typing
         run: |
           set -euo pipefail
           python -m ruff check -- \
@@ -95,43 +118,6 @@ jobs:
             tests/test_run_manifest_v2_hardening.py \
             tests/test_run_manifest_cli.py \
             tests/test_claim_bundle_v1.py
-          python -m coverage erase
-          python -m coverage run --branch --source=bayesian_phystwin \
-            -m pytest -q \
-            tests/test_run_manifest_v2.py \
-            tests/test_run_manifest_v2_hardening.py
-          python -m coverage json -o run-manifest-v2-coverage.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          payload = json.loads(
-              Path("run-manifest-v2-coverage.json").read_text(encoding="utf-8")
-          )
-          matches = [
-              (path, record)
-              for path, record in payload["files"].items()
-              if path.endswith("bayesian_phystwin/run_manifest_v2.py")
-          ]
-          if len(matches) != 1:
-              raise SystemExit(f"unexpected coverage file matches: {matches!r}")
-          path, record = matches[0]
-          summary = record["summary"]
-          line_percent = float(summary["percent_covered"])
-          branch_total = int(summary["num_branches"])
-          branch_covered = int(summary["covered_branches"])
-          branch_percent = (
-              100.0
-              if branch_total == 0
-              else 100.0 * branch_covered / branch_total
-          )
-          print(
-              f"{path}: lines={line_percent:.2f}% "
-              f"branches={branch_percent:.2f}%"
-          )
-          if line_percent < 90.0 or branch_percent < 80.0:
-              raise SystemExit("focused RunManifestV2 coverage is below the ratchet")
-          PY
           python -m mypy \
             src/bayesian_phystwin/run_manifest.py \
             src/bayesian_phystwin/repository_provenance.py \
@@ -146,14 +132,58 @@ jobs:
             src/bayesian_phystwin/causal4d_provider_v1.py \
             src/bayesian_phystwin/prob4d_causal_lineage.py
 
-      - name: Commit and push repair
+      - name: Run the repository stable-core coverage ratchet
+        shell: bash
         run: |
           set -euo pipefail
-          git config user.name "OpenAI"
-          git config user.email "openai@users.noreply.github.com"
-          git add \
-            src/bayesian_phystwin/run_manifest_v2.py \
-            .github/quality/test-suites.json
-          git diff --cached --check
-          git commit -m "Fix RunManifestV2 hardening CI"
+          export QUALITY_BASE_SHA="$(git merge-base origin/main HEAD)"
+          export QUALITY_HEAD_SHA="$(git rev-parse HEAD)"
+
+          python tools/quality/test_suite_manifest.py list stable-core-coverage \
+            > "$RUNNER_TEMP/stable-core-tests.txt"
+          mapfile -t stable_tests < "$RUNNER_TEMP/stable-core-tests.txt"
+          test "${#stable_tests[@]}" -gt 0
+          python -m coverage run --branch --source=bayesian_phystwin \
+            -m pytest -q "${stable_tests[@]}"
+
+          python -m coverage json -o package-coverage.json
+
+          stable_files=(
+            src/bayesian_phystwin/_gauge_aware_contracts.py
+            src/bayesian_phystwin/_gauge_aware_solver.py
+            src/bayesian_phystwin/calibration.py
+            src/bayesian_phystwin/causal4d_provider_v1.py
+            src/bayesian_phystwin/cli/main.py
+            src/bayesian_phystwin/cli/run_manifest.py
+            src/bayesian_phystwin/gauge_aware_belief.py
+            src/bayesian_phystwin/deform360_contact_anchor.py
+            src/bayesian_phystwin/observation_belief.py
+            src/bayesian_phystwin/observation_belief_gauge_adapter.py
+            src/bayesian_phystwin/phystwin_profile.py
+            src/bayesian_phystwin/prob4d_causal_lineage.py
+            src/bayesian_phystwin/prob4d_observation_contract.py
+            src/bayesian_phystwin/pseudo_measurements.py
+            src/bayesian_phystwin/repository_provenance.py
+            src/bayesian_phystwin/robust_likelihood.py
+            src/bayesian_phystwin/run_manifest.py
+            src/bayesian_phystwin/run_manifest_v2.py
+          )
+          stable_include=$(IFS=,; echo "${stable_files[*]}")
+          python -m coverage json \
+            --include="${stable_include}" \
+            -o stable-core-coverage.json
+          python -m coverage report \
+            --include="${stable_include}" \
+            --show-missing
+
+          python tools/quality/check_coverage_floors.py \
+            stable-core-coverage.json \
+            .github/quality/stable-core-coverage-floors.json \
+            --changed-coverage-json package-coverage.json \
+            --base "${QUALITY_BASE_SHA}" \
+            --head "${QUALITY_HEAD_SHA}"
+
+      - name: Push the validated repair
+        run: |
+          set -euo pipefail
           git push origin HEAD:agent/run-manifest-v2-hardening
