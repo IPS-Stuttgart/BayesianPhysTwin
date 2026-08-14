@@ -20,13 +20,11 @@ import subprocess
 import sys
 import time
 import types
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Callable
 
 import numpy as np
-
 
 _MATPHYS_PYDEPS = os.environ.get("MATPHYS_PYDEPS")
 if _MATPHYS_PYDEPS:
@@ -35,9 +33,11 @@ if _MATPHYS_PYDEPS:
     sys.path.append(_MATPHYS_PYDEPS)
 
 from bayesian_phystwin.matphys_causal_bridge import (  # noqa: E402
+    MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT,
     MATPHYS_GENERIC_MOTION_BACKBONE,
     MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT,
     causal_uniform_frame_ids,
+    matphys_causal_absolute_part_field,
     matphys_fresh_fold_initialization,
     numeric_frame_paths,
     prepare_global_material_proxy,
@@ -47,7 +47,9 @@ from bayesian_phystwin.matphys_causal_bridge import (  # noqa: E402
     write_causal_training_audit,
     write_source_supervised_training_audit,
 )
-from bayesian_phystwin.matphys_dino_features import CausalDinoNodeExtractor  # noqa: E402
+from bayesian_phystwin.matphys_dino_features import (  # noqa: E402
+    CausalDinoNodeExtractor,
+)
 from bayesian_phystwin.matphys_graph_parts import (  # noqa: E402
     GRAPH_PART_COMPACT_PROXY_CONTRACT,
     GRAPH_PART_PROXY_CONTRACT,
@@ -56,6 +58,7 @@ from bayesian_phystwin.matphys_graph_parts import (  # noqa: E402
 from bayesian_phystwin.matphys_part_model import (  # noqa: E402
     PART_AWARE_MODEL_CONTRACT,
     install_part_aware_simple_model,
+    summarize_part_spring_field,
     summarize_part_spring_ratios,
 )
 from bayesian_phystwin.matphys_teacher_residual import (  # noqa: E402
@@ -65,15 +68,14 @@ from bayesian_phystwin.matphys_teacher_residual import (  # noqa: E402
     load_matphys_teacher_bundle,
     load_matphys_teacher_manifest,
 )
-from bayesian_phystwin.phystwin_graph import (  # noqa: E402
-    PhysTwinSpringGraphConfig,
-    build_phystwin_spring_graph,
-)
 from bayesian_phystwin.phystwin_external_backbone import (  # noqa: E402
     EXTERNAL_COORDINATE_FRAME,
     EXTERNAL_VERTEX_CONTRACT,
 )
-
+from bayesian_phystwin.phystwin_graph import (  # noqa: E402
+    PhysTwinSpringGraphConfig,
+    build_phystwin_spring_graph,
+)
 
 MATPHYS_REPOSITORY = "https://github.com/Yrainy0615/MatPhys"
 UNEVEN_DDP_TRAINING_CONTRACT = "ddp-join-uneven-case-steps-v1"
@@ -441,8 +443,8 @@ def _causal_video_loader(evidence_end_by_case: dict[str, int]) -> Callable:
         image_size: int = 224,
         device=None,
     ):
-        from PIL import Image
         import torch
+        from PIL import Image
         from torchvision import transforms
 
         color_dir = Path(base_path) / case_name / "color" / "0"
@@ -1098,6 +1100,45 @@ def _teacher_configuration(
     return parameterization, bundles
 
 
+def _validate_training_mode(
+    args,
+    *,
+    source_supervised: bool,
+    case_count: int,
+) -> bool:
+    """Validate mutually exclusive MatPhys parameterization families."""
+
+    absolute_part_field = bool(args.absolute_part_field)
+    if absolute_part_field:
+        if not args.graph_parts:
+            raise ValueError("absolute part fields require --graph-parts")
+        if source_supervised:
+            raise ValueError(
+                "absolute part fields are restricted to causal-prefix-only training"
+            )
+        if case_count != 1:
+            raise ValueError("absolute part fields require exactly one case per fit")
+        if (
+            args.teacher_residual_log_scale is not None
+            or args.teacher_experiments_dir is not None
+        ):
+            raise ValueError(
+                "absolute part fields cannot use a teacher residual or teacher root"
+            )
+        if args.teacher_proximity_weight != 0.0:
+            raise ValueError("absolute part fields cannot use teacher proximity")
+        if (
+            args.initialization_checkpoint is not None
+            or args.initialization_sha256 is not None
+        ):
+            raise ValueError("absolute part fields require fresh initialization")
+        if not args.finite_optimizer_guard:
+            raise ValueError("absolute part fields require the finite optimizer guard")
+    elif args.graph_parts and args.teacher_residual_log_scale is None:
+        raise ValueError("graph parts require the identity-preserving teacher residual")
+    return absolute_part_field
+
+
 def _load_trunk_initialization(
     args,
 ) -> tuple[Mapping[str, object] | None, dict[str, object] | None]:
@@ -1170,6 +1211,11 @@ def train(args) -> None:
         raise ValueError(
             "target cases and split registration require source-supervised-meta"
         )
+    absolute_part_field_enabled = _validate_training_mode(
+        args,
+        source_supervised=source_supervised,
+        case_count=len(cases),
+    )
     _ACCESSED_FRAMES.clear()
     _ACCESSED_FRAME_PATHS.clear()
     _OBJECTIVE_END_FRAMES.clear()
@@ -1192,8 +1238,6 @@ def train(args) -> None:
         if source_supervised
         else {}
     )
-    if args.graph_parts and args.teacher_residual_log_scale is None:
-        raise ValueError("graph parts require the identity-preserving teacher residual")
     proxy = _prepare_proxy(args, cases, evidence_end_by_case)
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
@@ -1224,6 +1268,20 @@ def train(args) -> None:
             initialization_excluded_prefixes=_RESIDUAL_HEAD_PREFIXES,
         )
     parameterization, teacher_bundles = _teacher_configuration(args, cases)
+    absolute_part_field = (
+        matphys_causal_absolute_part_field(
+            proxy_contract=str(proxy["contract"]),
+            part_model_contract=PART_AWARE_MODEL_CONTRACT,
+            part_feature_scale=args.part_feature_scale,
+            fit_fraction=args.fit_fraction,
+            epochs=args.epochs,
+            learning_rate=args.learning_rate,
+            gradient_clip=args.grad_clip,
+            random_seed=args.random_seed,
+        )
+        if absolute_part_field_enabled
+        else None
+    )
     if parameterization is not None and proxy["contract"] in (
         GRAPH_PART_PROXY_CONTRACT,
         GRAPH_PART_COMPACT_PROXY_CONTRACT,
@@ -1417,6 +1475,7 @@ def train(args) -> None:
             checkpoints,
             output_dir / "causal_training_audit.json",
             split_by_case=_splits(data_root, cases),
+            absolute_part_field=absolute_part_field,
             **common_audit,
         )
     print(json.dumps(audit, indent=2, sort_keys=True))
@@ -1463,6 +1522,40 @@ def _model_spring_y(training, runtime, model_out, device):
     if not np.isfinite(spring_y).all() or np.any(spring_y <= 0.0):
         raise RuntimeError("MatPhys produced a non-positive or non-finite spring field")
     return model_logk, spring_y.astype(np.float32, copy=False)
+
+
+def _absolute_part_spring_summary(
+    case: str,
+    spring_y: np.ndarray,
+    edge_part_index: np.ndarray,
+) -> dict[str, object]:
+    """Summarize an absolute field without implying a teacher-relative ratio."""
+
+    spring = np.asarray(spring_y, dtype=float).reshape(-1)
+    part_index = np.asarray(edge_part_index, dtype=np.int64).reshape(-1)
+    object_count = len(part_index)
+    if object_count < 1 or len(spring) < object_count:
+        raise ValueError("part indices do not cover the object spring field")
+    if not np.all(np.isfinite(spring)) or np.any(spring <= 0.0):
+        raise ValueError("complete spring field must be finite and positive")
+    return {
+        "case": case,
+        "absolute_part_field_contract": (
+            MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT
+        ),
+        "object_spring_field": summarize_part_spring_field(
+            spring[:object_count],
+            part_index,
+        ),
+        "complete_spring_field": {
+            "count": int(len(spring)),
+            "object_spring_count": object_count,
+            "controller_spring_count": int(len(spring) - object_count),
+            "minimum": float(np.min(spring)),
+            "maximum": float(np.max(spring)),
+            "geometric_mean": float(np.exp(np.mean(np.log(spring)))),
+        },
+    }
 
 
 def _rollout_model_output(
@@ -1571,25 +1664,31 @@ def export(args) -> None:
 
     if not hasattr(warp_utils, "warn"):
         warp_utils.warn = warnings.warn
+    import train_model_video_material_simple as training
     from material_param_dataset import (
         MaterialDatasetConfig,
         MaterialParamDataset,
     )
-    import train_model_video_material_simple as training
 
     parameterization = audit.get("parameterization")
+    absolute_part_field = audit.get("absolute_part_field")
+    part_configuration = (
+        parameterization
+        if parameterization is not None
+        else absolute_part_field
+    )
     if proxy["contract"] in (
         GRAPH_PART_PROXY_CONTRACT,
         GRAPH_PART_COMPACT_PROXY_CONTRACT,
     ):
-        if not isinstance(parameterization, dict):
-            raise ValueError("part-aware checkpoint omits its parameterization")
-        if parameterization.get("part_model_contract") != PART_AWARE_MODEL_CONTRACT:
+        if not isinstance(part_configuration, dict):
+            raise ValueError("part-aware checkpoint omits its field configuration")
+        if part_configuration.get("part_model_contract") != PART_AWARE_MODEL_CONTRACT:
             raise ValueError("part-aware checkpoint uses an unknown model adapter")
         install_part_aware_simple_model(
             training,
             part_feature_dim=int(proxy["cases"][0]["semantic_dimension"]),
-            part_feature_scale=float(parameterization["part_feature_scale"]),
+            part_feature_scale=float(part_configuration["part_feature_scale"]),
         )
     if parameterization is not None:
         if source_supervised:
@@ -1634,7 +1733,7 @@ def export(args) -> None:
         **(
             {
                 "part_feature_dim": int(proxy["cases"][0]["semantic_dimension"]),
-                "part_feature_scale": float(parameterization["part_feature_scale"]),
+                "part_feature_scale": float(part_configuration["part_feature_scale"]),
             }
             if proxy["contract"]
             in (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
@@ -1683,28 +1782,37 @@ def export(args) -> None:
         spring_field_identity = None
         teacher_control_identity = None
         teacher_trajectory = None
-        if parameterization is not None:
-            teacher_bundle = teacher_bundles[case]
+        if parameterization is not None or absolute_part_field is not None:
             model_logk, candidate_spring_y = _model_spring_y(
                 training, runtime, model_out, device
             )
-            object_log_k = model_out["log_k"].detach().cpu().numpy().reshape(-1)
             edge_part_index = np.asarray(
                 sample["edge_part_idx"].detach().cpu().numpy(),
                 dtype=np.int64,
             )
-            spring_summary = summarize_part_spring_ratios(
-                object_log_k,
-                teacher_bundle.spring_log_y[: len(object_log_k)],
-                edge_part_index,
-            )
-            spring_summary.update(
-                {
-                    "case": case,
-                    "parameterization": parameterization["name"],
-                    "residual_log_scale": float(parameterization["residual_log_scale"]),
-                }
-            )
+            if parameterization is not None:
+                teacher_bundle = teacher_bundles[case]
+                object_log_k = model_out["log_k"].detach().cpu().numpy().reshape(-1)
+                spring_summary = summarize_part_spring_ratios(
+                    object_log_k,
+                    teacher_bundle.spring_log_y[: len(object_log_k)],
+                    edge_part_index,
+                )
+                spring_summary.update(
+                    {
+                        "case": case,
+                        "parameterization": parameterization["name"],
+                        "residual_log_scale": float(
+                            parameterization["residual_log_scale"]
+                        ),
+                    }
+                )
+            else:
+                spring_summary = _absolute_part_spring_summary(
+                    case,
+                    candidate_spring_y,
+                    edge_part_index,
+                )
             spring_summary_path = (
                 output_root / "cases" / case / "spring_field_summary.json"
             )
@@ -1726,41 +1834,46 @@ def export(args) -> None:
                     "maximum": float(np.max(candidate_spring_y)),
                 },
             }
-            teacher_runtime = training._init_runtime(case, train_end, model_args)
-            teacher_model_out = apply_matphys_teacher_residual(
-                model_out,
-                teacher_bundle,
-                0.0,
-            )
-            teacher_trajectory = _rollout_model_output(
-                training,
-                teacher_runtime,
-                teacher_model_out,
-                device,
-                train_end,
-            )
-            teacher_path = (
-                output_root / "cases" / case / "teacher_control_trajectory.pkl"
-            )
-            teacher_path.parent.mkdir(parents=True, exist_ok=True)
-            with teacher_path.open("wb") as handle:
-                pickle.dump(
-                    teacher_trajectory,
-                    handle,
-                    protocol=pickle.HIGHEST_PROTOCOL,
+            if parameterization is not None:
+                teacher_runtime = training._init_runtime(case, train_end, model_args)
+                teacher_model_out = apply_matphys_teacher_residual(
+                    model_out,
+                    teacher_bundle,
+                    0.0,
                 )
-            teacher_control_identity = {
-                "contract": "paired-exact-teacher-same-export-v1",
-                "trajectory": str(teacher_path),
-                "sha256": sha256_file(teacher_path),
-            }
+                teacher_trajectory = _rollout_model_output(
+                    training,
+                    teacher_runtime,
+                    teacher_model_out,
+                    device,
+                    train_end,
+                )
+                teacher_path = (
+                    output_root / "cases" / case / "teacher_control_trajectory.pkl"
+                )
+                teacher_path.parent.mkdir(parents=True, exist_ok=True)
+                with teacher_path.open("wb") as handle:
+                    pickle.dump(
+                        teacher_trajectory,
+                        handle,
+                        protocol=pickle.HIGHEST_PROTOCOL,
+                    )
+                teacher_control_identity = {
+                    "contract": "paired-exact-teacher-same-export-v1",
+                    "trajectory": str(teacher_path),
+                    "sha256": sha256_file(teacher_path),
+                }
         trajectory = _rollout_model_output(
             training,
             runtime,
             model_out,
             device,
             train_end,
-            **({"model_logk": model_logk} if parameterization is not None else {}),
+            **(
+                {"model_logk": model_logk}
+                if parameterization is not None or absolute_part_field is not None
+                else {}
+            ),
         )
         causal_validation_identity = None
         if teacher_trajectory is not None:
@@ -1829,6 +1942,8 @@ def export(args) -> None:
                 in (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
                 else "MatPhys source-supervised causal PhysTwin residual"
                 if source_supervised
+                else "MatPhys causal absolute graph-part field"
+                if absolute_part_field is not None
                 else "MatPhys causal graph-part released-PhysTwin residual"
                 if proxy["contract"]
                 in (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
@@ -1857,6 +1972,7 @@ def export(args) -> None:
             ),
             "claim_boundary": proxy["claim_boundary"],
             "parameterization": parameterization,
+            "absolute_part_field": absolute_part_field,
         },
         "cases": manifest_cases,
     }
@@ -1887,6 +2003,7 @@ def main() -> None:
     train_parser.add_argument("--teacher-residual-log-scale", type=float)
     train_parser.add_argument("--fit-fraction", type=float, default=1.0)
     train_parser.add_argument("--graph-parts", action="store_true")
+    train_parser.add_argument("--absolute-part-field", action="store_true")
     train_parser.add_argument("--dino-model", default="dinov2_vitl14_reg")
     train_parser.add_argument("--dino-image-size", type=int, default=518)
     train_parser.add_argument("--dino-keyframes", type=int, default=4)
@@ -1933,4 +2050,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    (matphys_fresh_fold_initialization,)

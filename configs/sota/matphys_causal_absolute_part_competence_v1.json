@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-causal-absolute-part-competence-v1",
+  "locked_at_utc": "2026-08-14T02:24:45Z",
+  "status": "development-only causal competence experiment on one already-open released PhysTwin case",
+  "claim_boundary": "This protocol can test whether a new BayesianPhysTwin causal absolute graph-part field has enough prefix-only predictive competence to justify a larger frozen source panel. It is not the published MatPhys method, is not independent or confirmatory, and cannot establish a state-of-the-art claim.",
+  "case": {
+    "case_id": "single_lift_zebra",
+    "selection": "canonical already-open single-lift case not used by the preceding all-frame sloth capacity control",
+    "released_train_interval": [0, 46],
+    "released_test_interval": [46, 66],
+    "fit_interval": [0, 34],
+    "unused_released_prefix_interval": [34, 46]
+  },
+  "bound_inputs": {
+    "data_root": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types",
+    "final_data_sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e",
+    "split_sha256": "c134477272286feb86e465bc02878a2311b810442e3179449bf47bce5863a681",
+    "source_graph_proxy_summary": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/proxy/proxy_summary.json",
+    "source_graph_proxy_summary_sha256": "f900505d4443f8289ef086b7e6c31bbbfdf7f1b40c473afc300a43585f237bc9",
+    "proxy_evidence_end_frame_exclusive": 34
+  },
+  "method": {
+    "upstream_repository": "https://github.com/Yrainy0615/MatPhys",
+    "upstream_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "published_matphys_method": false,
+    "absolute_part_field_contract": "matphys-causal-absolute-part-field-v1",
+    "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
+    "proxy_contract": "causal-dino-graph-parts-compact-unused-edge-semantics-v1",
+    "fit_fraction_of_released_prefix": 0.75,
+    "video_frame_contract": "16 uniform numeric filename IDs strictly before frame 34",
+    "part_count": 5,
+    "part_feature_scale": 1.0,
+    "learning_rate": 0.0003,
+    "gradient_clip": 5.0,
+    "random_seed": 42,
+    "initialization": "fresh generic VideoMAE initialization; no benchmark-trained or all-frame checkpoint",
+    "checkpoint_policy": "fixed terminal epoch only",
+    "finite_optimizer_guard": "transactional-finite-adamw-v1",
+    "teacher_centered": false,
+    "teacher_proximity_weight": 0.0,
+    "prob4d": "unused",
+    "molmomotion_beta": 0
+  },
+  "stage_0_mechanical_smoke": {
+    "epochs": 1,
+    "maximum_runs": 1,
+    "future_metrics_may_be_opened": false,
+    "pass": "The exact audit validates, every optimizer/checkpoint tensor is finite, at least one optimizer step is accepted, no step is rejected, the export validates, and the complete spring field is finite and positive.",
+    "failure": "Stop and amend only a source-independent implementation defect before any 200-epoch run."
+  },
+  "stage_1_causal_competence": {
+    "epochs": 200,
+    "eval_every_epochs": 10,
+    "maximum_runs": 1,
+    "authorization": "Only after the stage-0 gate passes and the implementation plus this protocol are committed.",
+    "prediction_seal": "Checkpoint, causal audit, trajectory, spring field, and external-backbone manifest are hash-bound before released future metrics are read.",
+    "evaluation": "Official released PhysTwin Chamfer and frame-zero manual-identity track metrics on [46,66), compared with exact released inference.pkl under the same evaluator.",
+    "competence_pass": "The candidate improves both future metrics by at least 10 percent versus exact released PhysTwin, every spring is positive, at least two parts have distinct geometric-mean stiffness, and no optimizer step is rejected.",
+    "sota_headroom_diagnostic": "Report whether this single case is at or below 8 mm Chamfer and 15 mm track error. Passing is not a SOTA claim because the published point is cohort-level and this case is already open.",
+    "advance": "A competence pass authorizes a separately frozen five-case already-open source panel. A failure closes this absolute-prefix family without tuning on the case outcome."
+  },
+  "forbidden": [
+    "using RGB, depth, geometry, manual tracks, or checkpoint selection at or after frame 34 during fitting",
+    "reusing the all-frame sloth checkpoint or learned spring field",
+    "changing epochs, fit fraction, part count, feature scale, learning rate, seed, or gate after stage-1 metrics are opened",
+    "calling the adapter the published MatPhys method",
+    "calling this one-case result independent, confirmatory, calibrated, state of the art, or better than state of the art",
+    "altering the frozen Deform360 v6.1 candidate or scorer",
+    "using held-v8 runtime, target, query, score, barrier, or outcome artifacts",
+    "opening any fresh target or confirmation outcome"
+  ]
+}

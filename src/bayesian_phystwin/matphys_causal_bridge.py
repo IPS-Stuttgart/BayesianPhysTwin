@@ -5,11 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import pickle
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
 
 import numpy as np
-
 
 MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION = 2
 MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION = 1
@@ -20,6 +19,10 @@ MATPHYS_FRESH_TRAINABLE_INITIALIZATION = (
     "fresh seeded initialization independently in every fold"
 )
 MATPHYS_DISTRIBUTED_SEED_RULE = "base-seed-plus-ddp-rank-v1"
+MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT = (
+    "matphys-causal-absolute-part-field-v1"
+)
+MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_OPTIMIZER = "transactional-finite-adamw-v1"
 _EXTERNAL_BACKBONE_SHARED_FIELDS = (
     "name",
     "source_repository",
@@ -70,6 +73,128 @@ def validate_matphys_fresh_fold_initialization(
     expected = matphys_fresh_fold_initialization(random_seed)
     if dict(value) != expected:
         raise ValueError("MatPhys fresh-fold initialization contract changed")
+    return expected
+
+
+def matphys_causal_absolute_part_field(
+    *,
+    proxy_contract: str,
+    part_model_contract: str,
+    part_feature_scale: float,
+    fit_fraction: float,
+    epochs: int,
+    learning_rate: float,
+    gradient_clip: float,
+    random_seed: int,
+) -> dict[str, object]:
+    """Bind the new causal absolute part-field adapter to one exact recipe."""
+
+    from .matphys_graph_parts import (
+        GRAPH_PART_COMPACT_PROXY_CONTRACT,
+        GRAPH_PART_PROXY_CONTRACT,
+    )
+    from .matphys_part_model import PART_AWARE_MODEL_CONTRACT
+
+    if proxy_contract not in (
+        GRAPH_PART_PROXY_CONTRACT,
+        GRAPH_PART_COMPACT_PROXY_CONTRACT,
+    ):
+        raise ValueError("absolute part fields require a registered graph-part proxy")
+    if part_model_contract != PART_AWARE_MODEL_CONTRACT:
+        raise ValueError("absolute part field uses an unknown model adapter")
+    if isinstance(part_feature_scale, bool) or not np.isfinite(part_feature_scale):
+        raise ValueError("part feature scale must be finite")
+    if float(part_feature_scale) <= 0.0:
+        raise ValueError("part feature scale must be positive")
+    if isinstance(fit_fraction, bool) or not np.isfinite(fit_fraction):
+        raise ValueError("fit fraction must be finite")
+    if not 0.0 < float(fit_fraction) <= 1.0:
+        raise ValueError("fit fraction must lie in (0, 1]")
+    if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
+        raise ValueError("epochs must be a positive integer")
+    for value, label in (
+        (learning_rate, "learning rate"),
+        (gradient_clip, "gradient clip"),
+    ):
+        if isinstance(value, bool) or not np.isfinite(value) or float(value) <= 0.0:
+            raise ValueError(f"{label} must be finite and positive")
+    initialization = matphys_fresh_fold_initialization(random_seed)
+    return {
+        "contract": MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT,
+        "future_observations_used": False,
+        "published_matphys_method": False,
+        "teacher_centered": False,
+        "material_parameterization": "absolute-positive-complete-spring-field-v1",
+        "part_model_contract": part_model_contract,
+        "proxy_contract": proxy_contract,
+        "part_feature_scale": float(part_feature_scale),
+        "fit_fraction": float(fit_fraction),
+        "optimization": {
+            "epochs": epochs,
+            "learning_rate": float(learning_rate),
+            "gradient_clip": float(gradient_clip),
+            "finite_optimizer_guard": (
+                MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_OPTIMIZER
+            ),
+        },
+        "checkpoint_policy": "fixed-terminal-epoch-v1",
+        "training_scope": "single-case-prefix-only-v1",
+        "initialization": initialization,
+        "claim_boundary": (
+            "BayesianPhysTwin causal part adapter; not the published MatPhys method."
+        ),
+    }
+
+
+def validate_matphys_causal_absolute_part_field(
+    value: object,
+) -> dict[str, object]:
+    """Fail closed on any change to the absolute part-field recipe."""
+
+    if not isinstance(value, Mapping):
+        raise ValueError("MatPhys absolute part-field audit must be an object")
+    optimization = value.get("optimization")
+    initialization = value.get("initialization")
+    if not isinstance(optimization, Mapping) or not isinstance(
+        initialization, Mapping
+    ):
+        raise ValueError("MatPhys absolute part-field recipe is incomplete")
+    def require_number(candidate: object, label: str) -> float:
+        if isinstance(candidate, bool) or not isinstance(candidate, (int, float)):
+            raise ValueError(f"MatPhys absolute part-field {label} is not numeric")
+        return float(candidate)
+
+    part_feature_scale = require_number(
+        value.get("part_feature_scale"), "part feature scale"
+    )
+    fit_fraction = require_number(value.get("fit_fraction"), "fit fraction")
+    epochs = optimization.get("epochs")
+    learning_rate = require_number(
+        optimization.get("learning_rate"), "learning rate"
+    )
+    gradient_clip = require_number(
+        optimization.get("gradient_clip"), "gradient clip"
+    )
+    random_seed = initialization.get("random_seed")
+    if isinstance(epochs, bool) or not isinstance(epochs, int):
+        raise ValueError("MatPhys absolute part-field epochs are not an integer")
+    if isinstance(random_seed, bool) or not isinstance(random_seed, int):
+        raise ValueError("MatPhys absolute part-field seed is not an integer")
+    try:
+        expected = matphys_causal_absolute_part_field(
+            proxy_contract=str(value.get("proxy_contract", "")),
+            part_model_contract=str(value.get("part_model_contract", "")),
+            part_feature_scale=part_feature_scale,
+            fit_fraction=fit_fraction,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            gradient_clip=gradient_clip,
+            random_seed=random_seed,
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid MatPhys absolute part-field recipe") from exc
+    if dict(value) != expected:
+        raise ValueError("MatPhys absolute part-field contract changed")
     return expected
 
 
@@ -339,6 +464,7 @@ def write_causal_training_audit(
     split_by_case: Mapping[str, Mapping[str, object]],
     proxy_summary_path: str | Path,
     parameterization: Mapping[str, object] | None = None,
+    absolute_part_field: Mapping[str, object] | None = None,
     runtime_access_log_paths: Sequence[str | Path] = (),
 ) -> dict[str, object]:
     """Bind checkpoint bytes to an observed-frame access log."""
@@ -428,8 +554,16 @@ def write_causal_training_audit(
         "cases": cases,
         "runtime_access_logs": _artifact_identities(runtime_access_log_paths),
     }
+    if parameterization is not None and absolute_part_field is not None:
+        raise ValueError(
+            "MatPhys teacher residual and absolute part field are mutually exclusive"
+        )
     if parameterization is not None:
         audit["parameterization"] = dict(parameterization)
+    if absolute_part_field is not None:
+        audit["absolute_part_field"] = (
+            validate_matphys_causal_absolute_part_field(absolute_part_field)
+        )
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -523,6 +657,11 @@ def validate_causal_training_audit(
         if int(case["maximum_objective_frame"]) != objective_end - 1:
             raise ValueError(f"{case.get('name')}: objective audit is inconsistent")
     parameterization = audit.get("parameterization")
+    absolute_part_field = audit.get("absolute_part_field")
+    if parameterization is not None and absolute_part_field is not None:
+        raise ValueError(
+            "MatPhys teacher residual and absolute part field are mutually exclusive"
+        )
     if parameterization is not None:
         if not isinstance(parameterization, dict):
             raise ValueError("MatPhys parameterization audit must be an object")
@@ -540,6 +679,14 @@ def validate_causal_training_audit(
         if not isinstance(teacher, dict):
             raise ValueError("teacher parameterization omits its source manifest")
         validate_matphys_teacher_manifest(teacher)
+    if absolute_part_field is not None:
+        validated_absolute = validate_matphys_causal_absolute_part_field(
+            absolute_part_field
+        )
+        if len(audit.get("cases", [])) != 1:
+            raise ValueError("absolute part-field audit must bind exactly one case")
+        if proxy_summary.get("contract") != validated_absolute["proxy_contract"]:
+            raise ValueError("absolute part-field proxy contract changed")
     return {
         **audit,
         "audit_path": str(source),

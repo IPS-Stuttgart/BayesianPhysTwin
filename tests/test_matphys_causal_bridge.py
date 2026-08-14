@@ -5,8 +5,10 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.matphys_causal_bridge import (
+    MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT,
     causal_uniform_frame_ids,
     causal_uniform_frame_indices,
+    matphys_causal_absolute_part_field,
     matphys_fresh_fold_initialization,
     merge_matphys_external_manifests,
     numeric_frame_paths,
@@ -36,6 +38,7 @@ def _proxy_summary(tmp_path: Path) -> Path:
     proxy.write_text(
         json.dumps(
             {
+                "contract": "global-onehot-single-part-v1",
                 "cases": [
                     {
                         "name": "case_a",
@@ -139,6 +142,100 @@ def test_training_audit_binds_checkpoint_and_rejects_future_access(
             evidence_end_frames_exclusive={"case_a": 5},
             split_by_case={"case_a": {"train": [0, 5], "test": [5, 8]}},
             proxy_summary_path=proxy,
+        )
+
+
+def test_causal_absolute_part_field_audit_is_exact_and_fail_closed(
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.pth"
+    checkpoint.write_bytes(b"checkpoint")
+    proxy = _proxy_summary(tmp_path)
+    proxy_payload = json.loads(proxy.read_text(encoding="utf-8"))
+    proxy_payload["contract"] = "causal-dino-graph-voronoi-parts-v1"
+    proxy.write_text(json.dumps(proxy_payload) + "\n", encoding="utf-8")
+    frames = _frame_sources(tmp_path, [0, 2, 4])
+    field = matphys_causal_absolute_part_field(
+        proxy_contract="causal-dino-graph-voronoi-parts-v1",
+        part_model_contract="simple-videomae-dino-part-conditioning-v1",
+        part_feature_scale=1.0,
+        fit_fraction=0.75,
+        epochs=200,
+        learning_rate=3.0e-4,
+        gradient_clip=5.0,
+        random_seed=42,
+    )
+    audit_path = tmp_path / "absolute_audit.json"
+    write_causal_training_audit(
+        [checkpoint],
+        audit_path,
+        source_repository="https://example.test/matphys",
+        source_commit="a" * 40,
+        data_root=tmp_path,
+        accessed_frame_indices={"case_a": [0, 2, 4]},
+        accessed_frame_paths={"case_a": frames},
+        objective_end_frames_exclusive={"case_a": 5},
+        evidence_end_frames_exclusive={"case_a": 5},
+        split_by_case={"case_a": {"train": [0, 6], "test": [6, 8]}},
+        proxy_summary_path=proxy,
+        absolute_part_field=field,
+    )
+
+    validated = validate_causal_training_audit(audit_path, checkpoint)
+    assert validated["absolute_part_field"] == field
+    assert field["contract"] == MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT
+    assert field["future_observations_used"] is False
+    assert field["published_matphys_method"] is False
+
+    original = json.loads(audit_path.read_text(encoding="utf-8"))
+    changed = json.loads(json.dumps(original))
+    changed["absolute_part_field"]["optimization"][
+        "finite_optimizer_guard"
+    ] = "disabled"
+    audit_path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="absolute part-field contract changed"):
+        validate_causal_training_audit(audit_path, checkpoint)
+
+    changed = json.loads(json.dumps(original))
+    changed["absolute_part_field"]["proxy_contract"] = (
+        "causal-dino-graph-parts-compact-unused-edge-semantics-v1"
+    )
+    audit_path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="proxy contract changed"):
+        validate_causal_training_audit(audit_path, checkpoint)
+
+
+def test_causal_audit_rejects_two_part_field_families(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint.pth"
+    checkpoint.write_bytes(b"checkpoint")
+    proxy = _proxy_summary(tmp_path)
+    frames = _frame_sources(tmp_path, [0])
+    audit_path = tmp_path / "conflicting_audit.json"
+    field = matphys_causal_absolute_part_field(
+        proxy_contract="causal-dino-graph-voronoi-parts-v1",
+        part_model_contract="simple-videomae-dino-part-conditioning-v1",
+        part_feature_scale=1.0,
+        fit_fraction=1.0,
+        epochs=1,
+        learning_rate=3.0e-4,
+        gradient_clip=5.0,
+        random_seed=42,
+    )
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        write_causal_training_audit(
+            [checkpoint],
+            audit_path,
+            source_repository="https://example.test/matphys",
+            source_commit="a" * 40,
+            data_root=tmp_path,
+            accessed_frame_indices={"case_a": [0]},
+            accessed_frame_paths={"case_a": frames},
+            objective_end_frames_exclusive={"case_a": 1},
+            evidence_end_frames_exclusive={"case_a": 1},
+            split_by_case={"case_a": {"train": [0, 1], "test": [1, 2]}},
+            proxy_summary_path=proxy,
+            parameterization={},
+            absolute_part_field=field,
         )
 
 

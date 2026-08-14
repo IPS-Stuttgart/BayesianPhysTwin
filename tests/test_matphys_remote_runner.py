@@ -1,6 +1,6 @@
 import importlib.util
-from pathlib import Path
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -261,6 +261,97 @@ def test_model_spring_y_rejects_topology_mismatch() -> None:
 
     with pytest.raises(RuntimeError, match="invalid complete spring field"):
         runner._model_spring_y(training, runtime, {}, "cpu")
+
+
+def _absolute_part_args(**overrides):
+    values = {
+        "absolute_part_field": True,
+        "graph_parts": True,
+        "teacher_residual_log_scale": None,
+        "teacher_experiments_dir": None,
+        "teacher_proximity_weight": 0.0,
+        "initialization_checkpoint": None,
+        "initialization_sha256": None,
+        "finite_optimizer_guard": True,
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def test_absolute_part_training_mode_is_explicit_and_mutually_exclusive() -> None:
+    runner = _load_runner()
+
+    assert runner._validate_training_mode(
+        _absolute_part_args(),
+        source_supervised=False,
+        case_count=1,
+    )
+
+    conflicts = (
+        ({"graph_parts": False}, "require --graph-parts"),
+        ({"teacher_residual_log_scale": 0.5}, "cannot use a teacher residual"),
+        ({"teacher_experiments_dir": "/teacher"}, "cannot use a teacher residual"),
+        ({"teacher_proximity_weight": 0.1}, "cannot use teacher proximity"),
+        ({"initialization_checkpoint": "/checkpoint"}, "fresh initialization"),
+        ({"finite_optimizer_guard": False}, "finite optimizer guard"),
+    )
+    for overrides, message in conflicts:
+        with pytest.raises(ValueError, match=message):
+            runner._validate_training_mode(
+                _absolute_part_args(**overrides),
+                source_supervised=False,
+                case_count=1,
+            )
+
+    with pytest.raises(ValueError, match="causal-prefix-only"):
+        runner._validate_training_mode(
+            _absolute_part_args(),
+            source_supervised=True,
+            case_count=1,
+        )
+    with pytest.raises(ValueError, match="exactly one case"):
+        runner._validate_training_mode(
+            _absolute_part_args(),
+            source_supervised=False,
+            case_count=2,
+        )
+
+
+def test_graph_parts_still_require_an_explicit_field_family() -> None:
+    runner = _load_runner()
+    args = _absolute_part_args(absolute_part_field=False)
+
+    with pytest.raises(ValueError, match="identity-preserving teacher residual"):
+        runner._validate_training_mode(
+            args,
+            source_supervised=False,
+            case_count=1,
+        )
+
+
+def test_absolute_part_spring_summary_separates_object_and_controller_edges() -> None:
+    runner = _load_runner()
+
+    summary = runner._absolute_part_spring_summary(
+        "case_a",
+        np.asarray([100.0, 200.0, 400.0, 800.0]),
+        np.asarray([0, 0, 1]),
+    )
+
+    assert summary["absolute_part_field_contract"] == (
+        runner.MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT
+    )
+    assert summary["object_spring_field"]["spatial_variation"][
+        "distinct_part_count"
+    ] == 2
+    assert summary["complete_spring_field"] == {
+        "count": 4,
+        "object_spring_count": 3,
+        "controller_spring_count": 1,
+        "minimum": 100.0,
+        "maximum": 800.0,
+        "geometric_mean": pytest.approx(282.842712474619),
+    }
 
 
 @pytest.mark.parametrize(
