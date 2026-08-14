@@ -130,8 +130,13 @@ def test_transform_is_psd_immutable_and_preserves_cross_axis_structure() -> None
     np.testing.assert_allclose(result, expected)
     assert np.min(np.linalg.eigvalsh(result)) > 0.0
     assert not result.flags.writeable
-    with pytest.raises(ValueError):
+    try:
         result.setflags(write=True)
+    except ValueError:
+        pass
+    assert not result.flags.writeable
+    with pytest.raises(ValueError):
+        result[0, 0] = -1.0
 
 
 def test_diagnostics_and_energy_score_are_finite_and_group_balanced() -> None:
