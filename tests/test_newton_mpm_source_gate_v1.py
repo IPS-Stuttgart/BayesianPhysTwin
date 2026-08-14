@@ -547,9 +547,9 @@ def _fake_source_trajectory(
     trajectory = np.repeat(points[None], len(controllers), axis=0)
     if driven:
         scale = np.float32(young_modulus_pa / 100_000_000.0)
-        trajectory[:, :, 0] += scale * np.arange(
-            len(trajectory), dtype=np.float32
-        )[:, None]
+        trajectory[:, :, 0] += (
+            scale * np.arange(len(trajectory), dtype=np.float32)[:, None]
+        )
     return trajectory
 
 
@@ -575,7 +575,9 @@ def test_source_runtime_helpers_and_provenance_are_cpu_testable(
             SimpleNamespace(stdout=""),
         )
     )
-    monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: next(completed))
+    monkeypatch.setattr(
+        runtime.subprocess, "run", lambda *args, **kwargs: next(completed)
+    )
     monkeypatch.setattr(runtime, "file_sha256", lambda _path: "b" * 64)
     provenance = runtime._implementation_provenance()
     assert provenance["git_head"] == "a" * 40
