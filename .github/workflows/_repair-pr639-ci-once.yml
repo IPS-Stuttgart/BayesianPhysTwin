@@ -33,9 +33,10 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Apply the focused source and coverage repairs
+      - name: Apply typing and stable-suite repairs
         run: |
           python - <<'PY'
+          import json
           from pathlib import Path
 
           source_path = Path("src/bayesian_phystwin/run_manifest_v2.py")
@@ -52,163 +53,77 @@ jobs:
               source = source.replace(old, new)
           source_path.write_text(source, encoding="utf-8")
 
-          test_path = Path("tests/test_run_manifest_v2_hardening.py")
-          tests = test_path.read_text(encoding="utf-8")
-          import_old = "from dataclasses import FrozenInstanceError\n"
-          import_new = "from dataclasses import FrozenInstanceError, replace\n"
-          if import_new not in tests:
-              if tests.count(import_old) != 1:
-                  raise SystemExit("unexpected dataclasses import")
-              tests = tests.replace(import_old, import_new)
-
-          marker = "def test_loader_rejects_nonobject_and_field_roster_changes"
-          if marker in tests:
-              raise SystemExit("focused PR 639 coverage tests already exist")
-
-          tests = tests.rstrip() + r'''
-
-
-          def test_loader_rejects_nonobject_and_field_roster_changes(
-              tmp_path: Path,
-          ) -> None:
-              path = tmp_path / "run-manifest-v2.json"
-              path.write_text("[]\n", encoding="utf-8")
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="run manifest must be a JSON object",
-              ):
-                  load_run_manifest_v2(path)
-
-              payload = _json_payload(_manifest())
-              payload.pop("notes")
-              path.write_text(json.dumps(payload), encoding="utf-8")
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="run manifest fields changed",
-              ):
-                  load_run_manifest_v2(path)
-
-
-          def test_manifest_mapping_normalizers_reject_nonstring_keys() -> None:
-              with pytest.raises(
-                  ContractValidationError,
-                  match="package_versions keys must be strings",
-              ):
-                  replace(_manifest(), package_versions={1: "0.4.0"})
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="metadata keys must be strings",
-              ):
-                  replace(_manifest(), metadata={1: "value"})
-
-
-          def test_repository_state_rejects_invalid_identity_and_dirty_markers() -> None:
-              with pytest.raises(ContractValidationError, match="role is invalid"):
-                  replace(_repository(), role="observer")
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="tree_sha256 must be a lowercase SHA-256 digest",
-              ):
-                  replace(_repository(), tree_sha256="x" * 64)
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="commit_sha must be a string or null",
-              ):
-                  replace(_repository(), commit_sha=123)
-
-              assert replace(_repository(), commit_sha=None).commit_sha is None
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="dirty must be a boolean",
-              ):
-                  replace(_repository(), dirty=1)
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="dirty repository describe must end with '-dirty'",
-              ):
-                  replace(_repository(), dirty=True, describe="v0.4.0")
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="clean repository describe must not end with '-dirty'",
-              ):
-                  replace(_repository(), dirty=False, describe="v0.4.0-dirty")
-
-
-          def test_artifact_record_rejects_invalid_path_and_kind() -> None:
-              artifact = _manifest().inputs[0]
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="artifact.path must not contain repeated separators",
-              ):
-                  replace(artifact, path="inputs//observation.npz")
-
-              with pytest.raises(
-                  ContractValidationError,
-                  match="artifact.kind is invalid",
-              ):
-                  replace(artifact, kind="archive")
-
-
-          @pytest.mark.parametrize(
-              ("field", "value", "message"),
-              [
-                  ("schema", "example.unsupported", "unsupported run-manifest schema"),
-                  (
-                      "schema_version",
-                      3,
-                      "unsupported run-manifest schema_version",
-                  ),
-              ],
+          suite_path = Path(".github/quality/test-suites.json")
+          payload = json.loads(suite_path.read_text(encoding="utf-8"))
+          suites = payload["suites"]
+          hardening_test = "tests/test_run_manifest_v2_hardening.py"
+          anchor = "tests/test_run_manifest_v2.py"
+          for suite_name in ("stable-core-coverage", "core-contracts"):
+              entries = suites[suite_name]
+              if hardening_test not in entries:
+                  entries.insert(entries.index(anchor) + 1, hardening_test)
+          suite_path.write_text(
+              json.dumps(payload, indent=2) + "\n",
+              encoding="utf-8",
           )
-          def test_loader_rejects_schema_dispatch_changes(
-              tmp_path: Path,
-              field: str,
-              value: object,
-              message: str,
-          ) -> None:
-              payload = _json_payload(_manifest())
-              payload[field] = value
-              _rewrite_identity(payload)
-              path = tmp_path / f"{field}.json"
-              path.write_text(json.dumps(payload), encoding="utf-8")
-
-              with pytest.raises(ContractValidationError, match=message):
-                  load_run_manifest_v2(path)
-          '''
-          test_path.write_text(tests, encoding="utf-8")
           PY
 
       - name: Install validation dependencies
         run: python -m pip install -e ".[dev]"
 
-      - name: Format and validate focused changes
+      - name: Validate focused contracts, typing, and coverage
         run: |
-          python -m ruff check --fix -- \
-            src/bayesian_phystwin/run_manifest_v2.py \
-            tests/test_run_manifest_v2_hardening.py
-          python -m ruff format -- \
-            src/bayesian_phystwin/run_manifest_v2.py \
-            tests/test_run_manifest_v2_hardening.py
+          set -euo pipefail
           python -m ruff check -- \
             src/bayesian_phystwin/run_manifest_v2.py \
             tests/test_run_manifest_v2_hardening.py
           python -m ruff format --check -- \
             src/bayesian_phystwin/run_manifest_v2.py \
             tests/test_run_manifest_v2_hardening.py
+          python tools/quality/test_suite_manifest.py list stable-core-coverage >/dev/null
+          python tools/quality/test_suite_manifest.py list core-contracts >/dev/null
           python -m pytest -q \
             tests/test_run_manifest_v2.py \
             tests/test_run_manifest_v2_hardening.py \
             tests/test_run_manifest_cli.py \
             tests/test_claim_bundle_v1.py
+          python -m coverage erase
+          python -m coverage run --branch --source=bayesian_phystwin \
+            -m pytest -q \
+            tests/test_run_manifest_v2.py \
+            tests/test_run_manifest_v2_hardening.py
+          python -m coverage json -o run-manifest-v2-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(
+              Path("run-manifest-v2-coverage.json").read_text(encoding="utf-8")
+          )
+          matches = [
+              (path, record)
+              for path, record in payload["files"].items()
+              if path.endswith("bayesian_phystwin/run_manifest_v2.py")
+          ]
+          if len(matches) != 1:
+              raise SystemExit(f"unexpected coverage file matches: {matches!r}")
+          path, record = matches[0]
+          summary = record["summary"]
+          line_percent = float(summary["percent_covered"])
+          branch_total = int(summary["num_branches"])
+          branch_covered = int(summary["covered_branches"])
+          branch_percent = (
+              100.0
+              if branch_total == 0
+              else 100.0 * branch_covered / branch_total
+          )
+          print(
+              f"{path}: lines={line_percent:.2f}% "
+              f"branches={branch_percent:.2f}%"
+          )
+          if line_percent < 90.0 or branch_percent < 80.0:
+              raise SystemExit("focused RunManifestV2 coverage is below the ratchet")
+          PY
           python -m mypy \
             src/bayesian_phystwin/run_manifest.py \
             src/bayesian_phystwin/repository_provenance.py \
@@ -230,7 +145,7 @@ jobs:
           git config user.email "openai@users.noreply.github.com"
           git add \
             src/bayesian_phystwin/run_manifest_v2.py \
-            tests/test_run_manifest_v2_hardening.py
+            .github/quality/test-suites.json
           git diff --cached --check
           git commit -m "Fix RunManifestV2 hardening CI"
           git push origin HEAD:agent/run-manifest-v2-hardening
