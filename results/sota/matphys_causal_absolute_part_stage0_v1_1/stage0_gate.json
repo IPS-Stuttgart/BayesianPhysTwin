@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "result_id": "matphys-causal-absolute-part-stage0-v1.1",
+  "frozen_at_utc": "2026-08-14T03:26:08Z",
+  "protocol_id": "matphys-causal-absolute-part-competence-v1.1",
+  "implementation_revision": "4bef7408390ccd5b6533e490873ae5929366b270",
+  "claim_boundary": "Outcome-blind mechanical evidence on one already-open released PhysTwin case. This artifact authorizes the registered causal competence run but contains no future prediction metric and cannot support a performance or state-of-the-art claim.",
+  "case": "single_lift_zebra",
+  "run_root": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage0-v1.1",
+  "custody": {
+    "future_metrics_opened": false,
+    "fresh_target_or_confirmation_opened": false,
+    "held_v8_artifact_accessed": false,
+    "prob4d": "unused",
+    "molmomotion_beta": 0
+  },
+  "artifacts": {
+    "train_invocation_sha256": "e12f0b35a27d7b10238a9db476040ce3b787bfb6d6a9e62636a40956c3871f83",
+    "train_log_sha256": "a50c9c12489a6a4171887e8004af75c6557536d5ffc65c6f2b12dcc76197eab5",
+    "checkpoint_sha256": "2e70d6d4df3ad26ef71b887effe9c2dd93c4f6bea174cc1e8baa169f78a0c414",
+    "training_audit_sha256": "170192ba43abbf1cf0e9ab4390c42bdc5a9f094d60fe836d095705e1b0d49b11",
+    "checkpoint_finiteness_sha256": "e54417428d9115cd152c695ad61616c62e36063f79fc59f0d2841d860495d58b",
+    "runtime_access_log_sha256": "0cb297a8a50b8d09528973eab99c08a61ba82085235bef0b273614905afb10e7",
+    "export_invocation_sha256": "cfeebe4e79eb21aa5441ca42fba032194edc1afd1a32cbd5828c58abf06d3188",
+    "export_log_sha256": "12b2506cf842803c25dfdfce4b2cd8f7e5ab0c4834c5dd1371465baf0cc2b6a0",
+    "external_backbone_manifest_sha256": "a06066c4751e7bed48b05266dcfe2464c640a94a32459e81f3ea179337452aa6",
+    "trajectory_sha256": "a496f4bffb5d39b5db81542d0003c4aa64240e8037fbc6260c2a7f71fe298e0b",
+    "spring_field_sha256": "b1f70b077d213b51f8f73a8e07139e18bdae153a162225f008629638d0d74f6c",
+    "spring_summary_sha256": "f4a127399d2e0b2a654431ac5328d05f451b157c49274e7cc14058222954babb"
+  },
+  "causal_audit": {
+    "validated": true,
+    "fit_all_frames": false,
+    "evidence_end_frame_exclusive": 34,
+    "maximum_accessed_frame": 33,
+    "maximum_objective_frame": 33,
+    "accessed_frame_count": 16,
+    "checkpoint_policy": "fixed-terminal-epoch-v1"
+  },
+  "optimizer": {
+    "attempted_steps": 33,
+    "accepted_steps": 33,
+    "rejected_pre_step": 0,
+    "rejected_post_step": 0,
+    "checkpoint_finite": true,
+    "model_nonfinite_count": 0,
+    "optimizer_nonfinite_count": 0
+  },
+  "spring_field": {
+    "count": 54989,
+    "finite": true,
+    "positive": true,
+    "minimum": 41924.125,
+    "maximum": 49676.33203125,
+    "distinct_part_count": 5,
+    "maximum_to_minimum_part_geometric_mean_ratio": 1.142322839741509
+  },
+  "gate": {
+    "audit_valid": true,
+    "optimizer_and_checkpoint_finite": true,
+    "accepted_step_present": true,
+    "zero_rejected_steps": true,
+    "export_valid": true,
+    "complete_spring_field_finite_and_positive": true,
+    "passed": true,
+    "authorize_stage_1": true
+  }
+}

@@ -66,3 +66,11 @@ control. The adapter only restores warning dispatch, including MatPhys's
 `once` argument; it does not alter data, simulation, model, optimization, or
 any gate. Stage 1 remains unauthorized until this retry passes the original
 mechanical gate.
+
+The authorized retry passed. Its compact gate record is
+`results/sota/matphys_causal_absolute_part_stage0_v1_1/stage0_gate.json`.
+Training used 16 frames ending at frame 33, accepted all 33 optimizer steps,
+and produced a finite checkpoint. The validated export contains 54,989
+positive springs and five distinct part geometric means. No future metric was
+opened. This mechanical result authorizes the single registered 200-epoch
+competence run; it is not performance evidence.

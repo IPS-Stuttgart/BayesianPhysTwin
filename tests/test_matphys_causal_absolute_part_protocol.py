@@ -14,6 +14,13 @@ AMENDMENT = (
     / "sota"
     / "matphys_causal_absolute_part_competence_v1_amendment.json"
 )
+STAGE_ZERO_GATE = (
+    ROOT
+    / "results"
+    / "sota"
+    / "matphys_causal_absolute_part_stage0_v1_1"
+    / "stage0_gate.json"
+)
 
 
 def test_absolute_part_competence_protocol_is_causal_and_single_run() -> None:
@@ -61,3 +68,23 @@ def test_stage_zero_amendment_allows_one_mechanical_retry_only() -> None:
     assert "unauthorized" in amendment["stage_1_causal_competence"][
         "authorization"
     ]
+
+
+def test_stage_zero_gate_binds_causal_mechanical_pass() -> None:
+    gate = json.loads(STAGE_ZERO_GATE.read_text(encoding="utf-8"))
+
+    assert gate["implementation_revision"] == (
+        "4bef7408390ccd5b6533e490873ae5929366b270"
+    )
+    assert gate["custody"]["future_metrics_opened"] is False
+    assert gate["causal_audit"]["maximum_accessed_frame"] == 33
+    assert gate["causal_audit"]["evidence_end_frame_exclusive"] == 34
+    assert gate["optimizer"]["attempted_steps"] == 33
+    assert gate["optimizer"]["accepted_steps"] == 33
+    assert gate["optimizer"]["rejected_pre_step"] == 0
+    assert gate["optimizer"]["rejected_post_step"] == 0
+    assert gate["spring_field"]["finite"] is True
+    assert gate["spring_field"]["positive"] is True
+    assert gate["spring_field"]["distinct_part_count"] == 5
+    assert gate["gate"]["passed"] is True
+    assert gate["gate"]["authorize_stage_1"] is True
