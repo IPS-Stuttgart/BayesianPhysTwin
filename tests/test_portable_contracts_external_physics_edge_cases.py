@@ -56,15 +56,11 @@ def _runtime(raw: Path) -> dict[str, Any]:
 
 def test_cli_helper_rejects_malformed_and_duplicate_artifacts() -> None:
     digest = "d" * 64
-    assert _producer_artifacts([f"scene.json={digest}"]) == {
-        "scene.json": digest
-    }
+    assert _producer_artifacts([f"scene.json={digest}"]) == {"scene.json": digest}
     with pytest.raises(ValueError, match="PATH=SHA256"):
         _producer_artifacts(["scene.json"])
     with pytest.raises(ValueError, match="duplicate producer artifact"):
-        _producer_artifacts(
-            [f"scene.json={digest}", f"scene.json={digest}"]
-        )
+        _producer_artifacts([f"scene.json={digest}", f"scene.json={digest}"])
     assert _parameterization(None) == {}
 
 
