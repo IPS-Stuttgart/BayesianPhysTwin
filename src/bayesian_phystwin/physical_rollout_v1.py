@@ -10,7 +10,7 @@ from __future__ import annotations
 import io
 import os
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, Final, TypeAlias
 
@@ -145,7 +145,8 @@ def load_physical_rollout_archive(
 
 def _npy_bytes(value: npt.NDArray[Any]) -> bytes:
     output = io.BytesIO()
-    np.lib.format.write_array(  # type: ignore[no-untyped-call]
+    write_array: Callable[..., None] = np.lib.format.write_array
+    write_array(
         output,
         np.ascontiguousarray(value),
         version=(2, 0),

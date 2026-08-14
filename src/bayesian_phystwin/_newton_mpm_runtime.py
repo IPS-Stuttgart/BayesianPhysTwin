@@ -112,7 +112,7 @@ def _build_model(
     particle_radius = float(np.cbrt(cell_volume) * 0.5)
     builder.add_particle_grid(
         pos=wp.vec3(0.0, 0.0, 0.0),
-        rot=wp.quat_identity(),  # type: ignore[call-arg]
+        rot=wp.quat_identity(float),
         vel=wp.vec3(0.0, 0.0, 0.0),
         dim_x=int(resolution[0] + 1),
         dim_y=int(resolution[1] + 1),
