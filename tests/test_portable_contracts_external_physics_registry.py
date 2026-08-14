@@ -46,21 +46,31 @@ def test_builtin_profiles_are_ranked_and_cover_complementary_mechanisms() -> Non
     assert [profile.profile_id for profile in profiles] == [
         "genesis-mpm-v1",
         "jax-fem-v1",
+        "warp-fem-v1",
+        "physx-fem-v1",
         "sofa-fem-v1",
         "mujoco-flex-v1",
+        "position-based-dynamics-v1",
+        "drake-fem-v1",
     ]
-    assert [profile.priority for profile in profiles] == [1, 2, 3, 4]
-    assert len({profile.engine_repository for profile in profiles}) == 4
+    assert [profile.priority for profile in profiles] == list(range(1, 9))
+    assert len({profile.engine_repository for profile in profiles}) == len(profiles)
     assert {profile.solver_family for profile in profiles} >= {
         "material-point-method",
         "finite-element-method",
         "flexible-body-dynamics",
+        "position-based-dynamics",
     }
+    assert all("persistent" in profile.state_representation for profile in profiles)
+    assert all(profile.query_identity.endswith("-index") for profile in profiles)
 
 
-def test_profile_mapping_round_trip_is_exact() -> None:
-    profile = BUILTIN_BACKEND_PROFILES[0]
+@pytest.mark.parametrize("profile", BUILTIN_BACKEND_PROFILES)
+def test_profile_mapping_round_trip_is_exact(
+    profile: PhysicsBackendProfileV1,
+) -> None:
     assert profile_from_mapping(profile.to_dict()) == profile
+    assert get_backend_profile(profile.profile_id) == profile
 
 
 def test_plugin_discovery_is_explicit_and_deterministic() -> None:

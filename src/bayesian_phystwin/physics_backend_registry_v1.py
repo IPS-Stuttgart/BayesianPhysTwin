@@ -163,6 +163,38 @@ BUILTIN_BACKEND_PROFILES: Final[tuple[PhysicsBackendProfileV1, ...]] = (
         ),
     ),
     PhysicsBackendProfileV1(
+        profile_id="warp-fem-v1",
+        display_name="NVIDIA Warp FEM",
+        engine_repository="NVIDIA/warp",
+        solver_family="finite-element-method",
+        state_representation="persistent-mesh-nodes",
+        query_identity="mesh-node-index",
+        differentiability="native-kernel-autodiff",
+        contact_model="producer-declared-fem-contact",
+        priority=3,
+        role="gpu-differentiable custom-mechanics candidate",
+        rationale=(
+            "Adds GPU-native differentiable kernels and an extensible FEM toolkit "
+            "for custom constitutive, contact, and batched inference experiments."
+        ),
+    ),
+    PhysicsBackendProfileV1(
+        profile_id="physx-fem-v1",
+        display_name="NVIDIA PhysX Deformables",
+        engine_repository="NVIDIA-Omniverse/PhysX",
+        solver_family="finite-element-method",
+        state_representation="persistent-simulation-mesh-vertices",
+        query_identity="simulation-mesh-vertex-index",
+        differentiability="external-or-gradient-free",
+        contact_model="native-gpu-deformable-contact",
+        priority=4,
+        role="high-throughput operational deformable reference",
+        rationale=(
+            "Provides GPU FEM surface and volume deformables with native contact "
+            "for scalable operational and simulator-transfer comparisons."
+        ),
+    ),
+    PhysicsBackendProfileV1(
         profile_id="sofa-fem-v1",
         display_name="SOFA FEM",
         engine_repository="sofa-framework/sofa",
@@ -171,7 +203,7 @@ BUILTIN_BACKEND_PROFILES: Final[tuple[PhysicsBackendProfileV1, ...]] = (
         query_identity="mechanical-state-index",
         differentiability="inverse-plugin-or-external",
         contact_model="native-fem-contact",
-        priority=3,
+        priority=5,
         role="mature contact-rich FEM reference",
         rationale=(
             "Adds a mature deformable-contact and constitutive-model reference "
@@ -187,11 +219,43 @@ BUILTIN_BACKEND_PROFILES: Final[tuple[PhysicsBackendProfileV1, ...]] = (
         query_identity="flex-vertex-index",
         differentiability="producer-declared-derivatives",
         contact_model="native-flex-contact",
-        priority=4,
+        priority=6,
         role="fast deployment and contact baseline",
         rationale=(
             "Offers a lightweight, fast, and widely deployed flexible-body path "
             "for controls-oriented comparisons and operational fallbacks."
+        ),
+    ),
+    PhysicsBackendProfileV1(
+        profile_id="position-based-dynamics-v1",
+        display_name="PositionBasedDynamics XPBD",
+        engine_repository="InteractiveComputerGraphics/PositionBasedDynamics",
+        solver_family="position-based-dynamics",
+        state_representation="persistent-particles-and-mesh-vertices",
+        query_identity="particle-or-vertex-index",
+        differentiability="external-or-gradient-free",
+        contact_model="native-pbd-xpbd-contact",
+        priority=7,
+        role="fast rope cloth and soft-body baseline",
+        rationale=(
+            "Adds stable interactive coverage for rods, ropes, cloth, and soft "
+            "solids where throughput and controllability are primary concerns."
+        ),
+    ),
+    PhysicsBackendProfileV1(
+        profile_id="drake-fem-v1",
+        display_name="Drake Deformable FEM",
+        engine_repository="RobotLocomotion/drake",
+        solver_family="finite-element-method",
+        state_representation="persistent-volumetric-mesh-vertices",
+        query_identity="deformable-body-vertex-index",
+        differentiability="double-only-external-inference",
+        contact_model="experimental-native-deformable-contact",
+        priority=8,
+        role="robotics-systems integration candidate",
+        rationale=(
+            "Connects persistent-topology FEM bodies and deformable contact to a "
+            "systems-and-controls stack, while retaining its experimental status."
         ),
     ),
 )

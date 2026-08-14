@@ -16,24 +16,38 @@ silently alter those responsibilities.
 
 ## Prioritized built-in profiles
 
-The initial profiles are deliberately complementary rather than four aliases
-for the same spring model:
+The built-ins cover complementary mechanics, inference, and deployment roles
+rather than aliases for the same spring model:
 
-1. `genesis-mpm-v1` — primary broad-coverage candidate. It represents stable
-   Material Point Method particles and is the first choice for contact-rich,
-   differentiable deformable simulations.
-2. `jax-fem-v1` — differentiable finite-element candidate for material
-   identification, inverse problems, and parameter ensembles.
-3. `sofa-fem-v1` — mature FEM/contact reference with a broad constitutive and
-   soft-robotics ecosystem.
-4. `mujoco-flex-v1` — fast controls-oriented flexible-body/contact baseline and
-   operational fallback.
+1. `genesis-mpm-v1` — broad differentiable MPM and coupled contact. This
+   remains the first concrete producer target; it must preserve material-particle
+   identity.
+2. `jax-fem-v1` — differentiable FEM material identification and ensembles.
+   Contact and time integration remain producer-declared.
+3. `warp-fem-v1` — GPU-differentiable custom constitutive and contact
+   experiments. Warp is a toolkit, so the producer must bind the exact
+   formulation.
+4. `physx-fem-v1` — high-throughput GPU surface/volume deformable reference.
+   It has a GPU requirement and no assumed native parameter gradients.
+5. `sofa-fem-v1` — mature contact-rich FEM and soft-robotics reference. The
+   producer must bind the exact component/plugin graph and constitutive model.
+6. `mujoco-flex-v1` — fast controls-oriented flexible-body/contact baseline.
+   Fidelity is task-dependent and must pass the same source gate.
+7. `position-based-dynamics-v1` — fast rope, rod, cloth, and soft-body
+   XPBD/PBD baseline. Operational stability is not evidence of force accuracy.
+8. `drake-fem-v1` — robotics systems-and-controls integration candidate.
+   Deformable support is experimental and must be revision-pinned.
 
 The profile order is a development priority, not an empirical ranking. None of
-the four is claim-bearing until it passes the source-only advancement gate
+the eight is claim-bearing until it passes the source-only advancement gate
 below. Exact engine and producer revisions are stored per runtime artifact, so
 the profile catalog never substitutes a floating package version for
 provenance.
+
+The existing dedicated Newton MPM compatibility path remains separate while it
+is migrated to this generic producer boundary. Research systems without a
+stable, versioned producer should enter through the plugin mechanism rather
+than expanding the core dependency surface.
 
 ## Raw producer archive
 
@@ -47,9 +61,9 @@ An external producer writes one no-pickle NPZ with exactly four members:
 
 `T` must be at least two. Positions are in metres in a producer-declared frame.
 The same entity index must denote the same material particle, mesh node,
-mechanical state, or flex vertex at every frame. Remeshing or particle
-resampling is allowed only if the producer first establishes a stable material
-correspondence and exports that correspondence as the entity order.
+mechanical state, flex vertex, or PBD particle at every frame. Remeshing or
+particle resampling is allowed only if the producer first establishes a stable
+material correspondence and exports that correspondence as the entity order.
 
 The adapter derives:
 
@@ -150,9 +164,10 @@ on already-open, source-only development data:
 8. a separately hashed prediction before independent future outcomes are
    opened.
 
-The most useful next producer is Genesis MPM on one already-open Deform360 or
-PokeFlex development object. JAX-FEM should follow for differentiable parameter
-inference, while SOFA and MuJoCo provide complementary contact and operational
-baselines. New research systems should enter as plugins only after they expose a
-versioned public producer with persistent material identity and exact source
-provenance.
+The producer implementation order remains Genesis MPM on one already-open
+Deform360 or PokeFlex development object, followed by JAX-FEM for differentiable
+parameter inference. Warp FEM is the next choice when custom GPU-differentiable
+mechanics are the bottleneck; PhysX is the next choice when operational contact
+throughput is the bottleneck. SOFA, MuJoCo, PositionBasedDynamics, and Drake
+provide complementary reference paths and should advance only after the first
+two producers establish the end-to-end evidence protocol.
