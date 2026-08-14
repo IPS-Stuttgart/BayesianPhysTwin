@@ -47,6 +47,11 @@ The sdist gate verifies:
   and
 - an explicit supported self-test subset.
 
+The 2026-08-14 Lagrangian backend bridge adds seven reviewed source, CLI,
+documentation, and test members. Its contract change raises only the regular
+sdist-member ratchet from 1250 to 1260; wheel size/member limits, isolated-import
+rules, API manifests, and the supported self-test list remain unchanged.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
