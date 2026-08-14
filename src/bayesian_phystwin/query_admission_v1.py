@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from numbers import Real
 from pathlib import Path
 from typing import Any, Final, cast
@@ -27,10 +27,7 @@ from ._portable_contracts import (
     write_atomic_json,
 )
 from .evidence_decision_v1 import EvidenceDecisionV1
-from .physical_query_v1 import (
-    PhysicalQueryDecisionMarginsV1,
-    PhysicalQueryV1,
-)
+from .physical_query_v1 import PhysicalQueryDecisionMarginsV1, PhysicalQueryV1
 from .query_covariance_decision_v1 import QueryCovarianceTreatmentDecisionV1
 
 QUERY_ADMISSION_SCHEMA: Final = "bayesian_phystwin.query_admission_certificate"
@@ -42,8 +39,73 @@ QUERY_ADMISSION_CLAIM_BOUNDARY: Final = (
     "fresh-object benefit, deployment calibration, Causal4D intervention "
     "benefit, deployment safety, or state of the art."
 )
-_PROVIDER_STATUSES: Final = frozenset(
-    {"pass", "fail", "degraded", "inconclusive"}
+_PROVIDER_STATUSES: Final = frozenset({"pass", "fail", "degraded", "inconclusive"})
+_POLICY_FIELDS: Final = frozenset(
+    {
+        "provider_decision_key",
+        "require_provider_claim_authorized",
+        "minimum_provider_evidence_level",
+        "minimum_group_count",
+        "minimum_identifiable_subspace_overlap",
+        "minimum_expected_information_gain",
+        "maximum_harmful_group_fraction",
+        "numerical_tolerance",
+    }
+)
+_EVIDENCE_FIELDS: Final = frozenset(
+    {
+        "candidate_belief_id",
+        "candidate_query_mean_id",
+        "candidate_query_covariance_id",
+        "baseline_query_mean_id",
+        "baseline_query_covariance_id",
+        "evaluation_artifact_id",
+        "score_metric",
+        "width_unit",
+        "statistical_unit",
+        "independent_group_count",
+        "mean_score_regret",
+        "score_regret_upper_bound",
+        "maximum_score_increase",
+        "worst_group_score_regret",
+        "harmful_group_fraction",
+        "accepted_coverage",
+        "mean_full_width",
+        "identifiable_subspace_overlap",
+        "shared_covariance_relevance",
+        "expected_information_gain",
+        "policy_frozen_before_evaluation_outcomes",
+        "evaluation_outcomes_used_for_candidate_selection",
+        "evaluation_groups_independent",
+        "metadata",
+    }
+)
+_CERTIFICATE_FIELDS: Final = frozenset(
+    {
+        "physical_query_id",
+        "provider_decision_id",
+        "covariance_decision_id",
+        "decision_margins",
+        "primary_proper_score",
+        "physical_unit",
+        "statistical_unit",
+        "policy",
+        "evidence",
+        "baseline_belief_id",
+        "selected_belief_id",
+        "exact_fallback_id",
+        "provider_status",
+        "provider_claim_authorized",
+        "provider_evidence_level",
+        "covariance_treatment_authorized",
+        "provider_competence_passed",
+        "query_nonharm_passed",
+        "query_information_passed",
+        "admitted",
+        "exact_fallback",
+        "reasons",
+        "metadata",
+    }
 )
 
 
@@ -86,10 +148,6 @@ def _finite(
 
 def _fraction(value: object, *, name: str) -> float:
     return _finite(value, name=name, minimum=0.0, maximum=1.0)
-
-
-def _field_names(class_type: type[object]) -> frozenset[str]:
-    return frozenset(item.name for item in fields(class_type))
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,10 +261,29 @@ class QueryAdmissionPolicyV1:
         source = dict(_mapping(value, name="query admission policy"))
         require_exact_fields(
             source,
-            expected=_field_names(cls),
+            expected=_POLICY_FIELDS,
             name="query admission policy",
         )
-        return cls(**source)  # type: ignore[arg-type]
+        return cls(
+            provider_decision_key=source["provider_decision_key"],
+            require_provider_claim_authorized=source[
+                "require_provider_claim_authorized"
+            ],
+            minimum_provider_evidence_level=source[
+                "minimum_provider_evidence_level"
+            ],
+            minimum_group_count=source["minimum_group_count"],
+            minimum_identifiable_subspace_overlap=source[
+                "minimum_identifiable_subspace_overlap"
+            ],
+            minimum_expected_information_gain=source[
+                "minimum_expected_information_gain"
+            ],
+            maximum_harmful_group_fraction=source[
+                "maximum_harmful_group_fraction"
+            ],
+            numerical_tolerance=source["numerical_tolerance"],
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -367,9 +444,7 @@ class QueryAdmissionEvidenceV1:
             "harmful_group_fraction": self.harmful_group_fraction,
             "accepted_coverage": self.accepted_coverage,
             "mean_full_width": self.mean_full_width,
-            "identifiable_subspace_overlap": (
-                self.identifiable_subspace_overlap
-            ),
+            "identifiable_subspace_overlap": self.identifiable_subspace_overlap,
             "shared_covariance_relevance": self.shared_covariance_relevance,
             "expected_information_gain": self.expected_information_gain,
             "policy_frozen_before_evaluation_outcomes": (
@@ -388,18 +463,53 @@ class QueryAdmissionEvidenceV1:
     @classmethod
     def from_mapping(cls, value: object) -> QueryAdmissionEvidenceV1:
         source = dict(_mapping(value, name="query admission evidence"))
-        expected = _field_names(cls) | {"evidence_id"}
         require_exact_fields(
             source,
-            expected=expected,
+            expected=_EVIDENCE_FIELDS | {"evidence_id"},
             name="query admission evidence",
         )
         expected_id = sha256_digest(source.pop("evidence_id"), name="evidence_id")
-        source["metadata"] = _mapping(
-            source["metadata"],
-            name="query admission evidence metadata",
+        result = cls(
+            candidate_belief_id=source["candidate_belief_id"],
+            candidate_query_mean_id=source["candidate_query_mean_id"],
+            candidate_query_covariance_id=source[
+                "candidate_query_covariance_id"
+            ],
+            baseline_query_mean_id=source["baseline_query_mean_id"],
+            baseline_query_covariance_id=source[
+                "baseline_query_covariance_id"
+            ],
+            evaluation_artifact_id=source["evaluation_artifact_id"],
+            score_metric=source["score_metric"],
+            width_unit=source["width_unit"],
+            statistical_unit=source["statistical_unit"],
+            independent_group_count=source["independent_group_count"],
+            mean_score_regret=source["mean_score_regret"],
+            score_regret_upper_bound=source["score_regret_upper_bound"],
+            maximum_score_increase=source["maximum_score_increase"],
+            worst_group_score_regret=source["worst_group_score_regret"],
+            harmful_group_fraction=source["harmful_group_fraction"],
+            accepted_coverage=source["accepted_coverage"],
+            mean_full_width=source["mean_full_width"],
+            identifiable_subspace_overlap=source[
+                "identifiable_subspace_overlap"
+            ],
+            shared_covariance_relevance=source["shared_covariance_relevance"],
+            expected_information_gain=source["expected_information_gain"],
+            policy_frozen_before_evaluation_outcomes=source[
+                "policy_frozen_before_evaluation_outcomes"
+            ],
+            evaluation_outcomes_used_for_candidate_selection=source[
+                "evaluation_outcomes_used_for_candidate_selection"
+            ],
+            evaluation_groups_independent=source[
+                "evaluation_groups_independent"
+            ],
+            metadata=_mapping(
+                source["metadata"],
+                name="query admission evidence metadata",
+            ),
         )
-        result = cls(**source)  # type: ignore[arg-type]
         if result.evidence_id != expected_id:
             raise ValueError("query admission evidence identity changed")
         return result
@@ -612,7 +722,9 @@ class QueryAdmissionCertificateV1:
         admitted = not supplied_reasons
         exact_fallback = not admitted
         selected = (
-            self.evidence.candidate_belief_id if admitted else self.baseline_belief_id
+            self.evidence.candidate_belief_id
+            if admitted
+            else self.baseline_belief_id
         )
         expected_values = {
             "provider_competence_passed": provider_passed,
@@ -703,7 +815,7 @@ class QueryAdmissionCertificateV1:
         extras = {"artifact_id", "schema", "schema_version", "claim_boundary"}
         require_exact_fields(
             source,
-            expected=_field_names(cls) | extras,
+            expected=_CERTIFICATE_FIELDS | extras,
             name="query admission certificate",
         )
         expected_id = sha256_digest(source.pop("artifact_id"), name="artifact_id")
@@ -718,26 +830,50 @@ class QueryAdmissionCertificateV1:
             raise ValueError("query admission schema version changed")
         if source.pop("claim_boundary") != QUERY_ADMISSION_CLAIM_BOUNDARY:
             raise ValueError("query admission claim boundary changed")
-        source["decision_margins"] = PhysicalQueryDecisionMarginsV1.from_mapping(
+        decision_margins = PhysicalQueryDecisionMarginsV1.from_mapping(
             source["decision_margins"]
         )
         policy_record = dict(_mapping(source["policy"], name="policy"))
         policy_id = sha256_digest(policy_record.pop("policy_id"), name="policy_id")
-        source["policy"] = QueryAdmissionPolicyV1.from_mapping(policy_record)
-        if source["policy"].policy_id != policy_id:
+        policy = QueryAdmissionPolicyV1.from_mapping(policy_record)
+        if policy.policy_id != policy_id:
             raise ValueError("query admission policy identity changed")
-        source["evidence"] = QueryAdmissionEvidenceV1.from_mapping(
-            source["evidence"]
-        )
+        evidence = QueryAdmissionEvidenceV1.from_mapping(source["evidence"])
         reasons = source["reasons"]
         if isinstance(reasons, (str, bytes)) or not isinstance(reasons, list):
             raise ValueError("query admission reasons must be a JSON array")
-        source["reasons"] = tuple(reasons)
-        source["metadata"] = _mapping(
-            source["metadata"],
-            name="query admission certificate metadata",
+        result = cls(
+            physical_query_id=source["physical_query_id"],
+            provider_decision_id=source["provider_decision_id"],
+            covariance_decision_id=source["covariance_decision_id"],
+            decision_margins=decision_margins,
+            primary_proper_score=source["primary_proper_score"],
+            physical_unit=source["physical_unit"],
+            statistical_unit=source["statistical_unit"],
+            policy=policy,
+            evidence=evidence,
+            baseline_belief_id=source["baseline_belief_id"],
+            selected_belief_id=source["selected_belief_id"],
+            exact_fallback_id=source["exact_fallback_id"],
+            provider_status=source["provider_status"],
+            provider_claim_authorized=source["provider_claim_authorized"],
+            provider_evidence_level=source["provider_evidence_level"],
+            covariance_treatment_authorized=source[
+                "covariance_treatment_authorized"
+            ],
+            provider_competence_passed=source[
+                "provider_competence_passed"
+            ],
+            query_nonharm_passed=source["query_nonharm_passed"],
+            query_information_passed=source["query_information_passed"],
+            admitted=source["admitted"],
+            exact_fallback=source["exact_fallback"],
+            reasons=tuple(reasons),
+            metadata=_mapping(
+                source["metadata"],
+                name="query admission certificate metadata",
+            ),
         )
-        result = cls(**source)  # type: ignore[arg-type]
         if result.artifact_id != expected_id:
             raise ValueError("query admission certificate identity changed")
         return result
