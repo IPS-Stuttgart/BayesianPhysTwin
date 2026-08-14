@@ -16,6 +16,7 @@ from bayesian_phystwin.matphys_causal_bridge import (
 from bayesian_phystwin.matphys_reconstruction_control import (
     MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT,
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
+    MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
     MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
@@ -98,6 +99,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
                     "single_case_loader_compatibility": (
                         "matphys-single-case-provisional-split-v1"
                     ),
+                    "objective_guard": "exact-full-sequence-objective-v1",
                 },
             }
         )
@@ -115,6 +117,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         "single_case_loader_compatibility": (
             MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
         ),
+        "objective_guard": MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
         "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
         "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
         "part_feature_scale": 1.0,
@@ -389,3 +392,50 @@ def test_reconstruction_single_case_loader_compatibility_avoids_empty_split(
         training._single_case_loader_compatibility
         == MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
     )
+
+
+def test_reconstruction_objective_guard_requires_exact_full_sequence(
+    tmp_path: Path,
+) -> None:
+    scripts = Path(__file__).parents[1] / "scripts" / "remote"
+    path = scripts / "run_matphys_reconstruction_control.py"
+    spec = importlib.util.spec_from_file_location(
+        "run_matphys_reconstruction_control_objective_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(scripts))
+    try:
+        runner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runner)
+    finally:
+        sys.path.remove(str(scripts))
+    case = tmp_path / "case_a"
+    case.mkdir()
+    (case / "split.json").write_text(
+        json.dumps({"train": [0, 3], "test": [3, 5], "frame_len": 5})
+    )
+    training = SimpleNamespace(
+        _resolve_train_frame=lambda args, case_name, train_frame: (
+            5 if args.fit_all_frames else train_frame
+        )
+    )
+    runner._OBJECTIVE_END_FRAMES.clear()
+    runner._install_reconstruction_objective_guard(
+        training, tmp_path, {"case_a": 5}
+    )
+
+    assert (
+        training._resolve_train_frame(
+            SimpleNamespace(fit_all_frames=True), "case_a", 3
+        )
+        == 5
+    )
+    assert runner._OBJECTIVE_END_FRAMES == {"case_a": 5}
+    assert (
+        training._reconstruction_objective_guard
+        == MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD
+    )
+    with pytest.raises(RuntimeError, match="requires --fit_all_frames"):
+        training._resolve_train_frame(
+            SimpleNamespace(fit_all_frames=False), "case_a", 3
+        )

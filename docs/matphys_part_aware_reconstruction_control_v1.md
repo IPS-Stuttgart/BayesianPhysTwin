@@ -54,6 +54,14 @@ remain unchanged. The v1.3 launch produced no checkpoint, metric, or scientific
 outcome (log SHA-256
 `ca8d2a5f13883350af10288b91b8f97a8bb63fac05b648bab8b0b049ac2cd92b`).
 
+The v1.4 retry constructed the part-aware model, then stopped before its first
+objective or optimizer step because the runner inherited the causal
+source-panel boundary guard. Version 1.5 replaces that mismatched hook with an
+exact full-sequence reconstruction guard: it requires `--fit_all_frames`, binds
+the released `frame_len`, and records the same objective end on every call. The
+v1.4 launch produced no checkpoint, metric, or scientific outcome (log SHA-256
+`ff6f00cb9930bf8bb62aa957a55d7e9efc7feede8d28f6a699443f0928dfee5c`).
+
 ## Decision
 
 Run the separately locked

@@ -30,7 +30,6 @@ from run_matphys_causal import (  # noqa: E402
     _collect_distributed_access_logs,
     _configure_matphys_imports,
     _install_finite_adamw,
-    _install_source_supervised_objective_guard,
     _install_torchvision_nms_stub,
     _model_spring_y,
     _prepare_proxy,
@@ -49,6 +48,7 @@ from bayesian_phystwin.matphys_reconstruction_control import (  # noqa: E402
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
     MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY,
     MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT,
+    MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
     MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
@@ -121,6 +121,36 @@ def _install_single_case_loader_compatibility(training: object) -> None:
     )
 
 
+def _install_reconstruction_objective_guard(
+    training: object,
+    data_root: Path,
+    frame_len_by_case: dict[str, int],
+) -> None:
+    """Require and record the exact full sequence for transductive fitting."""
+
+    original = training._resolve_train_frame
+
+    def resolve_train_frame(model_args, case_name: str, dataset_train_frame: int):
+        split = _split(data_root, case_name)
+        frame_len = int(split.get("frame_len", split["test"][1]))
+        if frame_len_by_case.get(case_name) != frame_len:
+            raise RuntimeError(f"{case_name}: reconstruction frame bound changed")
+        requested = int(original(model_args, case_name, dataset_train_frame))
+        if requested != frame_len:
+            raise RuntimeError(
+                f"{case_name}: reconstruction requires --fit_all_frames"
+            )
+        previous = _OBJECTIVE_END_FRAMES.setdefault(case_name, frame_len)
+        if previous != frame_len:
+            raise RuntimeError(
+                f"{case_name}: reconstruction objective changed during training"
+            )
+        return frame_len
+
+    training._resolve_train_frame = resolve_train_frame
+    training._reconstruction_objective_guard = MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD
+
+
 def _split(data_root: Path, case: str) -> dict[str, object]:
     path = data_root / case / "split.json"
     value = json.loads(path.read_text(encoding="utf-8"))
@@ -186,6 +216,7 @@ def _training_configuration(
         "single_case_loader_compatibility": (
             MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
         ),
+        "objective_guard": MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
         "proxy_contract": str(proxy["contract"]),
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
         "part_feature_scale": float(args.part_feature_scale),
@@ -262,7 +293,7 @@ def train(args: argparse.Namespace) -> None:
         part_feature_scale=args.part_feature_scale,
     )
     training.load_video_frames = _causal_video_loader(frame_len_by_case)
-    _install_source_supervised_objective_guard(training, data_root, frame_len_by_case)
+    _install_reconstruction_objective_guard(training, data_root, frame_len_by_case)
     _install_finite_adamw(training)
     sys.argv = [
         "train_model_video_material_simple.py",

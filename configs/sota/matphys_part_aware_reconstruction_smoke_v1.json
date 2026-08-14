@@ -1,15 +1,16 @@
 {
   "schema_version": 1,
-  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.4",
-  "locked_at_utc": "2026-08-14T00:15:00Z",
+  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.5",
+  "locked_at_utc": "2026-08-14T00:21:29Z",
   "status": "mechanical one-epoch smoke on an already-open case",
   "supersedes_before_execution": {
     "protocol_ids": [
       "matphys-part-aware-reconstruction-smoke-v1.1",
       "matphys-part-aware-reconstruction-smoke-v1.2",
-      "matphys-part-aware-reconstruction-smoke-v1.3"
+      "matphys-part-aware-reconstruction-smoke-v1.3",
+      "matphys-part-aware-reconstruction-smoke-v1.4"
     ],
-    "reason": "Version 1.1 stopped during import before model construction because Warp 1.15 omits the private warn helper expected by pinned MatPhys (log SHA-256 dd4507a2ff84cdcf180ad1787f6f8718ce98fe37985a93225dfcfdcc94e0100e). Version 1.2 passed that import but stopped before model construction because the staged proxy mapping still enumerated extra cases (log SHA-256 6ea3a2efa7dee5fa3ae157285fc3c26e594dbe25e55b399965810c95040a3062). Version 1.3 used a true single-case mapping but stopped before model construction because upstream first instantiated an empty floor(0.8 times 1) provisional training split, before replacing both loaders with the requested case (log SHA-256 ca8d2a5f13883350af10288b91b8f97a8bb63fac05b648bab8b0b049ac2cd92b). None produced a checkpoint, metric, or scientific outcome. Version 1.4 makes only that provisional split nonempty; upstream still replaces both loaders with the one selected case."
+    "reason": "Versions 1.1-1.3 stopped before model construction on, respectively, the missing private Warp warning helper, an overbroad proxy mapping, and upstream's empty provisional one-case split (log SHA-256 values dd4507a2ff84cdcf180ad1787f6f8718ce98fe37985a93225dfcfdcc94e0100e, 6ea3a2efa7dee5fa3ae157285fc3c26e594dbe25e55b399965810c95040a3062, and ca8d2a5f13883350af10288b91b8f97a8bb63fac05b648bab8b0b049ac2cd92b). Version 1.4 constructed the part-aware model but stopped before the first objective or optimizer step because it inherited a causal source-panel guard that correctly rejects an all-frame objective (log SHA-256 ff6f00cb9930bf8bb62aa957a55d7e9efc7feede8d28f6a699443f0928dfee5c). None produced a checkpoint, metric, or scientific outcome. Version 1.5 replaces that mismatched guard with an exact full-sequence reconstruction guard while retaining explicit transductive labeling."
   },
   "claim_boundary": "This smoke deliberately fits future observations from the same case. It verifies only runtime wiring, finite optimization, provenance, export, and metric plumbing; it is not accuracy evidence.",
   "case": {
@@ -27,6 +28,7 @@
     "part_feature_scale": 1.0,
     "warp_warning_compatibility": "warp-private-warn-signature-v1",
     "single_case_loader_compatibility": "matphys-single-case-provisional-split-v1",
+    "objective_guard": "exact-full-sequence-objective-v1",
     "checkpoint_policy": "fixed terminal epoch only",
     "epochs": 1,
     "eval_every": 1,

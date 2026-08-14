@@ -25,6 +25,7 @@ MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY = "warp-private-warn-signature
 MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY = (
     "matphys-single-case-provisional-split-v1"
 )
+MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD = "exact-full-sequence-objective-v1"
 MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS = frozenset(
     (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
 )
@@ -97,6 +98,7 @@ def _validate_training_configuration(value: object) -> dict[str, object]:
         "single_case_loader_compatibility": (
             MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
         ),
+        "objective_guard": MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
     }
     for key, expected in required.items():
@@ -167,6 +169,7 @@ def validate_matphys_reconstruction_protocol(
         "single_case_loader_compatibility": protocol_implementation.get(
             "single_case_loader_compatibility"
         ),
+        "objective_guard": protocol_implementation.get("objective_guard"),
     }
     audited_training = {key: configuration.get(key) for key in protocol_training}
     if protocol_training != audited_training:
