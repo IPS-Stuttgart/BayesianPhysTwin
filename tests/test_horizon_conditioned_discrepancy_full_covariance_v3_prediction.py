@@ -99,9 +99,7 @@ def test_transition_power_matches_iterated_propagation() -> None:
         expected_transition = np.eye(6)
         expected_process = np.zeros((6, 6))
         for _ in range(horizon):
-            expected_process = (
-                transition @ expected_process @ transition.T + process
-            )
+            expected_process = transition @ expected_process @ transition.T + process
             expected_transition = transition @ expected_transition
         np.testing.assert_allclose(powered_transition, expected_transition)
         np.testing.assert_allclose(powered_process, expected_process)

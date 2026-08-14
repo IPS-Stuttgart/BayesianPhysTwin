@@ -376,8 +376,7 @@ class FullCovarianceDynamicEndpointPredictionV3:
         finite = (mean, weights, component_mean, velocity)
         if not all(np.all(np.isfinite(value)) for value in finite):
             raise ValueError(
-                "full-covariance dynamic endpoint prediction contains "
-                "non-finite values"
+                "full-covariance dynamic endpoint prediction contains non-finite values"
             )
         if np.any(weights < 0.0) or not np.allclose(
             np.sum(weights, axis=1),

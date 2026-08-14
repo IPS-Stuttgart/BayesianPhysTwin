@@ -47,17 +47,13 @@ def _admit_psd(value: np.ndarray, *, name: str) -> np.ndarray:
     if not np.all(np.isfinite(raw)):
         raise DynamicEndpointNumericalError(f"{name} is non-finite")
     scale = max(1.0, float(np.max(np.abs(raw), initial=0.0)))
-    asymmetry = float(
-        np.max(np.abs(raw - raw.swapaxes(-1, -2)), initial=0.0)
-    )
+    asymmetry = float(np.max(np.abs(raw - raw.swapaxes(-1, -2)), initial=0.0))
     if asymmetry > _SYMMETRY_TOLERANCE * scale:
         raise DynamicEndpointNumericalError(f"{name} is not symmetric")
     symmetric = 0.5 * (raw + raw.swapaxes(-1, -2))
     eigenvalues = np.linalg.eigvalsh(symmetric)
     if float(np.min(eigenvalues, initial=0.0)) < -_SYMMETRY_TOLERANCE * scale:
-        raise DynamicEndpointNumericalError(
-            f"{name} is not positive semidefinite"
-        )
+        raise DynamicEndpointNumericalError(f"{name} is not positive semidefinite")
     return symmetric
 
 
@@ -91,9 +87,7 @@ def _solve_spd(
     except np.linalg.LinAlgError as error:
         raise DynamicEndpointNumericalError(f"{name} solve failed") from error
     if not np.all(np.isfinite(result)):
-        raise DynamicEndpointNumericalError(
-            f"{name} solve produced non-finite values"
-        )
+        raise DynamicEndpointNumericalError(f"{name} solve produced non-finite values")
     return result
 
 
@@ -111,13 +105,9 @@ def _log_gaussian_density(
     diagonal = np.diag(factor)
     log_determinant = 2.0 * float(np.sum(np.log(diagonal)))
     mahalanobis = float(whitened @ whitened)
-    value = -0.5 * (
-        3.0 * np.log(2.0 * np.pi) + log_determinant + mahalanobis
-    )
+    value = -0.5 * (3.0 * np.log(2.0 * np.pi) + log_determinant + mahalanobis)
     if not np.isfinite(value):
-        raise DynamicEndpointNumericalError(
-            f"{name} log density is non-finite"
-        )
+        raise DynamicEndpointNumericalError(f"{name} log density is non-finite")
     return value
 
 
@@ -141,9 +131,7 @@ def _validated_inputs(
     if raw_validity.dtype != np.dtype(np.bool_):
         raise ValueError("valid must contain only booleans")
     if covariance.shape != (*residual.shape[:2], 3, 3):
-        raise ValueError(
-            "observation_covariance_m2 must have shape (T, N, 3, 3)"
-        )
+        raise ValueError("observation_covariance_m2 must have shape (T, N, 3, 3)")
     if not np.all(np.isfinite(residual)):
         raise ValueError("residual_m must contain only finite values")
     covariance = _admit_psd(
@@ -170,9 +158,7 @@ def _kalman_branch(
     name: str,
 ) -> tuple[np.ndarray, np.ndarray, float]:
     innovation_covariance = (
-        _OBSERVATION_MATRIX
-        @ predicted_covariance
-        @ _OBSERVATION_MATRIX.T
+        _OBSERVATION_MATRIX @ predicted_covariance @ _OBSERVATION_MATRIX.T
         + observation_covariance
     )
     log_density = _log_gaussian_density(
@@ -189,9 +175,7 @@ def _kalman_branch(
     updated_mean = predicted_mean + gain @ innovation
     residual_transition = _IDENTITY_6 - gain @ _OBSERVATION_MATRIX
     updated_covariance = (
-        residual_transition
-        @ predicted_covariance
-        @ residual_transition.T
+        residual_transition @ predicted_covariance @ residual_transition.T
         + gain @ observation_covariance @ gain.T
     )
     return (
@@ -215,8 +199,7 @@ def _robust_update(
     innovation = observation - predicted_mean[:3]
     inlier_covariance = metric_covariance + observation_variance * _IDENTITY_3
     outlier_covariance = (
-        metric_covariance
-        + observation_variance * outlier_multiplier * _IDENTITY_3
+        metric_covariance + observation_variance * outlier_multiplier * _IDENTITY_3
     )
     inlier_mean, inlier_state_covariance, inlier_density = _kalman_branch(
         predicted_mean,
@@ -237,12 +220,9 @@ def _robust_update(
     log_mixture = float(np.logaddexp(log_inlier, log_outlier))
     nominal_probability = float(np.exp(log_inlier - log_mixture))
     if not np.isfinite(log_mixture) or not np.isfinite(nominal_probability):
-        raise DynamicEndpointNumericalError(
-            f"{name} mixture probability is non-finite"
-        )
+        raise DynamicEndpointNumericalError(f"{name} mixture probability is non-finite")
     updated_mean = (
-        nominal_probability * inlier_mean
-        + (1.0 - nominal_probability) * outlier_mean
+        nominal_probability * inlier_mean + (1.0 - nominal_probability) * outlier_mean
     )
     inlier_delta = inlier_mean - updated_mean
     outlier_delta = outlier_mean - updated_mean
@@ -273,8 +253,7 @@ def _persistence_update(
     innovation = observation - predicted_mean[:3]
     inlier_covariance = metric_covariance + observation_variance * _IDENTITY_3
     outlier_covariance = (
-        metric_covariance
-        + observation_variance * outlier_multiplier * _IDENTITY_3
+        metric_covariance + observation_variance * outlier_multiplier * _IDENTITY_3
     )
     predicted_level_covariance = predicted_covariance[:3, :3]
     log_inlier = np.log(inlier_prior) + _log_gaussian_density(
@@ -290,9 +269,7 @@ def _persistence_update(
     log_mixture = float(np.logaddexp(log_inlier, log_outlier))
     nominal_probability = float(np.exp(log_inlier - log_mixture))
     if not np.isfinite(log_mixture) or not np.isfinite(nominal_probability):
-        raise DynamicEndpointNumericalError(
-            f"{name} mixture probability is non-finite"
-        )
+        raise DynamicEndpointNumericalError(f"{name} mixture probability is non-finite")
     updated_mean = np.zeros(6, dtype=np.float64)
     updated_mean[:3] = observation
     updated_covariance = np.zeros((6, 6), dtype=np.float64)
@@ -421,8 +398,7 @@ def _mixture_moments(
     covariance = np.einsum(
         "nk,knij->nij",
         weights,
-        component_covariance
-        + centered[:, :, :, None] * centered[:, :, None, :],
+        component_covariance + centered[:, :, :, None] * centered[:, :, None, :],
     )
     return mean, _admit_psd(covariance, name="model-average endpoint covariance")
 
@@ -560,9 +536,7 @@ def predict_full_covariance_dynamic_endpoint_model_average(
     """Propagate every full-covariance component and recompute mixture moments."""
 
     if not isinstance(posterior, FullCovarianceDynamicEndpointPosteriorV3):
-        raise TypeError(
-            "posterior must be a FullCovarianceDynamicEndpointPosteriorV3"
-        )
+        raise TypeError("posterior must be a FullCovarianceDynamicEndpointPosteriorV3")
     if isinstance(horizon_steps, (bool, np.bool_)) or not isinstance(
         horizon_steps,
         (int, np.integer),

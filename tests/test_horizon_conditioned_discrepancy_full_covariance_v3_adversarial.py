@@ -30,9 +30,7 @@ def _metric_covariance(
         (np.zeros((1, 1, 2, 2)), "shape"),
         (np.full((1, 1, 3, 3), np.nan), "non-finite"),
         (
-            np.array(
-                [[[[1.0, 0.1, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]]]
-            ),
+            np.array([[[[1.0, 0.1, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]]]),
             "not symmetric",
         ),
         (-np.eye(3)[None, None], "not positive semidefinite"),
