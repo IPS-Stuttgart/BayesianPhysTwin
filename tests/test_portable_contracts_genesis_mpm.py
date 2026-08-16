@@ -336,9 +336,7 @@ def test_genesis_bundle_rejects_non_object_records(
     tmp_path: Path, field: str, nested: str | None, message: str
 ) -> None:
     raw_path = _raw_archive(tmp_path / f"{field}-raw.npz")
-    runtime_path = _runtime_manifest(
-        tmp_path / f"{field}-runtime.json", raw_path
-    )
+    runtime_path = _runtime_manifest(tmp_path / f"{field}-runtime.json", raw_path)
     output = tmp_path / f"{field}-{nested or 'root'}"
     materialize_genesis_mpm_backend(
         raw_rollout_path=raw_path,
