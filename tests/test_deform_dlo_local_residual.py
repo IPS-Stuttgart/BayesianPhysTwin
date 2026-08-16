@@ -7,12 +7,17 @@ import pytest
 from bayesian_phystwin.deform_dlo_local_residual import (
     build_deform_local_residual_features,
     deform_causal_inputs,
+    deserialize_deform_local_residual_model,
     fit_deform_local_residual,
+    load_deform_dlo2_local_residual_alltrain_v7_protocol,
+    load_deform_dlo2_local_residual_official_v7_protocol,
     load_deform_dlo2_local_residual_protocol,
     load_deform_dlo2_local_residual_v6_protocol,
     load_deform_local_residual_protocol,
     predict_deform_local_residual,
     serialize_deform_local_residual_model,
+    validate_deform_dlo2_local_residual_alltrain_v7_authorization,
+    validate_deform_dlo2_local_residual_official_v7_authorization,
     validate_deform_dlo2_local_residual_parent,
     validate_deform_dlo2_local_residual_v6_parents,
 )
@@ -42,6 +47,30 @@ DLO2_V6_PROTOCOL = (
 DLO2_V6_RUNNER = (
     REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_local_residual_v6.py"
 )
+DLO2_V7_ALLTRAIN_PROTOCOL = (
+    REPOSITORY_ROOT
+    / "configs"
+    / "sota"
+    / "deform_dlo2_local_residual_alltrain_v7.json"
+)
+DLO2_V7_OFFICIAL_PROTOCOL = (
+    REPOSITORY_ROOT
+    / "configs"
+    / "sota"
+    / "deform_dlo2_local_residual_official_v7.json"
+)
+DLO2_V7_ALLTRAIN_RUNNER = (
+    REPOSITORY_ROOT
+    / "scripts"
+    / "remote"
+    / "run_deform_dlo2_local_residual_alltrain_v7.py"
+)
+DLO2_V7_OFFICIAL_RUNNER = (
+    REPOSITORY_ROOT
+    / "scripts"
+    / "remote"
+    / "run_deform_dlo2_local_residual_official_v7.py"
+)
 SOURCE_RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
 DLO1_RESULT = (
     REPOSITORY_ROOT
@@ -63,6 +92,13 @@ DLO2_V6_DEVELOPMENT = (
     / "sota"
     / "deform_dlo2_local_residual_v6"
     / "development_selection.json"
+)
+DLO2_V6_RESULT = (
+    REPOSITORY_ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo2_local_residual_v6"
+    / "result.json"
 )
 
 
@@ -256,6 +292,145 @@ def test_dlo2_v6_seals_source_opening_before_loading_outcomes() -> None:
     assert '"official_eval_read": False' in source
 
 
+def test_dlo2_v7_alltrain_requires_the_passed_v6_source_result() -> None:
+    protocol = load_deform_dlo2_local_residual_alltrain_v7_protocol(
+        DLO2_V7_ALLTRAIN_PROTOCOL
+    )
+    source_protocol = load_deform_dlo2_local_residual_v6_protocol(DLO2_V6_PROTOCOL)
+    source_result = json.loads(DLO2_V6_RESULT.read_text(encoding="utf-8"))
+
+    authorization = validate_deform_dlo2_local_residual_alltrain_v7_authorization(
+        protocol,
+        source_protocol,
+        source_result,
+        source_protocol_sha256=sha256_file(DLO2_V6_PROTOCOL),
+        source_result_sha256=sha256_file(DLO2_V6_RESULT),
+    )
+
+    assert authorization["source_gate_passed"] is True
+    assert authorization["selected_arm"] == "r1_s0p25"
+    assert protocol["local_residual"]["target_reselection"] is False
+
+    source_result["source_gate"]["passed"] = False
+    with pytest.raises(ValueError, match="does not authorize"):
+        validate_deform_dlo2_local_residual_alltrain_v7_authorization(
+            protocol,
+            source_protocol,
+            source_result,
+            source_protocol_sha256=sha256_file(DLO2_V6_PROTOCOL),
+            source_result_sha256=sha256_file(DLO2_V6_RESULT),
+        )
+
+
+def test_dlo2_v7_alltrain_guards_official_eval_and_has_no_reselection() -> None:
+    source = DLO2_V7_ALLTRAIN_RUNNER.read_text(encoding="utf-8")
+
+    guard = source.index(
+        'source_runtime._install_eval_read_guard(data_root / "DLO2" / "eval")'
+    )
+    trajectory_load = source.index("trajectories = source_runtime._load_named_trajectories")
+    preflight_stop = source.index('if args.mode == "preflight":')
+    train_update = source.index("source_runtime._train_update(")
+    assert guard < trajectory_load < preflight_stop < train_update
+    assert '"validation_reselection": False' in source
+    assert '"source_reselection": False' in source
+    assert '"target_reselection": False' in source
+
+
+def test_dlo2_v7_official_authorization_precedes_target_enumeration() -> None:
+    source = DLO2_V7_OFFICIAL_RUNNER.read_text(encoding="utf-8")
+
+    authorization_write = source.index("_write_json(authorization_path, authorization)")
+    target_manifest = source.index("official_runtime._build_eval_manifest(")
+    assert authorization_write < target_manifest
+    assert '"target_selection": False' in source
+    assert '"target_calibration": False' in source
+    assert '"target_retries": False' in source
+    assert '"case_replacement": False' in source
+    assert '"retry_authorized": False' in source
+
+
+def test_dlo2_v7_official_protocol_rejects_target_selection(tmp_path: Path) -> None:
+    protocol = load_deform_dlo2_local_residual_official_v7_protocol(
+        DLO2_V7_OFFICIAL_PROTOCOL
+    )
+    assert protocol["methods"]["target_selection"] is False
+
+    payload = json.loads(DLO2_V7_OFFICIAL_PROTOCOL.read_text(encoding="utf-8"))
+    payload["methods"]["target_selection"] = True
+    changed = tmp_path / "changed-official.json"
+    changed.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="method policy"):
+        load_deform_dlo2_local_residual_official_v7_protocol(changed)
+
+
+def test_dlo2_v7_official_accepts_only_the_frozen_alltrain_method() -> None:
+    protocol = load_deform_dlo2_local_residual_official_v7_protocol(
+        DLO2_V7_OFFICIAL_PROTOCOL
+    )
+    alltrain = load_deform_dlo2_local_residual_alltrain_v7_protocol(
+        DLO2_V7_ALLTRAIN_PROTOCOL
+    )
+    checkpoint = {
+        "path": "/tmp/update_6400.pt",
+        "sha256": "a" * 64,
+        "size_bytes": 1,
+        "update": 6400,
+    }
+    model = {
+        "path": "/tmp/local_residual_model.npz",
+        "sha256": "b" * 64,
+        "size_bytes": 1,
+    }
+    final_method = {
+        "contract": "deform-dlo2-local-residual-final-method-v7",
+        "official_eval_read": False,
+        "physical_checkpoint": checkpoint,
+        "local_residual_model": model,
+        "fixed_arm": {
+            "name": "r1_s0p25",
+            "ridge": 1.0,
+            "shrinkage": 0.25,
+            "selection_source": "passed-dlo2-source-v6",
+        },
+        "validation_reselection": False,
+        "source_reselection": False,
+        "target_reselection": False,
+    }
+    alltrain_result = {
+        "contract": "deform-dlo2-local-residual-alltrain-result-v7",
+        "official_eval_read": False,
+        "official_eval_execution_authorized": True,
+        "protocol": {"sha256": sha256_file(DLO2_V7_ALLTRAIN_PROTOCOL)},
+        "final_method": {"sha256": "c" * 64},
+        "runtime": {"torch": "test", "cuda": "test"},
+    }
+
+    selected = validate_deform_dlo2_local_residual_official_v7_authorization(
+        protocol,
+        alltrain,
+        alltrain_result,
+        final_method,
+        alltrain_protocol_sha256=sha256_file(DLO2_V7_ALLTRAIN_PROTOCOL),
+        alltrain_result_sha256="d" * 64,
+        final_method_sha256="c" * 64,
+    )
+    assert selected["physical_checkpoint"]["update"] == 6400
+    assert selected["fixed_arm"]["shrinkage"] == 0.25
+
+    final_method["target_reselection"] = True
+    with pytest.raises(ValueError, match="does not authorize"):
+        validate_deform_dlo2_local_residual_official_v7_authorization(
+            protocol,
+            alltrain,
+            alltrain_result,
+            final_method,
+            alltrain_protocol_sha256=sha256_file(DLO2_V7_ALLTRAIN_PROTOCOL),
+            alltrain_result_sha256="d" * 64,
+            final_method_sha256="c" * 64,
+        )
+
+
 def test_causal_input_extractor_omits_future_free_nodes() -> None:
     trajectories = _trajectories()
     changed = trajectories.copy()
@@ -412,6 +587,43 @@ def test_model_serialization_is_pickle_free() -> None:
 
     assert serialized
     assert all(np.asarray(value).dtype != object for value in serialized.values())
+
+
+def test_model_npz_roundtrip_preserves_predictions(tmp_path: Path) -> None:
+    initial, action, baseline, targets, names = _problem()
+    model = fit_deform_local_residual(
+        initial,
+        action,
+        baseline,
+        targets,
+        names.tolist(),
+        ridge=1e-2,
+        variance_floor_m2=1e-6,
+    )
+    expected = predict_deform_local_residual(
+        model,
+        initial,
+        action,
+        baseline,
+        shrinkage=0.25,
+    )
+    path = tmp_path / "model.npz"
+    np.savez_compressed(path, **serialize_deform_local_residual_model(model))
+
+    with np.load(path, allow_pickle=False) as archive:
+        restored = deserialize_deform_local_residual_model(archive)
+    actual = predict_deform_local_residual(
+        restored,
+        initial,
+        action,
+        baseline,
+        shrinkage=0.25,
+    )
+
+    assert np.array_equal(actual["predictions"], expected["predictions"])
+    assert np.array_equal(
+        actual["coordinate_variance_m2"], expected["coordinate_variance_m2"]
+    )
 
 
 def test_invalid_ridge_is_rejected() -> None:

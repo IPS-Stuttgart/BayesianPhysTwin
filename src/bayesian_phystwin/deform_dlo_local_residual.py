@@ -341,6 +341,317 @@ def validate_deform_dlo2_local_residual_v6_parents(
     }
 
 
+def load_deform_dlo2_local_residual_alltrain_v7_protocol(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the target-blind all-56 refit of the source-confirmed method."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported DLO2 local-residual all-train v7 schema")
+    if payload.get("contract") != "deform-dlo2-local-residual-alltrain-v7":
+        raise ValueError("unsupported DLO2 local-residual all-train v7 contract")
+    if payload.get("prob4d_used") is not False:
+        raise ValueError("DLO2 local-residual all-train must keep Prob4D unused")
+    upstream = payload.get("upstream")
+    if (
+        not isinstance(upstream, Mapping)
+        or upstream.get("repository") != "https://github.com/roahmlab/DEFORM"
+        or len(str(upstream.get("commit", ""))) != 40
+    ):
+        raise ValueError("DLO2 local-residual all-train upstream is invalid")
+    for key in ("parent_source_protocol", "parent_source_result", "source_manifest"):
+        identity = payload.get(key)
+        if (
+            not isinstance(identity, Mapping)
+            or not str(identity.get("repository_path", identity.get("path", "")))
+            or len(str(identity.get("sha256", ""))) != 64
+        ):
+            raise ValueError(f"DLO2 local-residual all-train {key} is invalid")
+    data = payload.get("data")
+    if (
+        not isinstance(data, Mapping)
+        or data.get("dlo_type") != "DLO2"
+        or data.get("partition") != "train"
+        or int(cast(Any, data.get("trajectory_count", -1))) != 56
+        or int(cast(Any, data.get("frame_count", -1))) != 500
+        or int(cast(Any, data.get("node_count", -1))) != 12
+        or data.get("use_every_train_trajectory") is not True
+        or data.get("official_eval_read") is not False
+    ):
+        raise ValueError("DLO2 local-residual all-train data contract differs")
+    training = payload.get("training")
+    checkpoints = (
+        tuple(int(value) for value in training.get("checkpoint_updates", ()))
+        if isinstance(training, Mapping)
+        else ()
+    )
+    if (
+        not isinstance(training, Mapping)
+        or int(cast(Any, training.get("random_seed", -1))) != 42
+        or int(cast(Any, training.get("unroll_horizon_frames", -1))) != 50
+        or int(cast(Any, training.get("batch_size", -1))) != 32
+        or int(cast(Any, training.get("total_updates", -1))) != 6400
+        or checkpoints
+        != (0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400)
+        or training.get("optimizer") != "official-sgd-parameter-groups-v1"
+        or training.get("cublas_workspace_config") != ":4096:8"
+        or training.get("known_action_nodes") != [0, 1, -2, -1]
+        or training.get("window_sampling") != "frozen-uniform-all-56-train-v1"
+        or int(cast(Any, training.get("physical_checkpoint_update", -1))) != 6400
+    ):
+        raise ValueError("DLO2 local-residual all-train training contract differs")
+    local = payload.get("local_residual")
+    fixed = local.get("fixed_arm") if isinstance(local, Mapping) else None
+    if (
+        not isinstance(local, Mapping)
+        or not isinstance(fixed, Mapping)
+        or fixed.get("name") != "r1_s0p25"
+        or float(cast(Any, fixed.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, fixed.get("shrinkage", math.nan))) != 0.25
+        or fixed.get("selection_source") != "passed-dlo2-source-v6"
+        or local.get("query_evidence")
+        != "two-observed-states-known-future-clamped-action-and-baseline-rollout-only"
+        or local.get("future_free_node_truth") != "fit-and-score-only"
+        or local.get("operator") != "per-node-trajectory-grouped-bayesian-ridge-v1"
+        or local.get("duplicate_policy") != "collapse-exact-causal-query-clusters"
+        or local.get("clamped_node_policy") != "baseline-exact"
+        or local.get("fit_trajectory_policy") != "all-56-official-train"
+        or local.get("validation_reselection") is not False
+        or local.get("source_reselection") is not False
+        or local.get("target_reselection") is not False
+        or local.get("fallback") != "alltrain-physical-checkpoint-exact"
+    ):
+        raise ValueError("DLO2 local-residual all-train method contract differs")
+    floor = float(cast(Any, local.get("coordinate_variance_floor_m2", math.nan)))
+    output = payload.get("output")
+    if (
+        not math.isfinite(floor)
+        or floor != 1e-6
+        or not isinstance(output, Mapping)
+        or output.get("official_eval_authorized_by_refit") is not True
+        or output.get("official_eval_read") is not False
+        or output.get("preserve_physical_checkpoint") is not True
+        or output.get("preserve_local_residual_model") is not True
+    ):
+        raise ValueError("DLO2 local-residual all-train output contract differs")
+    result = dict(payload)
+    result["checkpoint_updates"] = checkpoints
+    result["protocol_path"] = str(source)
+    return result
+
+
+def validate_deform_dlo2_local_residual_alltrain_v7_authorization(
+    protocol: Mapping[str, object],
+    source_protocol: Mapping[str, object],
+    source_result: Mapping[str, object],
+    *,
+    source_protocol_sha256: str,
+    source_result_sha256: str,
+) -> dict[str, object]:
+    """Require the passed untouched DLO2 source gate before the all-56 refit."""
+
+    protocol_identity = protocol.get("parent_source_protocol")
+    result_identity = protocol.get("parent_source_result")
+    local = protocol.get("local_residual")
+    source_local = source_protocol.get("local_residual")
+    gate = source_result.get("source_gate")
+    fixed = source_result.get("fixed_arm")
+    if (
+        not isinstance(protocol_identity, Mapping)
+        or not isinstance(result_identity, Mapping)
+        or protocol_identity.get("sha256") != source_protocol_sha256
+        or result_identity.get("sha256") != source_result_sha256
+        or source_protocol.get("contract") != "deform-dlo2-local-residual-source-v6"
+        or source_result.get("contract") != "deform-dlo2-local-residual-result-v6"
+        or source_result.get("protocol_sha256") != source_protocol_sha256
+        or source_result.get("source_test_opened") is not True
+        or source_result.get("official_eval_read") is not False
+        or source_result.get("fallback_used") is not False
+        or source_result.get("fallback_byte_exact") is not True
+        or source_result.get("alltrain_and_official_evaluation_authorized") is not True
+        or not isinstance(gate, Mapping)
+        or gate.get("passed") is not True
+        or float(cast(Any, gate.get("relative_improvement", -math.inf))) < 0.01
+        or int(cast(Any, gate.get("wins", -1))) < 6
+        or float(cast(Any, gate.get("maximum_case_ratio", math.inf))) > 1.10
+        or float(cast(Any, gate.get("candidate_mean_l1_m", math.inf))) > 0.0097
+        or not isinstance(local, Mapping)
+        or not isinstance(source_local, Mapping)
+        or not isinstance(fixed, Mapping)
+        or fixed.get("name") != "r1_s0p25"
+        or float(cast(Any, fixed.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, fixed.get("shrinkage", math.nan))) != 0.25
+        or source_result.get("fitted_model_sha256")
+        != source_local.get("expected_fitted_model_sha256")
+    ):
+        raise ValueError("DLO2 v6 source result does not authorize all-train refit")
+    return {
+        "source_protocol_sha256": source_protocol_sha256,
+        "source_result_sha256": source_result_sha256,
+        "source_gate_passed": True,
+        "source_test_opened": True,
+        "official_eval_read": False,
+        "selected_arm": "r1_s0p25",
+        "shrinkage": 0.25,
+    }
+
+
+def load_deform_dlo2_local_residual_official_v7_protocol(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the exactly-once official evaluation of the frozen all-56 method."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported DLO2 local-residual official v7 schema")
+    if payload.get("contract") != "deform-dlo2-local-residual-official-v7":
+        raise ValueError("unsupported DLO2 local-residual official v7 contract")
+    if payload.get("prob4d_used") is not False:
+        raise ValueError("DLO2 local-residual official eval must keep Prob4D unused")
+    parent = payload.get("parent_alltrain_protocol")
+    required = payload.get("required_parent")
+    evaluation = payload.get("evaluation")
+    methods = payload.get("methods")
+    gate = payload.get("claim_gate")
+    uncertainty = payload.get("uncertainty")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (parent, required, evaluation, methods, gate, uncertainty)
+    ):
+        raise ValueError("DLO2 local-residual official protocol is incomplete")
+    if (
+        not str(parent.get("repository_path", ""))
+        or len(str(parent.get("sha256", ""))) != 64
+        or required.get("result_contract")
+        != "deform-dlo2-local-residual-alltrain-result-v7"
+        or required.get("final_method_contract")
+        != "deform-dlo2-local-residual-final-method-v7"
+        or required.get("official_eval_read") is not False
+        or required.get("official_eval_execution_authorized") is not True
+    ):
+        raise ValueError("DLO2 local-residual official parent contract differs")
+    reference = evaluation.get("published_reference_operator")
+    expected_draw = [1, 7, 9, 7, 11, 7, 13, 8, 8, 6, 8, 5, 8, 4]
+    if (
+        evaluation.get("dlo_type") != "DLO2"
+        or evaluation.get("partition") != "eval"
+        or int(cast(Any, evaluation.get("expected_trajectory_count", -1))) != 14
+        or int(cast(Any, evaluation.get("expected_frame_count", -1))) != 500
+        or int(cast(Any, evaluation.get("expected_node_count", -1))) != 12
+        or evaluation.get("trajectory_policy")
+        != "all-eval-files-sorted-once-plus-canonical-reference-draw-v2"
+        or evaluation.get("failure_policy") != "seal-failure-no-retry-v1"
+        or evaluation.get("metric") != "mean-coordinate-l1-m"
+        or float(cast(Any, evaluation.get("published_reference_l1_m", math.nan)))
+        != 0.0097
+        or not isinstance(reference, Mapping)
+        or reference.get("canonical_eval_indices") != expected_draw
+        or int(cast(Any, reference.get("canonical_unique_index_count", -1))) != 9
+    ):
+        raise ValueError("DLO2 local-residual official evaluation contract differs")
+    if (
+        methods.get("candidate")
+        != "alltrain-physical-plus-r1-s0p25-local-residual"
+        or methods.get("comparison_baseline")
+        != "identically-trained-alltrain-physical-checkpoint"
+        or methods.get("action_aware_persistence") is not True
+        or methods.get("target_selection") is not False
+        or methods.get("target_calibration") is not False
+        or methods.get("target_retries") is not False
+        or methods.get("case_replacement") is not False
+    ):
+        raise ValueError("DLO2 local-residual official method policy differs")
+    if (
+        gate.get("published_reference_all_unique_strictly_better") is not True
+        or gate.get("published_reference_canonical_draw_strictly_better") is not True
+        or float(cast(Any, gate.get("candidate_relative_improvement_min", math.nan)))
+        != 0.01
+        or int(cast(Any, gate.get("candidate_minimum_case_wins", -1))) != 8
+        or float(cast(Any, gate.get("maximum_case_ratio", math.nan))) != 1.10
+        or gate.get("require_all_expected_cases") is not True
+    ):
+        raise ValueError("DLO2 local-residual official claim gate differs")
+    if (
+        uncertainty.get("use_alltrain_fit_covariance_unchanged") is not True
+        or float(cast(Any, uncertainty.get("variance_scale", math.nan))) != 1.0
+        or float(cast(Any, uncertainty.get("variance_floor_m2", math.nan))) != 1e-6
+        or float(cast(Any, uncertainty.get("nominal_coordinate_coverage", math.nan)))
+        != 0.90
+    ):
+        raise ValueError("DLO2 local-residual official uncertainty differs")
+    result = dict(payload)
+    result["protocol_path"] = str(source)
+    return result
+
+
+def validate_deform_dlo2_local_residual_official_v7_authorization(
+    protocol: Mapping[str, object],
+    alltrain_protocol: Mapping[str, object],
+    alltrain_result: Mapping[str, object],
+    final_method: Mapping[str, object],
+    *,
+    alltrain_protocol_sha256: str,
+    alltrain_result_sha256: str,
+    final_method_sha256: str,
+) -> dict[str, object]:
+    """Verify the immutable all-56 method before target enumeration."""
+
+    parent = protocol.get("parent_alltrain_protocol")
+    required = protocol.get("required_parent")
+    result_protocol = alltrain_result.get("protocol")
+    final_identity = alltrain_result.get("final_method")
+    checkpoint = final_method.get("physical_checkpoint")
+    model = final_method.get("local_residual_model")
+    fixed = final_method.get("fixed_arm")
+    if (
+        not isinstance(parent, Mapping)
+        or parent.get("sha256") != alltrain_protocol_sha256
+        or alltrain_protocol.get("contract")
+        != "deform-dlo2-local-residual-alltrain-v7"
+        or not isinstance(required, Mapping)
+        or alltrain_result.get("contract") != required.get("result_contract")
+        or alltrain_result.get("official_eval_read")
+        is not required.get("official_eval_read")
+        or alltrain_result.get("official_eval_execution_authorized")
+        is not required.get("official_eval_execution_authorized")
+        or not isinstance(result_protocol, Mapping)
+        or result_protocol.get("sha256") != alltrain_protocol_sha256
+        or not isinstance(final_identity, Mapping)
+        or final_identity.get("sha256") != final_method_sha256
+        or final_method.get("contract") != required.get("final_method_contract")
+        or final_method.get("official_eval_read") is not False
+        or not isinstance(checkpoint, Mapping)
+        or int(cast(Any, checkpoint.get("update", -1))) != 6400
+        or len(str(checkpoint.get("sha256", ""))) != 64
+        or not isinstance(model, Mapping)
+        or len(str(model.get("sha256", ""))) != 64
+        or not isinstance(fixed, Mapping)
+        or fixed.get("name") != "r1_s0p25"
+        or float(cast(Any, fixed.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, fixed.get("shrinkage", math.nan))) != 0.25
+        or final_method.get("validation_reselection") is not False
+        or final_method.get("source_reselection") is not False
+        or final_method.get("target_reselection") is not False
+    ):
+        raise ValueError("all-train local-residual method does not authorize official eval")
+    runtime = alltrain_result.get("runtime")
+    if not isinstance(runtime, Mapping):
+        raise ValueError("all-train local-residual runtime is missing")
+    return {
+        "alltrain_protocol_sha256": alltrain_protocol_sha256,
+        "alltrain_result_sha256": alltrain_result_sha256,
+        "final_method_sha256": final_method_sha256,
+        "physical_checkpoint": dict(checkpoint),
+        "local_residual_model": dict(model),
+        "fixed_arm": dict(fixed),
+        "runtime": dict(runtime),
+        "official_eval_read": False,
+    }
+
+
 def validate_deform_dlo2_local_residual_parent(
     protocol: Mapping[str, object],
     parent: Mapping[str, object],
@@ -884,4 +1195,98 @@ def serialize_deform_local_residual_model(
         "trajectory_clusters_json": np.asarray(
             [json.dumps([list(group) for group in clusters], separators=(",", ":"))]
         ),
+    }
+
+
+def deserialize_deform_local_residual_model(
+    archive: Mapping[str, Any],
+) -> dict[str, object]:
+    """Reconstruct and validate a local-residual model from a pickle-free NPZ."""
+
+    def scalar(key: str, dtype: type[int] | type[float]) -> int | float:
+        value = np.asarray(archive[key])
+        if value.shape != (1,):
+            raise ValueError(f"DEFORM local residual {key} is not scalar")
+        return dtype(value[0])
+
+    schema_version = int(scalar("schema_version", int))
+    node_count = int(scalar("node_count", int))
+    prediction_horizon = int(scalar("prediction_horizon", int))
+    feature_count = int(scalar("feature_count", int))
+    ridge = float(scalar("ridge", float))
+    variance_floor_m2 = float(scalar("variance_floor_m2", float))
+    cluster_count = int(scalar("trajectory_cluster_count", int))
+    raw_clusters = np.asarray(archive["trajectory_clusters_json"])
+    if raw_clusters.shape != (1,):
+        raise ValueError("DEFORM local residual clusters are not scalar JSON")
+    try:
+        decoded = json.loads(str(raw_clusters[0]))
+    except (TypeError, ValueError) as error:
+        raise ValueError("DEFORM local residual clusters are invalid JSON") from error
+    if (
+        schema_version != 1
+        or node_count < 5
+        or prediction_horizon < 1
+        or feature_count < 1
+        or not math.isfinite(ridge)
+        or ridge <= 0.0
+        or not math.isfinite(variance_floor_m2)
+        or variance_floor_m2 <= 0.0
+        or not isinstance(decoded, list)
+        or len(decoded) != cluster_count
+        or any(
+            not isinstance(group, list)
+            or not group
+            or not all(isinstance(name, str) and name for name in group)
+            for group in decoded
+        )
+    ):
+        raise ValueError("DEFORM local residual serialized metadata is invalid")
+    internal_count = node_count - 4
+    location = _finite_array(
+        np.asarray(archive["feature_location"]), ndim=2, label="feature location"
+    ).copy()
+    scale = _finite_array(
+        np.asarray(archive["feature_scale"]), ndim=2, label="feature scale"
+    ).copy()
+    coefficients = _finite_array(
+        np.asarray(archive["coefficients"]),
+        ndim=3,
+        label="local residual coefficients",
+    ).copy()
+    covariance = _finite_array(
+        np.asarray(archive["coefficient_covariance"]),
+        ndim=4,
+        label="local residual coefficient covariance",
+    ).copy()
+    residual_variance = _finite_array(
+        np.asarray(archive["residual_variance"]),
+        ndim=2,
+        label="local residual variance",
+    ).copy()
+    if (
+        location.shape != (internal_count, feature_count)
+        or scale.shape != location.shape
+        or np.any(scale <= 0.0)
+        or coefficients.shape != (internal_count, feature_count + 1, 3)
+        or covariance.shape
+        != (internal_count, 3, feature_count + 1, feature_count + 1)
+        or residual_variance.shape != (internal_count, 3)
+        or np.any(residual_variance < 0.0)
+    ):
+        raise ValueError("DEFORM local residual serialized arrays do not align")
+    return {
+        "schema_version": schema_version,
+        "contract": "deform-dlo-local-residual-model-v1",
+        "node_count": node_count,
+        "prediction_horizon": prediction_horizon,
+        "feature_count": feature_count,
+        "trajectory_clusters": tuple(tuple(group) for group in decoded),
+        "feature_location": location,
+        "feature_scale": scale,
+        "coefficients": coefficients,
+        "coefficient_covariance": covariance,
+        "residual_variance": residual_variance,
+        "ridge": ridge,
+        "variance_floor_m2": variance_floor_m2,
     }
