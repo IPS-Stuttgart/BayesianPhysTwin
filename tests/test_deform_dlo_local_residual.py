@@ -28,6 +28,12 @@ DLO2_PROTOCOL = (
 DLO2_RUNNER = (
     REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_local_residual.py"
 )
+DLO2_V6_DEVELOPMENT_RUNNER = (
+    REPOSITORY_ROOT
+    / "scripts"
+    / "remote"
+    / "analyze_deform_dlo2_local_residual_v6.py"
+)
 SOURCE_RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
 DLO1_RESULT = (
     REPOSITORY_ROOT
@@ -171,6 +177,16 @@ def test_dlo2_training_and_transfer_seal_source_before_loading() -> None:
     assert training_stop < generic_source_load
     assert transfer_seal < transfer_fallback < transfer_source_load
     assert '_install_eval_read_guard(data_root / "DLO2" / "eval")' in transfer
+
+
+def test_dlo2_v6_development_runner_cannot_open_source_or_official_eval() -> None:
+    source = DLO2_V6_DEVELOPMENT_RUNNER.read_text(encoding="utf-8")
+
+    assert 'manifest["split"]["source_test"]' not in source
+    assert "source_test_opened\": False" in source
+    assert "official_eval_read\": False" in source
+    assert '_install_eval_read_guard(data_root / "DLO2" / "eval")' in source
+    assert '_install_eval_read_guard(data_root / "DLO1" / "eval")' in source
 
 
 def test_causal_input_extractor_omits_future_free_nodes() -> None:
