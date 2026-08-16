@@ -7,6 +7,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Added an opt-in Genesis elastic-MPM backend with compliant rigid
+  attachments, fixed particle identities, a stability-gated native smoke, and
+  deterministic conversion to the engine-neutral physical rollout contract.
 - Expanded the installed ecosystem compatibility table to admit Prob4D 0.5 for provider-v2 and historical provider-v1 artifact inspection, while pinning full provider-v1 execution to Prob4D 0.4.1.
 - Added an opt-in, content-addressed MatPhys spring-proposal backend adapter
   with disjoint prefix gating, exact archive bindings, atomic publication, and

@@ -109,6 +109,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "materialize-matphys-backend": (
         "build or validate a guarded MatPhys spring-proposal backend artifact"
     ),
+    "materialize-genesis-mpm-backend": (
+        "run or adapt an optional Genesis elastic-MPM physical backend smoke"
+    ),
     "materialize-newton-mpm-backend": (
         "run or adapt an optional Newton implicit-MPM physical backend smoke"
     ),
@@ -137,6 +140,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "diagnose-provider-failures": "provider-failure-decomposition-v1",
     "score-probabilistic-predictions": "probabilistic-prediction-scoring-v1",
     "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
+    "materialize-genesis-mpm-backend": "genesis-mpm-backend-v1",
     "materialize-matphys-backend": "matphys-backend-v1",
     "materialize-newton-mpm-backend": "newton-mpm-backend-v1",
 }
@@ -211,6 +215,8 @@ def optional_dependencies(command_id: str) -> tuple[str, ...]:
     dependencies: list[str] = []
     if command_id == "evaluate-pokeflex-public":
         dependencies.extend(("graph", "vision"))
+    if command_id == "materialize-genesis-mpm-backend":
+        dependencies.append("genesis-mpm")
     if command_id == "materialize-newton-mpm-backend":
         dependencies.append("mpm")
     if command_id in {
