@@ -292,8 +292,14 @@ def test_genesis_optional_runtime_materializes_valid_outputs(
 ) -> None:
     runtime = _runtime_module(monkeypatch)
     driven, zero = _trajectories()
+    driven[:, 1, 2] = np.linspace(0.0, 0.01, len(driven), dtype=np.float32)
     outputs = iter((driven, zero))
     monkeypatch.setattr(runtime, "_simulate_one", lambda *args, **kwargs: next(outputs))
+    monkeypatch.setattr(
+        runtime,
+        "deterministic_farthest_point_ids",
+        lambda *args, **kwargs: np.array([0, 1], dtype=np.int64),
+    )
     monkeypatch.setattr(
         runtime,
         "_implementation_record",

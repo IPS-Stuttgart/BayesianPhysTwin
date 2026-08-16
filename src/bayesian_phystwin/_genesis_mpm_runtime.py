@@ -288,14 +288,17 @@ def run_genesis_mpm_smoke(
     query_indices = deterministic_farthest_point_ids(
         driven[0], np.arange(driven.shape[1], dtype=np.int64), query_count
     )
-    response = np.linalg.norm(driven[:, query_indices] - zero[:, query_indices], axis=2)
-    maximum_response = np.max(response, axis=0)
-    normalization = float(np.max(maximum_response))
-    if not np.isfinite(normalization) or normalization <= 0.0:
+    query_response = np.linalg.norm(
+        driven[:, query_indices] - zero[:, query_indices], axis=2
+    )
+    maximum_query_response = np.max(query_response, axis=0)
+    query_normalization = float(np.max(maximum_query_response))
+    if not np.isfinite(query_normalization) or query_normalization <= 0.0:
         raise RuntimeError(
             "driven Genesis smoke produced no action-conditioned response"
         )
-    response_ratio = normalization / smoke.action_displacement_m
+    maximum_response = float(np.max(np.linalg.norm(driven - zero, axis=2)))
+    response_ratio = maximum_response / smoke.action_displacement_m
     stability_cap_ratio = 3.0
     if response_ratio > stability_cap_ratio:
         raise RuntimeError("Genesis MPM response exceeded the frozen stability cap")
@@ -304,7 +307,9 @@ def run_genesis_mpm_smoke(
     )
     if not np.isfinite(maximum_particle_step) or maximum_particle_step <= 0.0:
         raise RuntimeError("driven Genesis smoke produced no finite particle motion")
-    action_support = np.asarray(maximum_response / normalization, dtype=np.float32)
+    action_support = np.asarray(
+        maximum_query_response / query_normalization, dtype=np.float32
+    )
     raw_arrays = {
         "driven_particle_positions_m": np.ascontiguousarray(driven),
         "zero_action_particle_positions_m": np.ascontiguousarray(zero),
@@ -362,7 +367,7 @@ def run_genesis_mpm_smoke(
         "time_step_s": 1.0 / smoke.fps,
         "simulation": simulation,
         "diagnostics": {
-            "maximum_action_response_m": normalization,
+            "maximum_action_response_m": maximum_response,
             "maximum_particle_step_m": maximum_particle_step,
             "response_to_action_ratio": response_ratio,
             "stability_cap_ratio": stability_cap_ratio,
@@ -378,5 +383,5 @@ def run_genesis_mpm_smoke(
     return {
         "runtime": runtime,
         "config": asdict(smoke),
-        "maximum_action_response_m": normalization,
+        "maximum_action_response_m": maximum_response,
     }
