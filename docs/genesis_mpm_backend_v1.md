@@ -11,7 +11,7 @@ The v1 milestone requires:
 - a pinned `genesis-world==1.2.2` optional runtime;
 - fixed material-particle identities across driven and zero-action rollouts;
 - metres, seconds, and a right-handed z-up world frame;
-- a deterministic six-array physical rollout artifact;
+- deterministic six-array materialization for a fixed raw rollout;
 - content-addressed runtime, raw-rollout, query-map, and output provenance;
 - strict rejection of changed units, frame-zero geometry, query identities, or
   archive bytes;
@@ -27,6 +27,11 @@ did not represent.
 The registered smoke also rejects a maximum particle response larger than
 three times the commanded displacement. This catches numerically finite but
 mechanically implausible attachment blow-ups before an artifact can be sealed.
+
+The CUDA producer is not assumed to be bitwise deterministic. Native replay
+differences are measured separately from artifact determinism; the v1 smoke
+observed sub-micrometre replay variation while exact rematerialization of a
+fixed raw rollout remained byte-identical.
 
 ## Commands
 
@@ -61,3 +66,7 @@ custody-checked Bayesian-PhysTwin physical artifact while preserving material
 identity. It does not reproduce PhysWorld or DeformMaster, validate a real
 deformable twin, or justify a point-accuracy or uncertainty claim. Any source
 gate must be separately frozen and must retain exact incumbent fallback.
+
+The frozen native result and hashes are recorded in
+`genesis_mpm_backend_v1_result.md` and
+`results/sota/diagnostics/genesis_mpm_backend_v1/native_smoke.json`.

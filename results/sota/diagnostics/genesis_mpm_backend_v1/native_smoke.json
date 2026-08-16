@@ -1,0 +1,77 @@
+{
+  "artifacts": {
+    "artifact_id": "726241f0d5464fb62cfa4b851a357f3419dbaead96c47db6b1c278997c1ddd60",
+    "material_query_indices_sha256": "c87ac5f4890c79a977d4888bfb97c0660f373a956ec60055bcf8b5b4a5920f01",
+    "physical_archive_sha256": "4394bea1251506fe7615ef12549c8b3cbe3d934a7570c45303b04c720520c821",
+    "raw_rollout_sha256": "cf51834cf9816d5bba4422e5830aaeb824c156aa3f42bdd5b77577b8e4363695",
+    "runtime_id": "c24de5162986bfc8c830bcb34b611b279eb487a88ff5e3fec8edfa9343d6f8f7",
+    "runtime_manifest_sha256": "3e6b8ad7251a1b781fba01d2247864596ff772a5f8616f4181b21f68c69561c0"
+  },
+  "decision": {
+    "compatibility_gate": "pass",
+    "empirical_advancement_gate": "not_evaluated",
+    "target_evaluation_authorized": false
+  },
+  "engine": {
+    "repository": "Genesis-Embodied-AI/Genesis",
+    "revision": "72bdd98b8d77d249e9c5296e4a6746ff680416a2",
+    "version": "1.2.2"
+  },
+  "implementation": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "revision": "a1bbdb844dcc019d0b323fa1ad7be84af8e0cc1d",
+    "source_files_sha256": {
+      "src/bayesian_phystwin/_genesis_mpm_runtime.py": "25511d5f12ef0e7ac6b6da55e8c9cca307af8b69b8415f6e8e3fd43ac5ed9901",
+      "src/bayesian_phystwin/genesis_mpm_backend_v1.py": "0c78ca51c175239fa2dc5256f6da33d2c6ce3f8fe5f9627b290fe9253c2b700d",
+      "src/bayesian_phystwin/physical_rollout_v1.py": "7843a789d57a53ca9736ac679fc72bda988df1b94becde70b3d6967323a34983"
+    }
+  },
+  "information_boundary": {
+    "dataset_payload_read": false,
+    "future_observations_read": false,
+    "known_action_used": true,
+    "outcomes_read": false,
+    "synthetic_scene": true
+  },
+  "native_smoke": {
+    "action_displacement_m": 0.01,
+    "attachment_stiffness": 500.0,
+    "frame_count": 40,
+    "maximum_action_response_m": 0.010224522091448307,
+    "maximum_particle_step_m": 0.00031288634636439383,
+    "particle_count": 690,
+    "query_count": 64,
+    "response_to_action_ratio": 1.0224522091448307,
+    "stability_cap_ratio": 3.0,
+    "time_step_s": 0.008333333333333333
+  },
+  "replay": {
+    "action_support_max_abs_difference": 1.1861324310302734e-05,
+    "driven_all_particle_max_abs_difference_m": 1.4901161193847656e-07,
+    "driven_all_particle_rmse_difference_m": 2.0085948987257603e-08,
+    "fixed_input_materialization_byte_identical": true,
+    "frame_zero_byte_identical": true,
+    "material_query_indices_byte_identical": true,
+    "native_gpu_byte_identical": false,
+    "physical_prediction_max_abs_difference_m": 8.940696716308594e-08,
+    "physical_prediction_rmse_difference_m": 1.953390397640224e-08,
+    "repeat_count": 2,
+    "zero_action_rollout_byte_identical": true
+  },
+  "runtime": {
+    "device": "NVIDIA GeForce RTX 4090",
+    "python": "3.12.3",
+    "torch": "2.13.0+cu130"
+  },
+  "schema": "bayesian-phystwin.genesis-mpm-native-compatibility-result",
+  "schema_version": 1,
+  "verification": {
+    "base_wheel_import_without_genesis": "pass",
+    "distribution_build": "pass",
+    "focused_tests_passed": 80,
+    "mypy": "pass",
+    "portable_validation_without_genesis_source": "pass",
+    "ruff": "pass",
+    "twine": "pass"
+  }
+}
