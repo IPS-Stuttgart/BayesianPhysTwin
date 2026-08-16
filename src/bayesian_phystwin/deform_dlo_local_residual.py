@@ -200,6 +200,147 @@ def load_deform_dlo2_local_residual_protocol(path: str | Path) -> dict[str, obje
     return protocol
 
 
+def load_deform_dlo2_local_residual_v6_protocol(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the validation-selected DLO2 source-transfer protocol."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported DLO2 local-residual v6 schema")
+    if payload.get("contract") != "deform-dlo2-local-residual-source-v6":
+        raise ValueError("unsupported DLO2 local-residual v6 contract")
+    upstream = payload.get("upstream")
+    boundary = payload.get("information_boundary")
+    if (
+        not isinstance(upstream, Mapping)
+        or upstream.get("repository") != "https://github.com/roahmlab/DEFORM"
+        or len(str(upstream.get("commit", ""))) != 40
+        or not isinstance(boundary, Mapping)
+        or boundary.get("development_partition") != "DLO2/train"
+        or boundary.get("source_read_only_after_opening_seal") is not True
+        or boundary.get("official_eval_read") is not False
+        or boundary.get("prob4d_used") is not False
+    ):
+        raise ValueError("DLO2 local-residual v6 information boundary is invalid")
+    for key in (
+        "parent_protocol",
+        "parent_result",
+        "development_selection",
+        "training_result",
+        "source_manifest",
+        "selected_checkpoint",
+    ):
+        identity = payload.get(key)
+        if (
+            not isinstance(identity, Mapping)
+            or not str(identity.get("repository_path", identity.get("path", "")))
+            or len(str(identity.get("sha256", ""))) != 64
+        ):
+            raise ValueError(f"DLO2 local-residual v6 {key} identity is invalid")
+    local = payload.get("local_residual")
+    fixed = local.get("fixed_arm") if isinstance(local, Mapping) else None
+    if (
+        not isinstance(local, Mapping)
+        or not isinstance(fixed, Mapping)
+        or fixed.get("name") != "r1_s0p25"
+        or float(cast(Any, fixed.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, fixed.get("shrinkage", math.nan))) != 0.25
+        or fixed.get("selection_source") != "dlo2-fit-validation-v6"
+        or local.get("query_evidence")
+        != "two-observed-states-known-future-clamped-action-and-baseline-rollout-only"
+        or local.get("future_free_node_truth") != "fit-and-score-only"
+        or local.get("operator") != "per-node-trajectory-grouped-bayesian-ridge-v1"
+        or local.get("duplicate_policy") != "collapse-exact-causal-query-clusters"
+        or local.get("clamped_node_policy") != "baseline-exact"
+        or local.get("fallback") != "selected-dlo2-checkpoint-exact"
+    ):
+        raise ValueError("DLO2 local-residual v6 fixed arm is invalid")
+    floor = float(cast(Any, local.get("coordinate_variance_floor_m2", math.nan)))
+    if not math.isfinite(floor) or floor <= 0.0:
+        raise ValueError("DLO2 local-residual v6 variance floor is invalid")
+    gate = payload.get("source_transfer_gate")
+    if not isinstance(gate, Mapping):
+        raise ValueError("DLO2 local-residual v6 source gate is missing")
+    improvement = float(cast(Any, gate.get("minimum_relative_improvement", math.nan)))
+    wins = int(cast(Any, gate.get("minimum_case_wins", -1)))
+    ratio = float(cast(Any, gate.get("maximum_case_ratio", math.nan)))
+    maximum = float(cast(Any, gate.get("maximum_candidate_l1_m", math.nan)))
+    if (
+        not math.isfinite(improvement)
+        or improvement != 0.01
+        or wins != 6
+        or not math.isfinite(ratio)
+        or ratio != 1.10
+        or not math.isfinite(maximum)
+        or maximum != 0.0097
+    ):
+        raise ValueError("DLO2 local-residual v6 source gate changed")
+    result = dict(payload)
+    result["protocol_path"] = str(source)
+    return result
+
+
+def validate_deform_dlo2_local_residual_v6_parents(
+    protocol: Mapping[str, object],
+    parent_result: Mapping[str, object],
+    development_selection: Mapping[str, object],
+) -> dict[str, object]:
+    """Verify that v5 stayed closed and v6 selected only on validation."""
+
+    parent_protocol = cast(Mapping[str, object], protocol["parent_protocol"])
+    parent_identity = cast(Mapping[str, object], protocol["parent_result"])
+    selection_identity = cast(Mapping[str, object], protocol["development_selection"])
+    training_identity = cast(Mapping[str, object], protocol["training_result"])
+    checkpoint_identity = cast(Mapping[str, object], protocol["selected_checkpoint"])
+    parent_validation = parent_result.get("validation_gate")
+    parent_source = parent_result.get("source_gate")
+    selected = development_selection.get("selected_arm")
+    selected_summary = selected.get("summary") if isinstance(selected, Mapping) else None
+    if (
+        parent_result.get("contract") != "deform-dlo2-local-residual-result-v5"
+        or parent_result.get("protocol_sha256") != parent_protocol.get("sha256")
+        or parent_result.get("source_test_opened") is not False
+        or parent_result.get("official_eval_read") is not False
+        or parent_result.get("fallback_used") is not True
+        or parent_result.get("alltrain_and_official_evaluation_authorized") is not False
+        or not isinstance(parent_validation, Mapping)
+        or parent_validation.get("passed") is not False
+        or not isinstance(parent_source, Mapping)
+        or parent_source.get("reason") != "validation-gate-failed"
+        or development_selection.get("contract")
+        != "deform-dlo2-local-residual-development-v6"
+        or development_selection.get("protocol_sha256")
+        != parent_protocol.get("sha256")
+        or development_selection.get("training_result_sha256")
+        != training_identity.get("sha256")
+        or development_selection.get("selected_checkpoint_sha256")
+        != checkpoint_identity.get("sha256")
+        or development_selection.get("source_test_opened") is not False
+        or development_selection.get("official_eval_read") is not False
+        or not isinstance(selected, Mapping)
+        or selected.get("name") != "shrinkage-0.25"
+        or float(cast(Any, selected.get("shrinkage", math.nan))) != 0.25
+        or not isinstance(selected_summary, Mapping)
+        or float(cast(Any, selected_summary.get("relative_improvement", -math.inf)))
+        < 0.01
+        or int(cast(Any, selected_summary.get("wins", -1))) < 6
+        or float(cast(Any, selected_summary.get("maximum_case_ratio", math.inf)))
+        > 1.05
+    ):
+        raise ValueError("DLO2 local-residual v6 parents do not authorize source")
+    return {
+        "parent_result_contract": str(parent_result["contract"]),
+        "parent_result_sha256": str(parent_identity["sha256"]),
+        "development_selection_contract": str(development_selection["contract"]),
+        "development_selection_sha256": str(selection_identity["sha256"]),
+        "selected_arm": "r1_s0p25",
+        "source_test_opened": False,
+        "official_eval_read": False,
+    }
+
+
 def validate_deform_dlo2_local_residual_parent(
     protocol: Mapping[str, object],
     parent: Mapping[str, object],

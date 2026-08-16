@@ -9,10 +9,12 @@ from bayesian_phystwin.deform_dlo_local_residual import (
     deform_causal_inputs,
     fit_deform_local_residual,
     load_deform_dlo2_local_residual_protocol,
+    load_deform_dlo2_local_residual_v6_protocol,
     load_deform_local_residual_protocol,
     predict_deform_local_residual,
     serialize_deform_local_residual_model,
     validate_deform_dlo2_local_residual_parent,
+    validate_deform_dlo2_local_residual_v6_parents,
 )
 from bayesian_phystwin.deform_dlo_source import (
     sha256_file,
@@ -34,6 +36,12 @@ DLO2_V6_DEVELOPMENT_RUNNER = (
     / "remote"
     / "analyze_deform_dlo2_local_residual_v6.py"
 )
+DLO2_V6_PROTOCOL = (
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_local_residual_v6.json"
+)
+DLO2_V6_RUNNER = (
+    REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_local_residual_v6.py"
+)
 SOURCE_RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
 DLO1_RESULT = (
     REPOSITORY_ROOT
@@ -41,6 +49,20 @@ DLO1_RESULT = (
     / "sota"
     / "deform_dlo_local_residual_v4"
     / "result.json"
+)
+DLO2_V5_RESULT = (
+    REPOSITORY_ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo2_local_residual_v5"
+    / "result.json"
+)
+DLO2_V6_DEVELOPMENT = (
+    REPOSITORY_ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo2_local_residual_v6"
+    / "development_selection.json"
 )
 
 
@@ -187,6 +209,51 @@ def test_dlo2_v6_development_runner_cannot_open_source_or_official_eval() -> Non
     assert "official_eval_read\": False" in source
     assert '_install_eval_read_guard(data_root / "DLO2" / "eval")' in source
     assert '_install_eval_read_guard(data_root / "DLO1" / "eval")' in source
+
+
+def test_dlo2_v6_protocol_binds_validation_selection_and_closed_v5() -> None:
+    protocol = load_deform_dlo2_local_residual_v6_protocol(DLO2_V6_PROTOCOL)
+    parent = json.loads(DLO2_V5_RESULT.read_text(encoding="utf-8"))
+    development = json.loads(DLO2_V6_DEVELOPMENT.read_text(encoding="utf-8"))
+
+    authorized = validate_deform_dlo2_local_residual_v6_parents(
+        protocol,
+        parent,
+        development,
+    )
+
+    assert protocol["local_residual"]["fixed_arm"]["shrinkage"] == 0.25
+    assert authorized["selected_arm"] == "r1_s0p25"
+    assert authorized["source_test_opened"] is False
+
+
+def test_dlo2_v6_parent_validation_rejects_opened_source() -> None:
+    protocol = load_deform_dlo2_local_residual_v6_protocol(DLO2_V6_PROTOCOL)
+    parent = json.loads(DLO2_V5_RESULT.read_text(encoding="utf-8"))
+    development = json.loads(DLO2_V6_DEVELOPMENT.read_text(encoding="utf-8"))
+    parent["source_test_opened"] = True
+
+    with pytest.raises(ValueError, match="do not authorize source"):
+        validate_deform_dlo2_local_residual_v6_parents(
+            protocol,
+            parent,
+            development,
+        )
+
+
+def test_dlo2_v6_seals_source_opening_before_loading_outcomes() -> None:
+    source = DLO2_V6_RUNNER.read_text(encoding="utf-8")
+
+    opening_seal = source.index(
+        'source_opening_path = output_root / "source_opening_seal.json"'
+    )
+    preflight_stop = source.index('if args.mode == "preflight":')
+    source_names = source.index('source_names = list(manifest["split"]["source_test"])')
+    source_load = source.index("source_trajectories =")
+    assert opening_seal < preflight_stop < source_names < source_load
+    assert '_install_eval_read_guard(data_root / "DLO2" / "eval")' in source
+    assert '_install_eval_read_guard(data_root / "DLO1" / "eval")' in source
+    assert '"official_eval_read": False' in source
 
 
 def test_causal_input_extractor_omits_future_free_nodes() -> None:
