@@ -239,6 +239,76 @@ def test_genesis_runtime_rejects_changed_units_and_identity(tmp_path: Path) -> N
         validate_genesis_mpm_runtime_manifest(runtime, raw_rollout_path=raw_path)
 
 
+@pytest.mark.parametrize(
+    ("field", "message"),
+    [
+        ("simulation", "simulation must be a JSON object"),
+        ("diagnostics", "diagnostics must be a JSON object"),
+        ("implementation", "implementation must be a JSON object"),
+        (
+            "information_boundary",
+            "information_boundary must be a JSON object",
+        ),
+    ],
+)
+def test_genesis_runtime_rejects_non_object_sections(
+    tmp_path: Path, field: str, message: str
+) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+    runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+    runtime[field] = []
+    with pytest.raises(ValueError, match=message):
+        validate_genesis_mpm_runtime_manifest(runtime)
+
+
+def test_genesis_runtime_rejects_invalid_source_hash_roster(tmp_path: Path) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+    runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+    runtime["implementation"]["source_files_sha256"] = []
+    with pytest.raises(ValueError, match="source_files_sha256 must be a JSON object"):
+        validate_genesis_mpm_runtime_manifest(runtime)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("frame_count", True, "positive integer"),
+        ("time_step_s", True, "finite positive number"),
+        ("time_step_s", np.nan, "finite positive number"),
+    ],
+)
+def test_genesis_runtime_rejects_invalid_scalars(
+    tmp_path: Path, field: str, value: Any, message: str
+) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+    runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+    runtime[field] = value
+    with pytest.raises(ValueError, match=message):
+        validate_genesis_mpm_runtime_manifest(runtime)
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ([], "three finite numbers"),
+        ([0.3, "bad", 0.05], "three finite numbers"),
+        ([0.3, np.nan, 0.05], "three finite numbers"),
+    ],
+)
+def test_genesis_runtime_rejects_invalid_vectors(
+    tmp_path: Path, value: list[Any], message: str
+) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+    runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+    runtime["simulation"]["beam_extents_m"] = value
+    with pytest.raises(ValueError, match=message):
+        validate_genesis_mpm_runtime_manifest(runtime)
+
+
 def test_genesis_bundle_detects_mutated_provenance(tmp_path: Path) -> None:
     raw_path = _raw_archive(tmp_path / "raw.npz")
     runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
@@ -251,6 +321,38 @@ def test_genesis_bundle_detects_mutated_provenance(tmp_path: Path) -> None:
     provenance = output / "provenance" / "genesis-particle-rollout.npz"
     provenance.write_bytes(provenance.read_bytes() + b"changed")
     with pytest.raises(ValueError, match="byte count changed"):
+        validate_genesis_mpm_backend(output)
+
+
+@pytest.mark.parametrize(
+    ("field", "nested", "message"),
+    [
+        ("inputs", None, "inputs must be a JSON object"),
+        ("inputs", "raw_rollout", "raw_rollout must be a JSON object"),
+        ("mapping", None, "mapping must be a JSON object"),
+    ],
+)
+def test_genesis_bundle_rejects_non_object_records(
+    tmp_path: Path, field: str, nested: str | None, message: str
+) -> None:
+    raw_path = _raw_archive(tmp_path / f"{field}-raw.npz")
+    runtime_path = _runtime_manifest(
+        tmp_path / f"{field}-runtime.json", raw_path
+    )
+    output = tmp_path / f"{field}-{nested or 'root'}"
+    materialize_genesis_mpm_backend(
+        raw_rollout_path=raw_path,
+        runtime_manifest_path=runtime_path,
+        output_dir=output,
+    )
+    artifact_path = output / ARTIFACT_FILENAME
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if nested is None:
+        artifact[field] = []
+    else:
+        artifact[field][nested] = []
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
         validate_genesis_mpm_backend(output)
 
 
@@ -339,6 +441,49 @@ def test_genesis_runtime_binds_implementation_sources(
     with pytest.raises(RuntimeError, match="not a lowercase Git SHA-1"):
         runtime._implementation_record()
 
+    monkeypatch.setenv("BPT_IMPLEMENTATION_REVISION", "1" * 40)
+    monkeypatch.setattr(runtime, "_IMPLEMENTATION_PATHS", ("missing.py",))
+    with pytest.raises(RuntimeError, match="source file is unavailable"):
+        runtime._implementation_record()
+
+
+def test_genesis_runtime_normalizes_particle_positions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = _runtime_module(monkeypatch)
+
+    class TensorLike:
+        def __init__(self, value: np.ndarray) -> None:
+            self.value = value
+
+        def detach(self) -> TensorLike:
+            return self
+
+        def cpu(self) -> TensorLike:
+            return self
+
+        def numpy(self) -> np.ndarray:
+            return self.value
+
+    class Entity:
+        def __init__(self, value: Any) -> None:
+            self.value = value
+
+        def get_particles_pos(self) -> Any:
+            return self.value
+
+    positions = np.arange(12, dtype=np.float64).reshape(1, 4, 3)
+    normalized = runtime._positions_numpy(Entity(TensorLike(positions)))
+    assert normalized.shape == (4, 3)
+    assert normalized.dtype == np.float32
+    assert normalized.flags.c_contiguous
+    np.testing.assert_array_equal(
+        runtime._positions_numpy(Entity(positions[0])), positions[0]
+    )
+    with pytest.raises(RuntimeError, match="unexpected particle-position shape"):
+        runtime._positions_numpy(Entity(np.zeros((4, 2), dtype=np.float32)))
+    assert runtime._backend_value("cpu") == "cpu"
+
 
 @pytest.mark.parametrize(
     ("field", "value", "message"),
@@ -413,6 +558,15 @@ def test_genesis_runtime_rejects_bad_invocations(
             config=config,
         )
 
+    outputs = iter((zero.copy(), zero.copy()))
+    monkeypatch.setattr(runtime, "_simulate_one", lambda *args, **kwargs: next(outputs))
+    with pytest.raises(RuntimeError, match="no action-conditioned response"):
+        runtime.run_genesis_mpm_smoke(
+            raw_rollout_path=tmp_path / "no-response.npz",
+            runtime_manifest_path=tmp_path / "no-response.json",
+            config=config,
+        )
+
 
 def test_genesis_cli_dispatches_commands_and_missing_runtime(
     tmp_path: Path,
@@ -447,6 +601,45 @@ def test_genesis_cli_dispatches_commands_and_missing_runtime(
     assert cli.main(["validate", str(tmp_path / "bundle")]) == 0
     assert {name for name, _ in calls} == {"materialize", "validate"}
     assert '"kind": "materialized"' in capsys.readouterr().out
+
+    runtime_module = _runtime_module(monkeypatch)
+    smoke_calls: list[dict[str, Any]] = []
+
+    def run_smoke(**kwargs: Any) -> dict[str, object]:
+        smoke_calls.append(kwargs)
+        return {"kind": "smoke"}
+
+    monkeypatch.setattr(runtime_module, "run_genesis_mpm_smoke", run_smoke)
+    assert (
+        cli.main(
+            [
+                "smoke",
+                str(tmp_path / "smoke-bundle"),
+                "--backend",
+                "cpu",
+                "--frames",
+                "5",
+                "--queries",
+                "3",
+                "--fps",
+                "60",
+                "--substeps",
+                "4",
+                "--grid-density",
+                "32",
+                "--attachment-stiffness",
+                "250",
+                "--action-displacement-m",
+                "0.02",
+            ]
+        )
+        == 0
+    )
+    assert len(smoke_calls) == 1
+    assert smoke_calls[0]["backend"] == "cpu"
+    config = smoke_calls[0]["config"]
+    assert config.frame_count == 5
+    assert config.action_displacement_m == pytest.approx(0.02)
 
     original_import = builtins.__import__
 
