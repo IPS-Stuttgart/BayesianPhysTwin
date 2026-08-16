@@ -24,6 +24,10 @@ the matched zero-action run leaves it stationary. This deliberately exercises
 volumetric MPM and compliant attachment behavior that the Newton direct adapter
 did not represent.
 
+The registered smoke also rejects a maximum particle response larger than
+three times the commanded displacement. This catches numerically finite but
+mechanically implausible attachment blow-ups before an artifact can be sealed.
+
 ## Commands
 
 Install the optional engine in an isolated environment:

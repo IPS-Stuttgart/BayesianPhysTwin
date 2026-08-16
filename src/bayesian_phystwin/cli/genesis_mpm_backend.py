@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     smoke.add_argument("--fps", type=float, default=120.0)
     smoke.add_argument("--substeps", type=int, default=32)
     smoke.add_argument("--grid-density", type=int, default=64)
-    smoke.add_argument("--attachment-stiffness", type=float, default=5_000.0)
+    smoke.add_argument("--attachment-stiffness", type=float, default=500.0)
     smoke.add_argument("--action-displacement-m", type=float, default=0.010)
 
     materialize = commands.add_parser(

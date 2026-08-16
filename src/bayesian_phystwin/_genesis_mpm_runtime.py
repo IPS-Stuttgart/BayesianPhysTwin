@@ -45,7 +45,7 @@ class GenesisMpmSmokeConfig:
     density_kg_m3: float = 1000.0
     young_modulus_pa: float = 50_000.0
     poisson_ratio: float = 0.30
-    attachment_stiffness: float = 5_000.0
+    attachment_stiffness: float = 500.0
     beam_length_m: float = 0.30
     beam_width_m: float = 0.05
     beam_height_m: float = 0.05

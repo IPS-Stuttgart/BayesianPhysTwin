@@ -100,7 +100,7 @@ def _runtime_manifest(path: Path, raw_path: Path) -> Path:
             "elastic_model": "corotation",
             "grid_density": 64,
             "substeps": 8,
-            "attachment_stiffness": 100000.0,
+            "attachment_stiffness": 500.0,
             "solver": "genesis-mpm",
         },
         "diagnostics": {
