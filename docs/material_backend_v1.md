@@ -60,10 +60,19 @@ consumers.
 | 6 | `physx-fem-v1` | NVIDIA PhysX deformables | experimental | `physx-fem-v1` |
 | 7 | `mujoco-flex-v1` | MuJoCo Flex | experimental | `mujoco-flex-v1` |
 
-Each family must have exactly one non-legacy default variant. Canonical
-resolution therefore cannot depend on tuple or insertion order. Additional
-legacy variants are allowed only for immutable artifact compatibility. Priority
-ties are ordered deterministically by canonical family ID.
+Every variant now carries independent `default` and `legacy` flags. Each family
+must have exactly one default variant, and a legacy variant cannot be the
+default. This permits a family to add another current transport or producer
+without making canonical resolution depend on tuple order. Existing callers
+that omit `default` retain the version-1 behavior: a current variant is inferred
+to be the default and a legacy variant is inferred not to be the default. New
+registry declarations should set the flag explicitly.
+
+The machine-readable registry description uses schema version 2 because each
+variant record now exposes `default`. Registry keys must equal their canonical
+family IDs, and a producer profile may not shadow another family's canonical
+ID. Within a family, the canonical ID may identify only the default variant.
+These checks remove lookup-precedence ambiguity before the registry is published.
 
 The duplicate Genesis identifiers are one canonical family. New materialization
 uses `genesis-mpm-v1` and the material-trajectory transport. The earlier
@@ -106,11 +115,12 @@ and selects the transport through exactly one of:
 - `backend_kind` for `material-trajectory-v1`.
 
 A canonical family assertion accepts any registered transport variant of that
-family. A retained transport-specific producer ID is an exact assertion. For
-example, requesting `genesis-world-mpm-v1` cannot silently accept a
-`genesis-mpm-v1` material-trajectory runtime. Materialization also fails when
-the requested family, runtime profile, and runtime schema disagree. Validation
-fails when a directory contains zero or multiple recognized artifact manifests.
+family. Any non-canonical producer profile ID is an exact assertion, including a
+current secondary variant or a retained legacy variant. For example, requesting
+`genesis-world-mpm-v1` cannot silently accept a `genesis-mpm-v1`
+material-trajectory runtime. Materialization also fails when the requested
+family, runtime profile, and runtime schema disagree. Validation fails when a
+directory contains zero or multiple recognized artifact manifests.
 
 `python -m bayesian_phystwin.cli.material_trajectory_backend` remains a thin
 compatibility shim for the same canonical CLI. It is not a second extension
@@ -121,12 +131,13 @@ point.
 A new backend contribution must:
 
 1. add one canonical family or one variant of an existing family;
-2. declare exactly one non-legacy default variant per family;
+2. declare exactly one explicit, non-legacy default variant per family;
 3. use one of the two admitted transport contracts;
-4. preserve persistent material identity and the common physical-rollout map;
-5. bind exact engine, source, runtime, units, frame, and information-boundary
+4. keep canonical IDs, registry keys, and producer IDs unambiguous;
+5. preserve persistent material identity and the common physical-rollout map;
+6. bind exact engine, source, runtime, units, frame, and information-boundary
    identities; and
-6. keep compatibility evidence separate from accuracy, calibration, physical
+7. keep compatibility evidence separate from accuracy, calibration, physical
    benefit, intervention benefit, safety, and state-of-the-art claims.
 
 Do not introduce another top-level backend contract merely because an engine
