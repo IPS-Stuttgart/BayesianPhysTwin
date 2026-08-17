@@ -216,6 +216,20 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 ),
             ),
         ),
+        "drake-fem-v1": MaterialBackendSpecV1(
+            profile_id="drake-fem-v1",
+            engine_repository="RobotLocomotion/drake",
+            solver_family="finite-element-method",
+            identity_kind="deformable-body-vertex-index",
+            priority=8,
+            maturity="experimental",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="drake-fem-v1",
+                    transport="material-trajectory-v1",
+                ),
+            ),
+        ),
     }
 )
 
