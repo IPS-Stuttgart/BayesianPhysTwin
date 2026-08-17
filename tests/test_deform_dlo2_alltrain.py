@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.deform_dlo_alltrain import (
+from bayesian_phystwin.experiments.deform_dlo_alltrain import (
     load_deform_dlo2_alltrain_protocol,
     validate_deform_dlo2_alltrain_authorization,
 )

@@ -10,8 +10,10 @@ from pathlib import Path
 
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_source import sha256_file
-from bayesian_phystwin.deform_dlo_upstream import load_deform_dlo_initialization
+from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin.experiments.deform_dlo_upstream import (
+    load_deform_dlo_initialization,
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -114,7 +116,11 @@ def main() -> int:
     )
     script_path = Path(__file__).resolve()
     parser_path = (
-        script_path.parents[2] / "src" / "bayesian_phystwin" / "deform_dlo_upstream.py"
+        script_path.parents[2]
+        / "src"
+        / "bayesian_phystwin"
+        / "experiments"
+        / "deform_dlo_upstream.py"
     )
     runner_path = script_path.with_name("run_deform_dlo_source.py")
     payload = {

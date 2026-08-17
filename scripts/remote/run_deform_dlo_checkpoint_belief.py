@@ -12,14 +12,14 @@ from typing import Any
 import numpy as np
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
     build_deform_checkpoint_belief_arms,
     evaluate_deform_checkpoint_belief_transfer,
     load_deform_checkpoint_belief_protocol,
     select_deform_checkpoint_belief_arm,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     choose_deform_validation_checkpoint,
     load_deform_dlo_source_protocol,
     sha256_file,

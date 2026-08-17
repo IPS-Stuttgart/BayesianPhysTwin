@@ -15,7 +15,7 @@ import numpy as np
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_action_residual import (
+from bayesian_phystwin.experiments.deform_dlo_action_residual import (
     deform_action_residual_records,
     fit_deform_action_residual,
     load_deform_action_residual_protocol,
@@ -24,8 +24,10 @@ from bayesian_phystwin.deform_dlo_action_residual import (
     serialize_deform_action_residual_model,
     summarize_deform_action_residual_records,
 )
-from bayesian_phystwin.deform_dlo_longrun import load_deform_dlo_longrun_protocol
-from bayesian_phystwin.deform_dlo_source import sha256_file
+from bayesian_phystwin.experiments.deform_dlo_longrun import (
+    load_deform_dlo_longrun_protocol,
+)
+from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
 
 
 def _parse_args() -> argparse.Namespace:

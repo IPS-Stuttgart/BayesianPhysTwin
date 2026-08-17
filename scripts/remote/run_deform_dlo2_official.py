@@ -16,21 +16,21 @@ import numpy as np
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_alltrain import (
+from bayesian_phystwin.experiments.deform_dlo_alltrain import (
     load_deform_dlo2_alltrain_protocol,
 )
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     combine_deform_checkpoint_predictions,
     weighted_deform_prediction_median,
 )
-from bayesian_phystwin.deform_dlo_official import (
+from bayesian_phystwin.experiments.deform_dlo_official import (
     DEFORM_CANONICAL_REFERENCE_DRAW,
     evaluate_deform_dlo2_official_uncertainty,
     load_deform_dlo2_official_protocol,
     summarize_deform_dlo2_official_records,
     validate_deform_dlo2_official_authorization,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )

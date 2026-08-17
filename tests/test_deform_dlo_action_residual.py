@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bayesian_phystwin.deform_dlo_action_residual import (
+from bayesian_phystwin.experiments.deform_dlo_action_residual import (
     build_deform_action_descriptors,
     deform_action_residual_records,
     fit_deform_action_residual,

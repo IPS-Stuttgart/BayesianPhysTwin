@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
     build_deform_checkpoint_belief_arms,
     calibrate_deform_coordinate_variance,
@@ -24,8 +24,10 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     select_deform_checkpoint_belief_arm,
     weighted_deform_prediction_median,
 )
-from bayesian_phystwin.deform_dlo_longrun import load_deform_dlo_longrun_protocol
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_longrun import (
+    load_deform_dlo_longrun_protocol,
+)
+from bayesian_phystwin.experiments.deform_dlo_source import (
     choose_deform_validation_checkpoint,
     sha256_file,
 )

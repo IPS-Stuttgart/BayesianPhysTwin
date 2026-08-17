@@ -25,7 +25,8 @@ The wheel gate verifies all of the following without extracting the archive:
 - a maximum compressed size and member count;
 - required stable namespace and PEP 561 members;
 - absence of repository-only directories such as `tests/`, `scripts/`,
-  `protocols/`, and `docs/`;
+  `protocols/`, `docs/`, and the source-only `bayesian_phystwin.experiments`
+  namespace;
 - exactly one declared console script, `bpt`;
 - exact `__all__` parity with the root, portable-artifact, and guarded-inference
   API manifests; and
@@ -47,18 +48,19 @@ The sdist gate verifies:
   and
 - an explicit supported self-test subset.
 
-The 2026-08-14 consolidated material-backend change adds two reviewed transport
-implementations, one canonical registry and CLI boundary, documentation, and
-tests. The successful JAX-FEM/Genesis candidate already used 539 of the former
-540 permitted wheel members. Combining the second transport and canonical
-registry therefore raises the wheel-member ratchet from 540 to 550 and the
-regular sdist-member ratchet from 1250 to 1270. Compressed-size limits,
-isolated-import rules, API manifests, console scripts, and the supported
-self-test list remain unchanged.
+The 2026-08-18 clean build audit found that the exact PR base already contained
+556 wheel members and 1,289 regular sdist members while the recorded ratchets
+still said 550 and 1,260. This corrects those stale member ratchets to 556 and
+1,290. The DEFORM experiment remains outside both stable archives, and its
+clean candidate wheel is byte-identical to the base wheel. Compressed-size
+limits, isolated-import rules, API manifests, console scripts, and the
+supported self-test list remain unchanged.
 
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
+Source-only experiment implementations and their dedicated tests likewise stay
+in the repository rather than the stable wheel or sdist.
 The sdist therefore does **not** claim that every repository test can be run from
 an unpacked source release. The supported self-test files are listed literally
 in the contract and must all be present.

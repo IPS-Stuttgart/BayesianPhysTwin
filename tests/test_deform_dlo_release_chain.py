@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from bayesian_phystwin.deform_dlo_source import sha256_file
+from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_ROOT = REPOSITORY_ROOT / "configs" / "sota"
@@ -67,15 +67,19 @@ def test_dlo2_initialization_smoke_preserves_its_historical_implementation() -> 
     assert smoke["dlo2_source_read"] is False
     assert smoke["official_eval_read"] is False
     assert smoke["implementation"]["parser_sha256"] == sha256_file(
-        REPOSITORY_ROOT / "src" / "bayesian_phystwin" / "deform_dlo_upstream.py"
+        REPOSITORY_ROOT
+        / "src"
+        / "bayesian_phystwin"
+        / "experiments"
+        / "deform_dlo_upstream.py"
     )
-    # The smoke sealed runner revision f8e9e3af. Later preregistered stages extend
-    # the shared runner, so historical evidence must not be rebound to the tip.
+    # The smoke sealed runner revision f8e9e3af and its companion verifier.
+    # Historical evidence must not be rebound to later repository paths or bytes.
     assert smoke["implementation"]["runner_sha256"] == (
         "d5626377a6028133791b6f89b4aee02ba2444b1222177cc3599b743b55daae67"
     )
-    assert smoke["implementation"]["verifier_sha256"] == sha256_file(
-        REPOSITORY_ROOT / "scripts" / "remote" / "check_deform_dlo_initialization.py"
+    assert smoke["implementation"]["verifier_sha256"] == (
+        "311b8e7a84037b021e796ac34ff483ab8b72abbf27acfdd73a86d3d5490714c5"
     )
 
 

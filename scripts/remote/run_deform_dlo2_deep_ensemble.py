@@ -15,14 +15,14 @@ import run_deform_dlo_deep_ensemble as ensemble_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     calibrate_deform_coordinate_variance,
     combine_deform_checkpoint_predictions,
     evaluate_deform_checkpoint_belief_transfer,
     evaluate_deform_coordinate_uncertainty,
     select_deform_checkpoint_belief_arm,
 )
-from bayesian_phystwin.deform_dlo_deep_ensemble import (
+from bayesian_phystwin.experiments.deform_dlo_deep_ensemble import (
     DEFORM_DLO2_DEEP_ENSEMBLE_CONTRACT,
     DEFORM_DLO2_DEEP_ENSEMBLE_RESULT_CONTRACT,
     build_deform_two_seed_weights,
@@ -30,7 +30,7 @@ from bayesian_phystwin.deform_dlo_deep_ensemble import (
     load_deform_dlo2_deep_ensemble_protocol,
     validate_deform_two_seed_manifests,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     evaluate_deform_source_gate,
     load_deform_dlo_source_protocol,
     sha256_file,

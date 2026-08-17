@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.deform_dlo_deep_ensemble import (
+from bayesian_phystwin.experiments.deform_dlo_deep_ensemble import (
     DEFORM_DLO2_DEEP_ENSEMBLE_CONTRACT,
     DEFORM_DLO_DEEP_ENSEMBLE_CONTRACT,
     build_deform_two_seed_weights,
@@ -14,7 +14,7 @@ from bayesian_phystwin.deform_dlo_deep_ensemble import (
     validate_deform_dlo2_deep_ensemble_parent,
     validate_deform_two_seed_manifests,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
     validate_deform_dlo2_stage_authorization,

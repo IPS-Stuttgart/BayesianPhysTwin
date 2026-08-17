@@ -43,7 +43,11 @@ def _contract(root: Path) -> Path:
             "maximum_size_bytes": 200_000,
             "maximum_member_count": 20,
             "required_members": ["bayesian_phystwin/__init__.py"],
-            "forbidden_member_prefixes": ["tests/", "tools/"],
+            "forbidden_member_prefixes": [
+                "tests/",
+                "tools/",
+                "bayesian_phystwin/experiments/",
+            ],
             "console_scripts": {"bpt": "bayesian_phystwin:main"},
             "isolated_imports": [
                 {
@@ -153,6 +157,14 @@ def test_valid_distribution_contract_reports_stable_surface(tmp_path: Path) -> N
 def test_wheel_rejects_repository_only_member(tmp_path: Path) -> None:
     with pytest.raises(StableDistributionError, match="repository-only"):
         _validate(tmp_path, extra={"tests/leak.py": ""})
+
+
+def test_wheel_rejects_source_only_experiment(tmp_path: Path) -> None:
+    with pytest.raises(StableDistributionError, match="repository-only"):
+        _validate(
+            tmp_path,
+            extra={"bayesian_phystwin/experiments/leak.py": ""},
+        )
 
 
 def test_isolated_import_rejects_api_drift(tmp_path: Path) -> None:

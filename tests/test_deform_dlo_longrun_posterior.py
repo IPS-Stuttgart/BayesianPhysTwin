@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     load_deform_longrun_posterior_protocol,
 )
 

@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.deform_dlo_alltrain import (
+from bayesian_phystwin.experiments.deform_dlo_alltrain import (
     DEFORM_DLO2_DEEP_ALLTRAIN_CONTRACT,
     load_deform_dlo2_deep_alltrain_protocol,
     validate_deform_dlo2_deep_alltrain_authorization,
 )
-from bayesian_phystwin.deform_dlo_source import sha256_file
+from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (

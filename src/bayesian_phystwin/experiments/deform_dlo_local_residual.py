@@ -10,6 +10,8 @@ from typing import Any, cast
 
 import numpy as np
 
+from bayesian_phystwin.numerical_linear_algebra_v1 import solve_spd
+
 DEFORM_LOCAL_RESIDUAL_PROTOCOL_SCHEMA_VERSION = 1
 DEFORM_LOCAL_RESIDUAL_PROTOCOL_CONTRACT = "deform-dlo-local-residual-source-v4"
 
@@ -124,7 +126,9 @@ def load_deform_local_residual_protocol(path: str | Path) -> dict[str, object]:
 def load_deform_dlo2_local_residual_protocol(path: str | Path) -> dict[str, object]:
     """Load the fixed-arm fresh DLO2 transfer protocol."""
 
-    from bayesian_phystwin.deform_dlo_source import load_deform_dlo_source_protocol
+    from bayesian_phystwin.experiments.deform_dlo_source import (
+        load_deform_dlo_source_protocol,
+    )
 
     protocol = load_deform_dlo_source_protocol(path)
     if protocol.get("dlo_types") != ("DLO2",):
@@ -1000,6 +1004,10 @@ def fit_deform_local_residual(
         dtype=np.float64,
     )
     residual_variance = np.zeros((internal_count, 3), dtype=np.float64)
+    normal_condition_number = np.zeros(internal_count, dtype=np.float64)
+    normal_relative_residual_norm = np.zeros(internal_count, dtype=np.float64)
+    normal_minimum_eigenvalue = np.zeros(internal_count, dtype=np.float64)
+    normal_maximum_eigenvalue = np.zeros(internal_count, dtype=np.float64)
     penalty = np.eye(feature_count + 1, dtype=np.float64) * ridge
     penalty[0, 0] = 0.0
     for node in range(internal_count):
@@ -1017,8 +1025,15 @@ def fit_deform_local_residual(
         )
         flat_design = design.reshape(-1, feature_count + 1)
         response = residual_canonical[:, :, node].reshape(-1, 3)
-        bread = np.linalg.inv(flat_design.T @ flat_design + penalty)
-        coefficient = bread @ flat_design.T @ response
+        solved = solve_spd(
+            flat_design.T @ flat_design + penalty,
+            flat_design.T @ response,
+            compute_covariance=True,
+        )
+        bread = solved.covariance
+        if bread is None:
+            raise RuntimeError("DEFORM local residual solve omitted covariance")
+        coefficient = solved.solution
         fit_residual = residual_canonical[:, :, node] - np.einsum(
             "ntd,dc->ntc", design, coefficient
         )
@@ -1035,6 +1050,10 @@ def fit_deform_local_residual(
         feature_scale[node] = scale
         coefficients[node] = coefficient
         residual_variance[node] = np.mean(np.square(fit_residual), axis=(0, 1))
+        normal_condition_number[node] = solved.diagnostics.condition_number
+        normal_relative_residual_norm[node] = solved.diagnostics.relative_residual_norm
+        normal_minimum_eigenvalue[node] = solved.diagnostics.minimum_eigenvalue
+        normal_maximum_eigenvalue[node] = solved.diagnostics.maximum_eigenvalue
     return {
         "schema_version": 1,
         "contract": "deform-dlo-local-residual-model-v1",
@@ -1047,6 +1066,10 @@ def fit_deform_local_residual(
         "coefficients": coefficients,
         "coefficient_covariance": coefficient_covariance,
         "residual_variance": residual_variance,
+        "normal_condition_number": normal_condition_number,
+        "normal_relative_residual_norm": normal_relative_residual_norm,
+        "normal_minimum_eigenvalue": normal_minimum_eigenvalue,
+        "normal_maximum_eigenvalue": normal_maximum_eigenvalue,
         "ridge": ridge,
         "variance_floor_m2": variance_floor_m2,
     }
@@ -1170,7 +1193,7 @@ def serialize_deform_local_residual_model(
     clusters = model.get("trajectory_clusters")
     if not isinstance(clusters, Sequence) or isinstance(clusters, (str, bytes)):
         raise ValueError("DEFORM local residual clusters are invalid")
-    return {
+    serialized = {
         "schema_version": np.asarray(
             [int(cast(Any, model["schema_version"]))], dtype=np.int64
         ),
@@ -1195,6 +1218,20 @@ def serialize_deform_local_residual_model(
             [json.dumps([list(group) for group in clusters], separators=(",", ":"))]
         ),
     }
+    diagnostic_keys = (
+        "normal_condition_number",
+        "normal_relative_residual_norm",
+        "normal_minimum_eigenvalue",
+        "normal_maximum_eigenvalue",
+    )
+    diagnostic_presence = tuple(key in model for key in diagnostic_keys)
+    if any(diagnostic_presence) and not all(diagnostic_presence):
+        raise ValueError("DEFORM local residual solver diagnostics are incomplete")
+    if all(diagnostic_presence):
+        serialized.update(
+            {key: np.asarray(model[key], dtype=np.float64) for key in diagnostic_keys}
+        )
+    return serialized
 
 
 def deserialize_deform_local_residual_model(
@@ -1263,6 +1300,25 @@ def deserialize_deform_local_residual_model(
         ndim=2,
         label="local residual variance",
     ).copy()
+    diagnostic_keys = (
+        "normal_condition_number",
+        "normal_relative_residual_norm",
+        "normal_minimum_eigenvalue",
+        "normal_maximum_eigenvalue",
+    )
+    diagnostic_presence = tuple(key in archive for key in diagnostic_keys)
+    if any(diagnostic_presence) and not all(diagnostic_presence):
+        raise ValueError("DEFORM local residual solver diagnostics are incomplete")
+    diagnostics: dict[str, np.ndarray] = {}
+    if all(diagnostic_presence):
+        diagnostics = {
+            key: _finite_array(
+                np.asarray(archive[key]),
+                ndim=1,
+                label=key.replace("_", " "),
+            ).copy()
+            for key in diagnostic_keys
+        }
     if (
         location.shape != (internal_count, feature_count)
         or scale.shape != location.shape
@@ -1271,9 +1327,22 @@ def deserialize_deform_local_residual_model(
         or covariance.shape != (internal_count, 3, feature_count + 1, feature_count + 1)
         or residual_variance.shape != (internal_count, 3)
         or np.any(residual_variance < 0.0)
+        or any(value.shape != (internal_count,) for value in diagnostics.values())
+        or (
+            diagnostics
+            and (
+                np.any(diagnostics["normal_condition_number"] < 1.0)
+                or np.any(diagnostics["normal_relative_residual_norm"] < 0.0)
+                or np.any(diagnostics["normal_minimum_eigenvalue"] <= 0.0)
+                or np.any(
+                    diagnostics["normal_maximum_eigenvalue"]
+                    < diagnostics["normal_minimum_eigenvalue"]
+                )
+            )
+        )
     ):
         raise ValueError("DEFORM local residual serialized arrays do not align")
-    return {
+    model = {
         "schema_version": schema_version,
         "contract": "deform-dlo-local-residual-model-v1",
         "node_count": node_count,
@@ -1288,3 +1357,5 @@ def deserialize_deform_local_residual_model(
         "ridge": ridge,
         "variance_floor_m2": variance_floor_m2,
     }
+    model.update(diagnostics)
+    return model

@@ -17,20 +17,20 @@ import run_deform_dlo2_official as official_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_alltrain import (
+from bayesian_phystwin.experiments.deform_dlo_alltrain import (
     load_deform_dlo2_deep_alltrain_protocol,
     validate_deform_dlo2_deep_alltrain_authorization,
 )
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     combine_deform_checkpoint_predictions,
 )
-from bayesian_phystwin.deform_dlo_official import (
+from bayesian_phystwin.experiments.deform_dlo_official import (
     evaluate_deform_dlo2_official_uncertainty,
     load_deform_dlo2_deep_official_protocol,
     summarize_deform_dlo2_official_records,
     validate_deform_dlo2_deep_official_authorization,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.deform_dlo_longrun import (
+from bayesian_phystwin.experiments.deform_dlo_longrun import (
     load_deform_dlo_longrun_protocol,
 )
 

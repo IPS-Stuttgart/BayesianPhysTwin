@@ -10,12 +10,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from bayesian_phystwin.deform_dlo_deep_ensemble import (
+from bayesian_phystwin.experiments.deform_dlo_deep_ensemble import (
     DEFORM_DLO2_DEEP_SEED_AUTHORIZATION_CONTRACT,
     load_deform_dlo1_deep_ensemble_protocol,
     validate_deform_dlo2_deep_ensemble_parent,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )

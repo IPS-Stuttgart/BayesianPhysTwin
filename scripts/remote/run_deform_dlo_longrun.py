@@ -13,8 +13,10 @@ from pathlib import Path
 import numpy as np
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.deform_dlo_longrun import load_deform_dlo_longrun_protocol
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_longrun import (
+    load_deform_dlo_longrun_protocol,
+)
+from bayesian_phystwin.experiments.deform_dlo_source import (
     choose_deform_validation_checkpoint,
     evaluate_deform_source_gate,
     load_deform_dlo_source_protocol,

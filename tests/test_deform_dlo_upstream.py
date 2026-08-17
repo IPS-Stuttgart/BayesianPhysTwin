@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.deform_dlo_upstream import (
+from bayesian_phystwin.experiments.deform_dlo_upstream import (
     load_deform_dlo_initialization,
 )
 

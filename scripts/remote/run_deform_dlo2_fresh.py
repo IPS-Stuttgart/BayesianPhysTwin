@@ -10,10 +10,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     validate_deform_dlo2_fresh_posterior_parent,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
     validate_deform_dlo2_fresh_parent,

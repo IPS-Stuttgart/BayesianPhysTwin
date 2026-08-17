@@ -18,7 +18,7 @@ from typing import Any
 
 import numpy as np
 
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     build_deform_dlo_source_manifest,
     choose_deform_validation_checkpoint,
     evaluate_deform_source_gate,
@@ -26,7 +26,9 @@ from bayesian_phystwin.deform_dlo_source import (
     sha256_file,
     validate_deform_dlo2_stage_authorization,
 )
-from bayesian_phystwin.deform_dlo_upstream import load_deform_dlo_initialization
+from bayesian_phystwin.experiments.deform_dlo_upstream import (
+    load_deform_dlo_initialization,
+)
 
 
 def _parse_args() -> argparse.Namespace:

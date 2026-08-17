@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bayesian_phystwin.deform_dlo_local_residual import (
+from bayesian_phystwin.experiments.deform_dlo_local_residual import (
     build_deform_local_residual_features,
     deform_causal_inputs,
     deserialize_deform_local_residual_model,
@@ -21,7 +21,7 @@ from bayesian_phystwin.deform_dlo_local_residual import (
     validate_deform_dlo2_local_residual_parent,
     validate_deform_dlo2_local_residual_v6_parents,
 )
-from bayesian_phystwin.deform_dlo_source import (
+from bayesian_phystwin.experiments.deform_dlo_source import (
     sha256_file,
     validate_deform_dlo2_stage_authorization,
 )
@@ -518,6 +518,12 @@ def test_duplicate_query_is_one_covariance_cluster() -> None:
 
     assert len(model["trajectory_clusters"]) == 6
     assert model["trajectory_clusters"][0] == ("case-0", "case-0-copy")
+    condition_number = np.asarray(model["normal_condition_number"])
+    relative_residual = np.asarray(model["normal_relative_residual_norm"])
+    assert condition_number.shape == (3,)
+    assert np.all(np.isfinite(condition_number))
+    assert np.all(condition_number >= 1.0)
+    assert np.all(relative_residual >= 0.0)
 
 
 def test_query_features_do_not_accept_target_or_innovation() -> None:
@@ -580,6 +586,8 @@ def test_model_serialization_is_pickle_free() -> None:
 
     assert serialized
     assert all(np.asarray(value).dtype != object for value in serialized.values())
+    assert "normal_condition_number" in serialized
+    assert "normal_relative_residual_norm" in serialized
 
 
 def test_model_npz_roundtrip_preserves_predictions(tmp_path: Path) -> None:
@@ -616,6 +624,9 @@ def test_model_npz_roundtrip_preserves_predictions(tmp_path: Path) -> None:
     assert np.array_equal(actual["predictions"], expected["predictions"])
     assert np.array_equal(
         actual["coordinate_variance_m2"], expected["coordinate_variance_m2"]
+    )
+    assert np.array_equal(
+        restored["normal_condition_number"], model["normal_condition_number"]
     )
 
 
