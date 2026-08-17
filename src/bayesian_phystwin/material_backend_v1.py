@@ -110,6 +110,13 @@ class MaterialBackendSpecV1:
             )
         if default_variants[0].legacy:
             raise ValueError("the default backend variant cannot be legacy")
+        if any(
+            item.producer_profile_id == self.profile_id and not item.default
+            for item in self.variants
+        ):
+            raise ValueError(
+                "the canonical profile ID may only identify the default variant"
+            )
 
     @property
     def default_variant(self) -> MaterialBackendVariantV1:
