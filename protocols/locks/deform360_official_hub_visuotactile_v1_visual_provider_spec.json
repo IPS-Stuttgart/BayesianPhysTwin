@@ -1,0 +1,82 @@
+{
+  "additional_metric_anchor_policy": "none",
+  "amendment_id": "deform360-official-hub-visuotactile-v1-visual-provider-lock",
+  "artifact_id": "65ad9fa1d3a176f663ff4ba720db15ebd92a0f0eccd27818bba5dba0b32ff7bc",
+  "claim_boundary": "Data-free producer preflight only. A valid result freezes executable Prob4D/MotionCrafter provenance before selected calibration payload access; it does not establish observation quality, calibration, tactile benefit, physical-query improvement, Causal4D benefit, safety, or state of the art.",
+  "gauge_covariance": {
+    "max_rank": 64,
+    "minimum_retained_trace": 0.999
+  },
+  "information_boundary": {
+    "calibration_payloads_opened": false,
+    "confirmation_payloads_opened": false,
+    "selected_raw_payloads_opened": false,
+    "target_outcomes_used": false
+  },
+  "metric_frame_prior_policy": {
+    "artifact_id": "27d26c15784e46c5baedc4fab3d3cf9ac44cbb572799878956c24eaea9312a1d",
+    "path": "protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json"
+  },
+  "motioncrafter": {
+    "height": 320,
+    "model_sources": {
+      "base_pipeline": {
+        "expected_revision": "9e43909513c6714f1bc78bcb44d96e733cd242aa",
+        "repository": "stabilityai/stable-video-diffusion-img2vid-xt",
+        "required_members": [
+          "model_index.json",
+          "feature_extractor/preprocessor_config.json",
+          "scheduler/scheduler_config.json",
+          "image_encoder/config.json",
+          "image_encoder/model.fp16.safetensors",
+          "vae/config.json",
+          "vae/diffusion_pytorch_model.fp16.safetensors"
+        ]
+      },
+      "image_vae": {
+        "expected_revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+        "repository": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+        "required_members": [
+          "vae/config.json",
+          "vae/diffusion_pytorch_model.fp16.safetensors"
+        ]
+      },
+      "unet": {
+        "expected_revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+        "repository": "TencentARC/MotionCrafter",
+        "required_members": [
+          "unet_determ/config.json",
+          "unet_determ/diffusion_pytorch_model.safetensors"
+        ]
+      },
+      "vae": {
+        "expected_revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+        "repository": "TencentARC/MotionCrafter",
+        "required_members": [
+          "geometry_motion_vae/config.json",
+          "geometry_motion_vae/diffusion_pytorch_model.safetensors"
+        ]
+      }
+    },
+    "model_type": "determ",
+    "overlap": 8,
+    "repository": "TencentARC/MotionCrafter",
+    "revision": "9cb4e9679f5f34e249945544052464ef46324bc2",
+    "root_seed": 20260805,
+    "seed_policy": "per-object-derived-seed-v1",
+    "storage_dtype": "float32",
+    "width": 640,
+    "window_size": 25
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "provider": {
+    "api_version": 2,
+    "composition_jacobian_mode": "analytic",
+    "covariance_root_mode": "canonical_eigenspaces",
+    "export_mode": "exploratory",
+    "repository": "IPS-Stuttgart/Prob4D",
+    "revision": "25d90ef7f78ba4307f4555cb636d666004e1bf66"
+  },
+  "schema": "bayesian-phystwin/deform360-visual-provider-preflight-spec-v1",
+  "schema_version": 1
+}

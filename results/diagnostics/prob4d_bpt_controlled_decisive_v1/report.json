@@ -1,0 +1,574 @@
+{
+  "aggregate": {
+    "B0_physical_fallback": {
+      "acceptance_fraction": 0.0,
+      "accepted_coverage_90_mean": null,
+      "accepted_group_count": 0,
+      "accepted_predictive_width_rms_m": null,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006165625497877009,
+      "by_scenario": {
+        "common_mode_bias": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.005748834568951904,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.005748834568951904,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "large_gauge_uncertainty": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.006128678327412677,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.006128678327412677,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "mixed_stress": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.005387525949510308,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.005387525949510308,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "nominal_correlated": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.006550453185890315,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.006550453185890315,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "outlier_groups": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.005465474448374757,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.005465474448374757,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "weak_identifiability": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.007712786507122092,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.007712786507122092,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        }
+      },
+      "deployed_improvement_fraction": 0.0,
+      "deployed_mean_rmse_m": 0.006165625497877009,
+      "group_count": 384,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        0.0,
+        0.0
+      ],
+      "raw_mean_rmse_m": 0.006165625497877009,
+      "risk_coverage": {
+        "lowest_risk_100_percent_rmse_m": null,
+        "lowest_risk_25_percent_rmse_m": null,
+        "lowest_risk_50_percent_rmse_m": null,
+        "lowest_risk_75_percent_rmse_m": null
+      },
+      "solver_admissible_fraction": 0.0
+    },
+    "B1_naive_last_frame_state": {
+      "acceptance_fraction": 0.0,
+      "accepted_coverage_90_mean": null,
+      "accepted_group_count": 0,
+      "accepted_predictive_width_rms_m": null,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006165625497877009,
+      "by_scenario": {
+        "common_mode_bias": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.005748834568951904,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.005748834568951904,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "large_gauge_uncertainty": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.006128678327412677,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.006128678327412677,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "mixed_stress": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.005387525949510308,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.005387525949510308,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "nominal_correlated": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.006550453185890315,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.006550453185890315,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "outlier_groups": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.005465474448374757,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.005465474448374757,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "weak_identifiability": {
+          "acceptance_fraction": 0.0,
+          "baseline_mean_rmse_m": 0.007712786507122092,
+          "deployed_improvement_fraction": 0.0,
+          "deployed_mean_rmse_m": 0.007712786507122092,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        }
+      },
+      "deployed_improvement_fraction": 0.0,
+      "deployed_mean_rmse_m": 0.006165625497877009,
+      "group_count": 384,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        0.0,
+        0.0
+      ],
+      "raw_mean_rmse_m": 0.0019573358149437914,
+      "risk_coverage": {
+        "lowest_risk_100_percent_rmse_m": 0.0019573358149437914,
+        "lowest_risk_25_percent_rmse_m": 0.0052384387133578075,
+        "lowest_risk_50_percent_rmse_m": 0.0032789381928697427,
+        "lowest_risk_75_percent_rmse_m": 0.002426080653430737
+      },
+      "solver_admissible_fraction": 1.0
+    },
+    "P1_marginal_gauge_persistent": {
+      "acceptance_fraction": 0.96875,
+      "accepted_coverage_90_mean": 0.8817204301075269,
+      "accepted_group_count": 372,
+      "accepted_predictive_width_rms_m": 0.0015576179144445226,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006165625497877009,
+      "by_scenario": {
+        "common_mode_bias": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005748834568951904,
+          "deployed_improvement_fraction": 0.9328378965789309,
+          "deployed_mean_rmse_m": 0.0003861038218705647,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "large_gauge_uncertainty": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006128678327412677,
+          "deployed_improvement_fraction": 0.9088118909203957,
+          "deployed_mean_rmse_m": 0.0005588625878339137,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "mixed_stress": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005387525949510308,
+          "deployed_improvement_fraction": 0.908529681848183,
+          "deployed_mean_rmse_m": 0.0004927987126528781,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "nominal_correlated": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006550453185890315,
+          "deployed_improvement_fraction": 0.9382826375971567,
+          "deployed_mean_rmse_m": 0.0004042766931764524,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "outlier_groups": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005465474448374757,
+          "deployed_improvement_fraction": 0.9225098406180722,
+          "deployed_mean_rmse_m": 0.0004235204861024139,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "weak_identifiability": {
+          "acceptance_fraction": 0.8125,
+          "baseline_mean_rmse_m": 0.007712786507122092,
+          "deployed_improvement_fraction": 0.33637469549851673,
+          "deployed_mean_rmse_m": 0.00511840029434383,
+          "group_count": 64,
+          "harmful_accepted_count": 8
+        }
+      },
+      "deployed_improvement_fraction": 0.8003997432073856,
+      "deployed_mean_rmse_m": 0.0012306604326633422,
+      "group_count": 384,
+      "harmful_accepted_count": 8,
+      "harmful_accepted_rate": 0.021505376344086023,
+      "paired_deployed_minus_baseline_95_m": [
+        -0.0051918989089864,
+        -0.004676151761887266
+      ],
+      "raw_mean_rmse_m": 0.0011092942444983305,
+      "risk_coverage": {
+        "lowest_risk_100_percent_rmse_m": 0.0011092942444983305,
+        "lowest_risk_25_percent_rmse_m": 0.00044675188165392506,
+        "lowest_risk_50_percent_rmse_m": 0.0004306491548239826,
+        "lowest_risk_75_percent_rmse_m": 0.0004480925118877315
+      },
+      "solver_admissible_fraction": 1.0
+    },
+    "P2_explicit_gauge_framewise": {
+      "acceptance_fraction": 0.9765625,
+      "accepted_coverage_90_mean": 0.9762222222222222,
+      "accepted_group_count": 375,
+      "accepted_predictive_width_rms_m": 0.0013606271652719854,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006165625497877009,
+      "by_scenario": {
+        "common_mode_bias": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005748834568951904,
+          "deployed_improvement_fraction": 0.9447328784907367,
+          "deployed_mean_rmse_m": 0.00031772153865891834,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "large_gauge_uncertainty": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006128678327412677,
+          "deployed_improvement_fraction": 0.9411039600529547,
+          "deployed_mean_rmse_m": 0.0003609548835938874,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "mixed_stress": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005387525949510308,
+          "deployed_improvement_fraction": 0.938176149879762,
+          "deployed_mean_rmse_m": 0.0003330775968214182,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "nominal_correlated": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006550453185890315,
+          "deployed_improvement_fraction": 0.9400565111335912,
+          "deployed_mean_rmse_m": 0.0003926570176183478,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "outlier_groups": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005465474448374757,
+          "deployed_improvement_fraction": 0.9286929574991287,
+          "deployed_mean_rmse_m": 0.00038972681877768504,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "weak_identifiability": {
+          "acceptance_fraction": 0.859375,
+          "baseline_mean_rmse_m": 0.007712786507122092,
+          "deployed_improvement_fraction": 0.6731526427935399,
+          "deployed_mean_rmse_m": 0.0025209038865505002,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        }
+      },
+      "deployed_improvement_fraction": 0.8833575565175411,
+      "deployed_mean_rmse_m": 0.0007191736236701263,
+      "group_count": 384,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        -0.00570464134911987,
+        -0.005192947103439476
+      ],
+      "raw_mean_rmse_m": 0.0006149329261995984,
+      "risk_coverage": {
+        "lowest_risk_100_percent_rmse_m": 0.0006149329261995984,
+        "lowest_risk_25_percent_rmse_m": 0.000346266172309559,
+        "lowest_risk_50_percent_rmse_m": 0.00035198241783826917,
+        "lowest_risk_75_percent_rmse_m": 0.0003610985530024045
+      },
+      "solver_admissible_fraction": 1.0
+    },
+    "P3_explicit_gauge_persistent": {
+      "acceptance_fraction": 0.9713541666666666,
+      "accepted_coverage_90_mean": 0.9868185880250224,
+      "accepted_group_count": 373,
+      "accepted_predictive_width_rms_m": 0.0009455134499476645,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006165625497877009,
+      "by_scenario": {
+        "common_mode_bias": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005748834568951904,
+          "deployed_improvement_fraction": 0.9530651015832617,
+          "deployed_mean_rmse_m": 0.0002698209665083907,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "large_gauge_uncertainty": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006128678327412677,
+          "deployed_improvement_fraction": 0.9581000419550596,
+          "deployed_mean_rmse_m": 0.00025679136478952696,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "mixed_stress": {
+          "acceptance_fraction": 0.90625,
+          "baseline_mean_rmse_m": 0.005387525949510308,
+          "deployed_improvement_fraction": 0.865208107851322,
+          "deployed_mean_rmse_m": 0.0007261948167345978,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "nominal_correlated": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006550453185890315,
+          "deployed_improvement_fraction": 0.9594657563076172,
+          "deployed_mean_rmse_m": 0.00026551766573242334,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "outlier_groups": {
+          "acceptance_fraction": 0.9375,
+          "baseline_mean_rmse_m": 0.005465474448374757,
+          "deployed_improvement_fraction": 0.8650530486746217,
+          "deployed_mean_rmse_m": 0.0007375491143549267,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "weak_identifiability": {
+          "acceptance_fraction": 0.984375,
+          "baseline_mean_rmse_m": 0.007712786507122092,
+          "deployed_improvement_fraction": 0.8768288696152207,
+          "deployed_mean_rmse_m": 0.0009499926324987016,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        }
+      },
+      "deployed_improvement_fraction": 0.9133403263593604,
+      "deployed_mean_rmse_m": 0.0005343110934364279,
+      "group_count": 384,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        -0.005880031301560466,
+        -0.005364677853835713
+      ],
+      "raw_mean_rmse_m": 0.0003915207677186756,
+      "risk_coverage": {
+        "lowest_risk_100_percent_rmse_m": 0.0003915207677186756,
+        "lowest_risk_25_percent_rmse_m": 0.00026727452225601737,
+        "lowest_risk_50_percent_rmse_m": 0.0002638232387594984,
+        "lowest_risk_75_percent_rmse_m": 0.0002684431392568124
+      },
+      "solver_admissible_fraction": 1.0
+    },
+    "P4_explicit_gauge_persistent_metric_anchor": {
+      "acceptance_fraction": 0.9661458333333334,
+      "accepted_coverage_90_mean": 0.9866352201257862,
+      "accepted_group_count": 371,
+      "accepted_predictive_width_rms_m": 0.0009356243963737737,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006165625497877009,
+      "by_scenario": {
+        "common_mode_bias": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.005748834568951904,
+          "deployed_improvement_fraction": 0.9541725477919238,
+          "deployed_mean_rmse_m": 0.0002634544414607792,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "large_gauge_uncertainty": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006128678327412677,
+          "deployed_improvement_fraction": 0.9584512879828087,
+          "deployed_mean_rmse_m": 0.00025463869087167146,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "mixed_stress": {
+          "acceptance_fraction": 0.921875,
+          "baseline_mean_rmse_m": 0.005387525949510308,
+          "deployed_improvement_fraction": 0.885244579608903,
+          "deployed_mean_rmse_m": 0.0006182478052039996,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "nominal_correlated": {
+          "acceptance_fraction": 1.0,
+          "baseline_mean_rmse_m": 0.006550453185890315,
+          "deployed_improvement_fraction": 0.9599317593014146,
+          "deployed_mean_rmse_m": 0.0002624651349370686,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "outlier_groups": {
+          "acceptance_fraction": 0.90625,
+          "baseline_mean_rmse_m": 0.005465474448374757,
+          "deployed_improvement_fraction": 0.8395149405713334,
+          "deployed_mean_rmse_m": 0.0008771269916532823,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        },
+        "weak_identifiability": {
+          "acceptance_fraction": 0.96875,
+          "baseline_mean_rmse_m": 0.007712786507122092,
+          "deployed_improvement_fraction": 0.8661321921051577,
+          "deployed_mean_rmse_m": 0.0010324938224693524,
+          "group_count": 64,
+          "harmful_accepted_count": 0
+        }
+      },
+      "deployed_improvement_fraction": 0.9105679575755579,
+      "deployed_mean_rmse_m": 0.0005514044810993588,
+      "group_count": 384,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        -0.005894167636403495,
+        -0.005335922232464959
+      ],
+      "raw_mean_rmse_m": 0.0003894795404130893,
+      "risk_coverage": {
+        "lowest_risk_100_percent_rmse_m": 0.0003894795404130893,
+        "lowest_risk_25_percent_rmse_m": 0.00025731009363234804,
+        "lowest_risk_50_percent_rmse_m": 0.0002577726897496001,
+        "lowest_risk_75_percent_rmse_m": 0.0002675322579845047
+      },
+      "solver_admissible_fraction": 1.0
+    }
+  },
+  "calibration": {
+    "B0_physical_fallback": {
+      "accepted_group_count": 0,
+      "baseline_mean_rmse_m": 0.007101421913734202,
+      "calibration_group_count": 48,
+      "deployed_mean_rmse_m": 0.007101421913734202,
+      "fallback_only": true,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "method_id": "B0_physical_fallback",
+      "risk_threshold": -1e+300
+    },
+    "B1_naive_last_frame_state": {
+      "accepted_group_count": 0,
+      "baseline_mean_rmse_m": 0.007101421913734202,
+      "calibration_group_count": 48,
+      "deployed_mean_rmse_m": 0.007101421913734202,
+      "fallback_only": true,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "method_id": "B1_naive_last_frame_state",
+      "risk_threshold": -1e+300
+    },
+    "P1_marginal_gauge_persistent": {
+      "accepted_group_count": 48,
+      "baseline_mean_rmse_m": 0.007101421913734202,
+      "calibration_group_count": 48,
+      "deployed_mean_rmse_m": 0.0009701684714512916,
+      "fallback_only": false,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "method_id": "P1_marginal_gauge_persistent",
+      "risk_threshold": 0.9472718537065475
+    },
+    "P2_explicit_gauge_framewise": {
+      "accepted_group_count": 48,
+      "baseline_mean_rmse_m": 0.007101421913734202,
+      "calibration_group_count": 48,
+      "deployed_mean_rmse_m": 0.0005987825101094582,
+      "fallback_only": false,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "method_id": "P2_explicit_gauge_framewise",
+      "risk_threshold": 0.737265425866642
+    },
+    "P3_explicit_gauge_persistent": {
+      "accepted_group_count": 48,
+      "baseline_mean_rmse_m": 0.007101421913734202,
+      "calibration_group_count": 48,
+      "deployed_mean_rmse_m": 0.0003737190202611287,
+      "fallback_only": false,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "method_id": "P3_explicit_gauge_persistent",
+      "risk_threshold": 0.6744605477155093
+    },
+    "P4_explicit_gauge_persistent_metric_anchor": {
+      "accepted_group_count": 48,
+      "baseline_mean_rmse_m": 0.007101421913734202,
+      "calibration_group_count": 48,
+      "deployed_mean_rmse_m": 0.00036392114200446327,
+      "fallback_only": false,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "method_id": "P4_explicit_gauge_persistent_metric_anchor",
+      "risk_threshold": 0.6665592651560721
+    }
+  },
+  "claim_boundary": "Controlled calibration/target-separated synthetic evidence only. A pass authorizes a fresh physical-object or acquisition-session experiment; it does not establish real-world Prob4D provider competence, calibrated deployment uncertainty, BayesianPhysTwin physical benefit on an independent cohort, or Causal4D intervention benefit.",
+  "configuration": {
+    "bias_mode_count": 2,
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 20260804,
+    "calibration_groups_per_scenario": 8,
+    "calibration_seed": 90420804,
+    "conditional_noise_std_m": 0.0015,
+    "frame_count": 4,
+    "guard_harmful_rate_at_most": 0.05,
+    "guard_minimum_accepted_groups": 4,
+    "harmful_margin_m": 0.0005,
+    "point_count": 24,
+    "query_progress": 1.25,
+    "scenarios": [
+      "nominal_correlated",
+      "common_mode_bias",
+      "outlier_groups",
+      "weak_identifiability",
+      "large_gauge_uncertainty",
+      "mixed_stress"
+    ],
+    "source_revision": "aa8ffc6541011d044561e09870569a14ab3f586f",
+    "state_count": 3,
+    "state_mode_maximum_m": 0.012,
+    "state_prior_std": 0.75,
+    "target_groups_per_scenario": 64,
+    "target_seed": 318420804,
+    "window_count": 2
+  },
+  "decision": {
+    "criteria": {
+      "all_rejections_exact_fallback": true,
+      "explicit_persistent_noninferior_to_marginal": true,
+      "harmful_accepted_rate_at_most_registered": true,
+      "mean_improvement_at_least_registered": true,
+      "paired_upper_bound_below_zero": true,
+      "worst_scenario_regression_at_most_registered": true
+    },
+    "method_decision": "advance-to-fresh-physical-object/session-gate",
+    "overall_passed": true,
+    "primary_method": "P3_explicit_gauge_persistent",
+    "reference_method": "B0_physical_fallback",
+    "worst_scenario_regression_fraction": 0.0
+  },
+  "prob4d_revision": "aa8ffc6541011d044561e09870569a14ab3f586f",
+  "protocol_id": "prob4d-bpt-controlled-decisive-v1",
+  "protocol_sha256": "921da8a6f14f9430b3f4861d68326d904f61b922e3aedd2b35882ea97bc63111",
+  "report_id": "c592807d62e9f5121acf85747432574601264160de67b15e9a1c8e48a12cc040",
+  "repository_revision": "04cc243aea82bfec1b8a2481ef99b38b357e4123",
+  "schema": "bayesian-phystwin-prob4d-controlled-decisive-report",
+  "schema_version": 1
+}

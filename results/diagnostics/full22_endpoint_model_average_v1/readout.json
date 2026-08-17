@@ -1,0 +1,346 @@
+{
+  "all_22_point_equal_case": {
+    "last_residual": {
+      "chamfer_distance_mm": 9.96824813274416,
+      "track_error_mm": 18.940923123757145
+    },
+    "model_average": {
+      "chamfer_distance_mm": 10.105072533037125,
+      "track_error_mm": 19.08469522634003
+    },
+    "model_average_anchor_guard": {
+      "chamfer_distance_mm": 10.247043455316872,
+      "track_error_mm": 19.254229616030717
+    },
+    "released_phystwin": {
+      "chamfer_distance_mm": 11.579260877226458,
+      "track_error_mm": 22.018638978870253
+    },
+    "selected_bayesian_anchor": {
+      "chamfer_distance_mm": 10.179761772459019,
+      "track_error_mm": 19.204636512369184
+    }
+  },
+  "claim_boundary": "Retrospective diagnostic on the released official 22-case PhysTwin cohort. The cohort and its development/confirmation split have already informed BayesianPhysTwin development. Results may diagnose point accuracy, raw predictive calibration, horizon degradation, and selective risk, but must not be promoted as fresh independent validation, calibrated deployment uncertainty, or a new state-of-the-art claim.",
+  "classification": "retrospective-non-claim-bearing-diagnostic",
+  "confirmation_19": {
+    "anchor_acceptance_fraction": 0.7894736842105263,
+    "case_count": 19,
+    "guard_diagnosis": {
+      "accepted_case_count": 15,
+      "accepted_point_equal_case": {
+        "last_residual": {
+          "chamfer_distance_mm": 10.41791187314311,
+          "track_error_mm": 21.201098919046505
+        },
+        "model_average": {
+          "chamfer_distance_mm": 10.588263477964668,
+          "track_error_mm": 21.358207308971522
+        },
+        "model_average_anchor_guard": {
+          "chamfer_distance_mm": 10.588263477964668,
+          "track_error_mm": 21.358207308971522
+        },
+        "released_phystwin": {
+          "chamfer_distance_mm": 12.164286550293365,
+          "track_error_mm": 24.725625783101616
+        },
+        "selected_bayesian_anchor": {
+          "chamfer_distance_mm": 10.52530584787896,
+          "track_error_mm": 21.348603884363328
+        }
+      },
+      "rejected_case_count": 4,
+      "rejected_cases": [
+        "double_lift_cloth_1",
+        "rope_double_hand",
+        "single_lift_dinosor",
+        "single_push_rope_1"
+      ],
+      "rejected_point_equal_case": {
+        "last_residual": {
+          "chamfer_distance_mm": 6.444610118606434,
+          "track_error_mm": 11.63920015658718
+        },
+        "model_average": {
+          "chamfer_distance_mm": 6.4327235044719755,
+          "track_error_mm": 11.745771936078032
+        },
+        "model_average_anchor_guard": {
+          "chamfer_distance_mm": 7.213563577010584,
+          "track_error_mm": 12.678211079376785
+        },
+        "released_phystwin": {
+          "chamfer_distance_mm": 7.213563577010584,
+          "track_error_mm": 12.678211079376785
+        },
+        "selected_bayesian_anchor": {
+          "chamfer_distance_mm": 7.213563577010584,
+          "track_error_mm": 12.678211079376785
+        }
+      }
+    },
+    "horizon_anchor_model_average_last_residual": {
+      "early": {
+        "last_residual": {
+          "chamfer_distance_mm": 6.985201852952782,
+          "track_error_mm": 14.879729534519116
+        },
+        "model_average": {
+          "chamfer_distance_mm": 7.111418121388433,
+          "track_error_mm": 14.968283992541247
+        },
+        "selected_bayesian_anchor": {
+          "chamfer_distance_mm": 7.355025546283107,
+          "track_error_mm": 15.416539944763757
+        }
+      },
+      "late": {
+        "last_residual": {
+          "chamfer_distance_mm": 12.260199025831776,
+          "track_error_mm": 22.883525391707177
+        },
+        "model_average": {
+          "chamfer_distance_mm": 12.399634975732694,
+          "track_error_mm": 23.10950849568614
+        },
+        "selected_bayesian_anchor": {
+          "chamfer_distance_mm": 12.395864069610495,
+          "track_error_mm": 22.9112942322054
+        }
+      },
+      "middle": {
+        "last_residual": {
+          "chamfer_distance_mm": 9.644408782215832,
+          "track_error_mm": 19.97854947749757
+        },
+        "model_average": {
+          "chamfer_distance_mm": 9.774488127231212,
+          "track_error_mm": 20.104919794485905
+        },
+        "selected_bayesian_anchor": {
+          "chamfer_distance_mm": 9.87157402007767,
+          "track_error_mm": 20.3942934051948
+        }
+      }
+    },
+    "model_average_calibration_by_horizon": {
+      "early": {
+        "coverage_90": 0.4545745390002539,
+        "mean_error_norm_mm": 8.509397471988345,
+        "mean_nees_over_dimension": 1170.2785644784653,
+        "mean_negative_log_likelihood": 1738.7921293559075,
+        "mean_predictive_std_mm": 2.3776332331850116,
+        "rms_error_norm_mm": 15.26765729786743
+      },
+      "late": {
+        "coverage_90": 0.3149813151584661,
+        "mean_error_norm_mm": 25.014992734786677,
+        "mean_nees_over_dimension": 3736.8063761980516,
+        "mean_negative_log_likelihood": 5590.55653942553,
+        "mean_predictive_std_mm": 4.947398472805065,
+        "rms_error_norm_mm": 33.898157187731904
+      },
+      "middle": {
+        "coverage_90": 0.3430705309881939,
+        "mean_error_norm_mm": 18.116844086001027,
+        "mean_nees_over_dimension": 3003.8817109980982,
+        "mean_negative_log_likelihood": 4490.510336458163,
+        "mean_predictive_std_mm": 3.822356036281628,
+        "rms_error_norm_mm": 25.79198118856454
+      }
+    },
+    "model_average_evidence_diagnostics": {
+      "mean_component_entropy_nats": {
+        "equal_case_mean": 0.11747158899375056,
+        "equal_case_median": 0.07360214569404784,
+        "maximum": 0.5058259658728392,
+        "minimum": 0.02156948798463383
+      },
+      "mean_zero_process_weight": {
+        "equal_case_mean": 0.1255402492067633,
+        "equal_case_median": 0.023882722148405894,
+        "maximum": 0.7573882277430034,
+        "minimum": 0.0007645607159630339
+      },
+      "median_between_model_covariance_fraction": {
+        "equal_case_mean": 0.00020693175385709455,
+        "equal_case_median": 2.9262325790258004e-07,
+        "maximum": 0.0018115945241548026,
+        "minimum": 0.0
+      },
+      "median_effective_component_count": {
+        "equal_case_mean": 1.0054503949816063,
+        "equal_case_median": 1.0000016486079029,
+        "maximum": 1.0830226603695723,
+        "minimum": 1.0
+      }
+    },
+    "model_average_selective_risk": {
+      "0.25": {
+        "mean_error_norm_mm": 7.372891137704492,
+        "rms_error_norm_mm": 11.350014175469632
+      },
+      "0.5": {
+        "mean_error_norm_mm": 10.405041210852913,
+        "rms_error_norm_mm": 15.721864168587715
+      },
+      "0.75": {
+        "mean_error_norm_mm": 13.529968470791502,
+        "rms_error_norm_mm": 20.758361585495518
+      },
+      "1.0": {
+        "mean_error_norm_mm": 16.6412797246003,
+        "rms_error_norm_mm": 25.72777745401168
+      }
+    },
+    "model_average_vs_anchor_calibration_contrast": {
+      "coverage_90_percentage_point_delta": -13.942632462756494,
+      "mean_error_percent": -5.795634919216496,
+      "mean_predictive_std_percent": -51.6415357783429,
+      "nees_over_dimension_ratio": 3.66038536948173,
+      "negative_log_likelihood_ratio": 3.697574259893682,
+      "rms_error_percent": -3.4180589766851677
+    },
+    "paired_case_bootstrap": {
+      "model_average_vs_last_residual": {
+        "chamfer_distance_mm": {
+          "bootstrap_probability_mean_improvement": 0.0038,
+          "candidate_win_count": 5,
+          "case_count": 19,
+          "lower_95_delta_mm": 0.028650061185949694,
+          "mean_delta_mm": 0.13198566398871367,
+          "median_delta_mm": 0.05729810624140533,
+          "tie_count": 0,
+          "upper_95_delta_mm": 0.26294281528601715
+        },
+        "track_error_mm": {
+          "bootstrap_probability_mean_improvement": 0.0532,
+          "candidate_win_count": 7,
+          "case_count": 19,
+          "lower_95_delta_mm": -0.026484364548137657,
+          "mean_delta_mm": 0.14646910351782394,
+          "median_delta_mm": 0.07172148968451544,
+          "tie_count": 0,
+          "upper_95_delta_mm": 0.34711021775573087
+        }
+      },
+      "model_average_vs_released_phystwin": {
+        "chamfer_distance_mm": {
+          "bootstrap_probability_mean_improvement": 1.0,
+          "candidate_win_count": 19,
+          "case_count": 19,
+          "lower_95_delta_mm": -2.0353084949121487,
+          "mean_delta_mm": -1.4086161250044673,
+          "median_delta_mm": -0.7305486670086958,
+          "tie_count": 0,
+          "upper_95_delta_mm": -0.836023073589122
+        },
+        "track_error_mm": {
+          "bootstrap_probability_mean_improvement": 1.0,
+          "candidate_win_count": 16,
+          "case_count": 19,
+          "lower_95_delta_mm": -4.1957487642669085,
+          "mean_delta_mm": -2.854791246586654,
+          "median_delta_mm": -2.632686262945888,
+          "tie_count": 0,
+          "upper_95_delta_mm": -1.5999950796240348
+        }
+      },
+      "model_average_vs_selected_bayesian_anchor": {
+        "chamfer_distance_mm": {
+          "bootstrap_probability_mean_improvement": 0.8527,
+          "candidate_win_count": 10,
+          "case_count": 19,
+          "lower_95_delta_mm": -0.3587588180084646,
+          "mean_delta_mm": -0.11468399151940999,
+          "median_delta_mm": -0.01200666043175546,
+          "tie_count": 0,
+          "upper_95_delta_mm": 0.09658933666782259
+        },
+        "track_error_mm": {
+          "bootstrap_probability_mean_improvement": 0.8532,
+          "candidate_win_count": 11,
+          "case_count": 19,
+          "lower_95_delta_mm": -0.5900383736574827,
+          "mean_delta_mm": -0.18872132653011037,
+          "median_delta_mm": -0.02712599526369895,
+          "tie_count": 0,
+          "upper_95_delta_mm": 0.1290586019691588
+        }
+      }
+    },
+    "point_equal_case": {
+      "last_residual": {
+        "chamfer_distance_mm": 9.581427293240653,
+        "track_error_mm": 19.188067600634014
+      },
+      "model_average": {
+        "chamfer_distance_mm": 9.713412957229362,
+        "track_error_mm": 19.33453670415184
+      },
+      "model_average_anchor_guard": {
+        "chamfer_distance_mm": 9.877800340921704,
+        "track_error_mm": 19.53083968168842
+      },
+      "released_phystwin": {
+        "chamfer_distance_mm": 11.122029082233833,
+        "track_error_mm": 22.189327950738498
+      },
+      "selected_bayesian_anchor": {
+        "chamfer_distance_mm": 9.828096948748778,
+        "track_error_mm": 19.523258030681955
+      }
+    },
+    "raw_predictive_calibration_overall": {
+      "model_average": {
+        "coverage_50": 0.21310360567698383,
+        "coverage_90": 0.3795856499111892,
+        "coverage_95": 0.4223620628789629,
+        "mean_error_norm_mm": 16.6412797246003,
+        "mean_nees": 7589.394921184714,
+        "mean_nees_over_dimension": 2529.798307061572,
+        "mean_negative_log_likelihood": 3779.116550477366,
+        "mean_predictive_std_mm": 3.667163436717626,
+        "rms_error_norm_mm": 25.72777745401168
+      },
+      "selected_bayesian_anchor": {
+        "coverage_50": 0.38910991787103294,
+        "coverage_90": 0.5190119745387541,
+        "coverage_95": 0.5422646466613052,
+        "mean_error_norm_mm": 17.6650834707392,
+        "mean_nees": 2073.3868582420027,
+        "mean_nees_over_dimension": 691.1289527473342,
+        "mean_negative_log_likelihood": 1022.052914925373,
+        "mean_predictive_std_mm": 7.583291768548977,
+        "rms_error_norm_mm": 26.638289913640282
+      }
+    }
+  },
+  "execution": {
+    "evaluated_pull_request_merge_revision": "054fedf3ac9c71299fe464ff3b62e68fc14d08e9",
+    "hosted_artifact_id": 8882742040,
+    "hosted_artifact_sha256": "3ecdf416c6bf534286aecdc4760f69a7c34ce5ecaaf5a4d17b62b932eb07138d",
+    "hosted_workflow_run_id": 30884863739,
+    "per_case_csv_sha256": "19184cfefe707ed49739a18ee667402cfea24b46297f0217d2edcd85d5fc3b31",
+    "pre_target_test_count": 48,
+    "pull_request_head_revision": "13161d3582b78949587606489f67e3a6782c3533",
+    "runner": "GitHub-hosted Ubuntu 24.04, Python 3.12.13, 2 CPUs",
+    "self_hosted_replication_status_at_readout": "queued",
+    "self_hosted_replication_workflow": "full22-model-average-science.yml",
+    "summary_sha256": "6b2baa1d1cddb941c7682aebc360e3fc9622bbd553849dbb95696c7afba7f672",
+    "target_execution_seconds_approximate": 178.9
+  },
+  "protocol_sha256": "8c4021f082b03ef761bc97300eeac11b6f3f92a2bdc52c1941020f6c1f340217",
+  "schema": "bayesian-phystwin-full22-endpoint-model-average-diagnostic-readout",
+  "schema_version": 1,
+  "scientific_conclusions": [
+    "The evidence-weighted endpoint model average improves the selected Bayesian anchor slightly in mean point prediction, but the paired case bootstrap intervals include zero.",
+    "The model average does not beat the last-supported-residual baseline; its Chamfer disadvantage is nonzero under the locked paired bootstrap.",
+    "The model-average gain over the selected anchor is concentrated in early and middle future horizons and disappears at the late horizon.",
+    "Reusing the frozen anchor validation guard is counterproductive for the model average because the largest model-average benefit occurs in the four cases rejected by that guard.",
+    "Raw predictive covariance is grossly overconfident for both posteriors and materially worse for the model average despite slightly better mean errors.",
+    "Cumulative per-track log evidence collapses the nominal 15-component average to effectively one component, leaving negligible between-model covariance.",
+    "The next scientific implementation should use development-only tempered or hierarchical evidence, a model-average-specific regret guard, and independent grouped calibration on fresh objects or sessions."
+  ]
+}

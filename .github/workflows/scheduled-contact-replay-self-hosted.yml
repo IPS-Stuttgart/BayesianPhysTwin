@@ -1,0 +1,85 @@
+name: Scheduled-contact replay self-hosted validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/scheduled-contact-replay-self-hosted.yml"
+      - "docs/causal4d_provider_v2.md"
+      - "docs/causal4d_scheduled_contact_replay_provider_v1.md"
+      - "src/bayesian_phystwin/causal4d_provider_v2.py"
+      - "src/bayesian_phystwin/contracts/__init__.py"
+      - "src/bayesian_phystwin/contracts/scheduled_replay.py"
+      - "tests/test_causal4d_provider_v2.py"
+      - "tests/test_scheduled_contact_replay_contract.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-contact-replay-self-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Immutable request/result contracts
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact same-repository pull-request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Create isolated development environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/scheduled-contact-replay-venv"
+          "$RUNNER_TEMP/scheduled-contact-replay-venv/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/scheduled-contact-replay-venv/bin/python" -m pip install -e ".[dev]"
+          "$RUNNER_TEMP/scheduled-contact-replay-venv/bin/python" -m pip check
+
+      - name: Check focused source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TEMP/scheduled-contact-replay-venv/bin/python"
+          "$python" -m ruff check \
+            src/bayesian_phystwin/contracts/scheduled_replay.py \
+            src/bayesian_phystwin/contracts/__init__.py \
+            src/bayesian_phystwin/causal4d_provider_v2.py \
+            tests/test_scheduled_contact_replay_contract.py
+          "$python" -m ruff format --check --diff \
+            src/bayesian_phystwin/contracts/scheduled_replay.py \
+            src/bayesian_phystwin/contracts/__init__.py \
+            src/bayesian_phystwin/causal4d_provider_v2.py \
+            tests/test_scheduled_contact_replay_contract.py
+
+      - name: Run provider and adversarial contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TEMP/scheduled-contact-replay-venv/bin/python"
+          "$python" -m pytest -q \
+            tests/test_scheduled_contact_replay_contract.py \
+            tests/test_causal4d_provider_v2.py \
+            tests/test_release_metadata.py
+
+      - name: Build and inspect the wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TEMP/scheduled-contact-replay-venv/bin/python"
+          wheelhouse="$RUNNER_TEMP/scheduled-contact-replay-wheelhouse"
+          mkdir -p "$wheelhouse"
+          "$python" -m build --wheel --outdir "$wheelhouse"
+          test "$(find "$wheelhouse" -maxdepth 1 -name '*.whl' | wc -l)" -eq 1

@@ -102,7 +102,7 @@ def load_released_phystwin_raw_track_map(
 ) -> ReleasedPhysTwinRawTrackMapV1:
     """Load released raw-track identities after hash-locking the legacy pickle."""
 
-    load_trusted_legacy_phystwin_pickle(
+    final_data = load_trusted_legacy_phystwin_pickle(
         final_data_path,
         expected_sha256=final_data_sha256,
         artifact_kind="mapping",
@@ -116,6 +116,7 @@ def load_released_phystwin_raw_track_map(
         final_data_path,
         raw_case_dir,
         config=config,
+        final_data_payload=final_data,
     )
     return ReleasedPhysTwinRawTrackMapV1(
         final_data_sha256=final_data_sha256,

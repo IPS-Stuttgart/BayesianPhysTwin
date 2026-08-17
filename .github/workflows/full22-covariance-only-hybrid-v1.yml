@@ -1,0 +1,295 @@
+name: Full-22 covariance-only hybrid v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/full22-covariance-only-hybrid-v1.yml"
+      - "docs/full22_covariance_only_hybrid_v1.md"
+      - "protocols/full22_covariance_only_hybrid_v1.json"
+      - "results/science/full22_covariance_only_hybrid_v1/**"
+      - "scripts/science/run_full22_covariance_only_hybrid_v1.py"
+      - "src/bayesian_phystwin/covariance_only_hybrid.py"
+      - "src/bayesian_phystwin/covariance_only_hybrid_analysis.py"
+      - "tests/test_covariance_only_hybrid.py"
+      - "tests/test_covariance_only_hybrid_adversarial.py"
+      - "tests/test_full22_covariance_only_hybrid_evidence_v1.py"
+      - "tests/test_full22_covariance_only_hybrid_v1.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: >-
+    full22-covariance-only-hybrid-v1-${{
+      github.event.pull_request.head.sha || github.sha
+    }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PROTOCOL: protocols/full22_covariance_only_hybrid_v1.json
+  SOURCE_TOURNAMENT_PROTOCOL: protocols/full22_discrepancy_candidate_tournament_v1.json
+  SOURCE_RUN_ID: "31410594302"
+  SOURCE_RUN_ATTEMPT: "1"
+  SOURCE_HEAD_SHA: c5d22a369f87a7ce2e10fcad532bcc5cc5207ff9
+  SOURCE_WORKFLOW_NAME: Full-22 discrepancy candidate tournament v1
+  SOURCE_WORKFLOW_PATH: .github/workflows/full22-discrepancy-candidate-tournament-v1.yml
+  SOURCE_ARTIFACT_ID: "9074451004"
+  SOURCE_ARTIFACT_NAME: bpt-full22-discrepancy-31410594302-1
+  SOURCE_ARTIFACT_DIGEST: sha256:22984bd34992ef7693c7577045c7496f8de2990641c3d2592ce230b9fbc97220
+  SOURCE_ARTIFACT_BYTES: "1893605659"
+  PROTOCOL_ID: 91c15957c8a71c579429c4245ccb2570f22ac6480dd5aebc9ddd73d1edb66b02
+
+jobs:
+  contracts:
+    name: Exact-mean covariance-only contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate implementation, protocol, and cross-fitting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            scripts/science/run_full22_covariance_only_hybrid_v1.py
+            src/bayesian_phystwin/covariance_only_hybrid.py
+            src/bayesian_phystwin/covariance_only_hybrid_analysis.py
+            tests/test_covariance_only_hybrid.py
+            tests/test_covariance_only_hybrid_adversarial.py
+            tests/test_full22_covariance_only_hybrid_evidence_v1.py
+            tests/test_full22_covariance_only_hybrid_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/covariance_only_hybrid.py \
+            src/bayesian_phystwin/covariance_only_hybrid_analysis.py \
+            scripts/science/run_full22_covariance_only_hybrid_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_covariance_only_hybrid.py \
+            tests/test_covariance_only_hybrid_adversarial.py \
+            tests/test_full22_covariance_only_hybrid_evidence_v1.py \
+            tests/test_full22_covariance_only_hybrid_v1.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_pr_ready.py
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["PROTOCOL"])
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          declared = payload.pop("protocol_id")
+          observed = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = os.environ["PROTOCOL_ID"]
+          if observed != declared or observed != expected:
+              raise SystemExit(
+                  f"covariance-only protocol changed: {observed} != {expected}"
+              )
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  analysis:
+    name: Cross-fitted covariance-only scientific analysis
+    needs: contracts
+    # The registered pull-request result is sealed. Reproduce the expensive
+    # analysis only through an explicit dispatch; PRs still validate contracts.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Check out exact analyzer revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Restore public PhysTwin trajectory subset
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/bayesian-phystwin/trajectory-evaluation-v1
+          key: >-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{
+            hashFiles('src/bayesian_phystwin/phystwin_data.py') }}
+          restore-keys: |
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-
+
+      - name: Install exact analysis environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev,data]"
+          python -m pip check
+
+      - name: Verify the immutable source run and artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"${run}")" = "${SOURCE_WORKFLOW_NAME}"
+          test "$(jq -r '.path' <<<"${run}")" = "${SOURCE_WORKFLOW_PATH}"
+          test "$(jq -r '.event' <<<"${run}")" = "pull_request"
+          test "$(jq -r '.head_sha' <<<"${run}")" = "${SOURCE_HEAD_SHA}"
+          test "$(jq -r '.status' <<<"${run}")" = "completed"
+          test "$(jq -r '.conclusion' <<<"${run}")" = "success"
+          test "$(jq -r '.run_attempt' <<<"${run}")" = \
+            "${SOURCE_RUN_ATTEMPT}"
+          test "$(jq -r '.repository.full_name' <<<"${run}")" = \
+            "${GITHUB_REPOSITORY}"
+
+          artifacts="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100")"
+          test "$(jq --arg name "${SOURCE_ARTIFACT_NAME}" \
+            '[.artifacts[] | select(.name == $name)] | length' \
+            <<<"${artifacts}")" = "1"
+          artifact="$(jq --arg name "${SOURCE_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name)' <<<"${artifacts}")"
+          test "$(jq -r '.id' <<<"${artifact}")" = "${SOURCE_ARTIFACT_ID}"
+          test "$(jq -r '.digest' <<<"${artifact}")" = \
+            "${SOURCE_ARTIFACT_DIGEST}"
+          test "$(jq -r '.size_in_bytes' <<<"${artifact}")" = \
+            "${SOURCE_ARTIFACT_BYTES}"
+          test "$(jq -r '.expired' <<<"${artifact}")" = "false"
+          test "$(jq -r '.workflow_run.id' <<<"${artifact}")" = \
+            "${SOURCE_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${artifact}")" = \
+            "${SOURCE_HEAD_SHA}"
+
+      - name: Download the exact sealed full-22 evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/full22-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Materialize the public scoring subset
+        shell: bash
+        run: |
+          set -euo pipefail
+          data_root="${HOME}/.cache/bayesian-phystwin/trajectory-evaluation-v1"
+          prefix_root="${RUNNER_TEMP}/full22-covariance-only-prefix"
+          python \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            prepare-prefix \
+            "${data_root}" \
+            "${prefix_root}" \
+            --protocol "${SOURCE_TOURNAMENT_PROTOCOL}" \
+            --force \
+            > "${RUNNER_TEMP}/prepare-prefix.json"
+          echo "DATA_ROOT=${data_root}" >> "${GITHUB_ENV}"
+
+      - name: Run the exact-mean covariance-only experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          result_root="${RUNNER_TEMP}/full22-covariance-only-result"
+          python scripts/science/run_full22_covariance_only_hybrid_v1.py \
+            "${RUNNER_TEMP}/full22-source" \
+            "${DATA_ROOT}" \
+            "${result_root}" \
+            --protocol "${PROTOCOL}" \
+            --analyzer-revision "$(git rev-parse HEAD)" \
+            --source-run-id "${SOURCE_RUN_ID}" \
+            --source-run-attempt "${SOURCE_RUN_ATTEMPT}" \
+            --source-artifact-id "${SOURCE_ARTIFACT_ID}" \
+            --source-artifact-name "${SOURCE_ARTIFACT_NAME}" \
+            --source-artifact-digest "${SOURCE_ARTIFACT_DIGEST}" \
+            --force
+          echo "RESULT_ROOT=${result_root}" >> "${GITHUB_ENV}"
+          test "$(jq -r '.claim_authorized' \
+            "${result_root}/summary.json")" = "false"
+          test "$(jq -r '.selection_authorized' \
+            "${result_root}/summary.json")" = "false"
+          test "$(jq -r '.promotion_authorized' \
+            "${result_root}/summary.json")" = "false"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Publish scientific job summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "${RESULT_ROOT:-}/summary.json" ]]; then
+            {
+              echo "### Full-22 covariance-only hybrid"
+              echo
+              jq -r '
+                "- Conclusion: `" + .summary.primary_conclusion + "`",
+                "- Full-source donor: `" + .full_source_fit.selected_donor + "`",
+                "- Full-source scales: `" + (.full_source_fit.selected_scales | tostring) + "`",
+                "- Exact-mean cases: `" + (.summary.exact_mean_identity_case_count | tostring) + "`",
+                "- Claim authorized: `false`"
+              ' "${RESULT_ROOT}/summary.json"
+            } >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Scientific result was not produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact covariance-only evidence
+        if: always() && env.RESULT_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: >-
+            full22-covariance-only-hybrid-v1-${{
+            github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.RESULT_ROOT }}
+          if-no-files-found: error
+          retention-days: 180

@@ -1,7 +1,7 @@
 # Causal4D Repository Migration
 
 Causal4D is maintained at
-[FlorianPfaff/Causal4D](https://github.com/FlorianPfaff/Causal4D).
+[IPS-Stuttgart/Causal4D](https://github.com/IPS-Stuttgart/Causal4D).
 
 The implementation, public-data adapters, tests, protocol configurations,
 remote runners, and frozen Causal4D evidence were extracted with their Git
@@ -23,4 +23,3 @@ following integration diagnostics also moved:
 Historical Bayesian-PhysTwin tags remain immutable. In particular,
 `v0.3.0-causal4d-aip` still identifies the original monorepo milestone, while
 new Causal4D development and releases use the standalone repository.
-

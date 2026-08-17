@@ -1,0 +1,308 @@
+name: PokeFlex public evaluation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/pokeflex-public-evaluation.yml"
+      - "src/bayesian_phystwin/cli/pokeflex_public_evaluation.py"
+      - "src/bayesian_phystwin/cli/experiments.py"
+      - "src/bayesian_phystwin/cli/_command_inventory.py"
+      - "src/bayesian_phystwin/pokeflex_*.py"
+      - "configs/sota/pokeflex_*.json"
+      - "scripts/remote/run_pokeflex_*.py"
+      - "tests/test_pokeflex_*.py"
+      - "docs/pokeflex_public_evaluation_workflow.md"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Evaluation boundary
+        required: true
+        default: contracts
+        type: choice
+        options:
+          - contracts
+          - source-validation
+      dataset_root:
+        description: Extracted PokeFlex root; falls back to POKEFLEX_DATA_ROOT
+        required: false
+        type: string
+      upstream_checkout:
+        description: Exact PokeFlex reconstruction checkout; falls back to repository variable
+        required: false
+        type: string
+      checkpoint_root:
+        description: Released Kinect checkpoint directory; falls back to repository variable
+        required: false
+        type: string
+      python_executable:
+        description: Python with torch, pyvista, and trimesh; falls back to repository variable
+        required: false
+        type: string
+      take_ids:
+        description: Optional comma-separated subset of the frozen source panel
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-public-evaluation-${{ github.ref }}-${{ inputs.profile || 'contracts' }}
+  cancel-in-progress: false
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Registry and custody contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install contract environment
+        run: python -m pip install -e ".[dev,graph,vision]"
+
+      - name: Verify registered PokeFlex command
+        shell: bash
+        run: |
+          set -euo pipefail
+          bpt commands describe evaluate-pokeflex-public --json \
+            | tee pokeflex-command.json
+          bpt experiment run evaluate-pokeflex-public --profile contracts \
+            | tee pokeflex-contract.json
+
+      - name: Run focused contracts
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/cli/pokeflex_public_evaluation.py \
+            tests/test_pokeflex_public_evaluation_cli.py \
+            tests/test_pokeflex_public_evaluation_workflow.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/cli/pokeflex_public_evaluation.py \
+            tests/test_pokeflex_public_evaluation_cli.py \
+            tests/test_pokeflex_public_evaluation_workflow.py
+          python -m pytest -q \
+            tests/test_command_registry.py \
+            tests/test_cli_main.py \
+            tests/test_pokeflex_registration_protocol.py \
+            tests/test_pokeflex_independent_depth_source_validation_protocol.py \
+            tests/test_pokeflex_public_evaluation_cli.py \
+            tests/test_pokeflex_public_evaluation_workflow.py
+
+      - name: Upload contract evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pokeflex-public-contract-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            pokeflex-command.json
+            pokeflex-contract.json
+          if-no-files-found: error
+          retention-days: 30
+
+  source-validation:
+    name: Frozen source-only public evaluation
+    needs: contracts
+    if: github.event_name == 'workflow_dispatch' && inputs.profile == 'source-validation'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 720
+    env:
+      INPUT_DATASET_ROOT: ${{ inputs.dataset_root }}
+      INPUT_UPSTREAM_CHECKOUT: ${{ inputs.upstream_checkout }}
+      INPUT_CHECKPOINT_ROOT: ${{ inputs.checkpoint_root }}
+      INPUT_PYTHON: ${{ inputs.python_executable }}
+      INPUT_TAKE_IDS: ${{ inputs.take_ids }}
+      VAR_DATASET_ROOT: ${{ vars.POKEFLEX_DATA_ROOT }}
+      VAR_UPSTREAM_CHECKOUT: ${{ vars.POKEFLEX_UPSTREAM_CHECKOUT }}
+      VAR_CHECKPOINT_ROOT: ${{ vars.POKEFLEX_CHECKPOINT_ROOT }}
+      VAR_PYTHON: ${{ vars.POKEFLEX_PYTHON }}
+    steps:
+      - name: Check out exact evaluation revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve isolated paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          data_root="${INPUT_DATASET_ROOT:-${VAR_DATASET_ROOT:-}}"
+          upstream_checkout="${INPUT_UPSTREAM_CHECKOUT:-${VAR_UPSTREAM_CHECKOUT:-}}"
+          checkpoint_root="${INPUT_CHECKPOINT_ROOT:-${VAR_CHECKPOINT_ROOT:-}}"
+          python_bin="${INPUT_PYTHON:-${VAR_PYTHON:-python3}}"
+          for value in data_root upstream_checkout checkpoint_root; do
+            if [[ -z "${!value}" ]]; then
+              echo "::error title=Missing PokeFlex path::${value} was not supplied as an input or repository variable"
+              exit 1
+            fi
+          done
+          root="${RUNNER_TEMP}/pokeflex-public-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          mkdir -p "${root}/evidence" "${root}/output"
+          {
+            echo "POKEFLEX_DATA_ROOT=${data_root}"
+            echo "POKEFLEX_UPSTREAM_CHECKOUT=${upstream_checkout}"
+            echo "POKEFLEX_CHECKPOINT_ROOT=${checkpoint_root}"
+            echo "POKEFLEX_BASE_PYTHON=${python_bin}"
+            echo "POKEFLEX_RUN_ROOT=${root}"
+            echo "POKEFLEX_EVIDENCE_ROOT=${root}/evidence"
+            echo "POKEFLEX_OUTPUT_ROOT=${root}/output"
+            echo "POKEFLEX_VENV=${root}/venv"
+          } >> "${GITHUB_ENV}"
+
+      - name: Create isolated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${POKEFLEX_BASE_PYTHON}" -m venv --system-site-packages "${POKEFLEX_VENV}"
+          echo "${POKEFLEX_VENV}/bin" >> "${GITHUB_PATH}"
+          "${POKEFLEX_VENV}/bin/python" -m pip install -e ".[dev,graph,vision]"
+          "${POKEFLEX_VENV}/bin/python" - <<'PY'
+          import cv2
+          import numpy
+          import pyvista
+          import scipy
+          import torch
+          import trimesh
+
+          if not torch.cuda.is_available():
+              raise SystemExit("PokeFlex runtime cannot see CUDA")
+          for module in (cv2, numpy, pyvista, scipy, torch, trimesh):
+              print(f"{module.__name__}={module.__version__}")
+          PY
+
+      - name: Record environment without dataset contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader
+          } | tee "${POKEFLEX_EVIDENCE_ROOT}/environment.txt"
+          bpt commands describe evaluate-pokeflex-public --json \
+            > "${POKEFLEX_EVIDENCE_ROOT}/command.json"
+          bpt experiment run evaluate-pokeflex-public --profile contracts \
+            > "${POKEFLEX_EVIDENCE_ROOT}/contract.json"
+
+      - name: Execute frozen source-only panel
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            experiment run evaluate-pokeflex-public
+            --profile source-validation
+            --dataset-root "${POKEFLEX_DATA_ROOT}"
+            --output-root "${POKEFLEX_OUTPUT_ROOT}"
+            --upstream-checkout "${POKEFLEX_UPSTREAM_CHECKOUT}"
+            --checkpoint-root "${POKEFLEX_CHECKPOINT_ROOT}"
+          )
+          if [[ -n "${INPUT_TAKE_IDS}" ]]; then
+            IFS=',' read -ra take_ids <<< "${INPUT_TAKE_IDS}"
+            for take_id in "${take_ids[@]}"; do
+              take_id="${take_id//[[:space:]]/}"
+              if [[ -n "${take_id}" ]]; then
+                args+=(--take-id "${take_id}")
+              fi
+            done
+          fi
+          bpt "${args[@]}" \
+            2>&1 | tee "${POKEFLEX_EVIDENCE_ROOT}/console.log"
+
+      - name: Verify compact evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["POKEFLEX_OUTPUT_ROOT"])
+          manifest = json.loads((root / "execution_manifest.json").read_text())
+          summary = json.loads((root / "evaluation_summary.json").read_text())
+          progress = json.loads(
+              (root / "source_validation_progress_v2.json").read_text()
+          )
+          if manifest["profile"] != "source-validation":
+              raise SystemExit("PokeFlex execution profile changed")
+          if manifest["replacement_allowed"] is not False:
+              raise SystemExit("PokeFlex execution permits replacement")
+          if progress["replacement_allowed"] is not False:
+              raise SystemExit("PokeFlex progress permits replacement")
+          if summary["record_count"] != len(manifest["selected_take_ids"]):
+              raise SystemExit("PokeFlex result does not account for every take")
+          if summary["execution_manifest_sha256"] != manifest["manifest_sha256"]:
+              raise SystemExit("PokeFlex execution manifest identity changed")
+          if not summary["run_complete"]:
+              raise SystemExit("PokeFlex source run is incomplete")
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+          find "${POKEFLEX_OUTPUT_ROOT}" -maxdepth 1 -type f -name '*.json' \
+            -print0 | sort -z | xargs -0 sha256sum \
+            > "${POKEFLEX_EVIDENCE_ROOT}/SHA256SUMS"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Publish scoped result
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### PokeFlex public source evaluation"
+            echo
+            echo "This run is source-only and retrospective/exploratory."
+            echo "It is not the official-18 comparison, prospective confirmation, or a SOTA claim."
+            if [[ -f "${POKEFLEX_OUTPUT_ROOT}/evaluation_summary.json" ]]; then
+              echo
+              echo '```json'
+              cat "${POKEFLEX_OUTPUT_ROOT}/evaluation_summary.json"
+              echo '```'
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload compact evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pokeflex-public-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.POKEFLEX_EVIDENCE_ROOT }}/environment.txt
+            ${{ env.POKEFLEX_EVIDENCE_ROOT }}/command.json
+            ${{ env.POKEFLEX_EVIDENCE_ROOT }}/contract.json
+            ${{ env.POKEFLEX_EVIDENCE_ROOT }}/console.log
+            ${{ env.POKEFLEX_EVIDENCE_ROOT }}/SHA256SUMS
+            ${{ env.POKEFLEX_OUTPUT_ROOT }}/execution_manifest.json
+            ${{ env.POKEFLEX_OUTPUT_ROOT }}/source_validation_progress_v2.json
+            ${{ env.POKEFLEX_OUTPUT_ROOT }}/evaluation_summary.json
+            ${{ env.POKEFLEX_OUTPUT_ROOT }}/source_validation_analysis.json
+          if-no-files-found: warn
+          retention-days: 30

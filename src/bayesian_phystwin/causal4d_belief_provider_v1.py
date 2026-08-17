@@ -33,23 +33,60 @@ CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS = {
 }
 
 
+def _real_float64_array(value: object, *, name: str) -> np.ndarray:
+    try:
+        raw = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError(f"{name} must contain real numeric values") from error
+    if raw.dtype.kind not in "iuf":
+        raise ValueError(f"{name} must contain real numeric values")
+    return np.asarray(raw, dtype=np.float64)
+
+
+def _validated_boolean_mask(
+    value: object,
+    *,
+    expected_shape: tuple[int, ...],
+) -> np.ndarray:
+    try:
+        raw = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("valid must contain booleans or exact 0/1 values") from error
+    if raw.shape != expected_shape:
+        raise ValueError("valid must match the residual frame and track dimensions")
+    if raw.dtype.kind == "b":
+        return np.array(raw, dtype=bool, copy=True, order="C")
+    if raw.dtype.kind not in "iuf":
+        raise ValueError("valid must contain booleans or exact 0/1 values")
+    numeric = np.asarray(raw, dtype=np.float64)
+    if not np.all(np.isfinite(numeric)) or not np.all(
+        (numeric == 0.0) | (numeric == 1.0)
+    ):
+        raise ValueError("valid must contain booleans or exact 0/1 values")
+    return numeric.astype(bool)
+
+
 def _validated_inputs(
     residual_m: np.ndarray,
     valid: np.ndarray,
     *,
     end_frame: int,
 ) -> tuple[np.ndarray, np.ndarray, int]:
-    residual = np.asarray(residual_m, dtype=np.float64)
-    validity = np.asarray(valid, dtype=bool)
+    residual = _real_float64_array(residual_m, name="residual_m")
     if residual.ndim != 3 or residual.shape[2:] != (3,) or residual.shape[1] < 1:
         raise ValueError("residual_m must have shape (T, N>=1, 3)")
-    if validity.shape != residual.shape[:2]:
-        raise ValueError("valid must match the residual frame and track dimensions")
+    validity = _validated_boolean_mask(
+        valid,
+        expected_shape=residual.shape[:2],
+    )
     if not np.all(np.isfinite(residual)):
         raise ValueError("residual_m must contain only finite values")
-    frame_stop = int(end_frame)
-    if isinstance(end_frame, bool) or frame_stop != end_frame:
+    if isinstance(end_frame, (bool, np.bool_)) or not isinstance(
+        end_frame,
+        (int, np.integer),
+    ):
         raise ValueError("end_frame must be an integer")
+    frame_stop = int(end_frame)
     if not 0 < frame_stop <= len(residual):
         raise ValueError("end_frame must lie inside the residual sequence")
     return residual, validity, frame_stop

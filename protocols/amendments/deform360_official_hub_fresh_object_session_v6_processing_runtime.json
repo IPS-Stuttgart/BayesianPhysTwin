@@ -1,0 +1,73 @@
+{
+  "claim_boundary": "Technical completion of the already-declared Deform360 frame-zero processing runtime. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "deform360_pyproject_file_sha256": "0ccfe6a386c184613191ccdaa8f2912bc3c148a7dda9c9f126959301d250232e",
+    "deform360_repository": "lhy0807/deform360",
+    "deform360_repository_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "gsplat_version": "1.4.0",
+    "install_target": "_deform360_physical[processing]",
+    "nerfstudio_version": "1.1.5",
+    "required_imports": [
+      "nerfstudio.configs.method_configs",
+      "nerfstudio.scripts.exporter",
+      "gsplat"
+    ],
+    "requirements_processing_git_file_used": false
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:6d24e7d63b4b6b9ae977fc048a9aee21cfefcabb86ff78730777ffd4161620f7",
+    "artifact_id": 9115032023,
+    "error_message": "'nerfstudio.configs.method_configs' is required for the reconstruct stage",
+    "error_type": "ImportError",
+    "execution_receipt_id": "8c7f87d82915dc83a89db6ef2cfab365d83c6b4ef2a186dd5b60a56bccbc0f8d",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "selector_api_repair_activated": true,
+    "source_prediction_seal_count": 0,
+    "source_revision": "5c8a121580ddff2d2c03ddbe6a75b1090b713dbf",
+    "terminal_stage": "frame-zero:026-sock-cloth-ep0007",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31526029495
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_selector_api_repair_id": "5502830e01585cb1bb208d2d49e05d1f5e1d164dd707c5ff291038949dd0917c",
+  "repair_id": "15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "deform360_processing_dependencies_completed": true,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "replacement_allowed": false,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-processing-runtime-repair",
+  "schema_version": 1
+}

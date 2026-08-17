@@ -9,10 +9,16 @@ on:
       - "tests/fixtures/prob4d_joint_observation_v1.json"
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_three_repository_workflow.py"
+      - "tests/test_three_repository_golden_path_artifacts_v1.py"
+      - "tests/test_endpoint_model_average.py"
+      - "tests/test_prospective_prob4d_update.py"
       - "docs/three_repository_golden_path.md"
+      - "docs/prospective_belief_updates_v1.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_graph_provider_v1.py"
@@ -22,6 +28,8 @@ on:
       - "src/bayesian_phystwin/phystwin/**"
       - "src/bayesian_phystwin/cli/provider_manifest.py"
       - "src/bayesian_phystwin/evidence_policy.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "src/bayesian_phystwin/prospective_prob4d_update.py"
       - "src/bayesian_phystwin/observation_belief.py"
       - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
       - "src/bayesian_phystwin/prob4d_causal_lineage.py"
@@ -33,6 +41,7 @@ on:
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
       - "src/bayesian_phystwin/run_manifest_v2.py"
+      - "src/bayesian_phystwin/three_repository_golden_path_artifacts_v1.py"
   push:
     branches: [main]
     paths:
@@ -42,10 +51,16 @@ on:
       - "tests/fixtures/prob4d_joint_observation_v1.json"
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_three_repository_workflow.py"
+      - "tests/test_three_repository_golden_path_artifacts_v1.py"
+      - "tests/test_endpoint_model_average.py"
+      - "tests/test_prospective_prob4d_update.py"
       - "docs/three_repository_golden_path.md"
+      - "docs/prospective_belief_updates_v1.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_graph_provider_v1.py"
@@ -55,6 +70,8 @@ on:
       - "src/bayesian_phystwin/phystwin/**"
       - "src/bayesian_phystwin/cli/provider_manifest.py"
       - "src/bayesian_phystwin/evidence_policy.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "src/bayesian_phystwin/prospective_prob4d_update.py"
       - "src/bayesian_phystwin/observation_belief.py"
       - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
       - "src/bayesian_phystwin/prob4d_causal_lineage.py"
@@ -66,6 +83,11 @@ on:
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
       - "src/bayesian_phystwin/run_manifest_v2.py"
+      - "src/bayesian_phystwin/three_repository_golden_path_artifacts_v1.py"
+  repository_dispatch:
+    types:
+      - prob4d-compatibility
+      - causal4d-compatibility
   workflow_dispatch:
     inputs:
       prob4d_ref:
@@ -83,8 +105,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: three-repository-golden-path-${{ github.workflow }}-${{ github.ref }}
+  group: >-
+    three-repository-golden-path-${{ github.workflow }}-${{ github.ref }}-
+    ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}-
+    ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
   cancel-in-progress: true
+
+env:
+  PROB4D_REF: >-
+    ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}
+  CAUSAL4D_REF: >-
+    ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
+  PROB4D_CHECKOUT_REPOSITORY: IPS-Stuttgart/Prob4D
 
 jobs:
   consumer-contract-fixture:
@@ -93,21 +125,21 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Check out Bayesian-PhysTwin
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: bayesian-phystwin
           persist-credentials: false
 
       - name: Check out public Causal4D consumer
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: FlorianPfaff/Causal4D
-          ref: ${{ inputs.causal4d_ref || 'main' }}
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_REF }}
           path: causal4d
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -125,7 +157,8 @@ jobs:
         run: |
           python -m pytest -q \
             bayesian-phystwin/tests/test_prob4d_joint_contract_fixture.py \
-            bayesian-phystwin/tests/test_prob4d_causal_lineage.py
+            bayesian-phystwin/tests/test_prob4d_causal_lineage.py \
+            bayesian-phystwin/tests/test_three_repository_workflow.py
 
       - name: Validate the Causal4D consumer fixture
         run: |
@@ -139,9 +172,11 @@ jobs:
           {
             echo "### Always-executed consumer contract fixture"
             echo
-            echo "Bayesian-PhysTwin and Causal4D independently validated the checked-in observation fixture."
-            echo "This detects consumer/schema drift but does not claim that the"
-            echo "current private Prob4D revision executed."
+            echo "BayesianPhysTwin and Causal4D independently validated the checked-in observation fixture."
+            echo "This detects consumer/schema drift but does not replace the"
+            echo "installed-wheel Prob4D -> BayesianPhysTwin -> Causal4D gate."
+            echo
+            echo "Causal4D ref: \`${CAUSAL4D_REF}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   installed-wheel-golden-path:
@@ -149,66 +184,31 @@ jobs:
     needs: consumer-contract-fixture
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    env:
-      PROB4D_READ_TOKEN: ${{ secrets.PROB4D_READ_TOKEN }}
     steps:
-      - name: Report unavailable Prob4D credential for external forks
-        if: >-
-          env.PROB4D_READ_TOKEN == '' &&
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name != github.repository
-        shell: bash
-        run: |
-          echo "::warning title=Credentialed three-repository gate unavailable for external fork::" \
-            "GitHub withholds PROB4D_READ_TOKEN from fork pull requests."
-          {
-            echo "### Credentialed three-repository gate unavailable"
-            echo
-            echo "GitHub withholds repository secrets from external-fork pull requests."
-            echo "The always-executed consumer fixture passed separately, but"
-            echo "no current-Prob4D evidence is admitted."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Reject missing Prob4D credential on trusted events
-        if: >-
-          env.PROB4D_READ_TOKEN == '' &&
-          (github.event_name != 'pull_request' ||
-           github.event.pull_request.head.repo.full_name == github.repository)
-        shell: bash
-        run: |
-          echo "::error title=Three-repository gate unavailable::" \
-            "PROB4D_READ_TOKEN is required for trusted pull requests, main, scheduled, and manual runs."
-          exit 1
-
       - name: Check out Bayesian-PhysTwin
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: bayesian-phystwin
           persist-credentials: false
 
-      - name: Check out Prob4D
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/checkout@v7
+      - name: Check out public Prob4D producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: FlorianPfaff/Prob4D
-          ref: ${{ inputs.prob4d_ref || 'main' }}
+          repository: ${{ env.PROB4D_CHECKOUT_REPOSITORY }}
+          ref: ${{ env.PROB4D_REF }}
           path: prob4d
-          token: ${{ env.PROB4D_READ_TOKEN }}
           persist-credentials: false
 
-      - name: Check out Causal4D
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/checkout@v7
+      - name: Check out public Causal4D consumer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: FlorianPfaff/Causal4D
-          ref: ${{ inputs.causal4d_ref || 'main' }}
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_REF }}
           path: causal4d
           persist-credentials: false
 
       - name: Set up Python
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -218,9 +218,294 @@ jobs:
             causal4d/pyproject.toml
 
       - name: Build, install, and execute the isolated golden path
-        if: env.PROB4D_READ_TOKEN != ''
+        env:
+          THREE_REPOSITORY_EVIDENCE_OUTPUT: >-
+            ${{ runner.temp }}/three-repository-golden-path-evidence
         run: |
           bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
             bayesian-phystwin \
             prob4d \
             causal4d
+
+      - name: Validate and summarize the generated evidence bundle
+        env:
+          EVIDENCE_ROOT: >-
+            ${{ runner.temp }}/three-repository-golden-path-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def load_json(path):
+              def pairs_hook(pairs):
+                  result = {}
+                  for key, value in pairs:
+                      if key in result:
+                          raise SystemExit(f"duplicate JSON key: {key}")
+                      result[key] = value
+                  return result
+
+              def reject_constant(value):
+                  raise SystemExit(f"non-finite JSON constant: {value}")
+
+              with path.open("r", encoding="utf-8") as stream:
+                  return json.load(
+                      stream,
+                      object_pairs_hook=pairs_hook,
+                      parse_constant=reject_constant,
+                  )
+
+          def canonical_id(value):
+              return hashlib.sha256(
+                  json.dumps(
+                      value,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  ).encode("utf-8")
+              ).hexdigest()
+
+          def require_digest(value, name):
+              if (
+                  type(value) is not str
+                  or len(value) != 64
+                  or any(character not in "0123456789abcdef" for character in value)
+              ):
+                  raise SystemExit(f"{name} is not a lowercase SHA-256 digest")
+              return value
+
+          def validate_content_id(record, id_field, name):
+              expected = require_digest(record.get(id_field), name)
+              descriptor = {
+                  key: value
+                  for key, value in record.items()
+                  if key != id_field
+              }
+              if expected != canonical_id(descriptor):
+                  raise SystemExit(f"{name} does not match its payload")
+              return expected
+
+          def validate_array(record, name):
+              if set(record) != {
+                  "array_id",
+                  "dtype",
+                  "shape",
+                  "nbytes",
+                  "payload_sha256",
+              }:
+                  raise SystemExit(f"{name} array identity fields changed")
+              require_digest(record["payload_sha256"], f"{name} payload")
+              validate_content_id(record, "array_id", f"{name} array ID")
+
+          def validate_selection(record, decision):
+              if record.get("decision") != decision:
+                  raise SystemExit(f"{decision} artifact has wrong decision")
+              validate_content_id(record, "artifact_id", f"{decision} artifact ID")
+              for field in (
+                  "observation_artifact_id",
+                  "twin_belief_id",
+                  "physical_posterior_id",
+                  "provider_manifest_id",
+                  "run_manifest_id",
+                  "evidence_fingerprint",
+              ):
+                  require_digest(record.get(field), f"{decision} {field}")
+              for field in (
+                  "baseline_identity",
+                  "candidate_identity",
+                  "selected_identity",
+              ):
+                  validate_array(record[field], f"{decision} {field}")
+
+          root = Path(os.environ["EVIDENCE_ROOT"]).resolve()
+          expected_files = {
+              "accepted-selection.json",
+              "exact-prob4d-observation.npz",
+              "golden-path-bundle.json",
+              "lineage-bound-physical-posterior.npz",
+              "lineage-bound-twin-belief.npz",
+              "profile-bound.npz",
+              "rejected-selection.json",
+              "run-manifest-v2.json",
+          }
+          actual_files = {
+              path.name for path in root.iterdir() if path.is_file()
+          }
+          if actual_files != expected_files:
+              raise SystemExit(
+                  "golden-path evidence roster changed: "
+                  f"missing={sorted(expected_files - actual_files)}, "
+                  f"extra={sorted(actual_files - expected_files)}"
+              )
+
+          manifest = load_json(root / "run-manifest-v2.json")
+          accepted = load_json(root / "accepted-selection.json")
+          rejected = load_json(root / "rejected-selection.json")
+          bundle = load_json(root / "golden-path-bundle.json")
+
+          manifest_id = validate_content_id(
+              manifest,
+              "manifest_id",
+              "run manifest ID",
+          )
+          evidence_fingerprint = require_digest(
+              manifest.get("evidence_fingerprint"),
+              "evidence fingerprint",
+          )
+          scientific_descriptor = {
+              key: value
+              for key, value in manifest.items()
+              if key not in {
+                  "manifest_id",
+                  "evidence_fingerprint",
+                  "created_utc",
+                  "notes",
+              }
+          }
+          if evidence_fingerprint != canonical_id(scientific_descriptor):
+              raise SystemExit(
+                  "evidence fingerprint does not match its payload"
+              )
+
+          for artifact in [
+              *manifest.get("inputs", []),
+              *manifest.get("outputs", []),
+          ]:
+              artifact_path = root / artifact["path"]
+              if not artifact_path.is_file():
+                  raise SystemExit(
+                      f"manifest artifact is missing: {artifact['path']}"
+                  )
+              data = artifact_path.read_bytes()
+              if len(data) != artifact["size_bytes"]:
+                  raise SystemExit(
+                      f"manifest artifact size changed: {artifact['path']}"
+                  )
+              if hashlib.sha256(data).hexdigest() != artifact["sha256"]:
+                  raise SystemExit(
+                      f"manifest artifact digest changed: {artifact['path']}"
+                  )
+
+          validate_selection(accepted, "accepted")
+          validate_selection(rejected, "rejected")
+          bundle_id = validate_content_id(
+              bundle,
+              "bundle_id",
+              "bundle ID",
+          )
+          if bundle.get("accepted") != accepted:
+              raise SystemExit("accepted record does not match the bundle")
+          if bundle.get("rejected") != rejected:
+              raise SystemExit("rejected record does not match the bundle")
+
+          shared_fields = (
+              "case_id",
+              "protocol_id",
+              "observation_artifact_id",
+              "twin_belief_id",
+              "physical_posterior_id",
+              "provider_manifest_id",
+              "run_manifest_id",
+              "evidence_fingerprint",
+              "repository_revisions",
+              "wheel_sha256",
+              "package_versions",
+              "baseline_identity",
+              "candidate_identity",
+          )
+          for field in shared_fields:
+              if accepted[field] != rejected[field]:
+                  raise SystemExit(
+                      f"accepted/rejected artifacts disagree on {field}"
+                  )
+          if accepted["run_manifest_id"] != manifest_id:
+              raise SystemExit("accepted artifact changed manifest binding")
+          if rejected["run_manifest_id"] != manifest_id:
+              raise SystemExit("rejected artifact changed manifest binding")
+          if accepted["evidence_fingerprint"] != evidence_fingerprint:
+              raise SystemExit(
+                  "accepted artifact changed evidence fingerprint"
+              )
+          if rejected["evidence_fingerprint"] != evidence_fingerprint:
+              raise SystemExit(
+                  "rejected artifact changed evidence fingerprint"
+              )
+          if accepted.get("candidate_accepted") is not True:
+              raise SystemExit("accepted artifact rejects the candidate")
+          if accepted["selected_identity"] != accepted["candidate_identity"]:
+              raise SystemExit(
+                  "accepted artifact does not select candidate bytes"
+              )
+          if accepted.get("exact_fallback_identity") is not None:
+              raise SystemExit("accepted artifact unexpectedly claims fallback")
+          if rejected.get("candidate_accepted") is not False:
+              raise SystemExit("rejected artifact accepts the candidate")
+          if rejected["selected_identity"] != rejected["baseline_identity"]:
+              raise SystemExit(
+                  "rejected artifact does not select baseline bytes"
+              )
+          fallback_id = rejected.get("exact_fallback_identity")
+          if fallback_id != rejected["baseline_identity"]["array_id"]:
+              raise SystemExit(
+                  "rejected artifact changed exact fallback identity"
+              )
+
+          with open(
+              os.environ["GITHUB_STEP_SUMMARY"],
+              "a",
+              encoding="utf-8",
+          ) as summary:
+              summary.write("### Golden-path decision artifacts\n\n")
+              summary.write(f"- Bundle ID: `{bundle_id}`\n")
+              summary.write(
+                  f"- Accepted artifact: `{accepted['artifact_id']}`\n"
+              )
+              summary.write(
+                  f"- Rejected artifact: `{rejected['artifact_id']}`\n"
+              )
+              summary.write(
+                  f"- Exact fallback identity: `{fallback_id}`\n"
+              )
+              summary.write(f"- Run manifest: `{manifest_id}`\n")
+              summary.write(
+                  "- Evidence admission: `promotable` "
+                  "(typed validation completed inside the isolated "
+                  "installed-wheel test)\n\n"
+              )
+              summary.write(
+                  "The accepted record demonstrates the admitted candidate "
+                  "routing contract. The rejected record demonstrates exact "
+                  "baseline-byte fallback. Neither record is an accuracy, "
+                  "calibration, transfer, or physical-benefit claim.\n"
+              )
+          PY
+          sha256sum \
+            "${EVIDENCE_ROOT}/accepted-selection.json" \
+            "${EVIDENCE_ROOT}/rejected-selection.json" \
+            "${EVIDENCE_ROOT}/golden-path-bundle.json" \
+            "${EVIDENCE_ROOT}/run-manifest-v2.json"
+
+      - name: Upload the content-addressed golden-path evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: three-repository-golden-path-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/three-repository-golden-path-evidence
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 6
+
+      - name: Record tested repository refs
+        run: |
+          {
+            echo "### Tested repository refs"
+            echo
+            echo "- Prob4D ref: \`${PROB4D_REF}\`"
+            echo "- Prob4D checkout repository: \`${PROB4D_CHECKOUT_REPOSITORY}\`"
+            echo "- Prob4D project identity: \`github-repository-id:1295794737\`"
+            echo "- BayesianPhysTwin: \`${GITHUB_SHA}\`"
+            echo "- Causal4D: \`${CAUSAL4D_REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

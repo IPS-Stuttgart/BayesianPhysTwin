@@ -1,0 +1,91 @@
+{
+  "claim_boundary": "Technical completion of the already-declared Deform360 gsplat CUDA runtime. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "cuda_home_layout": "merge-three-checksum-pinned-nvidia-redistributable-archives-under-one-run-local-root",
+    "cuda_toolkit_release": "12.1.1",
+    "gsplat_backend_probe": {
+      "compiled_backend_required": true,
+      "required_attribute": "CameraModelType",
+      "torch_extensions_directory_scope": "workflow-run-and-attempt-local"
+    },
+    "nvidia_redistributable_base_url": "https://developer.download.nvidia.com/compute/cuda/redist",
+    "nvidia_redistributable_components": [
+      {
+        "component": "cuda_cccl",
+        "relative_path": "cuda_cccl/linux-x86_64/cuda_cccl-linux-x86_64-12.1.109-archive.tar.xz",
+        "sha256": "b84ef3ec3dc1b4891267be25846f0c3ed7f9fa84154d59eba805402b86991baa",
+        "version": "12.1.109"
+      },
+      {
+        "component": "cuda_cudart",
+        "relative_path": "cuda_cudart/linux-x86_64/cuda_cudart-linux-x86_64-12.1.105-archive.tar.xz",
+        "sha256": "6096ec878c8c443258d39c6e9cf2decef127f8aa8da594fdc5a336d047ab6bd9",
+        "version": "12.1.105"
+      },
+      {
+        "component": "cuda_nvcc",
+        "relative_path": "cuda_nvcc/linux-x86_64/cuda_nvcc-linux-x86_64-12.1.105-archive.tar.xz",
+        "sha256": "0b85f7eee17788abbd170b0b493c74ce2e9fd5a9604461b99c2c378165e1083b",
+        "version": "12.1.105"
+      }
+    ],
+    "torch_cuda_version": "12.1",
+    "torch_distribution_version": "2.5.1+cu121"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:bb14ce5365ba3dcd46c17d52ea0c2ba36d71ec678176ef761bfe65a526e49917",
+    "artifact_id": 9117335082,
+    "error_message": "'NoneType' object has no attribute 'CameraModelType'",
+    "error_type": "AttributeError",
+    "execution_receipt_id": "e8b1d22443251e2a5f14a8538c0f73f591ea10c1d625e0b6326fbb885a63a190",
+    "exit_code": 1,
+    "gsplat_disabled_message": "gsplat: No CUDA toolkit found. gsplat will be disabled.",
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "98e20353fa80caa8a58e1885c487f3bfbfb02b93",
+    "terminal_stage": "frame-zero:026-sock-cloth-ep0007",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31532027045
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_runtime_dependency_scope_repair_id": "1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460",
+  "repair_id": "44da91d95947d07d9d930bd0c707d16da9555bc7b9ea3042fcf0a88444ec3bb4",
+  "repair_scope": {
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "cuda_compiler_runtime_completed": true,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "prob4d_role_changed": false,
+    "replacement_allowed": false,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-gsplat-cuda-runtime-repair",
+  "schema_version": 1
+}

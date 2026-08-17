@@ -1,0 +1,253 @@
+{
+  "components": [
+    {
+      "component_id": "bayesian_phystwin",
+      "distribution_name": "bayesian-phystwin",
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "required_dependencies": {
+        "numpy": ">=1.23"
+      },
+      "requires_python": ">=3.10",
+      "role": "Bayesian physical-twin inference and compatibility bridge",
+      "supported_versions": ">=0.4,<0.5"
+    },
+    {
+      "component_id": "prob4d",
+      "distribution_name": "prob4d",
+      "repository": "IPS-Stuttgart/Prob4D",
+      "required_dependencies": {
+        "numpy": ">=1.24"
+      },
+      "requires_python": ">=3.10",
+      "role": "Probabilistic 4D observation and covariance producer",
+      "supported_versions": ">=0.4,<0.6"
+    },
+    {
+      "component_id": "causal4d",
+      "distribution_name": "causal4d",
+      "repository": "IPS-Stuttgart/Causal4D",
+      "required_dependencies": {
+        "numpy": ">=1.24",
+        "packaging": ">=23",
+        "scipy": ">=1.10"
+      },
+      "requires_python": ">=3.10",
+      "role": "Abduction, intervention, and counterfactual consumer",
+      "supported_versions": ">=0.5,<0.6"
+    }
+  ],
+  "evidence_boundary": {
+    "artifact_digests_required_for_claim_bearing_runs": true,
+    "development_ranges_are_evidence_locks": false,
+    "exact_revisions_required_for_claim_bearing_runs": true,
+    "interoperability_implies_accuracy_or_calibration": false,
+    "interoperability_implies_physical_benefit": false
+  },
+  "interfaces": [
+    {
+      "distribution_ranges": {
+        "bayesian_phystwin": ">=0.4,<0.5",
+        "causal4d": ">=0.5,<0.6"
+      },
+      "exact_revisions_required_for_evidence": true,
+      "interface_id": "bayesian-phystwin-to-causal4d",
+      "lifecycle": "production_additive",
+      "notes": [
+        "Causal4D imports versioned public modules only.",
+        "Provider manifests and local Causal4D contracts remain authoritative for capability admission.",
+        "Provider compatibility alone does not establish a physical-query or intervention benefit."
+      ],
+      "participants": [
+        "bayesian_phystwin",
+        "causal4d"
+      ],
+      "provider_modules": [
+        {
+          "api_version": 1,
+          "lifecycle": "frozen_compatibility",
+          "module": "bayesian_phystwin.causal4d_artifacts_v1",
+          "role": "released_artifact_io"
+        },
+        {
+          "api_version": 2,
+          "lifecycle": "production_additive",
+          "module": "bayesian_phystwin.causal4d_artifacts_v2",
+          "role": "released_visual_artifact_io"
+        },
+        {
+          "api_version": 1,
+          "lifecycle": "frozen_compatibility",
+          "module": "bayesian_phystwin.causal4d_belief_provider_v1",
+          "role": "fixed_anchor_endpoint_inference"
+        },
+        {
+          "api_version": 2,
+          "lifecycle": "additive_development",
+          "module": "bayesian_phystwin.causal4d_belief_provider_v2",
+          "role": "model_averaged_horizon_discrepancy"
+        },
+        {
+          "api_version": 1,
+          "lifecycle": "production",
+          "module": "bayesian_phystwin.causal4d_graph_provider_v1",
+          "role": "spring_graph_and_controller_grouping"
+        },
+        {
+          "api_version": 1,
+          "lifecycle": "frozen_compatibility",
+          "module": "bayesian_phystwin.causal4d_provider_v1",
+          "role": "scientific_compatibility_facade"
+        },
+        {
+          "api_version": 2,
+          "lifecycle": "production",
+          "module": "bayesian_phystwin.causal4d_provider_v2",
+          "role": "request_complete_replay"
+        },
+        {
+          "api_version": 1,
+          "lifecycle": "diagnostic",
+          "module": "bayesian_phystwin.causal4d_public_provider_v1",
+          "role": "source_locked_public_diagnostics"
+        },
+        {
+          "api_version": 1,
+          "lifecycle": "production_additive",
+          "module": "bayesian_phystwin.causal4d_tree_block_provider_v1",
+          "role": "claim_bearing_tree_block_query_covariance"
+        }
+      ],
+      "required_artifact_schema_versions": {
+        "FixedBayesianAnchorConfig": [
+          1
+        ],
+        "GraphBelief": [
+          1
+        ],
+        "ReplayRequest": [
+          1
+        ],
+        "ReplayTrajectory": [
+          1
+        ],
+        "RobustEndpointPosterior": [
+          1
+        ],
+        "ScheduledContactReplayRequest": [
+          1
+        ],
+        "ScheduledContactReplayResult": [
+          1
+        ],
+        "TwinBelief": [
+          1
+        ]
+      },
+      "supports_claim_bearing_admission": true
+    },
+    {
+      "distribution_ranges": {
+        "bayesian_phystwin": ">=0.4,<0.5",
+        "prob4d": ">=0.4,<0.6"
+      },
+      "exact_revisions_required_for_evidence": true,
+      "interface_id": "prob4d-provider-v1-to-bayesian-phystwin",
+      "lifecycle": "frozen_compatibility",
+      "notes": [
+        "Prob4D 0.5 retains provider-v1 only as an artifact-compatibility bridge; full provider-v1 execution requires the exact Prob4D 0.4.1 release.",
+        "Claim-bearing admission uses the independently attested Prob4D provider-v2 boundary.",
+        "The content-addressed provider manifest retains the historical source repository identity FlorianPfaff/Prob4D."
+      ],
+      "participants": [
+        "prob4d",
+        "bayesian_phystwin"
+      ],
+      "provider_modules": [
+        {
+          "api_version": 1,
+          "lifecycle": "frozen_compatibility",
+          "module": "prob4d.provider_v1",
+          "role": "historical_artifact_compatibility"
+        }
+      ],
+      "required_artifact_schema_versions": {
+        "GaugeCovarianceCalibrationV1": [
+          1
+        ],
+        "MetricGaugeAnchor": [
+          1
+        ],
+        "ObservationBeliefV1": [
+          1
+        ],
+        "ObservationFactorBundle": [
+          3
+        ],
+        "PointUncertaintyCalibrationV1": [
+          1
+        ],
+        "Prob4DCausalObservationStream": [
+          2
+        ]
+      },
+      "supports_claim_bearing_admission": false
+    },
+    {
+      "distribution_ranges": {
+        "bayesian_phystwin": ">=0.4,<0.5",
+        "prob4d": ">=0.4,<0.6"
+      },
+      "exact_revisions_required_for_evidence": true,
+      "interface_id": "prob4d-provider-v2-to-bayesian-phystwin",
+      "lifecycle": "production",
+      "notes": [
+        "Prob4D 0.5 exposes the current provider-v2 contract through prob4d.api.v2 and the prob4d.provider_v2 implementation module.",
+        "Provider-v2 joint cross-window gauge factors require ObservationFactorBundle schema version 4.",
+        "The content-addressed provider manifest retains the historical source repository identity FlorianPfaff/Prob4D."
+      ],
+      "participants": [
+        "prob4d",
+        "bayesian_phystwin"
+      ],
+      "provider_modules": [
+        {
+          "api_version": 2,
+          "lifecycle": "production",
+          "module": "prob4d.provider_v2",
+          "role": "claim_bearing_observation_provider"
+        }
+      ],
+      "required_artifact_schema_versions": {
+        "GaugeCovarianceCalibrationV1": [
+          1
+        ],
+        "MetricGaugeAnchor": [
+          1
+        ],
+        "ObservationBeliefV1": [
+          1
+        ],
+        "ObservationFactorBundle": [
+          4
+        ],
+        "ObservationFactorStreamV1": [
+          1
+        ],
+        "PointUncertaintyCalibrationV1": [
+          1
+        ],
+        "Prob4DCausalObservationStream": [
+          2
+        ],
+        "ProviderAttestation": [
+          1
+        ]
+      },
+      "supports_claim_bearing_admission": true
+    }
+  ],
+  "schema_name": "bayesian_phystwin.ecosystem_compatibility_table",
+  "schema_version": 1,
+  "status": "development_interoperability",
+  "table_name": "bpt-prob4d-causal4d-development-compatibility-v1"
+}

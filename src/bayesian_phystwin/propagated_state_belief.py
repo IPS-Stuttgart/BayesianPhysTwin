@@ -234,9 +234,14 @@ def infer_propagated_state_belief(
     no coordinate-separable linearization is assumed.
     """
 
-    cfg = config or PropagatedStateBeliefConfig()
+    if config is None:
+        cfg = PropagatedStateBeliefConfig()
+    elif isinstance(config, PropagatedStateBeliefConfig):
+        cfg = config
+    else:
+        raise TypeError("config must be a PropagatedStateBeliefConfig")
     innovation = np.asarray(innovation_m, dtype=np.float64)
-    mask = np.asarray(available, dtype=bool)
+    raw_mask = np.asarray(available)
     response = np.asarray(state_response_at_step_m, dtype=np.float64)
     bias_basis = np.asarray(shared_bias_basis, dtype=np.float64)
     _require(
@@ -244,7 +249,12 @@ def infer_propagated_state_belief(
         "innovation must have shape (T, N, 3)",
     )
     frame_count, point_count, _ = innovation.shape
-    _require(mask.shape == (frame_count, point_count), "availability shape changed")
+    _require(raw_mask.shape == (frame_count, point_count), "availability shape changed")
+    _require(
+        raw_mask.dtype == np.dtype(np.bool_),
+        "availability must contain only booleans",
+    )
+    mask = np.asarray(raw_mask, dtype=np.bool_)
     _require(
         response.ndim == 4 and response.shape[:3] == innovation.shape,
         "state response must have shape (T, N, 3, K)",
@@ -385,6 +395,7 @@ def infer_propagated_state_belief(
     for iteration in range(cfg.maximum_iterations):
         iterations = iteration + 1
         previous = solution.copy()
+        previous_robust = robust.copy()
         normal, right = posterior_system(robust)
         solved, _, condition_number, failure = solve_posterior(normal, right)
         if failure is not None or solved is None:
@@ -406,9 +417,13 @@ def infer_propagated_state_belief(
             cfg.minimum_robust_weight,
             1.0,
         )
+        solution_delta = float(np.max(np.abs(solution - previous), initial=0.0))
+        robust_weight_delta = float(
+            np.max(np.abs(robust - previous_robust), initial=0.0)
+        )
         if (
-            np.max(np.abs(solution - previous), initial=0.0)
-            <= cfg.convergence_tolerance
+            solution_delta <= cfg.convergence_tolerance
+            and robust_weight_delta <= cfg.convergence_tolerance
         ):
             break
 

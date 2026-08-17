@@ -1,0 +1,121 @@
+{
+  "claim_boundary": "Source-independent repair of the exact cuDNN 9.1.0.70 wheel supply route before any v6.1 public-source suffix access. It authorizes no source result, confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "distribution_attestation": {
+      "distribution": "nvidia-cudnn-cu12",
+      "expected_version": "9.1.0.70",
+      "probe": "importlib.metadata.version"
+    },
+    "install_order": [
+      "download-exact-cudnn-wheel",
+      "verify-byte-count-and-sha256",
+      "install-cudnn-wheel-with-no-deps",
+      "install-unchanged-cuda-runtime-lock",
+      "install-unchanged-precompiled-gsplat-wheel",
+      "attest-complete-runtime"
+    ],
+    "runtime_lock": {
+      "changed": false,
+      "path": "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt",
+      "sha256": "e46e32b809fd9438437cf0ff4138dccb119904b5f1d9f90900df99603f278af3"
+    },
+    "wheel": {
+      "byte_count": 664752741,
+      "filename": "nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl",
+      "index_project": "https://pypi.org/project/nvidia-cudnn-cu12/9.1.0.70/",
+      "sha256": "165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f",
+      "url": "https://files.pythonhosted.org/packages/9f/fd/713452cd72343f682b1c7b9321e23829f00b842ceaedcda96e742ea0b0b3/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl",
+      "version": "9.1.0.70"
+    }
+  },
+  "execution_authorization": {
+    "event": "one-explicit-protected-main-workflow-dispatch-after-reviewed-runtime-repair-merge",
+    "failed_workflow_disabled": true,
+    "failed_workflow_retry_authorized": false,
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "successor_durable_namespace": "deform360-v61-source-scorer-cudnn-supply",
+    "successor_workflow_path": ".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml"
+  },
+  "failed_execution_evidence": {
+    "admission_step_conclusion": "skipped",
+    "artifact_count": 0,
+    "durable_endpoint_root_created": false,
+    "durable_run_claim_created": false,
+    "durable_source_root_created": false,
+    "error_message": "No matching distribution found for nvidia-cudnn-cu12==9.1.0.70",
+    "error_type": "NoMatchingDistribution",
+    "execute_step_conclusion": "skipped",
+    "job_id": 94325687447,
+    "runner_id": 64,
+    "runner_name": "workstation2",
+    "runtime_exit_code": 1,
+    "source_revision": "9a18d3a4dd4aa95c69308f184c77958ddc4eec8d",
+    "source_suffix_opened": false,
+    "terminal_stage": "build-and-attest-isolated-source-runtime",
+    "workflow_file_sha256": "ab2a11410ab1d74148c0a6033e90e94add803045e2e65ad9d3ef56bb36d48b9f",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31660983482
+  },
+  "information_boundary": {
+    "claim_authorized": false,
+    "confirmation_payloads_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "held_v8_artifacts_accessed": false,
+    "human_approval_required": false,
+    "independent_confirmation_authorized": false,
+    "new_measurements_collected": false,
+    "replacement_allowed": false,
+    "source_outcomes_opened": false,
+    "source_suffix_opened": false,
+    "target_outcomes_opened": false
+  },
+  "predecessor_source_scoring": {
+    "amendment_file_sha256": "c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1",
+    "amendment_id": "e8b962a8abf228114495683cfb9ba87ee802e7405ca92f1f28b5a76df3faa371",
+    "amendment_path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json"
+  },
+  "repair_id": "afc4753c60e48062b6ae3b0789a6d924bb832d2b8b186c4d450ee2ca75dbf0ca",
+  "repair_scope": {
+    "candidate_artifacts_changed": false,
+    "candidate_changed": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "data_changed": false,
+    "endpoint_algorithm_changed": false,
+    "fallback_algorithm_changed": false,
+    "loss_changed": false,
+    "mean_changed": false,
+    "model_changed": false,
+    "prediction_horizons_changed": false,
+    "prob4d_usage_changed": false,
+    "scorer_code_changed": false,
+    "selector_changed": false,
+    "source_gate_changed": false,
+    "suffix_policy_changed": false,
+    "supply_route_changed": true,
+    "target_policy_changed": false,
+    "torch_cuda_cudnn_versions_changed": false
+  },
+  "scientific_identity": {
+    "candidate_execution_receipt_file_sha256": "d2569acd499c7d21a11937a22de012418e6f15579394944ffe7399a8b89c3bf6",
+    "candidate_panel_receipt_file_sha256": "2b96b8c92fe3be4e7ea92fd8a58fa3c3858279d2cc3d081d723d870fd84ff7ed",
+    "endpoint_processor_sha256": "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa",
+    "execution_lock_file_sha256": "429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a",
+    "raw_prediction_batch_file_sha256": "b3a22f24015d0c0d8e757b5946dafd21dd61394c1c91a872a9eb56d28e2a74e6",
+    "scorer_cli_sha256": "f132d6ef0c401305d2a975762cafc43746072ac7df9f41a494823b772735f658",
+    "scorer_library_sha256": "daeea31c0aa6bc796d7b2819ab6502d57d0ae0f0c4d730fbc32bc7f51101b5ea",
+    "scorer_runner_sha256": "43d83a2efaea9e474d8e762eacfadd38fc5ff79b11e1ab0ab66f382155997fd3",
+    "source_scoring_amendment_file_sha256": "c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1",
+    "upstream_source_plan_file_sha256": "08863166df11033f4a968c94a4cb5bd02869175ce3bf1c1859c8ac49be371991"
+  },
+  "schema": "bayesian-phystwin.deform360-v6.1-source-scorer-cudnn-supply-runtime-repair",
+  "schema_version": 1
+}

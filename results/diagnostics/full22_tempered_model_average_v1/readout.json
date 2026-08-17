@@ -1,0 +1,154 @@
+{
+  "claim_boundary": "Retrospective source-only tuning and confirmation-cohort diagnosis on the released official 22-case PhysTwin cohort. The cohort and its frozen three-case development / nineteen-case confirmation split have already informed BayesianPhysTwin development. Results may diagnose evidence tempering, a model-average-specific fallback guard, and case-blocked covariance inflation, but must not be promoted as fresh independent validation, calibrated deployment uncertainty, or a new state-of-the-art claim.",
+  "classification": "retrospective-non-claim-bearing-experiment",
+  "confirmation_case_count": 19,
+  "confirmation_guard_acceptance_fraction": 0.2631578947368421,
+  "confirmation_point_methods": {
+    "last_residual": {
+      "chamfer_equal_case_mean_m": 0.009581427293240652,
+      "track_equal_case_mean_m": 0.019188067600634014
+    },
+    "released_phystwin": {
+      "chamfer_equal_case_mean_m": 0.011122029082233833,
+      "track_equal_case_mean_m": 0.022189327950738497
+    },
+    "selected_bayesian_anchor": {
+      "chamfer_equal_case_mean_m": 0.009828096948748777,
+      "track_equal_case_mean_m": 0.019523258030681955
+    },
+    "temperature_1_model_average": {
+      "chamfer_equal_case_mean_m": 0.009713412957229363,
+      "track_equal_case_mean_m": 0.01933453670415184
+    },
+    "tempered_model_average": {
+      "chamfer_equal_case_mean_m": 0.009763593657132044,
+      "track_equal_case_mean_m": 0.019428544981601084
+    },
+    "tempered_model_average_guard": {
+      "chamfer_equal_case_mean_m": 0.009614446014994156,
+      "track_equal_case_mean_m": 0.019234477971405917
+    }
+  },
+  "predictive_calibration_equal_case_overall": {
+    "temperature_1_model_average_raw": {
+      "coverage_90": 0.3795856499111892,
+      "coverage_95": 0.4223620628789629,
+      "mean_error_norm_m": 0.0166412797246003,
+      "mean_nees_over_dimension": 2529.798307061572,
+      "mean_negative_log_likelihood": 3779.116550477366,
+      "mean_predictive_std_m": 0.003667163436717626
+    },
+    "tempered_model_average_group_conformal": {
+      "coverage_90": 0.9716447862253742,
+      "coverage_95": 0.9786478454330687,
+      "mean_error_norm_m": 0.01721939673464663,
+      "mean_nees_over_dimension": 0.6358271866922977,
+      "mean_negative_log_likelihood": -8.583580223013513,
+      "mean_predictive_std_m": 0.020696410867536274
+    },
+    "tempered_model_average_raw": {
+      "coverage_90": 0.7964095405984553,
+      "coverage_95": 0.8302145283189598,
+      "mean_error_norm_m": 0.01721939673464663,
+      "mean_nees_over_dimension": 3.0369275905375623,
+      "mean_negative_log_likelihood": -7.30632839577246,
+      "mean_predictive_std_m": 0.008796243163657416
+    }
+  },
+  "protocol_sha256": "a351cf37ba19130feca4dcfb87b1e7ab9a2e601d22edeed3a39a00c904ecbbe3",
+  "registered_comparisons": {
+    "tempered_model_average_guard_vs_last_residual": {
+      "chamfer_distance_m": {
+        "bootstrap_probability_mean_improvement": 0.1272,
+        "candidate_win_count": 1,
+        "case_count": 19,
+        "lower_95_delta_m": -1.483546194521979e-05,
+        "mean_delta_m": 3.301872175350416e-05,
+        "tie_count": 14,
+        "upper_95_delta_m": 0.00010133035167020574
+      },
+      "track_error_m": {
+        "bootstrap_probability_mean_improvement": 0.0768,
+        "candidate_win_count": 1,
+        "case_count": 19,
+        "lower_95_delta_m": -1.506950123300809e-05,
+        "mean_delta_m": 4.6410370771903236e-05,
+        "tie_count": 14,
+        "upper_95_delta_m": 0.00011566443070000433
+      }
+    },
+    "tempered_model_average_guard_vs_selected_bayesian_anchor": {
+      "chamfer_distance_m": {
+        "bootstrap_probability_mean_improvement": 0.9874,
+        "candidate_win_count": 16,
+        "case_count": 19,
+        "lower_95_delta_m": -0.0004475083538771754,
+        "mean_delta_m": -0.00021365093375461949,
+        "tie_count": 0,
+        "upper_95_delta_m": -2.2288249849001752e-05
+      },
+      "track_error_m": {
+        "bootstrap_probability_mean_improvement": 0.9547,
+        "candidate_win_count": 10,
+        "case_count": 19,
+        "lower_95_delta_m": -0.0006895964281857631,
+        "mean_delta_m": -0.00028878005927603106,
+        "tie_count": 0,
+        "upper_95_delta_m": 3.099801346694186e-05
+      }
+    },
+    "tempered_model_average_vs_last_residual": {
+      "chamfer_distance_m": {
+        "bootstrap_probability_mean_improvement": 0.0011,
+        "candidate_win_count": 5,
+        "case_count": 19,
+        "lower_95_delta_m": 5.731399682733241e-05,
+        "mean_delta_m": 0.000182166363891393,
+        "tie_count": 0,
+        "upper_95_delta_m": 0.00032211132341405073
+      },
+      "track_error_m": {
+        "bootstrap_probability_mean_improvement": 0.0068,
+        "candidate_win_count": 8,
+        "case_count": 19,
+        "lower_95_delta_m": 3.6511082752410525e-05,
+        "mean_delta_m": 0.0002404773809670682,
+        "tie_count": 0,
+        "upper_95_delta_m": 0.0005039472597366343
+      }
+    },
+    "tempered_model_average_vs_temperature_1_model_average": {
+      "chamfer_distance_m": {
+        "bootstrap_probability_mean_improvement": 0.0492,
+        "candidate_win_count": 6,
+        "case_count": 19,
+        "lower_95_delta_m": -8.50194673826895e-06,
+        "mean_delta_m": 5.018069990267951e-05,
+        "tie_count": 0,
+        "upper_95_delta_m": 0.00011671780218060734
+      },
+      "track_error_m": {
+        "bootstrap_probability_mean_improvement": 0.0158,
+        "candidate_win_count": 7,
+        "case_count": 19,
+        "lower_95_delta_m": 7.664932150583641e-06,
+        "mean_delta_m": 9.400827744924427e-05,
+        "tie_count": 0,
+        "upper_95_delta_m": 0.00019106872577776113
+      }
+    }
+  },
+  "schema": "bayesian-phystwin-tempered-model-average-compact-readout",
+  "schema_version": 1,
+  "selection": {
+    "group_conformal_scales_by_horizon": {
+      "early": 2.7416218173238707,
+      "late": 8.261418946685277,
+      "middle": 5.049342196339878
+    },
+    "guard_threshold_m": 0.004611348712376792,
+    "locked_before_confirmation": true,
+    "selected_temperature": 128.0
+  },
+  "selection_sha256": "5dac806ab91a5709215bd3572b04361b5a541cfe81987c9385455f8ba7420b5f"
+}

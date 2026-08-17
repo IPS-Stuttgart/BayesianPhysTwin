@@ -1,0 +1,91 @@
+name: Deform360 calibration run-record CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-run-record-ci.yml"
+      - ".github/workflows/deform360-official-hub-calibration-source-reusable.yml"
+      - ".github/workflows/dispatch-deform360-calibration-source-pr-target.yml"
+      - "scripts/ci/render_deform360_calibration_source_run_record.py"
+      - "scripts/ci/run_deform360_calibration_source_direct.sh"
+      - "src/bayesian_phystwin/_deform360_calibration_*.py"
+      - "src/bayesian_phystwin/deform360_calibration_source_run_record.py"
+      - "tests/test_deform360_calibration_source_direct_workflow.py"
+      - "tests/test_deform360_calibration_source_run_record*.py"
+      - "tests/test_render_deform360_calibration_source_run_record.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-calibration-run-record-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Run-record contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install validation environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate changed contracts
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          contract_files=(
+            scripts/ci/render_deform360_calibration_source_run_record.py
+            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py
+            src/bayesian_phystwin/_deform360_calibration_run_common.py
+            src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py
+            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py
+            src/bayesian_phystwin/deform360_calibration_source_run_record.py
+            tests/test_deform360_calibration_source_direct_workflow.py
+            tests/test_deform360_calibration_source_run_record.py
+            tests/test_deform360_calibration_source_run_record_validation.py
+            tests/test_render_deform360_calibration_source_run_record.py
+          )
+          python -m ruff check "${contract_files[@]}"
+          format_files=("${contract_files[@]}")
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            mapfile -t format_files < <(
+              git diff --name-only --diff-filter=ACMR \
+                "${BASE_SHA}...${HEAD_SHA}" -- "${contract_files[@]}"
+            )
+          fi
+          if (( ${#format_files[@]} )); then
+            python -m ruff format --check "${format_files[@]}"
+          fi
+          bash -n scripts/ci/run_deform360_calibration_source_direct.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_source_direct_workflow.py \
+            tests/test_deform360_calibration_source_run_record.py \
+            tests/test_deform360_calibration_source_run_record_validation.py \
+            tests/test_render_deform360_calibration_source_run_record.py
+          python -m compileall -q "${contract_files[@]}"

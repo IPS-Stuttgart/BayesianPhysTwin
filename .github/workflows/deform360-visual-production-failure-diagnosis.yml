@@ -1,0 +1,396 @@
+name: Diagnose retained Deform360 visual-production failures
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-visual-production-failure-diagnosis.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-visual-production-failure-diagnosis.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-visual-production-failure-diagnosis-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360
+  OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  ADAPTIVE_CONFIRMATION_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  PRODUCTION_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production
+  ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
+  IMPLEMENTATION_REVISION: 312d4a46545b547efcdab79d4f285473077887cf
+  PRODUCTION_RESULT_ID: 9f2f9c3d4bf9d4ec3b6fa1e917c4c3e906dbc69a0f9c57b9b546e73e41f6b4c2
+  EXPECTED_JOB_COUNT: "324"
+  EXPECTED_WORKFLOW_ATTEMPT: 31277475724-1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Validate bounded failure-diagnosis contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate workflow policy and exact information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              ".github/workflows/deform360-visual-production-failure-diagnosis.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          required = (
+              "runs-on: self-hosted",
+              "github.event_name == 'push'",
+              "EXPECTED_JOB_COUNT: \"324\"",
+              "EXPECTED_WORKFLOW_ATTEMPT: 31277475724-1",
+              "representative-stderr.bin",
+              "official_raw_payload_opened\": False",
+              "adaptive_confirmation_payloads_opened\": False",
+              "confirmation_payloads_opened\": False",
+              "target_outcomes_used\": False",
+          )
+          for token in required:
+              if token not in text:
+                  raise SystemExit(f"missing bounded-diagnosis token: {token}")
+          forbidden = (
+              "find \"${OFFICIAL_RAW_ROOT}",
+              "find \"${ADAPTIVE_CONFIRMATION_ROOT}",
+              "cat \"${OFFICIAL_RAW_ROOT}",
+              "cat \"${ADAPTIVE_CONFIRMATION_ROOT}",
+          )
+          for token in forbidden:
+              if token in text:
+                  raise SystemExit(f"forbidden raw traversal token: {token}")
+          PY
+          git diff --check
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  diagnose:
+    name: Summarize one verified shared failure from runner results
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: self-hosted
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact trusted main source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Resolve results-only diagnosis boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"
+          official="$(realpath -e "${OFFICIAL_RAW_ROOT}")"
+          adaptive="$(realpath -e "${ADAPTIVE_CONFIRMATION_ROOT}")"
+          output="$(realpath -e "${PRODUCTION_OUTPUT_ROOT}")"
+          run_root="$(realpath -e "${output}/${ADMISSION_ID}/${IMPLEMENTATION_REVISION}")"
+          case "${output}/" in
+            "${storage}/results/"*) ;;
+            *) echo "production output is outside the results subtree" >&2; exit 1 ;;
+          esac
+          case "${run_root}/" in
+            "${output}/"*) ;;
+            *) echo "run root is outside the production output" >&2; exit 1 ;;
+          esac
+          for raw in "${official}" "${adaptive}"; do
+            case "${run_root}/" in
+              "${raw}/"*) echo "diagnosis root entered a raw snapshot" >&2; exit 1 ;;
+            esac
+          done
+          evidence="${RUNNER_TEMP}/deform360-failure-diagnosis-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${evidence}"
+          mkdir -p -- "${evidence}"
+          {
+            echo "RESOLVED_RUN_ROOT=${run_root}"
+            echo "EVIDENCE_ROOT=${evidence}"
+          } >> "${GITHUB_ENV}"
+          stat -c 'official_raw directory device=%d inode=%i' "${official}"
+          stat -c 'adaptive_confirmation directory device=%d inode=%i' "${adaptive}"
+          echo "official_raw_payload_opened=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+      - name: Verify all receipts and retain one common stderr representative
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import stat
+          from collections import Counter
+          from pathlib import Path, PurePosixPath
+          from typing import Any
+
+          MAX_JSON_BYTES = 64 * 1024 * 1024
+          MAX_LOG_BYTES = 64 * 1024
+          root = Path(os.environ["RESOLVED_RUN_ROOT"])
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          expected_count = int(os.environ["EXPECTED_JOB_COUNT"])
+
+          def reject_symlinks(path: Path) -> None:
+              absolute = path.absolute()
+              for candidate in (absolute, *absolute.parents):
+                  if candidate.is_symlink():
+                      raise ValueError(f"path contains symbolic link: {candidate}")
+
+          def safe_member(base: Path, relative: object) -> Path:
+              if not isinstance(relative, str) or not relative:
+                  raise ValueError("relative path must be a nonempty string")
+              pure = PurePosixPath(relative)
+              if pure.is_absolute() or ".." in pure.parts or "." in pure.parts:
+                  raise ValueError(f"unsafe relative path: {relative!r}")
+              path = base
+              for part in pure.parts:
+                  path = path / part
+                  if path.is_symlink():
+                      raise ValueError(f"path contains symbolic link: {path}")
+              return path
+
+          def read_regular(path: Path, *, limit: int) -> bytes:
+              reject_symlinks(path)
+              flags = (
+                  os.O_RDONLY
+                  | int(getattr(os, "O_CLOEXEC", 0))
+                  | int(getattr(os, "O_NOFOLLOW", 0))
+              )
+              descriptor = os.open(path, flags)
+              try:
+                  before = os.fstat(descriptor)
+                  if not stat.S_ISREG(before.st_mode):
+                      raise ValueError(f"not a regular file: {path}")
+                  if before.st_size > limit:
+                      raise ValueError(f"file exceeds bounded read limit: {path}")
+                  chunks: list[bytes] = []
+                  while True:
+                      block = os.read(descriptor, 1024 * 1024)
+                      if not block:
+                          break
+                      chunks.append(block)
+                  after = os.fstat(descriptor)
+              finally:
+                  os.close(descriptor)
+              payload = b"".join(chunks)
+              identity_before = (
+                  before.st_dev,
+                  before.st_ino,
+                  before.st_size,
+                  before.st_mtime_ns,
+                  before.st_ctime_ns,
+              )
+              identity_after = (
+                  after.st_dev,
+                  after.st_ino,
+                  after.st_size,
+                  after.st_mtime_ns,
+                  after.st_ctime_ns,
+              )
+              if identity_before != identity_after or len(payload) != after.st_size:
+                  raise ValueError(f"file changed during read: {path}")
+              return payload
+
+          def load_json(path: Path) -> dict[str, Any]:
+              value = json.loads(read_regular(path, limit=MAX_JSON_BYTES))
+              if not isinstance(value, dict):
+                  raise ValueError(f"JSON root is not an object: {path}")
+              return value
+
+          def verify_descriptor(base: Path, descriptor: dict[str, Any]) -> Path:
+              path = safe_member(base, descriptor["path"])
+              payload = read_regular(path, limit=MAX_JSON_BYTES)
+              if len(payload) != descriptor["byte_count"]:
+                  raise ValueError(f"byte count mismatch: {path}")
+              if hashlib.sha256(payload).hexdigest() != descriptor["sha256"]:
+                  raise ValueError(f"digest mismatch: {path}")
+              return path
+
+          result = load_json(root / "visual-production-result.json")
+          expected_result = {
+              "schema": "bayesian-phystwin.deform360-calibration-visual-production-result",
+              "schema_version": 1,
+              "production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "admission_id": os.environ["ADMISSION_ID"],
+              "implementation_revision": os.environ["IMPLEMENTATION_REVISION"],
+              "status": "failed",
+              "camera_view_count": expected_count,
+              "successful_job_count": 0,
+              "technical_failure_count": expected_count,
+          }
+          for key, expected in expected_result.items():
+              if result.get(key) != expected:
+                  raise ValueError(
+                      f"production result {key} changed: {result.get(key)!r}"
+                  )
+          jobs = result.get("jobs")
+          if not isinstance(jobs, list) or len(jobs) != expected_count:
+              raise ValueError("production result job roster changed")
+
+          stderr_groups: Counter[tuple[str, int]] = Counter()
+          stdout_groups: Counter[tuple[str, int]] = Counter()
+          stages: Counter[str] = Counter()
+          objects: Counter[str] = Counter()
+          receipts: list[dict[str, Any]] = []
+          for job in jobs:
+              if not isinstance(job, dict) or job.get("status") != "technical-failure":
+                  raise ValueError("job roster contains a non-failure entry")
+              descriptor = job.get("receipt")
+              if not isinstance(descriptor, dict):
+                  raise ValueError("job receipt descriptor is malformed")
+              receipt_path = verify_descriptor(root, descriptor)
+              receipt = load_json(receipt_path)
+              if receipt.get("job_id") != job.get("job_id"):
+                  raise ValueError("job and receipt identities differ")
+              if receipt.get("admission_id") != os.environ["ADMISSION_ID"]:
+                  raise ValueError("failure receipt admission changed")
+              if receipt.get("implementation_revision") != os.environ[
+                  "IMPLEMENTATION_REVISION"
+              ]:
+                  raise ValueError("failure receipt implementation changed")
+              stderr = receipt.get("stderr")
+              stdout = receipt.get("stdout")
+              if not isinstance(stderr, dict) or not isinstance(stdout, dict):
+                  raise ValueError("failure stream descriptors are malformed")
+              stderr_groups[(stderr["sha256"], stderr["byte_count"])] += 1
+              stdout_groups[(stdout["sha256"], stdout["byte_count"])] += 1
+              stages[str(receipt.get("stage"))] += 1
+              objects[str(receipt.get("object_id"))] += 1
+              receipts.append(receipt)
+
+          if len(stderr_groups) != 1 or next(iter(stderr_groups.values())) != expected_count:
+              raise ValueError("failures do not share one stderr signature")
+          empty_sha = hashlib.sha256(b"").hexdigest()
+          if stdout_groups != Counter({(empty_sha, 0): expected_count}):
+              raise ValueError("failure stdout is not uniformly empty")
+          if stages != Counter({"motioncrafter-production": expected_count}):
+              raise ValueError("failure stage changed")
+
+          representative = min(receipts, key=lambda item: str(item["job_id"]))
+          stderr_descriptor = representative["stderr"]
+          stderr_path = safe_member(root, stderr_descriptor["path"])
+          expected_prefix = f"logs/{os.environ['EXPECTED_WORKFLOW_ATTEMPT']}/"
+          if not str(stderr_descriptor["path"]).startswith(expected_prefix):
+              raise ValueError("representative log is outside the frozen attempt")
+          stderr_payload = read_regular(stderr_path, limit=MAX_LOG_BYTES)
+          if len(stderr_payload) != stderr_descriptor["byte_count"]:
+              raise ValueError("representative stderr byte count changed")
+          if hashlib.sha256(stderr_payload).hexdigest() != stderr_descriptor["sha256"]:
+              raise ValueError("representative stderr digest changed")
+
+          boundaries = result.get("information_boundary")
+          required_boundaries = {
+              "confirmation_payloads_opened": False,
+              "reserved_evaluation_frames_opened": False,
+              "target_outcomes_used": False,
+              "replacement_allowed": False,
+          }
+          if not isinstance(boundaries, dict):
+              raise ValueError("information boundary is malformed")
+          for key, expected in required_boundaries.items():
+              if boundaries.get(key) is not expected:
+                  raise ValueError(f"information boundary changed: {key}")
+
+          stderr_key, stderr_count = next(iter(stderr_groups.items()))
+          summary = {
+              "schema": "bayesian-phystwin.deform360-visual-production-failure-diagnosis",
+              "schema_version": 1,
+              "source_production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "source_implementation_revision": os.environ[
+                  "IMPLEMENTATION_REVISION"
+              ],
+              "source_workflow_attempt": os.environ["EXPECTED_WORKFLOW_ATTEMPT"],
+              "receipt_count": expected_count,
+              "successful_job_count": 0,
+              "technical_failure_count": expected_count,
+              "common_stage": "motioncrafter-production",
+              "common_stderr_sha256": stderr_key[0],
+              "common_stderr_byte_count": stderr_key[1],
+              "common_stderr_receipt_count": stderr_count,
+              "empty_stdout_receipt_count": expected_count,
+              "object_failure_counts": dict(sorted(objects.items())),
+              "representative": {
+                  "job_id": representative["job_id"],
+                  "object_id": representative["object_id"],
+                  "camera_id": representative["camera_id"],
+                  "stderr_path": stderr_descriptor["path"],
+                  "stderr_text": stderr_payload.decode("utf-8", errors="replace"),
+              },
+              "information_boundary": {
+                  **required_boundaries,
+                  "official_raw_payload_opened": False,
+                  "adaptive_confirmation_payloads_opened": False,
+              },
+          }
+          canonical = json.dumps(summary, sort_keys=True, separators=(",", ":")).encode()
+          summary["diagnosis_id"] = hashlib.sha256(canonical).hexdigest()
+          (evidence / "failure-diagnosis.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          (evidence / "representative-stderr.bin").write_bytes(stderr_payload)
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+      - name: Record closed data-access boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "diagnostic_revision=${GITHUB_SHA}"
+            echo "source_implementation_revision=${IMPLEMENTATION_REVISION}"
+            echo "source_production_result_id=${PRODUCTION_RESULT_ID}"
+            echo "source_workflow_attempt=${EXPECTED_WORKFLOW_ATTEMPT}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "official_raw_payload_opened=false"
+            echo "adaptive_confirmation_payloads_opened=false"
+            echo "confirmation_payloads_opened=false"
+            echo "target_outcomes_used=false"
+          } > "${EVIDENCE_ROOT}/environment.txt"
+          (
+            cd "${EVIDENCE_ROOT}"
+            sha256sum failure-diagnosis.json representative-stderr.bin environment.txt \
+              > SHA256SUMS
+          )
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+      - name: Upload bounded shared-failure diagnosis
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-visual-production-failure-diagnosis-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 90

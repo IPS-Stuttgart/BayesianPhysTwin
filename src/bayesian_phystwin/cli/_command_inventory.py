@@ -10,6 +10,7 @@ STABLE_ROUTES: Final[dict[str, tuple[str, ...]]] = {
     "replay-residuals": ("residual", "replay"),
     "synthetic-benchmark": ("benchmark", "synthetic"),
     "decisive-evidence": ("evidence", "summarize"),
+    "claim-bundle": ("evidence", "bundle"),
     "run-manifest": ("run", "manifest"),
 }
 
@@ -46,12 +47,14 @@ ARCHIVED_IDS: Final = frozenset(
 DIAGNOSTIC_IDS: Final = frozenset(
     """
     evaluate-phystwin-priors
+    audit-prob4d-covariance-ablation
     audit-phystwin-calibration
     compare-phystwin-additional-controls
     analyze-phystwin-horizon
     analyze-phystwin-controller-sensitivity
     infer-phystwin-controller-bias
     analyze-phystwin-spatial-modes
+    assess-practical-equivalence
     compare-phystwin-graph-anchors
     compare-phystwin-residual-scales
     evaluate-phystwin-perception-cues
@@ -59,6 +62,9 @@ DIAGNOSTIC_IDS: Final = frozenset(
     compare-phystwin-sota
     diagnose-phystwin-bias
     diagnose-deform360-raw-pairwise
+    diagnose-provider-failures
+    score-probabilistic-predictions
+    select-discrepancy-candidate
     audit-phystwin-state-decay
     audit-phystwin-state-modes
     aggregate-phystwin-state-modes
@@ -74,6 +80,13 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "replay-residuals": "replay exported residuals through the robust likelihood",
     "synthetic-benchmark": "run the controlled synthetic benchmark",
     "decisive-evidence": "summarize matched guarded prospective evidence",
+    "claim-bundle": "build or validate a content-addressed claim bundle",
+    "assess-practical-equivalence": (
+        "assess paired practical equivalence with frozen margins"
+    ),
+    "audit-prob4d-covariance-ablation": (
+        "verify and compare a controlled five-way Prob4D covariance ablation"
+    ),
     "confirm-phystwin-bayesian-anchor": (
         "evaluate the frozen Bayesian anchor on the official PhysTwin cohort"
     ),
@@ -83,6 +96,30 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     ),
     "deform360-bias-aware-result": (
         "aggregate the sealed Deform360 bias-aware prospective result"
+    ),
+    "diagnose-provider-failures": (
+        "attribute source-only provider and guarded-update rejection causes"
+    ),
+    "score-probabilistic-predictions": (
+        "score matched predictive distributions with proper scoring rules"
+    ),
+    "select-discrepancy-candidate": (
+        "select one matched discrepancy belief on source-only groups"
+    ),
+    "materialize-lagrangian-backend": (
+        "materialize or validate registered external material backends"
+    ),
+    "materialize-matphys-backend": (
+        "build or validate a guarded MatPhys spring-proposal backend artifact"
+    ),
+    "materialize-deformmaster-backend": (
+        "seal or adapt a producer-attested causal DeformMaster rollout"
+    ),
+    "materialize-newton-mpm-backend": (
+        "run or adapt an optional Newton implicit-MPM physical backend smoke"
+    ),
+    "seal-deform360-calibration": (
+        "seal all target-blind Deform360 calibration choices before confirmation"
     ),
     "fetch-phystwin-eval-data": "fetch the released PhysTwin evaluation subset",
 }
@@ -94,11 +131,22 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "replay-residuals": "residual-replay-v1",
     "synthetic-benchmark": "synthetic-benchmark-v3",
     "decisive-evidence": "bayesian-phystwin-decisive-evidence-v1",
+    "claim-bundle": "claim-bundle-v1",
+    "assess-practical-equivalence": "practical-equivalence-v1",
+    "audit-prob4d-covariance-ablation": "prob4d-covariance-ablation-v1",
     "combine-phystwin-profiles": "phystwin-profile-pooling-v1",
     "calibrate-phystwin-discrepancy": "phystwin-discrepancy-calibration-v1",
     "phystwin-refit": "phystwin-refit-v1",
     "evaluate-deform360-online-belief": "deform360-online-belief-v1",
+    "seal-deform360-calibration": "deform360-official-hub-visuotactile-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
+    "diagnose-provider-failures": "provider-failure-decomposition-v1",
+    "score-probabilistic-predictions": "probabilistic-prediction-scoring-v1",
+    "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
+    "materialize-lagrangian-backend": "material-backend-v1",
+    "materialize-matphys-backend": "matphys-backend-v1",
+    "materialize-deformmaster-backend": "deformmaster-backend-v1",
+    "materialize-newton-mpm-backend": "newton-mpm-backend-v1",
 }
 
 
@@ -121,6 +169,7 @@ def owner(command_id: str) -> str:
     if exact is not None:
         return exact
     rules = (
+        (("pokeflex",), "pokeflex-public-evaluation-v1"),
         (("deform360",), "deform360-bias-aware-v1"),
         (("matphys",), "matphys-causal-backbone-v1"),
         (("motioncrafter",), "phystwin-motioncrafter-v1"),
@@ -165,7 +214,13 @@ def owner(command_id: str) -> str:
 
 
 def optional_dependencies(command_id: str) -> tuple[str, ...]:
+    if command_id == "seal-deform360-calibration":
+        return ()
     dependencies: list[str] = []
+    if command_id == "evaluate-pokeflex-public":
+        dependencies.extend(("graph", "vision"))
+    if command_id == "materialize-newton-mpm-backend":
+        dependencies.append("mpm")
     if command_id in {
         "download-deform360-selective-virtual-sensing",
         "fetch-phystwin-eval-data",

@@ -1,0 +1,139 @@
+name: Finite-group query covariance calibration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/query-calibration-v1.yml"
+      - "src/bayesian_phystwin/query_calibration.py"
+      - "tests/test_query_calibration*.py"
+      - "docs/query_calibration_v1.md"
+      - "docs/finite_group_calibration_design.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: query-calibration-v1-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Finite groups, covariance geometry, persistence, and provenance
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve isolated validation paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/query-calibration-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          mkdir -p "${root}"
+          {
+            echo "QUERY_CALIBRATION_RUN_ROOT=${root}"
+            echo "QUERY_CALIBRATION_VENV=${root}/venv"
+          } >> "${GITHUB_ENV}"
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Create isolated validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "${QUERY_CALIBRATION_VENV}"
+          echo "${QUERY_CALIBRATION_VENV}/bin" >> "${GITHUB_PATH}"
+          "${QUERY_CALIBRATION_VENV}/bin/python" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          "${QUERY_CALIBRATION_VENV}/bin/python" -m pip install -e ".[dev]"
+          "${QUERY_CALIBRATION_VENV}/bin/python" -m pip check
+
+      - name: Record exact environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=$(git rev-parse HEAD)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            python -m pip --version
+            python -m pip freeze --all
+          } | tee "${QUERY_CALIBRATION_RUN_ROOT}/environment.txt"
+
+      - name: Check focused source quality
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/query_calibration.py \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/query_calibration.py \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
+          python -m mypy src/bayesian_phystwin/query_calibration.py
+
+      - name: Run focused and adjacent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py \
+            tests/test_calibration.py \
+            tests/test_grouped_conformal.py \
+            | tee "${QUERY_CALIBRATION_RUN_ROOT}/pytest.txt"
+          python -m py_compile \
+            src/bayesian_phystwin/query_calibration.py \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
+
+      - name: Verify clean repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: query-calibration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.QUERY_CALIBRATION_RUN_ROOT }}/environment.txt
+            ${{ env.QUERY_CALIBRATION_RUN_ROOT }}/pytest.txt
+          if-no-files-found: warn
+          retention-days: 30

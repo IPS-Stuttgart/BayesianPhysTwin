@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 
+from ._canonical_contracts import immutable_array
 
 DYNAMIC_DISCREPANCY_SCHEMA_VERSION = 1
 LOCALIZATION_GRAPH_RANK = 4
@@ -41,9 +43,7 @@ def _is_sha256(value: Any) -> bool:
 
 
 def _readonly(values: np.ndarray, *, dtype: Any = float) -> np.ndarray:
-    result = np.asarray(values, dtype=dtype).copy()
-    result.setflags(write=False)
-    return result
+    return immutable_array(values, dtype=dtype)
 
 
 def _json_data(values: Mapping[str, Any], *, name: str) -> dict[str, Any]:
@@ -100,7 +100,10 @@ class DynamicDiscrepancyCorrection:
             if values.shape != (rank, 3) or not np.all(np.isfinite(values)):
                 raise ValueError(f"{name} must have finite shape (rank, 3)")
             object.__setattr__(self, name, values)
-        if self.prefix_frame_start < 0 or self.prefix_frame_stop <= self.prefix_frame_start:
+        if (
+            self.prefix_frame_start < 0
+            or self.prefix_frame_stop <= self.prefix_frame_start
+        ):
             raise ValueError("prefix interval must be nonempty and nonnegative")
         if self.frame_dt_s <= 0.0 or not np.isfinite(self.frame_dt_s):
             raise ValueError("frame_dt_s must be positive and finite")
@@ -112,9 +115,13 @@ class DynamicDiscrepancyCorrection:
             "graph_rank": LOCALIZATION_GRAPH_RANK,
         }
         if any(boundary.get(key) != value for key, value in required.items()):
-            raise ValueError("dynamic discrepancy artifact violates its information boundary")
+            raise ValueError(
+                "dynamic discrepancy artifact violates its information boundary"
+            )
         if self.prefix_frame_stop - self.prefix_frame_start != 7:
-            raise ValueError("prefix must contain the endpoint and exactly six O-plus frames")
+            raise ValueError(
+                "prefix must contain the endpoint and exactly six O-plus frames"
+            )
         checksums = dict(self.source_checksums)
         if not checksums or any(
             not key or not _is_sha256(value) for key, value in checksums.items()
@@ -323,7 +330,8 @@ def scale_coefficients_to_field_limit(
         raise ValueError("coefficient shape and maximum_node_norm must be valid")
     field = basis @ values
     before = float(np.max(np.linalg.norm(field, axis=1), initial=0.0))
-    scale = min(1.0, maximum_node_norm / max(before, np.finfo(float).tiny))
+    tiny = float(np.finfo(float).tiny)
+    scale = min(1.0, maximum_node_norm / max(before, tiny))
     limited = values * scale
     after = float(np.max(np.linalg.norm(basis @ limited, axis=1), initial=0.0))
     return limited, {
@@ -345,7 +353,10 @@ def write_dynamic_discrepancy_correction(
     target.parent.mkdir(parents=True, exist_ok=True)
     manifest_path = target.with_suffix(".json")
     arrays_path = target.with_suffix(".npz")
-    np.savez_compressed(arrays_path, **correction._array_payload())
+    np.savez_compressed(
+        arrays_path,
+        **correction._array_payload(),  # type: ignore[arg-type]
+    )
     manifest = {
         **correction._scalar_payload(),
         "artifact_id": correction.artifact_id,

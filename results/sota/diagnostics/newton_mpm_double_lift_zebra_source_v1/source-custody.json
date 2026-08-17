@@ -1,0 +1,55 @@
+{
+  "artifacts": {
+    "future-outcomes.npz": {
+      "byte_count": 910364,
+      "sha256": "f0483f987b40a0a3d3cbb408535fbac4a5fdecdd9894923bbec10f40dcdb324d"
+    },
+    "prefix-outcomes.npz": {
+      "byte_count": 2022134,
+      "sha256": "db0018d3581f8cc760746bdc84d96d77214a213fd3242490bb5adaa396772540"
+    },
+    "source-inputs.npz": {
+      "byte_count": 109118,
+      "sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7"
+    }
+  },
+  "case_id": "double_lift_zebra",
+  "custody_id": "6a77dd1cee4a89201d988cdc30e9e71266f57f52f950979fc504ae08b50884bb",
+  "information_boundary": {
+    "custody_preparer_read_full_already_open_source_payload": true,
+    "prediction_input_contains_future_object_observations": false,
+    "prediction_input_contains_known_full_controller_action": true,
+    "prefix_and_future_outcomes_are_separate_files": true,
+    "target_or_held_out_artifact_read": false
+  },
+  "mapping": {
+    "attached_material_particle_count": 107,
+    "controller_edge_count": 342
+  },
+  "protocol_id": "newton-mpm-double-lift-zebra-source-v1",
+  "protocol_sha256": "31c4bbe3bf9fa18247c403e75abad4cefd4deada4494d1b9611b66d7eec2a0ab",
+  "schema": "bayesian-phystwin.newton-mpm-source-custody-v1",
+  "schema_version": 1,
+  "sources": {
+    "final_data": {
+      "byte_count": 11370090,
+      "sha256": "fa81083526ab4d41a9b153a8d39b51a7baa9f5726184c52ff34e4902e26b9dc8"
+    },
+    "incumbent_physical": {
+      "byte_count": 11703828,
+      "sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+    },
+    "matphys_physical": {
+      "byte_count": 11704342,
+      "sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555"
+    },
+    "matphys_replay_result": {
+      "byte_count": 3030,
+      "sha256": "a4d8edd3a2f652e5110d414443009a36c29464c40af00bad121b9a51a32ed474"
+    },
+    "optimal_params": {
+      "byte_count": 551,
+      "sha256": "9dc8496dfa23820210103f9547b9dfa17285b148cfc3a8aaa1bf73918db9ed5e"
+    }
+  }
+}

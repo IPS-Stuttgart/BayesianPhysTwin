@@ -21,6 +21,14 @@ def _require(condition: bool | np.bool_, message: str) -> None:
         raise ValueError(message)
 
 
+def _nonnegative_integer(value: object, *, name: str) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
+        raise ValueError(f"{name} must be a nonnegative integer")
+    integer = int(value)
+    _require(integer >= 0, f"{name} must be a nonnegative integer")
+    return integer
+
+
 def _finite_matrix(value: np.ndarray, *, name: str) -> np.ndarray:
     matrix = np.asarray(value, dtype=np.float64).copy()
     _require(matrix.ndim == 2, f"{name} must be a matrix")
@@ -354,7 +362,7 @@ def greedy_nuisance_aware_selection(
         and len(observation_covariances) == candidate_count,
         "candidate input counts differ",
     )
-    _require(count >= 0, "count must be nonnegative")
+    selection_count = _nonnegative_integer(count, name="count")
     _require(
         np.isfinite(minimum_gain_nats) and minimum_gain_nats >= 0.0,
         "minimum_gain_nats must be finite and nonnegative",
@@ -372,7 +380,7 @@ def greedy_nuisance_aware_selection(
     remaining = set(range(candidate_count))
     selected: list[int] = []
     gains: list[float] = []
-    while remaining and len(selected) < count:
+    while remaining and len(selected) < selection_count:
         evaluations: dict[int, NuisanceAwareInformationUpdate] = {}
         for candidate in sorted(remaining):
             evaluations[candidate] = state.observation_information_gain(

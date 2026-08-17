@@ -1,0 +1,83 @@
+{
+  "claim_boundary": "Source-independent correction of the Deform360 v6 CUDA host-compiler binding after the registered GNU 12 executables were absent on the sole authorized runner. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "compiler_family": "GNU",
+    "compiler_major_version": 11,
+    "compiler_package_versions": {
+      "cc": "gcc-11 11.5.0-1ubuntu1~24.04.1",
+      "cxx": "g++-11 11.5.0-1ubuntu1~24.04.1"
+    },
+    "compiler_paths": {
+      "cc": "/usr/bin/gcc-11",
+      "cxx": "/usr/bin/g++-11"
+    },
+    "compiler_versions": {
+      "cc": "11.5.0",
+      "cxx": "11.5.0"
+    },
+    "cuda_host_compiler_environment": [
+      "CC",
+      "CXX",
+      "CUDAHOSTCXX",
+      "NVCC_CCBIN"
+    ],
+    "nvcc_compiler_bindir_probe_required": true,
+    "resolved_compiler_paths": {
+      "cc": "/usr/bin/x86_64-linux-gnu-gcc-11",
+      "cxx": "/usr/bin/x86_64-linux-gnu-g++-11"
+    },
+    "resolved_compiler_sha256": {
+      "cc": "920b82bda223384ee558b43dd2a6e4c465b40ba268380f12ea59df45eeb7609d",
+      "cxx": "02ba98cc5feefe173cfb8c28c98089817737800537dc7189138ed66b07cf56ec"
+    },
+    "source_independent_probe": {
+      "cuda_toolkit_release": "12.1.1",
+      "host": "workstation2",
+      "probe": "compile a trivial CUDA translation unit with nvcc --compiler-bindir /usr/bin/g++-11",
+      "result": "passed"
+    },
+    "unsupported_compiler_override_allowed": false
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:99fb907a41abae55e6b4bfc9c428152bb267019432d005d4f479c272c30c145a",
+    "artifact_id": 9131997879,
+    "error_message": "registered CUDA host compiler is unavailable: /usr/bin/gcc-12",
+    "execution_receipt_id": "c87880567b37dff33c9d15386a409dec0b1be872869923dd391f5ebc4ed73d2a",
+    "execution_receipt_sha256": "2c55d6fa0e62cea0a7a022ca5e42eb812a8d70ac9d2a8d9d86b4d5b76acdddbd",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "270857469cfe8c7afc0db77d58e9dda7cc0f7c57",
+    "terminal_stage": "build-isolated-gpu-source-runtime",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31572805759
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_host_compiler_repair_id": "e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721",
+  "repair_id": "01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0",
+  "repair_scope": {
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "host_compiler_binding_corrected": true,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "prob4d_role_changed": false,
+    "replacement_allowed": false,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-cuda-host-compiler-gnu11-repair",
+  "schema_version": 1
+}

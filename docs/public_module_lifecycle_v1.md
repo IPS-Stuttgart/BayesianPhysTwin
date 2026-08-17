@@ -1,0 +1,97 @@
+# Public module lifecycle v1
+
+BayesianPhysTwin exposes several kinds of importable modules for different
+purposes. A module being importable does not by itself make it a supported
+integration boundary. The machine-readable registry at
+`api/public-module-lifecycle-v1.json` separates the current `0.4.x` surface into
+three explicit lifecycle categories while preserving every historical import.
+
+## Stable modules
+
+Stable modules own versioned artifact contracts, guarded inference, or public
+Prob4D and Causal4D integration boundaries. Within the documented compatibility
+line, their public semantics, units, shapes, failure behavior, and artifact
+interpretation cannot be silently changed. Incompatible changes require a new
+versioned namespace, provider API, or compatibility line.
+
+The stable category includes:
+
+- `bayesian_phystwin.v1` and its artifact owners;
+- `bayesian_phystwin.inference.v1` and its guarded-inference owners;
+- `bayesian_phystwin.inference.components_v1` for separate point-mean and
+  covariance admission;
+- `bayesian_phystwin.inference.component_beliefs_v1` for semantic validation of
+  the five complete-belief arms;
+- the public Causal4D provider-v1 and provider-v2 modules; and
+- the Prob4D causal-lineage validation bridge.
+
+The two component-admission modules remain explicit direct imports. Registering
+them as stable does not add symbols to the exact
+`bayesian_phystwin.inference.v1` export snapshot.
+
+Stable status does not promote every implementation dependency imported by
+those modules. It applies only to the explicitly registered module identities
+and their documented public contracts.
+
+## Historical compatibility modules
+
+Compatibility modules own symbols retained by the frozen `0.4.x` package-root
+convenience surface. Their historical imports remain available, and the lazy
+root shim must continue to return the same owning objects. The lifecycle label
+does not promote these research-oriented modules into the smaller versioned
+integration API.
+
+A future compatibility line may deprecate or reorganize these modules only
+after documenting replacement imports. The registry itself emits no warnings,
+moves no files, and changes no runtime behavior.
+
+## Experimental modules
+
+Experimental modules are dataset-specific, benchmark-specific, or
+research-lifecycle surfaces. The current registry classifies every Deform360
+root owner and `synthetic_benchmark` as experimental. Exact revisions and frozen
+artifacts remain reproducible, but current-main forward compatibility is not
+promised outside separately versioned contracts that those modules may consume.
+
+Experimental status does not authorize target access, confirmation access,
+retuning, deployment, or a scientific claim. It is software lifecycle metadata
+only.
+
+## Unregistered modules
+
+An importable module absent from the registry is internal or experimental and
+has no compatibility promise. Underscore-prefixed modules are always internal
+and cannot be added to the public lifecycle registry.
+
+New public modules should be registered only when their intended lifecycle is
+clear. Adding a stable module requires a documented consumer boundary and
+appropriate installed-artifact tests. Adding a historical compatibility module
+requires an explicit package-root compatibility decision. Dataset or benchmark
+surfaces should normally remain experimental.
+
+## Validation
+
+Run the fail-closed checker from the repository root:
+
+```bash
+python tools/quality/check_public_module_lifecycle.py
+```
+
+Add `--json` for a machine-readable report. The checker validates:
+
+- strict JSON syntax and exact schema fields;
+- canonical, sorted, unique, and disjoint module lists;
+- exact bindings to the root-export migration and stable API manifests;
+- complete one-category coverage of every historical root owner;
+- experimental classification of dataset and benchmark root owners;
+- required stable integration identities; and
+- one regular, non-symlinked source file for every classified module.
+
+The changed-source quality ratchet executes this checker on every pull request.
+The manifest, checker, and this policy document are also included in the source
+distribution.
+
+A successful lifecycle check establishes software-policy consistency only. It
+does not establish estimator accuracy, covariance calibration, provider
+competence, unseen-object transfer, physical-query benefit, deployment safety,
+or state of the art.

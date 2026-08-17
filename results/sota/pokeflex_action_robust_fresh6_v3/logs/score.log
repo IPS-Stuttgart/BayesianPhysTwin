@@ -1,0 +1,46 @@
+{
+  "published_kinect_CD_UL1_mm": 6.498,
+  "published_reference_is_contextual_only": true,
+  "published_direct_comparison_authorized": false,
+  "action_robust_fresh_take_count": 6,
+  "development_overlap_take_count": 0,
+  "baseline_frame_balanced_CD_UL1_mm": 5.700643789970182,
+  "global_scale_frame_balanced_CD_UL1_mm": 5.634563963550509,
+  "action_robust_scale_frame_balanced_CD_UL1_mm": 5.5562413905477275,
+  "global_scale_checkpoint_pairing": {
+    "reference_mean_CD_UL1_mm": 5.771228493610711,
+    "candidate_mean_CD_UL1_mm": 5.712049462683591,
+    "relative_CD_UL1_improvement": 0.010254147967393174,
+    "win_count": 5,
+    "tie_count": 0,
+    "minimum_per_object_relative_improvement": -0.001255329494013344,
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.03045560960951092,
+    "passed": false
+  },
+  "checkpoint_pairing": {
+    "reference_mean_CD_UL1_mm": 5.771228493610711,
+    "candidate_mean_CD_UL1_mm": 5.6419434126320835,
+    "relative_CD_UL1_improvement": 0.02240165696467543,
+    "win_count": 6,
+    "tie_count": 0,
+    "minimum_per_object_relative_improvement": 0.0024190382990383792,
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.055600387699891694,
+    "passed": true
+  },
+  "global_scale_advancement": {
+    "reference_mean_CD_UL1_mm": 5.712049462683591,
+    "candidate_mean_CD_UL1_mm": 5.6419434126320835,
+    "relative_CD_UL1_improvement": 0.012273361865912684,
+    "win_count": 6,
+    "tie_count": 0,
+    "minimum_per_object_relative_improvement": 0.0011826993014361583,
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.016427603374932653,
+    "passed": true
+  },
+  "candidate_global_jaccard_valid": null,
+  "candidate_jaccard_valid_fraction": 0.0,
+  "jaccard_is_gating": false,
+  "released_checkpoint_pairing_is_primary": true,
+  "global_scale_is_advancement_baseline": true,
+  "all_target_gates_passed": true
+}

@@ -20,11 +20,11 @@ from bayesian_phystwin.cli.command_registry import (
 
 def test_registry_is_complete_and_unambiguous() -> None:
     validate_registry()
-    assert len(COMMANDS) == 80
+    assert len(COMMANDS) == 92
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
-    assert len(COMMANDS_BY_LEGACY_ALIAS) == 79
-    assert len(COMMANDS_BY_PREVIOUS_ROUTE) == 42
+    assert len(COMMANDS_BY_LEGACY_ALIAS) == 90
+    assert len(COMMANDS_BY_PREVIOUS_ROUTE) == 47
     assert set(STABLE_ROUTES) == {
         command.command_id
         for command in COMMANDS
@@ -35,12 +35,100 @@ def test_registry_is_complete_and_unambiguous() -> None:
 def test_registry_covers_all_lifecycle_states() -> None:
     counts = {status: len(iter_commands(status=status)) for status in CommandStatus}
     assert counts == {
-        CommandStatus.STABLE: 6,
-        CommandStatus.EXPERIMENT: 32,
-        CommandStatus.DIAGNOSTIC: 17,
+        CommandStatus.STABLE: 7,
+        CommandStatus.EXPERIMENT: 38,
+        CommandStatus.DIAGNOSTIC: 22,
         CommandStatus.ARCHIVED: 25,
     }
     assert len(iter_commands()) == len(COMMANDS)
+
+
+def test_provider_failure_decomposition_is_a_registered_diagnostic() -> None:
+    command = find_command_metadata("diagnose-provider-failures")
+    assert command is not None
+    assert command.status is CommandStatus.DIAGNOSTIC
+    assert command.canonical_command == (
+        "bpt diagnostic run diagnose-provider-failures"
+    )
+    assert command.owner == "provider-failure-decomposition-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_discrepancy_tournament_is_a_registered_diagnostic() -> None:
+    command = find_command_metadata("select-discrepancy-candidate")
+    assert command is not None
+    assert command.status is CommandStatus.DIAGNOSTIC
+    assert command.canonical_command == (
+        "bpt diagnostic run select-discrepancy-candidate"
+    )
+    assert command.owner == "discrepancy-candidate-tournament-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_material_backend_is_a_registered_experiment() -> None:
+    command = find_command_metadata("materialize-lagrangian-backend")
+    assert command is not None
+    assert command.status is CommandStatus.EXPERIMENT
+    assert command.canonical_command == (
+        "bpt experiment run materialize-lagrangian-backend"
+    )
+    assert command.owner == "material-backend-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_matphys_backend_is_a_registered_experiment() -> None:
+    command = find_command_metadata("materialize-matphys-backend")
+    assert command is not None
+    assert command.status is CommandStatus.EXPERIMENT
+    assert command.canonical_command == (
+        "bpt experiment run materialize-matphys-backend"
+    )
+    assert command.owner == "matphys-backend-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_deformmaster_backend_is_a_registered_experiment() -> None:
+    command = find_command_metadata("materialize-deformmaster-backend")
+    assert command is not None
+    assert command.status is CommandStatus.EXPERIMENT
+    assert command.canonical_command == (
+        "bpt experiment run materialize-deformmaster-backend"
+    )
+    assert command.owner == "deformmaster-backend-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_newton_mpm_backend_is_a_registered_experiment() -> None:
+    command = find_command_metadata("materialize-newton-mpm-backend")
+    assert command is not None
+    assert command.status is CommandStatus.EXPERIMENT
+    assert command.canonical_command == (
+        "bpt experiment run materialize-newton-mpm-backend"
+    )
+    assert command.owner == "newton-mpm-backend-v1"
+    assert command.optional_dependencies == ("mpm",)
+
+
+def test_probabilistic_scoring_is_a_registered_diagnostic() -> None:
+    command = find_command_metadata("score-probabilistic-predictions")
+    assert command is not None
+    assert command.status is CommandStatus.DIAGNOSTIC
+    assert command.canonical_command == (
+        "bpt diagnostic run score-probabilistic-predictions"
+    )
+    assert command.owner == "probabilistic-prediction-scoring-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_practical_equivalence_is_a_registered_diagnostic() -> None:
+    command = find_command_metadata("assess-practical-equivalence")
+    assert command is not None
+    assert command.status is CommandStatus.DIAGNOSTIC
+    assert command.canonical_command == (
+        "bpt diagnostic run assess-practical-equivalence"
+    )
+    assert command.owner == "practical-equivalence-v1"
+    assert command.optional_dependencies == ()
 
 
 def test_removed_aliases_are_metadata_not_runnable_selectors() -> None:

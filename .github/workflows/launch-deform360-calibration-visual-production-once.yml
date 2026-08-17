@@ -1,0 +1,87 @@
+name: Launch reviewed Deform360 calibration visual production once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-calibration-visual-production-once.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-calibration-visual-production-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute frozen calibration visual production
+    uses: ./.github/workflows/deform360-calibration-visual-production.yml
+    with:
+      execute_authorized: true
+      resume: true
+    secrets: inherit
+
+  receipt:
+    name: Publish calibration visual-production receipt
+    if: always()
+    needs: execute
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post custody-preserving status to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.execute.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          body=$(cat <<EOF
+          ## Deform360 calibration visual production completed with result \`${RESULT}\`
+
+          - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - runner scheduling contract: sole \`self-hosted\` label; GPU availability checked at runtime
+          - Deform360 storage root: \`/mnt/lexar4tb/datasets/deform360\`
+          - official raw revision root: \`/mnt/lexar4tb/datasets/deform360/data-7fea8e2\`
+          - adaptive-confirmation raw root registered: \`/mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370\`
+          - official raw payload opened: \`false\`
+          - adaptive-confirmation payloads opened: \`false\`
+          - pre-payload predecessor: run \`31274946936\` failed before admission download, model construction, or calibration-data access
+          - environment-bootstrap predecessor: run \`31275886113\` verified the frozen admission but failed because the unseeded uv environment had no pip module; it stopped before model snapshots, retained source-byte reads, inference, or prediction output
+          - dependency-metadata predecessor: run \`31276893637\` verified the runner roots and frozen admission, then stopped at the sole Decord platform-metadata report before model snapshots, retained source-byte reads, inference, or prediction output
+          - fresh-resume predecessor: run \`31277475724\` retained \`324/324\` technical failures at \`motioncrafter-production\`; all had empty stdout and one shared 812-byte stderr because the outer resume request was forwarded to fresh bundles without a progress journal
+          - fresh-resume correction: PR \`#303\` starts missing or empty job outputs normally and enables Prob4D bundle resume only for nonempty interrupted outputs
+          - retained-source admission run: \`31272512658\`
+          - retained-source admission artifact ID: \`9026043628\`
+          - retained-source admission ID: \`715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15\`
+          - admitted camera jobs: \`324\`
+          - Prob4D used: \`true\`, revision \`25d90ef7f78ba4307f4555cb636d666004e1bf66\`
+          - MotionCrafter used: \`true\`, revision \`9cb4e9679f5f34e249945544052464ef46324bc2\`
+          - model loading: \`single-session-shared-adapter-v1\`
+          - reserved evaluation frames opened: \`false\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - replacement allowed: \`false\`
+
+          This is calibration-only provider production. The compact seals and
+          retained technical-failure receipts require separate review before any
+          contact/physical-query materialization or calibration decision. It does
+          not authorize adaptive-confirmation or confirmation access and does not
+          establish a scientific claim.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed calibration visual-production request: 2026-08-09-sole-self-hosted-layout-v4
+# Reviewed calibration visual-production retry: 2026-08-09-decord-runtime-validation-v5
+# Reviewed calibration visual-production retry: 2026-08-09-fresh-resume-v6

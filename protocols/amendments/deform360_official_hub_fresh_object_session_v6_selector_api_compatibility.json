@@ -1,0 +1,74 @@
+{
+  "claim_boundary": "Technical process-local reconciliation of the already-frozen selector and prefix-stage APIs. It authorizes no source result, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "application": "process-local-selector-class-adapter",
+    "consumer_file_sha256": "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6",
+    "consumer_path": "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py",
+    "consumer_required_method": "select_initial_mask_from_rgb",
+    "delegation": "existing-select-initial-mask-with-exact-rgb-reader-override",
+    "producer_class": "DeformableObjectSam2VideoPredictor",
+    "producer_existing_method": "select_initial_mask",
+    "selector_byte_count": 17310,
+    "selector_file_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "selector_path": "src/causal4d_public/deform360_object_sam2.py",
+    "selector_repository": "IPS-Stuttgart/Causal4D",
+    "selector_repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:e082d5bccf2d8ac6476396aad9ca0eac9d906521a3069e4867d8457d5ebef417",
+    "artifact_id": 9113689469,
+    "error_message": "'DeformableObjectSam2VideoPredictor' object has no attribute 'select_initial_mask_from_rgb'",
+    "error_type": "AttributeError",
+    "execution_receipt_id": "d4012d47004669d4a220e9f57fbac19a3b514da97ca91280ff64a4d9b8922acf",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "e7c303bbac8af462c1437dfc9fb57deaa5537d8f",
+    "terminal_stage": "stage-prefix:026-sock-cloth-ep0007",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31522573008
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_stage_selector_repair_id": "aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae",
+  "repair_id": "5502830e01585cb1bb208d2d49e05d1f5e1d164dd707c5ff291038949dd0917c",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "consumer_bytes_changed": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "replacement_allowed": false,
+    "runtime_api_adapter_only": true,
+    "selector_algorithm_changed": false,
+    "selector_bytes_changed": false,
+    "selector_repository_revision_changed": false,
+    "source_cohort_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-selector-api-compatibility-repair",
+  "schema_version": 1
+}

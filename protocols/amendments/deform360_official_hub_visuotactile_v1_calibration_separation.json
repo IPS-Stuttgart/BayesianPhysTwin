@@ -1,0 +1,46 @@
+{
+  "access_boundary": {
+    "calibration_payloads_opened": false,
+    "confirmation_payloads_opened": false,
+    "target_outcomes_used": false
+  },
+  "amendment_id": "deform360-official-hub-visuotactile-v1-calibration-separation-v1",
+  "artifact_id": "697261131ae83a08a0ce437c7b837f32ab4870c6c0cc4256784373b3ce19f1c8",
+  "claim_boundary": "Protocol and finite-sample design only; this artifact does not establish provider competence, physical-query improvement, calibrated deployment uncertainty, or Causal4D intervention benefit.",
+  "information_order": {
+    "calibration_outcomes_used_for_policy_selection": false,
+    "cross_validation_alternative": "requires_separately_versioned_cv_plus_or_jackknife_plus_contract",
+    "predictor_score_guard_grouping_and_endpoints_frozen_before_scores": true,
+    "selection_source": "external_or_precalibration_source_only"
+  },
+  "primary_interval": {
+    "calibration_group_count": 10,
+    "finite_sample_rank": 10,
+    "maximum_finite_coverage": 0.9090909090909091,
+    "nominal_coverage": 0.9,
+    "pooling": "pooled",
+    "pooling_strata": [
+      "sheet",
+      "volumetric"
+    ]
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "schema": "bayesian-phystwin/deform360-finite-group-calibration-design",
+  "schema_version": 1,
+  "selection_lock_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
+  "selection_sha256": "b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222",
+  "statistical_unit": "physical_object",
+  "stratum_reporting": {
+    "calibration_group_count_per_stratum": 5,
+    "maximum_finite_coverage_per_stratum": 0.8333333333333334,
+    "nominal_90_percent_interval_claim": "forbidden",
+    "role": "diagnostic_and_no_regression_only"
+  },
+  "unit_accounting": {
+    "frames_are_statistical_units": false,
+    "points_are_statistical_units": false,
+    "taxels_are_statistical_units": false,
+    "tracks_are_statistical_units": false,
+    "views_are_statistical_units": false
+  }
+}

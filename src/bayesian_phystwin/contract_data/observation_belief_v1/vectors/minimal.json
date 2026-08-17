@@ -1,0 +1,339 @@
+{
+  "arrays": {
+    "association_probability": {
+      "dtype": "float64",
+      "shape": [
+        4
+      ],
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "correlation_group_ids": {
+      "dtype": "int64",
+      "shape": [
+        4
+      ],
+      "values": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "declared_frame_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        8,
+        9
+      ]
+    },
+    "entity_ids": {
+      "dtype": "int64",
+      "shape": [
+        4
+      ],
+      "values": [
+        0,
+        1,
+        0,
+        1
+      ]
+    },
+    "factor_group_ids": {
+      "dtype": "int64",
+      "shape": [
+        4
+      ],
+      "values": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "frame_ids": {
+      "dtype": "int64",
+      "shape": [
+        4
+      ],
+      "values": [
+        8,
+        8,
+        9,
+        9
+      ]
+    },
+    "group_composite_weight": {
+      "dtype": "float64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0.5,
+        0.5
+      ]
+    },
+    "group_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0,
+        1
+      ]
+    },
+    "group_prior_nominal_probability": {
+      "dtype": "float64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0.85,
+        0.65
+      ]
+    },
+    "local_covariance_m2": {
+      "dtype": "float64",
+      "shape": [
+        4,
+        3,
+        3
+      ],
+      "values": [
+        [
+          [
+            0.0001,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0001,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0001
+          ]
+        ],
+        [
+          [
+            0.0001,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0001,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0001
+          ]
+        ],
+        [
+          [
+            0.0001,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0001,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0001
+          ]
+        ],
+        [
+          [
+            0.0001,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0001,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0001
+          ]
+        ]
+      ]
+    },
+    "low_rank_factor_m": {
+      "dtype": "float64",
+      "shape": [
+        4,
+        3,
+        2
+      ],
+      "values": [
+        [
+          [
+            0.002,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.002,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.003
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.003
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ]
+      ]
+    },
+    "mean_xyz_m": {
+      "dtype": "float64",
+      "shape": [
+        4,
+        3
+      ],
+      "values": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.1,
+          0.0,
+          1.0
+        ],
+        [
+          1.1,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "prior_reliability": {
+      "dtype": "float64",
+      "shape": [
+        4
+      ],
+      "values": [
+        0.9,
+        0.8,
+        0.7,
+        0.6
+      ]
+    },
+    "view_indices": {
+      "dtype": "int64",
+      "shape": [
+        4
+      ],
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "window_indices": {
+      "dtype": "int64",
+      "shape": [
+        4
+      ],
+      "values": [
+        0,
+        0,
+        1,
+        1
+      ]
+    }
+  },
+  "descriptor": {
+    "case_id": "case-1",
+    "causal_frame_stop": 12,
+    "factor_names": [
+      "gauge_latent_0",
+      "gauge_latent_1"
+    ],
+    "metadata": {
+      "causal_source": "prefix only"
+    },
+    "schema_name": "phys4d.observation_belief",
+    "schema_version": 1,
+    "source_artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "source_repository": "FlorianPfaff/Prob4D",
+    "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "stream_id": "prob4d:points",
+    "view_names": [
+      "camera0"
+    ],
+    "window_names": [
+      "window0",
+      "window1"
+    ]
+  },
+  "expected_artifact_id": "9c02e638f60424cca7738d347d1258acd208eb562f422efacd077db4edb2fe80",
+  "vector_version": 1
+}

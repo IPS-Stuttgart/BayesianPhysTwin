@@ -1,0 +1,63 @@
+{
+  "schema": "bayesian-phystwin.public-module-lifecycle",
+  "schema_version": 1,
+  "package": "bayesian_phystwin",
+  "compatibility_line": "0.4",
+  "target_compatibility_line": "0.5",
+  "policy": "explicit-stable-compatibility-experimental",
+  "root_export_migration": "api/root-export-migration-v1.json",
+  "stable_api_manifests": [
+    "api/versioned-public-api-v1.json",
+    "api/inference-public-api-v1.json"
+  ],
+  "unregistered_module_policy": "internal-or-experimental-no-compatibility-promise",
+  "stable_modules": [
+    "bayesian_phystwin.causal4d_provider_v1",
+    "bayesian_phystwin.causal4d_provider_v2",
+    "bayesian_phystwin.claim_bundle_v1",
+    "bayesian_phystwin.complete_belief_selection",
+    "bayesian_phystwin.evidence_decision_v1",
+    "bayesian_phystwin.inference.component_beliefs_v1",
+    "bayesian_phystwin.inference.components_v1",
+    "bayesian_phystwin.inference.v1",
+    "bayesian_phystwin.observation_belief",
+    "bayesian_phystwin.physical_linearization",
+    "bayesian_phystwin.physical_query_v1",
+    "bayesian_phystwin.posterior_covariance_semantics",
+    "bayesian_phystwin.prior_aware_gauge_belief",
+    "bayesian_phystwin.prob4d_causal_lineage",
+    "bayesian_phystwin.prospective_prob4d_update",
+    "bayesian_phystwin.repository_provenance",
+    "bayesian_phystwin.run_manifest",
+    "bayesian_phystwin.run_manifest_v2",
+    "bayesian_phystwin.v1"
+  ],
+  "compatibility_modules": [
+    "bayesian_phystwin.bias_aware_belief",
+    "bayesian_phystwin.bias_aware_input_contract",
+    "bayesian_phystwin.calibration",
+    "bayesian_phystwin.claim_bearing_prob4d",
+    "bayesian_phystwin.drift_bias",
+    "bayesian_phystwin.endpoint_model_average",
+    "bayesian_phystwin.gauge_aware_belief",
+    "bayesian_phystwin.group_sandwich_covariance",
+    "bayesian_phystwin.grouped_conformal",
+    "bayesian_phystwin.grouped_likelihood",
+    "bayesian_phystwin.material_identity_marginalization",
+    "bayesian_phystwin.nuisance_aware_information",
+    "bayesian_phystwin.observation_belief_gauge_adapter",
+    "bayesian_phystwin.parameter_posterior",
+    "bayesian_phystwin.phystwin_adapter",
+    "bayesian_phystwin.pseudo_measurements",
+    "bayesian_phystwin.residual_replay",
+    "bayesian_phystwin.robust_likelihood",
+    "bayesian_phystwin.structured_reliability"
+  ],
+  "experimental_modules": [
+    "bayesian_phystwin.deform360_calibration_factor_materializer",
+    "bayesian_phystwin.deform360_contact_anchor",
+    "bayesian_phystwin.deform360_public_contact_prefix",
+    "bayesian_phystwin.deform360_visual_provider_lock",
+    "bayesian_phystwin.synthetic_benchmark"
+  ]
+}

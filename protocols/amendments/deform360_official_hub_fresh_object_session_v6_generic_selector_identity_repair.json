@@ -1,0 +1,72 @@
+{
+  "correction": {
+    "corrected_byte_count": 17310,
+    "corrected_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "field": "runtime_sources.generic_selector_source_sha256",
+    "path": "src/causal4d_public/deform360_object_sam2.py",
+    "previous_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+    "repository": "IPS-Stuttgart/Causal4D",
+    "repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
+    "selector_semantics": "deform360-object-sam2-generic-selector"
+  },
+  "diagnostic_probe": {
+    "complete_history_searched": true,
+    "historical_match_found": false,
+    "observed_byte_count": 17310,
+    "observed_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "registered_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+    "workflow_run_id": 31458663573
+  },
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:4438365b1664020f5398dfc1b6bdcd749b7499c8c1168ef62ca0fa49cb95d63a",
+    "artifact_id": 9088797337,
+    "artifact_name": "deform360-v6-source-prediction-evidence-31458096956-1",
+    "error": "frozen generic SAM2 selector source is unavailable",
+    "execution_receipt_id": "cfcfeab74ee9cc88002e398afa2655ccc1a56752787fe6b44a961061fb7cd040",
+    "physical_manifest_count": 0,
+    "prepared_source_inventory_id": "b94c1c87d0a8c571d03cc4e222a20c2fa41b12236461c9e4134ba39bf41267bb",
+    "prepared_source_inventory_sha256": "82ca509fcc0575224b80eafd0944354ac57bd72482b2dc3d0b6b4748e635deeb",
+    "prepared_source_object_count": 10,
+    "prepared_source_stream_count": 324,
+    "source_prediction_seal_count": 0,
+    "source_revision": "67daacdaafe98b63b8aa0357dccdcd11b9a81d51",
+    "status": "source-inputs-incomplete",
+    "terminal_stage": "locate-frozen-generic-selector",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31458096956
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "replacement_allowed": false,
+    "repository_revision_changed": false,
+    "runtime_byte_identity_only": true,
+    "selector_semantics_changed": false,
+    "source_cohort_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-runtime-identity-repair",
+  "schema_version": 1,
+  "semantics": "pre-source-prediction-generic-selector-byte-identity-repair-v1",
+  "superseded_execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+}

@@ -1,0 +1,352 @@
+{
+  "claim_boundary": "A positive result supports only object-session-level improvement of one source-selected, source-calibrated challenger over the unchanged physical fallback and last causal residual on the sixteen locked, previously untouched Deform360 object-session units. It does not establish deployment safety, general performance outside this cohort, Causal4D intervention benefit, official benchmark parity, or state of the art.",
+  "covariance_calibration": {
+    "all_available_methods_or_explicit_unavailability_required": true,
+    "confirmation_adaptation": "forbidden",
+    "exact-prior-fallback-role": "rejected-inference-only",
+    "final_full_source_refit_changes_no_method_or_decision_rule": true,
+    "interval_calibration": "group-clustered-split-conformal",
+    "maximum_mean_full_interval_width_ratio_vs_reference": 1.25,
+    "maximum_source_object_balanced_coverage": 0.98,
+    "method_complexity_order": [
+      "working-irls",
+      "observed-information",
+      "group-sandwich"
+    ],
+    "method_selection_nested_inside_candidate_outer_folds": true,
+    "minimum_source_object_balanced_coverage": 0.8,
+    "population_safety_certificate_claimed": false,
+    "portfolio_contract": "bayesian-phystwin-posterior-query-covariance-portfolio-v1",
+    "proper_score_nonregression_vs_reference_required": true,
+    "raw_covariance_claimed_calibrated": false,
+    "reference_interval_required": true,
+    "required_raw_methods": [
+      "working-irls",
+      "observed-information",
+      "group-sandwich"
+    ],
+    "selected_method_must_match_at_least_outer_folds": 8,
+    "selection_strategy": "nested-source-only-proper-score-coverage-width-selection",
+    "selection_unit": "physical-object-session",
+    "target_nominal_coverage": 0.9,
+    "variance_scale_fitted_source_only": true
+  },
+  "cross_version_reporting": {
+    "cross_version_candidate_threshold_or_covariance_retuning_allowed": false,
+    "cross_version_replication_claim_requires_v5_and_v6_positive": true,
+    "v5_and_v6_terminal_records_must_be_reported_together": true,
+    "v6_execution_after_source_authorization_is_not_optional_by_v5_result_sign": true,
+    "v6_positive_result_does_not_override_or_relabel_v5": true,
+    "v6_standalone_claim_scope": "the-sixteen-fresh-v6-object-session-units-only"
+  },
+  "evaluation": {
+    "all_covariance_portfolio_members_reported_as_diagnostics": true,
+    "all_target_units_in_denominator": true,
+    "bootstrap": {
+      "confirmatory_contrast_count": 3,
+      "confirmatory_contrasts": [
+        {
+          "comparator": "B0_physical_fallback",
+          "metric": "primary-loss"
+        },
+        {
+          "comparator": "B1_last_causal_residual",
+          "metric": "primary-loss"
+        },
+        {
+          "comparator": "B1_last_causal_residual",
+          "metric": "gaussian-nll"
+        }
+      ],
+      "contract": "bayesian-phystwin-group-clustered-paired-bootstrap-v1",
+      "familywise_confidence": 0.95,
+      "per_confirmatory_contrast_confidence": 0.9833333333333333,
+      "replicates": 20000,
+      "seed": 20260811
+    },
+    "endpoint_view_reservation": {
+      "metadata_only_selection": true,
+      "ranking": "ascending-sha256(object_id\\0episode_id\\0camera_id\\0v6-fresh-endpoint-view-v1)",
+      "reserved_views_contribute_likelihood": false,
+      "selected_before_target_payload_opening": true,
+      "views_per_unit": 2
+    },
+    "future_evaluation_frame_range_half_open": [
+      58,
+      76
+    ],
+    "methods": [
+      {
+        "method_id": "B0_physical_fallback",
+        "role": "baseline-and-exact-fallback"
+      },
+      {
+        "method_id": "B1_last_causal_residual",
+        "role": "registered-reference"
+      },
+      {
+        "method_id": "C1_source_selected_challenger_guarded",
+        "role": "primary-candidate"
+      },
+      {
+        "method_id": "C2_source_selected_challenger_unguarded",
+        "role": "safety-diagnostic"
+      }
+    ],
+    "observation_causal_frame_range_half_open": [
+      0,
+      58
+    ],
+    "only_source_selected_covariance_is_claim_bearing": true,
+    "primary_endpoint": {
+      "aggregation": "average-within-object-session-then-equal-unit-mean",
+      "direction": "lower-is-better",
+      "endpoint_id": "future-held-out-view-geometry-error",
+      "target_independent_of_contact_refinement": true,
+      "target_source": "released-future-held-out-view-geometry-under-frozen-processing"
+    },
+    "registered_action_frame_range_half_open": [
+      0,
+      81
+    ],
+    "rejected_or_unsupported_candidate_uses_exact_fallback": true,
+    "secondary_endpoints": [
+      "future-control-point-track-error",
+      "gaussian-nll",
+      "object-session-coverage-and-full-interval-width",
+      "acceptance-coverage",
+      "harmful-accepted-update-frequency",
+      "worst-unit-regression",
+      "sheet-and-volumetric-strata"
+    ],
+    "secondary_endpoints_cannot_rescue_primary_failure": true,
+    "statistical_unit": "physical-object-session",
+    "target_stratum_counts": {
+      "sheet": 8,
+      "volumetric": 8
+    },
+    "target_unit_count": 16,
+    "unscored_terminal_buffer_frame_range_half_open": [
+      76,
+      81
+    ],
+    "within_unit_rows_do_not_increase_sample_size": true
+  },
+  "fresh_selection": {
+    "allowed_prelock_inputs": [
+      "official-raw-object-directory-names",
+      "selected-object-metadata-json",
+      "prior-open-reserved-cache-exclusion-identities"
+    ],
+    "dataset": {
+      "raw_prefix": "raw",
+      "repo_id": "brownu/deform360",
+      "revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+    },
+    "episode_identity_must_be_previously_untouched": true,
+    "episode_ranking": "ascending-sha256(object_id\\0episode_id\\0deform360-v6-fresh-session-v1)",
+    "forbidden_prelock_inputs": [
+      "camera-pixels",
+      "depth-or-geometry-values",
+      "tactile-arrays",
+      "robot-arrays",
+      "prediction-values",
+      "prediction-residuals",
+      "future-frames",
+      "target-outcomes"
+    ],
+    "insufficient_eligible_units_action": "publish-terminal-support-negative-without-payload-access",
+    "metadata_only_before_selection_lock": true,
+    "object_count": 16,
+    "object_identity_must_be_previously_untouched": true,
+    "object_ranking": "ascending-sha256(stratum\\0object_id\\0deform360-v6-fresh-object-v1)",
+    "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "one_session_per_object": true,
+    "replacement_allowed": false,
+    "required_exclusions": [
+      "all-v5-development-object-identities",
+      "all-v5-confirmation-object-identities",
+      "all-prior-opened-or-reserved-object-identities",
+      "all-prior-opened-or-reserved-episode-identities",
+      "all-cache-touched-object-identities",
+      "all-source-tournament-target-identities"
+    ],
+    "selection_lock_must_bind_exact_metadata_sha256": true,
+    "selection_lock_required_before_payload_access": true,
+    "selection_unit": "unique-physical-object-session",
+    "stratum_counts": {
+      "sheet": 8,
+      "volumetric": 8
+    }
+  },
+  "frozen_implementation": {
+    "candidate_roster_frozen_at_design": true,
+    "causal4d_primary_evaluation": false,
+    "design_base_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa",
+    "exact_execution_revisions_frozen_before_v6_selection_lock": true,
+    "minimum_covariance_portfolio_revision": "275b6daed23876d66e87f9dd87241b2162f34284",
+    "minimum_discrepancy_tournament_revision": "50c7a38a3cef6e7b3a837da63ad51f7b031035e7",
+    "minimum_dynamic_endpoint_revision": "29c7ae4d2105502afec3fa998f87d24c41f04cf0",
+    "minimum_joint_sparse_source_revision": "1c3127ebef5b86fd62590a66605065ab9e7d1d93",
+    "minimum_tree_parity_trace_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa",
+    "source_and_target_use_identical_candidate_and_covariance_revisions": true
+  },
+  "guard_calibration": {
+    "candidate_prediction_and_risk_score_sealed_before_suffix_scoring": true,
+    "candidate_specific_thresholds_fitted_inside_each_outer_fold": true,
+    "causal_prefix_only_features": true,
+    "confirmation_adaptation": "forbidden",
+    "exact_point_and_interval_fallback_for_every_rejection": true,
+    "final_full_source_refit_changes_no_candidate_or_decision_rule": true,
+    "harmful_update_relative_margin": 0.02,
+    "maximum_harmful_source_units": 1,
+    "minimum_accepted_source_units": 8,
+    "minimum_accepted_source_units_per_stratum": 4,
+    "outer_folds": 10,
+    "risk_score_semantics": "lower-is-safer-inclusive-threshold-v1",
+    "risk_threshold_tie_policy": "accept-complete-tied-score-blocks",
+    "statistical_unit": "physical-object-session",
+    "strategy": "nested-source-only-tie-preserving-risk-coverage",
+    "training_units_per_outer_fold": 9
+  },
+  "information_boundary": {
+    "causal4d_evaluation_before_v6_decision": false,
+    "confirmation_side_retuning_allowed": false,
+    "cross_version_retuning_allowed": false,
+    "future_frames_used_for_candidate_prediction_or_risk_score": false,
+    "human_approval_required": false,
+    "human_selection_allowed": false,
+    "new_measurements_required": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_used": false,
+    "v5_result_sign_used_for_v6_go_no_go": false,
+    "v6_design_frozen_before_v5_terminal_outcome_use": true,
+    "v6_source_selection_completed_before_v5_terminal_outcome_read": true,
+    "v6_target_outcomes_used_for_candidate_selection": false,
+    "v6_target_outcomes_used_for_covariance_or_guard_calibration": false,
+    "v6_target_payloads_opened_before_source_authorization": false
+  },
+  "negative_controls": [
+    "camera-identity-permutation",
+    "dependence-group-duplication",
+    "covariance-method-permutation",
+    "guard-removal",
+    "future-frame-feature-use-forbidden",
+    "v5-confirmation-identity-overlap-forbidden"
+  ],
+  "policy_id": "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f",
+  "positive_decision": {
+    "harmful_update_relative_margin": 0.02,
+    "maximum_harmful_accepted_units": 0,
+    "maximum_mean_full_interval_width_ratio_vs_reference": 1.25,
+    "maximum_object_session_balanced_coverage": 0.98,
+    "maximum_stratum_mean_regression": 0.02,
+    "maximum_worst_unit_regression": 0.1,
+    "minimum_accepted_target_units": 12,
+    "minimum_accepted_units_per_stratum": 6,
+    "minimum_improved_target_units_vs_each_primary_comparator": 13,
+    "minimum_improved_units_per_stratum_vs_each_primary_comparator": 6,
+    "minimum_object_session_balanced_coverage": 0.8,
+    "minimum_relative_gaussian_nll_improvement_vs_last_causal_residual": 0.02,
+    "minimum_relative_improvement_vs_last_causal_residual": 0.05,
+    "minimum_relative_improvement_vs_physical_fallback": 0.1,
+    "primary_method_id": "C1_source_selected_challenger_guarded",
+    "require_all_checks": true,
+    "require_exact_point_and_interval_fallback_for_every_rejection": true,
+    "require_familywise_bootstrap_upper_bound_below_zero_for": [
+      {
+        "comparator": "B0_physical_fallback",
+        "metric": "primary-loss"
+      },
+      {
+        "comparator": "B1_last_causal_residual",
+        "metric": "primary-loss"
+      },
+      {
+        "comparator": "B1_last_causal_residual",
+        "metric": "gaussian-nll"
+      }
+    ]
+  },
+  "predecessor_boundary": {
+    "v5_confirmation_units_excluded_from_v6": true,
+    "v5_development_units_may_be_used_as_source_only": true,
+    "v5_method_threshold_or_outcome_used_for_v6_design": false,
+    "v5_must_have_immutable_terminal_record_before_v6_target_selection": true,
+    "v5_policy_id": "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749",
+    "v5_policy_path": "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json",
+    "v5_result_reinterpreted_or_rewritten": false,
+    "v5_selection_artifact_sha256": "dc1c2d192fbb841d2f0e290d77f21d697983b3f8bfbcae476e71fe902309cd82",
+    "v5_selection_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
+    "v6_positive_result_relabels_v5_negative": false,
+    "v6_source_selection_completed_before_v5_terminal_outcome_read": true,
+    "v6_target_execution_if_source_passes_independent_of_v5_result_sign": true
+  },
+  "protocol_id": "deform360-official-hub-fresh-object-session-v6",
+  "schema": "bayesian-phystwin.deform360-fresh-object-session-prospective-policy",
+  "schema_version": 6,
+  "semantics": "prospective-fresh-object-session-source-selected-challenger-v6",
+  "source_tournament": {
+    "baseline_candidate_id": "B0_physical_fallback",
+    "candidate_dependent_missing_intervals_forbidden": true,
+    "candidate_predictions_sealed_before_source_suffix_scoring": true,
+    "challenger_candidates": [
+      {
+        "candidate_id": "D1_dynamic_endpoint_model_average_v2",
+        "complexity_rank": 1,
+        "minimum_revision": "29c7ae4d2105502afec3fa998f87d24c41f04cf0"
+      },
+      {
+        "candidate_id": "VT1_joint_sparse_visuotactile_guarded_v5",
+        "complexity_rank": 2,
+        "minimum_revision": "1c3127ebef5b86fd62590a66605065ab9e7d1d93"
+      }
+    ],
+    "complete_candidate_roster_required": true,
+    "contract": "bayesian-phystwin-discrepancy-candidate-tournament-v1",
+    "equal_source_unit_weighting": true,
+    "exact_point_and_interval_fallback_required": true,
+    "final_winner_must_match_at_least_outer_folds": 8,
+    "harmful_update_relative_margin": 0.02,
+    "human_candidate_selection_allowed": false,
+    "inner_training_units_per_fold": 9,
+    "maximum_advanced_challengers": 1,
+    "maximum_harmful_source_units": 1,
+    "minimum_nonregressing_held_out_units": 8,
+    "minimum_nonregressing_held_out_units_per_stratum": 4,
+    "minimum_relative_point_improvement_over_reference": 0.02,
+    "outer_folds": 10,
+    "reference_candidate_id": "B1_last_causal_residual",
+    "reference_retained_action": "publish-terminal-source-negative-without-v6-target-access",
+    "source_stratum_counts": {
+      "sheet": 5,
+      "volumetric": 5
+    },
+    "source_unit_count": 10,
+    "source_units": "the-ten-v5-development-object-session-units-only",
+    "statistical_unit": "physical-object-session",
+    "target_outcomes_used": false,
+    "tie_breaking": [
+      "primary-point-loss",
+      "gaussian-proper-score",
+      "full-interval-width",
+      "lower-complexity-rank"
+    ]
+  },
+  "stage_order": [
+    "freeze-v6-design-before-v5-terminal-outcome-use",
+    "seal-all-v6-source-candidate-predictions-before-source-suffix-scoring",
+    "run-nested-source-only-candidate-covariance-and-guard-selection",
+    "terminate-without-target-access-if-no-stable-challenger",
+    "complete-or-close-v5-under-its-own-immutable-lock",
+    "apply-precommitted-v6-continuation-regardless-of-v5-result-sign",
+    "publish-metadata-only-disjoint-v6-object-session-selection-lock",
+    "freeze-exact-v6-execution-revisions-and-machine-authorization",
+    "open-sixteen-fresh-object-session-payloads-once",
+    "evaluate-one-source-selected-challenger-and-registered-baselines",
+    "jointly-report-v5-and-v6-without-relabeling-either-result",
+    "publish-positive-or-negative-v6-object-session-result",
+    "consider-causal4d-only-after-v6-positive-result"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "bayesian-phystwin.deform360-covariance-only-crossrepo-preregistration-binding",
+  "schema_version": 1,
+  "status": "target-closed",
+  "code_protocol": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "path": "protocols/locks/deform360_covariance_only_independent_validation_v1.json",
+    "protocol_id": "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc",
+    "role": "prediction-custody-and-runtime-lock"
+  },
+  "paper_protocol": {
+    "repository": "FlorianPfaff/BayesianPhysTwin-Paper",
+    "merge_revision": "7951467b1a24ac428a2ffc81dd0ce8bd0d622ae5",
+    "path": "preregistrations/deform360_covariance_only_confirmation_v1.json",
+    "protocol_id": "fa16c105e6d535d1e229ccf086fd69d05b2be74592b5c4e3f6c5289b8915fee3",
+    "role": "analysis-and-claim-authority"
+  },
+  "precedence": {
+    "prediction_custody_authority": "code_protocol",
+    "statistical_analysis_authority": "paper_protocol",
+    "claim_wording_authority": "paper_protocol",
+    "conflict_rule": "fail-closed-no-target-opening",
+    "target_execution_requires_both": true,
+    "target_result_promotion_requires_both": true
+  },
+  "aligned_frozen_values": {
+    "mean_predictor": "last_residual",
+    "mean_identity": "exact-byte-and-content-identity",
+    "covariance_donor": "independent_endpoint_v1",
+    "covariance_scales": [
+      8.0,
+      16.0,
+      16.0
+    ],
+    "observation_std_m": 0.005,
+    "development_object_session_count": 10,
+    "confirmation_object_session_count": 12,
+    "source_prediction_record_count": 100,
+    "bootstrap_replicates": 100000,
+    "bootstrap_seed": 20260812,
+    "independent_statistical_unit": "complete-physical-object-session",
+    "negative_result_complete": true,
+    "target_retuning_allowed": false
+  },
+  "information_boundary": {
+    "development_suffix_opened_by_binding": false,
+    "confirmation_payload_opened_by_binding": false,
+    "confirmation_prediction_opened_by_binding": false,
+    "confirmation_outcome_opened_by_binding": false,
+    "target_execution_authorized_by_binding_alone": false,
+    "claim_authorized_by_binding_alone": false
+  },
+  "binding_id": "531123205959a3d3d0549d9256b6ec222dca636198bc1e93f1b468d1a77c8f33"
+}

@@ -1,0 +1,75 @@
+{
+  "claim_boundary": "Technical scoping of one exact inherited system-package conflict in the already-declared Deform360 source runtime. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "bayesian_phystwin_install_target": ".[graph,vision]",
+    "exact_allowlisted_pip_check_line": "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4.",
+    "full_pip_check_expected_exit_code": 1,
+    "full_pip_check_expected_line_count": 1,
+    "inherited_pyrecest_distribution_version": "2.4.3",
+    "nerfstudio_version": "1.1.5",
+    "nuscenes_devkit_numpy_constraint": "numpy<2.0.0,>=1.22.0",
+    "nuscenes_devkit_version": "1.2.0",
+    "other_dependency_conflicts_allowed": false,
+    "pyrecest_extra_installed": false,
+    "pyrecest_runtime_used": false,
+    "runtime_numpy_version": "1.26.4"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:d1b1a09d71628ebe6cbaef52e4e5907df7ee9ca30bd1210557c857aa6ecf2ebe",
+    "artifact_id": 9116256114,
+    "error_message": "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4.",
+    "error_type": "DependencyConflict",
+    "execution_receipt_file_sha256": "2948fcb42192ceea5c513f9eec9705b35705915e9a3486e86d7f3077da3cb45e",
+    "execution_receipt_id": "9880e35a4a1fabcace127e6151ea16e645613f7ae49a6539c64723a6aa189786",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "processing_install_completed_before_pip_check_failure": true,
+    "runtime_bootstrap_log_sha256": "6a1ea246179a673584267e29c23caca85dfdd9e2948bb45baf7deec5e3277fb0",
+    "source_prediction_seal_count": 0,
+    "source_revision": "7f8af627db8812447cdc5f14e69ddf28bdc99f7f",
+    "terminal_stage": "build-isolated-gpu-source-runtime",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31529240660
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_processing_runtime_repair_id": "15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f",
+  "repair_id": "1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460",
+  "repair_scope": {
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "prob4d_role_changed": false,
+    "replacement_allowed": false,
+    "runtime_dependency_check_scoped": true,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-runtime-dependency-scope-repair",
+  "schema_version": 1
+}

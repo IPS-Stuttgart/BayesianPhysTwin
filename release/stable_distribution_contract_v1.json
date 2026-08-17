@@ -1,0 +1,106 @@
+{
+  "schema": "bayesian-phystwin.stable-distribution-contract",
+  "schema_version": 1,
+  "compatibility_line": "0.4",
+  "wheel": {
+    "maximum_size_bytes": 2200000,
+    "maximum_member_count": 550,
+    "required_members": [
+      "bayesian_phystwin/__init__.py",
+      "bayesian_phystwin/py.typed",
+      "bayesian_phystwin/v1/__init__.py",
+      "bayesian_phystwin/inference/v1/__init__.py"
+    ],
+    "forbidden_member_prefixes": [
+      ".github/",
+      "docs/",
+      "examples/",
+      "protocols/",
+      "scripts/",
+      "tests/",
+      "tools/"
+    ],
+    "console_scripts": {
+      "bpt": "bayesian_phystwin.cli.main:main"
+    },
+    "isolated_imports": [
+      {
+        "module": "bayesian_phystwin",
+        "api_manifest": "api/root-public-api-v0.4.json",
+        "forbidden_external_modules": [
+          "cv2",
+          "h5py",
+          "numpyro",
+          "pymc",
+          "scipy",
+          "torch",
+          "warp"
+        ],
+        "forbidden_package_prefixes": [
+          "bayesian_phystwin.deform360_",
+          "bayesian_phystwin.experiments",
+          "bayesian_phystwin.phystwin_",
+          "bayesian_phystwin.synthetic_benchmark"
+        ]
+      },
+      {
+        "module": "bayesian_phystwin.v1",
+        "api_manifest": "api/versioned-public-api-v1.json",
+        "forbidden_external_modules": [
+          "cv2",
+          "h5py",
+          "numpyro",
+          "pymc",
+          "scipy",
+          "torch",
+          "warp"
+        ],
+        "forbidden_package_prefixes": [
+          "bayesian_phystwin.deform360_",
+          "bayesian_phystwin.experiments",
+          "bayesian_phystwin.phystwin_",
+          "bayesian_phystwin.synthetic_benchmark"
+        ]
+      },
+      {
+        "module": "bayesian_phystwin.inference.v1",
+        "api_manifest": "api/inference-public-api-v1.json",
+        "forbidden_external_modules": [
+          "cv2",
+          "h5py",
+          "numpyro",
+          "pymc",
+          "scipy",
+          "torch",
+          "warp"
+        ],
+        "forbidden_package_prefixes": [
+          "bayesian_phystwin.deform360_",
+          "bayesian_phystwin.experiments",
+          "bayesian_phystwin.phystwin_"
+        ]
+      }
+    ]
+  },
+  "sdist": {
+    "maximum_size_bytes": 3100000,
+    "maximum_regular_member_count": 1260,
+    "required_members": [
+      "release/stable_distribution_contract_v1.json",
+      "docs/stable_distribution_contract_v1.md",
+      "tools/release/check_stable_distribution.py",
+      "tools/release/build_release_evidence.py",
+      "api/root-public-api-v0.4.json",
+      "api/versioned-public-api-v1.json",
+      "api/inference-public-api-v1.json"
+    ],
+    "supported_self_test_files": [
+      "tests/test_versioned_api_v1.py",
+      "tests/test_inference_v1.py",
+      "tests/test_public_api_manifest.py",
+      "tests/test_spd_system.py",
+      "tests/test_spd_system_adversarial.py",
+      "tests/test_stable_distribution_contract.py"
+    ]
+  }
+}

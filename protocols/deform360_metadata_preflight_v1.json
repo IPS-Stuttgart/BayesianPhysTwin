@@ -1,0 +1,51 @@
+{
+  "claim_boundary": "Metadata-only preflight for a later public Deform360 source diagnostic. This protocol does not evaluate a model, open array payloads, authorize reserved-target access, establish official Deform360 benchmark parity, or support an accuracy claim.",
+  "classification_precedence": [
+    "reserved_target",
+    "prior_calibration",
+    "prior_open_or_reserved",
+    "candidate_name_only"
+  ],
+  "dataset": {
+    "repository": "brownu/deform360",
+    "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "runner_cache_path": "/home/github-runner/.cache/datasets/deform360"
+  },
+  "information_boundary": {
+    "dataset_payload_opened": false,
+    "file_contents_hashed": false,
+    "names_and_directory_structure_only": true,
+    "reserved_target_outcomes_opened": false
+  },
+  "locked_at": "2026-08-04",
+  "next_stage_gate": {
+    "arbitrary_npz_discovery_for_scoring": false,
+    "dataset_payload_access_before_gate": "forbidden",
+    "method_or_threshold_selection_from_target_outcomes": "forbidden",
+    "requires_adapter_specific_contract_tests": true,
+    "requires_committed_content_addressed_cohort_lock": true,
+    "requires_exact_allowed_path_list": true,
+    "requires_exclusion_of_reserved_target_objects": true
+  },
+  "numeric_suffixes": [
+    ".h5",
+    ".npy",
+    ".npz",
+    ".ply"
+  ],
+  "prior_protocols": {
+    "v1": {
+      "expected_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+      "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+    },
+    "v2": {
+      "expected_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+      "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+    }
+  },
+  "protocol_id": "deform360-metadata-preflight-v1",
+  "sample_path_limit_per_object": 25,
+  "schema": "bayesian-phystwin/deform360-metadata-preflight-protocol",
+  "schema_version": 1,
+  "status": "locked-before-new-dataset-payload-access"
+}

@@ -1,0 +1,192 @@
+{
+  "all_target_gates_passed": false,
+  "artifact_kind": "PokeFlexInstanceShrinkageFresh12V2Summary",
+  "claim_boundary": "This protocol tests whether a correction magnitude calibrated on one opened interaction transfers to another untouched interaction of the same physical object. It compares the frozen instance scale with both the released checkpoint and the globally validated 0.125 correction. The cohort differs from the published eighteen-take split, so the published 6.498 mm value remains contextual rather than a table-SOTA gate.",
+  "frame_balanced": {
+    "checkpoint_CD_UL1_mm": 6.392855787434378,
+    "global_scale_CD_UL1_mm": 6.319788840301921,
+    "instance_scale_CD_UL1_mm": 6.279895534126148
+  },
+  "global_vs_checkpoint": {
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.045362069667258566,
+    "candidate_mean_CD_UL1_mm": 6.196394209996527,
+    "minimum_per_object_relative_improvement": 0.0,
+    "passed": true,
+    "reference_mean_CD_UL1_mm": 6.266420342857489,
+    "relative_CD_UL1_improvement": 0.011174822151976908,
+    "tie_count": 1,
+    "win_count": 11
+  },
+  "implementation_revision": "d51eca193ca1762b95c0802a1a428c09d036d92f",
+  "instance_vs_checkpoint": {
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.06607793384653596,
+    "candidate_mean_CD_UL1_mm": 6.158451910324801,
+    "minimum_per_object_relative_improvement": 0.0,
+    "passed": true,
+    "reference_mean_CD_UL1_mm": 6.266420342857489,
+    "relative_CD_UL1_improvement": 0.01722968243835599,
+    "tie_count": 1,
+    "win_count": 11
+  },
+  "instance_vs_global": {
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.007913056644174785,
+    "candidate_mean_CD_UL1_mm": 6.158451910324801,
+    "minimum_per_object_relative_improvement": -0.011402171146111119,
+    "passed": false,
+    "reference_mean_CD_UL1_mm": 6.196394209996527,
+    "relative_CD_UL1_improvement": 0.006123286928793878,
+    "tie_count": 1,
+    "win_count": 10
+  },
+  "object_balanced": {
+    "checkpoint_CD_UL1_mm": 6.266420342857489,
+    "global_scale_CD_UL1_mm": 6.196394209996527,
+    "instance_scale_CD_UL1_mm": 6.158451910324801
+  },
+  "objects": [
+    {
+      "checkpoint_CD_UL1_mm": 3.486677564406134,
+      "global_scale_CD_UL1_mm": 3.3552288233377463,
+      "instance_scale_CD_UL1_mm": 3.263886073917637,
+      "instance_vs_checkpoint_relative_improvement": 0.06389793331131945,
+      "instance_vs_global_relative_improvement": 0.02722399998019876,
+      "object_name": "3dPrintedCylinder",
+      "scored_frames": 97,
+      "supported_scored_frames": 92,
+      "take_id": "3dPrintedCylinder_T1"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 2.038224712606416,
+      "global_scale_CD_UL1_mm": 2.0292002286452053,
+      "instance_scale_CD_UL1_mm": 2.027088738294187,
+      "instance_vs_checkpoint_relative_improvement": 0.005463565544737551,
+      "instance_vs_global_relative_improvement": 0.0010405529829985993,
+      "object_name": "3dPrintedPizza",
+      "scored_frames": 58,
+      "supported_scored_frames": 53,
+      "take_id": "3dPrintedPizza_T4"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 6.641105789130773,
+      "global_scale_CD_UL1_mm": 6.509635215280657,
+      "instance_scale_CD_UL1_mm": 6.583859190104039,
+      "instance_vs_checkpoint_relative_improvement": 0.008620040222883861,
+      "instance_vs_global_relative_improvement": -0.011402171146111119,
+      "object_name": "3dPrintedPyramid",
+      "scored_frames": 67,
+      "supported_scored_frames": 62,
+      "take_id": "3dPrintedPyramid_T5"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 5.966029419728538,
+      "global_scale_CD_UL1_mm": 5.895737231089655,
+      "instance_scale_CD_UL1_mm": 5.835506866211345,
+      "instance_vs_checkpoint_relative_improvement": 0.02187762485474501,
+      "instance_vs_global_relative_improvement": 0.010215917453156004,
+      "object_name": "Beanbag",
+      "scored_frames": 56,
+      "supported_scored_frames": 51,
+      "take_id": "Beanbag_T1"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 4.2235830067414595,
+      "global_scale_CD_UL1_mm": 4.173731461774823,
+      "instance_scale_CD_UL1_mm": 4.136641063129036,
+      "instance_vs_checkpoint_relative_improvement": 0.02058487863826782,
+      "instance_vs_global_relative_improvement": 0.008886627945635602,
+      "object_name": "FoamCylinder",
+      "scored_frames": 39,
+      "supported_scored_frames": 36,
+      "take_id": "FoamCylinder_T6"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 2.3871418975965386,
+      "global_scale_CD_UL1_mm": 2.313836738322863,
+      "instance_scale_CD_UL1_mm": 2.278490361615963,
+      "instance_vs_checkpoint_relative_improvement": 0.0455153236135522,
+      "instance_vs_global_relative_improvement": 0.01527608932880895,
+      "object_name": "FoamHalfSphere",
+      "scored_frames": 81,
+      "supported_scored_frames": 76,
+      "take_id": "FoamHalfSphere_T6"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 8.328908419823923,
+      "global_scale_CD_UL1_mm": 8.251457671723912,
+      "instance_scale_CD_UL1_mm": 8.207118657393272,
+      "instance_vs_checkpoint_relative_improvement": 0.014622535906479127,
+      "instance_vs_global_relative_improvement": 0.005373476553431459,
+      "object_name": "Pillow",
+      "scored_frames": 86,
+      "supported_scored_frames": 80,
+      "take_id": "Pillow_T3"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 12.21476788626637,
+      "global_scale_CD_UL1_mm": 12.076825003103247,
+      "instance_scale_CD_UL1_mm": 11.91688337770958,
+      "instance_vs_checkpoint_relative_improvement": 0.02438724266645431,
+      "instance_vs_global_relative_improvement": 0.013243681625971147,
+      "object_name": "PlushDice",
+      "scored_frames": 73,
+      "supported_scored_frames": 65,
+      "take_id": "PlushDice_T6"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 8.05333796558216,
+      "global_scale_CD_UL1_mm": 8.022670466849409,
+      "instance_scale_CD_UL1_mm": 7.997893779493675,
+      "instance_vs_checkpoint_relative_improvement": 0.00688462179601047,
+      "instance_vs_global_relative_improvement": 0.0030883341722825904,
+      "object_name": "PlushMoon",
+      "scored_frames": 82,
+      "supported_scored_frames": 77,
+      "take_id": "PlushMoon_T4"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 7.044869739164262,
+      "global_scale_CD_UL1_mm": 6.996898337647702,
+      "instance_scale_CD_UL1_mm": 6.9531406532507125,
+      "instance_vs_checkpoint_relative_improvement": 0.013020692973725729,
+      "instance_vs_global_relative_improvement": 0.006253868826640705,
+      "object_name": "PlushTurtle",
+      "scored_frames": 63,
+      "supported_scored_frames": 58,
+      "take_id": "PlushTurtle_T6"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 7.05056718089613,
+      "global_scale_CD_UL1_mm": 7.05056718089613,
+      "instance_scale_CD_UL1_mm": 7.05056718089613,
+      "instance_vs_checkpoint_relative_improvement": 0.0,
+      "instance_vs_global_relative_improvement": 0.0,
+      "object_name": "PlushVolleyball",
+      "scored_frames": 77,
+      "supported_scored_frames": 0,
+      "take_id": "PlushVolleyball_T6"
+    },
+    {
+      "checkpoint_CD_UL1_mm": 7.761830532347164,
+      "global_scale_CD_UL1_mm": 7.680942161286976,
+      "instance_scale_CD_UL1_mm": 7.650346981882035,
+      "instance_vs_checkpoint_relative_improvement": 0.014363048768009732,
+      "instance_vs_global_relative_improvement": 0.003983258663129192,
+      "object_name": "Sponge",
+      "scored_frames": 96,
+      "supported_scored_frames": 91,
+      "take_id": "Sponge_T5"
+    }
+  ],
+  "prediction_barrier_file_sha256": "243ee31e5f1f8fd94d8d2fcb601f9ccb4a2afde1fd4527f017578d037d0a5e51",
+  "prediction_barrier_sha256": "8feb255b279fb4749ce8acabeb67eef7f74edf8bdb4625ccf351bf02180a5693",
+  "protocol_sha256": "ee2b4379d087c71a13a570a07d1acccfb881c7ad91479de42713265d47d225d3",
+  "published_direct_comparison_authorized": false,
+  "published_reference_is_contextual_only": true,
+  "schema_version": 1,
+  "scored_frame_count": 875,
+  "source_result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "summary_sha256": "9a78d4cd0e258c30ff290b87a81c9450a77e6d21032cd026ad0f0568cc195b60",
+  "supported_scored_frame_count": 741,
+  "target_result_file_sha256": "defc3c8cf78ccdea0c5b4d03fcb5d3e983dff1a63c4c08b29111a004bfdb0d3b",
+  "target_take_count": 12
+}

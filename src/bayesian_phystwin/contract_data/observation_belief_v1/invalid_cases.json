@@ -1,0 +1,156 @@
+{
+  "base_vector": "minimal",
+  "cases": [
+    {
+      "id": "future_observation_frame",
+      "mode": "semantic",
+      "mutations": [
+        {
+          "index": [
+            3
+          ],
+          "name": "frame_ids",
+          "op": "set",
+          "target": "array",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "id": "duplicate_observation_identity",
+      "mode": "semantic",
+      "mutations": [
+        {
+          "index": [
+            1
+          ],
+          "name": "entity_ids",
+          "op": "set",
+          "target": "array",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "non_positive_definite_local_covariance",
+      "mode": "semantic",
+      "mutations": [
+        {
+          "index": [
+            0,
+            2,
+            2
+          ],
+          "name": "local_covariance_m2",
+          "op": "set",
+          "target": "array",
+          "value": -0.0001
+        }
+      ]
+    },
+    {
+      "id": "group_ids_do_not_match_assignments",
+      "mode": "semantic",
+      "mutations": [
+        {
+          "index": [
+            1
+          ],
+          "name": "group_ids",
+          "op": "set",
+          "target": "array",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "association_probability_above_one",
+      "mode": "semantic",
+      "mutations": [
+        {
+          "index": [
+            0
+          ],
+          "name": "association_probability",
+          "op": "set",
+          "target": "array",
+          "value": 1.1
+        }
+      ]
+    },
+    {
+      "id": "extra_descriptor_field",
+      "mode": "closed_descriptor",
+      "mutations": [
+        {
+          "op": "set",
+          "path": [
+            "unexpected"
+          ],
+          "target": "descriptor",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "missing_descriptor_field",
+      "mode": "closed_descriptor",
+      "mutations": [
+        {
+          "op": "delete",
+          "path": [
+            "metadata"
+          ],
+          "target": "descriptor"
+        }
+      ]
+    },
+    {
+      "id": "extra_array_member",
+      "mode": "closed_arrays",
+      "mutations": [
+        {
+          "dtype": "int64",
+          "name": "unexpected",
+          "op": "add",
+          "shape": [
+            1
+          ],
+          "target": "arrays",
+          "value": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wrong_integer_dtype",
+      "mode": "exact_dtype",
+      "mutations": [
+        {
+          "dtype": "int32",
+          "name": "frame_ids",
+          "op": "astype",
+          "target": "array"
+        }
+      ]
+    },
+    {
+      "id": "tampered_payload_preserves_artifact_id",
+      "mode": "digest_mismatch",
+      "mutations": [
+        {
+          "index": [
+            0,
+            0
+          ],
+          "name": "mean_xyz_m",
+          "op": "set",
+          "target": "array",
+          "value": 0.25
+        }
+      ]
+    }
+  ],
+  "invalid_case_version": 1
+}

@@ -1,0 +1,120 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Branch lifecycle audit
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      stale_days:
+        description: Minimum inactivity age before cleanup review
+        required: false
+        default: "60"
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: branch-lifecycle-audit-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Inventory branches and workflows without modifying refs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out complete repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch every branch and tag for local reachability checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin \
+            '+refs/heads/*:refs/remotes/origin/*' \
+            '+refs/tags/*:refs/tags/*'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build the read-only branch lifecycle inventory
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_STALE_DAYS: ${{ inputs.stale_days }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          stale_days="${REQUESTED_STALE_DAYS:-60}"
+          mkdir -p branch-lifecycle-audit
+          python tools/maintenance/branch_lifecycle_audit.py \
+            --repository-root . \
+            --repository "${GITHUB_REPOSITORY}" \
+            --default-branch main \
+            --stale-days "${stale_days}" \
+            --output-json branch-lifecycle-audit/inventory.json \
+            --output-markdown branch-lifecycle-audit/report.md
+
+      - name: Build the read-only workflow lifecycle inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/quality/check_workflow_policy.py \
+            --inventory-only \
+            --inventory-json branch-lifecycle-audit/workflows.json \
+            --inventory-markdown branch-lifecycle-audit/workflows.md
+
+      - name: Compare the Actions registry with checked-in workflows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/maintenance/workflow_registry_audit.py \
+            --repository-root . \
+            --repository "${GITHUB_REPOSITORY}" \
+            --output-json branch-lifecycle-audit/workflow-registry.json \
+            --output-markdown branch-lifecycle-audit/workflow-registry.md
+
+      - name: Publish the operator summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f branch-lifecycle-audit/report.md ]]; then
+            cat branch-lifecycle-audit/report.md >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Branch lifecycle audit did not publish a report." \
+              >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ -f branch-lifecycle-audit/workflows.md ]]; then
+            printf '\n---\n\n' >> "${GITHUB_STEP_SUMMARY}"
+            cat branch-lifecycle-audit/workflows.md >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Workflow lifecycle audit did not publish a report." \
+              >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ -f branch-lifecycle-audit/workflow-registry.md ]]; then
+            printf '\n---\n\n' >> "${GITHUB_STEP_SUMMARY}"
+            cat branch-lifecycle-audit/workflow-registry.md \
+              >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Workflow registry audit did not publish a report." \
+              >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload the complete audit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: branch-lifecycle-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: branch-lifecycle-audit
+          if-no-files-found: error
+          retention-days: 90

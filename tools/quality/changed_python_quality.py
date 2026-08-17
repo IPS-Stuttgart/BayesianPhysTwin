@@ -8,7 +8,9 @@ ratchets quality without requiring an all-at-once cleanup:
 * every added or modified package module is type-checked;
 * mature public contracts are type-checked on every run;
 * stable modules with pre-existing type debt become blocking when modified;
-* a smaller, mature subset is checked with ``mypy --strict``.
+* a smaller, mature subset is checked with ``mypy --strict``;
+* public-module lifecycle classifications remain fail-closed; and
+* added or modified workflows satisfy lifecycle and immutable-action policy.
 """
 
 from __future__ import annotations
@@ -22,16 +24,31 @@ from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
-# These targets have a clean mypy baseline and therefore remain unconditional.
-_ALWAYS_TYPE_TARGETS = (
+# Portable artifact validators and manifests that own the installed v1 boundary.
+_STRICT_ARTIFACT_TYPE_TARGETS = (
     "src/bayesian_phystwin/run_manifest.py",
     "src/bayesian_phystwin/repository_provenance.py",
     "src/bayesian_phystwin/run_manifest_v2.py",
+    "src/bayesian_phystwin/claim_bundle_v1.py",
+    "src/bayesian_phystwin/evidence_decision_v1.py",
+    "src/bayesian_phystwin/physical_query_v1.py",
+)
+
+# Public integration entry points used by independent, Prob4D, and Causal4D
+# consumers. Keep this tuple in both unconditional and strict checks.
+_STRICT_INTEGRATION_TYPE_TARGETS = (
+    "src/bayesian_phystwin/v1/__init__.py",
+    "src/bayesian_phystwin/causal4d_provider_v1.py",
+    "src/bayesian_phystwin/prob4d_causal_lineage.py",
+)
+
+# These targets have a clean mypy baseline and therefore remain unconditional.
+_ALWAYS_TYPE_TARGETS = (
+    *_STRICT_ARTIFACT_TYPE_TARGETS,
     "src/bayesian_phystwin/cli/main.py",
     "src/bayesian_phystwin/cli/run_manifest.py",
     "src/bayesian_phystwin/gauge_aware_belief.py",
-    "src/bayesian_phystwin/causal4d_provider_v1.py",
-    "src/bayesian_phystwin/prob4d_causal_lineage.py",
+    *_STRICT_INTEGRATION_TYPE_TARGETS,
 )
 
 # These stable scientific modules contain pre-existing typing debt. They are
@@ -46,12 +63,11 @@ _CHANGED_ONLY_TYPE_DEBT = (
 )
 
 _STRICT_TYPE_TARGETS = (
-    "src/bayesian_phystwin/run_manifest.py",
-    "src/bayesian_phystwin/repository_provenance.py",
-    "src/bayesian_phystwin/run_manifest_v2.py",
+    *_STRICT_ARTIFACT_TYPE_TARGETS,
     "src/bayesian_phystwin/cli/main.py",
     "src/bayesian_phystwin/cli/run_manifest.py",
     "src/bayesian_phystwin/gauge_aware_belief.py",
+    *_STRICT_INTEGRATION_TYPE_TARGETS,
 )
 
 
@@ -152,6 +168,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parse_args(argv)
     head = _git_text("rev-parse", arguments.head)
+    checkout_head = _git_text("rev-parse", "HEAD")
     base = _resolve_base(arguments.base, head)
     changed_python = _changed_python_files(base, head)
 
@@ -177,6 +194,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     else:
         print("No added or modified Python files require Ruff checks.", flush=True)
+
+    # The workflow checker validates files from the checkout, not arbitrary Git
+    # objects. Tests may run on GitHub's synthetic pull-request merge commit even
+    # when changed-Python selection is bound to the contributor head, so pass the
+    # exact checked-out revision here. The dedicated changed-workflow preflight
+    # checks out the contributor head explicitly.
+    workflow_policy_command = [
+        sys.executable,
+        "tools/quality/check_workflow_policy.py",
+        "--head",
+        checkout_head,
+    ]
+    if base is not None:
+        workflow_policy_command.extend(("--base", base))
+    _run(
+        tuple(workflow_policy_command),
+        label="Workflow lifecycle and immutable-action policy",
+    )
+    _run(
+        (
+            sys.executable,
+            "tools/quality/check_public_module_lifecycle.py",
+        ),
+        label="Public module lifecycle policy",
+    )
 
     changed_package_modules = tuple(
         path for path in changed_python if path.startswith("src/bayesian_phystwin/")

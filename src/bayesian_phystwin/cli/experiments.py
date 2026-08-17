@@ -27,11 +27,15 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "analyze-phystwin-spatial-modes": (
         "bayesian_phystwin.cli.phystwin_spatial_mode_analysis"
     ),
+    "assess-practical-equivalence": ("bayesian_phystwin.cli.practical_equivalence"),
     "assimilate-phystwin-motioncrafter": (
         "bayesian_phystwin.cli.phystwin_motioncrafter_assimilation"
     ),
     "associate-phystwin-motioncrafter": (
         "bayesian_phystwin.cli.phystwin_motioncrafter_association"
+    ),
+    "audit-prob4d-covariance-ablation": (
+        "bayesian_phystwin.cli.prob4d_covariance_ablation"
     ),
     "audit-phystwin-calibration": "bayesian_phystwin.cli.phystwin_calibration",
     "audit-phystwin-state-decay": "bayesian_phystwin.cli.phystwin_state_decay",
@@ -95,6 +99,13 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "diagnose-phystwin-structure": (
         "bayesian_phystwin.cli.phystwin_structural_diagnostic"
     ),
+    "diagnose-provider-failures": (
+        "bayesian_phystwin.cli.provider_failure_decomposition"
+    ),
+    "score-probabilistic-predictions": "bayesian_phystwin.cli.probabilistic_scoring",
+    "select-discrepancy-candidate": (
+        "bayesian_phystwin.cli.discrepancy_candidate_tournament"
+    ),
     "download-deform360-selective-virtual-sensing": (
         "bayesian_phystwin.cli.deform360_selective_virtual_sensing_download"
     ),
@@ -111,6 +122,7 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "evaluate-phystwin-state-injection": (
         "bayesian_phystwin.cli.phystwin_state_injection"
     ),
+    "evaluate-pokeflex-public": ("bayesian_phystwin.cli.pokeflex_public_evaluation"),
     "export-phystwin-residuals": "bayesian_phystwin.cli.phystwin_export",
     "fetch-phystwin-eval-data": "bayesian_phystwin.cli.phystwin_data",
     "fit-phystwin-bayesian-anchor": "bayesian_phystwin.cli.phystwin_bayesian_anchor",
@@ -151,6 +163,10 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "infer-phystwin-controller-bias": (
         "bayesian_phystwin.cli.phystwin_controller_inference"
     ),
+    "materialize-lagrangian-backend": ("bayesian_phystwin.cli.lagrangian_backend"),
+    "materialize-matphys-backend": "bayesian_phystwin.cli.matphys_backend",
+    "materialize-deformmaster-backend": ("bayesian_phystwin.cli.deformmaster_backend"),
+    "materialize-newton-mpm-backend": ("bayesian_phystwin.cli.newton_mpm_backend"),
     "open-matphys-part-family-future": (
         "bayesian_phystwin.cli.matphys_part_family_future"
     ),
@@ -167,6 +183,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "report-matphys-loo-sota": "bayesian_phystwin.cli.matphys_loo_sota_report",
     "search-phystwin-topology-field": (
         "bayesian_phystwin.cli.phystwin_zero_order_topology"
+    ),
+    "seal-deform360-calibration": (
+        "bayesian_phystwin.cli.deform360_calibration_execution"
     ),
     "select-phystwin-motioncrafter-view": (
         "bayesian_phystwin.cli.phystwin_motioncrafter_selection"

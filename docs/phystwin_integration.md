@@ -56,6 +56,14 @@ boundary_distance
 flow_inconsistency
 ```
 
+Cue and probability domains are fail-closed. `confidence` and externally
+supplied prior reliability must be finite and lie in `[0, 1]`; `occluded` must
+contain booleans or exact numeric `0`/`1`; `boundary_distance` must be
+nonnegative and may use positive infinity to mean no nearby boundary; and
+`flow_inconsistency` must be finite and nonnegative. Invalid values are rejected
+rather than clipped or truth-value coerced, so an upstream Prob4D export cannot
+silently change the evidence admitted by the robust update.
+
 Build a simulator-independent continuous motion-consistency sidecar directly
 from the tracked geometry:
 

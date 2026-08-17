@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageTargetProtocol",
+  "protocol_id": "pokeflex-conservative-shrinkage-official13-public-v1",
+  "locked_at_utc": "2026-08-02T19:05:13Z",
+  "status": "pre-outcome lock for the publicly materializable subset of the official validation split",
+  "claim_boundary": "This protocol directly compares the unchanged source-selected correction with the released PokeFlex checkpoint on all thirteen officially listed validation takes that are present in the public archive. Ten exact takes are prospectively untouched for this method; FoamDice_T3, PlushOctopus_T6, and ToiletPaperRoll_T1 are disclosed development-overlap controls. Five officially listed takes are absent from the public archive and receive no replacements. Consequently this protocol cannot reproduce or directly compare against the published eighteen-object aggregate; the published 6.498 mm value is contextual only. Jaccard is diagnostic because the public target meshes are not guaranteed volumetric under the published boolean implementation.",
+  "source_gate": {
+    "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+    "result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+    "result_git_commit": "234e201d586712f5966908b86cacc3076dc5b6ca",
+    "passed": true,
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "source_object_count": 9,
+    "source_object_win_count": 9,
+    "source_object_balanced_relative_improvement": 0.01286289679729027
+  },
+  "target_cohort": {
+    "take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "FoamDice_T3",
+      "PlushMoon_T1",
+      "PlushOctopus_T6",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Beanbag_T6",
+      "FoamCylinder_T1",
+      "ToiletPaperRoll_T1"
+    ],
+    "prospective_take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "PlushMoon_T1",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Beanbag_T6",
+      "FoamCylinder_T1"
+    ],
+    "development_overlap_take_ids": [
+      "FoamDice_T3",
+      "PlushOctopus_T6",
+      "ToiletPaperRoll_T1"
+    ],
+    "missing_official_take_ids": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ],
+    "replacement_allowed": false,
+    "selection_basis": "the exact shot/take arrays hard-coded in upstream test/evaluate.py, intersected with takes physically present in the registered public archive",
+    "missingness_basis": "target-free public-archive inventory completed before this lock; no target mesh or score was opened",
+    "overlap_audit_basis": "exact take-ID search over tracked Bayesian-PhysTwin source, config, result, script, test, and documentation artifacts before opening the remaining ten archives"
+  },
+  "method": {
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "physical_prior": "released PokeFlex Kinect checkpoint",
+    "state_update": "robust correlation-aware graph registration at f-1",
+    "field": "action_local_state_relative_0.4",
+    "scale": 0.125,
+    "transfer": "one material-vertex-identity step from f-1 to f",
+    "required_action_history": "finite T_WT, T_WE, and force values for every frame used by the frozen action-local field",
+    "missing_required_robot_pose_action": "mark update unsupported and return byte-identical released checkpoint",
+    "unsupported_frame_action": "byte-identical released checkpoint",
+    "online_selector": "none"
+  },
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    }
+  },
+  "official_reference": {
+    "paper": "PokeFlex: A Real-World Dataset of Deformable Objects for Physics-Based Reconstruction",
+    "arxiv": "2410.07688v2",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "evaluator_path": "test/evaluate.py",
+    "evaluator_sha256": "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60",
+    "published_kinect_CD_UL1_mm": 6.498,
+    "published_kinect_jaccard": 0.82,
+    "published_split_scope": "one hard-coded validation recording per each of eighteen objects",
+    "public_subset_scope": "thirteen exact official validation recordings; excludes five absent public takes without replacement"
+  },
+  "custody": {
+    "prediction_and_scoring_are_separate": true,
+    "required_prediction_seal_count": 13,
+    "all_prediction_revisions_must_match": true,
+    "implementation_checkout_must_be_clean": true,
+    "target_mesh_access_before_barrier": "forbidden",
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "template_mesh": "allowed explicit task input selected by the frozen upstream robot-metadata rule",
+    "prediction_frames": "all contiguous f from 6 through the last robot frame; active-frame filtering occurs only during locked scoring",
+    "scored_frames": "force-y at f exceeds 3 N, matching the registered official evaluator",
+    "retry_policy": "no replacement; technical failures and exact fallbacks remain in the registered cohort"
+  },
+  "evaluation": {
+    "primary_metric": "CD_UL1_mm",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to target surface points in original metric coordinates",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720,
+    "aggregation": "equal scored frames over the 13 publicly materializable official validation takes; object-balanced prospective values drive transfer gates",
+    "jaccard_definition": "trimesh boolean intersection volume divided by union volume",
+    "jaccard_boolean_backend": "manifold",
+    "jaccard_role": "non-gating reproducibility diagnostic because the released target meshes are not guaranteed volumetric",
+    "invalid_jaccard_action": "report the failure and valid fraction; never substitute a voxel or repaired-mesh surrogate"
+  },
+  "gates": {
+    "direct_metric_reference": {
+      "published_aggregate_is_gating": false,
+      "released_checkpoint_pairing_is_primary": true,
+      "scope": "paired candidate-versus-released-checkpoint comparison on the ten prospectively untouched public official takes"
+    },
+    "paired_transfer": {
+      "relative_CD_UL1_improvement_above": 0.0,
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "maximum_per_object_relative_regression": 0.0,
+      "bootstrap_unit": "physical object among the ten prospective public official takes",
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_upper_quantile": 0.975
+    }
+  },
+  "forbidden": [
+    "opening any campaign target deformed mesh before all thirteen prediction seals pass the barrier",
+    "using frame f Kinect or robot observations to predict frame f",
+    "substituting T_WT for missing T_WE or otherwise imputing a required actuator pose",
+    "changing the selected arm, scale, support radius, metric, aggregation, or gate after target access",
+    "replacing any of the five unavailable official takes or any failed public-subset take",
+    "tuning from any of the ten prospective take outcomes",
+    "representing the three disclosed development-overlap takes as prospective",
+    "substituting a repaired-mesh or voxel Jaccard for the registered public-mesh diagnostic",
+    "claiming reproduction of or direct comparison with the published eighteen-object aggregate",
+    "touching any held-v8 artifact or process"
+  ],
+  "protocol_sha256": "6becd1a69d482654bf4e4faad57cc94c76ab56c4e1d24e46707e7a423aff0146"
+}

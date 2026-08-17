@@ -135,7 +135,7 @@ def test_v2_rejects_payload_and_schema_tampering(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="fingerprint|digest"):
         load_run_manifest_v2(path)
 
-    write_run_manifest(path, manifest)
+    write_run_manifest(path, manifest, overwrite=True)
     payload = json.loads(path.read_text(encoding="utf-8"))
     payload["uncovered"] = "tampering"
     path.write_text(json.dumps(payload), encoding="utf-8")
@@ -158,7 +158,7 @@ def test_repository_states_require_exact_unique_revisions(tmp_path: Path) -> Non
                 ),
             ),
         )
-    with pytest.raises(ValueError, match="exact 40-character"):
+    with pytest.raises(ValueError, match="exact lowercase Git revision"):
         RepositoryState(
             repository="FlorianPfaff/Prob4D",
             revision="main",

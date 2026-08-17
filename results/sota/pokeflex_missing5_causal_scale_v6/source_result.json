@@ -1,0 +1,628 @@
+{
+  "artifact_kind": "PokeFlexMissingFiveCausalScaleV6SourceResult",
+  "claim_boundary": "Exploratory target-disjoint source calibration. The five official target archives and outcomes remained unavailable and unopened.",
+  "exact_v5_fallback_objects": [
+    "3dPrintedPizza",
+    "Pillow",
+    "Sponge"
+  ],
+  "held_v8_accessed": false,
+  "leave_one_out": [
+    {
+      "absolute_gain_mm": 0.029126418523634547,
+      "admitted_frame_count": 35,
+      "held_take_id": "3dPrintedCylinder_T1",
+      "object_name": "3dPrintedCylinder",
+      "relative_gain": 0.008923846563269947
+    },
+    {
+      "absolute_gain_mm": 0.04347179701098939,
+      "admitted_frame_count": 22,
+      "held_take_id": "3dPrintedCylinder_T2",
+      "object_name": "3dPrintedCylinder",
+      "relative_gain": 0.011926955383388133
+    },
+    {
+      "absolute_gain_mm": 0.03543186429214625,
+      "admitted_frame_count": 15,
+      "held_take_id": "3dPrintedCylinder_T3",
+      "object_name": "3dPrintedCylinder",
+      "relative_gain": 0.006185689164441652
+    },
+    {
+      "absolute_gain_mm": 0.012244871103629151,
+      "admitted_frame_count": 48,
+      "held_take_id": "3dPrintedCylinder_T4",
+      "object_name": "3dPrintedCylinder",
+      "relative_gain": 0.004130459865391226
+    },
+    {
+      "absolute_gain_mm": 0.02154622777622234,
+      "admitted_frame_count": 52,
+      "held_take_id": "3dPrintedCylinder_T5",
+      "object_name": "3dPrintedCylinder",
+      "relative_gain": 0.006977813458892641
+    },
+    {
+      "absolute_gain_mm": 0.011731599032723942,
+      "admitted_frame_count": 23,
+      "held_take_id": "3dPrintedCylinder_T6",
+      "object_name": "3dPrintedCylinder",
+      "relative_gain": 0.003443825025149089
+    },
+    {
+      "absolute_gain_mm": 0.0016454525365946122,
+      "admitted_frame_count": 6,
+      "held_take_id": "3dPrintedHeart_T1",
+      "object_name": "3dPrintedHeart",
+      "relative_gain": 0.0005282889680873989
+    },
+    {
+      "absolute_gain_mm": 0.010199733373091949,
+      "admitted_frame_count": 19,
+      "held_take_id": "3dPrintedHeart_T2",
+      "object_name": "3dPrintedHeart",
+      "relative_gain": 0.0031658066697767594
+    },
+    {
+      "absolute_gain_mm": 0.014234069437984158,
+      "admitted_frame_count": 25,
+      "held_take_id": "3dPrintedHeart_T3",
+      "object_name": "3dPrintedHeart",
+      "relative_gain": 0.001930419619136236
+    },
+    {
+      "absolute_gain_mm": 0.002926229522438678,
+      "admitted_frame_count": 45,
+      "held_take_id": "3dPrintedHeart_T4",
+      "object_name": "3dPrintedHeart",
+      "relative_gain": 0.0006512563631639347
+    },
+    {
+      "absolute_gain_mm": 0.0076439267507283325,
+      "admitted_frame_count": 12,
+      "held_take_id": "3dPrintedHeart_T5",
+      "object_name": "3dPrintedHeart",
+      "relative_gain": 0.00231368333666791
+    },
+    {
+      "absolute_gain_mm": 0.002740095659324476,
+      "admitted_frame_count": 12,
+      "held_take_id": "3dPrintedHeart_T6",
+      "object_name": "3dPrintedHeart",
+      "relative_gain": 0.0007624377829721007
+    }
+  ],
+  "leave_two_out": {
+    "3dPrintedCylinder": {
+      "evaluation_count": 30,
+      "mean_relative_gain": 0.007535989164662189,
+      "minimum_relative_gain": 0.002726424939546237,
+      "regression_count": 0,
+      "strict_win_count": 30
+    },
+    "3dPrintedHeart": {
+      "evaluation_count": 30,
+      "mean_relative_gain": 0.0019187850876382464,
+      "minimum_relative_gain": 0.00027707102744192226,
+      "regression_count": 0,
+      "strict_win_count": 30
+    }
+  },
+  "model_file_sha256": "130fd65b84723b05a8a7b6926b2c82bea2f356d3ff35c613fb7d6bf4f51373fa",
+  "model_sha256": "4b6835f6ab57787be007855141081a3a10cea30eba736d47863b68fa7acf6ffa",
+  "official_target_outcomes_used": false,
+  "parent_bindings": {
+    "v5_completion_protocol_file_sha256": "960eb903634c621b0ea2244a2039cb92da974f9a196d54c77622cdd40f2ab271",
+    "v5_execution_protocol_file_sha256": "eaa1eea978783f25255fe3667a0222689c7055b128b4e2cfcf052aa9a7e27cf2",
+    "v5_source_protocol_file_sha256": "0671df8beaaa4e560a264599ab5edbedd2e66ad2a7e1f9181f1b71fdea5fc70a",
+    "v5_source_protocol_sha256": "83737068dca8621e331bcd30c76bc2852509872e59d034d984dc931d7bf5e27a",
+    "v5_source_result_file_sha256": "2f666ce4060a488f036745ff9471acd39a79e2c2a7e0799c7c03e65075e75bf1",
+    "v5_source_result_sha256": "49658508e9531abd43d966c0eeb56f4deec43db3234e0ea530f756955b6deee7",
+    "v6_policy_module_file_sha256": "5fd96eb787fbfce732cab9682d0c71d309c3590f73ba82667647db04dd98d80f",
+    "v6_source_builder_file_sha256": "87b0a60720ca037bbc73711ab6893cfd1e6c0c838bf8a0ed668e3599313c01aa"
+  },
+  "permutation_control": {
+    "all_take_win_count": 2,
+    "mean_and_minimum_at_least_observed_count": 0,
+    "mean_at_least_observed_count": 0,
+    "minimum_at_least_observed_count": 0,
+    "null_mean_relative_gain_median": 0.0008165493389669847,
+    "null_mean_relative_gain_q95": 0.0019165278233424943,
+    "null_minimum_relative_gain_median": -0.0009438175434410639,
+    "null_minimum_relative_gain_q95": -0.00013397552934897762,
+    "observed_mean_relative_gain": 0.004245040183361419,
+    "observed_minimum_relative_gain": 0.0005282889680873989,
+    "permutation_unit": "accepted frame gains within each physical take",
+    "replicate_count": 1000,
+    "seed_rule": "integers 0 through 999 inclusive",
+    "zero_regression_count": 13
+  },
+  "policy": {
+    "gain_margin_mm": 0.001,
+    "minimum_robust_scale": 1e-08,
+    "neighbors_per_source_take": 20,
+    "robust_scale_factor": 1.4826,
+    "support_distance_quantile": 0.9
+  },
+  "positive_controls": {
+    "control_count": 12,
+    "controls": [
+      {
+        "control_index": 1,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007338311227746948,
+        "minimum_relative_gain": 0.0004269312531158012,
+        "passed": true
+      },
+      {
+        "control_index": 2,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007320426049429496,
+        "minimum_relative_gain": 0.0004314153759008242,
+        "passed": true
+      },
+      {
+        "control_index": 3,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007225480892858855,
+        "minimum_relative_gain": 0.00042793922358082774,
+        "passed": true
+      },
+      {
+        "control_index": 4,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007313344994904054,
+        "minimum_relative_gain": 0.0004312151978694153,
+        "passed": true
+      },
+      {
+        "control_index": 5,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007234360795841011,
+        "minimum_relative_gain": 0.0004202256769815966,
+        "passed": true
+      },
+      {
+        "control_index": 6,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007386168719249976,
+        "minimum_relative_gain": 0.0004398675466934846,
+        "passed": true
+      },
+      {
+        "control_index": 7,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007306219910758733,
+        "minimum_relative_gain": 0.0004228862157119219,
+        "passed": true
+      },
+      {
+        "control_index": 8,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007253155732465555,
+        "minimum_relative_gain": 0.0004184297113173969,
+        "passed": true
+      },
+      {
+        "control_index": 9,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007341035257170549,
+        "minimum_relative_gain": 0.0004272224653732305,
+        "passed": true
+      },
+      {
+        "control_index": 10,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007365346992712225,
+        "minimum_relative_gain": 0.000427500063855612,
+        "passed": true
+      },
+      {
+        "control_index": 11,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.000721639630788693,
+        "minimum_relative_gain": 0.00043157850225130164,
+        "passed": true
+      },
+      {
+        "control_index": 12,
+        "harmful_region_admission_count": 0,
+        "mean_relative_gain": 0.0007308372972121257,
+        "minimum_relative_gain": 0.00042985802744053187,
+        "passed": true
+      }
+    ],
+    "harmful_region_admission_count": 0,
+    "minimum_relative_gain": 0.0004184297113173969,
+    "passed_count": 12
+  },
+  "promoted_transitions": {
+    "3dPrintedCylinder": "effective scale 0.25 to 0.375",
+    "3dPrintedHeart": "effective scale 0.1875 to 0.25"
+  },
+  "protocol_id": "pokeflex-missing5-causal-scale-v6-source",
+  "result_sha256": "e7f17d5bd9045a3634e4f07b32ae9217ea8432ddd24ed387ab1c3512dd18483f",
+  "schema_version": 1,
+  "sensitivity": {
+    "configuration_count": 36,
+    "configurations": [
+      {
+        "admitted_frame_count": 295,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.0037505800014005896,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 305,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.003854320699423213,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 310,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.0039237402162249045,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 277,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.0035279144926444648,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 287,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.0036316551906670877,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 292,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.003701074707468779,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 261,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0033035062560126485,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 271,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0034072469540352723,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 276,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0034766664708369643,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 10,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 313,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.0042657757350121756,
+        "minimum_relative_gain": 0.0004742483561052621,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 326,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004337960269220851,
+        "minimum_relative_gain": 0.0004360587395691948,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 334,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004424212022143984,
+        "minimum_relative_gain": 0.0004515112942397592,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 282,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.0038898300041685144,
+        "minimum_relative_gain": 0.00048315176651951883,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 293,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.003965683920486268,
+        "minimum_relative_gain": 0.00048315176651951883,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 299,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.004034062703810344,
+        "minimum_relative_gain": 0.00048315176651951883,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 270,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0037461419011421034,
+        "minimum_relative_gain": 0.00048315176651951883,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 280,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0038206654390196704,
+        "minimum_relative_gain": 0.00048315176651951883,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 286,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0038890442223437466,
+        "minimum_relative_gain": 0.00048315176651951883,
+        "neighbors_per_source_take": 15,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 300,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004141819393648822,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 314,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004245040183361419,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 322,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004368855951857269,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 282,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.003852746788080794,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 295,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.003959887411672966,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 301,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.004052200298369265,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 259,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0035097309797253906,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 271,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0036166211515470652,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 275,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0036534970530715913,
+        "minimum_relative_gain": 0.0005282889680873989,
+        "neighbors_per_source_take": 20,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 330,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004315541928303824,
+        "minimum_relative_gain": 0.00042423514955292757,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 344,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004437423556583934,
+        "minimum_relative_gain": 0.00038604553301686026,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 353,
+        "gain_margin_mm": 0.001,
+        "mean_relative_gain": 0.004596099014516178,
+        "minimum_relative_gain": 0.00041398688941880513,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 314,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.003945050057587545,
+        "minimum_relative_gain": 0.0004052482257098481,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 328,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.004066931685867654,
+        "minimum_relative_gain": 0.00036705860917378083,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 336,
+        "gain_margin_mm": 0.003,
+        "mean_relative_gain": 0.004232727855940054,
+        "minimum_relative_gain": 0.00048044851125757866,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      },
+      {
+        "admitted_frame_count": 283,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0034515067941761897,
+        "minimum_relative_gain": 0.0002114468081388626,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.85
+      },
+      {
+        "admitted_frame_count": 296,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0035544771321182893,
+        "minimum_relative_gain": 0.0002114468081388626,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.9
+      },
+      {
+        "admitted_frame_count": 304,
+        "gain_margin_mm": 0.005,
+        "mean_relative_gain": 0.0037202733021906888,
+        "minimum_relative_gain": 0.0002114468081388626,
+        "neighbors_per_source_take": 30,
+        "regression_count": 0,
+        "support_distance_quantile": 0.95
+      }
+    ],
+    "maximum_admitted_frame_count": 353,
+    "maximum_mean_relative_gain": 0.004596099014516178,
+    "minimum_admitted_frame_count": 259,
+    "minimum_mean_relative_gain": 0.0033035062560126485,
+    "minimum_relative_gain": 0.0002114468081388626,
+    "regressing_configuration_count": 0
+  },
+  "source_artifact_file_sha256s": {
+    "3dPrintedCylinder_T1": "777bc4c655c600c3afad7cdfed0aa20d37d85937ba9c52225104db123c1d8bcb",
+    "3dPrintedCylinder_T2": "addc0aa3d017b9bb3cdee1e6ae4b4622fb3dc51757034a75f5f302457a8e30ae",
+    "3dPrintedCylinder_T3": "70018fd3d9ee49ddae9c279ebe17eeeed502a03c37ce95091fb07a5a8069c217",
+    "3dPrintedCylinder_T4": "9ce74697038f8169d38cbd93cc80435492bc71b0a5e76f466829909210389421",
+    "3dPrintedCylinder_T5": "57edf1f34ffa8c603cc9b312eca296ba1ed05ccd67883c491304d0d73d6bc44f",
+    "3dPrintedCylinder_T6": "90df5ae932bb2c88d16a2435abef5f6c7fb003800480c5df0d0c966c3dd39f33",
+    "3dPrintedHeart_T1": "a99d53ef54a8b022b8c04ee5da4b8b68c6f13282285ce8ec7e088bc75d9c1597",
+    "3dPrintedHeart_T2": "a951829bbdd6a72052400a3141513d6215780523ece9067c92b937edd83a94a2",
+    "3dPrintedHeart_T3": "14edbf84de218b1f30d8c5e704f82583e199b1deb9a1b9a6bd13b33cdb2ac8a4",
+    "3dPrintedHeart_T4": "785143002e93eb8a653530810e3ede151b7e7cdc5b8ba44a054555c9746a5c4e",
+    "3dPrintedHeart_T5": "d8aed1abd810b55338545b9db26c0ff63da63ce9268a8be16346d701b11eed23",
+    "3dPrintedHeart_T6": "44f9106d6f1ac6a1b7eb528c871d88e1dcee29646e8b124876bde38b37c11be4",
+    "3dPrintedPizza_T1": "cbd8a6e21c4c6396f560cb7b66c58c4c2e0d8d45cc3b552fbb67b4c6f9515867",
+    "3dPrintedPizza_T2": "421cbebaba58431b9b1275c03d19c14e8a7c9c3a3c47f9d447d5d51c0a04a91d",
+    "3dPrintedPizza_T3": "7d4457e23cb39d37fd2331e84c2eef238d14789a9e48234d65152777185fe47c",
+    "3dPrintedPizza_T4": "5897b197787726d5f72bbb22cc586c2043f916532e9f0249f4b279c3c3a252a4",
+    "3dPrintedPizza_T5": "74f3663f471ecf545a4a25c68d0df44886ce91887a5f65d89047b33538a6ea0d",
+    "3dPrintedPizza_T6": "6112378e2cf3df6b379ef4f5c076ecebaea98a24c8a063963967dcefdec34c6a",
+    "Pillow_T1": "558d72dd872ee134f3425b55ee2535e3aa8f086e37400e808741926374ccc3ba",
+    "Pillow_T2": "c6118c9fae15aa2c5baac395f148db2fce1287f9c74b0e72fce72e45cf3c7395",
+    "Pillow_T3": "3014ec96b581392c1640db011a869a446782ffd1ca36e32bd4f10c1197691811",
+    "Pillow_T4": "1bde4939285d13f93f527329ffb3606dd085a5129c9ac03aa5ab3cc8272d5d86",
+    "Pillow_T5": "92c2c8f13b8dd997ced1042e6c15558d537d469bc80f596f513114b9d7174621",
+    "Pillow_T6": "521ddb8816c50ab427ad5e775e845e7469530fade0735515577b23b065ac61d4",
+    "Pillow_T7": "7b2d9b407395bae9377cd638fd141098188b659defc68334d81ba8e94a5dc995",
+    "Sponge_T1": "54304730393e17ecf29be30771ad3a7635222e3d265f8cea7700a2a5b8260b8a",
+    "Sponge_T2": "63c9f7282339372c95d813f6f9b2a5b843499b4b0201bc96c5893dba341a5740",
+    "Sponge_T3": "29d1e5a3bf189df1cd472d8f4684192fa185cb3e66164e7d0adcd1ade0fd5533",
+    "Sponge_T4": "932e5283d506f25da9637fa58f712da7e1ebb7c4c5aabb6b07391074dd70dafd",
+    "Sponge_T5": "48cde8247ed413ee2e8fabfee232fc1c6018ab753cbb1ea76d7f705e1752f7d3"
+  },
+  "source_gate": {
+    "leave_one_out_mean_relative_gain": 0.004245040183361419,
+    "leave_one_out_minimum_relative_gain": 0.0005282889680873989,
+    "leave_one_out_regression_count": 0,
+    "leave_one_out_strict_win_count": 12,
+    "leave_one_out_take_count": 12,
+    "leave_two_out_evaluation_count": 60,
+    "leave_two_out_regression_count": 0,
+    "passed": true,
+    "permutation_mean_and_minimum_at_least_observed_count": 0,
+    "positive_control_harmful_region_admission_count": 0,
+    "positive_controls_passed": 12,
+    "sensitivity_regressing_configuration_count": 0
+  }
+}

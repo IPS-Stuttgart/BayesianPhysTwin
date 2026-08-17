@@ -1,0 +1,97 @@
+{
+  "claim_boundary": "Source-independent completion of the headless isolated primary runtime required to import the already-frozen official PhysTwin trainer. It authorizes no source result, suffix access, confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "backend": "dummy",
+    "evdev": {
+      "distribution_type": "sdist",
+      "filename": "evdev-1.9.2.tar.gz",
+      "sha256": "5d3278892ce1f92a74d6bf888cc8525d9f68af85dbe336c95d1c87fb8f423069",
+      "version": "1.9.2"
+    },
+    "frozen_official_environment_sha256": "5de429018aec646a33fc2f5434b1ce7d74208063c51f7b17cb6f33c087369be3",
+    "frozen_official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "frozen_trainer_sha256": "260052644c5751336635c3fda52c0f8197ce76fab8eefe3b7b905b1f569d8eb3",
+    "full_import_probe": "from qqtt.engine.trainer_warp import InvPhyTrainerWarp",
+    "install_mode": "isolated-primary-runtime-only, require-hashes, wheel-only except the pinned evdev source distribution, no build isolation",
+    "interactive_keyboard_control_selected": false,
+    "pynput": {
+      "distribution_type": "wheel",
+      "filename": "pynput-1.8.2-py2.py3-none-any.whl",
+      "sha256": "8cc38cf13a6ab2749cb375678be8a0fd705d7ce49c8001ff5db4007a723bbef1",
+      "version": "1.8.2"
+    },
+    "python_xlib": {
+      "distribution_type": "wheel",
+      "filename": "python_xlib-0.33-py2.py3-none-any.whl",
+      "sha256": "c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398",
+      "version": "0.33"
+    },
+    "required_by": "qqtt/engine/trainer_warp.py",
+    "six": {
+      "distribution_type": "wheel",
+      "filename": "six-1.17.0-py2.py3-none-any.whl",
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+      "version": "1.17.0"
+    },
+    "upstream_environment_declaration": "pip install pynput"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:6d15e540d4d8d06c278cb4108bd05dc45f8d2db975f04f68a5495f4820d87dc6",
+    "artifact_id": 9124211532,
+    "error_message": "No module named 'pynput'",
+    "error_type": "ModuleNotFoundError",
+    "execution_receipt_id": "63a41ecd55948bbc7de4f8c73ef89d1c98108d4cd3609a7c19513a56ce06d65f",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "primary_cma_runtime_repair_activated": true,
+    "registered_source_case_ordinal": 1,
+    "source_prediction_seal_count": 0,
+    "source_revision": "d98294c61f485d9f5c8d86e390bb9a6d26086bb7",
+    "terminal_stage": "physical-prior",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31550645363
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_primary_cma_runtime_repair_id": "29487f91243232dd824bd4e8e394ce6ac91e05ce94709a7014c8fc3f5b61c97c",
+  "repair_id": "4a6e9655859d2d6da28d248a8bc0ecbfc142fce28566982d8897740c46542825",
+  "repair_scope": {
+    "candidate_changed": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "fallback_algorithm_changed": false,
+    "interactive_keyboard_control_selected": false,
+    "loss_changed": false,
+    "mean_changed": false,
+    "physical_algorithm_changed": false,
+    "prediction_horizons_changed": false,
+    "primary_pynput_headless_import_dependency_completed": true,
+    "selector_changed": false,
+    "suffix_policy_changed": false,
+    "target_policy_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-primary-pynput-runtime-repair",
+  "schema_version": 1
+}

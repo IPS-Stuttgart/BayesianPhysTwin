@@ -1,9 +1,15 @@
 import copy
+import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
 
+from bayesian_phystwin._canonical_contracts import (
+    immutable_array,
+    immutable_integer_array,
+)
 from bayesian_phystwin.observation_belief import (
     ObservationBeliefV1,
     load_observation_belief,
@@ -60,6 +66,31 @@ def _asymmetric_covariance() -> np.ndarray:
     return covariance
 
 
+def _write_observation_archive(
+    path: Path,
+    belief: ObservationBeliefV1,
+    *,
+    descriptor_changes: dict[str, Any],
+) -> None:
+    descriptor = {
+        **belief._descriptor(),
+        "artifact_id": belief.artifact_id,
+        **descriptor_changes,
+    }
+    payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
+            json.dumps(
+                descriptor,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+        )
+    }
+    payload.update(belief._arrays())
+    np.savez_compressed(path, **payload)
+
+
 def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     belief = _belief()
     path = tmp_path / "belief.npz"
@@ -71,6 +102,56 @@ def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     assert restored.summary()["observation_count"] == 4
     assert restored.mean_xyz_m.flags.writeable is False
     np.testing.assert_array_equal(restored.mean_xyz_m, belief.mean_xyz_m)
+
+
+def test_shared_immutable_arrays_use_byte_backing_and_canonical_storage() -> None:
+    source = np.arange(24, dtype=np.float32).reshape(4, 6)[:, ::2]
+    expected = np.asarray(source, dtype=np.float64).copy()
+
+    frozen = immutable_array(source, dtype=np.dtype(np.float64))
+
+    assert frozen.dtype == np.dtype(np.float64)
+    assert frozen.flags.c_contiguous
+    assert not frozen.flags.writeable
+    np.testing.assert_array_equal(frozen, expected)
+    source[...] = -1.0
+    np.testing.assert_array_equal(frozen, expected)
+    with pytest.raises(ValueError):
+        frozen.setflags(write=True)
+
+    empty = immutable_array(np.empty((0, 3), dtype=np.float64))
+    assert empty.shape == (0, 3)
+    with pytest.raises(ValueError):
+        empty.setflags(write=True)
+
+    with pytest.raises(TypeError, match="Python objects"):
+        immutable_array(np.asarray([object()], dtype=object))
+
+
+def test_shared_immutable_integer_arrays_validate_and_freeze_int64() -> None:
+    source = np.asarray([1, 2, 3], dtype=np.int16)
+    frozen = immutable_integer_array(source, name="ids")
+
+    assert frozen.dtype == np.dtype(np.int64)
+    np.testing.assert_array_equal(frozen, source)
+    source[:] = 9
+    np.testing.assert_array_equal(frozen, np.asarray([1, 2, 3]))
+    with pytest.raises(ValueError):
+        frozen.setflags(write=True)
+    with pytest.raises(ValueError, match="must contain integers"):
+        immutable_integer_array(np.asarray([1.0]), name="ids")
+
+
+def test_observation_arrays_are_irreversibly_immutable() -> None:
+    belief = _belief()
+    artifact_id = belief.artifact_id
+
+    for name, array in belief._arrays().items():
+        assert not array.flags.writeable, name
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
+
+    assert belief.artifact_id == artifact_id
 
 
 def test_observation_metadata_is_deeply_immutable_and_digest_stable(
@@ -160,6 +241,37 @@ def test_observation_metadata_rejects_non_json_values(metadata: object) -> None:
 
 
 @pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("case_id", "", "case_id must be nonempty"),
+        ("case_id", cast(str, 1), "case_id must be nonempty"),
+        ("stream_id", "", "stream_id must be nonempty"),
+        ("stream_id", cast(str, 1), "stream_id must be nonempty"),
+        ("source_repository", "", "source repository must be nonempty"),
+        ("source_repository", cast(str, 1), "source repository must be nonempty"),
+        ("source_revision", "", "source revision must be nonempty"),
+        ("source_revision", cast(str, 1), "source revision must be nonempty"),
+        ("source_artifact_sha256", "invalid", "lowercase SHA-256"),
+        ("source_artifact_sha256", cast(str, 1), "lowercase SHA-256"),
+    ),
+)
+def test_observation_belief_rejects_invalid_descriptor_fields(
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    source = _belief()
+
+    with pytest.raises(ValueError, match=message):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                field: value,
+            }
+        )
+
+
+@pytest.mark.parametrize(
     ("changes", "message"),
     (
         (
@@ -212,6 +324,104 @@ def test_observation_belief_validates_reformatted_schema_guards(
         )
 
 
+def test_observation_belief_rejects_nonfinite_low_rank_factors() -> None:
+    source = _belief()
+    factors = source.low_rank_factor_m.copy()
+    factors[0, 0, 0] = np.nan
+
+    with pytest.raises(ValueError, match="low-rank factors must be finite"):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                "low_rank_factor_m": factors,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "causal_frame_stop",
+    (True, 12.0, np.float64(12.0)),
+)
+def test_observation_belief_rejects_noninteger_causal_cutoff(
+    causal_frame_stop: object,
+) -> None:
+    with pytest.raises(ValueError, match="causal_frame_stop must be an integer"):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                "causal_frame_stop": causal_frame_stop,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "declared_frame_ids",
+        "frame_ids",
+        "entity_ids",
+        "view_indices",
+        "window_indices",
+        "correlation_group_ids",
+        "factor_group_ids",
+        "group_ids",
+    ),
+)
+def test_observation_belief_rejects_float_identity_arrays(field: str) -> None:
+    source = _belief()
+    values = np.asarray(getattr(source, field), dtype=np.float64)
+
+    with pytest.raises(ValueError, match=f"{field} must contain integers"):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                field: values,
+            }
+        )
+
+
+def test_observation_belief_canonicalizes_numpy_integer_and_name_sequences() -> None:
+    source = _belief()
+    belief = ObservationBeliefV1(
+        **{
+            **source.__dict__,
+            "causal_frame_stop": np.int64(source.causal_frame_stop),
+            "view_names": list(source.view_names),
+            "window_names": list(source.window_names),
+            "factor_names": list(source.factor_names),
+        }
+    )
+
+    assert type(belief.causal_frame_stop) is int
+    assert type(belief.view_names) is tuple
+    assert type(belief.window_names) is tuple
+    assert type(belief.factor_names) is tuple
+    assert belief.artifact_id == source.artifact_id
+
+
+def test_group_position_requires_a_genuine_integer() -> None:
+    belief = _belief()
+
+    with pytest.raises(ValueError, match="group_id must be an integer"):
+        belief.group_position(0.0)
+    with pytest.raises(KeyError, match="unknown correlation group"):
+        belief.group_position(2)
+    assert belief.group_position(np.int64(1)) == 1
+
+
+def test_observation_loader_rejects_schema_version_drift(tmp_path: Path) -> None:
+    belief = _belief()
+    path = tmp_path / "schema-drift.npz"
+    _write_observation_archive(
+        path,
+        belief,
+        descriptor_changes={"schema_version": 2},
+    )
+
+    with pytest.raises(ValueError, match="unsupported observation-belief version"):
+        load_observation_belief(path)
+
+
 def test_observation_belief_rejects_future_frame() -> None:
     belief = _belief()
     with pytest.raises(ValueError, match="causal boundary"):
@@ -250,3 +460,185 @@ def test_sim3_transform_moves_covariance_and_factors() -> None:
         transformed.local_covariance_m2[0], 4.0 * belief.local_covariance_m2[0]
     )
     assert transformed.artifact_id != belief.artifact_id
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "mean_xyz_m",
+        "prior_reliability",
+        "association_probability",
+        "local_covariance_m2",
+        "low_rank_factor_m",
+        "group_prior_nominal_probability",
+        "group_composite_weight",
+    ),
+)
+def test_observation_belief_rejects_complex_numeric_arrays(field: str) -> None:
+    source = _belief()
+    values = np.asarray(getattr(source, field), dtype=np.complex128).copy()
+    values.flat[0] += 1j
+
+    with pytest.raises(ValueError, match=f"{field} must contain real numeric values"):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                field: values,
+            }
+        )
+
+
+def test_sim3_transform_rejects_complex_inputs_and_nonreal_scale() -> None:
+    belief = _belief()
+
+    with pytest.raises(ValueError, match="rotation must contain real numeric values"):
+        belief.transformed(
+            rotation=np.eye(3, dtype=np.complex128),
+            translation_m=np.zeros(3),
+        )
+    with pytest.raises(
+        ValueError,
+        match="translation_m must contain real numeric values",
+    ):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3, dtype=np.complex128),
+        )
+    with pytest.raises(ValueError, match="scale must be a real scalar"):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=True,
+        )
+    with pytest.raises(ValueError, match="scale must be a real scalar"):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=1.0 + 0.0j,
+        )
+
+
+def test_sim3_transform_overflow_fails_closed() -> None:
+    with pytest.raises(
+        ValueError,
+        match="metric transform is not representable as finite float64 values",
+    ):
+        _belief().transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=1e155,
+        )
+
+
+class _ArrayConversionFailure:
+    def __array__(self, dtype: object = None, copy: object = None) -> np.ndarray:
+        del dtype, copy
+        raise ValueError("intentional array conversion failure")
+
+
+def test_observation_belief_normalizes_float_array_conversion_failures() -> None:
+    with pytest.raises(ValueError, match="mean_xyz_m must contain real numeric values"):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                "mean_xyz_m": _ArrayConversionFailure(),
+            }
+        )
+
+
+def test_sim3_transform_normalizes_array_conversion_failures() -> None:
+    belief = _belief()
+
+    with pytest.raises(ValueError, match="rotation must contain real numeric values"):
+        belief.transformed(
+            rotation=_ArrayConversionFailure(),  # type: ignore[arg-type]
+            translation_m=np.zeros(3),
+        )
+    with pytest.raises(
+        ValueError,
+        match="translation_m must contain real numeric values",
+    ):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=_ArrayConversionFailure(),  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    ("rotation", "message"),
+    (
+        (np.eye(2), "rotation must have finite shape"),
+        (np.full((3, 3), np.inf), "rotation must have finite shape"),
+        (2.0 * np.eye(3), "rotation must be orthonormal"),
+        (1e308 * np.eye(3), "rotation must be orthonormal"),
+        (np.diag([-1.0, 1.0, 1.0]), "rotation must have determinant one"),
+    ),
+)
+def test_sim3_transform_rejects_invalid_rotations(
+    rotation: np.ndarray,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        _belief().transformed(
+            rotation=rotation,
+            translation_m=np.zeros(3),
+        )
+
+
+@pytest.mark.parametrize(
+    "translation",
+    (
+        np.zeros(2),
+        np.full(3, np.nan),
+    ),
+)
+def test_sim3_transform_rejects_invalid_translation_shape_or_values(
+    translation: np.ndarray,
+) -> None:
+    with pytest.raises(ValueError, match="translation_m must have finite shape"):
+        _belief().transformed(
+            rotation=np.eye(3),
+            translation_m=translation,
+        )
+
+
+@pytest.mark.parametrize("scale", (0.0, -1.0, np.inf, np.nan))
+def test_sim3_transform_rejects_nonpositive_or_nonfinite_scale(scale: float) -> None:
+    with pytest.raises(ValueError, match="scale must be finite and positive"):
+        _belief().transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=scale,
+        )
+
+
+@pytest.mark.parametrize("overflow_source", ("mean", "covariance", "factor"))
+def test_sim3_transform_rejects_each_finite_input_overflow_source(
+    overflow_source: str,
+) -> None:
+    source = _belief()
+    changes: dict[str, object] = {}
+    if overflow_source == "mean":
+        changes["mean_xyz_m"] = np.full(source.mean_xyz_m.shape, 1e200)
+    elif overflow_source == "covariance":
+        changes["local_covariance_m2"] = np.repeat(
+            (10.0 * np.eye(3))[None, :, :],
+            source.observation_count,
+            axis=0,
+        )
+    else:
+        changes["low_rank_factor_m"] = np.full(
+            source.low_rank_factor_m.shape,
+            1e155,
+        )
+    belief = ObservationBeliefV1(**{**source.__dict__, **changes})
+
+    with pytest.raises(
+        ValueError,
+        match="metric transform is not representable as finite float64 values",
+    ):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=1e154,
+        )

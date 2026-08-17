@@ -42,6 +42,23 @@ An initial-state request must also identify the released initial state owned by
 the provider. A restart request may identify a particle-specific `TwinBelief`
 endpoint state.
 
+### Scheduled-contact extension
+
+`bayesian_phystwin.contracts.scheduled_replay` adds an experimental contract for
+one continuous physical rollout per complete joint contact schedule. It binds
+finite-area contact patches, stick/slip/detach regimes, contact mechanics,
+endpoint state, controller trajectory, physical parameters, explicit timebase,
+and all schedule identities before simulation. The result binds every complete
+position/velocity trajectory, conditional variance, provider revision, and
+numerical output byte into a replay-result identity.
+
+The package manifest advertises `scheduled_contact_replay_contracts`; it does
+not claim that the official PhysTwin/Warp provider already implements dynamic
+scheduled contact. A runtime backend must separately satisfy
+`ScheduledContactReplayProviderV1`. See
+[`causal4d_scheduled_contact_replay_provider_v1.md`](causal4d_scheduled_contact_replay_provider_v1.md)
+for the complete boundary and non-claims.
+
 ## Example
 
 ```python

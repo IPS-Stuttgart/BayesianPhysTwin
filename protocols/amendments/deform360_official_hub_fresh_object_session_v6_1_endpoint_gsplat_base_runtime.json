@@ -1,0 +1,128 @@
+{
+  "claim_boundary": "Source-independent correction of the endpoint gsplat base-version validator after the retained v6.1 public-source technical failure. It authorizes no confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "corrected_predicate": "module_version == distribution_version == expected_distribution_version and module_version.partition('+')[0] == expected_base_version",
+    "distribution_version": "1.4.0+pt24cu121",
+    "incorrect_predicate": "module_version == expected_base_version and distribution_version == expected_distribution_version",
+    "module_version": "1.4.0+pt24cu121",
+    "reason": "The frozen source-scoring amendment distinguishes the untagged release base from the checksum-pinned wheel's tagged module and distribution identity. The endpoint validator compared the full tagged module version directly with the untagged base field, even though the workflow runtime attestation had already established the exact tagged module and distribution values.",
+    "release_base_version": "1.4.0"
+  },
+  "execution_authorization": {
+    "event": "one-explicit-protected-main-workflow-dispatch-after-reviewed-endpoint-validator-repair-merge",
+    "failed_workflow_disabled": true,
+    "failed_workflow_retry_authorized": false,
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "successor_durable_namespace": "deform360-v61-source-scorer-endpoint-gsplat-base",
+    "successor_workflow_path": ".github/workflows/deform360-v61-source-scorer-endpoint-gsplat-base.yml"
+  },
+  "failed_execution_evidence": {
+    "artifact": {
+      "artifact_id": 9167998004,
+      "byte_count": 130052,
+      "digest": "sha256:3e8818a76c77d0dfb781661027b83097504d0a94b020eddfec4e7ece1c520139",
+      "name": "deform360-v61-source-scorer-gsplat-attestation-31666009357-1"
+    },
+    "artifact_count": 1,
+    "compact_manifest_sha256": "7fae5cc59014964211b2e7dba82d6a9170d53ac953500e26634de28f911c127f",
+    "compact_receipt_file_sha256": "a0b6b2ff1a7ce5dd4732a2896b0f6f4cff593a5f29e43b9bd5a6cc160135c027",
+    "compact_receipt_id": "69967a3441da85fc1a862d8206b6cb750d167dbabfc0c921c47adbc87f738f61",
+    "compact_receipt_status": "source-scoring-technical-failure-retained",
+    "confirmation_payloads_opened": false,
+    "durable_endpoint_root_created": true,
+    "durable_endpoint_root_entry_count": 0,
+    "durable_run_claim_created": true,
+    "durable_source_root_created": true,
+    "endpoint_geometry_inspected": false,
+    "endpoint_geometry_materialized": false,
+    "endpoint_worker_exit_codes": [
+      1,
+      1
+    ],
+    "error_message": "gsplat distribution changed",
+    "error_type": "EndpointGsplatBaseVersionComparisonMismatch",
+    "job_id": 94340752633,
+    "partial_source_outcomes_retained": false,
+    "partial_support_reports_retained": false,
+    "public_video_metadata_checked": true,
+    "scored_outcome_count": 0,
+    "source_gate_evaluated": false,
+    "source_revision": "cde6f9da37c2697e50897f2b9ce8360c744325bc",
+    "source_suffix_opened": true,
+    "target_outcomes_opened": false,
+    "terminal_stage": "endpoint-processing",
+    "workflow_file_sha256": "98df48c85b567caae1be7c0c5a4f896de264e8d50039482b4a4a30f705510ef8",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31666009357
+  },
+  "information_boundary": {
+    "claim_authorized": false,
+    "confirmation_payloads_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "held_v8_artifacts_accessed": false,
+    "human_approval_required": false,
+    "independent_confirmation_authorized": false,
+    "new_measurements_collected": false,
+    "replacement_allowed": false,
+    "source_outcomes_used_to_design_repair": false,
+    "source_suffix_opened_in_failed_execution": true,
+    "target_outcomes_opened": false
+  },
+  "predecessor_runtime_repair": {
+    "file_sha256": "3c39973c74787f505113b4750eccd5d31818e3a0a1f507b0737c3ea27272a5cd",
+    "path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json",
+    "repair_id": "2a4eb1eab33653fcef140861361d59c5e17f44ac3c81a766594aa76f45346bc6"
+  },
+  "predecessor_source_scoring": {
+    "amendment_file_sha256": "c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1",
+    "amendment_id": "e8b962a8abf228114495683cfb9ba87ee802e7405ca92f1f28b5a76df3faa371",
+    "amendment_path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json"
+  },
+  "repair_id": "1b3136b89be19d5dc587ce3a27e8a2e8ac621248a202662d1fe9e2ba086da5b5",
+  "repair_scope": {
+    "candidate_artifacts_changed": false,
+    "candidate_changed": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "data_changed": false,
+    "endpoint_dependency_attestation_changed": true,
+    "endpoint_processor_source_changed": true,
+    "fallback_algorithm_changed": false,
+    "loss_changed": false,
+    "mean_changed": false,
+    "model_changed": false,
+    "prediction_horizons_changed": false,
+    "prob4d_usage_changed": false,
+    "runtime_packages_changed": false,
+    "scorer_code_changed": false,
+    "selector_changed": false,
+    "source_gate_changed": false,
+    "source_processing_algorithm_changed": false,
+    "suffix_policy_changed": false,
+    "target_policy_changed": false,
+    "torch_cuda_cudnn_versions_changed": false
+  },
+  "scientific_identity": {
+    "candidate_execution_receipt_file_sha256": "d2569acd499c7d21a11937a22de012418e6f15579394944ffe7399a8b89c3bf6",
+    "candidate_panel_receipt_file_sha256": "2b96b8c92fe3be4e7ea92fd8a58fa3c3858279d2cc3d081d723d870fd84ff7ed",
+    "corrected_endpoint_processor_sha256": "bfac71d11c8226397b65ee261f1758e18f5e87bfe1bf868f5f3924141883fdb5",
+    "execution_lock_file_sha256": "429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a",
+    "predecessor_endpoint_processor_sha256": "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa",
+    "raw_prediction_batch_file_sha256": "b3a22f24015d0c0d8e757b5946dafd21dd61394c1c91a872a9eb56d28e2a74e6",
+    "scorer_cli_sha256": "f132d6ef0c401305d2a975762cafc43746072ac7df9f41a494823b772735f658",
+    "scorer_library_sha256": "daeea31c0aa6bc796d7b2819ab6502d57d0ae0f0c4d730fbc32bc7f51101b5ea",
+    "scorer_runner_sha256": "43d83a2efaea9e474d8e762eacfadd38fc5ff79b11e1ab0ab66f382155997fd3",
+    "source_scoring_amendment_file_sha256": "c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1",
+    "upstream_source_plan_file_sha256": "08863166df11033f4a968c94a4cb5bd02869175ce3bf1c1859c8ac49be371991"
+  },
+  "schema": "bayesian-phystwin.deform360-v6.1-source-scorer-endpoint-gsplat-base-runtime-repair",
+  "schema_version": 1
+}

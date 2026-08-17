@@ -1,0 +1,46 @@
+{
+  "access_boundary": {
+    "calibration_outcomes_opened_for_this_amendment": false,
+    "confirmation_outcomes_opened_for_this_amendment": false,
+    "target_outcomes_used_for_numerical_selection": false
+  },
+  "amendment_id": "bias-aware-belief-spd-v2-prospective-v1",
+  "claim_boundary": "Numerical hardening and compatibility evidence only. This amendment does not authorize reinterpretation of historical v1 results or establish physical accuracy, calibration, provider competence, Causal4D benefit, deployment safety, or state of the art.",
+  "compatibility": {
+    "historical_result_recomputation_required": false,
+    "historical_v1_artifacts_modified": false,
+    "result_rows_must_identify_implementation_version": true,
+    "v1_and_v2_results_interchangeable": false
+  },
+  "frozen_v1": {
+    "git_blob_sha1": "80994687a44b798c6b33089bfd4f1858911e0837",
+    "implementation_path": "src/bayesian_phystwin/bias_aware_belief.py",
+    "protocol_use": "historical_and_existing_frozen_evidence_only",
+    "source_bytes_must_remain_unchanged": true
+  },
+  "prospective_v2": {
+    "configuration_type": "bayesian_phystwin.bias_aware_belief_v2.BiasAwareStateUpdateConfigV2",
+    "documentation_path": "docs/bias_aware_belief_spd_v2.md",
+    "implementation_id": "bias-aware-linear-student-t-spd-v2",
+    "implementation_path": "src/bayesian_phystwin/bias_aware_belief_v2.py",
+    "implementation_schema": "bayesian_phystwin.bias_aware_belief",
+    "implementation_version": 2,
+    "numerical_backend_path": "src/bayesian_phystwin/spd_system.py",
+    "numerical_backend_schema": "bayesian_phystwin.spd_system",
+    "numerical_backend_version": 1,
+    "status": "prospective_unfrozen",
+    "target_use_authorized": false
+  },
+  "required_future_freeze": {
+    "condition_limit": true,
+    "exact_distribution_and_source_revision": true,
+    "fallback_and_guard_artifacts": true,
+    "inverse_residual_tolerance": true,
+    "reliability_covariance_and_nuisance_artifacts": true,
+    "solve_residual_tolerance": true,
+    "source_calibration_target_information_order": true,
+    "symmetry_tolerances": true
+  },
+  "schema": "bayesian-phystwin/bias-aware-belief-numerical-amendment",
+  "schema_version": 1
+}

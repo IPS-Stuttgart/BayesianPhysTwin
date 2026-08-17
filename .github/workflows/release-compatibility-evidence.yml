@@ -1,0 +1,279 @@
+name: Release compatibility evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/release-compatibility-evidence.yml"
+      - "api/inference-public-api-v1.json"
+      - "api/root-public-api-v0.4.json"
+      - "api/root-export-migration-v1.json"
+      - "api/versioned-public-api-v1.json"
+      - "requirements/numpy-floor-py310.txt"
+      - "requirements/release-build-py312.txt"
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/__init__.py"
+      - "src/bayesian_phystwin/_validation.py"
+      - "src/bayesian_phystwin/inference/**"
+      - "src/bayesian_phystwin/numerical_environment_v1.py"
+      - "src/bayesian_phystwin/v1/**"
+      - "tests/test_inference_v1.py"
+      - "tests/test_public_api_manifest.py"
+      - "tests/test_release_compatibility_workflow_policy.py"
+      - "tests/test_versioned_api_v1.py"
+      - "tools/quality/check_public_api.py"
+      - "tools/quality/check_root_export_migration.py"
+      - "docs/inference_v1.md"
+      - "docs/public_api_policy.md"
+      - "docs/releasing.md"
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-compatibility-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+  TZ: UTC
+
+jobs:
+  artifact-matrix:
+    name: Wheel and sdist / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.14"]
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_REVISION }}
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the pinned build toolchain
+        run: |
+          python -m pip install --upgrade "pip==26.1.2"
+          python -m pip install \
+            "build==1.5.0" \
+            "setuptools==83.0.0" \
+            "twine==6.2.0" \
+            "wheel==0.47.0"
+
+      - name: Build and validate both distributions
+        run: |
+          rm -rf build dist
+          python -m build --no-isolation
+          python -m twine check --strict dist/*
+          test "$(find dist -maxdepth 1 -name '*.whl' | wc -l)" -eq 1
+          test "$(find dist -maxdepth 1 -name '*.tar.gz' | wc -l)" -eq 1
+
+      - name: Install and exercise wheel and source distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          for kind in wheel sdist; do
+            environment="${RUNNER_TEMP}/bpt-${kind}-${{ matrix.python-version }}"
+            python -m venv "${environment}"
+            python_bin="${environment}/bin/python"
+            if [[ "${kind}" == "wheel" ]]; then
+              artifact=$(find dist -maxdepth 1 -name '*.whl' -print -quit)
+            else
+              artifact=$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)
+            fi
+            test -n "${artifact}"
+            "${python_bin}" -m pip install --upgrade \
+              "pip==26.1.2" \
+              "setuptools==83.0.0" \
+              "wheel==0.47.0"
+            "${python_bin}" -m pip install --no-build-isolation "${artifact}"
+            "${python_bin}" -m pip check
+            "${python_bin}" -I - <<'PY'
+          import sys
+
+          import bayesian_phystwin
+
+          root_modules = sorted(
+              name
+              for name in sys.modules
+              if name == "bayesian_phystwin"
+              or name.startswith("bayesian_phystwin.")
+          )
+          if root_modules != ["bayesian_phystwin"]:
+              raise SystemExit(
+                  "package-root import loaded implementation modules: "
+                  f"{root_modules}"
+              )
+
+          import bayesian_phystwin.v1 as api
+          import bayesian_phystwin.inference.v1 as inference_api
+
+          if not api.__all__:
+              raise SystemExit("versioned integration API is empty")
+          if not inference_api.__all__:
+              raise SystemExit("versioned guarded-inference API is empty")
+          forbidden_package_prefixes = (
+              "bayesian_phystwin.deform360_",
+              "bayesian_phystwin.experiments",
+              "bayesian_phystwin.phystwin_",
+              "bayesian_phystwin.synthetic_benchmark",
+          )
+          forbidden_external = {
+              "cv2",
+              "numpyro",
+              "pymc",
+              "scipy",
+              "torch",
+          }
+          leaked = sorted(
+              name
+              for name in sys.modules
+              if name in forbidden_external
+              or name.startswith(forbidden_package_prefixes)
+          )
+          if leaked:
+              raise SystemExit(
+                  "stable API import loaded forbidden modules: "
+                  f"{leaked}"
+              )
+          PY
+            "${environment}/bin/bpt" --help >/dev/null
+            "${environment}/bin/bpt" provider manifest --help >/dev/null
+            "${environment}/bin/bpt" observation validate --help >/dev/null
+          done
+          sha256sum dist/*
+
+  numpy-floor:
+    name: Core contracts / Python 3.10 / NumPy 1.23.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_REVISION }}
+          persist-credentials: false
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+
+      - name: Install at the declared NumPy floor
+        run: |
+          python -m pip install --upgrade "pip==26.1.2"
+          python -m pip install \
+            --constraint requirements/numpy-floor-py310.txt \
+            -e ".[dev]"
+          python - <<'PY'
+          import numpy
+
+          if numpy.__version__ != "1.23.0":
+              raise SystemExit(
+                  f"expected NumPy 1.23.0, resolved {numpy.__version__}"
+              )
+          PY
+
+      - name: Run the complete NumPy-only contract suite
+        shell: bash
+        run: |
+          python tools/quality/test_suite_manifest.py list core-contracts \
+            > "${RUNNER_TEMP}/numpy-floor-tests.txt"
+          mapfile -t floor_tests < "${RUNNER_TEMP}/numpy-floor-tests.txt"
+          test "${#floor_tests[@]}" -gt 0
+          python -m pytest -q "${floor_tests[@]}"
+
+  numerical-environment:
+    name: Content-addressed numerical environment and resolver input
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OMP_DYNAMIC: "FALSE"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_REVISION }}
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Resolve the exact checked-in input
+        run: |
+          python -m pip install --upgrade \
+            --requirement requirements/release-build-py312.txt
+          python -m pip freeze --all | LC_ALL=C sort \
+            > release-resolved-environment.txt
+
+      - name: Capture and validate NumericalEnvironmentV1
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m bayesian_phystwin.numerical_environment_v1 capture \
+            release-numerical-environment.json \
+            --dependency-lock requirements/release-build-py312.txt
+          python -m bayesian_phystwin.numerical_environment_v1 validate \
+            release-numerical-environment.json \
+            --require-dependency-lock
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          lock = Path("requirements/release-build-py312.txt")
+          payload = json.loads(
+              Path("release-numerical-environment.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          profile = payload["numerical_environment_v1"]
+          lock_digest = hashlib.sha256(lock.read_bytes()).hexdigest()
+          if profile["dependency_lock"]["sha256"] != lock_digest:
+              raise SystemExit("NumericalEnvironmentV1 changed the lock identity")
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as stream:
+              stream.write("### Release numerical environment\n\n")
+              stream.write(f"- Source: `{os.environ['SOURCE_REVISION']}`\n")
+              stream.write(f"- Profile ID: `{profile['profile_id']}`\n")
+              stream.write(f"- Resolver input SHA-256: `{lock_digest}`\n")
+              stream.write(f"- NumPy: `{profile['numpy']['version']}`\n")
+          PY
+          sha256sum \
+            requirements/release-build-py312.txt \
+            release-numerical-environment.json \
+            release-resolved-environment.txt
+
+      - name: Upload the exact runtime evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: release-runtime-evidence-${{ env.SOURCE_REVISION }}
+          path: |
+            requirements/release-build-py312.txt
+            release-numerical-environment.json
+            release-resolved-environment.txt
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,74 @@
+name: Launch reviewed Deform360 Prob4D target-free-visible source gate v2 once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-prob4d-visible-source-gate-v2-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute frozen target-free-visible ten-object public source gate v2
+    uses: ./.github/workflows/deform360-prob4d-source-gate.yml
+    with:
+      execute_authorized: true
+      eligibility_contract: v2-target-free-visible
+
+  receipt:
+    name: Publish public target-free-visible source-gate receipt
+    if: always()
+    needs: execute
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post custody-preserving status to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.execute.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          body=$(cat <<EOF
+          ## Deform360 Prob4D target-free-visible source gate v2 completed with result \`${RESULT}\`
+
+          - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - eligibility contract: \`v2-target-free-visible\`
+          - empirical runner: \`workstation2\` via the sole \`self-hosted\` label
+          - source measurements: released public real-world Deform360 calibration data
+          - new measurements required: \`false\`
+          - human approval required: \`false\`
+          - camera pixels used for eligibility: \`false\`
+          - unsupported visibility streams replaced: \`false\`
+          - confirmation payloads opened: \`false\`
+          - future frames used: \`false\`
+          - target outcomes used: \`false\`
+
+          This launcher executes exactly one frozen ten-object public source-only
+          run. Target-free robot/camera geometry determines camera eligibility;
+          retained visibility exclusions are never replaced. A successful
+          support check permits source covariance calibration, but only the
+          separately frozen automated calibration gate may authorize an
+          independently locked confirmation evaluation. This run is not
+          confirmation evidence and does not authorize target-informed retuning.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed one-shot target-free-visible public source-gate request: 2026-08-09-v2

@@ -1,0 +1,604 @@
+name: Deform360 official-Hub visuotactile Stage 0
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-official-hub-visuotactile.yml"
+      - "protocols/deform360_official_hub_visuotactile_v1.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_integration.json"
+      - "scripts/science/build_deform360_hub_selection.py"
+      - "src/bayesian_phystwin/deform360_contact_anchor.py"
+      - "tests/test_deform360_contact_anchor.py"
+      - "tests/test_deform360_hub_selection.py"
+      - "tests/test_deform360_stage0_workflow.py"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-official-hub-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BPT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  BPT_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Contact-anchor and selection contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact BayesianPhysTwin head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate target-blind implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m pytest -q \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py
+
+  official-hub-selection:
+    name: Names and metadata only / workstation2
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact trusted head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_HEAD_SHA }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Initialize evidence directory
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "${EVIDENCE_DIR}"
+          mkdir -p "${EVIDENCE_DIR}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "workflow_revision=${GITHUB_SHA}"
+            echo "implementation_revision=${BPT_HEAD_SHA}"
+            echo "head_ref=${BPT_HEAD_REF}"
+            uname -a
+          } | tee "${EVIDENCE_DIR}/runner.txt"
+
+      - name: Set up Python
+        timeout-minutes: 10
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install metadata-only client
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${RUNNER_TEMP}/deform360-official-hub-stage0-venv"
+          rm -rf "${venv}"
+          python -m venv "${venv}"
+          echo "${venv}/bin" >> "${GITHUB_PATH}"
+          "${venv}/bin/python" -m pip install --upgrade pip
+          "${venv}/bin/python" -m pip install -e ".[dev]" "huggingface_hub>=0.30,<2"
+          "${venv}/bin/python" -m pip check
+
+      - name: Revalidate target-blind implementation on publication runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m pytest -q \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py
+
+      - name: Record environment outside the checkout
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python --version | tee "${EVIDENCE_DIR}/python.txt"
+          python -m pip freeze --all \
+            | sort \
+            > "${EVIDENCE_DIR}/python-packages.txt"
+          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee "${EVIDENCE_DIR}/gpus.csv"
+
+      - name: Resolve official revision and select from names/metadata only
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/build_deform360_hub_selection.py \
+            --repository . \
+            --protocol protocols/deform360_official_hub_visuotactile_v1.json \
+            --implementation-revision "${BPT_HEAD_SHA}" \
+            --output "${EVIDENCE_DIR}/selection.json" \
+            | tee "${EVIDENCE_DIR}/selection.log"
+
+      - name: Verify exact head, information boundary, and clean source tree
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(
+              (Path(os.environ["EVIDENCE_DIR"]) / "selection.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if payload["implementation_revision"] != os.environ["BPT_HEAD_SHA"]:
+              raise SystemExit("selection is not bound to the exact trusted head")
+          boundary = payload["information_boundary"]
+          forbidden = (
+              "camera_media_opened",
+              "tactile_arrays_opened",
+              "robot_arrays_opened",
+              "geometry_annotations_opened",
+              "target_outcomes_opened",
+          )
+          if any(boundary[name] is not False for name in forbidden):
+              raise SystemExit("Stage-0 information boundary was exceeded")
+          PY
+          git diff --exit-code
+          git status --porcelain=v1 --untracked-files=no \
+            | tee "${EVIDENCE_DIR}/git-status.txt"
+          test ! -s "${EVIDENCE_DIR}/git-status.txt"
+
+      - name: Verify committed Stage-0 selection lock
+        if: github.event_name == 'pull_request'
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          def git_success(*arguments: str) -> bool:
+              return (
+                  subprocess.run(
+                      ["git", *arguments],
+                      check=False,
+                      stdout=subprocess.DEVNULL,
+                      stderr=subprocess.DEVNULL,
+                  ).returncode
+                  == 0
+              )
+
+          def git_output(*arguments: str) -> str:
+              return subprocess.run(
+                  ["git", *arguments],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.strip()
+
+          def exact_revision(value: object, *, name: str) -> str:
+              if (
+                  not isinstance(value, str)
+                  or len(value) not in {40, 64}
+                  or any(
+                      character not in "0123456789abcdef"
+                      for character in value
+                  )
+              ):
+                  raise SystemExit(f"{name} is not an exact revision")
+              return value
+
+          def changed_paths(
+              base_revision: str,
+              head_revision: str,
+          ) -> tuple[tuple[str, str], ...]:
+              output = git_output(
+                  "diff", "--name-status", "--no-renames", base_revision, head_revision
+              )
+              records: list[tuple[str, str]] = []
+              for line in output.splitlines():
+                  status, separator, path = line.partition("\t")
+                  if separator != "\t" or not path:
+                      raise SystemExit("git emitted a malformed changed-path record")
+                  if status not in {"A", "M", "D"}:
+                      raise SystemExit(
+                          f"unsupported Stage-0 integration status {status!r}"
+                      )
+                  records.append((status, path))
+              return tuple(records)
+
+          evidence_dir = Path(os.environ["EVIDENCE_DIR"])
+          generated_path = evidence_dir / "selection.json"
+          lock_path = Path(
+              "protocols/locks/"
+              "deform360_official_hub_visuotactile_v1_selection.json"
+          )
+          if not lock_path.is_file():
+              raise SystemExit(
+                  "committed Stage-0 lock is missing; publish the generated "
+                  "selection.json before opening selected raw payloads"
+              )
+          generated = json.loads(generated_path.read_text(encoding="utf-8"))
+          committed = json.loads(lock_path.read_text(encoding="utf-8"))
+          current_revision = os.environ["BPT_HEAD_SHA"]
+          if generated["implementation_revision"] != current_revision:
+              raise SystemExit("generated selection is not bound to the current head")
+          lock_revision = committed.get("implementation_revision")
+          if not isinstance(lock_revision, str) or len(lock_revision) not in {40, 64}:
+              raise SystemExit("committed lock has no exact implementation revision")
+          if any(character not in "0123456789abcdef" for character in lock_revision):
+              raise SystemExit("committed lock implementation revision is malformed")
+
+          comparable_generated = dict(generated)
+          comparable_committed = dict(committed)
+          for payload in (comparable_generated, comparable_committed):
+              payload.pop("implementation_revision", None)
+              payload.pop("selection_artifact_sha256", None)
+          differing_fields = sorted(
+              key
+              for key in set(comparable_generated) | set(comparable_committed)
+              if comparable_generated.get(key) != comparable_committed.get(key)
+          )
+          if differing_fields:
+              raise SystemExit(
+                  "committed Stage-0 lock differs from fresh metadata-only "
+                  f"selection in fields: {differing_fields}"
+              )
+
+          integration: dict[str, object] = {
+              "mode": "direct-ancestor",
+              "pull_request": None,
+              "pull_request_base": None,
+              "pull_request_head": None,
+              "integration_revision": None,
+              "integration_parent": None,
+              "integrated_change_count": 0,
+              "integrated_paths": [],
+          }
+          if not git_success(
+              "merge-base",
+              "--is-ancestor",
+              lock_revision,
+              current_revision,
+          ):
+              attestation_path = Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_visuotactile_v1_integration.json"
+              )
+              if not attestation_path.is_file():
+                  raise SystemExit(
+                      "squash-integrated Stage-0 lock lacks an integration "
+                      "attestation"
+                  )
+              attestation = json.loads(
+                  attestation_path.read_text(encoding="utf-8")
+              )
+              expected_attestation_keys = {
+                  "schema",
+                  "schema_version",
+                  "lock_implementation_revision",
+                  "pull_request_number",
+                  "pull_request_base_revision",
+                  "pull_request_head_revision",
+                  "integration_revision",
+              }
+              if (
+                  not isinstance(attestation, dict)
+                  or set(attestation) != expected_attestation_keys
+                  or attestation.get("schema")
+                  != (
+                      "bayesian-phystwin/"
+                      "deform360-stage0-squash-integration-v1"
+                  )
+                  or attestation.get("schema_version") != 1
+              ):
+                  raise SystemExit(
+                      "Stage-0 squash integration attestation is malformed"
+                  )
+              if attestation["lock_implementation_revision"] != lock_revision:
+                  raise SystemExit(
+                      "Stage-0 integration attestation names a different lock"
+                  )
+              pull_request = attestation["pull_request_number"]
+              if (
+                  not isinstance(pull_request, int)
+                  or isinstance(pull_request, bool)
+                  or pull_request < 1
+              ):
+                  raise SystemExit(
+                      "Stage-0 integration pull request is invalid"
+                  )
+              pull_request_base = exact_revision(
+                  attestation["pull_request_base_revision"],
+                  name="Stage-0 pull-request base",
+              )
+              pull_request_head = exact_revision(
+                  attestation["pull_request_head_revision"],
+                  name="Stage-0 pull-request head",
+              )
+              integration_revision = exact_revision(
+                  attestation["integration_revision"],
+                  name="Stage-0 integration revision",
+              )
+              if not git_success(
+                  "cat-file",
+                  "-e",
+                  f"{pull_request_head}^{{commit}}",
+              ):
+                  subprocess.run(
+                      [
+                          "git",
+                          "fetch",
+                          "--no-tags",
+                          "origin",
+                          f"refs/pull/{pull_request}/head",
+                      ],
+                      check=True,
+                  )
+              if not git_success(
+                  "merge-base",
+                  "--is-ancestor",
+                  pull_request_base,
+                  pull_request_head,
+              ):
+                  raise SystemExit(
+                      "attested Stage-0 pull-request base is not an ancestor "
+                      "of its head"
+                  )
+              if not git_success(
+                  "merge-base",
+                  "--is-ancestor",
+                  lock_revision,
+                  pull_request_head,
+              ):
+                  raise SystemExit(
+                      "locked implementation is not an ancestor of the "
+                      "attested pull-request head"
+                  )
+              if not git_success(
+                  "merge-base",
+                  "--is-ancestor",
+                  integration_revision,
+                  current_revision,
+              ):
+                  raise SystemExit(
+                      "attested squash integration revision is not an "
+                      "ancestor of the current head"
+                  )
+              parent_record = git_output(
+                  "rev-list",
+                  "--parents",
+                  "-n",
+                  "1",
+                  integration_revision,
+              ).split()
+              if len(parent_record) != 2 or parent_record[0] != integration_revision:
+                  raise SystemExit(
+                      "attested Stage-0 integration is not a single-parent commit"
+                  )
+              integration_parent = parent_record[1]
+              pull_request_changes = changed_paths(
+                  pull_request_base,
+                  pull_request_head,
+              )
+              integrated_changes = changed_paths(
+                  integration_parent,
+                  integration_revision,
+              )
+              if not pull_request_changes:
+                  raise SystemExit("attested Stage-0 pull request has no changes")
+              if pull_request_changes != integrated_changes:
+                  raise SystemExit(
+                      "squash integration changed a different path/status set "
+                      "than the verified Stage-0 pull request"
+                  )
+              for status, path in pull_request_changes:
+                  if status == "D":
+                      if git_success(
+                          "cat-file", "-e", f"{pull_request_head}:{path}"
+                      ) or git_success(
+                          "cat-file", "-e", f"{integration_revision}:{path}"
+                      ):
+                          raise SystemExit(
+                              f"deleted Stage-0 path still exists: {path}"
+                          )
+                      continue
+                  pull_request_blob = git_output(
+                      "rev-parse",
+                      f"{pull_request_head}:{path}",
+                  )
+                  integration_blob = git_output(
+                      "rev-parse",
+                      f"{integration_revision}:{path}",
+                  )
+                  if pull_request_blob != integration_blob:
+                      raise SystemExit(
+                          "squash integration blob differs from verified "
+                          f"Stage-0 pull-request path: {path}"
+                      )
+              integration = {
+                  "mode": "squash-merged-pr",
+                  "pull_request": pull_request,
+                  "pull_request_base": pull_request_base,
+                  "pull_request_head": pull_request_head,
+                  "integration_revision": integration_revision,
+                  "integration_parent": integration_parent,
+                  "integrated_change_count": len(integrated_changes),
+                  "integrated_paths": [path for _, path in integrated_changes],
+              }
+
+          verification = {
+              "schema": (
+                  "bayesian-phystwin/"
+                  "deform360-stage0-lock-verification-v2"
+              ),
+              "current_revision": current_revision,
+              "lock_implementation_revision": lock_revision,
+              "dataset_revision": committed["dataset"]["resolved_revision"],
+              "content_selection_sha256": committed["content_selection_sha256"],
+              "selection_sha256": committed["selection_sha256"],
+              "normalized_payload_match": True,
+              "lock_revision_is_ancestor": (
+                  integration["mode"] == "direct-ancestor"
+              ),
+              "lock_revision_integration": integration,
+          }
+          (evidence_dir / "lock-verification.json").write_text(
+              json.dumps(verification, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Finalize evidence checksums
+        if: always()
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd "${EVIDENCE_DIR}"
+            rm -f SHA256SUMS
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\0' \
+              | sort -z \
+              | xargs -0 -r sha256sum \
+              > SHA256SUMS
+          )
+
+      - name: Publish Stage-0 summary
+        if: always()
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_DIR}/selection.json" ]]; then
+            python - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          import os
+          from pathlib import Path
+
+          evidence_dir = Path(os.environ["EVIDENCE_DIR"])
+          payload = json.loads(
+              (evidence_dir / "selection.json").read_text(encoding="utf-8")
+          )
+          verification_path = evidence_dir / "lock-verification.json"
+          verified = verification_path.is_file()
+          print("### Official-Hub Deform360 Stage 0")
+          print()
+          print(f"- BayesianPhysTwin head: `{payload['implementation_revision']}`")
+          print(f"- Resolved dataset revision: `{payload['dataset']['resolved_revision']}`")
+          print(f"- Selection content SHA-256: `{payload['content_selection_sha256']}`")
+          print(f"- Calibration objects: `{len(payload['selection']['calibration'])}`")
+          print(f"- Confirmation objects: `{len(payload['selection']['confirmation'])}`")
+          print(f"- Committed lock verified: `{str(verified).lower()}`")
+          if verified:
+              verification = json.loads(
+                  verification_path.read_text(encoding="utf-8")
+              )
+              print(
+                  "- Lock implementation revision: "
+                  f"`{verification['lock_implementation_revision']}`"
+              )
+              print(
+                  "- Lock integration mode: "
+                  f"`{verification['lock_revision_integration']['mode']}`"
+              )
+          print("- Camera media opened: `false`")
+          print("- Tactile arrays opened: `false`")
+          print("- Target outcomes opened: `false`")
+          print()
+          if verified:
+              print(
+                  "The committed lock matches the fresh metadata-only selection; "
+                  "its implementation revision is directly or squash-integrated "
+                  "into this head."
+              )
+          else:
+              print(
+                  "This workflow-dispatch run produced evidence only and did not "
+                  "verify a pull-request lock."
+              )
+          PY
+          else
+            echo "### Official-Hub Deform360 Stage 0" >> "${GITHUB_STEP_SUMMARY}"
+            echo >> "${GITHUB_STEP_SUMMARY}"
+            echo "No selection artifact was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload target-blind selection evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-official-hub-stage0-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deform360-official-hub-stage0
+          if-no-files-found: error
+          retention-days: 90

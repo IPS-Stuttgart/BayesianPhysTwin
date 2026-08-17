@@ -14,7 +14,8 @@ Split by physical object or acquisition session into development, calibration, a
 - loss metrics and prediction-horizon labels;
 - reliability calibration and identifiable-rank definition;
 - interval construction and nominal coverage levels;
-- regression quantiles and all claim gates.
+- regression quantiles and all claim gates;
+- the group-clustered bootstrap replicate count, seed, and confidence level.
 
 The minimum prospective comparison is:
 
@@ -40,7 +41,8 @@ For each registered loss metric, report:
 6. separately labeled matched-count curves and paired deployed performance against the registered reference method at equal coverage;
 7. predictive coverage and interval width by prediction horizon;
 8. raw and deployed performance conditioned on inferred reliability;
-9. raw and deployed performance conditioned on identifiable rank.
+9. raw and deployed performance conditioned on identifiable rank;
+10. paired equal-group bootstrap intervals versus the fallback and registered reference method.
 
 The primary endpoint should be paired held-out future physical-prediction error. A mean improvement alone is insufficient when a method has a material high-quantile or worst-case regression.
 
@@ -94,6 +96,12 @@ There must be exactly one record for every `(metric, unit_id, method)` combinati
 
 `intervals[].width` is the full predictive interval width, not a half-width. `horizon` may be a registered label such as `early`, `middle`, or `late`, or a nonnegative numeric prediction step.
 
+## Paired group-clustered uncertainty
+
+The additive `bayesian-phystwin-group-clustered-paired-bootstrap-v1` analysis resamples independent `group_id` values with replacement. Each group receives equal weight. When a group contains several horizons, sessions, or registered unit rows, those losses are averaged within the group before resampling. Frames, views, tracks, points, and tactile taxels therefore cannot increase the effective sample size.
+
+The same sampled group indices are applied to every method, the physical fallback, and the registered reference method. The output reports percentile intervals for the paired mean-loss difference and relative change of means, together with the bootstrap probability that the candidate has lower loss. With fewer than two independent groups, point estimates are retained but interval status is `insufficient_independent_groups`; a degenerate single-group interval is not presented as inferential evidence.
+
 ## Command
 
 ```bash
@@ -112,11 +120,14 @@ bpt evidence summarize \
   --reliability-edge 0.25 \
   --reliability-edge 0.5 \
   --reliability-edge 0.75 \
-  --reliability-edge 1.0
+  --reliability-edge 1.0 \
+  --bootstrap-replicates 10000 \
+  --bootstrap-seed 20260805 \
+  --bootstrap-confidence 0.95
 ```
 
 The output binds the input path and SHA-256 digest and records every analysis setting. Include both files in the run manifest and bind the manifest to the frozen protocol, split, baseline, method-freeze, and claim identifiers.
 
 ## Interpretation
 
-A Bayesian claim is supported only when the registered Bayesian arm improves the primary error at relevant matched coverages without unacceptable harmful-update frequency or high-quantile regression, and when its uncertainty is informative: coverage should approach the nominal level without achieving it solely through uninformatively wide intervals. Reliability and identifiable-rank strata must be treated as diagnostics unless their decision rules were frozen before target opening.
+A Bayesian claim is supported only when the registered Bayesian arm improves the primary error at relevant matched coverages without unacceptable harmful-update frequency or high-quantile regression, and when its uncertainty is informative: coverage should approach the nominal level without achieving it solely through uninformatively wide intervals. The paired group-clustered interval must support the claim at the registered statistical-unit level; row-level or frame-level resampling is not an acceptable substitute. Reliability and identifiable-rank strata must be treated as diagnostics unless their decision rules were frozen before target opening.

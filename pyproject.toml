@@ -30,28 +30,32 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
 ]
 dependencies = [
     "numpy>=1.23",
 ]
 
 [project.urls]
-Repository = "https://github.com/FlorianPfaff/Bayesian-PhysTwin"
-Documentation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/tree/main/docs"
-Issues = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/issues"
-Changelog = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/CHANGELOG.md"
-Citation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/CITATION.cff"
-License = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/LICENSE"
-Support = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/SUPPORT.md"
+Repository = "https://github.com/IPS-Stuttgart/BayesianPhysTwin"
+Documentation = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/tree/main/docs"
+Issues = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/issues"
+Changelog = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/CHANGELOG.md"
+Citation = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/CITATION.cff"
+License = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/LICENSE"
+Support = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/SUPPORT.md"
 
 [project.scripts]
 bpt = "bayesian_phystwin.cli.main:main"
 
 [project.optional-dependencies]
 dev = [
+    "h5py>=3.10",
     "mypy>=1.11",
     "numpy>=1.23,<2.3; python_version < '3.14'",
+    "pre-commit>=4.0",
     "pytest>=8.0",
+    "PyYAML>=6.0",
     "ruff>=0.6",
 ]
 data = [
@@ -60,7 +64,11 @@ data = [
 graph = [
     "scipy>=1.10",
 ]
+mpm = [
+    "newton==1.5.0",
+]
 vision = [
+    "h5py>=3.10",
     "opencv-python-headless>=4.8",
 ]
 pyrecest = [
@@ -69,6 +77,16 @@ pyrecest = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+bayesian_phystwin = [
+    "py.typed",
+    "contract_data/ecosystem_compatibility_v1/*.json",
+    "contract_data/evidence_decision_v1/*.json",
+    "contract_data/evidence_decision_v2/*.json",
+    "contract_data/observation_belief_v1/*.json",
+    "contract_data/observation_belief_v1/vectors/*.json",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -87,4 +105,39 @@ follow_imports = "skip"
 ignore_missing_imports = true
 no_implicit_optional = true
 show_error_codes = true
+warn_unused_ignores = true
+
+# Mypy's aggregate `strict` switch is not reliably scoped per module. Enumerate
+# the per-module-capable strict options for the supported artifact and
+# cross-repository integration boundary. The changed-source ratchet additionally
+# invokes `mypy --strict` on the same files, covering global-only strict flags.
+[[tool.mypy.overrides]]
+module = [
+    "bayesian_phystwin.run_manifest",
+    "bayesian_phystwin.repository_provenance",
+    "bayesian_phystwin.run_manifest_v2",
+    "bayesian_phystwin.claim_bundle_v1",
+    "bayesian_phystwin.evidence_decision_v1",
+    "bayesian_phystwin.evidence_decision_v2",
+    "bayesian_phystwin.evidence_decision",
+    "bayesian_phystwin.physical_query_v1",
+    "bayesian_phystwin.v1",
+    "bayesian_phystwin.causal4d_provider_v1",
+    "bayesian_phystwin.prob4d_causal_lineage",
+    "bayesian_phystwin.query_covariance_crossfit",
+    "bayesian_phystwin._query_covariance_crossfit_common",
+    "bayesian_phystwin._query_covariance_crossfit_selection",
+    "bayesian_phystwin._query_covariance_crossfit_scoring",
+]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+extra_checks = true
+no_implicit_reexport = true
+strict_equality = true
+warn_return_any = true
 warn_unused_ignores = true

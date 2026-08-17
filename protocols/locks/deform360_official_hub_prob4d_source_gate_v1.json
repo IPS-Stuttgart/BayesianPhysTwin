@@ -1,0 +1,46 @@
+{
+  "artifact_id": "cc96d2cc03a5039479621acc7769690ef9bf8c15c00d418a0f14d3303ce3ebfb",
+  "claim_boundary": "A passing source gate establishes only leave-one-physical-object-out transfer of correlation-aware Prob4D point and Sim(3) gauge covariance on the ten public Deform360 calibration objects. It does not establish confirmation performance, state-estimation benefit, physical-query benefit, safety, official benchmark parity, or state of the art.",
+  "cohort": {
+    "exact_object_count": 10,
+    "exact_stratum_counts": {
+      "sheet": 5,
+      "volumetric": 5
+    },
+    "minimum_gauge_rows_per_object": 8,
+    "minimum_metric_streams_per_object": 2,
+    "minimum_point_clusters_per_object": 32
+  },
+  "information_boundary": {
+    "confirmation_payloads_opened": false,
+    "future_frames_used": false,
+    "human_approval_required": false,
+    "new_measurements_required": false,
+    "replacement_allowed": false,
+    "target_outcomes_used": false
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "schema": "bayesian-phystwin.deform360-prob4d-source-gate-v1",
+  "schema_version": 1,
+  "semantics": "object-balanced-leave-one-physical-object-out-calibration-gate-v1",
+  "thresholds": {
+    "aggregate_gauge_coverage_90_minimum": 0.75,
+    "aggregate_gauge_nees_per_dof_maximum": 4.0,
+    "aggregate_gauge_nees_per_dof_minimum": 0.25,
+    "aggregate_point_coverage_90_maximum": 0.98,
+    "aggregate_point_coverage_90_minimum": 0.8,
+    "aggregate_point_nees_per_dof_maximum": 2.0,
+    "aggregate_point_nees_per_dof_minimum": 0.5,
+    "calibrated_coverage_error_worsening_tolerance": 0.02,
+    "gauge_chi_square_90": 12.017036623780532,
+    "gauge_degrees_of_freedom": 7,
+    "maximum_factor_ratio_to_full_fit": 4.0,
+    "minimum_gauge_coverage_90_per_passing_fold": 0.6,
+    "minimum_passing_folds": 8,
+    "minimum_point_coverage_90_per_passing_fold": 0.7,
+    "point_chi_square_90": 6.251388631170325,
+    "point_degrees_of_freedom": 3,
+    "target_coverage": 0.9,
+    "trim_quantile": 0.99
+  }
+}

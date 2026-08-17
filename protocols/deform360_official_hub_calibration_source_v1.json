@@ -1,0 +1,70 @@
+{
+  "claim_boundary": "Calibration-source acquisition, synchronization, tactile alignment, robot-state recovery, and action-only window-selection evidence. It is not a provider-competence result, a BayesianPhysTwin accuracy result, a tactile-benefit result, a calibrated-uncertainty result, a confirmation result, or a state-of-the-art claim.",
+  "cohort": {
+    "confirmation_object_count": 12,
+    "minimum_camera_streams_per_object": 8,
+    "minimum_planned_or_prepared_objects": 8,
+    "minimum_planned_or_prepared_per_stratum": 4,
+    "object_count": 10,
+    "objects_per_stratum": 5,
+    "replacement_allowed": false,
+    "role": "calibration only"
+  },
+  "dataset": {
+    "repository": "brownu/deform360",
+    "repository_type": "dataset",
+    "revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+  },
+  "information_boundary": {
+    "calibration_payloads_opened_before_names_plan": false,
+    "calibration_target_metrics_computed": false,
+    "confirmation_paths_forbidden": true,
+    "confirmation_payloads_opened": false,
+    "target_outcomes_used": false
+  },
+  "information_order": [
+    "verify the committed Stage-0 selection and data-free visual-provider lock",
+    "list exact official-Hub calibration object paths at the registered dataset revision without opening file bytes",
+    "seal one exact selected-episode file plan per calibration object",
+    "stop without payload access if the names-only support gate fails",
+    "download and hash only the planned calibration files",
+    "prepare synchronized RGB, tactile, and robot state for the ten calibration units without replacement",
+    "select one 81-frame window from robot actions and openings only",
+    "stop without confirmation access if the calibration-source support gate fails",
+    "use the sealed windows in a later calibration-only MotionCrafter, Prob4D, contact, physical-response, guard, and interval selection",
+    "seal all eight calibration artifacts and the complete evidence-use ledger before any confirmation payload access"
+  ],
+  "locked_at_utc": "2026-08-05T00:00:00Z",
+  "locks": {
+    "stage0_selection": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
+    "visual_provider": "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json",
+    "visual_provider_lock_id": "b04341bf8c5e9f5250b87e35f1428bd21d5b79507e4e0c27ec24226e244befaf"
+  },
+  "parent_protocol_id": "deform360-official-hub-visuotactile-v1",
+  "processing": {
+    "audio_policy": "FLAC and WAV files are not admitted",
+    "camera_policy": "all streams with an exact selected-episode MP4/timestamp pair; the official processing code keeps only streams covered by released refined calibration",
+    "repository": "lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "selected_episode_staging": "The original selected episode is materialized as the sole synthetic raw episode 0 without changing source bytes; the original object and episode identities remain in every manifest.",
+    "source_stages": [
+      "download-selected-episode-files",
+      "undistort-and-align-all-calibrated-cameras",
+      "align-exact-tactile-sidecars",
+      "recover-robot-state",
+      "select-action-only-81-frame-window"
+    ],
+    "tactile_policy": "all named sensors with an exact selected-episode raw NPY/timestamp pair and one released median baseline"
+  },
+  "protocol_id": "deform360-official-hub-calibration-source-v1",
+  "protocol_sha256": "a42c087caa268e0072fa96f461de37144014a23e1087d3321de0d40216565562",
+  "schema": "bayesian-phystwin/deform360-official-hub-calibration-source-v1",
+  "schema_version": 1,
+  "status": "locked-before-calibration-payload-access",
+  "support_gate": {
+    "minimum_objects": 8,
+    "minimum_objects_per_stratum": 4,
+    "no_replacement": true,
+    "technical_failures_retained": true
+  }
+}

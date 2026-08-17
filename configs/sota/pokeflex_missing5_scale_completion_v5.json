@@ -1,0 +1,121 @@
+{
+  "artifact_kind": "PokeFlexMissingFiveScaleCompletionV5Protocol",
+  "claim_boundary": "The source gate selects scales before any of the five official target archives are available. This amendment is not target evidence and does not alter the immutable V4 result or protocol.",
+  "custody": {
+    "all_prediction_revisions_must_match": true,
+    "execution_implementation_lock_before_author_archive_access": true,
+    "inherits_v4_all-five_prediction_barrier": true,
+    "inherits_v4_author_source_manifest": true,
+    "required_prospective_prediction_seal_count": 5,
+    "target_mesh_access_before_barrier": "forbidden"
+  },
+  "evaluation": {
+    "bootstrap": {
+      "replicates": 20000,
+      "seed": 20260806,
+      "unit": "physical object",
+      "upper_quantile": 0.975
+    },
+    "primary_metric": "CD_UL1_mm",
+    "references": [
+      "released checkpoint",
+      "global effective scale 0.125",
+      "frozen V4 object-specific scale",
+      "published official-18 checkpoint value 6.498 mm"
+    ],
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720
+  },
+  "forbidden": [
+    "opening a target mesh before all five V5 prediction seals pass",
+    "changing any V5 multiplier from a target outcome",
+    "substituting an alternate take for an unavailable official target",
+    "weakening a V5-versus-V4 gate after author archive access",
+    "altering or relabeling the frozen V4 protocol or result",
+    "using frame f or later observations to predict frame f",
+    "touching any held-v8 runtime, target, query, score, barrier, or outcome artifact"
+  ],
+  "gates": {
+    "official18": {
+      "paired_bootstrap_upper_v5_minus_v4_mm_below": 0.0,
+      "v5_below_published_6_498_mm": true,
+      "v5_below_v4": true
+    },
+    "prospective_v5_vs_v4": {
+      "minimum_per_object_relative_improvement": 0.0,
+      "object_balanced_relative_improvement_above": 0.0,
+      "paired_bootstrap_upper_difference_mm_below": 0.0
+    }
+  },
+  "held_v8_accessed": false,
+  "locked_at_utc": "2026-08-06T07:18:29Z",
+  "method": {
+    "base_effective_scale": 0.125,
+    "field": "action_local_state_relative_0.4",
+    "global_multiplier": 1.0,
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "target_effective_scales": {
+      "3dPrintedCylinder_T7": 0.25,
+      "3dPrintedHeart_T14": 0.1875,
+      "3dPrintedPizza_T13": 0.125,
+      "Pillow_T8": 0.125,
+      "Sponge_T10": 0.125
+    },
+    "target_multipliers": {
+      "3dPrintedCylinder_T7": 2.0,
+      "3dPrintedHeart_T14": 1.5,
+      "3dPrintedPizza_T13": 1.0,
+      "Pillow_T8": 1.0,
+      "Sponge_T10": 1.0
+    },
+    "target_outcome_adaptation": "forbidden",
+    "unsupported_frame_action": "byte-identical released checkpoint",
+    "v4_target_effective_scales": {
+      "3dPrintedCylinder_T7": 0.375,
+      "3dPrintedHeart_T14": 0.1875,
+      "3dPrintedPizza_T13": 0.0625,
+      "Pillow_T8": 0.25,
+      "Sponge_T10": 0.1875
+    }
+  },
+  "parent_v4": {
+    "path": "configs/sota/pokeflex_action_robust_official18_v4.json",
+    "protocol_file_sha256": "2e51c38305a345200485a49be1c82d5816d3d1c4c5867026115fbecd27d9d141",
+    "protocol_sha256": "112a34e3af11f7fde44fa70de6b712d8b906ba81ea287b4897ad4a13692fed26",
+    "unchanged": true
+  },
+  "protocol_id": "pokeflex-missing5-scale-completion-v5",
+  "protocol_sha256": "11d6eb1ff115f0021e1ab9ad959b0dfd614ca455e5f54d1dd05c99e9b916c7de",
+  "schema_version": 1,
+  "source_calibration": {
+    "object_multipliers": {
+      "3dPrintedCylinder": 2.0,
+      "3dPrintedHeart": 1.5,
+      "3dPrintedPizza": 1.0,
+      "Pillow": 1.0,
+      "Sponge": 1.0
+    },
+    "official_target_outcomes_used": false,
+    "protocol_file_sha256": "0671df8beaaa4e560a264599ab5edbedd2e66ad2a7e1f9181f1b71fdea5fc70a",
+    "protocol_path": "configs/sota/pokeflex_missing5_scale_source_v5.json",
+    "protocol_sha256": "83737068dca8621e331bcd30c76bc2852509872e59d034d984dc931d7bf5e27a",
+    "result_file_sha256": "2f666ce4060a488f036745ff9471acd39a79e2c2a7e0799c7c03e65075e75bf1",
+    "result_path": "results/sota/pokeflex_missing5_scale_source_v5/source_result.json",
+    "result_sha256": "49658508e9531abd43d966c0eeb56f4deec43db3234e0ea530f756955b6deee7",
+    "source_outcomes_previously_opened": true
+  },
+  "status": "pretarget V5 amendment; author archives remain unavailable",
+  "target_cohort": {
+    "author_archives_available_at_lock": false,
+    "replacement_allowed": false,
+    "take_count": 5,
+    "take_ids": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ],
+    "target_outcomes_opened_at_lock": false
+  }
+}

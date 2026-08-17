@@ -46,10 +46,38 @@ _RELATED_REPOSITORY_ROLES = frozenset(
 )
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key!r}")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON constant is forbidden: {value}")
+
+
+def _load_json_value(path: Path, *, name: str) -> Any:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise ValueError(f"{name} JSON cannot be read as UTF-8") from error
+    try:
+        return json.loads(
+            text,
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_nonfinite_constant,
+        )
+    except json.JSONDecodeError as error:
+        raise ValueError(f"{name} JSON is malformed") from error
+
+
 def _load_json_mapping(path: Path | None, *, name: str) -> dict[str, Any]:
     if path is None:
         return {}
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = _load_json_value(path, name=name)
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} JSON must contain an object")
     return dict(value)
@@ -58,7 +86,7 @@ def _load_json_mapping(path: Path | None, *, name: str) -> dict[str, Any]:
 def _load_repository_states(path: Path | None) -> tuple[RepositoryState, ...]:
     if path is None:
         return ()
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = _load_json_value(path, name="related repositories")
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
         raise ValueError("related repositories JSON must contain an array")
     states: list[RepositoryState] = []
@@ -67,22 +95,28 @@ def _load_repository_states(path: Path | None) -> tuple[RepositoryState, ...]:
             raise ValueError(
                 f"related repository record {position} must contain an object"
             )
-        actual = frozenset(map(str, raw_record))
+        actual = frozenset(raw_record)
         if actual != _REPOSITORY_FIELDS:
             raise ValueError(
                 "related repository records require exactly "
                 f"{sorted(_REPOSITORY_FIELDS)}"
             )
-        role = str(raw_record["role"])
-        if role not in _RELATED_REPOSITORY_ROLES:
-            raise ValueError("related repository role is unsupported")
+        repository = raw_record["repository"]
+        revision = raw_record["revision"]
+        role = raw_record["role"]
         dirty = raw_record["dirty"]
-        if not isinstance(dirty, bool):
+        if type(repository) is not str:
+            raise ValueError("related repository name must be a genuine string")
+        if type(revision) is not str:
+            raise ValueError("related repository revision must be a genuine string")
+        if type(role) is not str or role not in _RELATED_REPOSITORY_ROLES:
+            raise ValueError("related repository role is unsupported")
+        if type(dirty) is not bool:
             raise ValueError("related repository dirty field must be boolean")
         states.append(
             RepositoryState(
-                repository=str(raw_record["repository"]),
-                revision=str(raw_record["revision"]),
+                repository=repository,
+                revision=revision,
                 dirty=dirty,
                 role=cast(RepositoryRole, role),
             )
@@ -209,6 +243,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=["bayesian-phystwin", "numpy"],
     )
+    create.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=("atomically replace an existing manifest instead of failing closed"),
+    )
     create.add_argument("--notes", default="")
 
     validate = subparsers.add_parser("validate", help="validate a saved manifest")
@@ -259,9 +298,7 @@ def _create(args: argparse.Namespace) -> int:
         repository=primary.repository,
         revision=primary.revision,
         dirty=primary.dirty,
-        related_repositories=_load_repository_states(
-            args.related_repositories_json
-        ),
+        related_repositories=_load_repository_states(args.related_repositories_json),
         command=tuple(shlex.split(args.command_line)),
         classification=args.classification,
         statistical_unit=args.statistical_unit,
@@ -287,7 +324,11 @@ def _create(args: argparse.Namespace) -> int:
     )
     if paper_evidence_requested:
         validate_paper_evidence_manifest(manifest)
-    write_run_manifest(args.manifest, manifest)
+    write_run_manifest(
+        args.manifest,
+        manifest,
+        overwrite=args.overwrite,
+    )
     print(
         json.dumps(
             {

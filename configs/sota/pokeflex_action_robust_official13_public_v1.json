@@ -1,0 +1,212 @@
+{
+  "artifact_kind": "PokeFlexConservativeShrinkageTargetProtocol",
+  "claim_boundary": "This method-specific execution lock evaluates the independently source-calibrated repeated-action robust scale rule on all thirteen publicly materializable recordings from PokeFlex's official validation list. All thirteen target outcomes were opened previously under a different fixed-scale protocol, so this evaluation is retrospective and cannot support a prospective-confirmation claim. Five officially listed validation takes are absent from the public archive and receive no replacements. The released checkpoint and the reproduced global 0.125 arm are the paired references. Falling numerically below the published 6.498 mm value on this thirteen-take subset is contextual evidence only and is not a direct comparison with the published eighteen-object aggregate.",
+  "custody": {
+    "all_prediction_revisions_must_match": true,
+    "implementation_checkout_must_be_clean": true,
+    "prediction_and_scoring_are_separate": true,
+    "prediction_frames": "all contiguous f from 6 through the last robot frame; active-frame filtering occurs only during locked scoring",
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "required_prediction_seal_count": 13,
+    "retry_policy": "no replacement; technical failures and exact fallbacks remain in the registered cohort",
+    "scored_frames": "force-y at f exceeds 3 N, matching the registered official evaluator",
+    "target_mesh_access_before_barrier": "historically opened under a prior protocol; this rerun forbids target-mesh access until all new prediction seals pass",
+    "template_mesh": "allowed explicit task input selected by the frozen upstream robot-metadata rule"
+  },
+  "evaluation": {
+    "aggregation": "equal scored frames over the 13 publicly materializable official validation takes; all results are retrospective for this scale rule",
+    "invalid_jaccard_action": "report the failure and valid fraction; never substitute a voxel or repaired-mesh surrogate",
+    "jaccard_boolean_backend": "manifold",
+    "jaccard_definition": "trimesh boolean intersection volume divided by union volume",
+    "jaccard_role": "non-gating reproducibility diagnostic because the released target meshes are not guaranteed volumetric",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to target surface points in original metric coordinates",
+    "primary_metric": "CD_UL1_mm",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720
+  },
+  "forbidden": [
+    "reading target meshes during this rerun before all thirteen new prediction seals pass the barrier",
+    "using frame f Kinect or robot observations to predict frame f",
+    "substituting T_WT for missing T_WE or otherwise imputing a required actuator pose",
+    "changing the repeated-action multiplier map, global fallbacks, support radius, metric, aggregation, or gates after this lock",
+    "replacing any of the five unavailable official takes or any technically failed public-subset take",
+    "representing any of the thirteen takes as prospectively untouched for this scale rule",
+    "substituting a repaired-mesh or voxel Jaccard for the registered public-mesh diagnostic",
+    "claiming reproduction of or direct comparison with the published eighteen-object aggregate",
+    "claiming that a numerically lower public-subset score establishes full-split state of the art",
+    "touching any held-v8 artifact or process"
+  ],
+  "gates": {
+    "action_robust_advancement": {
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_unit": "physical object among all thirteen retrospective public official-subset takes",
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "bootstrap_upper_quantile": 0.975,
+      "maximum_per_object_relative_regression": 0.0,
+      "reference": "reproduced frozen global correction scale 0.125 on the same predictions",
+      "relative_CD_UL1_improvement_above": 0.0
+    },
+    "direct_metric_reference": {
+      "published_aggregate_is_gating": false,
+      "released_checkpoint_pairing_is_primary": true,
+      "scope": "paired retrospective candidate-versus-released-checkpoint comparison on the thirteen publicly materializable official validation takes"
+    },
+    "global_scale_reproduction": {
+      "absolute_tolerance_mm": 1e-09,
+      "expected_CD_UL1_mm": 6.4993172114797195,
+      "reference": "previously archived global-scale frame-balanced score on the identical thirteen takes"
+    },
+    "paired_transfer": {
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_unit": "physical object among all thirteen retrospective public official-subset takes",
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "bootstrap_upper_quantile": 0.975,
+      "maximum_per_object_relative_regression": 0.0,
+      "relative_CD_UL1_improvement_above": 0.0
+    },
+    "public_subset_numeric_reference": {
+      "candidate_CD_UL1_mm_below": 6.498,
+      "direct_full18_comparison_authorized": false,
+      "role": "contextual numeric threshold on a thirteen-take subset; not a published-split SOTA gate"
+    }
+  },
+  "locked_at_utc": "2026-08-04T21:31:20Z",
+  "method": {
+    "action_robust_scale_calibration": {
+      "calibration_file_sha256": "96fe0046d15dfdd150b3f2f695b678a5b2b8a6acd790978624b120f6fa6408b0",
+      "calibration_sha256": "78d3c74e4246ec6b69cbcfe113ed04324bf1a9f49d543194df8a7a87d7f09157",
+      "multipliers": {
+        "3dPrintedBunny": 1.0,
+        "3dPrintedPyramid": 1.0,
+        "Beanbag": 4.0,
+        "FoamCylinder": 3.0,
+        "FoamDice": 1.0,
+        "FoamHalfSphere": 2.0,
+        "MemoryFoam": 1.0,
+        "PlushDice": 4.0,
+        "PlushMoon": 4.0,
+        "PlushOctopus": 1.0,
+        "PlushTurtle": 4.0,
+        "PlushVolleyball": 1.0,
+        "ToiletPaperRoll": 1.0
+      },
+      "path": "configs/sota/pokeflex_action_robust_scale_v3.json"
+    },
+    "base_scale": 0.125,
+    "effective_scale_by_object": {
+      "3dPrintedBunny": 0.125,
+      "3dPrintedPyramid": 0.125,
+      "Beanbag": 0.5,
+      "FoamCylinder": 0.375,
+      "FoamDice": 0.125,
+      "FoamHalfSphere": 0.25,
+      "MemoryFoam": 0.125,
+      "PlushDice": 0.5,
+      "PlushMoon": 0.5,
+      "PlushOctopus": 0.125,
+      "PlushTurtle": 0.5,
+      "PlushVolleyball": 0.125,
+      "ToiletPaperRoll": 0.125
+    },
+    "field": "action_local_state_relative_0.4",
+    "global_conflict_fallback": "multiplier one for every object absent from the source calibration or without a source-supported non-default multiplier",
+    "missing_required_robot_pose_action": "mark update unsupported and return byte-identical released checkpoint",
+    "online_selector": "none; the frozen source-calibrated multiplier or exact global fallback is fixed before this rerun",
+    "physical_prior": "released PokeFlex Kinect checkpoint",
+    "required_action_history": "finite T_WT, T_WE, and force values for every frame used by the frozen action-local field",
+    "scale_policy": "two-action maximin per physical object with frozen capped bank and global fallback",
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "state_update": "robust correlation-aware graph registration at f-1",
+    "target_outcome_adaptation": "forbidden",
+    "transfer": "one material-vertex-identity step from f-1 to f",
+    "unsupported_frame_action": "byte-identical released checkpoint"
+  },
+  "official_reference": {
+    "arxiv": "2410.07688v2",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "evaluator_path": "test/evaluate.py",
+    "evaluator_sha256": "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60",
+    "paper": "PokeFlex: A Real-World Dataset of Deformable Objects for Physics-Based Reconstruction",
+    "published_kinect_CD_UL1_mm": 6.498,
+    "published_kinect_jaccard": 0.82,
+    "published_split_scope": "one hard-coded validation recording per each of eighteen objects",
+    "public_subset_scope": "thirteen exact official validation recordings; excludes five absent public takes without replacement"
+  },
+  "protocol_id": "pokeflex-action-robust-official13-public-v1",
+  "protocol_sha256": "fe3199f72822ff384ce5e304c0afa85c7913f973055aaae06b88d62bdbc49349",
+  "schema_version": 1,
+  "source_gate": {
+    "action_robust_scale_calibration": {
+      "adjusted_object_count": 10,
+      "calibration_file_sha256": "96fe0046d15dfdd150b3f2f695b678a5b2b8a6acd790978624b120f6fa6408b0",
+      "calibration_sha256": "78d3c74e4246ec6b69cbcfe113ed04324bf1a9f49d543194df8a7a87d7f09157",
+      "controls_passed": true,
+      "future_take_outcomes_opened": false,
+      "source_action_count": 24,
+      "source_object_count": 12
+    },
+    "passed": true,
+    "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+    "result_git_commit": "234e201d586712f5966908b86cacc3076dc5b6ca",
+    "result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "source_object_balanced_relative_improvement": 0.01286289679729027,
+    "source_object_count": 9,
+    "source_object_win_count": 9
+  },
+  "status": "method-specific execution lock for retrospective repeated-action robust shrinkage on the thirteen public official-subset takes",
+  "target_cohort": {
+    "missing_official_take_ids": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ],
+    "previously_opened_take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "FoamDice_T3",
+      "PlushMoon_T1",
+      "PlushOctopus_T6",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Beanbag_T6",
+      "FoamCylinder_T1",
+      "ToiletPaperRoll_T1"
+    ],
+    "prospective_take_ids": [],
+    "replacement_allowed": false,
+    "selection_basis": "the exact official validation take list intersected with the registered public archive; inherited unchanged from the prior public-subset protocol",
+    "take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "FoamDice_T3",
+      "PlushMoon_T1",
+      "PlushOctopus_T6",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Beanbag_T6",
+      "FoamCylinder_T1",
+      "ToiletPaperRoll_T1"
+    ]
+  },
+  "upstream": {
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    },
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "repository": "https://github.com/pokeflex-dataset/reconstruction"
+  }
+}

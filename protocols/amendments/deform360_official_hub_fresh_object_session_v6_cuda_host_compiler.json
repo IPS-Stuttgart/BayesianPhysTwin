@@ -1,0 +1,59 @@
+{
+  "claim_boundary": "Technical completion of the already-declared Deform360 gsplat CUDA runtime by selecting a CUDA-12.1-supported GNU host compiler. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "compiler_family": "GNU",
+    "compiler_major_version": 12,
+    "compiler_paths": {
+      "cc": "/usr/bin/gcc-12",
+      "cxx": "/usr/bin/g++-12"
+    },
+    "cuda_host_compiler_environment": [
+      "CC",
+      "CXX",
+      "CUDAHOSTCXX",
+      "NVCC_CCBIN"
+    ],
+    "nvcc_compiler_bindir_probe_required": true,
+    "unsupported_compiler_override_allowed": false
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:e563bba93ef78aa45714ade7114842944ee7dcc07d29442d94cc5857b987bc43",
+    "artifact_id": 9131235897,
+    "error_message": "unsupported GNU version! gcc versions later than 12 are not supported!",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "88c2af78fd76252896d9fe00ed8b2400a14ade5e",
+    "terminal_stage": "build-isolated-gpu-source-runtime",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31570771026
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_gsplat_cuda_runtime_repair_id": "44da91d95947d07d9d930bd0c707d16da9555bc7b9ea3042fcf0a88444ec3bb4",
+  "repair_id": "e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721",
+  "repair_scope": {
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "host_compiler_binding_added": true,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "prob4d_role_changed": false,
+    "replacement_allowed": false,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-cuda-host-compiler-repair",
+  "schema_version": 1
+}

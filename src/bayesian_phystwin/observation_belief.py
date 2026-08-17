@@ -12,13 +12,59 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from numbers import Real
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from ._canonical_contracts import (
+    canonical_string_tuple,
+    frozen_finite_json_mapping,
+    genuine_integer,
+    immutable_array,
+    immutable_integer_array,
+    plain_json,
+)
+
 OBSERVATION_BELIEF_SCHEMA = "phys4d.observation_belief"
 OBSERVATION_BELIEF_VERSION = 1
+
+
+_OBSERVATION_BELIEF_SERIALIZED_DESCRIPTOR_FIELDS = frozenset(
+    {
+        "schema_name",
+        "schema_version",
+        "case_id",
+        "stream_id",
+        "causal_frame_stop",
+        "view_names",
+        "window_names",
+        "factor_names",
+        "source_repository",
+        "source_revision",
+        "source_artifact_sha256",
+        "metadata",
+        "artifact_id",
+    }
+)
+_OBSERVATION_BELIEF_ARRAY_DTYPES = {
+    "declared_frame_ids": np.dtype(np.int64),
+    "mean_xyz_m": np.dtype(np.float64),
+    "frame_ids": np.dtype(np.int64),
+    "entity_ids": np.dtype(np.int64),
+    "view_indices": np.dtype(np.int64),
+    "window_indices": np.dtype(np.int64),
+    "correlation_group_ids": np.dtype(np.int64),
+    "factor_group_ids": np.dtype(np.int64),
+    "prior_reliability": np.dtype(np.float64),
+    "association_probability": np.dtype(np.float64),
+    "local_covariance_m2": np.dtype(np.float64),
+    "low_rank_factor_m": np.dtype(np.float64),
+    "group_ids": np.dtype(np.int64),
+    "group_prior_nominal_probability": np.dtype(np.float64),
+    "group_composite_weight": np.dtype(np.float64),
+}
 
 
 def array_sha256(values: np.ndarray) -> str:
@@ -44,122 +90,34 @@ def file_sha256(path: str | Path) -> str:
 
 def _canonical_json(value: Mapping[str, Any]) -> bytes:
     return json.dumps(
-        dict(value),
+        plain_json(value),
         sort_keys=True,
         separators=(",", ":"),
         allow_nan=False,
     ).encode("utf-8")
 
 
-def _plain_json(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {key: _plain_json(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_plain_json(item) for item in value]
-    return value
-
-
-class _FrozenDict(dict):
-    __slots__ = ()
-    _MUTATORS = frozenset({"clear", "pop", "popitem", "setdefault", "update"})
-
-    def __getattribute__(self, name: str) -> Any:
-        if name in type(self)._MUTATORS:
-            return self._immutable
-        return super().__getattribute__(name)
-
-    @staticmethod
-    def _immutable(*args: object, **kwargs: object) -> None:
-        raise TypeError("metadata is immutable")
-
-    def __setitem__(self, key, value):
-        self._immutable(key, value)
-
-    def __delitem__(self, key):
-        self._immutable(key)
-
-    def __ior__(self, other) -> _FrozenDict:  # type: ignore[misc]
-        self._immutable(other)
-        return self
-
-    def __copy__(self) -> dict[str, Any]:
-        return _plain_json(self)
-
-    def __deepcopy__(self, memo: dict[int, Any]) -> dict[str, Any]:
-        del memo
-        return _plain_json(self)
-
-
-class _FrozenList(list):
-    __slots__ = ()
-    _MUTATORS = frozenset(
-        {"append", "clear", "extend", "insert", "pop", "remove", "reverse", "sort"}
-    )
-
-    def __getattribute__(self, name: str) -> Any:
-        if name in type(self)._MUTATORS:
-            return self._immutable
-        return super().__getattribute__(name)
-
-    @staticmethod
-    def _immutable(*args: object, **kwargs: object) -> None:
-        raise TypeError("metadata is immutable")
-
-    def __setitem__(self, key, value):
-        self._immutable(key, value)
-
-    def __delitem__(self, key):
-        self._immutable(key)
-
-    def __iadd__(self, other) -> _FrozenList:  # type: ignore[misc]
-        self._immutable(other)
-        return self
-
-    def __imul__(self, other) -> _FrozenList:  # type: ignore[misc]
-        self._immutable(other)
-        return self
-
-    def __copy__(self) -> list[Any]:
-        return _plain_json(self)
-
-    def __deepcopy__(self, memo: dict[int, Any]) -> list[Any]:
-        del memo
-        return _plain_json(self)
-
-
-def _freeze_json(value: Any) -> Any:
-    if isinstance(value, dict):
-        return _FrozenDict({key: _freeze_json(item) for key, item in value.items()})
-    if isinstance(value, list):
-        return _FrozenList(_freeze_json(item) for item in value)
-    return value
-
-
-def _validated_metadata(values: Mapping[str, Any]) -> Mapping[str, Any]:
-    try:
-        normalized = json.loads(
-            json.dumps(_plain_json(values), sort_keys=True, allow_nan=False)
-        )
-    except (TypeError, ValueError) as error:
-        raise ValueError("metadata must be finite JSON data") from error
-    return _freeze_json(normalized)
-
-
 def _validate_sha256(value: str, *, name: str) -> None:
-    if len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
-def _readonly(
-    values: np.ndarray,
-    *,
-    dtype: np.dtype[Any] | type | None = None,
-) -> np.ndarray:
-    array = np.asarray(values, dtype=dtype).copy()
-    array.setflags(write=False)
-    return array
+def _readonly_float(values: object, *, name: str) -> np.ndarray:
+    try:
+        raw = np.asarray(values)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError(f"{name} must contain real numeric values") from error
+    if raw.dtype.kind not in "iuf":
+        raise ValueError(f"{name} must contain real numeric values")
+    return immutable_array(raw, dtype=np.dtype(np.float64))
+
+
+def _readonly_integer(values: object, *, name: str) -> np.ndarray:
+    return immutable_integer_array(values, name=name)
 
 
 def _artifact_id(
@@ -174,14 +132,42 @@ def _artifact_id(
 
 
 def _validate_rotation(rotation: np.ndarray) -> np.ndarray:
-    matrix = np.asarray(rotation, dtype=np.float64)
+    try:
+        raw = np.asarray(rotation)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("rotation must contain real numeric values") from error
+    if raw.dtype.kind not in "iuf":
+        raise ValueError("rotation must contain real numeric values")
+    matrix = np.asarray(raw, dtype=np.float64)
     if matrix.shape != (3, 3) or not np.all(np.isfinite(matrix)):
         raise ValueError("rotation must have finite shape (3, 3)")
-    if not np.allclose(matrix.T @ matrix, np.eye(3), atol=1e-9, rtol=1e-9):
+    with np.errstate(over="ignore", invalid="ignore"):
+        gram = matrix.T @ matrix
+    if not np.all(np.isfinite(gram)) or not np.allclose(
+        gram,
+        np.eye(3),
+        atol=1e-9,
+        rtol=1e-9,
+    ):
         raise ValueError("rotation must be orthonormal")
-    if not np.isclose(np.linalg.det(matrix), 1.0, atol=1e-9, rtol=1e-9):
+    determinant = float(np.linalg.det(matrix))
+    if not np.isfinite(determinant) or not np.isclose(
+        determinant,
+        1.0,
+        atol=1e-9,
+        rtol=1e-9,
+    ):
         raise ValueError("rotation must have determinant one")
     return matrix
+
+
+def _finite_positive_real(value: object, *, name: str) -> float:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a real scalar")
+    result = float(value)
+    if not np.isfinite(result) or result <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
+    return result
 
 
 @dataclass(frozen=True)
@@ -227,40 +213,81 @@ class ObservationBeliefV1:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.case_id or not self.stream_id:
-            raise ValueError("case_id and stream_id must be nonempty")
-        if self.causal_frame_stop < 1:
-            raise ValueError("causal_frame_stop must be positive")
-        if not self.view_names or any(not name for name in self.view_names):
-            raise ValueError("view_names must contain nonempty names")
-        if not self.window_names or any(not name for name in self.window_names):
-            raise ValueError("window_names must contain nonempty names")
-        if any(not name for name in self.factor_names):
-            raise ValueError("factor_names must be nonempty when present")
-        if not self.source_repository or not self.source_revision:
-            raise ValueError("source repository and revision must be nonempty")
+        if not isinstance(self.case_id, str) or not self.case_id:
+            raise ValueError("case_id must be nonempty")
+        if not isinstance(self.stream_id, str) or not self.stream_id:
+            raise ValueError("stream_id must be nonempty")
+        causal_frame_stop = genuine_integer(
+            self.causal_frame_stop,
+            name="causal_frame_stop",
+            minimum=1,
+        )
+        view_names = canonical_string_tuple(
+            self.view_names,
+            name="view_names",
+            allow_empty=False,
+        )
+        window_names = canonical_string_tuple(
+            self.window_names,
+            name="window_names",
+            allow_empty=False,
+        )
+        factor_names = canonical_string_tuple(
+            self.factor_names,
+            name="factor_names",
+            allow_empty=True,
+        )
+        if not isinstance(self.source_repository, str) or not self.source_repository:
+            raise ValueError("source repository must be nonempty")
+        if not isinstance(self.source_revision, str) or not self.source_revision:
+            raise ValueError("source revision must be nonempty")
         _validate_sha256(
             self.source_artifact_sha256,
             name="source_artifact_sha256",
         )
 
-        declared_frames = _readonly(self.declared_frame_ids, dtype=np.int64)
-        mean = _readonly(self.mean_xyz_m, dtype=np.float64)
-        frame_ids = _readonly(self.frame_ids, dtype=np.int64)
-        entity_ids = _readonly(self.entity_ids, dtype=np.int64)
-        view_indices = _readonly(self.view_indices, dtype=np.int64)
-        window_indices = _readonly(self.window_indices, dtype=np.int64)
-        correlation_groups = _readonly(self.correlation_group_ids, dtype=np.int64)
-        factor_groups = _readonly(self.factor_group_ids, dtype=np.int64)
-        prior_reliability = _readonly(self.prior_reliability, dtype=np.float64)
-        association_probability = _readonly(
-            self.association_probability, dtype=np.float64
+        declared_frames = _readonly_integer(
+            self.declared_frame_ids,
+            name="declared_frame_ids",
         )
-        local_covariance = _readonly(self.local_covariance_m2, dtype=np.float64)
-        factors = _readonly(self.low_rank_factor_m, dtype=np.float64)
-        group_ids = _readonly(self.group_ids, dtype=np.int64)
-        group_prior = _readonly(self.group_prior_nominal_probability, dtype=np.float64)
-        group_weight = _readonly(self.group_composite_weight, dtype=np.float64)
+        mean = _readonly_float(self.mean_xyz_m, name="mean_xyz_m")
+        frame_ids = _readonly_integer(self.frame_ids, name="frame_ids")
+        entity_ids = _readonly_integer(self.entity_ids, name="entity_ids")
+        view_indices = _readonly_integer(self.view_indices, name="view_indices")
+        window_indices = _readonly_integer(self.window_indices, name="window_indices")
+        correlation_groups = _readonly_integer(
+            self.correlation_group_ids,
+            name="correlation_group_ids",
+        )
+        factor_groups = _readonly_integer(
+            self.factor_group_ids,
+            name="factor_group_ids",
+        )
+        prior_reliability = _readonly_float(
+            self.prior_reliability,
+            name="prior_reliability",
+        )
+        association_probability = _readonly_float(
+            self.association_probability,
+            name="association_probability",
+        )
+        local_covariance = _readonly_float(
+            self.local_covariance_m2,
+            name="local_covariance_m2",
+        )
+        factors = _readonly_float(
+            self.low_rank_factor_m,
+            name="low_rank_factor_m",
+        )
+        group_ids = _readonly_integer(self.group_ids, name="group_ids")
+        group_prior = _readonly_float(
+            self.group_prior_nominal_probability,
+            name="group_prior_nominal_probability",
+        )
+        group_weight = _readonly_float(
+            self.group_composite_weight,
+            name="group_composite_weight",
+        )
 
         if (
             declared_frames.ndim != 1
@@ -272,7 +299,7 @@ class ObservationBeliefV1:
                 "declared_frame_ids must be nonempty, nonnegative, and "
                 "strictly increasing"
             )
-        if np.any(declared_frames >= self.causal_frame_stop):
+        if np.any(declared_frames >= causal_frame_stop):
             raise ValueError("declared frames must lie before causal_frame_stop")
         if mean.ndim != 2 or mean.shape[1] != 3 or len(mean) == 0:
             raise ValueError("mean_xyz_m must have nonempty shape (N, 3)")
@@ -292,7 +319,7 @@ class ObservationBeliefV1:
                 raise ValueError(f"{name} must have shape ({observation_count},)")
         if local_covariance.shape != (observation_count, 3, 3):
             raise ValueError("local_covariance_m2 must have shape (N, 3, 3)")
-        factor_rank = len(self.factor_names)
+        factor_rank = len(factor_names)
         if factors.shape != (observation_count, 3, factor_rank):
             raise ValueError(f"low_rank_factor_m must have shape (N, 3, {factor_rank})")
         if not np.all(np.isfinite(mean)):
@@ -303,15 +330,13 @@ class ObservationBeliefV1:
             raise ValueError("low-rank factors must be finite")
         if np.any(entity_ids < 0):
             raise ValueError("entity_ids must be nonnegative")
-        if np.any(frame_ids < 0) or np.any(frame_ids >= self.causal_frame_stop):
+        if np.any(frame_ids < 0) or np.any(frame_ids >= causal_frame_stop):
             raise ValueError("observation frames cross the causal boundary")
         if not np.all(np.isin(frame_ids, declared_frames)):
             raise ValueError("frame_ids must be contained in declared_frame_ids")
-        if np.any(view_indices < 0) or np.any(view_indices >= len(self.view_names)):
+        if np.any(view_indices < 0) or np.any(view_indices >= len(view_names)):
             raise ValueError("view_indices reference unavailable views")
-        if np.any(window_indices < 0) or np.any(
-            window_indices >= len(self.window_names)
-        ):
+        if np.any(window_indices < 0) or np.any(window_indices >= len(window_names)):
             raise ValueError("window_indices reference unavailable windows")
         if np.any(correlation_groups < 0) or np.any(factor_groups < 0):
             raise ValueError("group identifiers must be nonnegative")
@@ -364,6 +389,10 @@ class ObservationBeliefV1:
                 "observation identity (frame, entity, view, window) must be unique"
             )
 
+        object.__setattr__(self, "causal_frame_stop", causal_frame_stop)
+        object.__setattr__(self, "view_names", view_names)
+        object.__setattr__(self, "window_names", window_names)
+        object.__setattr__(self, "factor_names", factor_names)
         object.__setattr__(self, "declared_frame_ids", declared_frames)
         object.__setattr__(self, "mean_xyz_m", mean)
         object.__setattr__(self, "frame_ids", frame_ids)
@@ -379,7 +408,11 @@ class ObservationBeliefV1:
         object.__setattr__(self, "group_ids", group_ids)
         object.__setattr__(self, "group_prior_nominal_probability", group_prior)
         object.__setattr__(self, "group_composite_weight", group_weight)
-        object.__setattr__(self, "metadata", _validated_metadata(self.metadata))
+        object.__setattr__(
+            self,
+            "metadata",
+            frozen_finite_json_mapping(self.metadata),
+        )
 
     def _descriptor(self) -> dict[str, Any]:
         return {
@@ -394,7 +427,7 @@ class ObservationBeliefV1:
             "source_repository": self.source_repository,
             "source_revision": self.source_revision,
             "source_artifact_sha256": self.source_artifact_sha256,
-            "metadata": _plain_json(self.metadata),
+            "metadata": plain_json(self.metadata),
         }
 
     def _arrays(self) -> dict[str, np.ndarray]:
@@ -412,7 +445,7 @@ class ObservationBeliefV1:
             "local_covariance_m2": self.local_covariance_m2,
             "low_rank_factor_m": self.low_rank_factor_m,
             "group_ids": self.group_ids,
-            "group_prior_nominal_probability": (self.group_prior_nominal_probability),
+            "group_prior_nominal_probability": self.group_prior_nominal_probability,
             "group_composite_weight": self.group_composite_weight,
         }
 
@@ -431,9 +464,17 @@ class ObservationBeliefV1:
         return len(self.factor_names)
 
     def group_position(self, group_id: int) -> int:
-        position = int(np.searchsorted(self.group_ids, group_id))
-        if position == len(self.group_ids) or self.group_ids[position] != group_id:
-            raise KeyError(f"unknown correlation group {group_id}")
+        canonical_group_id = genuine_integer(
+            group_id,
+            name="group_id",
+            minimum=0,
+        )
+        position = int(np.searchsorted(self.group_ids, canonical_group_id))
+        if (
+            position == len(self.group_ids)
+            or self.group_ids[position] != canonical_group_id
+        ):
+            raise KeyError(f"unknown correlation group {canonical_group_id}")
         return position
 
     def transformed(
@@ -447,25 +488,51 @@ class ObservationBeliefV1:
         """Return the same belief in another metric Sim(3) frame."""
 
         matrix = _validate_rotation(rotation)
-        translation = np.asarray(translation_m, dtype=np.float64)
+        try:
+            raw_translation = np.asarray(translation_m)
+        except (TypeError, ValueError, OverflowError) as error:
+            raise ValueError(
+                "translation_m must contain real numeric values"
+            ) from error
+        if raw_translation.dtype.kind not in "iuf":
+            raise ValueError("translation_m must contain real numeric values")
+        translation = np.asarray(raw_translation, dtype=np.float64)
         if translation.shape != (3,) or not np.all(np.isfinite(translation)):
             raise ValueError("translation_m must have finite shape (3,)")
-        if not np.isfinite(scale) or scale <= 0.0:
-            raise ValueError("scale must be finite and positive")
-        mean = scale * np.einsum("ij,nj->ni", matrix, self.mean_xyz_m)
-        mean += translation
-        covariance = scale**2 * np.einsum(
-            "ij,njk,lk->nil",
-            matrix,
-            self.local_covariance_m2,
-            matrix,
-        )
-        factors = scale * np.einsum("ij,njr->nir", matrix, self.low_rank_factor_m)
-        metadata = _plain_json(self.metadata)
+        scale_value = _finite_positive_real(scale, name="scale")
+        with np.errstate(over="ignore", invalid="ignore"):
+            scale_squared = np.float64(scale_value) * np.float64(scale_value)
+            mean = scale_value * np.einsum(
+                "ij,nj->ni",
+                matrix,
+                self.mean_xyz_m,
+            )
+            mean += translation
+            covariance = scale_squared * np.einsum(
+                "ij,njk,lk->nil",
+                matrix,
+                self.local_covariance_m2,
+                matrix,
+            )
+            factors = scale_value * np.einsum(
+                "ij,njr->nir",
+                matrix,
+                self.low_rank_factor_m,
+            )
+        if (
+            not np.isfinite(scale_squared)
+            or not np.all(np.isfinite(mean))
+            or not np.all(np.isfinite(covariance))
+            or not np.all(np.isfinite(factors))
+        ):
+            raise ValueError(
+                "metric transform is not representable as finite float64 values"
+            )
+        metadata = plain_json(self.metadata)
         metadata["metric_transform"] = {
             "rotation": matrix.tolist(),
             "translation_m": translation.tolist(),
-            "scale": float(scale),
+            "scale": scale_value,
             "source_artifact_id": self.artifact_id,
         }
         return replace(
@@ -529,56 +596,69 @@ def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
     """Load and fully revalidate an ``ObservationBeliefV1`` artifact."""
 
     with np.load(path, allow_pickle=False) as archive:
-        if "descriptor_json" not in archive:
-            raise ValueError("observation artifact has no descriptor_json")
-        descriptor = json.loads(str(archive["descriptor_json"]))
+        required_members = {
+            "descriptor_json",
+            *_OBSERVATION_BELIEF_ARRAY_DTYPES,
+        }
+        members = set(archive.files)
+        missing = required_members - members
+        extra = members - required_members
+        if missing or extra:
+            raise ValueError(
+                "observation artifact members changed; "
+                f"missing={sorted(missing)}, extra={sorted(extra)}"
+            )
+
+        descriptor_member = np.asarray(archive["descriptor_json"])
+        if descriptor_member.shape != ():
+            raise ValueError("descriptor_json must be a scalar array")
+        raw_descriptor = descriptor_member.item()
+        if isinstance(raw_descriptor, bytes):
+            try:
+                raw_descriptor = raw_descriptor.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise ValueError("descriptor_json is not valid UTF-8") from error
+        if type(raw_descriptor) is not str:
+            raise ValueError("descriptor_json must contain a string")
+        try:
+            descriptor = json.loads(raw_descriptor)
+        except (TypeError, ValueError) as error:
+            raise ValueError("descriptor_json is not valid JSON") from error
+        if not isinstance(descriptor, dict):
+            raise ValueError("observation descriptor must be a JSON object")
+        if set(descriptor) != _OBSERVATION_BELIEF_SERIALIZED_DESCRIPTOR_FIELDS:
+            raise ValueError("observation descriptor fields changed")
         if descriptor.get("schema_name") != OBSERVATION_BELIEF_SCHEMA:
             raise ValueError("unsupported observation-belief schema")
-        if int(descriptor.get("schema_version", -1)) != (OBSERVATION_BELIEF_VERSION):
-            raise ValueError("unsupported observation-belief version")
-        arrays = {
-            name: np.asarray(archive[name])
-            for name in archive.files
-            if name != "descriptor_json"
-        }
-    required_arrays = {
-        "declared_frame_ids",
-        "mean_xyz_m",
-        "frame_ids",
-        "entity_ids",
-        "view_indices",
-        "window_indices",
-        "correlation_group_ids",
-        "factor_group_ids",
-        "prior_reliability",
-        "association_probability",
-        "local_covariance_m2",
-        "low_rank_factor_m",
-        "group_ids",
-        "group_prior_nominal_probability",
-        "group_composite_weight",
-    }
-    missing = required_arrays - arrays.keys()
-    extra = arrays.keys() - required_arrays
-    if missing or extra:
-        raise ValueError(
-            "observation artifact arrays changed; "
-            f"missing={sorted(missing)}, extra={sorted(extra)}"
+        version = genuine_integer(
+            descriptor.get("schema_version"),
+            name="observation-belief schema_version",
+            minimum=0,
         )
+        if version != OBSERVATION_BELIEF_VERSION:
+            raise ValueError("unsupported observation-belief version")
+
+        arrays: dict[str, np.ndarray] = {}
+        for name, expected_dtype in _OBSERVATION_BELIEF_ARRAY_DTYPES.items():
+            values = np.asarray(archive[name])
+            if values.dtype != expected_dtype:
+                raise ValueError(f"{name} must have exact dtype {expected_dtype.name}")
+            arrays[name] = values
+
     belief = ObservationBeliefV1(
-        case_id=str(descriptor["case_id"]),
-        stream_id=str(descriptor["stream_id"]),
-        causal_frame_stop=int(descriptor["causal_frame_stop"]),
-        view_names=tuple(map(str, descriptor["view_names"])),
-        window_names=tuple(map(str, descriptor["window_names"])),
-        factor_names=tuple(map(str, descriptor["factor_names"])),
-        source_repository=str(descriptor["source_repository"]),
-        source_revision=str(descriptor["source_revision"]),
-        source_artifact_sha256=str(descriptor["source_artifact_sha256"]),
+        case_id=descriptor["case_id"],
+        stream_id=descriptor["stream_id"],
+        causal_frame_stop=descriptor["causal_frame_stop"],
+        view_names=tuple(descriptor["view_names"]),
+        window_names=tuple(descriptor["window_names"]),
+        factor_names=tuple(descriptor["factor_names"]),
+        source_repository=descriptor["source_repository"],
+        source_revision=descriptor["source_revision"],
+        source_artifact_sha256=descriptor["source_artifact_sha256"],
         metadata=descriptor["metadata"],
         **arrays,
     )
-    expected = str(descriptor.get("artifact_id", ""))
+    expected = descriptor["artifact_id"]
     _validate_sha256(expected, name="artifact_id")
     if belief.artifact_id != expected:
         raise ValueError("observation artifact digest does not match its payload")

@@ -11,6 +11,8 @@ import json
 from collections.abc import Mapping
 from typing import Any, cast
 
+from ._canonical_contracts import literal_lower_hex
+
 PROB4D_PROVIDER_ATTESTATION_SCHEMA = "prob4d.provider-attestation"
 PROB4D_PROVIDER_ATTESTATION_VERSION = 1
 PROB4D_PROVIDER_API_VERSION = 2
@@ -100,23 +102,21 @@ def _require_exact_fields(
 
 
 def _require_sha256(value: Any, *, name: str) -> str:
-    result = str(value)
-    _require(
-        len(result) == 64
-        and all(character in "0123456789abcdef" for character in result),
-        f"{name} must be a lowercase SHA-256 digest",
-    )
-    return result
+    try:
+        return literal_lower_hex(value, name=name, lengths={64})
+    except ValueError as error:
+        raise ValueError(
+            f"{name} must be a literal lowercase SHA-256 digest"
+        ) from error
 
 
 def _require_revision(value: Any, *, name: str) -> str:
-    result = str(value)
-    _require(
-        len(result) in {40, 64}
-        and all(character in "0123456789abcdef" for character in result),
-        f"{name} must be an exact lowercase Git commit",
-    )
-    return result
+    try:
+        return literal_lower_hex(value, name=name, lengths={40, 64})
+    except ValueError as error:
+        raise ValueError(
+            f"{name} must be an exact literal lowercase Git commit"
+        ) from error
 
 
 def _canonical_json(value: Mapping[str, Any]) -> bytes:

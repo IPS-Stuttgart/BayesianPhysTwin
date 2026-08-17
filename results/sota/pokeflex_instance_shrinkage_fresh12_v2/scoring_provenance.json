@@ -1,0 +1,170 @@
+{
+  "all_prediction_return_codes_zero": true,
+  "artifact_kind": "PokeFlexInstanceShrinkageFresh12V2ScoringProvenance",
+  "checkpoint_sha256": {
+    "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+    "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+    "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+  },
+  "implementation_revision": "d51eca193ca1762b95c0802a1a428c09d036d92f",
+  "instance_scale_calibration_file_sha256": "bfde9f3572b694d4dffe008b889d45dccea888162886a307fd3b96cfd6b475f3",
+  "instance_scale_calibration_sha256": "74c2f5fe6b57215fdebedd18cc31cb1b4bca010aac905b1c91f185fb34b10390",
+  "prediction_barrier_file_sha256": "243ee31e5f1f8fd94d8d2fcb601f9ccb4a2afde1fd4527f017578d037d0a5e51",
+  "prediction_barrier_sha256": "8feb255b279fb4749ce8acabeb67eef7f74edf8bdb4625ccf351bf02180a5693",
+  "prediction_bundle_sha256": "79df8dd38ba3bb7233ce80e4a11434842874fc8cdead5e8777715fc5ef3c65fe",
+  "prediction_logs": {
+    "gpu0_sha256": "82c2d5a5902025e65346eb8267f890fca392ed3dd0b4e06d07d7597f7bf307bc",
+    "gpu1_sha256": "356d6fab8f8aae4b122c422fa6acc890aa8e2c0e92045c57164ffd6514b8791a"
+  },
+  "protocol_sha256": "ee2b4379d087c71a13a570a07d1acccfb881c7ad91479de42713265d47d225d3",
+  "provenance_sha256": "6d620a0d2308946d71391f43bd321944f002fbec40b0abb9d747e53892c530e3",
+  "runtime": {
+    "opencv": "4.10.0",
+    "prediction_gpus": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "python": "3",
+    "torch": "2.4.0+cu121",
+    "trimesh": "4.12.2"
+  },
+  "schema_version": 1,
+  "source_result_file_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "source_result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "takes": [
+    {
+      "archive_byte_count": 5183332283,
+      "archive_name": "3dPrintedCylinder_T1.zip",
+      "archive_sha256": "ffcd4b36ac501b2e2c96f08e84d4ae0469a4a0718724a2cfae7c1dc954808f1d",
+      "stage_manifest_file_sha256": "549405aa6fe794f82eb384d84f63c93e18b3b6c4141d25b1978b3089bbb7527c",
+      "stage_manifest_sha256": "a766dd966d5a0c838dca4c9261c97811b530b2fb08c2f15a4aa7f81970969692",
+      "staged_byte_count": 432558696,
+      "staged_member_count": 513,
+      "take_id": "3dPrintedCylinder_T1"
+    },
+    {
+      "archive_byte_count": 4230188136,
+      "archive_name": "3dPrintedPizza_T4.zip",
+      "archive_sha256": "73038bcfe296840d53008003bde9bf9874d6f38689ddaaceb05d01c1736ef554",
+      "stage_manifest_file_sha256": "68c1a674967191b2fb96dbb3273644e669efa7a1927e21a955e03b487a90fe68",
+      "stage_manifest_sha256": "8a388c2a0ee6ea62c31d4af82a1e09e05e49f3552d6c6f10dbe77f2b40825d67",
+      "staged_byte_count": 225779411,
+      "staged_member_count": 483,
+      "take_id": "3dPrintedPizza_T4"
+    },
+    {
+      "archive_byte_count": 4353137065,
+      "archive_name": "3dPrintedPyramid_T5.zip",
+      "archive_sha256": "ed55ed9cebeb89c01c5ccf6223a94fb14003c4da712e6a29b6523f880c37a911",
+      "stage_manifest_file_sha256": "edfc6e7a059170260e8fe384f738d8082a31cba8ee4af01e38d8b20737ad1ce1",
+      "stage_manifest_sha256": "e595438f7f0ef57cd1357b8e52406a3f1e5b2cbf342247a1b5860ff336fb0b6c",
+      "staged_byte_count": 236147383,
+      "staged_member_count": 483,
+      "take_id": "3dPrintedPyramid_T5"
+    },
+    {
+      "archive_byte_count": 4487030386,
+      "archive_name": "Beanbag_T1.zip",
+      "archive_sha256": "01d55155dc1356181f9ae3654d8f37edf95c201881e3be4d58fc70c4b48841d8",
+      "stage_manifest_file_sha256": "ab7a5a386656a3fa3aaef53af9828bf2b5f6f51fe0e5657be8288a7f5c893c18",
+      "stage_manifest_sha256": "467f1daf5edf6befd6addff924826afd1e8230b08755ff796c3ed79e815a0009",
+      "staged_byte_count": 292117534,
+      "staged_member_count": 468,
+      "take_id": "Beanbag_T1"
+    },
+    {
+      "archive_byte_count": 3874560391,
+      "archive_name": "FoamCylinder_T6.zip",
+      "archive_sha256": "2e2e5948052d9e1f4dfd669c433109d2e75d9482ab170bf8b3f62399f25ab3a4",
+      "stage_manifest_file_sha256": "ead00dae2514d6023e5e5b67c6bdf19ac5ed781a75e4571a402e35d837be5b6b",
+      "stage_manifest_sha256": "fc866c31e93b9e54b9ed683bdab52f08b2135e0f3a61a77d2b9e5418ba4d1c54",
+      "staged_byte_count": 482879829,
+      "staged_member_count": 363,
+      "take_id": "FoamCylinder_T6"
+    },
+    {
+      "archive_byte_count": 4486036313,
+      "archive_name": "FoamHalfSphere_T6.zip",
+      "archive_sha256": "55df53071b45f513d98b5a91aa398b0c45728d9cb42259d579a4e43ccd4864a5",
+      "stage_manifest_file_sha256": "537a1d585fafac859c3ec5dc97bfa5dd3299e12e81ebcb3f90e705604dddc971",
+      "stage_manifest_sha256": "2d6228c9732436b82884ad8fb79f96d977fce94f74100bd984b839af785d2bdd",
+      "staged_byte_count": 349403140,
+      "staged_member_count": 483,
+      "take_id": "FoamHalfSphere_T6"
+    },
+    {
+      "archive_byte_count": 4934506293,
+      "archive_name": "Pillow_T3.zip",
+      "archive_sha256": "eeee6794bbf3631b9eb05fbbe2158653dab0ec0f8dfb50996c775a7441a72f40",
+      "stage_manifest_file_sha256": "e850d86e3d09e65c750816f7622101a114f37e1c3062ddf5a0c3dafe13d3b408",
+      "stage_manifest_sha256": "c2788efdd8c8e2e4b81a30e57eee8b623f1278c0ec620861d690f1713a7f6d74",
+      "staged_byte_count": 628943028,
+      "staged_member_count": 468,
+      "take_id": "Pillow_T3"
+    },
+    {
+      "archive_byte_count": 5437804834,
+      "archive_name": "PlushDice_T6.zip",
+      "archive_sha256": "469eb374d4447fdc96009c5410f5f3222eb85dd4bd83cb22c1a26573ad06b2af",
+      "stage_manifest_file_sha256": "4e931f89f84fd8ac1caafa854451129b86a57dc1eae10f04c0a0e80beea42700",
+      "stage_manifest_sha256": "aaa6a9d561bb7b8fc29c1e4d58abe3d40d52238a62ccdc5c6e5482abcc4115a8",
+      "staged_byte_count": 644598371,
+      "staged_member_count": 483,
+      "take_id": "PlushDice_T6"
+    },
+    {
+      "archive_byte_count": 5061491488,
+      "archive_name": "PlushMoon_T4.zip",
+      "archive_sha256": "a2b54585572ee26f0a33507ae8363cdf426fc2c0ef5206cce763708f14e32643",
+      "stage_manifest_file_sha256": "5036437a9e700fc5b66f4573e6673ebda755dcd15f64d8f07f9085d4fbb043bb",
+      "stage_manifest_sha256": "ac83c06b695704fac14c57996d55bbe74858a83c970f62d6af223246f3691de3",
+      "staged_byte_count": 452423795,
+      "staged_member_count": 483,
+      "take_id": "PlushMoon_T4"
+    },
+    {
+      "archive_byte_count": 5401407872,
+      "archive_name": "PlushTurtle_T6.zip",
+      "archive_sha256": "40b322971a20fce9713c55e5f565103ef9e1ee253bfb3923ddb13e9398d0e5ce",
+      "stage_manifest_file_sha256": "c17184f331547813c53c76f0816eceb7fde998b93148a4c3e37936f2cc411fc5",
+      "stage_manifest_sha256": "73f28d64948cf41b5a46d85f9615fddd66ab07e1d1c667e96b030603146013c7",
+      "staged_byte_count": 635730138,
+      "staged_member_count": 468,
+      "take_id": "PlushTurtle_T6"
+    },
+    {
+      "archive_byte_count": 4385390252,
+      "archive_name": "PlushVolleyball_T6.zip",
+      "archive_sha256": "eb29a341810b514baecffa25e727adaf7bf18857a94f25fbeb69ac2cf9a37385",
+      "stage_manifest_file_sha256": "5bf931b562c50a84116729147ec597bef7e5ba277f30aefada2cee96eeaa664c",
+      "stage_manifest_sha256": "e25bc11ee5f938615cbca79b38fa602aadd5f420b10955f41dfdcc082d1962a2",
+      "staged_byte_count": 411174207,
+      "staged_member_count": 420,
+      "take_id": "PlushVolleyball_T6"
+    },
+    {
+      "archive_byte_count": 4969298874,
+      "archive_name": "Sponge_T5.zip",
+      "archive_sha256": "02d1d3ce94c2dceac3f339fbae7e63326fddad7553a6b81767a5c1d7c291ddd8",
+      "stage_manifest_file_sha256": "6563026cf7df9bc7719855d4af51158c67ddd907aa9c751cd8bed4ff796c1a7f",
+      "stage_manifest_sha256": "a823ec0776edf47cb12629aacc8d75ff6ddf897e0ec207b48bb71c7924253021",
+      "staged_byte_count": 624732566,
+      "staged_member_count": 468,
+      "take_id": "Sponge_T5"
+    }
+  ],
+  "target_mesh_access_authorized_by_complete_barrier": true,
+  "target_mesh_geometry_decoded_before_barrier": false,
+  "target_metric_computed_before_barrier": false,
+  "target_result_file_sha256": "defc3c8cf78ccdea0c5b4d03fcb5d3e983dff1a63c4c08b29111a004bfdb0d3b",
+  "transfer": {
+    "destination_host": "gpuserver4090",
+    "direct_lan": true,
+    "jump_server_used_for_data": false,
+    "post_transfer_member_rehash_passed": true,
+    "source_host": "gpuserver6000",
+    "staged_byte_count": 5416488098,
+    "staged_member_count": 5583
+  },
+  "upstream_revision": "aaa8726072834a95bbe97e1a113588968c36e185"
+}
