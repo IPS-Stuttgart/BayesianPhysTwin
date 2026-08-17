@@ -6,6 +6,7 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any, cast
 
 DEFORM_DLO2_ALLTRAIN_SCHEMA_VERSION = 1
 DEFORM_DLO2_ALLTRAIN_CONTRACT = "deform-dlo2-alltrain-refit-v1"
@@ -350,13 +351,13 @@ def validate_deform_dlo2_deep_alltrain_authorization(
             or not isinstance(selected, Mapping)
             or not isinstance(stage, Mapping)
             or stage.get("contract") != "deform-dlo2-deep-seed-authorization-v1"
-            or int(stage.get("seed", -1)) != seed
+            or int(cast(Any, stage.get("seed", -1))) != seed
             or not isinstance(parent_identity, Mapping)
             or parent_identity.get("sha256") != source_protocol_sha256s[seed]
             or len(source_result_sha256s[seed]) != 64
         ):
             raise ValueError(f"DLO2 seed-{seed} did not authorize all-train refit")
-        selected_updates[seed] = int(selected.get("update", -1))
+        selected_updates[seed] = int(cast(Any, selected.get("update", -1)))
 
     selection_identity = ensemble_result.get("selection_seal")
     selection = ensemble_result.get("selection")
@@ -371,20 +372,17 @@ def validate_deform_dlo2_deep_alltrain_authorization(
     )
     uncertainty = ensemble_result.get("uncertainty")
     alltrain_contract = ensemble_result.get("alltrain_authorization_contract")
-    if not all(
-        isinstance(value, Mapping)
-        for value in (
-            selection_identity,
-            selection,
-            sealed_selection,
-            selected_spec,
-            candidate_specs,
-            sealed_protocol,
-            transfer,
-            candidate_gate,
-            uncertainty,
-            alltrain_contract,
-        )
+    if (
+        not isinstance(selection_identity, Mapping)
+        or not isinstance(selection, Mapping)
+        or not isinstance(sealed_selection, Mapping)
+        or not isinstance(selected_spec, Mapping)
+        or not isinstance(candidate_specs, Mapping)
+        or not isinstance(sealed_protocol, Mapping)
+        or not isinstance(transfer, Mapping)
+        or not isinstance(candidate_gate, Mapping)
+        or not isinstance(uncertainty, Mapping)
+        or not isinstance(alltrain_contract, Mapping)
     ):
         raise ValueError("DLO2 ensemble result is incomplete")
     selected_arm = str(ensemble_result.get("selected_arm", ""))
@@ -392,18 +390,32 @@ def validate_deform_dlo2_deep_alltrain_authorization(
     raw_updates = selected_spec.get("selected_member_updates")
     if not isinstance(raw_weights, Mapping) or not isinstance(raw_updates, Mapping):
         raise ValueError("DLO2 ensemble selected spec is malformed")
-    weights = {int(seed): float(weight) for seed, weight in raw_weights.items()}
-    member_updates = {int(seed): int(update) for seed, update in raw_updates.items()}
-    source_identities = {
-        seed: selection_seal.get(f"seed{seed}_source_result") for seed in (42, 43)
+    weights = {
+        int(cast(Any, seed)): float(cast(Any, weight))
+        for seed, weight in raw_weights.items()
     }
+    member_updates = {
+        int(cast(Any, seed)): int(cast(Any, update))
+        for seed, update in raw_updates.items()
+    }
+    source_identities: dict[int, Mapping[str, object]] = {}
+    for seed in (42, 43):
+        identity = selection_seal.get(f"seed{seed}_source_result")
+        if (
+            not isinstance(identity, Mapping)
+            or identity.get("sha256") != source_result_sha256s[seed]
+        ):
+            raise ValueError("DLO2 ensemble source identity differs")
+        source_identities[seed] = identity
     variance_scale = float(
-        uncertainty.get("validation_fitted_variance_scale", math.nan)
+        cast(Any, uncertainty.get("validation_fitted_variance_scale", math.nan))
     )
-    variance_floor = float(uncertainty.get("variance_floor_m2", math.nan))
-    nominal_coverage = float(uncertainty.get("nominal_coordinate_coverage", math.nan))
+    variance_floor = float(cast(Any, uncertainty.get("variance_floor_m2", math.nan)))
+    nominal_coverage = float(
+        cast(Any, uncertainty.get("nominal_coordinate_coverage", math.nan))
+    )
     checkpoint_updates = {
-        int(value) for value in protocol.get("checkpoint_updates", ())
+        int(value) for value in cast(Any, protocol.get("checkpoint_updates", ()))
     }
     parent_ensemble = parents.get("ensemble_protocol")
     if (
@@ -433,15 +445,11 @@ def validate_deform_dlo2_deep_alltrain_authorization(
         or not math.isclose(sum(weights.values()), 1.0, rel_tol=0.0, abs_tol=1e-10)
         or member_updates != selected_updates
         or not set(member_updates.values()).issubset(checkpoint_updates)
-        or int(ensemble_result.get("comparison_baseline_seed", -1)) not in (42, 43)
-        or float(transfer.get("relative_improvement", -math.inf)) < 0.01
-        or int(transfer.get("wins", -1)) < 5
+        or int(cast(Any, ensemble_result.get("comparison_baseline_seed", -1)))
+        not in (42, 43)
+        or float(cast(Any, transfer.get("relative_improvement", -math.inf))) < 0.01
+        or int(cast(Any, transfer.get("wins", -1))) < 5
         or candidate_gate.get("passed") is not True
-        or any(
-            not isinstance(source_identities[seed], Mapping)
-            or source_identities[seed].get("sha256") != source_result_sha256s[seed]
-            for seed in (42, 43)
-        )
         or not math.isfinite(variance_scale)
         or variance_scale < 1.0
         or not math.isfinite(variance_floor)
@@ -457,7 +465,9 @@ def validate_deform_dlo2_deep_alltrain_authorization(
         "operator": "predictive_mean",
         "weights": weights,
         "member_updates": member_updates,
-        "comparison_baseline_seed": int(ensemble_result["comparison_baseline_seed"]),
+        "comparison_baseline_seed": int(
+            cast(Any, ensemble_result["comparison_baseline_seed"])
+        ),
         "validation_fitted_variance_scale": variance_scale,
         "variance_floor_m2": variance_floor,
         "nominal_coordinate_coverage": nominal_coverage,

@@ -7,6 +7,7 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 
@@ -33,7 +34,7 @@ def _require_mapping(value: object, *, label: str) -> Mapping[str, object]:
 def _require_positive_int(value: object, *, label: str) -> int:
     if isinstance(value, bool):
         raise ValueError(f"{label} must be a positive integer")
-    number = int(value)
+    number = int(cast(Any, value))
     if number <= 0 or number != value:
         raise ValueError(f"{label} must be a positive integer")
     return number
@@ -69,7 +70,7 @@ def load_deform_dlo_source_protocol(path: str | Path) -> dict[str, object]:
         raise ValueError("official DEFORM evaluation metrics must remain unopened")
     if data.get("forbid_eval_reads_during_source_stage") is not True:
         raise ValueError("DEFORM source stage must explicitly forbid eval reads")
-    dlo_types = tuple(str(value) for value in data.get("dlo_types", ()))
+    dlo_types = tuple(str(value) for value in cast(Any, data.get("dlo_types", ())))
     if not dlo_types or any(not value.startswith("DLO") for value in dlo_types):
         raise ValueError("DEFORM source protocol has invalid DLO types")
     if (
@@ -110,7 +111,9 @@ def load_deform_dlo_source_protocol(path: str | Path) -> dict[str, object]:
     total_updates = _require_positive_int(
         training.get("total_updates"), label="training.total_updates"
     )
-    checkpoints = tuple(int(value) for value in training.get("checkpoint_updates", ()))
+    checkpoints = tuple(
+        int(value) for value in cast(Any, training.get("checkpoint_updates", ()))
+    )
     if (
         not checkpoints
         or checkpoints[0] != 0
@@ -129,7 +132,7 @@ def load_deform_dlo_source_protocol(path: str | Path) -> dict[str, object]:
         raise ValueError("DEFORM source reproduction must bind deterministic cuBLAS")
 
     gate = _require_mapping(payload.get("source_gate"), label="source_gate")
-    multiplier = float(gate.get("published_error_multiplier_max", math.nan))
+    multiplier = float(cast(Any, gate.get("published_error_multiplier_max", math.nan)))
     if not math.isfinite(multiplier) or multiplier <= 0.0:
         raise ValueError("DEFORM source gate has an invalid error multiplier")
     minimum_wins = _require_positive_int(
@@ -142,8 +145,8 @@ def load_deform_dlo_source_protocol(path: str | Path) -> dict[str, object]:
         gate.get("published_reference_l1_m"), label="published_reference_l1_m"
     )
     if any(
-        not math.isfinite(float(references.get(dlo_type, math.nan)))
-        or float(references[dlo_type]) <= 0.0
+        not math.isfinite(float(cast(Any, references.get(dlo_type, math.nan))))
+        or float(cast(Any, references[dlo_type])) <= 0.0
         for dlo_type in dlo_types
     ):
         raise ValueError("DEFORM source gate omits a positive published reference")
@@ -389,25 +392,27 @@ def build_deform_dlo_source_manifest(
     """Bind all source trajectory bytes and their outcome-blind partition."""
 
     protocol = load_deform_dlo_source_protocol(protocol_path)
-    if dlo_type not in protocol["dlo_types"]:
+    registered_dlo_types = cast(tuple[str, ...], protocol["dlo_types"])
+    if dlo_type not in registered_dlo_types:
         raise ValueError(f"DLO type is outside the registered source stage: {dlo_type}")
     root = Path(data_root).resolve()
     train_root = root / dlo_type / "train"
     if not train_root.is_dir():
         raise FileNotFoundError(train_root)
     paths = tuple(sorted(train_root.glob("*.pkl"), key=lambda path: path.name))
-    expected = int(protocol["data"]["expected_train_trajectories_per_dlo"])
+    data = _require_mapping(protocol.get("data"), label="data")
+    expected = int(cast(Any, data["expected_train_trajectories_per_dlo"]))
     if len(paths) != expected:
         raise ValueError(
             f"{dlo_type} expected {expected} train trajectories, got {len(paths)}"
         )
-    split_config = protocol["source_split"]
+    split_config = _require_mapping(protocol.get("source_split"), label="source_split")
     split = partition_deform_source_names(
         [path.name for path in paths],
         seed=str(split_config["seed"]),
-        fit_count=int(split_config["fit_count"]),
-        validation_count=int(split_config["validation_count"]),
-        source_test_count=int(split_config["source_test_count"]),
+        fit_count=int(cast(Any, split_config["fit_count"])),
+        validation_count=int(cast(Any, split_config["validation_count"])),
+        source_test_count=int(cast(Any, split_config["source_test_count"])),
     )
     identities = {
         path.name: {
@@ -458,8 +463,8 @@ def choose_deform_validation_checkpoint(
     normalized = []
     seen_updates: set[int] = set()
     for record in records:
-        update = int(record.get("update", -1))
-        error = float(record.get("validation_l1_m", math.nan))
+        update = int(cast(Any, record.get("update", -1)))
+        error = float(cast(Any, record.get("validation_l1_m", math.nan)))
         if update < 0 or update in seen_updates or not math.isfinite(error):
             raise ValueError("DEFORM validation checkpoint record is invalid")
         seen_updates.add(update)
@@ -486,8 +491,8 @@ def evaluate_deform_source_gate(
     names: set[str] = set()
     for record in records:
         name = str(record.get("name", ""))
-        model_error = float(record.get("model_l1_m", math.nan))
-        persistence_error = float(record.get("persistence_l1_m", math.nan))
+        model_error = float(cast(Any, record.get("model_l1_m", math.nan)))
+        persistence_error = float(cast(Any, record.get("persistence_l1_m", math.nan)))
         if (
             not name
             or name in names
