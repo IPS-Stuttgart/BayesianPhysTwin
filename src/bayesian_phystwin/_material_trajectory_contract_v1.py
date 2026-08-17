@@ -79,9 +79,7 @@ MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
             ),
             "position-based-dynamics-v1": MaterialBackendProfile(
                 backend_kind="position-based-dynamics-v1",
-                engine_repository=(
-                    "InteractiveComputerGraphics/PositionBasedDynamics"
-                ),
+                engine_repository=("InteractiveComputerGraphics/PositionBasedDynamics"),
                 solver_family="position-based-dynamics-xpbd",
                 identity_kind="simulation-particle-index",
             ),
