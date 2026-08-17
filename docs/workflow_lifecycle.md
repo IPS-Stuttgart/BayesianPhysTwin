@@ -7,14 +7,16 @@ relevant source revisions or operational history. Their existence is not, by
 itself, authorization to delete them, and green workflow execution is not
 scientific evidence.
 
-The repository now uses an incremental lifecycle ratchet. Existing workflows are
-inventoried as legacy until they are deliberately classified. Pull requests may
-not add or rename another workflow without explicit lifecycle metadata and the
-minimum supply-chain controls below.
+The repository uses an incremental lifecycle ratchet. Existing untouched
+workflows are inventoried as legacy until they are deliberately classified. A
+pull request may not add, copy, rename, or modify a workflow without explicit
+lifecycle metadata and the minimum supply-chain controls below. Deleting a
+workflow does not reclassify it; evidence-aware archival and registry cleanup
+remain separate maintainer decisions.
 
 ## Permanent workflows
 
-A new permanent workflow starts with:
+A new or modified permanent workflow starts with:
 
 ```yaml
 # workflow-lifecycle: permanent
@@ -57,20 +59,39 @@ A temporary workflow is not an evidence archive. Before removal, preserve any
 scientifically relevant exact revision, protocol identifier, run ID, artifact
 ID, and digest in the owning manifest, evidence record, or immutable tag.
 
+## Metadata and file boundary
+
+Lifecycle metadata belongs in the leading comment header before the first YAML
+key. The recognized keys are `workflow-lifecycle`, `workflow-owner`,
+`workflow-issue`, and `workflow-expiry`. Duplicate or unknown `workflow-*` keys
+are rejected when a workflow enters the ratchet; this catches misspelled expiry
+or ownership declarations instead of silently ignoring them.
+
+A changed workflow must be an ordinary repository-local `.yml` or `.yaml` file
+directly below `.github/workflows`. Symlinked workflow definitions are rejected.
+This prevents the reviewed Git path from resolving to different bytes outside
+the active workflow directory.
+
 ## Quality gate
 
-Run the same incremental policy used by CI:
+Run the same incremental policy used by CI from a checkout of the exact head
+revision:
 
 ```bash
 python tools/quality/check_workflow_policy.py \
   --base origin/main \
-  --head HEAD
+  --head "$(git rev-parse HEAD)"
 ```
 
-The policy rejects newly added or renamed unmanaged workflows and validates all
-managed temporary expiry dates. It deliberately does not retroactively fail on
-legacy one-shot files; cleanup must remain evidence-aware rather than being a
-blind filename deletion.
+The checker resolves both revisions to commits and refuses to inspect the
+working tree when its `HEAD` differs from `--head`. The managed preflight checks
+out the contributor head explicitly, fetches the comparison base when needed,
+and applies the ratchet to added, copied, modified, and renamed workflow files.
+Untouched legacy one-shot files remain grandfathered; cleanup must remain
+evidence-aware rather than becoming a blind filename rewrite.
+
+All managed temporary workflows are still checked for expiry on every policy
+run, even when they were not changed in the current diff.
 
 ## Read-only inventory
 

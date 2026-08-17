@@ -10,7 +10,7 @@ ratchets quality without requiring an all-at-once cleanup:
 * stable modules with pre-existing type debt become blocking when modified;
 * a smaller, mature subset is checked with ``mypy --strict``;
 * public-module lifecycle classifications remain fail-closed; and
-* newly added workflows satisfy lifecycle and immutable-action policy.
+* added or modified workflows satisfy lifecycle and immutable-action policy.
 """
 
 from __future__ import annotations
@@ -168,6 +168,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parse_args(argv)
     head = _git_text("rev-parse", arguments.head)
+    checkout_head = _git_text("rev-parse", "HEAD")
     base = _resolve_base(arguments.base, head)
     changed_python = _changed_python_files(base, head)
 
@@ -194,11 +195,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         print("No added or modified Python files require Ruff checks.", flush=True)
 
+    # The workflow checker validates files from the checkout, not arbitrary Git
+    # objects. Tests may run on GitHub's synthetic pull-request merge commit even
+    # when changed-Python selection is bound to the contributor head, so pass the
+    # exact checked-out revision here. The dedicated changed-workflow preflight
+    # checks out the contributor head explicitly.
     workflow_policy_command = [
         sys.executable,
         "tools/quality/check_workflow_policy.py",
         "--head",
-        head,
+        checkout_head,
     ]
     if base is not None:
         workflow_policy_command.extend(("--base", base))
