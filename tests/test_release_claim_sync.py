@@ -144,7 +144,13 @@ def test_repository_release_claim_contract_is_synchronized() -> None:
     report = tool.check_release_claim_sync(ROOT)
 
     assert report["contract_name"] == "phystwin-release-claim-v1"
-    assert len(report["documents"]) == 4
+    assert [entry["path"] for entry in report["documents"]] == [
+        "CHANGELOG.md",
+        "README.md",
+        "SUPPORT.md",
+        "docs/phystwin_release_claim_v1.md",
+        "evidence/public_claim_snapshot_v1.json",
+    ]
     assert [entry["path"] for entry in report["source_documents"]] == [
         "docs/full22_covariance_only_hybrid_v1.md",
         "docs/phystwin_release_claim_v1.md",
