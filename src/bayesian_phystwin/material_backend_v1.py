@@ -97,7 +97,8 @@ class MaterialBackendSpecV1:
         default_count = sum(not item.legacy for item in self.variants)
         if default_count != 1:
             raise ValueError(
-                "a backend family requires exactly one non-legacy default variant"
+                "a backend family requires a non-legacy variant and exactly one "
+                "non-legacy default variant"
             )
 
     def to_record(self) -> dict[str, object]:
@@ -177,9 +178,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
         ),
         "position-based-dynamics-v1": MaterialBackendSpecV1(
             profile_id="position-based-dynamics-v1",
-            engine_repository=(
-                "InteractiveComputerGraphics/PositionBasedDynamics"
-            ),
+            engine_repository=("InteractiveComputerGraphics/PositionBasedDynamics"),
             solver_family="position-based-dynamics-xpbd",
             identity_kind="simulation-particle-index",
             priority=5,
