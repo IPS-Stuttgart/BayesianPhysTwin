@@ -9,12 +9,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, TypeAlias, cast
+from typing import Any, Protocol, TypeAlias, cast
 
 import numpy as np
 import numpy.typing as npt
 
 FloatArray: TypeAlias = npt.NDArray[np.floating[Any]]
+
+
+class _PyElasticaRodLike(Protocol):
+    position_collection: object
 
 
 def _no_op() -> None:
@@ -132,7 +136,8 @@ class PyElasticaRodReplayV1:
         return self.synchronize_callback()
 
     def get_material_positions_m(self) -> FloatArray:
-        native = _to_numpy(getattr(self.rod, "position_collection"))
+        rod = cast(_PyElasticaRodLike, self.rod)
+        native = _to_numpy(rod.position_collection)
         _require(
             native.ndim == 2 and native.shape[0] == 3 and native.shape[1] >= 2,
             "PyElastica position_collection must have shape (3,N) with N >= 2",
