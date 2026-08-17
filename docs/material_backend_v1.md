@@ -8,7 +8,8 @@ simulators:
 - the Lagrangian export contract introduced for JAX-FEM and an early Genesis
   bridge; and
 - the material-trajectory contract used by Warp FEM, SOFA, Genesis, the
-  PositionBasedDynamics XPBD/PBD family, PhysX deformables, and MuJoCo Flex.
+  PositionBasedDynamics XPBD/PBD family, PhysX deformables, MuJoCo Flex, and
+  Drake deformable FEM.
 
 Both transports produce the existing six-array `physical_rollout_v1` archive.
 They differ only in producer/runtime metadata and artifact custody. New engines
@@ -32,9 +33,12 @@ content-addressed artifacts keep their exact interpretation.
 For engine-facing execution, `material_trajectory_producer_v1` records matched
 fresh driven and zero-action simulations directly into the existing
 material-trajectory transport. It is dependency-free and currently targets
-Warp FEM, SOFA FEM, and PositionBasedDynamics XPBD/PBD first. See
+Warp FEM, SOFA FEM, PositionBasedDynamics XPBD/PBD, and Drake deformable FEM.
+The Drake-specific `DrakeDeformableBodyReplayV1` adapter converts the native
+`DeformableBody.GetPositions(context)` matrix from `(3,N)` to the common `(N,3)`
+material ordering without importing `pydrake`. See
 [`material_trajectory_producer_v1.md`](material_trajectory_producer_v1.md) for
-the replay protocol, callback wrapper, provenance requirements, and
+the replay protocol, callback wrappers, provenance requirements, and
 engine-specific integration rules. This producer is an experimental execution
 surface; it does not create a third artifact contract or change Prob4D/Causal4D
 consumers.
@@ -50,6 +54,7 @@ consumers.
 | 5 | `position-based-dynamics-v1` | PositionBasedDynamics XPBD/PBD | supported | `position-based-dynamics-v1` |
 | 6 | `physx-fem-v1` | NVIDIA PhysX deformables | experimental | `physx-fem-v1` |
 | 7 | `mujoco-flex-v1` | MuJoCo Flex | experimental | `mujoco-flex-v1` |
+| 8 | `drake-fem-v1` | Drake deformable FEM | experimental | `drake-fem-v1` |
 
 The duplicate Genesis identifiers are one canonical family. New materialization
 uses `genesis-mpm-v1` and the material-trajectory transport. The earlier
@@ -62,7 +67,10 @@ fixed FEM-node identity. PositionBasedDynamics adds a deliberately different
 XPBD/PBD rope, rod, cloth, and soft-body baseline. PhysX adds a high-throughput
 GPU FEM/contact reference, but remains experimental until a standalone producer
 has demonstrated deterministic access to the simulation-mesh vertex ordering
-and complete runtime provenance.
+and complete runtime provenance. Drake adds a complementary robotics systems,
+controls, and native deformable-contact path. It remains experimental until a
+pinned native scene demonstrates fresh replay, fixed body-local vertex order,
+and the common source-only competence gates.
 
 The ranking records implementation priority only. It is not evidence that one
 engine has better physical fidelity. A backend advances scientifically only
