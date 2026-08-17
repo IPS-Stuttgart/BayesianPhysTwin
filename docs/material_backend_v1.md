@@ -29,14 +29,23 @@ The transport-specific `lagrangian_backend_v1` and
 `material_trajectory_backend_v1` modules remain available so that existing
 content-addressed artifacts keep their exact interpretation.
 
-For engine-facing execution, `material_trajectory_producer_v1` records matched
-fresh driven and zero-action simulations directly into the existing
-material-trajectory transport. It is dependency-free and currently targets
-Warp FEM, SOFA FEM, and PositionBasedDynamics XPBD/PBD first. See
+For engine-facing JAX-FEM execution, `jax_fem_producer_v1` records matched fresh
+driven and zero-action solve sequences directly into the existing Lagrangian
+transport. It accepts total nodal displacements from one fixed reference mesh,
+synchronizes JAX-like values before capture, and binds its own source digest
+alongside the caller's exact wrapper, scene, mesh, and environment artifacts.
+See [`jax_fem_producer_v1.md`](jax_fem_producer_v1.md) for the replay protocol,
+callback wrapper, provenance requirements, and qualification boundary.
+
+For engine-facing material-trajectory execution,
+`material_trajectory_producer_v1` records matched fresh driven and zero-action
+simulations directly into the existing material-trajectory transport. It is
+dependency-free and currently targets Warp FEM, SOFA FEM, and
+PositionBasedDynamics XPBD/PBD first. See
 [`material_trajectory_producer_v1.md`](material_trajectory_producer_v1.md) for
 the replay protocol, callback wrapper, provenance requirements, and
-engine-specific integration rules. This producer is an experimental execution
-surface; it does not create a third artifact contract or change Prob4D/Causal4D
+engine-specific integration rules. Both producers are experimental execution
+surfaces; neither creates a third artifact contract or changes Prob4D/Causal4D
 consumers.
 
 ## Canonical families
