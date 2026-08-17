@@ -94,8 +94,11 @@ class MaterialBackendSpecV1:
         producer_ids = tuple(item.producer_profile_id for item in self.variants)
         if len(set(producer_ids)) != len(producer_ids):
             raise ValueError("backend producer profile IDs must be unique")
-        if all(item.legacy for item in self.variants):
-            raise ValueError("a backend family requires a non-legacy variant")
+        default_count = sum(not item.legacy for item in self.variants)
+        if default_count != 1:
+            raise ValueError(
+                "a backend family requires exactly one non-legacy default variant"
+            )
 
     def to_record(self) -> dict[str, object]:
         return {
@@ -225,7 +228,10 @@ _PRODUCER_INDEX: Final = MappingProxyType(_producer_index())
 def describe_material_backend_profiles() -> dict[str, object]:
     """Return the canonical, priority-ordered external-backend registry."""
 
-    profiles = sorted(MATERIAL_BACKEND_SPECS.values(), key=lambda item: item.priority)
+    profiles = sorted(
+        MATERIAL_BACKEND_SPECS.values(),
+        key=lambda item: (item.priority, item.profile_id),
+    )
     return {
         "schema": "bayesian-phystwin.material-backend-registry",
         "schema_version": 1,
@@ -238,7 +244,7 @@ def describe_material_backend_profiles() -> dict[str, object]:
 
 
 def resolve_material_backend_profile(profile_id: str) -> ResolvedMaterialBackendV1:
-    """Resolve either a canonical family ID or a transport-specific legacy ID."""
+    """Resolve either a canonical family ID or an exact producer-profile ID."""
 
     if type(profile_id) is not str or not profile_id:
         raise ValueError("profile_id must be a nonempty string")
@@ -278,6 +284,30 @@ def _runtime_selection(runtime_manifest_path: str | Path) -> ResolvedMaterialBac
     return resolved
 
 
+def _assert_requested_profile(
+    *,
+    requested_profile_id: str,
+    resolved_runtime: ResolvedMaterialBackendV1,
+) -> None:
+    """Check a canonical-family assertion or an exact legacy producer assertion."""
+
+    requested = resolve_material_backend_profile(requested_profile_id)
+    if requested.profile_id != resolved_runtime.profile_id:
+        raise ValueError(
+            "requested canonical backend does not match the runtime manifest"
+        )
+    # Canonical family IDs intentionally admit their registered transport variants.
+    # A transport-specific alias is an exact producer assertion and must not
+    # silently accept another transport from the same family.
+    if (
+        requested_profile_id != requested.profile_id
+        and requested.producer_profile_id != resolved_runtime.producer_profile_id
+    ):
+        raise ValueError(
+            "requested producer profile does not match the runtime manifest"
+        )
+
+
 def materialize_material_backend(
     *,
     raw_rollout_path: str | Path,
@@ -289,11 +319,10 @@ def materialize_material_backend(
 
     resolved = _runtime_selection(runtime_manifest_path)
     if profile_id is not None:
-        requested = resolve_material_backend_profile(profile_id)
-        if requested.profile_id != resolved.profile_id:
-            raise ValueError(
-                "requested canonical backend does not match the runtime manifest"
-            )
+        _assert_requested_profile(
+            requested_profile_id=profile_id,
+            resolved_runtime=resolved,
+        )
     if resolved.transport == "lagrangian-export-v1":
         return materialize_lagrangian_backend(
             raw_rollout_path=raw_rollout_path,
@@ -307,6 +336,23 @@ def materialize_material_backend(
     )
 
 
+def _validate_transport_binding(
+    artifact: dict[str, Any],
+    *,
+    transport: BackendTransportV1,
+) -> dict[str, Any]:
+    profile_key = (
+        "backend_profile" if transport == "lagrangian-export-v1" else "backend_kind"
+    )
+    producer_profile_id = artifact.get(profile_key)
+    if type(producer_profile_id) is not str:
+        raise ValueError("validated backend artifact has no producer profile")
+    resolved = resolve_material_backend_profile(producer_profile_id)
+    if resolved.transport != transport:
+        raise ValueError("validated backend profile and artifact transport disagree")
+    return artifact
+
+
 def validate_material_backend(output_dir: str | Path) -> dict[str, Any]:
     """Auto-detect and validate exactly one registered backend artifact family."""
 
@@ -318,8 +364,14 @@ def validate_material_backend(output_dir: str | Path) -> dict[str, Any]:
             "backend bundle must contain exactly one recognized artifact manifest"
         )
     if lagrangian.exists():
-        return validate_lagrangian_backend(root)
-    return validate_material_trajectory_backend(root)
+        return _validate_transport_binding(
+            validate_lagrangian_backend(root),
+            transport="lagrangian-export-v1",
+        )
+    return _validate_transport_binding(
+        validate_material_trajectory_backend(root),
+        transport="material-trajectory-v1",
+    )
 
 
 __all__ = [
