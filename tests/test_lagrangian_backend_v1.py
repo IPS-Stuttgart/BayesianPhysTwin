@@ -378,6 +378,8 @@ def test_cli_lists_profiles_and_validates_bundle(
         "physx-fem-v1",
         "mujoco-flex-v1",
         "drake-fem-v1",
+        "fenicsx-fem-v1",
+        "pyelastica-cosserat-rod-v1",
     ]
     genesis = next(
         item for item in listed["profiles"] if item["profile_id"] == "genesis-mpm-v1"
