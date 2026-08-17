@@ -45,9 +45,7 @@ from .material_trajectory_backend_v1 import (
 )
 from .physical_rollout_v1 import write_deterministic_npz
 
-MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL: Final = (
-    "fresh-replay-control-before-step-v1"
-)
+MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL: Final = "fresh-replay-control-before-step-v1"
 
 _RESERVED_ENGINE_PARAMETER_KEYS: Final = frozenset(
     {
@@ -102,6 +100,10 @@ class MaterialTrajectoryReplayV1(Protocol):
         ...
 
 
+def _no_op() -> None:
+    return None
+
+
 @dataclass(slots=True)
 class CallbackMaterialTrajectoryReplayV1:
     """Build a replay wrapper from three engine-specific zero-argument callbacks."""
@@ -128,6 +130,56 @@ class CallbackMaterialTrajectoryReplayV1:
 
     def step(self) -> object:
         return self.step_callback()
+
+
+@dataclass(slots=True)
+class DrakeDeformableBodyReplayV1:
+    """Adapt one Drake ``DeformableBody`` to the fixed-material replay protocol.
+
+    Drake returns body vertex positions as a ``(3, N)`` matrix. The portable
+    producer uses ``(N, 3)`` rows, so this adapter performs and validates the
+    conversion without importing ``pydrake`` into BayesianPhysTwin.
+    """
+
+    deformable_body: object
+    plant_context_callback: Callable[[], object]
+    advance_callback: Callable[[], object]
+    synchronize_callback: Callable[[], object] = _no_op
+    context: object | None = None
+
+    def __post_init__(self) -> None:
+        if not callable(getattr(self.deformable_body, "GetPositions", None)):
+            raise TypeError("deformable_body must expose GetPositions(context)")
+        for name in (
+            "plant_context_callback",
+            "advance_callback",
+            "synchronize_callback",
+        ):
+            if not callable(getattr(self, name)):
+                raise TypeError(f"{name} must be callable")
+
+    def synchronize(self) -> object:
+        return self.synchronize_callback()
+
+    def get_material_positions_m(self) -> FloatArray:
+        body = cast(Any, self.deformable_body)
+        matrix = _to_numpy(body.GetPositions(self.plant_context_callback()))
+        _require(
+            matrix.ndim == 2 and matrix.shape[0] == 3 and matrix.shape[1] >= 1,
+            "Drake GetPositions must return a matrix with shape (3,N)",
+        )
+        _require(
+            np.issubdtype(matrix.dtype, np.floating),
+            "Drake GetPositions must return floating positions",
+        )
+        _require(
+            np.all(np.isfinite(matrix)),
+            "Drake GetPositions returned non-finite positions",
+        )
+        return cast(FloatArray, np.ascontiguousarray(matrix.T))
+
+    def step(self) -> object:
+        return self.advance_callback()
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -205,9 +257,7 @@ def _capture_positions(
     replay.synchronize()
     positions = _to_numpy(replay.get_material_positions_m())
     _require(
-        positions.ndim == 2
-        and positions.shape[0] >= 1
-        and positions.shape[1] == 3,
+        positions.ndim == 2 and positions.shape[0] >= 1 and positions.shape[1] == 3,
         f"{label} material positions must have shape (S,3)",
     )
     _require(
@@ -382,9 +432,7 @@ def produce_material_trajectory_backend(
 
     revision = exact_revision(engine_revision, name="engine_revision")
     version = nonempty_string(engine_version, name="engine_version")
-    producer_repo = repository_name(
-        producer_repository, name="producer_repository"
-    )
+    producer_repo = repository_name(producer_repository, name="producer_repository")
     producer_rev = exact_revision(producer_revision, name="producer_revision")
     producer_ver = nonempty_string(producer_version, name="producer_version")
     artifacts = source_artifact_mapping(
@@ -512,6 +560,7 @@ def produce_material_trajectory_backend(
 
 __all__ = [
     "CallbackMaterialTrajectoryReplayV1",
+    "DrakeDeformableBodyReplayV1",
     "MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL",
     "MaterialTrajectoryReplayV1",
     "ReplayControl",

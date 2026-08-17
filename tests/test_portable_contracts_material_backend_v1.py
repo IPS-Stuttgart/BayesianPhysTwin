@@ -64,6 +64,7 @@ def test_registry_consolidates_duplicate_genesis_profiles() -> None:
         "position-based-dynamics-v1",
         "physx-fem-v1",
         "mujoco-flex-v1",
+        "drake-fem-v1",
     ]
 
     canonical = backend.resolve_material_backend_profile("genesis-mpm-v1")
@@ -76,6 +77,13 @@ def test_registry_consolidates_duplicate_genesis_profiles() -> None:
     assert legacy.transport == "lagrangian-export-v1"
     assert legacy.legacy_alias
     assert legacy.to_record()["selected_variant"]["legacy"] is True
+
+    drake = backend.resolve_material_backend_profile("drake-fem-v1")
+    assert drake.spec.engine_repository == "RobotLocomotion/drake"
+    assert drake.spec.solver_family == "finite-element-method"
+    assert drake.spec.identity_kind == "deformable-body-vertex-index"
+    assert drake.spec.maturity == "experimental"
+    assert drake.transport == "material-trajectory-v1"
 
 
 def test_material_transport_profiles_match_canonical_registry() -> None:

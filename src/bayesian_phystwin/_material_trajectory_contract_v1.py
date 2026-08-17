@@ -79,9 +79,7 @@ MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
             ),
             "position-based-dynamics-v1": MaterialBackendProfile(
                 backend_kind="position-based-dynamics-v1",
-                engine_repository=(
-                    "InteractiveComputerGraphics/PositionBasedDynamics"
-                ),
+                engine_repository=("InteractiveComputerGraphics/PositionBasedDynamics"),
                 solver_family="position-based-dynamics-xpbd",
                 identity_kind="simulation-particle-index",
             ),
@@ -96,6 +94,12 @@ MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
                 engine_repository="google-deepmind/mujoco",
                 solver_family="mujoco-flex",
                 identity_kind="flex-vertex-index",
+            ),
+            "drake-fem-v1": MaterialBackendProfile(
+                backend_kind="drake-fem-v1",
+                engine_repository="RobotLocomotion/drake",
+                solver_family="finite-element-method",
+                identity_kind="deformable-body-vertex-index",
             ),
         }
     )

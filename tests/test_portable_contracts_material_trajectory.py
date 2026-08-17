@@ -125,6 +125,7 @@ def test_profile_catalog_is_sorted_and_complete() -> None:
     records = material_backend_profile_records()
     assert tuple(record["backend_kind"] for record in records) == BACKEND_KINDS
     assert BACKEND_KINDS == (
+        "drake-fem-v1",
         "genesis-mpm-v1",
         "mujoco-flex-v1",
         "physx-fem-v1",
@@ -334,6 +335,7 @@ def test_cli_profiles_are_machine_readable(capsys: pytest.CaptureFixture[str]) -
         "position-based-dynamics-v1",
         "physx-fem-v1",
         "mujoco-flex-v1",
+        "drake-fem-v1",
     ]
 
 
@@ -361,4 +363,4 @@ def test_cli_materialize_validate_and_module_entrypoint(
     assert exit_info.value.code == 0
     module_payload = json.loads(capsys.readouterr().out)
     assert module_payload["schema"] == "bayesian-phystwin.material-backend-registry"
-    assert len(module_payload["profiles"]) == 7
+    assert len(module_payload["profiles"]) == 8

@@ -4,7 +4,7 @@
 
 Bayesian-PhysTwin already contains the official PhysTwin/Warp spring path, the
 MatPhys spring-proposal adapter, and an optional Newton implicit-MPM backend.
-This extension uses one strict fixed-material trajectory boundary for six
+This extension uses one strict fixed-material trajectory boundary for seven
 complementary simulator families:
 
 | profile | canonical engine | material identity | intended role |
@@ -15,6 +15,7 @@ complementary simulator families:
 | `position-based-dynamics-v1` | `InteractiveComputerGraphics/PositionBasedDynamics` | simulation particle index | fast XPBD/PBD rope, rod, cloth, and soft-body baseline |
 | `physx-fem-v1` | `NVIDIA-Omniverse/PhysX` | deformable simulation-mesh vertex index | high-throughput GPU FEM/contact reference |
 | `mujoco-flex-v1` | `google-deepmind/mujoco` | flex vertex index | lightweight control-oriented compatibility path |
+| `drake-fem-v1` | `RobotLocomotion/drake` | deformable-body vertex index | robotics systems, controls, and native contact reference |
 
 The engines remain optional and run in their own pinned environments. The base
 `bayesian_phystwin` package does not import or vendor them. An engine producer
@@ -23,9 +24,9 @@ the same six-array physical archive already consumed by Bayesian-PhysTwin.
 Prob4D and Causal4D therefore do not need engine-specific branches.
 
 This is a compatibility extension, not evidence that any new engine improves
-held-out prediction. In particular, the PhysX and MuJoCo Flex profiles remain
-experimental until their exact producer/runtime combinations pass the common
-source-only replay, calibration, and non-harm gates.
+held-out prediction. In particular, the PhysX, MuJoCo Flex, and Drake profiles
+remain experimental until their exact producer/runtime combinations pass the
+common source-only replay, calibration, and non-harm gates.
 
 ## Why these profiles
 
@@ -45,13 +46,15 @@ already admitted spring and Newton-MPM paths:
    the producer must expose simulation-mesh state without depending on render or
    collision-mesh ordering.
 6. **MuJoCo Flex** remains a compact controls-oriented path for rapid ablations.
+7. **Drake deformable FEM** provides a distinct systems-and-controls integration
+   path with persistent volumetric body vertices and native deformable contact.
 
-Isaac Lab, Drake, Brax, PyBullet, RaiSim, NimblePhysics, Taichi-only MPM, and
-LAMMPS are deliberately deferred. They either wrap an already represented
-solver, focus primarily on rigid/control workflows, require a more specialized
-material readout, or offer a weaker fit to the current fixed-material-query
-contract. They can be added later as another exact profile without changing the
-portable physical archive.
+Isaac Lab, Brax, PyBullet, RaiSim, NimblePhysics, Taichi-only MPM, and LAMMPS
+are deliberately deferred. They either wrap an already represented solver,
+focus primarily on rigid/control workflows, require a more specialized material
+readout, or offer a weaker fit to the current fixed-material-query contract.
+They can be added later as another exact profile without changing the portable
+physical archive.
 
 ## Raw trajectory archive
 
@@ -66,8 +69,9 @@ The producer writes a deterministic, no-pickle NPZ with exactly four arrays:
 The producer must transform positions into metres in
 `right-handed-z-up-world-v1` before publication. Query index `n` must denote the
 same FEM node, MPM particle, simulation particle, deformable simulation vertex,
-or flex vertex at every frame. Producers with remeshing, particle birth/death,
-or topology-changing identities are not admissible under v1.
+flex vertex, or Drake deformable-body vertex at every frame. Producers with
+remeshing, particle birth/death, or topology-changing identities are not
+admissible under v1.
 
 ## Engine-specific producer rules
 
@@ -95,6 +99,13 @@ interpretation auditable:
 - **MuJoCo Flex:** bind the flex vertex order, element topology, contact options,
   and exact model bytes. Any accelerated runtime must bind both MuJoCo and
   accelerator revisions.
+- **Drake FEM:** read the registered `DeformableBody.GetPositions(context)` state
+  and preserve its body-local vertex order. Construct fresh Diagram, context,
+  simulator, and body instances for the driven and zero-action arms. Bind body
+  and geometry IDs, reference mesh and vertex order, material parameters, fixed
+  constraints, contact approximation, discrete update manager or integrator,
+  time step, model bytes, and the exact Drake revision. Illustration or
+  proximity-geometry vertices may not replace the deformable-body state.
 
 ## Runtime manifest
 
@@ -185,10 +196,10 @@ claim-bearing backend only after a source-only protocol establishes:
 8. an exact incumbent fallback for failed production or source gates.
 
 Recommended implementation order: Warp FEM first, SOFA second, Genesis third,
-PositionBasedDynamics fourth, PhysX fifth, and MuJoCo Flex sixth. Keep Newton MPM
-as the pinned MPM reference while Genesis matures, and do not replace the
-official PhysTwin/Warp path until matched prospective evidence supports that
-decision.
+PositionBasedDynamics fourth, PhysX fifth, MuJoCo Flex sixth, and Drake seventh.
+Keep Newton MPM as the pinned MPM reference while Genesis matures, and do not
+replace the official PhysTwin/Warp path until matched prospective evidence
+supports that decision.
 
 ## Upstream references
 
@@ -199,3 +210,4 @@ decision.
 - NVIDIA PhysX: <https://github.com/NVIDIA-Omniverse/PhysX>
 - MuJoCo: <https://github.com/google-deepmind/mujoco>
 - MuJoCo Warp acceleration: <https://github.com/google-deepmind/mujoco_warp>
+- Drake: <https://github.com/RobotLocomotion/drake>
