@@ -13,9 +13,9 @@ from bayesian_phystwin.material_trajectory_backend_v1 import (
     validate_material_trajectory_backend,
 )
 from bayesian_phystwin.material_trajectory_producer_v1 import (
+    MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL,
     CallbackMaterialTrajectoryReplayV1,
     DrakeDeformableBodyReplayV1,
-    MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL,
     MaterialTrajectoryReplayV1,
     produce_material_trajectory_backend,
 )
