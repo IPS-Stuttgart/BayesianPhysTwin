@@ -232,7 +232,9 @@ def test_invalid_lifecycle_value_is_rejected() -> None:
     )
 
     assert record.lifecycle == "legacy"
-    assert any("must be 'permanent' or 'temporary'" in item for item in record.violations)
+    assert any(
+        "must be 'permanent' or 'temporary'" in item for item in record.violations
+    )
 
 
 def test_modified_legacy_workflow_enters_the_lifecycle_ratchet(
