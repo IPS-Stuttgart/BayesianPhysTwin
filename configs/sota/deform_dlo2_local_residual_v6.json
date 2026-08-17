@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-local-residual-source-v6",
+  "claim_boundary": "Independent DLO2 source test of a shrinkage selected on DLO2 fit and validation only. Official DEFORM evaluation remains unopened.",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "information_boundary": {
+    "development_partition": "DLO2/train",
+    "fit_count": 40,
+    "validation_count": 8,
+    "source_test_count": 8,
+    "source_read_only_after_opening_seal": true,
+    "official_eval_read": false,
+    "prob4d_used": false
+  },
+  "parent_protocol": {
+    "repository_path": "configs/sota/deform_dlo2_local_residual_v5.json",
+    "sha256": "072cbdf3c971af4c78d21b8a3c7056a4670da8df8721ab46577c8c33fff08889"
+  },
+  "parent_result": {
+    "repository_path": "results/sota/deform_dlo2_local_residual_v5/result.json",
+    "sha256": "804023b09bc960cf988fb8e6ed181b4d557c826c12d7f7a7d75a4f57e8deb876"
+  },
+  "development_selection": {
+    "repository_path": "results/sota/deform_dlo2_local_residual_v6/development_selection.json",
+    "sha256": "56365ef30f511e296ffbbb0d22001fd1bc07f655ed87656b60c23c0897a2bef1"
+  },
+  "training_result": {
+    "path": "external:deform-dlo2-local-residual-v5/training_validation_result.json",
+    "sha256": "1f8d092bc38b03f6cdd68ef38abcb7d403d914e38ba483698579deaeea8c2572"
+  },
+  "source_manifest": {
+    "path": "external:deform-dlo2-local-residual-v5/source_manifest.json",
+    "sha256": "7c5501997e6bab7b0537ef9cda932ec19312e40618f03a4fad80ffc1622a6d98"
+  },
+  "selected_checkpoint": {
+    "path": "external:deform-dlo2-local-residual-v5/update_6400.pt",
+    "sha256": "b64affff638c9d47ca51f17bb7124cc4bd224facd1f7137b0042b7fa9037ea65"
+  },
+  "local_residual": {
+    "query_evidence": "two-observed-states-known-future-clamped-action-and-baseline-rollout-only",
+    "future_free_node_truth": "fit-and-score-only",
+    "operator": "per-node-trajectory-grouped-bayesian-ridge-v1",
+    "fixed_arm": {
+      "name": "r1_s0p25",
+      "ridge": 1.0,
+      "shrinkage": 0.25,
+      "selection_source": "dlo2-fit-validation-v6"
+    },
+    "coordinate_variance_floor_m2": 0.000001,
+    "duplicate_policy": "collapse-exact-causal-query-clusters",
+    "uncertainty": "trajectory-cluster-sandwich-plus-fit-residual-plus-unresolved-mean",
+    "clamped_node_policy": "baseline-exact",
+    "expected_fitted_model_sha256": "ed4feae941ca9c293860d21f89846761ab2e5b9e6c64d97dc798d6b4db7acf10",
+    "fallback": "selected-dlo2-checkpoint-exact"
+  },
+  "source_transfer_gate": {
+    "minimum_relative_improvement": 0.01,
+    "minimum_case_wins": 6,
+    "maximum_case_ratio": 1.10,
+    "maximum_candidate_l1_m": 0.0097
+  },
+  "future_stage": {
+    "all_training_refit_requires_source_gate": true,
+    "official_eval_allowed_before_source_gate": false,
+    "identical_information_sota_only": true,
+    "online_prefix_assimilation_must_be_reported_separately": true
+  }
+}

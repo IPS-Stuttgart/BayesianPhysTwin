@@ -1,0 +1,36 @@
+{
+  "alltrain_and_official_evaluation_authorized": false,
+  "claim_boundary": "Fresh DLO2 source transfer of the DLO1-selected local-residual arm. Official DEFORM evaluation remains unopened.",
+  "contract": "deform-dlo2-local-residual-result-v5",
+  "fallback_used": true,
+  "official_eval_read": false,
+  "protocol_sha256": "072cbdf3c971af4c78d21b8a3c7056a4670da8df8721ab46577c8c33fff08889",
+  "runtime": {
+    "cuda": "11.8",
+    "device": "cuda:0",
+    "elapsed_seconds": 17.61363411322236,
+    "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+    "torch": "2.0.1+cu118"
+  },
+  "schema_version": 1,
+  "selected_method": "selected-dlo2-checkpoint-exact",
+  "source_gate": {
+    "passed": false,
+    "reason": "validation-gate-failed"
+  },
+  "source_test_opened": false,
+  "validation_gate": {
+    "baseline_mean_l1_m": 0.007912038893007275,
+    "candidate_mean_l1_m": 0.0069580119445648665,
+    "maximum_allowed_case_ratio": 1.05,
+    "maximum_case_ratio": 1.1500547357377315,
+    "minimum_case_wins": 6,
+    "minimum_relative_improvement": 0.01,
+    "passed": false,
+    "relative_improvement": 0.12057915302787325,
+    "ties": 0,
+    "trajectory_count": 8,
+    "wins": 7
+  },
+  "validation_transfer_sha256": "0c2e052ed5bbacb69b36736dc76814ca00d016e271c8cda28951e0f601f1b087"
+}
