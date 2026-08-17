@@ -1,14 +1,17 @@
 # workflow-lifecycle: permanent
 # workflow-owner: IPS-Stuttgart maintainers
-name: Changed Python source preflight
+name: Changed source and workflow preflight
 
 on:
   pull_request:
     branches: [main]
     paths:
       - "**/*.py"
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
       - ".pre-commit-config.yaml"
       - ".github/workflows/changed-python-preflight.yml"
+      - "docs/workflow_lifecycle.md"
       - "pyproject.toml"
   workflow_dispatch:
     inputs:
@@ -25,12 +28,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: changed-python-preflight-${{ github.ref }}
+  group: changed-source-preflight-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   preflight:
-    name: Ruff and compile changed Python
+    name: Ruff, compile, and workflow policy
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -91,9 +94,14 @@ jobs:
             echo "head=${head}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Check only changed Python source
+      - name: Check changed Python and workflow definitions
+        shell: bash
         run: |
+          set -euo pipefail
           python scripts/ci/check_changed_python.py \
+            --base "${{ steps.revisions.outputs.base }}" \
+            --head "${{ steps.revisions.outputs.head }}"
+          python tools/quality/check_workflow_policy.py \
             --base "${{ steps.revisions.outputs.base }}" \
             --head "${{ steps.revisions.outputs.head }}"
 
@@ -102,6 +110,7 @@ jobs:
         run: |
           set -euo pipefail
           tests=(tests/test_changed_python_preflight.py)
+          tests+=(tests/test_workflow_policy.py)
           tests+=(tests/test_workflow_registry_audit.py)
           tests+=(tests/test_repository_branch_lifecycle_audit.py)
           if [[ -f tests/test_pr_ready.py ]]; then

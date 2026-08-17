@@ -2,11 +2,11 @@
 """Ratchet GitHub Actions workflow lifecycle and supply-chain policy.
 
 The repository contains historical one-shot workflows that can remain necessary
-for frozen evidence. This checker therefore does not fail merely because a
-legacy workflow exists. It does fail when a pull request adds or renames a
-workflow without explicit lifecycle metadata, adds another temporary-looking
-permanent workflow, or weakens the minimum permissions and action-pinning
-contract.
+for frozen evidence. This checker therefore does not fail merely because an
+untouched legacy workflow exists. It does fail when a pull request adds, copies,
+renames, or modifies a workflow without explicit lifecycle metadata, adds
+another temporary-looking permanent workflow, or weakens the minimum
+permissions and action-pinning contract.
 
 Managed temporary workflows are checked on every invocation and become failures
 after their declared expiry date. The inventory output is read-only operational
@@ -24,25 +24,20 @@ import sys
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-_WORKFLOW_DIRECTORY = Path(".github/workflows")
-_WORKFLOW_SUFFIXES = {".yml", ".yaml"}
+_WORKFLOW_DIRECTORY = PurePosixPath(".github/workflows")
+_WORKFLOW_SUFFIXES = frozenset({".yml", ".yaml"})
 _SCHEMA = "bayesian-phystwin.workflow-lifecycle-inventory"
 _SCHEMA_VERSION = 1
 
-_METADATA_PATTERNS = {
-    "lifecycle": re.compile(
-        r"^#\s*workflow-lifecycle:\s*(permanent|temporary)\s*$",
-        re.MULTILINE | re.IGNORECASE,
-    ),
-    "owner": re.compile(r"^#\s*workflow-owner:\s*(\S.*\S|\S)\s*$", re.MULTILINE),
-    "issue": re.compile(r"^#\s*workflow-issue:\s*(\S.*\S|\S)\s*$", re.MULTILINE),
-    "expiry": re.compile(
-        r"^#\s*workflow-expiry:\s*(\d{4}-\d{2}-\d{2})\s*$", re.MULTILINE
-    ),
-}
+_WORKFLOW_METADATA_PATTERN = re.compile(
+    r"^#\s*workflow-([a-z0-9-]+):\s*(.*?)\s*$",
+    re.IGNORECASE,
+)
+_ALLOWED_METADATA_KEYS = frozenset({"lifecycle", "owner", "issue", "expiry"})
+_ALLOWED_LIFECYCLES = frozenset({"permanent", "temporary"})
 
 _TEMPORARY_NAME_PATTERNS = (
     re.compile(r"^_"),
@@ -76,9 +71,35 @@ class WorkflowRecord:
     violations: tuple[str, ...]
 
 
-def _metadata(text: str, key: str) -> str | None:
-    match = _METADATA_PATTERNS[key].search(text)
-    return match.group(1).strip() if match else None
+def _metadata_header(text: str) -> tuple[dict[str, str], tuple[str, ...]]:
+    """Return canonical leading workflow metadata and header violations."""
+
+    metadata: dict[str, str] = {}
+    violations: list[str] = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if not stripped.startswith("#"):
+            break
+        match = _WORKFLOW_METADATA_PATTERN.fullmatch(line)
+        if match is None:
+            continue
+        key = match.group(1).lower()
+        value = match.group(2).strip()
+        if key not in _ALLOWED_METADATA_KEYS:
+            violations.append(
+                f"line {line_number}: unknown workflow metadata key "
+                f"'workflow-{key}'"
+            )
+        elif key in metadata:
+            violations.append(
+                f"line {line_number}: duplicate workflow metadata key "
+                f"'workflow-{key}'"
+            )
+        else:
+            metadata[key] = value
+    return metadata, tuple(violations)
 
 
 def _temporary_looking_name(path: Path) -> bool:
@@ -120,20 +141,27 @@ def inspect_workflow(
     """Classify and validate one workflow without mutating repository state."""
 
     current_date = today or date.today()
-    lifecycle_value = _metadata(text, "lifecycle")
-    owner = _metadata(text, "owner")
-    issue = _metadata(text, "issue")
-    expiry = _metadata(text, "expiry")
+    metadata, metadata_violations = _metadata_header(text)
+    lifecycle_value = metadata.get("lifecycle")
+    owner = metadata.get("owner")
+    issue = metadata.get("issue")
+    expiry = metadata.get("expiry")
     temporary_name = _temporary_looking_name(path)
-    violations: list[str] = []
+    violations = list(metadata_violations)
 
     if lifecycle_value is None:
         lifecycle = "legacy"
         if require_managed:
             violations.append(
-                "new workflows require '# workflow-lifecycle: permanent' or "
+                "added or modified workflows require "
+                "'# workflow-lifecycle: permanent' or "
                 "'# workflow-lifecycle: temporary'"
             )
+    elif lifecycle_value.lower() not in _ALLOWED_LIFECYCLES:
+        lifecycle = "legacy"
+        violations.append(
+            "workflow-lifecycle must be 'permanent' or 'temporary'"
+        )
     else:
         lifecycle = lifecycle_value.lower()
 
@@ -202,7 +230,7 @@ def inspect_workflow(
 
 
 def _workflow_paths(root: Path) -> tuple[Path, ...]:
-    directory = root / _WORKFLOW_DIRECTORY
+    directory = root / Path(*_WORKFLOW_DIRECTORY.parts)
     if not directory.is_dir():
         return ()
     return tuple(
@@ -250,18 +278,44 @@ def _git_text(root: Path, *arguments: str) -> str:
     return completed.stdout.strip()
 
 
+def _resolve_commit(root: Path, revision: str, *, name: str) -> str:
+    if not revision or revision.strip() != revision:
+        raise ValueError(f"{name} must be a nonempty canonical revision")
+    if not _commit_exists(root, revision):
+        raise ValueError(f"{name} is not an available commit: {revision}")
+    return _git_text(root, "rev-parse", "--verify", f"{revision}^{{commit}}")
+
+
 def _resolve_base(root: Path, base: str | None, head: str) -> str | None:
     if _commit_exists(root, base):
-        return base
+        assert base is not None
+        return _resolve_commit(root, base, name="base revision")
     parent = f"{head}^"
     if _commit_exists(root, parent):
-        return parent
+        return _resolve_commit(root, parent, name="head parent")
     return None
 
 
-def _added_or_renamed_workflows(
-    root: Path, base: str | None, head: str
-) -> tuple[Path, ...]:
+def _canonical_workflow_path(raw_path: bytes) -> Path:
+    rendered = os.fsdecode(raw_path)
+    if not rendered or "\\" in rendered:
+        raise ValueError(f"git reported a noncanonical workflow path: {rendered!r}")
+    pure_path = PurePosixPath(rendered)
+    if (
+        pure_path.is_absolute()
+        or pure_path.as_posix() != rendered
+        or ".." in pure_path.parts
+        or len(pure_path.parts) != 3
+        or tuple(pure_path.parts[:2]) != tuple(_WORKFLOW_DIRECTORY.parts)
+        or pure_path.suffix.lower() not in _WORKFLOW_SUFFIXES
+    ):
+        raise ValueError(f"git reported a noncanonical workflow path: {rendered!r}")
+    return Path(*pure_path.parts)
+
+
+def _changed_workflows(root: Path, base: str | None, head: str) -> tuple[Path, ...]:
+    """Return ordinary added, copied, modified, or renamed workflow files."""
+
     if base is None:
         return ()
     completed = subprocess.run(
@@ -269,28 +323,50 @@ def _added_or_renamed_workflows(
             "git",
             "diff",
             "--name-only",
-            "--diff-filter=AR",
+            "--diff-filter=ACMR",
             "-z",
             f"{base}...{head}",
             "--",
-            _WORKFLOW_DIRECTORY.as_posix(),
+            ":(glob).github/workflows/*.yml",
+            ":(glob).github/workflows/*.yaml",
         ),
         cwd=root,
         check=True,
         capture_output=True,
     )
-    paths = (
-        Path(os.fsdecode(raw_path))
-        for raw_path in completed.stdout.split(b"\0")
-        if raw_path
-    )
-    return tuple(
-        sorted(
-            path
-            for path in paths
-            if path.suffix.lower() in _WORKFLOW_SUFFIXES and (root / path).is_file()
-        )
-    )
+    root_resolved = root.resolve(strict=True)
+    paths: set[Path] = set()
+    for raw_path in completed.stdout.split(b"\0"):
+        if not raw_path:
+            continue
+        relative_path = _canonical_workflow_path(raw_path)
+        source = root / relative_path
+        if source.is_symlink():
+            raise ValueError(
+                "changed workflow path must not be a symlink: "
+                f"{relative_path.as_posix()}"
+            )
+        try:
+            resolved = source.resolve(strict=True)
+        except OSError as error:
+            raise ValueError(
+                "changed workflow path is not readable: "
+                f"{relative_path.as_posix()}"
+            ) from error
+        try:
+            resolved.relative_to(root_resolved)
+        except ValueError as error:
+            raise ValueError(
+                "changed workflow path escapes the repository: "
+                f"{relative_path.as_posix()}"
+            ) from error
+        if not source.is_file():
+            raise ValueError(
+                "changed workflow path must be an ordinary file: "
+                f"{relative_path.as_posix()}"
+            )
+        paths.add(relative_path)
+    return tuple(sorted(paths, key=lambda path: path.as_posix()))
 
 
 def validate_repository(
@@ -300,17 +376,24 @@ def validate_repository(
     head: str,
     today: date | None = None,
 ) -> tuple[WorkflowRecord, ...]:
-    """Validate newly added workflows and every managed temporary workflow."""
+    """Validate changed workflows and every managed temporary workflow."""
 
-    resolved_head = _git_text(root, "rev-parse", head)
+    root = root.resolve(strict=True)
+    resolved_head = _resolve_commit(root, head, name="head revision")
+    checkout_head = _resolve_commit(root, "HEAD", name="repository HEAD")
+    if checkout_head != resolved_head:
+        raise ValueError(
+            "repository HEAD does not match the requested head revision; "
+            "refusing to inspect workflow bytes from a different tree"
+        )
     resolved_base = _resolve_base(root, base, resolved_head)
-    added = set(_added_or_renamed_workflows(root, resolved_base, resolved_head))
+    changed = set(_changed_workflows(root, resolved_base, resolved_head))
     records = build_inventory(root, today=today)
     relevant: list[WorkflowRecord] = []
 
     for record in records:
         path = Path(record.path)
-        if path in added:
+        if path in changed:
             text = (root / path).read_text(encoding="utf-8")
             relevant.append(
                 inspect_workflow(path, text, today=today, require_managed=True)
@@ -478,11 +561,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if arguments.inventory_only:
         return 0
 
-    relevant = validate_repository(
-        root,
-        base=arguments.base,
-        head=arguments.head,
-    )
+    try:
+        relevant = validate_repository(
+            root,
+            base=arguments.base,
+            head=arguments.head,
+        )
+    except (OSError, UnicodeError, ValueError, subprocess.CalledProcessError) as error:
+        print(f"Workflow lifecycle policy failed: {error}", file=sys.stderr)
+        return 1
+
     violations = [record for record in relevant if record.violations]
     if not violations:
         print("Workflow lifecycle policy passed.", flush=True)
