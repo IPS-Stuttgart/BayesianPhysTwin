@@ -8,14 +8,16 @@ into BayesianPhysTwin. It is intended for the highest-value material backends
 whose state can be exposed as one persistent ordered set of material points:
 
 1. NVIDIA Warp FEM;
-2. SOFA FEM; and
-3. PositionBasedDynamics XPBD/PBD.
+2. SOFA FEM;
+3. PositionBasedDynamics XPBD/PBD; and
+4. Drake deformable FEM.
 
 The same producer can be used for Genesis MPM, MuJoCo Flex, or a future PhysX
 adapter when their wrappers satisfy the same identity contract. PhysX remains
 experimental: a wrapper must expose the deformable **simulation-mesh** vertex
 order, not render or collision vertices, before its output is scientifically
-admissible.
+admissible. Drake also remains experimental until a pinned native scene passes
+the common fresh-replay, calibration, and non-harm gates.
 
 The producer adds no engine dependency and introduces no new downstream
 artifact family. It creates the four-array raw material trajectory and strict
@@ -62,6 +64,23 @@ replay = CallbackMaterialTrajectoryReplayV1(
     positions_callback=read_fixed_material_positions_m,
     step_callback=advance_one_output_step,
     context=engine_scene,
+)
+```
+
+Drake integrations should use the specialized dependency-free adapter, which
+validates the public `DeformableBody.GetPositions(context)` surface and converts
+Drake's `(3,N)` matrix to the common `(N,3)` material rows:
+
+```python
+from bayesian_phystwin.material_trajectory_producer_v1 import (
+    DrakeDeformableBodyReplayV1,
+)
+
+replay = DrakeDeformableBodyReplayV1(
+    deformable_body=scene.deformable_body,
+    plant_context_callback=scene.current_plant_context,
+    advance_callback=scene.advance_one_output_step,
+    context=scene,
 )
 ```
 
@@ -215,6 +234,27 @@ all topology and constraint assets.
 XPBD/PBD is a deliberately different, inexpensive hypothesis family for rope,
 rod, cloth, and compliant-surface cases. Its value is complementary model error,
 not constitutive fidelity by assumption.
+
+### Drake deformable FEM
+
+Use one registered `DeformableBody` and read only its body-local vertex matrix
+through `GetPositions(plant_context)`. `DrakeDeformableBodyReplayV1` rejects a
+missing method, a matrix other than `(3,N)`, integer state, and non-finite state,
+then returns contiguous `(N,3)` rows. Do not substitute SceneGraph illustration
+or proximity vertices for this state.
+
+Each arm must create a fresh Diagram, MultibodyPlant context, simulator, and
+deformable body from identical model bytes. The producer must bind the body and
+geometry identities, reference tetrahedral mesh and vertex order, material
+model and parameters, fixed constraints, contact approximation, discrete update
+manager or integrator, time step, model/source hashes, and exact Drake revision.
+The `advance_callback` must advance exactly one registered output interval. A
+CPU replay normally uses the default no-op synchronization callback.
+
+Drake is complementary to the GPU-oriented backends because it connects FEM and
+deformable contact to a mature robotics systems-and-controls stack. The profile
+remains experimental: successful bundle publication proves compatibility and
+custody, not physical accuracy, gradient support, or downstream benefit.
 
 ## Scientific boundary
 
