@@ -1,0 +1,147 @@
+{
+  "contract": "bayesian-phystwin.public-claim-snapshot",
+  "contract_version": 1,
+  "snapshot_date": "2026-08-18",
+  "evidence_source": {
+    "path": "docs/phystwin_release_claim_v1.md",
+    "git_blob_sha1": "4da80f31f1c091ed111e774c041b63aef18be251",
+    "role": "release-facing scientific claim contract"
+  },
+  "claims": [
+    {
+      "id": "full22_point_improvement",
+      "table_order": 1,
+      "question": "Better than released PhysTwin under the frozen full-22 point contract?",
+      "status": "confirmed_with_boundary",
+      "display_status": "Confirmed, bounded",
+      "boundary": "The Bayesian anchor improves both primary point metrics, but this does not establish overall state of the art.",
+      "metrics": {
+        "released_phystwin_equal_case_chamfer_m": 0.011579,
+        "bayesian_anchor_equal_case_chamfer_m": 0.01018,
+        "chamfer_relative_change_percent": -12.09,
+        "released_phystwin_track_error_m": 0.022019,
+        "bayesian_anchor_track_error_m": 0.019205,
+        "track_relative_change_percent": -12.78
+      }
+    },
+    {
+      "id": "unique_deterministic_winner",
+      "table_order": 2,
+      "question": "Unique deterministic winner over the matched last-residual comparator?",
+      "status": "not_confirmed",
+      "display_status": "Not confirmed",
+      "boundary": "The methods are essentially tied in Chamfer distance, and last-residual is marginally better in track error.",
+      "metrics": {
+        "bayesian_anchor_equal_case_chamfer_m": 0.01018,
+        "last_residual_equal_case_chamfer_m": 0.010185,
+        "bayesian_anchor_track_error_m": 0.019205,
+        "last_residual_track_error_m": 0.019156
+      }
+    },
+    {
+      "id": "raw_covariance_calibration",
+      "table_order": 3,
+      "question": "Raw posterior covariance calibrated?",
+      "status": "refuted",
+      "display_status": "No",
+      "boundary": "Operational 3-D NEES is extremely high and nominal-90% ellipsoid coverage is far below nominal.",
+      "metrics": {
+        "operational_mean_nees_3d": 1355.05,
+        "nominal_90_percent_ellipsoid_coverage": 0.3831
+      }
+    },
+    {
+      "id": "retrospective_covariance_only_value",
+      "table_order": 4,
+      "question": "Retrospective covariance-only proper-score value established?",
+      "status": "confirmed_with_cost",
+      "display_status": "Yes, with width cost",
+      "boundary": "The exact last-residual mean is preserved; Gaussian NLL and marginal coverage improve, while mean full interval width grows by 3.10x.",
+      "metrics": {
+        "exact_mean_preserved_case_count": 22,
+        "case_count": 22,
+        "gaussian_nll_change": -9.136,
+        "simultaneous_95_percent_ci": [
+          -13.961,
+          -4.312
+        ],
+        "object_session_wins": 17,
+        "baseline_marginal_90_percent_coverage": 0.706,
+        "candidate_marginal_90_percent_coverage": 0.91,
+        "baseline_mean_full_interval_width_m": 0.01645,
+        "candidate_mean_full_interval_width_m": 0.05094,
+        "mean_full_interval_width_ratio": 3.1
+      }
+    },
+    {
+      "id": "covariance_only_independent_validation",
+      "table_order": 5,
+      "question": "Fresh independent covariance-only confirmation established?",
+      "status": "not_established",
+      "display_status": "Not opened",
+      "boundary": "The separate route still requires 100 sealed source prediction records and source-positive authorization; twelve disjoint confirmation object-sessions remain closed.",
+      "metrics": {
+        "protocol_id": "deform360_covariance_only_independent_validation_v1",
+        "development_object_session_count": 10,
+        "source_prediction_seal_count_required": 100,
+        "confirmation_object_session_count": 12,
+        "source_positive_authorization_required": true,
+        "confirmation_payload_opened": false,
+        "authorized_independent_validation_claim": false
+      }
+    },
+    {
+      "id": "fresh_object_session_v61",
+      "table_order": 6,
+      "question": "Fresh-object-session v6/v6.1 transfer established?",
+      "status": "terminal_without_claim",
+      "display_status": "Terminal, no claim",
+      "boundary": "A retained endpoint-processing technical failure occurred before the source gate was evaluated; replacement, retry, and source continuation are forbidden, and no fresh-target payload was opened.",
+      "metrics": {
+        "protocol_id": "deform360_official_hub_fresh_object_session_v6",
+        "source_prediction_success_count": 313,
+        "source_prediction_expected_count": 324,
+        "retained_support_negative_count": 11,
+        "fresh_target_object_session_count": 16,
+        "failure_stage": "endpoint-processing technical failure",
+        "source_gate_evaluated": false,
+        "replacement_retry_source_continuation_forbidden": true,
+        "fresh_target_payload_opened": false,
+        "confirmation_payload_opened": false,
+        "held_v8_payload_opened": false,
+        "authorized_fresh_object_claim": false
+      }
+    },
+    {
+      "id": "prob4d_real_provider_transfer",
+      "table_order": 7,
+      "question": "Real Prob4D feeder transfer established?",
+      "status": "not_established",
+      "display_status": "Not established",
+      "boundary": "Portable contracts and synthetic integration tests do not substitute for a real provider-value experiment.",
+      "metrics": {
+        "authorized_real_provider_claim": false
+      }
+    },
+    {
+      "id": "causal4d_downstream_benefit",
+      "table_order": 8,
+      "question": "Downstream Causal4D counterfactual benefit established?",
+      "status": "not_established",
+      "display_status": "Not established",
+      "boundary": "Provider compatibility is implemented, but a registered downstream causal-value result is still required.",
+      "metrics": {
+        "authorized_downstream_causal_claim": false
+      }
+    }
+  ],
+  "not_authorized": [
+    "overall state of the art",
+    "a unique deterministic winner over last-residual",
+    "calibrated raw posterior covariance",
+    "fresh independent covariance-only confirmation",
+    "fresh-object-session v6/v6.1 transfer",
+    "real Prob4D provider value",
+    "downstream Causal4D counterfactual value"
+  ]
+}
