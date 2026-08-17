@@ -45,9 +45,7 @@ from .material_trajectory_backend_v1 import (
 )
 from .physical_rollout_v1 import write_deterministic_npz
 
-MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL: Final = (
-    "fresh-replay-control-before-step-v1"
-)
+MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL: Final = "fresh-replay-control-before-step-v1"
 
 _RESERVED_ENGINE_PARAMETER_KEYS: Final = frozenset(
     {
@@ -259,9 +257,7 @@ def _capture_positions(
     replay.synchronize()
     positions = _to_numpy(replay.get_material_positions_m())
     _require(
-        positions.ndim == 2
-        and positions.shape[0] >= 1
-        and positions.shape[1] == 3,
+        positions.ndim == 2 and positions.shape[0] >= 1 and positions.shape[1] == 3,
         f"{label} material positions must have shape (S,3)",
     )
     _require(
@@ -436,9 +432,7 @@ def produce_material_trajectory_backend(
 
     revision = exact_revision(engine_revision, name="engine_revision")
     version = nonempty_string(engine_version, name="engine_version")
-    producer_repo = repository_name(
-        producer_repository, name="producer_repository"
-    )
+    producer_repo = repository_name(producer_repository, name="producer_repository")
     producer_rev = exact_revision(producer_revision, name="producer_revision")
     producer_ver = nonempty_string(producer_version, name="producer_version")
     artifacts = source_artifact_mapping(
