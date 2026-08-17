@@ -336,23 +336,6 @@ def materialize_material_backend(
     )
 
 
-def _validate_transport_binding(
-    artifact: dict[str, Any],
-    *,
-    transport: BackendTransportV1,
-) -> dict[str, Any]:
-    profile_key = (
-        "backend_profile" if transport == "lagrangian-export-v1" else "backend_kind"
-    )
-    producer_profile_id = artifact.get(profile_key)
-    if type(producer_profile_id) is not str:
-        raise ValueError("validated backend artifact has no producer profile")
-    resolved = resolve_material_backend_profile(producer_profile_id)
-    if resolved.transport != transport:
-        raise ValueError("validated backend profile and artifact transport disagree")
-    return artifact
-
-
 def validate_material_backend(output_dir: str | Path) -> dict[str, Any]:
     """Auto-detect and validate exactly one registered backend artifact family."""
 
@@ -364,14 +347,8 @@ def validate_material_backend(output_dir: str | Path) -> dict[str, Any]:
             "backend bundle must contain exactly one recognized artifact manifest"
         )
     if lagrangian.exists():
-        return _validate_transport_binding(
-            validate_lagrangian_backend(root),
-            transport="lagrangian-export-v1",
-        )
-    return _validate_transport_binding(
-        validate_material_trajectory_backend(root),
-        transport="material-trajectory-v1",
-    )
+        return validate_lagrangian_backend(root)
+    return validate_material_trajectory_backend(root)
 
 
 __all__ = [
