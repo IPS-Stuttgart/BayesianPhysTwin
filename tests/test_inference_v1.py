@@ -492,6 +492,7 @@ def test_inference_v1_import_does_not_load_optional_or_experiment_modules() -> N
                 forbidden_package_prefixes = (
                     "bayesian_phystwin.deform360_",
                     "bayesian_phystwin.experiments",
+                    "bayesian_phystwin_experiments",
                     "bayesian_phystwin.phystwin_",
                 )
                 leaked = sorted(

@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bayesian_phystwin.experiments.deform_dlo_source import (
+from bayesian_phystwin_experiments.deform_dlo_source import (
     DEFORM_DLO_SOURCE_CONTRACT,
     build_deform_dlo_source_manifest,
     choose_deform_validation_checkpoint,

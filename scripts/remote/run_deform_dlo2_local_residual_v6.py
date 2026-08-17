@@ -16,11 +16,11 @@ import run_deform_dlo_action_residual as common_runtime
 import run_deform_dlo_local_residual as local_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_action_residual import (
+from bayesian_phystwin_experiments.deform_dlo_action_residual import (
     deform_action_residual_records,
     summarize_deform_action_residual_records,
 )
-from bayesian_phystwin.experiments.deform_dlo_local_residual import (
+from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     fit_deform_local_residual,
     load_deform_dlo2_local_residual_protocol,
     load_deform_dlo2_local_residual_v6_protocol,
@@ -28,7 +28,7 @@ from bayesian_phystwin.experiments.deform_dlo_local_residual import (
     serialize_deform_local_residual_model,
     validate_deform_dlo2_local_residual_v6_parents,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 
 def _parse_args() -> argparse.Namespace:
@@ -162,8 +162,7 @@ def main() -> int:
     module_path = (
         runner_path.parents[2]
         / "src"
-        / "bayesian_phystwin"
-        / "experiments"
+        / "bayesian_phystwin_experiments"
         / "deform_dlo_local_residual.py"
     )
     source_opening = {

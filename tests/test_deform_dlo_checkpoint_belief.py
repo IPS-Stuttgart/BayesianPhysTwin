@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin_experiments.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
     build_deform_checkpoint_belief_arms,
     calibrate_deform_coordinate_variance,

@@ -126,7 +126,7 @@ def load_deform_local_residual_protocol(path: str | Path) -> dict[str, object]:
 def load_deform_dlo2_local_residual_protocol(path: str | Path) -> dict[str, object]:
     """Load the fixed-arm fresh DLO2 transfer protocol."""
 
-    from bayesian_phystwin.experiments.deform_dlo_source import (
+    from bayesian_phystwin_experiments.deform_dlo_source import (
         load_deform_dlo_source_protocol,
     )
 

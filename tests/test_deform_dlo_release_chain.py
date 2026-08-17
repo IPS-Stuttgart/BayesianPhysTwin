@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_ROOT = REPOSITORY_ROOT / "configs" / "sota"
@@ -69,8 +69,7 @@ def test_dlo2_initialization_smoke_preserves_its_historical_implementation() -> 
     assert smoke["implementation"]["parser_sha256"] == sha256_file(
         REPOSITORY_ROOT
         / "src"
-        / "bayesian_phystwin"
-        / "experiments"
+        / "bayesian_phystwin_experiments"
         / "deform_dlo_upstream.py"
     )
     # The smoke sealed runner revision f8e9e3af and its companion verifier.

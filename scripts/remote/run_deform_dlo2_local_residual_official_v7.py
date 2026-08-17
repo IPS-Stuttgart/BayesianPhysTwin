@@ -17,18 +17,18 @@ import run_deform_dlo_local_residual as local_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_local_residual import (
+from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     deserialize_deform_local_residual_model,
     load_deform_dlo2_local_residual_alltrain_v7_protocol,
     load_deform_dlo2_local_residual_official_v7_protocol,
     predict_deform_local_residual,
     validate_deform_dlo2_local_residual_official_v7_authorization,
 )
-from bayesian_phystwin.experiments.deform_dlo_official import (
+from bayesian_phystwin_experiments.deform_dlo_official import (
     evaluate_deform_dlo2_official_uncertainty,
     summarize_deform_dlo2_official_records,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 
 def _parse_args() -> argparse.Namespace:

@@ -17,15 +17,15 @@ import run_deform_dlo_checkpoint_belief as source_belief_runtime
 import run_deform_dlo_deep_ensemble as ensemble_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_alltrain import (
+from bayesian_phystwin_experiments.deform_dlo_alltrain import (
     load_deform_dlo2_deep_alltrain_protocol,
     validate_deform_dlo2_deep_alltrain_authorization,
 )
-from bayesian_phystwin.experiments.deform_dlo_deep_ensemble import (
+from bayesian_phystwin_experiments.deform_dlo_deep_ensemble import (
     load_deform_dlo2_deep_ensemble_protocol,
     validate_deform_two_seed_manifests,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import (
+from bayesian_phystwin_experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )

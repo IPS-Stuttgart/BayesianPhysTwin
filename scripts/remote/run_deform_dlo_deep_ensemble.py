@@ -16,23 +16,23 @@ import run_deform_dlo_checkpoint_belief as source_belief_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin_experiments.deform_dlo_checkpoint_belief import (
     calibrate_deform_coordinate_variance,
     combine_deform_checkpoint_predictions,
     evaluate_deform_checkpoint_belief_transfer,
     evaluate_deform_coordinate_uncertainty,
     select_deform_checkpoint_belief_arm,
 )
-from bayesian_phystwin.experiments.deform_dlo_deep_ensemble import (
+from bayesian_phystwin_experiments.deform_dlo_deep_ensemble import (
     DEFORM_DLO_DEEP_ENSEMBLE_CONTRACT,
     build_deform_two_seed_weights,
     load_deform_dlo1_deep_ensemble_protocol,
     validate_deform_two_seed_manifests,
 )
-from bayesian_phystwin.experiments.deform_dlo_longrun import (
+from bayesian_phystwin_experiments.deform_dlo_longrun import (
     load_deform_dlo_longrun_protocol,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 
 def _parse_args() -> argparse.Namespace:

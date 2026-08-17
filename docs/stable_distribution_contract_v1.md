@@ -25,8 +25,8 @@ The wheel gate verifies all of the following without extracting the archive:
 - a maximum compressed size and member count;
 - required stable namespace and PEP 561 members;
 - absence of repository-only directories such as `tests/`, `scripts/`,
-  `protocols/`, `docs/`, and the source-only `bayesian_phystwin.experiments`
-  namespace;
+  `protocols/`, `docs/`, and the sibling source-only
+  `bayesian_phystwin_experiments` namespace;
 - exactly one declared console script, `bpt`;
 - exact `__all__` parity with the root, portable-artifact, and guarded-inference
   API manifests; and

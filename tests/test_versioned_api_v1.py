@@ -88,6 +88,7 @@ def test_versioned_api_import_does_not_load_experiment_or_optional_modules() -> 
         forbidden_package_prefixes = (
             "bayesian_phystwin.deform360_",
             "bayesian_phystwin.experiments",
+            "bayesian_phystwin_experiments",
             "bayesian_phystwin.phystwin_",
             "bayesian_phystwin.synthetic_benchmark",
         )

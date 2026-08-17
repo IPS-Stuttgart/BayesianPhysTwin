@@ -16,16 +16,16 @@ import run_deform_dlo_action_residual as common_runtime
 import run_deform_dlo_local_residual as local_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_action_residual import (
+from bayesian_phystwin_experiments.deform_dlo_action_residual import (
     deform_action_residual_records,
     summarize_deform_action_residual_records,
 )
-from bayesian_phystwin.experiments.deform_dlo_local_residual import (
+from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     fit_deform_local_residual,
     load_deform_dlo2_local_residual_protocol,
     predict_deform_local_residual,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 SHRINKAGE_BANK = (0.125, 0.25, 0.375, 0.5)
 MINIMUM_RELATIVE_IMPROVEMENT = 0.01

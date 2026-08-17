@@ -77,7 +77,12 @@ pyrecest = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-exclude = ["bayesian_phystwin.experiments", "bayesian_phystwin.experiments.*"]
+exclude = [
+    "bayesian_phystwin.experiments",
+    "bayesian_phystwin.experiments.*",
+    "bayesian_phystwin_experiments",
+    "bayesian_phystwin_experiments.*",
+]
 
 [tool.setuptools.package-data]
 bayesian_phystwin = [

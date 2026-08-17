@@ -15,22 +15,22 @@ import run_deform_dlo_action_residual as common_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_action_residual import (
+from bayesian_phystwin_experiments.deform_dlo_action_residual import (
     deform_action_residual_records,
     select_deform_action_residual_arm,
     summarize_deform_action_residual_records,
 )
-from bayesian_phystwin.experiments.deform_dlo_local_residual import (
+from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     deform_causal_inputs,
     fit_deform_local_residual,
     load_deform_local_residual_protocol,
     predict_deform_local_residual,
     serialize_deform_local_residual_model,
 )
-from bayesian_phystwin.experiments.deform_dlo_longrun import (
+from bayesian_phystwin_experiments.deform_dlo_longrun import (
     load_deform_dlo_longrun_protocol,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import sha256_file
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 
 def _parse_args() -> argparse.Namespace:

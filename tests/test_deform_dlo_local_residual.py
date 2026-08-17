@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bayesian_phystwin.experiments.deform_dlo_local_residual import (
+from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     build_deform_local_residual_features,
     deform_causal_inputs,
     deserialize_deform_local_residual_model,
@@ -21,7 +21,7 @@ from bayesian_phystwin.experiments.deform_dlo_local_residual import (
     validate_deform_dlo2_local_residual_parent,
     validate_deform_dlo2_local_residual_v6_parents,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import (
+from bayesian_phystwin_experiments.deform_dlo_source import (
     sha256_file,
     validate_deform_dlo2_stage_authorization,
 )

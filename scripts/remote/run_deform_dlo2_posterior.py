@@ -12,7 +12,7 @@ import run_deform_dlo_checkpoint_belief as source_belief_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin_experiments.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
     build_deform_checkpoint_belief_arms,
     calibrate_deform_coordinate_variance,
@@ -23,7 +23,7 @@ from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
     validate_deform_dlo2_checkpoint_posterior,
     weighted_deform_prediction_median,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import (
+from bayesian_phystwin_experiments.deform_dlo_source import (
     choose_deform_validation_checkpoint,
     load_deform_dlo_source_protocol,
     sha256_file,

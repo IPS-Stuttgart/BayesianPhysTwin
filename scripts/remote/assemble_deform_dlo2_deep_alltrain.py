@@ -9,12 +9,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from bayesian_phystwin.experiments.deform_dlo_alltrain import (
+from bayesian_phystwin_experiments.deform_dlo_alltrain import (
     DEFORM_DLO2_DEEP_ALLTRAIN_RESULT_CONTRACT,
     load_deform_dlo2_deep_alltrain_protocol,
     validate_deform_dlo2_deep_alltrain_authorization,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import (
+from bayesian_phystwin_experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )

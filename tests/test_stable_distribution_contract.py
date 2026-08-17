@@ -47,6 +47,7 @@ def _contract(root: Path) -> Path:
                 "tests/",
                 "tools/",
                 "bayesian_phystwin/experiments/",
+                "bayesian_phystwin_experiments/",
             ],
             "console_scripts": {"bpt": "bayesian_phystwin:main"},
             "isolated_imports": [
@@ -54,7 +55,10 @@ def _contract(root: Path) -> Path:
                     "module": "bayesian_phystwin",
                     "api_manifest": "api.json",
                     "forbidden_external_modules": ["xmlrpc"],
-                    "forbidden_package_prefixes": ["bayesian_phystwin.experiments"],
+                    "forbidden_package_prefixes": [
+                        "bayesian_phystwin.experiments",
+                        "bayesian_phystwin_experiments",
+                    ],
                 }
             ],
         },
@@ -160,6 +164,14 @@ def test_wheel_rejects_repository_only_member(tmp_path: Path) -> None:
 
 
 def test_wheel_rejects_source_only_experiment(tmp_path: Path) -> None:
+    with pytest.raises(StableDistributionError, match="repository-only"):
+        _validate(
+            tmp_path,
+            extra={"bayesian_phystwin_experiments/leak.py": ""},
+        )
+
+
+def test_wheel_rejects_legacy_nested_experiment(tmp_path: Path) -> None:
     with pytest.raises(StableDistributionError, match="repository-only"):
         _validate(
             tmp_path,

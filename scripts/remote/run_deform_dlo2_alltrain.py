@@ -14,14 +14,14 @@ import numpy as np
 import run_deform_dlo_checkpoint_belief as source_belief_runtime
 import run_deform_dlo_source as source_runtime
 
-from bayesian_phystwin.experiments.deform_dlo_alltrain import (
+from bayesian_phystwin_experiments.deform_dlo_alltrain import (
     load_deform_dlo2_alltrain_protocol,
     validate_deform_dlo2_alltrain_authorization,
 )
-from bayesian_phystwin.experiments.deform_dlo_checkpoint_belief import (
+from bayesian_phystwin_experiments.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
 )
-from bayesian_phystwin.experiments.deform_dlo_source import (
+from bayesian_phystwin_experiments.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )
