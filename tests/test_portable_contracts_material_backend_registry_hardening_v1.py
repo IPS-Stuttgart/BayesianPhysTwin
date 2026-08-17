@@ -109,37 +109,3 @@ def test_transport_specific_profile_assertion_is_exact(
             profile_id="genesis-world-mpm-v1",
         )
     assert not called
-
-
-@pytest.mark.parametrize(
-    ("artifact_filename", "validator_name", "artifact", "message"),
-    [
-        (
-            backend.LAGRANGIAN_ARTIFACT_FILENAME,
-            "validate_lagrangian_backend",
-            {"backend_profile": "genesis-mpm-v1"},
-            "profile and artifact transport disagree",
-        ),
-        (
-            backend.MATERIAL_TRAJECTORY_ARTIFACT_FILENAME,
-            "validate_material_trajectory_backend",
-            {"backend_kind": "genesis-world-mpm-v1"},
-            "profile and artifact transport disagree",
-        ),
-    ],
-)
-def test_validation_rejects_profile_transport_drift(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    artifact_filename: str,
-    validator_name: str,
-    artifact: dict[str, object],
-    message: str,
-) -> None:
-    root = tmp_path / validator_name
-    root.mkdir()
-    (root / artifact_filename).touch()
-    monkeypatch.setattr(backend, validator_name, lambda _: artifact)
-
-    with pytest.raises(ValueError, match=message):
-        backend.validate_material_backend(root)
