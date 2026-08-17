@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-local-residual-official-v7",
+  "claim_boundary": "One-shot identical-information evaluation of the source-confirmed all-56 DLO2 local-residual method. No target outcome may change the method, reporting operator, calibration, case set, or gate.",
+  "prob4d_used": false,
+  "parent_alltrain_protocol": {
+    "repository_path": "configs/sota/deform_dlo2_local_residual_alltrain_v7.json",
+    "sha256": "39566ca4542f1a0afff84458123580be92ca3c95af5bda396351ed702e7d4739"
+  },
+  "required_parent": {
+    "result_contract": "deform-dlo2-local-residual-alltrain-result-v7",
+    "final_method_contract": "deform-dlo2-local-residual-final-method-v7",
+    "official_eval_read": false,
+    "official_eval_execution_authorized": true
+  },
+  "evaluation": {
+    "dlo_type": "DLO2",
+    "partition": "eval",
+    "expected_trajectory_count": 14,
+    "expected_frame_count": 500,
+    "expected_node_count": 12,
+    "trajectory_policy": "all-eval-files-sorted-once-plus-canonical-reference-draw-v2",
+    "failure_policy": "seal-failure-no-retry-v1",
+    "metric": "mean-coordinate-l1-m",
+    "horizon_breakdown": "equal-frame-thirds-v1",
+    "published_reference_l1_m": 0.0097,
+    "published_reference_source": "DEFORM-CoRL-2024-DLO2-Table-1-average-L1",
+    "published_reference_operator": {
+      "loader": "upstream-random-choices-with-replacement-v1",
+      "upstream_train_script_sha256": "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55",
+      "python_random_seed": 0,
+      "preceding_train_population": 56,
+      "preceding_train_draw_count": 56,
+      "eval_population": 14,
+      "eval_draw_count": 14,
+      "canonical_filename_order": "sorted-by-name-v1",
+      "canonical_eval_indices": [1, 7, 9, 7, 11, 7, 13, 8, 8, 6, 8, 5, 8, 4],
+      "canonical_unique_index_count": 9,
+      "upstream_glob_order": "unspecified"
+    }
+  },
+  "methods": {
+    "candidate": "alltrain-physical-plus-r1-s0p25-local-residual",
+    "comparison_baseline": "identically-trained-alltrain-physical-checkpoint",
+    "action_aware_persistence": true,
+    "target_selection": false,
+    "target_calibration": false,
+    "target_retries": false,
+    "case_replacement": false
+  },
+  "claim_gate": {
+    "published_reference_all_unique_strictly_better": true,
+    "published_reference_canonical_draw_strictly_better": true,
+    "candidate_relative_improvement_min": 0.01,
+    "candidate_minimum_case_wins": 8,
+    "maximum_case_ratio": 1.10,
+    "require_all_expected_cases": true
+  },
+  "uncertainty": {
+    "use_alltrain_fit_covariance_unchanged": true,
+    "variance_scale": 1.0,
+    "variance_floor_m2": 0.000001,
+    "nominal_coordinate_coverage": 0.90,
+    "report_coordinate_marginal_coverage": true,
+    "report_interval_width": true,
+    "report_gaussian_nll": true,
+    "report_coordinate_nees": true,
+    "report_horizon_breakdown": true
+  }
+}

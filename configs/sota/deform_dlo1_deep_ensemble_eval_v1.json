@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-deep-ensemble-v1",
+  "claim_boundary": "Post-open exploratory DLO1 two-seed ensemble selection and source transfer. Official DEFORM evaluation remains unavailable.",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "parents": {
+    "seed42_longrun_protocol": {
+      "repository_path": "configs/sota/deform_dlo_longrun_v2.json",
+      "sha256": "a1c7ad23ccf6c83e0130efb9c9b172063892caf5b0066ca79cd6ad3b151515a0"
+    },
+    "seed42_source_manifest": {
+      "repository_path": "results/sota/deform_dlo_source_v1/source_manifest.json",
+      "sha256": "570e8f65a4a9c5b5bbfeb923fcb8714885896ec041d862548b91ef6ff1599a8a"
+    },
+    "seed43_source_protocol": {
+      "repository_path": "configs/sota/deform_dlo1_seed43_longrun_v1.json",
+      "sha256": "fb2a5eacc85f415fb078aef69de333cb25e1d9c8334343f055eb06c56bb87710"
+    }
+  },
+  "evaluation": {
+    "dlo_type": "DLO1",
+    "frame_count": 500,
+    "node_count": 13,
+    "cublas_workspace_config": ":4096:8",
+    "source_replay_tolerance_m": 0.000001,
+    "official_eval_read": false
+  },
+  "policy": {
+    "member_checkpoint_selection": "minimum-validation-l1-tie-earliest-v1",
+    "comparison_baseline": "lower-validation-error-single-member-v1",
+    "fallback": "comparison-baseline-exact",
+    "operators": [
+      {
+        "name": "equal_weight_predictive_mean",
+        "weighting": "uniform"
+      },
+      {
+        "name": "validation_softmax_predictive_mean",
+        "weighting": "validation-softmax",
+        "temperature_m": 0.001
+      }
+    ],
+    "validation_improvement_min": 0.01,
+    "source_transfer_improvement_min": 0.01,
+    "source_transfer_minimum_case_wins": 5,
+    "coordinate_variance_floor_m2": 0.000025,
+    "coordinate_interval_nominal_coverage": 0.9,
+    "fresh_confirmation": {
+      "dlo_type": "DLO2",
+      "seeds": [42, 43],
+      "same_split_horizon_batch_updates_and_operators": true,
+      "no_dlo1_retuning": true,
+      "official_eval_remains_closed_until_fresh_source_gate": true
+    }
+  }
+}

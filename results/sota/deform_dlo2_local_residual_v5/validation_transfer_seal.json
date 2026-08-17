@@ -1,0 +1,132 @@
+{
+  "contract": "deform-dlo2-local-residual-validation-v5",
+  "fixed_arm": {
+    "name": "r1_s0p5",
+    "ridge": 1.0,
+    "selection_source": "frozen-dlo1-v4",
+    "shrinkage": 0.5
+  },
+  "model_sha256": "ed4feae941ca9c293860d21f89846761ab2e5b9e6c64d97dc798d6b4db7acf10",
+  "official_eval_read": false,
+  "protocol_sha256": "072cbdf3c971af4c78d21b8a3c7056a4670da8df8721ab46577c8c33fff08889",
+  "schema_version": 1,
+  "selected_checkpoint": {
+    "path": "/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run/checkpoints/update_6400.pt",
+    "sha256": "b64affff638c9d47ca51f17bb7124cc4bd224facd1f7137b0042b7fa9037ea65"
+  },
+  "source_manifest": {
+    "path": "/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run/source_manifest.json",
+    "sha256": "7c5501997e6bab7b0537ef9cda932ec19312e40618f03a4fad80ffc1622a6d98"
+  },
+  "source_test_opened": false,
+  "training_result": {
+    "path": "/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run/training_validation_result.json",
+    "sha256": "1f8d092bc38b03f6cdd68ef38abcb7d403d914e38ba483698579deaeea8c2572"
+  },
+  "validation_diagnostics": {
+    "correction_l2_m": [
+      0.007803321923501465,
+      0.008464867685997558,
+      0.006588674232573574,
+      0.0048820273405889136,
+      0.010096129925693862,
+      0.006389341618893995,
+      0.0064516245196667345,
+      0.00782165472137204
+    ],
+    "mean_coordinate_nees": 0.606101190118665,
+    "mean_coordinate_standard_deviation_m": 0.018392333358458902,
+    "nominal_90_coordinate_coverage": 0.9539303045515395,
+    "trajectory_coverage": [
+      0.9568273092369478,
+      0.9546519410977242,
+      0.9851907630522089,
+      0.9949799196787149,
+      0.8477242302543507,
+      0.9495481927710844,
+      0.9606760374832664,
+      0.9818440428380187
+    ],
+    "trajectory_mean_nees": [
+      0.7112356738931561,
+      0.6970840572314906,
+      0.3378055061338337,
+      0.28321314514121493,
+      1.2892428144191816,
+      0.5314726180151611,
+      0.5524136251066963,
+      0.4463420810085853
+    ]
+  },
+  "validation_gate": {
+    "baseline_mean_l1_m": 0.007912038893007275,
+    "candidate_mean_l1_m": 0.0069580119445648665,
+    "maximum_allowed_case_ratio": 1.05,
+    "maximum_case_ratio": 1.1500547357377315,
+    "minimum_case_wins": 6,
+    "minimum_relative_improvement": 0.01,
+    "passed": false,
+    "relative_improvement": 0.12057915302787325,
+    "ties": 0,
+    "trajectory_count": 8,
+    "wins": 7
+  },
+  "validation_records": [
+    {
+      "baseline_l1_m": 0.008373869450372783,
+      "candidate_l1_m": 0.007369599684680022,
+      "candidate_to_baseline_ratio": 0.8800710028207982,
+      "improved": true,
+      "name": "50.pkl"
+    },
+    {
+      "baseline_l1_m": 0.010460138267929464,
+      "candidate_l1_m": 0.008161954356081191,
+      "candidate_to_baseline_ratio": 0.7802912492185261,
+      "improved": true,
+      "name": "3.pkl"
+    },
+    {
+      "baseline_l1_m": 0.005752612172770842,
+      "candidate_l1_m": 0.00567519126448755,
+      "candidate_to_baseline_ratio": 0.9865416082367325,
+      "improved": true,
+      "name": "106.pkl"
+    },
+    {
+      "baseline_l1_m": 0.005322361948232082,
+      "candidate_l1_m": 0.00412641960985787,
+      "candidate_to_baseline_ratio": 0.775298570445502,
+      "improved": true,
+      "name": "19.pkl"
+    },
+    {
+      "baseline_l1_m": 0.013720007399332046,
+      "candidate_l1_m": 0.011312153629884362,
+      "candidate_to_baseline_ratio": 0.8245005487704832,
+      "improved": true,
+      "name": "25.pkl"
+    },
+    {
+      "baseline_l1_m": 0.005465953270266799,
+      "candidate_l1_m": 0.006286145443791473,
+      "candidate_to_baseline_ratio": 1.1500547357377315,
+      "improved": false,
+      "name": "102.pkl"
+    },
+    {
+      "baseline_l1_m": 0.007317791898003025,
+      "candidate_l1_m": 0.0067580913719249335,
+      "candidate_to_baseline_ratio": 0.9235151075789911,
+      "improved": true,
+      "name": "6.pkl"
+    },
+    {
+      "baseline_l1_m": 0.006883576737151159,
+      "candidate_l1_m": 0.005974540195811528,
+      "candidate_to_baseline_ratio": 0.8679412497236363,
+      "improved": true,
+      "name": "56.pkl"
+    }
+  ]
+}

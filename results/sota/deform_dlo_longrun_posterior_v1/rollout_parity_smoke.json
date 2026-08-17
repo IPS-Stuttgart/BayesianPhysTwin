@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-longrun-posterior-rollout-parity-v1",
+  "implementation_commit": "04c40a9",
+  "official_eval_read": false,
+  "source_test_opened": false,
+  "parent_checkpoint_update": 280,
+  "validation_case": "93.pkl",
+  "tolerance_m": 1e-06,
+  "expected": {
+    "early_l1_m": 0.006348427385091782,
+    "middle_l1_m": 0.007659277878701687,
+    "late_l1_m": 0.006665851920843124,
+    "model_l1_m": 0.006891185883432627,
+    "persistence_l1_m": 0.035778772085905075
+  },
+  "candidate": {
+    "early_l1_m": 0.006348581261332108,
+    "middle_l1_m": 0.007659333464878004,
+    "late_l1_m": 0.0066658718857291605,
+    "model_l1_m": 0.006891262203979757,
+    "persistence_l1_m": 0.03577877001668297
+  },
+  "model_abs_diff_m": 7.632054713040126e-08,
+  "persistence_abs_diff_m": 2.069222106160229e-09,
+  "passed": true
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": 2,
+  "contract": "deform-dlo-longrun-posterior-v2",
+  "claim_boundary": "Conditional post-open DLO1 checkpoint posterior. It cannot run unless the frozen long-run source gate passes and cannot confirm transfer or state of the art.",
+  "parent_longrun_protocol": {
+    "repository_path": "configs/sota/deform_dlo_longrun_v2.json",
+    "sha256": "a1c7ad23ccf6c83e0130efb9c9b172063892caf5b0066ca79cd6ad3b151515a0",
+    "execution_commit": "2060c71"
+  },
+  "parent_source_result": {
+    "repository_path": "results/sota/deform_dlo_source_v1/source_result.json",
+    "sha256": "9722a7bf4800e18677daa15cb220a39f9a72c73ae2f7ca7d100bb4cba25e8f65"
+  },
+  "source_test_status": "post-open-exploratory-only",
+  "official_eval_policy": "forbidden",
+  "fresh_confirmation_dlo": "DLO2",
+  "validation_improvement_min": 0.01,
+  "fallback": "selected_single_exact",
+  "benchmark_point_loss": "coordinate-wise-l1",
+  "predictive_median_definition": "coordinate-wise-weighted-midpoint-median-v1",
+  "operators": ["parameter_mean", "predictive_mean", "predictive_median"],
+  "softmax_temperature_m": 0.001,
+  "source_transfer_improvement_min": 0.01,
+  "source_transfer_minimum_case_wins": 5,
+  "coordinate_variance_floor_m2": 0.000025,
+  "coordinate_interval_nominal_coverage": 0.9,
+  "arms": [
+    {
+      "name": "tail_2_uniform",
+      "updates": [6040, 6400],
+      "weighting": "uniform"
+    },
+    {
+      "name": "tail_3_uniform",
+      "updates": [5200, 6040, 6400],
+      "weighting": "uniform"
+    },
+    {
+      "name": "tail_4_uniform",
+      "updates": [4000, 5200, 6040, 6400],
+      "weighting": "uniform"
+    },
+    {
+      "name": "late_validation_softmax",
+      "updates": [2560, 4000, 5200, 6040, 6400],
+      "weighting": "validation-softmax"
+    }
+  ],
+  "fresh_confirmation": {
+    "protocol_path": "configs/sota/deform_dlo2_fresh_v2.json",
+    "dlo_type": "DLO2",
+    "train_from_scratch": true,
+    "same_total_update_budget": true,
+    "same_horizon_and_batch_size": true,
+    "same_checkpoint_posterior_arm_bank": true,
+    "no_dlo1_retuning": true,
+    "official_eval_remains_closed_until_dlo2_source_gate": true,
+    "identical_information_only": true
+  }
+}

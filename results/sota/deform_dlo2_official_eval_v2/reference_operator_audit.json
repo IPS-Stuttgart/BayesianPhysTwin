@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-published-reference-operator-audit-v1",
+  "audit_scope": "Public paper and commit-locked upstream source only.",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "train_deform_sha256": "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
+  },
+  "paper": {
+    "url": "https://arxiv.org/abs/2406.05931",
+    "metric": "average-l1-over-500-step-prediction",
+    "table_units": "1e-2-m",
+    "dlo1_reference_l1_m": 0.0101,
+    "dlo2_reference_l1_m": 0.0097
+  },
+  "released_loader": {
+    "python_random_seed": 0,
+    "preceding_train_draw": {
+      "population": 56,
+      "draw_count": 56,
+      "replacement": true
+    },
+    "eval_draw": {
+      "population": 14,
+      "draw_count": 14,
+      "replacement": true,
+      "canonical_filename_order": "sorted-by-name-v1",
+      "canonical_indices": [1, 7, 9, 7, 11, 7, 13, 8, 8, 6, 8, 5, 8, 4],
+      "unique_index_count": 9
+    },
+    "limitation": "The upstream glob population order is unspecified, so the canonical draw is a source-code compatibility view, not a reconstruction of the paper run's filesystem order."
+  },
+  "training_budget_audit": {
+    "released_upstream": {
+      "train_file_draw_count": 56,
+      "train_file_draw_with_replacement": true,
+      "frames_per_trajectory": 500,
+      "unroll_horizon_frames": 100,
+      "windows_per_drawn_trajectory": 399,
+      "dataset_windows": 22344,
+      "batch_size": 32,
+      "drop_last": true,
+      "updates_per_epoch": 698,
+      "epochs": 100,
+      "nominal_total_updates": 69800
+    },
+    "locked_longrun_v2": {
+      "fit_trajectory_count": 40,
+      "frames_per_trajectory": 500,
+      "unroll_horizon_frames": 50,
+      "windows_per_trajectory": 449,
+      "fit_window_pool": 17960,
+      "batch_size": 32,
+      "total_updates": 6400,
+      "equivalent_fit_pool_passes": 11.403118040089087,
+      "fraction_of_upstream_nominal_updates": 0.09169054441260745,
+      "fraction_of_upstream_nominal_unrolled_frame_steps": 0.045845272206303724
+    },
+    "interpretation": "The live 6400-update DLO1 run is a deliberately smaller author-guided horizon-50 route, not a compute-matched reproduction of the released 100-epoch script. Its frozen gates and process remain unchanged. A failure closes that budgeted route, not the DEFORM model family under the upstream nominal budget."
+  },
+  "information_boundary": {
+    "dlo2_train_trajectory_read": false,
+    "dlo2_source_outcome_read": false,
+    "dlo2_eval_directory_listed": false,
+    "dlo2_eval_filename_read": false,
+    "dlo2_eval_trajectory_read": false,
+    "dlo2_eval_outcome_read": false
+  }
+}

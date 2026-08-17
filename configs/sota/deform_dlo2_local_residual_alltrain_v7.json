@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-local-residual-alltrain-v7",
+  "claim_boundary": "Target-blind refit of the source-confirmed DLO2 local-residual method on all 56 official training trajectories. Official evaluation remains unopened.",
+  "prob4d_used": false,
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "parent_source_protocol": {
+    "repository_path": "configs/sota/deform_dlo2_local_residual_v6.json",
+    "sha256": "82c4d07ce297bf27884e52f092d450ea38c4e62495695e97d69568c39c7ba470"
+  },
+  "parent_source_result": {
+    "repository_path": "results/sota/deform_dlo2_local_residual_v6/result.json",
+    "sha256": "e1a4bbf87a658c4e52527b3bacbfbb761e2fc08b723358d7f4f8dfedb49440ef"
+  },
+  "source_manifest": {
+    "path": "external:deform-dlo2-local-residual-v5/source_manifest.json",
+    "sha256": "7c5501997e6bab7b0537ef9cda932ec19312e40618f03a4fad80ffc1622a6d98"
+  },
+  "data": {
+    "dlo_type": "DLO2",
+    "partition": "train",
+    "trajectory_count": 56,
+    "frame_count": 500,
+    "node_count": 12,
+    "use_every_train_trajectory": true,
+    "official_eval_read": false
+  },
+  "training": {
+    "random_seed": 42,
+    "unroll_horizon_frames": 50,
+    "batch_size": 32,
+    "total_updates": 6400,
+    "checkpoint_updates": [0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400],
+    "optimizer": "official-sgd-parameter-groups-v1",
+    "cublas_workspace_config": ":4096:8",
+    "known_action_nodes": [0, 1, -2, -1],
+    "window_sampling": "frozen-uniform-all-56-train-v1",
+    "physical_checkpoint_update": 6400
+  },
+  "local_residual": {
+    "query_evidence": "two-observed-states-known-future-clamped-action-and-baseline-rollout-only",
+    "future_free_node_truth": "fit-and-score-only",
+    "operator": "per-node-trajectory-grouped-bayesian-ridge-v1",
+    "fixed_arm": {
+      "name": "r1_s0p25",
+      "ridge": 1.0,
+      "shrinkage": 0.25,
+      "selection_source": "passed-dlo2-source-v6"
+    },
+    "coordinate_variance_floor_m2": 0.000001,
+    "duplicate_policy": "collapse-exact-causal-query-clusters",
+    "clamped_node_policy": "baseline-exact",
+    "fit_trajectory_policy": "all-56-official-train",
+    "validation_reselection": false,
+    "source_reselection": false,
+    "target_reselection": false,
+    "fallback": "alltrain-physical-checkpoint-exact"
+  },
+  "output": {
+    "official_eval_authorized_by_refit": true,
+    "official_eval_read": false,
+    "preserve_physical_checkpoint": true,
+    "preserve_local_residual_model": true
+  }
+}

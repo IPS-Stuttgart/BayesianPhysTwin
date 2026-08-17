@@ -1,0 +1,525 @@
+"""Leakage-safe source protocol helpers for the external DEFORM benchmark."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+
+import numpy as np
+
+DEFORM_DLO_SOURCE_SCHEMA_VERSION = 1
+DEFORM_DLO_SOURCE_CONTRACT = "deform-dlo-source-reproduction-v1"
+
+
+def sha256_file(path: str | Path) -> str:
+    """Return the SHA-256 digest of one external artifact."""
+
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _require_mapping(value: object, *, label: str) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{label} must be an object")
+    return value
+
+
+def _require_positive_int(value: object, *, label: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{label} must be a positive integer")
+    number = int(value)
+    if number <= 0 or number != value:
+        raise ValueError(f"{label} must be a positive integer")
+    return number
+
+
+def load_deform_dlo_source_protocol(path: str | Path) -> dict[str, object]:
+    """Load and strictly validate the source-only DEFORM protocol."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != DEFORM_DLO_SOURCE_SCHEMA_VERSION:
+        raise ValueError("unsupported DEFORM source protocol schema")
+    if payload.get("contract") != DEFORM_DLO_SOURCE_CONTRACT:
+        raise ValueError("unsupported DEFORM source protocol contract")
+
+    upstream = _require_mapping(payload.get("upstream"), label="upstream")
+    if upstream.get("repository") != "https://github.com/roahmlab/DEFORM":
+        raise ValueError("DEFORM source protocol names an unexpected repository")
+    commit = str(upstream.get("commit", ""))
+    if len(commit) != 40 or any(
+        character not in "0123456789abcdef" for character in commit
+    ):
+        raise ValueError("DEFORM source protocol requires a full lowercase commit")
+    if upstream.get("code_vendored") is not False:
+        raise ValueError("external DEFORM code must not be vendored")
+
+    data = _require_mapping(payload.get("data"), label="data")
+    if data.get("development_partition") != "train":
+        raise ValueError(
+            "DEFORM development must use only the official train partition"
+        )
+    if data.get("official_eval_metrics_opened") is not False:
+        raise ValueError("official DEFORM evaluation metrics must remain unopened")
+    if data.get("forbid_eval_reads_during_source_stage") is not True:
+        raise ValueError("DEFORM source stage must explicitly forbid eval reads")
+    dlo_types = tuple(str(value) for value in data.get("dlo_types", ()))
+    if not dlo_types or any(not value.startswith("DLO") for value in dlo_types):
+        raise ValueError("DEFORM source protocol has invalid DLO types")
+    if (
+        "DLO2" in dlo_types
+        and payload.get("model_initialization")
+        != "official-deform-dlo-initialization-v1"
+    ):
+        raise ValueError("DLO2 must use its locked upstream initialization")
+    expected_trajectories = _require_positive_int(
+        data.get("expected_train_trajectories_per_dlo"),
+        label="expected_train_trajectories_per_dlo",
+    )
+
+    split = _require_mapping(payload.get("source_split"), label="source_split")
+    split_counts = tuple(
+        _require_positive_int(split.get(name), label=f"source_split.{name}")
+        for name in ("fit_count", "validation_count", "source_test_count")
+    )
+    if sum(split_counts) != expected_trajectories:
+        raise ValueError("DEFORM source split does not cover every train trajectory")
+    if not str(split.get("seed", "")):
+        raise ValueError("DEFORM source split requires a seed")
+
+    training = _require_mapping(payload.get("training"), label="training")
+    horizon = _require_positive_int(
+        training.get("unroll_horizon_frames"),
+        label="training.unroll_horizon_frames",
+    )
+    if (
+        horizon
+        >= _require_positive_int(
+            data.get("expected_frames_per_trajectory"),
+            label="expected_frames_per_trajectory",
+        )
+        - 2
+    ):
+        raise ValueError("DEFORM training horizon leaves no valid source windows")
+    total_updates = _require_positive_int(
+        training.get("total_updates"), label="training.total_updates"
+    )
+    checkpoints = tuple(int(value) for value in training.get("checkpoint_updates", ()))
+    if (
+        not checkpoints
+        or checkpoints[0] != 0
+        or checkpoints[-1] != total_updates
+        or tuple(sorted(set(checkpoints))) != checkpoints
+    ):
+        raise ValueError(
+            "DEFORM checkpoint schedule must be unique, sorted, and complete"
+        )
+    _require_positive_int(training.get("batch_size"), label="training.batch_size")
+    if training.get("known_action_nodes") != [0, 1, -2, -1]:
+        raise ValueError("DEFORM known-action node contract changed")
+    if training.get("optimizer") != "official-sgd-parameter-groups-v1":
+        raise ValueError("DEFORM source reproduction must use official SGD groups")
+    if training.get("cublas_workspace_config") != ":4096:8":
+        raise ValueError("DEFORM source reproduction must bind deterministic cuBLAS")
+
+    gate = _require_mapping(payload.get("source_gate"), label="source_gate")
+    multiplier = float(gate.get("published_error_multiplier_max", math.nan))
+    if not math.isfinite(multiplier) or multiplier <= 0.0:
+        raise ValueError("DEFORM source gate has an invalid error multiplier")
+    minimum_wins = _require_positive_int(
+        gate.get("minimum_persistence_wins"),
+        label="source_gate.minimum_persistence_wins",
+    )
+    if minimum_wins > split_counts[2]:
+        raise ValueError("DEFORM source gate requires too many persistence wins")
+    references = _require_mapping(
+        gate.get("published_reference_l1_m"), label="published_reference_l1_m"
+    )
+    if any(
+        not math.isfinite(float(references.get(dlo_type, math.nan)))
+        or float(references[dlo_type]) <= 0.0
+        for dlo_type in dlo_types
+    ):
+        raise ValueError("DEFORM source gate omits a positive published reference")
+
+    result = dict(payload)
+    result["protocol_path"] = str(source)
+    result["dlo_types"] = dlo_types
+    return result
+
+
+def partition_deform_source_names(
+    names: Sequence[str],
+    *,
+    seed: str,
+    fit_count: int,
+    validation_count: int,
+    source_test_count: int,
+) -> dict[str, tuple[str, ...]]:
+    """Create a stable, exhaustive trajectory split without reading outcomes."""
+
+    normalized = tuple(str(name) for name in names)
+    if any(not name for name in normalized) or len(set(normalized)) != len(normalized):
+        raise ValueError("DEFORM trajectory names must be nonempty and unique")
+    expected_count = fit_count + validation_count + source_test_count
+    if len(normalized) != expected_count:
+        raise ValueError(
+            f"expected {expected_count} DEFORM trajectories, got {len(normalized)}"
+        )
+
+    def key(name: str) -> tuple[bytes, str]:
+        payload = (
+            b"deform-dlo-source-split-v1\0" + seed.encode() + b"\0" + name.encode()
+        )
+        return hashlib.sha256(payload).digest(), name
+
+    ordered = tuple(sorted(normalized, key=key))
+    fit_end = fit_count
+    validation_end = fit_end + validation_count
+    return {
+        "fit": ordered[:fit_end],
+        "validation": ordered[fit_end:validation_end],
+        "source_test": ordered[validation_end:],
+    }
+
+
+def validate_deform_dlo2_fresh_parent(
+    protocol_payload: Mapping[str, object],
+    parent: Mapping[str, object],
+) -> dict[str, object]:
+    """Verify that the frozen DLO1 long run authorized fresh DLO2 access."""
+
+    authorization = protocol_payload.get("authorization")
+    if not isinstance(authorization, Mapping):
+        raise ValueError("fresh DLO2 protocol omits parent authorization")
+    source_gate = parent.get("source_gate")
+    parent_protocol = parent.get("protocol")
+    if (
+        parent.get("contract") != authorization.get("required_parent_contract")
+        or parent.get("official_eval_read") is not False
+        or not isinstance(source_gate, Mapping)
+        or source_gate.get("passed")
+        is not authorization.get("required_parent_source_gate_passed")
+        or parent.get("checkpoint_posterior_authorized")
+        is not authorization.get("required_parent_checkpoint_posterior_authorized")
+        or not isinstance(parent_protocol, Mapping)
+        or parent_protocol.get("sha256")
+        != authorization.get("required_parent_protocol_sha256")
+    ):
+        raise ValueError("fresh DLO2 parent did not authorize this stage")
+    return {
+        "contract": str(parent["contract"]),
+        "source_gate_passed": bool(source_gate["passed"]),
+        "checkpoint_posterior_authorized": bool(
+            parent["checkpoint_posterior_authorized"]
+        ),
+        "parent_protocol_sha256": str(parent_protocol["sha256"]),
+    }
+
+
+def validate_deform_dlo2_stage_authorization(
+    protocol: Mapping[str, object],
+    authorization: Mapping[str, object],
+    *,
+    protocol_sha256: str,
+) -> dict[str, object]:
+    """Require the registered two-parent wrapper for every DLO2 source run."""
+
+    contract = authorization.get("contract")
+    if contract == "deform-dlo2-local-residual-authorization-v1":
+        protocol_identity = authorization.get("protocol")
+        parent = authorization.get("parent_local_residual_result")
+        required = protocol.get("authorization")
+        fixed_arm = protocol.get("local_residual")
+        selected_spec = parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        required_spec = (
+            fixed_arm.get("fixed_arm") if isinstance(fixed_arm, Mapping) else None
+        )
+        if (
+            protocol.get("dlo_types") != ("DLO2",)
+            or authorization.get("official_eval_read") is not False
+            or authorization.get("source_test_opened") is not False
+            or not isinstance(protocol_identity, Mapping)
+            or protocol_identity.get("sha256") != protocol_sha256
+            or not isinstance(required, Mapping)
+            or not isinstance(parent, Mapping)
+            or parent.get("sha256") != required.get("required_parent_result_sha256")
+            or parent.get("contract") != required.get("required_parent_contract")
+            or parent.get("protocol_sha256")
+            != required.get("required_parent_protocol_sha256")
+            or parent.get("source_gate_passed") is not True
+            or parent.get("fresh_dlo2_local_residual_authorized") is not True
+            or parent.get("dlo2_read") is not False
+            or parent.get("official_eval_read") is not False
+            or parent.get("selected_arm")
+            != required.get("required_parent_selected_arm")
+            or not isinstance(selected_spec, Mapping)
+            or not isinstance(required_spec, Mapping)
+            or float(selected_spec.get("ridge", math.nan))
+            != float(required_spec.get("ridge", math.nan))
+            or float(selected_spec.get("shrinkage", math.nan))
+            != float(required_spec.get("shrinkage", math.nan))
+        ):
+            raise ValueError("DLO2 local-residual stage authorization differs")
+        return {
+            "contract": str(contract),
+            "protocol_sha256": protocol_sha256,
+            "selected_arm": str(parent["selected_arm"]),
+            "parent_local_residual_result_sha256": str(parent["sha256"]),
+        }
+
+    if contract == "deform-dlo2-deep-seed-authorization-v1":
+        protocol_identity = authorization.get("protocol")
+        parent = authorization.get("parent_deep_ensemble_result")
+        source_authorization = protocol.get("authorization")
+        required = (
+            source_authorization.get("required_parent_deep_ensemble")
+            if isinstance(source_authorization, Mapping)
+            else None
+        )
+        role = protocol.get("deep_ensemble_role")
+        selected_spec = (
+            parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        )
+        weights = (
+            selected_spec.get("weights") if isinstance(selected_spec, Mapping) else None
+        )
+        normalized_weights = (
+            {int(seed): float(weight) for seed, weight in weights.items()}
+            if isinstance(weights, Mapping)
+            else {}
+        )
+        if (
+            protocol.get("dlo_types") != ("DLO2",)
+            or authorization.get("official_eval_read") is not False
+            or authorization.get("source_test_opened") is not False
+            or not isinstance(protocol_identity, Mapping)
+            or protocol_identity.get("sha256") != protocol_sha256
+            or not isinstance(required, Mapping)
+            or not isinstance(role, Mapping)
+            or not isinstance(parent, Mapping)
+            or len(str(parent.get("sha256", ""))) != 64
+            or parent.get("contract") != required.get("result_contract")
+            or parent.get("selection_contract")
+            != required.get("selection_contract")
+            or parent.get("fresh_dlo2_deep_ensemble_authorized")
+            is not required.get("fresh_dlo2_deep_ensemble_authorized")
+            or not str(parent.get("selected_arm", ""))
+            or not isinstance(selected_spec, Mapping)
+            or selected_spec.get("operator") != "predictive_mean"
+            or set(normalized_weights) != {42, 43}
+            or not math.isclose(sum(normalized_weights.values()), 1.0, abs_tol=1e-12)
+            or any(
+                not math.isfinite(weight) or weight < 0.0
+                for weight in normalized_weights.values()
+            )
+            or not math.isfinite(
+                float(parent.get("source_transfer_relative_improvement", math.nan))
+            )
+            or float(parent.get("source_transfer_relative_improvement", -math.inf))
+            < 0.01
+            or int(parent.get("source_transfer_wins", -1)) < 5
+            or not math.isfinite(
+                float(parent.get("validation_fitted_variance_scale", math.nan))
+            )
+            or float(parent.get("validation_fitted_variance_scale", math.nan))
+            < 1.0
+            or int(role.get("seed", -1)) not in (42, 43)
+            or int(role.get("peer_seed", -1)) not in (42, 43)
+            or int(role.get("seed", -1)) == int(role.get("peer_seed", -1))
+            or role.get("operator_bank") != "copy-dlo1-exactly"
+            or role.get("no_dlo1_retuning") is not True
+        ):
+            raise ValueError("DLO2 deep-seed stage authorization differs")
+        return {
+            "contract": str(contract),
+            "protocol_sha256": protocol_sha256,
+            "seed": int(role["seed"]),
+            "peer_seed": int(role["peer_seed"]),
+            "selected_arm": str(parent["selected_arm"]),
+            "parent_deep_ensemble_result_sha256": str(parent.get("sha256", "")),
+        }
+
+    protocol_identity = authorization.get("protocol")
+    longrun = authorization.get("parent_longrun_result")
+    posterior = authorization.get("parent_posterior_result")
+    if (
+        protocol.get("dlo_types") != ("DLO2",)
+        or authorization.get("contract") != "deform-dlo2-fresh-authorization-v2"
+        or authorization.get("official_eval_read") is not False
+        or authorization.get("source_test_opened") is not False
+        or not isinstance(protocol_identity, Mapping)
+        or protocol_identity.get("sha256") != protocol_sha256
+        or not isinstance(longrun, Mapping)
+        or longrun.get("source_gate_passed") is not True
+        or longrun.get("checkpoint_posterior_authorized") is not True
+        or not isinstance(posterior, Mapping)
+        or not str(posterior.get("selected_arm", ""))
+        or not isinstance(posterior.get("selected_spec"), Mapping)
+        or float(posterior.get("source_transfer_relative_improvement", -math.inf))
+        < 0.01
+        or int(posterior.get("source_transfer_wins", -1)) < 5
+        or not math.isfinite(
+            float(posterior.get("validation_fitted_variance_scale", math.nan))
+        )
+        or float(posterior.get("validation_fitted_variance_scale", math.nan)) < 1.0
+    ):
+        raise ValueError("DLO2 source stage authorization differs")
+    return {
+        "contract": str(authorization["contract"]),
+        "protocol_sha256": protocol_sha256,
+        "selected_arm": str(posterior["selected_arm"]),
+        "parent_longrun_result_sha256": str(longrun.get("sha256", "")),
+        "parent_posterior_result_sha256": str(posterior.get("sha256", "")),
+    }
+
+
+def build_deform_dlo_source_manifest(
+    protocol_path: str | Path,
+    data_root: str | Path,
+    *,
+    dlo_type: str,
+) -> dict[str, object]:
+    """Bind all source trajectory bytes and their outcome-blind partition."""
+
+    protocol = load_deform_dlo_source_protocol(protocol_path)
+    if dlo_type not in protocol["dlo_types"]:
+        raise ValueError(f"DLO type is outside the registered source stage: {dlo_type}")
+    root = Path(data_root).resolve()
+    train_root = root / dlo_type / "train"
+    if not train_root.is_dir():
+        raise FileNotFoundError(train_root)
+    paths = tuple(sorted(train_root.glob("*.pkl"), key=lambda path: path.name))
+    expected = int(protocol["data"]["expected_train_trajectories_per_dlo"])
+    if len(paths) != expected:
+        raise ValueError(
+            f"{dlo_type} expected {expected} train trajectories, got {len(paths)}"
+        )
+    split_config = protocol["source_split"]
+    split = partition_deform_source_names(
+        [path.name for path in paths],
+        seed=str(split_config["seed"]),
+        fit_count=int(split_config["fit_count"]),
+        validation_count=int(split_config["validation_count"]),
+        source_test_count=int(split_config["source_test_count"]),
+    )
+    identities = {
+        path.name: {
+            "path": str(path),
+            "size_bytes": path.stat().st_size,
+            "sha256": sha256_file(path),
+        }
+        for path in paths
+    }
+    protocol_source = Path(str(protocol["protocol_path"]))
+    return {
+        "schema_version": DEFORM_DLO_SOURCE_SCHEMA_VERSION,
+        "contract": DEFORM_DLO_SOURCE_CONTRACT,
+        "dlo_type": dlo_type,
+        "protocol": {
+            "path": str(protocol_source),
+            "sha256": sha256_file(protocol_source),
+        },
+        "partition": "train",
+        "official_eval_read": False,
+        "trajectories": identities,
+        "split": {name: list(values) for name, values in split.items()},
+    }
+
+
+def deform_mean_coordinate_l1_m(
+    prediction: np.ndarray,
+    target: np.ndarray,
+) -> float:
+    """Return DEFORM's published mean coordinate-wise L1 error in metres."""
+
+    predicted = np.asarray(prediction, dtype=float)
+    observed = np.asarray(target, dtype=float)
+    if predicted.shape != observed.shape or predicted.ndim < 2:
+        raise ValueError("DEFORM prediction and target shapes must agree")
+    if not np.isfinite(predicted).all() or not np.isfinite(observed).all():
+        raise ValueError("DEFORM metric inputs must be finite")
+    return float(np.mean(np.abs(predicted - observed)))
+
+
+def choose_deform_validation_checkpoint(
+    records: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    """Choose the lowest validation error, breaking exact ties toward less training."""
+
+    if not records:
+        raise ValueError("DEFORM validation checkpoint records are empty")
+    normalized = []
+    seen_updates: set[int] = set()
+    for record in records:
+        update = int(record.get("update", -1))
+        error = float(record.get("validation_l1_m", math.nan))
+        if update < 0 or update in seen_updates or not math.isfinite(error):
+            raise ValueError("DEFORM validation checkpoint record is invalid")
+        seen_updates.add(update)
+        normalized.append({**record, "update": update, "validation_l1_m": error})
+    return min(
+        normalized,
+        key=lambda record: (record["validation_l1_m"], record["update"]),
+    )
+
+
+def evaluate_deform_source_gate(
+    records: Sequence[Mapping[str, object]],
+    *,
+    published_reference_l1_m: float,
+    published_error_multiplier_max: float,
+    minimum_persistence_wins: int,
+) -> dict[str, object]:
+    """Evaluate the registered held-out source reproduction gate."""
+
+    if not records:
+        raise ValueError("DEFORM source gate requires held-out records")
+    model_errors = []
+    persistence_errors = []
+    names: set[str] = set()
+    for record in records:
+        name = str(record.get("name", ""))
+        model_error = float(record.get("model_l1_m", math.nan))
+        persistence_error = float(record.get("persistence_l1_m", math.nan))
+        if (
+            not name
+            or name in names
+            or not math.isfinite(model_error)
+            or not math.isfinite(persistence_error)
+            or model_error < 0.0
+            or persistence_error < 0.0
+        ):
+            raise ValueError("DEFORM source gate record is invalid")
+        names.add(name)
+        model_errors.append(model_error)
+        persistence_errors.append(persistence_error)
+
+    model_mean = float(np.mean(model_errors))
+    persistence_mean = float(np.mean(persistence_errors))
+    wins = sum(
+        model_error < persistence_error
+        for model_error, persistence_error in zip(
+            model_errors, persistence_errors, strict=True
+        )
+    )
+    threshold = float(published_reference_l1_m) * float(published_error_multiplier_max)
+    parity_passed = model_mean <= threshold
+    persistence_passed = wins >= minimum_persistence_wins
+    return {
+        "case_count": len(records),
+        "model_mean_l1_m": model_mean,
+        "persistence_mean_l1_m": persistence_mean,
+        "persistence_wins": wins,
+        "published_reference_l1_m": float(published_reference_l1_m),
+        "published_error_threshold_l1_m": threshold,
+        "parity_passed": parity_passed,
+        "persistence_gate_passed": persistence_passed,
+        "passed": parity_passed and persistence_passed,
+    }
