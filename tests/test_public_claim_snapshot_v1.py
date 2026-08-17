@@ -31,8 +31,7 @@ def test_public_claim_snapshot_is_pinned_and_bounded() -> None:
     assert claims["unique_deterministic_winner"]["status"] == "not_confirmed"
     assert claims["raw_covariance_calibration"]["status"] == "refuted"
     assert (
-        claims["covariance_only_independent_validation"]["status"]
-        == "not_established"
+        claims["covariance_only_independent_validation"]["status"] == "not_established"
     )
     assert claims["fresh_object_session_v61"]["status"] == "terminal_without_claim"
     assert claims["prob4d_real_provider_transfer"]["status"] == "not_established"
