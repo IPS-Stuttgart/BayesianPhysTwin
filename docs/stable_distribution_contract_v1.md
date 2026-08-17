@@ -47,6 +47,15 @@ The sdist gate verifies:
   and
 - an explicit supported self-test subset.
 
+The 2026-08-14 consolidated material-backend change adds two reviewed transport
+implementations, one canonical registry and CLI boundary, documentation, and
+tests. The successful JAX-FEM/Genesis candidate already used 539 of the former
+540 permitted wheel members. Combining the second transport and canonical
+registry therefore raises the wheel-member ratchet from 540 to 550 and the
+regular sdist-member ratchet from 1250 to 1270. Compressed-size limits,
+isolated-import rules, API manifests, console scripts, and the supported
+self-test list remain unchanged.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
