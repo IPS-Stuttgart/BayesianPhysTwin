@@ -174,9 +174,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
         ),
         "position-based-dynamics-v1": MaterialBackendSpecV1(
             profile_id="position-based-dynamics-v1",
-            engine_repository=(
-                "InteractiveComputerGraphics/PositionBasedDynamics"
-            ),
+            engine_repository=("InteractiveComputerGraphics/PositionBasedDynamics"),
             solver_family="position-based-dynamics-xpbd",
             identity_kind="simulation-particle-index",
             priority=5,
