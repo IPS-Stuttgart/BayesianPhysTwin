@@ -1,0 +1,60 @@
+{
+  "adapter": {
+    "causal_boundary": "prefix-only-router-initialization-offset-v1",
+    "material_identity_required": true,
+    "portable_contract": "physical_rollout_v1",
+    "portable_contract_gate": "pass"
+  },
+  "decision": {
+    "empirical_advancement_gate": "not_evaluated",
+    "public_release_causal_producer_gate": "fail",
+    "target_evaluation_authorized": false
+  },
+  "findings": [
+    {
+      "evidence": "object_points is loaded for T frames and passed to the router as tracks without a causal prefix split",
+      "file": "deformmaster/data/dataset_mpm.py",
+      "lines": [97, 104, 180, 187],
+      "reason": "all-frame-router-input"
+    },
+    {
+      "evidence": "auto_offset is derived from flattened gt_surface_tracks across all loaded frames",
+      "file": "deformmaster/engine/playground_engine.py",
+      "lines": [185, 201],
+      "reason": "all-frame-initialization-input"
+    },
+    {
+      "evidence": "the public release says full training code is coming soon",
+      "file": "README.md",
+      "lines": [154, 158],
+      "reason": "checkpoint-training-provenance-unavailable"
+    }
+  ],
+  "information_boundary": {
+    "dataset_outcomes_read": false,
+    "future_trajectories_read": false,
+    "source_code_only": true,
+    "target_metrics_read": false
+  },
+  "schema": "bayesian-phystwin.deformmaster-source-audit",
+  "schema_version": 1,
+  "upstream": {
+    "repository": "CAN-Lee/DeformMaster",
+    "revision": "c7b3510a38b3fccbfe12cc6557aaf58d9ea823dc",
+    "source_files_sha256": {
+      "README.md": "1a2797c3689b2f42657de01ee8bc702378b47863009b3fb210381c6f2392c45a",
+      "deformmaster/data/dataset_mpm.py": "ddb9c612bcd99f37986585a2defeb5cc51fe071c77193333ea56c203dd7b99b4",
+      "deformmaster/engine/playground_engine.py": "8849908e4396baa741e5b0b3310ec7e026e2cff5844f0eae7127a412e2c01ae2"
+    }
+  },
+  "verification": {
+    "base_wheel_import_without_deformmaster": "pass",
+    "backend_module_coverage_percent": 98,
+    "cli_coverage_percent": 96,
+    "distribution_build": "pass",
+    "focused_mypy": "pass",
+    "ruff": "pass",
+    "shared_cross_backend_tests_passed": 109,
+    "twine": "pass"
+  }
+}

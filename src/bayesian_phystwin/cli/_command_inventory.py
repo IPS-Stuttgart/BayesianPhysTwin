@@ -112,6 +112,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "materialize-matphys-backend": (
         "build or validate a guarded MatPhys spring-proposal backend artifact"
     ),
+    "materialize-deformmaster-backend": (
+        "seal or adapt a producer-attested causal DeformMaster rollout"
+    ),
     "materialize-newton-mpm-backend": (
         "run or adapt an optional Newton implicit-MPM physical backend smoke"
     ),
@@ -142,6 +145,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
     "materialize-lagrangian-backend": "material-backend-v1",
     "materialize-matphys-backend": "matphys-backend-v1",
+    "materialize-deformmaster-backend": "deformmaster-backend-v1",
     "materialize-newton-mpm-backend": "newton-mpm-backend-v1",
 }
 
