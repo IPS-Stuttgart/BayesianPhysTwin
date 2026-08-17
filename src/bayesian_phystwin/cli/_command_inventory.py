@@ -109,6 +109,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "materialize-lagrangian-backend": (
         "materialize or validate registered external material backends"
     ),
+    "materialize-learned-twin-backend": (
+        "inspect or ingest claim-bounded learned-twin rollout exports"
+    ),
     "materialize-matphys-backend": (
         "build or validate a guarded MatPhys spring-proposal backend artifact"
     ),
@@ -144,6 +147,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "score-probabilistic-predictions": "probabilistic-prediction-scoring-v1",
     "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
     "materialize-lagrangian-backend": "material-backend-v1",
+    "materialize-learned-twin-backend": "learned-twin-backend-v1",
     "materialize-matphys-backend": "matphys-backend-v1",
     "materialize-deformmaster-backend": "deformmaster-backend-v1",
     "materialize-newton-mpm-backend": "newton-mpm-backend-v1",

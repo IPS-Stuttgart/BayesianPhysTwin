@@ -172,6 +172,7 @@ the canonical paper-side manuscript for exact numbers and provenance.
 | Official Warp parameter refits | [PhysTwin refit](phystwin_refit.md) | Checkpoint restoration, matched baselines, provenance, and simulator requirements. |
 | Causal MatPhys graph-part residual | [MatPhys graph-part residual](matphys_graph_parts_v1.md) | Corrected causal audit; source gate failed, so the family is frozen without a wider run. |
 | Legacy MatPhys backbone experiments | [Causal MatPhys backbone](matphys_causal_backbone_v1.md) | Engineering history only; the original causal audit was invalidated by a frame-ordering defect. |
+| Learned-twin backend interfaces | [Learned-twin backend v1](learned_twin_backend_v1.md) | Availability-aware MatPhys, NeuSpring, PhySPRING, PhysWorld, and EgoPhys registry plus a strict portable rollout intake; no unavailable native runtime is implied. |
 | Bias-aware guarded updates | [Bias-aware guarded belief](bias_aware_guarded_belief_v1.md) | Generic guarded-update method and source-only acceptance logic. |
 
 Detailed commands live with the protocol they implement. New commands should be

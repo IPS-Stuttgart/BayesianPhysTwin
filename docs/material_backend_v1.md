@@ -1,5 +1,12 @@
 # Canonical external material-backend registry v1
 
+This registry covers simulator families whose trajectories are produced by a
+declared mechanics engine. Learned deformable-twin methods have a separate
+[availability-aware learned-twin interface](learned_twin_backend_v1.md). That
+interface accepts the same simulator-neutral physical rollout while preserving
+whether an upstream runtime is public, natively adapted, or only represented by
+an external producer export.
+
 ## Purpose
 
 BayesianPhysTwin has two version-1 transport contracts for external deformable

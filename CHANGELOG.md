@@ -7,6 +7,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Added an availability-aware learned-twin registry and strict portable rollout
+  intake for MatPhys, NeuSpring, PhySPRING, PhysWorld, and EgoPhys, with causal
+  versus parity labeling, checkpoint/source custody, exact array identity, and
+  explicit non-reproduction claim boundaries.
 - Added a strict, producer-attested DeformMaster backend boundary that rejects
   all-frame router, initialization, or frame-offset inputs; binds checkpoint
   training-object exclusion; and materializes causal surface rollouts into the

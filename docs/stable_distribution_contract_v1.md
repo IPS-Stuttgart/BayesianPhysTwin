@@ -52,9 +52,15 @@ The 2026-08-18 clean build audit found that the exact PR base already contained
 556 wheel members and 1,289 regular sdist members while the recorded ratchets
 still said 550 and 1,260. This corrects those stale member ratchets to 556 and
 1,290. The DEFORM experiment remains outside both stable archives, and its
-clean candidate wheel is byte-identical to the base wheel. Compressed-size
-limits, isolated-import rules, API manifests, console scripts, and the
-supported self-test list remain unchanged.
+clean candidate wheel is byte-identical to the base wheel.
+
+The learned-twin interface adds two reviewed wheel modules. A reproducible
+build on that corrected base contains 558 wheel members, 2,205,330 compressed
+wheel bytes, and 1,295 regular sdist members. The interface change therefore
+sets the ratchets to 560 members, 2,220,000 bytes, and 1,300 regular sdist
+members. The 3,100,000-byte sdist limit, isolated-import rules, API manifests,
+console scripts, and supported self-test list remain unchanged. Unused ratchet
+margin is not advance approval for another backend family.
 
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
