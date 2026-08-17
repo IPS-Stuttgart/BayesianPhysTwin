@@ -12,16 +12,10 @@ import numpy as np
 
 DEFORM_DLO_DEEP_ENSEMBLE_SCHEMA_VERSION = 1
 DEFORM_DLO_DEEP_ENSEMBLE_CONTRACT = "deform-dlo-deep-ensemble-v1"
-DEFORM_DLO_DEEP_ENSEMBLE_RESULT_CONTRACT = (
-    "deform-dlo-deep-ensemble-result-v1"
-)
+DEFORM_DLO_DEEP_ENSEMBLE_RESULT_CONTRACT = "deform-dlo-deep-ensemble-result-v1"
 DEFORM_DLO2_DEEP_ENSEMBLE_CONTRACT = "deform-dlo2-deep-ensemble-v1"
-DEFORM_DLO2_DEEP_ENSEMBLE_RESULT_CONTRACT = (
-    "deform-dlo2-deep-ensemble-result-v1"
-)
-DEFORM_DLO2_DEEP_SEED_AUTHORIZATION_CONTRACT = (
-    "deform-dlo2-deep-seed-authorization-v1"
-)
+DEFORM_DLO2_DEEP_ENSEMBLE_RESULT_CONTRACT = "deform-dlo2-deep-ensemble-result-v1"
+DEFORM_DLO2_DEEP_SEED_AUTHORIZATION_CONTRACT = "deform-dlo2-deep-seed-authorization-v1"
 
 
 def _identity(value: object, *, label: str) -> Mapping[str, object]:
@@ -211,14 +205,12 @@ def load_deform_dlo2_deep_ensemble_protocol(
             raise ValueError("DLO2 deep-ensemble gate differs")
     if (
         int(policy.get("source_transfer_minimum_case_wins", -1)) != 5
-        or float(policy.get("candidate_published_reference_l1_m", math.nan))
-        != 0.0097
+        or float(policy.get("candidate_published_reference_l1_m", math.nan)) != 0.0097
         or float(policy.get("candidate_published_error_multiplier_max", math.nan))
         != 1.1
         or int(policy.get("candidate_minimum_persistence_wins", -1)) != 6
         or float(policy.get("coordinate_variance_floor_m2", math.nan)) != 0.000025
-        or float(policy.get("coordinate_interval_nominal_coverage", math.nan))
-        != 0.9
+        or float(policy.get("coordinate_interval_nominal_coverage", math.nan)) != 0.9
     ):
         raise ValueError("DLO2 deep-ensemble confirmation gate differs")
     alltrain = policy.get("alltrain_authorization")
@@ -229,8 +221,7 @@ def load_deform_dlo2_deep_ensemble_protocol(
         or alltrain.get("same_operator_and_weights") is not True
         or alltrain.get("same_total_update_budget") is not True
         or alltrain.get("no_source_retuning") is not True
-        or alltrain.get("official_eval_remains_closed_until_alltrain_refit")
-        is not True
+        or alltrain.get("official_eval_remains_closed_until_alltrain_refit") is not True
     ):
         raise ValueError("DLO2 deep-ensemble all-train policy differs")
 
@@ -388,15 +379,12 @@ def validate_deform_dlo2_deep_ensemble_parent(
     if (
         source_protocol.get("dlo_types") != ("DLO2",)
         or required.get("protocol_sha256") != parent_protocol_sha256
-        or required.get("result_contract")
-        != DEFORM_DLO_DEEP_ENSEMBLE_RESULT_CONTRACT
-        or required.get("selection_contract")
-        != DEFORM_DLO_DEEP_ENSEMBLE_CONTRACT
+        or required.get("result_contract") != DEFORM_DLO_DEEP_ENSEMBLE_RESULT_CONTRACT
+        or required.get("selection_contract") != DEFORM_DLO_DEEP_ENSEMBLE_CONTRACT
         or required.get("exact_fallback") is not False
         or required.get("fresh_dlo2_deep_ensemble_authorized") is not True
         or parent_protocol.get("contract") != DEFORM_DLO_DEEP_ENSEMBLE_CONTRACT
-        or parent_result.get("contract")
-        != DEFORM_DLO_DEEP_ENSEMBLE_RESULT_CONTRACT
+        or parent_result.get("contract") != DEFORM_DLO_DEEP_ENSEMBLE_RESULT_CONTRACT
         or parent_result.get("official_eval_read") is not False
         or parent_result.get("exact_fallback") is not False
         or parent_result.get("fresh_dlo2_deep_ensemble_authorized") is not True

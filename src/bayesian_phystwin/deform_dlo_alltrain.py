@@ -10,9 +10,7 @@ from pathlib import Path
 DEFORM_DLO2_ALLTRAIN_SCHEMA_VERSION = 1
 DEFORM_DLO2_ALLTRAIN_CONTRACT = "deform-dlo2-alltrain-refit-v1"
 DEFORM_DLO2_DEEP_ALLTRAIN_CONTRACT = "deform-dlo2-deep-alltrain-refit-v1"
-DEFORM_DLO2_DEEP_ALLTRAIN_RESULT_CONTRACT = (
-    "deform-dlo2-deep-alltrain-result-v1"
-)
+DEFORM_DLO2_DEEP_ALLTRAIN_RESULT_CONTRACT = "deform-dlo2-deep-alltrain-result-v1"
 
 
 def load_deform_dlo2_alltrain_protocol(path: str | Path) -> dict[str, object]:
@@ -257,8 +255,7 @@ def load_deform_dlo2_deep_alltrain_protocol(
         or required.get("source_gate_passed") is not True
         or required.get("ensemble_result_contract")
         != "deform-dlo2-deep-ensemble-result-v1"
-        or required.get("ensemble_selection_contract")
-        != "deform-dlo2-deep-ensemble-v1"
+        or required.get("ensemble_selection_contract") != "deform-dlo2-deep-ensemble-v1"
         or required.get("ensemble_exact_fallback") is not False
         or required.get("ensemble_alltrain_authorized") is not True
     ):
@@ -286,22 +283,18 @@ def load_deform_dlo2_deep_alltrain_protocol(
         or training.get("optimizer") != "official-sgd-parameter-groups-v1"
         or training.get("cublas_workspace_config") != ":4096:8"
         or training.get("known_action_nodes") != [0, 1, -2, -1]
-        or training.get("window_sampling")
-        != "frozen-uniform-all-56-train-v1"
+        or training.get("window_sampling") != "frozen-uniform-all-56-train-v1"
     ):
         raise ValueError("DLO2 deep all-train training contract differs")
     if (
-        transfer.get("selection_source")
-        != "fresh-dlo2-deep-ensemble-result"
-        or transfer.get("operator")
-        != "copy-selected-predictive-mean-exactly"
+        transfer.get("selection_source") != "fresh-dlo2-deep-ensemble-result"
+        or transfer.get("operator") != "copy-selected-predictive-mean-exactly"
         or transfer.get("seed_weights") != "copy-selected-spec-exactly"
         or transfer.get("member_updates") != "copy-selected-spec-exactly"
         or transfer.get("validation_reselection") is not False
         or transfer.get("source_reselection") is not False
         or transfer.get("target_reselection") is not False
-        or transfer.get("variance_scale")
-        != "copy-validation-fitted-scale-exactly"
+        or transfer.get("variance_scale") != "copy-validation-fitted-scale-exactly"
         or output.get("preserve_seed_member_checkpoints") is not True
         or output.get("assemble_only_after_both_seed_runs_verify") is not True
         or output.get("official_eval_authorized_by_one_seed_alone") is not False
@@ -331,10 +324,15 @@ def validate_deform_dlo2_deep_alltrain_authorization(
     parents = protocol.get("parents")
     if not isinstance(required, Mapping) or not isinstance(parents, Mapping):
         raise ValueError("DLO2 deep all-train protocol omits parent gates")
-    if set(source_results) != {42, 43} or set(source_protocol_sha256s) != {
-        42,
-        43,
-    } or set(source_result_sha256s) != {42, 43}:
+    if (
+        set(source_results) != {42, 43}
+        or set(source_protocol_sha256s)
+        != {
+            42,
+            43,
+        }
+        or set(source_result_sha256s) != {42, 43}
+    ):
         raise ValueError("DLO2 deep all-train requires seeds 42 and 43")
     selected_updates = {}
     for seed in (42, 43):
@@ -351,8 +349,7 @@ def validate_deform_dlo2_deep_alltrain_authorization(
             or source_gate.get("passed") is not required.get("source_gate_passed")
             or not isinstance(selected, Mapping)
             or not isinstance(stage, Mapping)
-            or stage.get("contract")
-            != "deform-dlo2-deep-seed-authorization-v1"
+            or stage.get("contract") != "deform-dlo2-deep-seed-authorization-v1"
             or int(stage.get("seed", -1)) != seed
             or not isinstance(parent_identity, Mapping)
             or parent_identity.get("sha256") != source_protocol_sha256s[seed]
@@ -405,18 +402,18 @@ def validate_deform_dlo2_deep_alltrain_authorization(
     )
     variance_floor = float(uncertainty.get("variance_floor_m2", math.nan))
     nominal_coverage = float(uncertainty.get("nominal_coordinate_coverage", math.nan))
-    checkpoint_updates = {int(value) for value in protocol.get("checkpoint_updates", ())}
+    checkpoint_updates = {
+        int(value) for value in protocol.get("checkpoint_updates", ())
+    }
     parent_ensemble = parents.get("ensemble_protocol")
     if (
-        ensemble_result.get("contract")
-        != required.get("ensemble_result_contract")
+        ensemble_result.get("contract") != required.get("ensemble_result_contract")
         or ensemble_result.get("official_eval_read") is not False
         or ensemble_result.get("exact_fallback")
         is not required.get("ensemble_exact_fallback")
         or ensemble_result.get("alltrain_deep_ensemble_authorized")
         is not required.get("ensemble_alltrain_authorized")
-        or selection_seal.get("contract")
-        != required.get("ensemble_selection_contract")
+        or selection_seal.get("contract") != required.get("ensemble_selection_contract")
         or selection_seal.get("official_eval_read") is not False
         or selection_seal.get("source_test_evaluated_by_this_stage") is not False
         or not isinstance(parent_ensemble, Mapping)
@@ -442,8 +439,7 @@ def validate_deform_dlo2_deep_alltrain_authorization(
         or candidate_gate.get("passed") is not True
         or any(
             not isinstance(source_identities[seed], Mapping)
-            or source_identities[seed].get("sha256")
-            != source_result_sha256s[seed]
+            or source_identities[seed].get("sha256") != source_result_sha256s[seed]
             for seed in (42, 43)
         )
         or not math.isfinite(variance_scale)
@@ -461,9 +457,7 @@ def validate_deform_dlo2_deep_alltrain_authorization(
         "operator": "predictive_mean",
         "weights": weights,
         "member_updates": member_updates,
-        "comparison_baseline_seed": int(
-            ensemble_result["comparison_baseline_seed"]
-        ),
+        "comparison_baseline_seed": int(ensemble_result["comparison_baseline_seed"]),
         "validation_fitted_variance_scale": variance_scale,
         "variance_floor_m2": variance_floor,
         "nominal_coordinate_coverage": nominal_coverage,

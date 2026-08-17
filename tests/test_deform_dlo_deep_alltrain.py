@@ -12,10 +12,7 @@ from bayesian_phystwin.deform_dlo_source import sha256_file
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_deep_alltrain_refit_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_alltrain_refit_v1.json"
 )
 
 
@@ -114,9 +111,7 @@ def test_deep_alltrain_authorization_copies_weights_and_updates_exactly() -> Non
             43: protocol["parents"]["seed43_source_protocol"]["sha256"],
         },
         source_result_sha256s={42: "b" * 64, 43: "c" * 64},
-        ensemble_protocol_sha256=protocol["parents"]["ensemble_protocol"][
-            "sha256"
-        ],
+        ensemble_protocol_sha256=protocol["parents"]["ensemble_protocol"]["sha256"],
         selection_seal_sha256="a" * 64,
     )
 
@@ -135,9 +130,7 @@ def test_deep_alltrain_rejects_fallback_or_changed_member_update() -> None:
             43: protocol["parents"]["seed43_source_protocol"]["sha256"],
         },
         "source_result_sha256s": {42: "b" * 64, 43: "c" * 64},
-        "ensemble_protocol_sha256": protocol["parents"]["ensemble_protocol"][
-            "sha256"
-        ],
+        "ensemble_protocol_sha256": protocol["parents"]["ensemble_protocol"]["sha256"],
         "selection_seal_sha256": "a" * 64,
     }
 

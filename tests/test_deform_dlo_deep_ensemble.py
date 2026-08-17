@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import pytest
-import torch
 
 from bayesian_phystwin.deform_dlo_deep_ensemble import (
     DEFORM_DLO2_DEEP_ENSEMBLE_CONTRACT,
@@ -31,10 +30,7 @@ DLO2_SEED_PROTOCOLS = (
     REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_seed43_v1.json",
 )
 DLO2_ENSEMBLE_PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_deep_ensemble_eval_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_ensemble_eval_v1.json"
 )
 
 
@@ -120,6 +116,7 @@ def test_deep_ensemble_manifests_require_identical_bytes_and_split() -> None:
 def test_deep_ensemble_runner_loads_only_the_selected_checkpoint(
     tmp_path: Path,
 ) -> None:
+    torch = pytest.importorskip("torch")
     runner = _load_runner()
     checkpoint = tmp_path / "checkpoint.pt"
     torch.save(

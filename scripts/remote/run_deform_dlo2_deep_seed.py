@@ -62,19 +62,16 @@ def main() -> int:
         raise ValueError("fresh deep-seed wrapper requires DLO2 only")
 
     parent_protocol_path = args.parent_ensemble_protocol.resolve()
-    parent_protocol = load_deform_dlo1_deep_ensemble_protocol(
-        parent_protocol_path
-    )
+    parent_protocol = load_deform_dlo1_deep_ensemble_protocol(parent_protocol_path)
     parent_result_path = args.parent_ensemble_result.resolve()
     parent_result = _read_json(parent_result_path)
     selection_identity = parent_result.get("selection_seal")
     if not isinstance(selection_identity, dict):
         raise ValueError("DLO1 ensemble result omits its selection seal")
     selection_path = Path(str(selection_identity.get("path", ""))).resolve()
-    if (
-        not selection_path.is_file()
-        or sha256_file(selection_path) != selection_identity.get("sha256")
-    ):
+    if not selection_path.is_file() or sha256_file(
+        selection_path
+    ) != selection_identity.get("sha256"):
         raise ValueError("DLO1 ensemble selection seal does not verify")
     selection_seal = _read_json(selection_path)
     parent_authorization = validate_deform_dlo2_deep_ensemble_parent(

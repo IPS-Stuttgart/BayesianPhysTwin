@@ -297,7 +297,9 @@ def validate_deform_dlo2_local_residual_v6_parents(
     parent_validation = parent_result.get("validation_gate")
     parent_source = parent_result.get("source_gate")
     selected = development_selection.get("selected_arm")
-    selected_summary = selected.get("summary") if isinstance(selected, Mapping) else None
+    selected_summary = (
+        selected.get("summary") if isinstance(selected, Mapping) else None
+    )
     if (
         parent_result.get("contract") != "deform-dlo2-local-residual-result-v5"
         or parent_result.get("protocol_sha256") != parent_protocol.get("sha256")
@@ -311,8 +313,7 @@ def validate_deform_dlo2_local_residual_v6_parents(
         or parent_source.get("reason") != "validation-gate-failed"
         or development_selection.get("contract")
         != "deform-dlo2-local-residual-development-v6"
-        or development_selection.get("protocol_sha256")
-        != parent_protocol.get("sha256")
+        or development_selection.get("protocol_sha256") != parent_protocol.get("sha256")
         or development_selection.get("training_result_sha256")
         != training_identity.get("sha256")
         or development_selection.get("selected_checkpoint_sha256")
@@ -326,8 +327,7 @@ def validate_deform_dlo2_local_residual_v6_parents(
         or float(cast(Any, selected_summary.get("relative_improvement", -math.inf)))
         < 0.01
         or int(cast(Any, selected_summary.get("wins", -1))) < 6
-        or float(cast(Any, selected_summary.get("maximum_case_ratio", math.inf)))
-        > 1.05
+        or float(cast(Any, selected_summary.get("maximum_case_ratio", math.inf))) > 1.05
     ):
         raise ValueError("DLO2 local-residual v6 parents do not authorize source")
     return {
@@ -393,8 +393,7 @@ def load_deform_dlo2_local_residual_alltrain_v7_protocol(
         or int(cast(Any, training.get("unroll_horizon_frames", -1))) != 50
         or int(cast(Any, training.get("batch_size", -1))) != 32
         or int(cast(Any, training.get("total_updates", -1))) != 6400
-        or checkpoints
-        != (0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400)
+        or checkpoints != (0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400)
         or training.get("optimizer") != "official-sgd-parameter-groups-v1"
         or training.get("cublas_workspace_config") != ":4096:8"
         or training.get("known_action_nodes") != [0, 1, -2, -1]
@@ -553,8 +552,7 @@ def load_deform_dlo2_local_residual_official_v7_protocol(
     ):
         raise ValueError("DLO2 local-residual official evaluation contract differs")
     if (
-        methods.get("candidate")
-        != "alltrain-physical-plus-r1-s0p25-local-residual"
+        methods.get("candidate") != "alltrain-physical-plus-r1-s0p25-local-residual"
         or methods.get("comparison_baseline")
         != "identically-trained-alltrain-physical-checkpoint"
         or methods.get("action_aware_persistence") is not True
@@ -609,8 +607,7 @@ def validate_deform_dlo2_local_residual_official_v7_authorization(
     if (
         not isinstance(parent, Mapping)
         or parent.get("sha256") != alltrain_protocol_sha256
-        or alltrain_protocol.get("contract")
-        != "deform-dlo2-local-residual-alltrain-v7"
+        or alltrain_protocol.get("contract") != "deform-dlo2-local-residual-alltrain-v7"
         or not isinstance(required, Mapping)
         or alltrain_result.get("contract") != required.get("result_contract")
         or alltrain_result.get("official_eval_read")
@@ -636,7 +633,9 @@ def validate_deform_dlo2_local_residual_official_v7_authorization(
         or final_method.get("source_reselection") is not False
         or final_method.get("target_reselection") is not False
     ):
-        raise ValueError("all-train local-residual method does not authorize official eval")
+        raise ValueError(
+            "all-train local-residual method does not authorize official eval"
+        )
     runtime = alltrain_result.get("runtime")
     if not isinstance(runtime, Mapping):
         raise ValueError("all-train local-residual runtime is missing")
@@ -1269,8 +1268,7 @@ def deserialize_deform_local_residual_model(
         or scale.shape != location.shape
         or np.any(scale <= 0.0)
         or coefficients.shape != (internal_count, feature_count + 1, 3)
-        or covariance.shape
-        != (internal_count, 3, feature_count + 1, feature_count + 1)
+        or covariance.shape != (internal_count, 3, feature_count + 1, feature_count + 1)
         or residual_variance.shape != (internal_count, 3)
         or np.any(residual_variance < 0.0)
     ):

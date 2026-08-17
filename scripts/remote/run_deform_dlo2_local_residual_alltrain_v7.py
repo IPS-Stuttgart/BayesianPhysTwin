@@ -96,7 +96,9 @@ def _verified_manifest(
     split_names: list[str] = []
     for key in ("fit", "validation", "source_test"):
         values = split.get(key)
-        if not isinstance(values, list) or not all(isinstance(name, str) for name in values):
+        if not isinstance(values, list) or not all(
+            isinstance(name, str) for name in values
+        ):
             raise ValueError("DLO2 all-train source split is invalid")
         split_names.extend(values)
     expected_count = int(protocol["data"]["trajectory_count"])
@@ -117,9 +119,7 @@ def main() -> int:
     source_result_path = args.source_result.resolve()
     source_manifest_path = args.source_manifest.resolve()
     protocol = load_deform_dlo2_local_residual_alltrain_v7_protocol(protocol_path)
-    source_protocol = load_deform_dlo2_local_residual_v6_protocol(
-        source_protocol_path
-    )
+    source_protocol = load_deform_dlo2_local_residual_v6_protocol(source_protocol_path)
     source_result = _read_json(source_result_path)
     source_protocol_sha256 = sha256_file(source_protocol_path)
     source_result_sha256 = sha256_file(source_result_path)

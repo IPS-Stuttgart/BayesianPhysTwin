@@ -17,23 +17,12 @@ from bayesian_phystwin.deform_dlo_source import sha256_file
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_deep_official_eval_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_official_eval_v1.json"
 )
 ALLTRAIN_PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_deep_alltrain_refit_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_alltrain_refit_v1.json"
 )
-RUNNER = (
-    REPOSITORY_ROOT
-    / "scripts"
-    / "remote"
-    / "run_deform_dlo2_deep_official.py"
-)
+RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_deep_official.py"
 
 
 def _load_runner():
@@ -165,9 +154,9 @@ def test_deep_official_authorization_rejects_changed_weight_or_baseline() -> Non
         )
 
     result, final_method = _authorization_artifacts()
-    final_method["comparison_baseline_checkpoint"] = final_method[
-        "member_checkpoints"
-    ]["43"]
+    final_method["comparison_baseline_checkpoint"] = final_method["member_checkpoints"][
+        "43"
+    ]
     with pytest.raises(ValueError, match="member bank"):
         validate_deform_dlo2_deep_official_authorization(
             protocol,

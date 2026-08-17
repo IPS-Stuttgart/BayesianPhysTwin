@@ -136,10 +136,9 @@ def _verified_source(
     if not isinstance(manifest_identity, Mapping):
         raise ValueError(f"DLO2 seed-{seed} source manifest is missing")
     manifest_path = Path(str(manifest_identity.get("path", ""))).resolve()
-    if (
-        not manifest_path.is_file()
-        or sha256_file(manifest_path) != manifest_identity.get("sha256")
-    ):
+    if not manifest_path.is_file() or sha256_file(
+        manifest_path
+    ) != manifest_identity.get("sha256"):
         raise ValueError(f"DLO2 seed-{seed} source manifest does not verify")
     return source_protocol, result, _read_json(manifest_path)
 
@@ -216,9 +215,7 @@ def main() -> int:
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = cublas_config
     import torch
 
-    runtime_torch, runtime_cuda = ensemble_runtime._runtime_identity(
-        source_results[42]
-    )
+    runtime_torch, runtime_cuda = ensemble_runtime._runtime_identity(source_results[42])
     if torch.__version__ != runtime_torch or torch.version.cuda != runtime_cuda:
         raise RuntimeError("DLO2 ensemble evaluator runtime differs")
     modules = source_runtime._load_upstream(args.upstream_root)
@@ -435,9 +432,7 @@ def main() -> int:
     )
     candidate_gate = evaluate_deform_source_gate(
         candidate_source_records,
-        published_reference_l1_m=float(
-            policy["candidate_published_reference_l1_m"]
-        ),
+        published_reference_l1_m=float(policy["candidate_published_reference_l1_m"]),
         published_error_multiplier_max=float(
             policy["candidate_published_error_multiplier_max"]
         ),
@@ -447,8 +442,7 @@ def main() -> int:
         not exact_fallback
         and float(transfer["relative_improvement"])
         >= float(policy["source_transfer_improvement_min"])
-        and int(transfer["wins"])
-        >= int(policy["source_transfer_minimum_case_wins"])
+        and int(transfer["wins"]) >= int(policy["source_transfer_minimum_case_wins"])
         and candidate_gate["passed"] is True
     )
     result = {

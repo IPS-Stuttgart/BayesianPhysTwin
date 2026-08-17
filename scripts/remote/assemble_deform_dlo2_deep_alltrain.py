@@ -97,9 +97,7 @@ def main() -> int:
     }
     source_protocol_sha256s = {}
     for seed in (42, 43):
-        source_protocol = load_deform_dlo_source_protocol(
-            source_protocol_paths[seed]
-        )
+        source_protocol = load_deform_dlo_source_protocol(source_protocol_paths[seed])
         source_protocol_sha256s[seed] = sha256_file(source_protocol_paths[seed])
         if (
             source_protocol_sha256s[seed]
@@ -114,10 +112,9 @@ def main() -> int:
     if not isinstance(selection_identity, Mapping):
         raise ValueError("DLO2 ensemble result omits its selection seal")
     selection_path = Path(str(selection_identity.get("path", ""))).resolve()
-    if (
-        not selection_path.is_file()
-        or sha256_file(selection_path) != selection_identity.get("sha256")
-    ):
+    if not selection_path.is_file() or sha256_file(
+        selection_path
+    ) != selection_identity.get("sha256"):
         raise ValueError("DLO2 ensemble selection seal does not verify")
     selection_seal = _read_json(selection_path)
 
@@ -138,8 +135,7 @@ def main() -> int:
         method_identity = result.get("method_spec")
         final_identity = result.get("final_member")
         if (
-            result.get("contract")
-            != "deform-dlo2-deep-alltrain-seed-result-v1"
+            result.get("contract") != "deform-dlo2-deep-alltrain-seed-result-v1"
             or result.get("official_eval_read") is not False
             or result.get("assembly_authorized") is not True
             or int(result.get("seed", -1)) != seed
@@ -185,9 +181,7 @@ def main() -> int:
         selection_seal,
         source_protocol_sha256s=source_protocol_sha256s,
         source_result_sha256s=source_result_sha256s,
-        ensemble_protocol_sha256=protocol["parents"]["ensemble_protocol"][
-            "sha256"
-        ],
+        ensemble_protocol_sha256=protocol["parents"]["ensemble_protocol"]["sha256"],
         selection_seal_sha256=sha256_file(selection_path),
     )
 
@@ -217,18 +211,14 @@ def main() -> int:
             update=selected["member_updates"][seed],
             protocol_sha256=protocol_sha256,
             schedule_sha256=str(schedule.get("sha256", "")),
-            method_spec_sha256=str(
-                alltrain_results[seed]["method_spec"]["sha256"]
-            ),
+            method_spec_sha256=str(alltrain_results[seed]["method_spec"]["sha256"]),
             torch=torch,
         )
         member_checkpoints[str(seed)] = checkpoint
         runtimes.append(alltrain_results[seed].get("runtime"))
     if not all(isinstance(runtime, Mapping) for runtime in runtimes):
         raise ValueError("deep all-train seed runtime is malformed")
-    runtime = {
-        key: runtimes[0].get(key) for key in ("python", "torch", "cuda")
-    }
+    runtime = {key: runtimes[0].get(key) for key in ("python", "torch", "cuda")}
     if any(
         {key: candidate.get(key) for key in runtime} != runtime
         for candidate in runtimes[1:]
@@ -254,9 +244,7 @@ def main() -> int:
         "variance_calibration": {
             "scale": selected["validation_fitted_variance_scale"],
             "floor_m2": selected["variance_floor_m2"],
-            "nominal_coordinate_coverage": selected[
-                "nominal_coordinate_coverage"
-            ],
+            "nominal_coordinate_coverage": selected["nominal_coordinate_coverage"],
         },
         "seed_results": {
             str(seed): {

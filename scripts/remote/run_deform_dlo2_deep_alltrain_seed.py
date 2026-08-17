@@ -123,8 +123,7 @@ def main() -> int:
         )
         expected_identity = parents[f"seed{seed}_source_protocol"]
         if (
-            sha256_file(source_protocol_paths[seed])
-            != expected_identity["sha256"]
+            sha256_file(source_protocol_paths[seed]) != expected_identity["sha256"]
             or int(source_protocols[seed]["training"]["random_seed"]) != seed
         ):
             raise ValueError(f"deep all-train seed-{seed} protocol differs")
@@ -138,9 +137,7 @@ def main() -> int:
             source_results[seed],
             source_protocol_sha256=sha256_file(source_protocol_paths[seed]),
         )
-    validate_deform_two_seed_manifests(
-        manifests[42], manifests[43], dlo_type="DLO2"
-    )
+    validate_deform_two_seed_manifests(manifests[42], manifests[43], dlo_type="DLO2")
     if ensemble_runtime._runtime_identity(
         source_results[42]
     ) != ensemble_runtime._runtime_identity(source_results[43]):
@@ -198,9 +195,7 @@ def main() -> int:
         "variance_calibration": {
             "scale": selected["validation_fitted_variance_scale"],
             "floor_m2": selected["variance_floor_m2"],
-            "nominal_coordinate_coverage": selected[
-                "nominal_coordinate_coverage"
-            ],
+            "nominal_coordinate_coverage": selected["nominal_coordinate_coverage"],
         },
         "ensemble_result": {
             "path": str(ensemble_result_path),
