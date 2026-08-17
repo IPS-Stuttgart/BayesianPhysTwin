@@ -20,8 +20,6 @@ from bayesian_phystwin.deform_dlo_source import (
     validate_deform_dlo2_stage_authorization,
 )
 
-torch = pytest.importorskip("torch")
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
     REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo1_deep_ensemble_eval_v1.json"
@@ -118,6 +116,7 @@ def test_deep_ensemble_manifests_require_identical_bytes_and_split() -> None:
 def test_deep_ensemble_runner_loads_only_the_selected_checkpoint(
     tmp_path: Path,
 ) -> None:
+    torch = pytest.importorskip("torch")
     runner = _load_runner()
     checkpoint = tmp_path / "checkpoint.pt"
     torch.save(

@@ -17,8 +17,6 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     weighted_deform_prediction_median,
 )
 
-torch = pytest.importorskip("torch")
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
     REPOSITORY_ROOT
@@ -69,6 +67,7 @@ def test_checkpoint_belief_arms_use_validation_only() -> None:
 
 
 def test_checkpoint_belief_average_preserves_discrete_state() -> None:
+    torch = pytest.importorskip("torch")
     averaged = average_deform_checkpoint_states(
         {
             40: {
@@ -88,6 +87,7 @@ def test_checkpoint_belief_average_preserves_discrete_state() -> None:
 
 
 def test_checkpoint_belief_average_rejects_discrete_disagreement() -> None:
+    torch = pytest.importorskip("torch")
     with pytest.raises(ValueError, match="discrete checkpoint state"):
         average_deform_checkpoint_states(
             {
