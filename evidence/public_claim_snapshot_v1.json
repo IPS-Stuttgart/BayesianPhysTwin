@@ -74,19 +74,47 @@
       }
     },
     {
-      "id": "fresh_unseen_object_covariance_value",
+      "id": "covariance_only_independent_validation",
       "table_order": 5,
-      "question": "Fresh unseen-object covariance benefit established?",
-      "status": "terminal_without_claim",
-      "display_status": "No valid result",
-      "boundary": "The registered one-shot route terminated before an authorized independent-object decision; no fresh-transfer claim is permitted.",
+      "question": "Fresh independent covariance-only confirmation established?",
+      "status": "not_established",
+      "display_status": "Not opened",
+      "boundary": "The separate route still requires 100 sealed source prediction records and source-positive authorization; twelve disjoint confirmation object-sessions remain closed.",
       "metrics": {
+        "protocol_id": "deform360_covariance_only_independent_validation_v1",
+        "development_object_session_count": 10,
+        "source_prediction_seal_count_required": 100,
+        "confirmation_object_session_count": 12,
+        "source_positive_authorization_required": true,
+        "confirmation_payload_opened": false,
+        "authorized_independent_validation_claim": false
+      }
+    },
+    {
+      "id": "fresh_object_session_v61",
+      "table_order": 6,
+      "question": "Fresh-object-session v6/v6.1 transfer established?",
+      "status": "terminal_without_claim",
+      "display_status": "Terminal, no claim",
+      "boundary": "A retained endpoint-processing technical failure occurred before the source gate was evaluated; replacement, retry, and source continuation are forbidden, and no fresh-target payload was opened.",
+      "metrics": {
+        "protocol_id": "deform360_official_hub_fresh_object_session_v6",
+        "source_prediction_success_count": 313,
+        "source_prediction_expected_count": 324,
+        "retained_support_negative_count": 11,
+        "fresh_target_object_session_count": 16,
+        "failure_stage": "endpoint-processing technical failure",
+        "source_gate_evaluated": false,
+        "replacement_retry_source_continuation_forbidden": true,
+        "fresh_target_payload_opened": false,
+        "confirmation_payload_opened": false,
+        "held_v8_payload_opened": false,
         "authorized_fresh_object_claim": false
       }
     },
     {
       "id": "prob4d_real_provider_transfer",
-      "table_order": 6,
+      "table_order": 7,
       "question": "Real Prob4D feeder transfer established?",
       "status": "not_established",
       "display_status": "Not established",
@@ -97,7 +125,7 @@
     },
     {
       "id": "causal4d_downstream_benefit",
-      "table_order": 7,
+      "table_order": 8,
       "question": "Downstream Causal4D counterfactual benefit established?",
       "status": "not_established",
       "display_status": "Not established",
@@ -111,7 +139,8 @@
     "overall state of the art",
     "a unique deterministic winner over last-residual",
     "calibrated raw posterior covariance",
-    "fresh unseen-object covariance transfer",
+    "fresh independent covariance-only confirmation",
+    "fresh-object-session v6/v6.1 transfer",
     "real Prob4D provider value",
     "downstream Causal4D counterfactual value"
   ]

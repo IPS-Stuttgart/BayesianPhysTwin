@@ -20,7 +20,8 @@ correction.
 | Unique deterministic winner over the matched last-residual comparator? | **Not confirmed** | The methods are essentially tied in Chamfer distance, and last-residual is marginally better in track error. |
 | Raw posterior covariance calibrated? | **No** | Operational 3-D NEES is extremely high and nominal-90% ellipsoid coverage is far below nominal. |
 | Retrospective covariance-only proper-score value established? | **Yes, with width cost** | The exact last-residual mean is preserved; Gaussian NLL and marginal coverage improve, while mean full interval width grows by 3.10x. |
-| Fresh unseen-object covariance benefit established? | **No valid result** | The registered one-shot route terminated before an authorized independent-object decision; no fresh-transfer claim is permitted. |
+| Fresh independent covariance-only confirmation established? | **Not opened** | The separate route still requires 100 sealed source prediction records and source-positive authorization; twelve disjoint confirmation object-sessions remain closed. |
+| Fresh-object-session v6/v6.1 transfer established? | **Terminal, no claim** | A retained endpoint-processing technical failure occurred before the source gate was evaluated; replacement, retry, and source continuation are forbidden, and no fresh-target payload was opened. |
 | Real Prob4D feeder transfer established? | **Not established** | Portable contracts and synthetic integration tests do not substitute for a real provider-value experiment. |
 | Downstream Causal4D counterfactual benefit established? | **Not established** | Provider compatibility is implemented, but a registered downstream causal-value result is still required. |
 <!-- public-claim-status:end -->
