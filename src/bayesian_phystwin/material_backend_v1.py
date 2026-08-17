@@ -97,7 +97,8 @@ class MaterialBackendSpecV1:
         default_count = sum(not item.legacy for item in self.variants)
         if default_count != 1:
             raise ValueError(
-                "a backend family requires exactly one non-legacy default variant"
+                "a backend family requires a non-legacy variant and exactly one "
+                "non-legacy default variant"
             )
 
     def to_record(self) -> dict[str, object]:
