@@ -127,7 +127,10 @@ def test_profile_catalog_is_sorted_and_complete() -> None:
     assert BACKEND_KINDS == (
         "genesis-mpm-v1",
         "mujoco-flex-v1",
+        "physx-fem-v1",
+        "position-based-dynamics-v1",
         "sofa-fem-v1",
+        "warp-fem-v1",
     )
     with pytest.raises(ValueError, match="unsupported material backend kind"):
         get_material_backend_profile("unknown-v1")
@@ -325,8 +328,11 @@ def test_cli_profiles_are_machine_readable(capsys: pytest.CaptureFixture[str]) -
     assert payload["schema"] == "bayesian-phystwin.material-backend-registry"
     assert [record["profile_id"] for record in payload["profiles"]] == [
         "jax-fem-quasistatic-v1",
+        "warp-fem-v1",
         "sofa-fem-v1",
         "genesis-mpm-v1",
+        "position-based-dynamics-v1",
+        "physx-fem-v1",
         "mujoco-flex-v1",
     ]
 
@@ -355,4 +361,4 @@ def test_cli_materialize_validate_and_module_entrypoint(
     assert exit_info.value.code == 0
     module_payload = json.loads(capsys.readouterr().out)
     assert module_payload["schema"] == "bayesian-phystwin.material-backend-registry"
-    assert len(module_payload["profiles"]) == 4
+    assert len(module_payload["profiles"]) == 7

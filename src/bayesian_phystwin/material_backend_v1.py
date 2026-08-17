@@ -125,12 +125,26 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 ),
             ),
         ),
+        "warp-fem-v1": MaterialBackendSpecV1(
+            profile_id="warp-fem-v1",
+            engine_repository="NVIDIA/warp",
+            solver_family="gpu-differentiable-fem",
+            identity_kind="mesh-node-index",
+            priority=2,
+            maturity="supported",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="warp-fem-v1",
+                    transport="material-trajectory-v1",
+                ),
+            ),
+        ),
         "sofa-fem-v1": MaterialBackendSpecV1(
             profile_id="sofa-fem-v1",
             engine_repository="sofa-framework/sofa",
             solver_family="finite-element-method",
             identity_kind="mechanical-node-index",
-            priority=2,
+            priority=3,
             maturity="supported",
             variants=(
                 MaterialBackendVariantV1(
@@ -144,7 +158,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
             engine_repository="Genesis-Embodied-AI/genesis-world",
             solver_family="material-point-method",
             identity_kind="material-particle-index",
-            priority=3,
+            priority=4,
             maturity="supported",
             variants=(
                 MaterialBackendVariantV1(
@@ -158,12 +172,42 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 ),
             ),
         ),
+        "position-based-dynamics-v1": MaterialBackendSpecV1(
+            profile_id="position-based-dynamics-v1",
+            engine_repository=(
+                "InteractiveComputerGraphics/PositionBasedDynamics"
+            ),
+            solver_family="position-based-dynamics-xpbd",
+            identity_kind="simulation-particle-index",
+            priority=5,
+            maturity="supported",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="position-based-dynamics-v1",
+                    transport="material-trajectory-v1",
+                ),
+            ),
+        ),
+        "physx-fem-v1": MaterialBackendSpecV1(
+            profile_id="physx-fem-v1",
+            engine_repository="NVIDIA-Omniverse/PhysX",
+            solver_family="gpu-fem-deformables",
+            identity_kind="deformable-simulation-vertex-index",
+            priority=6,
+            maturity="experimental",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="physx-fem-v1",
+                    transport="material-trajectory-v1",
+                ),
+            ),
+        ),
         "mujoco-flex-v1": MaterialBackendSpecV1(
             profile_id="mujoco-flex-v1",
             engine_repository="google-deepmind/mujoco",
             solver_family="mujoco-flex",
             identity_kind="flex-vertex-index",
-            priority=4,
+            priority=7,
             maturity="experimental",
             variants=(
                 MaterialBackendVariantV1(
