@@ -191,7 +191,7 @@ def test_backend_variant_validation_fails_closed(
         ),
         (
             lambda: _spec(variants=(_variant(legacy=True),)),
-            "requires a non-legacy variant",
+            "requires exactly one non-legacy default variant",
         ),
     ],
 )
