@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Mapping, Sequence
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -42,68 +43,97 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def load_snapshot(path: Path) -> dict[str, Any]:
+    """Load strict JSON without duplicate keys or non-finite constants."""
+
     with path.open("r", encoding="utf-8") as handle:
-        raw = json.load(
+        value = json.load(
             handle,
             object_pairs_hook=_unique_object,
             parse_constant=_reject_constant,
         )
-    if not isinstance(raw, dict):
+    if not isinstance(value, dict):
         raise ValueError("claim snapshot must be a JSON object")
-    return raw
+    return value
+
+
+def _expect_fields(
+    value: Mapping[str, Any],
+    expected: set[str],
+    *,
+    name: str,
+) -> None:
+    if set(value) != expected:
+        raise ValueError(
+            f"{name} fields changed; "
+            f"expected={sorted(expected)}, observed={sorted(value)}"
+        )
+
+
+def _nonempty_string(value: object, *, name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must be a nonempty string")
+    return value
+
+
+def _git_blob_sha1(path: Path) -> str:
+    value = path.read_bytes()
+    return hashlib.sha1(f"blob {len(value)}\0".encode("ascii") + value).hexdigest()
 
 
 def validate_snapshot(snapshot: dict[str, Any], *, root: Path = ROOT) -> None:
-    expected_fields = {
-        "contract",
-        "contract_version",
-        "snapshot_date",
-        "evidence_source",
-        "claims",
-        "not_authorized",
-    }
-    if set(snapshot) != expected_fields:
-        raise ValueError(
-            "public claim snapshot fields changed; "
-            f"expected={sorted(expected_fields)}, observed={sorted(snapshot)}"
-        )
-    if snapshot.get("contract") != "bayesian-phystwin.public-claim-snapshot":
+    """Validate structure, source identity, claim order, and public boundaries."""
+
+    _expect_fields(
+        snapshot,
+        {
+            "contract",
+            "contract_version",
+            "snapshot_date",
+            "evidence_source",
+            "claims",
+            "not_authorized",
+        },
+        name="public claim snapshot",
+    )
+    if snapshot["contract"] != "bayesian-phystwin.public-claim-snapshot":
         raise ValueError("unexpected public claim snapshot contract")
-    if snapshot.get("contract_version") != 1:
+    if type(snapshot["contract_version"]) is not int or (
+        snapshot["contract_version"] != 1
+    ):
         raise ValueError("unexpected public claim snapshot version")
-    snapshot_date = snapshot.get("snapshot_date")
-    if not isinstance(snapshot_date, str):
-        raise ValueError("snapshot_date must be an ISO date")
     try:
-        date.fromisoformat(snapshot_date)
+        date.fromisoformat(
+            _nonempty_string(snapshot["snapshot_date"], name="snapshot_date")
+        )
     except ValueError as error:
         raise ValueError("snapshot_date must be an ISO date") from error
 
-    source = snapshot.get("evidence_source")
+    source = snapshot["evidence_source"]
     if not isinstance(source, dict):
         raise ValueError("evidence_source must be an object")
-    if set(source) != {"path", "git_blob_sha1", "role"}:
-        raise ValueError("evidence_source fields changed")
-    source_path = source.get("path")
-    expected_sha = source.get("git_blob_sha1")
-    if not isinstance(source_path, str) or not source_path:
-        raise ValueError("evidence_source.path must be nonempty")
-    if (
-        not isinstance(expected_sha, str)
-        or len(expected_sha) != 40
-        or any(character not in "0123456789abcdef" for character in expected_sha)
+    _expect_fields(
+        source,
+        {"path", "git_blob_sha1", "role"},
+        name="evidence_source",
+    )
+    source_path = _nonempty_string(source["path"], name="evidence_source.path")
+    expected_sha = _nonempty_string(
+        source["git_blob_sha1"],
+        name="evidence_source.git_blob_sha1",
+    )
+    _nonempty_string(source["role"], name="evidence_source.role")
+    if len(expected_sha) != 40 or any(
+        character not in "0123456789abcdef" for character in expected_sha
     ):
         raise ValueError("evidence_source.git_blob_sha1 must be a SHA-1 digest")
-    source_bytes = (root / source_path).read_bytes()
-    header = f"blob {len(source_bytes)}\0".encode("ascii")
-    actual_sha = hashlib.sha1(header + source_bytes).hexdigest()
+    actual_sha = _git_blob_sha1(root / source_path)
     if actual_sha != expected_sha:
         raise ValueError(
             "pinned evidence source changed: "
             f"expected {expected_sha}, observed {actual_sha}"
         )
 
-    claims = snapshot.get("claims")
+    claims = snapshot["claims"]
     if not isinstance(claims, list) or not claims:
         raise ValueError("claims must be a nonempty list")
     seen_ids: set[str] = set()
@@ -111,44 +141,43 @@ def validate_snapshot(snapshot: dict[str, Any], *, root: Path = ROOT) -> None:
     for claim in claims:
         if not isinstance(claim, dict):
             raise ValueError("each claim must be an object")
-        expected_claim_fields = {
-            "id",
-            "table_order",
-            "question",
-            "status",
-            "display_status",
-            "boundary",
-            "metrics",
-        }
-        if set(claim) != expected_claim_fields:
-            raise ValueError("claim fields changed")
-        if not isinstance(claim.get("metrics"), dict):
-            raise ValueError("claim metrics must be an object")
-        claim_id = claim.get("id")
-        order = claim.get("table_order")
-        status = claim.get("status")
-        if not isinstance(claim_id, str) or not claim_id:
-            raise ValueError("every claim needs a nonempty id")
+        _expect_fields(
+            claim,
+            {
+                "id",
+                "table_order",
+                "question",
+                "status",
+                "display_status",
+                "boundary",
+                "metrics",
+            },
+            name="claim",
+        )
+        claim_id = _nonempty_string(claim["id"], name="claim.id")
         if claim_id in seen_ids:
             raise ValueError(f"duplicate claim id: {claim_id}")
         seen_ids.add(claim_id)
-        if not isinstance(order, int) or order < 1 or order in seen_orders:
+        order = claim["table_order"]
+        if type(order) is not int or order < 1 or order in seen_orders:
             raise ValueError(f"invalid or duplicate table_order for {claim_id}")
         seen_orders.add(order)
-        if status not in ALLOWED_STATUSES:
-            raise ValueError(f"unsupported status for {claim_id}: {status}")
+        if claim["status"] not in ALLOWED_STATUSES:
+            raise ValueError(f"unsupported status for {claim_id}: {claim['status']}")
         for field in ("question", "display_status", "boundary"):
-            if not isinstance(claim.get(field), str) or not claim[field].strip():
-                raise ValueError(f"{claim_id}.{field} must be nonempty")
+            _nonempty_string(claim[field], name=f"{claim_id}.{field}")
+        if not isinstance(claim["metrics"], dict):
+            raise ValueError(f"{claim_id}.metrics must be an object")
 
-    not_authorized = snapshot.get("not_authorized")
-    if (
-        not isinstance(not_authorized, list)
-        or not not_authorized
-        or any(not isinstance(item, str) or not item for item in not_authorized)
-        or len(not_authorized) != len(set(not_authorized))
-    ):
-        raise ValueError("not_authorized must contain unique nonempty strings")
+    not_authorized = snapshot["not_authorized"]
+    if not isinstance(not_authorized, list) or not not_authorized:
+        raise ValueError("not_authorized must be a nonempty list")
+    values = [
+        _nonempty_string(item, name=f"not_authorized[{index}]")
+        for index, item in enumerate(not_authorized)
+    ]
+    if len(values) != len(set(values)):
+        raise ValueError("not_authorized contains duplicate values")
 
 
 def _escape_cell(value: object) -> str:
@@ -156,7 +185,12 @@ def _escape_cell(value: object) -> str:
 
 
 def render_status_block(snapshot: dict[str, Any]) -> str:
-    claims = sorted(snapshot["claims"], key=lambda item: item["table_order"])
+    """Render the canonical Markdown block and its provenance note."""
+
+    claims: Sequence[Mapping[str, Any]] = sorted(
+        snapshot["claims"],
+        key=lambda item: item["table_order"],
+    )
     lines = [
         START_MARKER,
         "| Question | Current status | Boundary |",
@@ -178,26 +212,28 @@ def render_status_block(snapshot: dict[str, Any]) -> str:
         (
             END_MARKER,
             "",
-            "This table is generated from "
+            "This table is generated from",
             "[`evidence/public_claim_snapshot_v1.json`]"
-            "(evidence/public_claim_snapshot_v1.json), which pins the release-facing "
-            "claim contract by Git blob identity. Regenerate it with "
-            "`python scripts/render_public_claim_status.py --write`; CI checks that "
-            "the snapshot, source document, and README stay synchronized.",
+            "(evidence/public_claim_snapshot_v1.json),",
+            "which pins the release-facing claim contract by Git blob identity. "
+            "Regenerate it",
+            "with `python scripts/render_public_claim_status.py --write`; CI checks "
+            "that the",
+            "snapshot, source document, and README stay synchronized.",
         )
     )
     return "\n".join(lines)
 
 
 def replace_status_block(readme: str, block: str) -> str:
-    start = readme.find(START_MARKER)
-    end = readme.find(END_MARKER)
-    if start < 0 or end < 0 or end < start:
-        raise ValueError("README claim-status markers are missing or malformed")
-    end += len(END_MARKER)
+    """Replace exactly one generated status block and provenance note."""
+
+    if readme.count(START_MARKER) != 1 or readme.count(END_MARKER) != 1:
+        raise ValueError("README must contain exactly one claim-status marker pair")
+    start = readme.index(START_MARKER)
+    end = readme.index(END_MARKER, start) + len(END_MARKER)
     suffix = readme[end:]
-    generated_note_start = suffix.find("\n\nThis table is generated from ")
-    if generated_note_start == 0:
+    if suffix.startswith("\n\nThis table is generated from"):
         next_section = suffix.find("\n\n## ", 2)
         suffix = suffix[next_section:] if next_section >= 0 else "\n"
     return readme[:start] + block + suffix
@@ -221,11 +257,8 @@ def main() -> int:
     args = parse_args()
     snapshot = load_snapshot(args.snapshot)
     validate_snapshot(snapshot, root=ROOT)
-    expected = replace_status_block(
-        args.readme.read_text(encoding="utf-8"),
-        render_status_block(snapshot),
-    )
     current = args.readme.read_text(encoding="utf-8")
+    expected = replace_status_block(current, render_status_block(snapshot))
     if args.write:
         args.readme.write_text(expected, encoding="utf-8")
         return 0
