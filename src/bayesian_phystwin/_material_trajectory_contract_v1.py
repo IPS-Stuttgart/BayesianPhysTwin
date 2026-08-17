@@ -97,6 +97,12 @@ MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
                 solver_family="mujoco-flex",
                 identity_kind="flex-vertex-index",
             ),
+            "drake-fem-v1": MaterialBackendProfile(
+                backend_kind="drake-fem-v1",
+                engine_repository="RobotLocomotion/drake",
+                solver_family="finite-element-method",
+                identity_kind="deformable-body-vertex-index",
+            ),
         }
     )
 )
