@@ -119,6 +119,17 @@ def test_backend_family_requires_exactly_one_explicit_default(
         _spec("ambiguous-family-v1", variants)
 
 
+def test_nondefault_variant_cannot_shadow_its_canonical_family() -> None:
+    with pytest.raises(ValueError, match="may only identify the default"):
+        _spec(
+            "canonical-family-v1",
+            (
+                _variant("primary-producer-v1", default=True),
+                _variant("canonical-family-v1", default=False),
+            ),
+        )
+
+
 def test_producer_index_rejects_registry_key_mismatch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
