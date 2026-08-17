@@ -101,6 +101,18 @@ MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
                 solver_family="finite-element-method",
                 identity_kind="deformable-body-vertex-index",
             ),
+            "fenicsx-fem-v1": MaterialBackendProfile(
+                backend_kind="fenicsx-fem-v1",
+                engine_repository="FEniCS/dolfinx",
+                solver_family="distributed-finite-element-method",
+                identity_kind="global-geometry-node-index",
+            ),
+            "pyelastica-cosserat-rod-v1": MaterialBackendProfile(
+                backend_kind="pyelastica-cosserat-rod-v1",
+                engine_repository="GazzolaLab/PyElastica",
+                solver_family="cosserat-rod-dynamics",
+                identity_kind="rod-node-index",
+            ),
         }
     )
 )

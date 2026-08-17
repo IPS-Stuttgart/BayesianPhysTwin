@@ -263,6 +263,34 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 ),
             ),
         ),
+        "fenicsx-fem-v1": MaterialBackendSpecV1(
+            profile_id="fenicsx-fem-v1",
+            engine_repository="FEniCS/dolfinx",
+            solver_family="distributed-finite-element-method",
+            identity_kind="global-geometry-node-index",
+            priority=9,
+            maturity="experimental",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="fenicsx-fem-v1",
+                    transport="material-trajectory-v1",
+                ),
+            ),
+        ),
+        "pyelastica-cosserat-rod-v1": MaterialBackendSpecV1(
+            profile_id="pyelastica-cosserat-rod-v1",
+            engine_repository="GazzolaLab/PyElastica",
+            solver_family="cosserat-rod-dynamics",
+            identity_kind="rod-node-index",
+            priority=10,
+            maturity="experimental",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="pyelastica-cosserat-rod-v1",
+                    transport="material-trajectory-v1",
+                ),
+            ),
+        ),
     }
 )
 
