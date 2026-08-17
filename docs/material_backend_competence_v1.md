@@ -11,6 +11,31 @@ The protocol applies uniformly to JAX-FEM, Warp FEM, SOFA, Genesis MPM,
 PositionBasedDynamics XPBD/PBD, PhysX deformables, MuJoCo Flex, and future
 canonical families registered by `material_backend_v1`.
 
+## Machine-readable qualification boundary
+
+`material_backend_qualification_v1.MaterialBackendQualificationV1` closes the
+executable gap between a portable backend bundle and this broader competence
+protocol. One content-addressed record binds the canonical family, exact
+producer transport, runtime, frozen source groups, incumbent, protocol, source
+evidence, thresholds, numerical checks, information order, and exact fallback.
+
+The qualification record covers structural and numerical admission only:
+
+- units, coordinate frame, persistent entity order, and query identity;
+- deterministic replay and zero-action equilibrium drift;
+- rigid-transform equivariance and time-step refinement;
+- topology identity and registered physical-sanity checks;
+- finite-difference Jacobian agreement when gradients are claimed;
+- source-query parity to the incumbent;
+- protocol freeze before source outcomes;
+- absence of target-outcome use; and
+- byte-identical fallback.
+
+A passing qualification is a prerequisite for the competence endpoints below.
+It is not itself evidence that the backend improves a physical prediction. A
+failed record remains a complete result for that exact runtime and preserves
+every failure reason.
+
 ## Frozen comparison roster
 
 Every competence run must compare complete physical object/session groups under
