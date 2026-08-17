@@ -68,6 +68,6 @@ def test_unknown_root_attribute_does_not_warn(
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         with pytest.raises(AttributeError, match="has no attribute"):
-            getattr(bpt, "DefinitelyNotAPublicExport")
+            bpt.__getattr__("DefinitelyNotAPublicExport")
 
     assert caught == []

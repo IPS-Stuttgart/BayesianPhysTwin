@@ -17,14 +17,14 @@ import warnings
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, Final
 
-if TYPE_CHECKING:  # pragma: no cover - static typing only
-    from ._root_exports_v0_4 import *  # noqa: F403
-
 from ._root_exports_v0_4 import (
     _ROOT_EXPORT_GROUPS as _ROOT_EXPORT_GROUPS,
     _ROOT_EXPORT_MODULES as _ROOT_EXPORT_MODULES,
     __all__ as __all__,
 )
+
+if TYPE_CHECKING:  # pragma: no cover - static typing only
+    from ._root_exports_v0_4 import *  # noqa: F403
 
 _ROOT_DEPRECATION_START: Final[tuple[int, int]] = (0, 5)
 _ROOT_REMOVAL_NOT_BEFORE: Final[str] = "0.6"
