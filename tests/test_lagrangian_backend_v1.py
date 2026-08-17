@@ -371,8 +371,11 @@ def test_cli_lists_profiles_and_validates_bundle(
     assert listed["schema"] == "bayesian-phystwin.material-backend-registry"
     assert [item["profile_id"] for item in listed["profiles"]] == [
         "jax-fem-quasistatic-v1",
+        "warp-fem-v1",
         "sofa-fem-v1",
         "genesis-mpm-v1",
+        "position-based-dynamics-v1",
+        "physx-fem-v1",
         "mujoco-flex-v1",
     ]
     genesis = next(
