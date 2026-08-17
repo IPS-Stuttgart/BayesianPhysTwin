@@ -180,6 +180,8 @@ class MaterialBackendQualificationV1:
                 name,
                 sha256_digest(getattr(self, name), name=name),
             )
+        if self.runtime_id == self.incumbent_runtime_id:
+            raise ValueError("incumbent_runtime_id must differ from runtime_id")
 
         group_ids = canonical_string_tuple(
             self.source_group_ids,
