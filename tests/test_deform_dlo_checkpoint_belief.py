@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import torch
 
 from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
@@ -17,6 +16,8 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     select_deform_checkpoint_belief_arm,
     weighted_deform_prediction_median,
 )
+
+torch = pytest.importorskip("torch")
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (

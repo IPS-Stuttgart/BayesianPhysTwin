@@ -379,8 +379,7 @@ def load_deform_dlo2_deep_official_protocol(
     if (
         not str(parent.get("repository_path", ""))
         or len(str(parent.get("sha256", ""))) != 64
-        or required.get("result_contract")
-        != "deform-dlo2-deep-alltrain-result-v1"
+        or required.get("result_contract") != "deform-dlo2-deep-alltrain-result-v1"
         or required.get("official_eval_read") is not False
         or required.get("official_eval_execution_authorized") is not True
         or required.get("final_method_contract")
@@ -435,10 +434,8 @@ def load_deform_dlo2_deep_official_protocol(
     ):
         raise ValueError("DLO2 deep official evaluation contract differs")
     if (
-        methods.get("candidate")
-        != "preselected-alltrain-two-seed-predictive-mean"
-        or methods.get("comparison_baseline")
-        != "preselected-lower-validation-seed"
+        methods.get("candidate") != "preselected-alltrain-two-seed-predictive-mean"
+        or methods.get("comparison_baseline") != "preselected-lower-validation-seed"
         or methods.get("action_aware_persistence") is not True
         or methods.get("target_selection") is not False
         or methods.get("target_calibration") is not False
@@ -490,8 +487,7 @@ def validate_deform_dlo2_deep_official_authorization(
     required = _mapping(protocol.get("required_parent"), label="required_parent")
     if (
         parent.get("sha256") != alltrain_protocol_sha256
-        or alltrain_protocol.get("contract")
-        != "deform-dlo2-deep-alltrain-refit-v1"
+        or alltrain_protocol.get("contract") != "deform-dlo2-deep-alltrain-refit-v1"
         or alltrain_result.get("contract") != required.get("result_contract")
         or alltrain_result.get("official_eval_read")
         is not required.get("official_eval_read")

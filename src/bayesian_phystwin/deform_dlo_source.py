@@ -237,7 +237,9 @@ def validate_deform_dlo2_stage_authorization(
         parent = authorization.get("parent_local_residual_result")
         required = protocol.get("authorization")
         fixed_arm = protocol.get("local_residual")
-        selected_spec = parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        selected_spec = (
+            parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        )
         required_spec = (
             fixed_arm.get("fixed_arm") if isinstance(fixed_arm, Mapping) else None
         )
@@ -306,8 +308,7 @@ def validate_deform_dlo2_stage_authorization(
             or not isinstance(parent, Mapping)
             or len(str(parent.get("sha256", ""))) != 64
             or parent.get("contract") != required.get("result_contract")
-            or parent.get("selection_contract")
-            != required.get("selection_contract")
+            or parent.get("selection_contract") != required.get("selection_contract")
             or parent.get("fresh_dlo2_deep_ensemble_authorized")
             is not required.get("fresh_dlo2_deep_ensemble_authorized")
             or not str(parent.get("selected_arm", ""))
@@ -328,8 +329,7 @@ def validate_deform_dlo2_stage_authorization(
             or not math.isfinite(
                 float(parent.get("validation_fitted_variance_scale", math.nan))
             )
-            or float(parent.get("validation_fitted_variance_scale", math.nan))
-            < 1.0
+            or float(parent.get("validation_fitted_variance_scale", math.nan)) < 1.0
             or int(role.get("seed", -1)) not in (42, 43)
             or int(role.get("peer_seed", -1)) not in (42, 43)
             or int(role.get("seed", -1)) == int(role.get("peer_seed", -1))

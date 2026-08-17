@@ -31,7 +31,9 @@ def _write_fixture(path: Path, *, duplicate_dlo2: bool = False) -> bytes:
     dlo2 = _branch("DLO2", 12, 5e-4, 3e-5)
     if duplicate_dlo2:
         dlo2 += _branch("DLO2", 12, 5e-4, 3e-5).replace("elif", "if", 1)
-    payload = ("def train(DLO_type):\n" + _branch("DLO1", 13, 5e-5, 2e-5) + dlo2).encode()
+    payload = (
+        "def train(DLO_type):\n" + _branch("DLO1", 13, 5e-5, 2e-5) + dlo2
+    ).encode()
     path.write_bytes(payload)
     return payload
 

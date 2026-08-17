@@ -307,9 +307,7 @@ def main() -> int:
             np.asarray(prediction["coordinate_variance_m2"]),
             variance_floor_m2=float(uncertainty_config["variance_floor_m2"]),
             variance_scale=float(uncertainty_config["variance_scale"]),
-            nominal_coverage=float(
-                uncertainty_config["nominal_coordinate_coverage"]
-            ),
+            nominal_coverage=float(uncertainty_config["nominal_coordinate_coverage"]),
         )
         prediction_path = output_root / "official_prediction.npz"
         np.savez_compressed(
@@ -319,9 +317,7 @@ def main() -> int:
             candidate_predictions=np.asarray(prediction["predictions"]),
             targets=np.asarray(baseline_rollout["targets"]),
             persistence=np.asarray(baseline_rollout["persistence"]),
-            coordinate_variance_m2=np.asarray(
-                prediction["coordinate_variance_m2"]
-            ),
+            coordinate_variance_m2=np.asarray(prediction["coordinate_variance_m2"]),
         )
         result = {
             "schema_version": 1,

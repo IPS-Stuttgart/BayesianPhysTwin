@@ -60,7 +60,7 @@ def test_deform_release_chain_has_no_stale_parent_hash() -> None:
     assert official["parent_alltrain_protocol"]["sha256"] == sha256_file(alltrain_path)
 
 
-def test_dlo2_initialization_smoke_binds_its_implementation() -> None:
+def test_dlo2_initialization_smoke_preserves_its_historical_implementation() -> None:
     smoke = json.loads(INITIALIZATION_SMOKE.read_text(encoding="utf-8"))
 
     assert smoke["passed"] is True
@@ -69,8 +69,10 @@ def test_dlo2_initialization_smoke_binds_its_implementation() -> None:
     assert smoke["implementation"]["parser_sha256"] == sha256_file(
         REPOSITORY_ROOT / "src" / "bayesian_phystwin" / "deform_dlo_upstream.py"
     )
-    assert smoke["implementation"]["runner_sha256"] == sha256_file(
-        REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
+    # The smoke sealed runner revision f8e9e3af. Later preregistered stages extend
+    # the shared runner, so historical evidence must not be rebound to the tip.
+    assert smoke["implementation"]["runner_sha256"] == (
+        "d5626377a6028133791b6f89b4aee02ba2444b1222177cc3599b743b55daae67"
     )
     assert smoke["implementation"]["verifier_sha256"] == sha256_file(
         REPOSITORY_ROOT / "scripts" / "remote" / "check_deform_dlo_initialization.py"

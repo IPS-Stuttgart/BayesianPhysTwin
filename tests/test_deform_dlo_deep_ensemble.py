@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import pytest
-import torch
 
 from bayesian_phystwin.deform_dlo_deep_ensemble import (
     DEFORM_DLO2_DEEP_ENSEMBLE_CONTRACT,
@@ -21,6 +20,8 @@ from bayesian_phystwin.deform_dlo_source import (
     validate_deform_dlo2_stage_authorization,
 )
 
+torch = pytest.importorskip("torch")
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
     REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo1_deep_ensemble_eval_v1.json"
@@ -31,10 +32,7 @@ DLO2_SEED_PROTOCOLS = (
     REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_seed43_v1.json",
 )
 DLO2_ENSEMBLE_PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_deep_ensemble_eval_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_deep_ensemble_eval_v1.json"
 )
 
 

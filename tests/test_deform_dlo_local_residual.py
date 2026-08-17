@@ -36,10 +36,7 @@ DLO2_RUNNER = (
     REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_local_residual.py"
 )
 DLO2_V6_DEVELOPMENT_RUNNER = (
-    REPOSITORY_ROOT
-    / "scripts"
-    / "remote"
-    / "analyze_deform_dlo2_local_residual_v6.py"
+    REPOSITORY_ROOT / "scripts" / "remote" / "analyze_deform_dlo2_local_residual_v6.py"
 )
 DLO2_V6_PROTOCOL = (
     REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_local_residual_v6.json"
@@ -48,16 +45,10 @@ DLO2_V6_RUNNER = (
     REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_local_residual_v6.py"
 )
 DLO2_V7_ALLTRAIN_PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_local_residual_alltrain_v7.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_local_residual_alltrain_v7.json"
 )
 DLO2_V7_OFFICIAL_PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo2_local_residual_official_v7.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_local_residual_official_v7.json"
 )
 DLO2_V7_ALLTRAIN_RUNNER = (
     REPOSITORY_ROOT
@@ -241,8 +232,8 @@ def test_dlo2_v6_development_runner_cannot_open_source_or_official_eval() -> Non
     source = DLO2_V6_DEVELOPMENT_RUNNER.read_text(encoding="utf-8")
 
     assert 'manifest["split"]["source_test"]' not in source
-    assert "source_test_opened\": False" in source
-    assert "official_eval_read\": False" in source
+    assert 'source_test_opened": False' in source
+    assert 'official_eval_read": False' in source
     assert '_install_eval_read_guard(data_root / "DLO2" / "eval")' in source
     assert '_install_eval_read_guard(data_root / "DLO1" / "eval")' in source
 
@@ -328,7 +319,9 @@ def test_dlo2_v7_alltrain_guards_official_eval_and_has_no_reselection() -> None:
     guard = source.index(
         'source_runtime._install_eval_read_guard(data_root / "DLO2" / "eval")'
     )
-    trajectory_load = source.index("trajectories = source_runtime._load_named_trajectories")
+    trajectory_load = source.index(
+        "trajectories = source_runtime._load_named_trajectories"
+    )
     preflight_stop = source.index('if args.mode == "preflight":')
     train_update = source.index("source_runtime._train_update(")
     assert guard < trajectory_load < preflight_stop < train_update

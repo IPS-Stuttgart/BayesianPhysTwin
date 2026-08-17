@@ -79,8 +79,7 @@ def _verified_json(
     default_size = path.stat().st_size if path.is_file() else -1
     if (
         not path.is_file()
-        or path.stat().st_size
-        != int(str(identity.get("size_bytes", default_size)))
+        or path.stat().st_size != int(str(identity.get("size_bytes", default_size)))
         or sha256_file(path) != identity.get("sha256")
     ):
         raise ValueError(f"{label} identity does not verify")
@@ -92,8 +91,7 @@ def _verified_file(identity: Mapping[str, object], *, label: str) -> Path:
     default_size = path.stat().st_size if path.is_file() else -1
     if (
         not path.is_file()
-        or path.stat().st_size
-        != int(str(identity.get("size_bytes", default_size)))
+        or path.stat().st_size != int(str(identity.get("size_bytes", default_size)))
         or sha256_file(path) != identity.get("sha256")
     ):
         raise ValueError(f"{label} identity does not verify")
@@ -117,8 +115,7 @@ def _verified_deep_checkpoint(
         or not isinstance(bundle.get("model_state_dict"), dict)
         or int(bundle.get("seed", -1)) != seed
         or int(bundle.get("update", -1)) != update
-        or bundle.get("deep_alltrain_protocol_sha256")
-        != alltrain_protocol_sha256
+        or bundle.get("deep_alltrain_protocol_sha256") != alltrain_protocol_sha256
         or bundle.get("schedule_sha256") != schedule_sha256
         or bundle.get("method_spec_sha256") != method_spec_sha256
     ):
@@ -148,14 +145,9 @@ def main() -> int:
         43: args.seed43_source_protocol.resolve(),
     }
     protocol = load_deform_dlo2_deep_official_protocol(protocol_path)
-    alltrain_protocol = load_deform_dlo2_deep_alltrain_protocol(
-        alltrain_protocol_path
-    )
+    alltrain_protocol = load_deform_dlo2_deep_alltrain_protocol(alltrain_protocol_path)
     alltrain_protocol_sha256 = sha256_file(alltrain_protocol_path)
-    if (
-        alltrain_protocol_sha256
-        != protocol["parent_alltrain_protocol"]["sha256"]
-    ):
+    if alltrain_protocol_sha256 != protocol["parent_alltrain_protocol"]["sha256"]:
         raise ValueError("deep official evaluator binds another all-train protocol")
 
     source_protocols = {}
@@ -167,9 +159,7 @@ def main() -> int:
         source_protocol_sha256s[seed] = sha256_file(source_protocol_paths[seed])
         if (
             source_protocol_sha256s[seed]
-            != alltrain_protocol["parents"][f"seed{seed}_source_protocol"][
-                "sha256"
-            ]
+            != alltrain_protocol["parents"][f"seed{seed}_source_protocol"]["sha256"]
             or source_protocols[seed]["dlo_types"] != ("DLO2",)
             or int(source_protocols[seed]["training"]["random_seed"]) != seed
         ):
@@ -226,8 +216,7 @@ def main() -> int:
             label=f"seed-{seed} schedule identity",
         )
         if (
-            seed_result.get("contract")
-            != "deform-dlo2-deep-alltrain-seed-result-v1"
+            seed_result.get("contract") != "deform-dlo2-deep-alltrain-seed-result-v1"
             or seed_result.get("official_eval_read") is not False
             or seed_result.get("assembly_authorized") is not True
             or int(seed_result.get("seed", -1)) != seed
@@ -240,9 +229,7 @@ def main() -> int:
         _, final_member = _verified_json(
             member_identity, label=f"seed-{seed} final member"
         )
-        schedule_path = _verified_file(
-            schedule_identity, label=f"seed-{seed} schedule"
-        )
+        schedule_path = _verified_file(schedule_identity, label=f"seed-{seed} schedule")
         method_specs[seed] = (method_path, method_spec)
         final_members[seed] = final_member
         schedules[seed] = schedule_path
@@ -251,24 +238,20 @@ def main() -> int:
             label=f"seed-{seed} selected checkpoint",
         )
         if (
-            method_spec.get("contract")
-            != "deform-dlo2-deep-alltrain-seed-method-v1"
+            method_spec.get("contract") != "deform-dlo2-deep-alltrain-seed-method-v1"
             or method_spec.get("official_eval_read") is not False
             or int(method_spec.get("seed", -1)) != seed
             or method_spec.get("operator") != selected["operator"]
-            or float(method_spec.get("seed_weight", -1.0))
-            != selected["weights"][seed]
+            or float(method_spec.get("seed_weight", -1.0)) != selected["weights"][seed]
             or int(method_spec.get("selected_update", -1))
             != selected["member_updates"][seed]
             or int(method_spec.get("comparison_baseline_seed", -1))
             != selected["comparison_baseline_seed"]
-            or final_member.get("contract")
-            != "deform-dlo2-deep-alltrain-seed-final-v1"
+            or final_member.get("contract") != "deform-dlo2-deep-alltrain-seed-final-v1"
             or final_member.get("official_eval_read") is not False
             or int(final_member.get("seed", -1)) != seed
             or final_member.get("operator") != selected["operator"]
-            or float(final_member.get("weight", -1.0))
-            != selected["weights"][seed]
+            or float(final_member.get("weight", -1.0)) != selected["weights"][seed]
             or int(final_member.get("selected_update", -1))
             != selected["member_updates"][seed]
             or checkpoint != selected["member_checkpoints"][seed]
@@ -303,9 +286,7 @@ def main() -> int:
         expected_calibration = {
             "scale": selected["variance_scale"],
             "floor_m2": selected["variance_floor_m2"],
-            "nominal_coordinate_coverage": selected[
-                "nominal_coordinate_coverage"
-            ],
+            "nominal_coordinate_coverage": selected["nominal_coordinate_coverage"],
         }
         if (
             dict(seed_ensemble) != dict(candidate_ensemble)
@@ -381,8 +362,7 @@ def main() -> int:
         != selected["comparison_baseline_seed"]
         or source_selected["validation_fitted_variance_scale"]
         != selected["variance_scale"]
-        or source_selected["variance_floor_m2"]
-        != selected["variance_floor_m2"]
+        or source_selected["variance_floor_m2"] != selected["variance_floor_m2"]
         or source_selected["nominal_coordinate_coverage"]
         != selected["nominal_coordinate_coverage"]
     ):
@@ -524,11 +504,9 @@ def main() -> int:
             rollouts[seed] = rollout
         if reference_rollout is None:
             raise RuntimeError("deep official rollout is empty")
-        candidate_prediction, raw_variance = (
-            combine_deform_checkpoint_predictions(
-                {seed: rollouts[seed]["predictions"] for seed in (42, 43)},
-                selected["weights"],
-            )
+        candidate_prediction, raw_variance = combine_deform_checkpoint_predictions(
+            {seed: rollouts[seed]["predictions"] for seed in (42, 43)},
+            selected["weights"],
         )
         candidate_records = posterior_runtime._records(
             {
@@ -544,9 +522,7 @@ def main() -> int:
             candidate_records,
             baseline_records,
             expected_case_count=int(str(evaluation["expected_trajectory_count"])),
-            published_reference_l1_m=float(
-                str(evaluation["published_reference_l1_m"])
-            ),
+            published_reference_l1_m=float(str(evaluation["published_reference_l1_m"])),
             minimum_relative_improvement=float(
                 str(gate["ensemble_relative_improvement_min"])
             ),
@@ -559,9 +535,7 @@ def main() -> int:
             raw_variance,
             variance_floor_m2=float(str(selected["variance_floor_m2"])),
             variance_scale=float(str(selected["variance_scale"])),
-            nominal_coverage=float(
-                str(selected["nominal_coordinate_coverage"])
-            ),
+            nominal_coverage=float(str(selected["nominal_coordinate_coverage"])),
         )
         result = {
             "schema_version": 1,
@@ -592,9 +566,7 @@ def main() -> int:
                 "source_validation_scale_reused_unchanged": True,
                 "variance_scale": selected["variance_scale"],
                 "variance_floor_m2": selected["variance_floor_m2"],
-                "nominal_coordinate_coverage": selected[
-                    "nominal_coordinate_coverage"
-                ],
+                "nominal_coordinate_coverage": selected["nominal_coordinate_coverage"],
                 "metrics": uncertainty,
             },
             "runtime": {
