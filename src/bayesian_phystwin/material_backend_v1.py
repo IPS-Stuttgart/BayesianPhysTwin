@@ -39,6 +39,7 @@ class MaterialBackendVariantV1:
     producer_profile_id: str
     transport: BackendTransportV1
     legacy: bool = False
+    default: bool | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -54,12 +55,19 @@ class MaterialBackendVariantV1:
             raise ValueError("unsupported backend transport")
         if type(self.legacy) is not bool:
             raise TypeError("legacy must be a genuine bool")
+        if self.default is None:
+            object.__setattr__(self, "default", not self.legacy)
+        elif type(self.default) is not bool:
+            raise TypeError("default must be a genuine bool")
+        if self.legacy and self.default:
+            raise ValueError("a legacy backend variant cannot be the default")
 
     def to_record(self) -> dict[str, object]:
         return {
             "producer_profile_id": self.producer_profile_id,
             "transport": self.transport,
             "legacy": self.legacy,
+            "default": self.default,
         }
 
 
@@ -94,12 +102,20 @@ class MaterialBackendSpecV1:
         producer_ids = tuple(item.producer_profile_id for item in self.variants)
         if len(set(producer_ids)) != len(producer_ids):
             raise ValueError("backend producer profile IDs must be unique")
-        default_count = sum(not item.legacy for item in self.variants)
-        if default_count != 1:
+        default_variants = tuple(item for item in self.variants if item.default)
+        if len(default_variants) != 1:
             raise ValueError(
                 "a backend family requires a non-legacy variant and exactly one "
                 "non-legacy default variant"
             )
+        if default_variants[0].legacy:
+            raise ValueError("the default backend variant cannot be legacy")
+
+    @property
+    def default_variant(self) -> MaterialBackendVariantV1:
+        """Return the unique explicitly selected default producer variant."""
+
+        return next(item for item in self.variants if item.default)
 
     def to_record(self) -> dict[str, object]:
         return {
@@ -126,6 +142,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="jax-fem-quasistatic-v1",
                     transport="lagrangian-export-v1",
+                    default=True,
                 ),
             ),
         ),
@@ -140,6 +157,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="warp-fem-v1",
                     transport="material-trajectory-v1",
+                    default=True,
                 ),
             ),
         ),
@@ -154,6 +172,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="sofa-fem-v1",
                     transport="material-trajectory-v1",
+                    default=True,
                 ),
             ),
         ),
@@ -168,11 +187,13 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="genesis-mpm-v1",
                     transport="material-trajectory-v1",
+                    default=True,
                 ),
                 MaterialBackendVariantV1(
                     producer_profile_id="genesis-world-mpm-v1",
                     transport="lagrangian-export-v1",
                     legacy=True,
+                    default=False,
                 ),
             ),
         ),
@@ -187,6 +208,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="position-based-dynamics-v1",
                     transport="material-trajectory-v1",
+                    default=True,
                 ),
             ),
         ),
@@ -201,6 +223,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="physx-fem-v1",
                     transport="material-trajectory-v1",
+                    default=True,
                 ),
             ),
         ),
@@ -215,6 +238,7 @@ MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProx
                 MaterialBackendVariantV1(
                     producer_profile_id="mujoco-flex-v1",
                     transport="material-trajectory-v1",
+                    default=True,
                 ),
             ),
         ),
@@ -245,6 +269,10 @@ class ResolvedMaterialBackendV1:
     def legacy_alias(self) -> bool:
         return self.variant.legacy
 
+    @property
+    def is_default(self) -> bool:
+        return self.variant.default is True
+
     def to_record(self) -> dict[str, object]:
         return {
             "canonical_profile": self.spec.to_record(),
@@ -254,10 +282,20 @@ class ResolvedMaterialBackendV1:
 
 def _producer_index() -> dict[str, ResolvedMaterialBackendV1]:
     result: dict[str, ResolvedMaterialBackendV1] = {}
-    for spec in MATERIAL_BACKEND_SPECS.values():
+    canonical_ids = frozenset(MATERIAL_BACKEND_SPECS)
+    for registry_key, spec in MATERIAL_BACKEND_SPECS.items():
+        if registry_key != spec.profile_id:
+            raise RuntimeError("backend registry key must equal canonical profile ID")
         for variant in spec.variants:
             if variant.producer_profile_id in result:
                 raise RuntimeError("duplicate producer profile in backend registry")
+            if (
+                variant.producer_profile_id in canonical_ids
+                and variant.producer_profile_id != spec.profile_id
+            ):
+                raise RuntimeError(
+                    "producer profile collides with another canonical backend family"
+                )
             result[variant.producer_profile_id] = ResolvedMaterialBackendV1(
                 spec=spec,
                 variant=variant,
@@ -277,7 +315,7 @@ def describe_material_backend_profiles() -> dict[str, object]:
     )
     return {
         "schema": "bayesian-phystwin.material-backend-registry",
-        "schema_version": 1,
+        "schema_version": 2,
         "profiles": [item.to_record() for item in profiles],
         "extension_rule": (
             "Add one canonical family and one transport variant; do not create a "
@@ -293,8 +331,7 @@ def resolve_material_backend_profile(profile_id: str) -> ResolvedMaterialBackend
         raise ValueError("profile_id must be a nonempty string")
     spec = MATERIAL_BACKEND_SPECS.get(profile_id)
     if spec is not None:
-        variant = next(item for item in spec.variants if not item.legacy)
-        return ResolvedMaterialBackendV1(spec=spec, variant=variant)
+        return ResolvedMaterialBackendV1(spec=spec, variant=spec.default_variant)
     resolved = _PRODUCER_INDEX.get(profile_id)
     if resolved is None:
         raise ValueError(f"unknown material backend profile: {profile_id}")
@@ -332,7 +369,7 @@ def _assert_requested_profile(
     requested_profile_id: str,
     resolved_runtime: ResolvedMaterialBackendV1,
 ) -> None:
-    """Check a canonical-family assertion or an exact legacy producer assertion."""
+    """Check a canonical-family assertion or an exact producer assertion."""
 
     requested = resolve_material_backend_profile(requested_profile_id)
     if requested.profile_id != resolved_runtime.profile_id:
@@ -340,8 +377,8 @@ def _assert_requested_profile(
             "requested canonical backend does not match the runtime manifest"
         )
     # Canonical family IDs intentionally admit their registered transport variants.
-    # A transport-specific alias is an exact producer assertion and must not
-    # silently accept another transport from the same family.
+    # Any producer alias is an exact assertion and must not silently accept another
+    # transport from the same family.
     if (
         requested_profile_id != requested.profile_id
         and requested.producer_profile_id != resolved_runtime.producer_profile_id
