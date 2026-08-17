@@ -255,6 +255,44 @@ def test_causal_mode_rejects_overlapping_evidence(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"mode": "future-aware-v1"}, "unknown learned-twin mode"),
+        ({"evidence_frame_range_half_open": "0:4"}, "must be a JSON array"),
+        ({"evidence_frame_range_half_open": (0,)}, "two integer frame indices"),
+        ({"evidence_frame_range_half_open": (4, 4)}, "nonempty half-open range"),
+        ({"model_artifacts": {" model.pt": None}}, "canonical relative paths"),
+    ],
+)
+def test_materializer_rejects_malformed_boundary_inputs(
+    tmp_path: Path,
+    overrides: dict[str, object],
+    message: str,
+) -> None:
+    source, checkpoint = _inputs(tmp_path)
+    values: dict[str, object] = {
+        "source_rollout_path": source,
+        "model_artifacts": {"model.pt": checkpoint},
+        "output_dir": tmp_path / "bundle",
+        "profile_id": "matphys-v1",
+        "mode": "causal-source-v1",
+        "producer_repository": "example/producer",
+        "producer_revision": "b" * 40,
+        "producer_source_artifacts": {"producer.py": "a" * 64},
+        "case_id": "case",
+        "target_object_id": "target",
+        "training_object_ids": ("source",),
+        "evidence_frame_range_half_open": (0, 4),
+        "rollout_frame_range_half_open": (4, 7),
+    }
+    values.update(overrides)
+    if values["model_artifacts"] == {" model.pt": None}:
+        values["model_artifacts"] = {" model.pt": checkpoint}
+    with pytest.raises(ValueError, match=message):
+        materialize_learned_twin_backend(**values)  # type: ignore[arg-type]
+
+
 def test_model_source_mutation_is_detected_when_requested(tmp_path: Path) -> None:
     output, checkpoint, _ = _build(tmp_path)
     checkpoint.write_bytes(b"mutated learned twin checkpoint\n")
