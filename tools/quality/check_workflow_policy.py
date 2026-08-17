@@ -89,13 +89,11 @@ def _metadata_header(text: str) -> tuple[dict[str, str], tuple[str, ...]]:
         value = match.group(2).strip()
         if key not in _ALLOWED_METADATA_KEYS:
             violations.append(
-                f"line {line_number}: unknown workflow metadata key "
-                f"'workflow-{key}'"
+                f"line {line_number}: unknown workflow metadata key 'workflow-{key}'"
             )
         elif key in metadata:
             violations.append(
-                f"line {line_number}: duplicate workflow metadata key "
-                f"'workflow-{key}'"
+                f"line {line_number}: duplicate workflow metadata key 'workflow-{key}'"
             )
         else:
             metadata[key] = value
@@ -159,9 +157,7 @@ def inspect_workflow(
             )
     elif lifecycle_value.lower() not in _ALLOWED_LIFECYCLES:
         lifecycle = "legacy"
-        violations.append(
-            "workflow-lifecycle must be 'permanent' or 'temporary'"
-        )
+        violations.append("workflow-lifecycle must be 'permanent' or 'temporary'")
     else:
         lifecycle = lifecycle_value.lower()
 
@@ -350,8 +346,7 @@ def _changed_workflows(root: Path, base: str | None, head: str) -> tuple[Path, .
             resolved = source.resolve(strict=True)
         except OSError as error:
             raise ValueError(
-                "changed workflow path is not readable: "
-                f"{relative_path.as_posix()}"
+                f"changed workflow path is not readable: {relative_path.as_posix()}"
             ) from error
         try:
             resolved.relative_to(root_resolved)
