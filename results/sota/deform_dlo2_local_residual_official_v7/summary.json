@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-local-residual-official-v7-compact-evidence",
+  "claim_boundary": "One-shot identical-information evaluation of the source-confirmed all-56 DLO2 local-residual method. No target outcome may change the method, reporting operator, calibration, case set, or gate.",
+  "decision": {
+    "benchmark_specific_claim_gate_passed": true,
+    "scope": "Released DEFORM DLO2 evaluation split under the locked mean-coordinate-L1 operator.",
+    "validation_passed": true
+  },
+  "method": {
+    "candidate": "alltrain-physical-plus-r1-s0p25-local-residual",
+    "comparison_baseline": "identically-trained-alltrain-physical-checkpoint",
+    "fallback": "alltrain-physical-checkpoint-exact",
+    "fixed_arm": {
+      "name": "r1_s0p25",
+      "ridge": 1.0,
+      "selection_source": "passed-dlo2-source-v6",
+      "shrinkage": 0.25
+    },
+    "prob4d_used": false
+  },
+  "evaluation": {
+    "case_count": 14,
+    "scored_future_frames": 498,
+    "node_count": 12,
+    "all_expected_cases_evaluated_once": true,
+    "target_selection_performed": false,
+    "target_calibration_performed": false,
+    "target_retry_performed": false,
+    "case_replacement_performed": false,
+    "candidate_mean_l1_m": 0.007860559253359958,
+    "comparison_baseline_mean_l1_m": 0.008746962326219684,
+    "action_aware_persistence_mean_l1_m": 0.05287526829808458,
+    "relative_improvement": 0.10133838923744597,
+    "case_wins": 14,
+    "maximum_case_ratio": 0.9419249083983519,
+    "candidate_horizon_l1_m": {
+      "early": 0.006479327779928443,
+      "middle": 0.008282800101033834,
+      "late": 0.008819549879117592
+    },
+    "comparison_baseline_horizon_l1_m": {
+      "early": 0.007239500581656865,
+      "middle": 0.009217650793470826,
+      "late": 0.009783735603531357
+    }
+  },
+  "published_reference": {
+    "source": "DEFORM CoRL 2024 Table 1, DLO2",
+    "mean_l1_m": 0.0097,
+    "candidate_all_unique_mean_l1_m": 0.007860559253359958,
+    "candidate_canonical_draw_mean_l1_m": 0.008503685752829573,
+    "comparison_baseline_canonical_draw_mean_l1_m": 0.009583381059864587,
+    "canonical_eval_indices": [
+      1,
+      7,
+      9,
+      7,
+      11,
+      7,
+      13,
+      8,
+      8,
+      6,
+      8,
+      5,
+      8,
+      4
+    ],
+    "canonical_unique_index_count": 9,
+    "upstream_glob_order": "unspecified"
+  },
+  "claim_gate": {
+    "all_expected_cases_present": true,
+    "published_reference_all_unique_strictly_better": true,
+    "published_reference_canonical_draw_strictly_better": true,
+    "bayesian_relative_improvement_passed": true,
+    "bayesian_case_wins_passed": true,
+    "maximum_case_ratio_passed": true,
+    "passed": true
+  },
+  "uncertainty": {
+    "nominal_coordinate_coverage": 0.9,
+    "variance_scale": 1.0,
+    "variance_floor_m2": 1e-06,
+    "alltrain_fit_covariance_reused_unchanged": true,
+    "overall": {
+      "coordinate_coverage": 0.9399941033977178,
+      "coordinate_nees": 0.8943375059550726,
+      "mean_gaussian_nll": -3.708817301882065,
+      "mean_interval_width_m": 0.04105467085133898
+    },
+    "horizon": {
+      "early": {
+        "coordinate_coverage": 0.9578910881621725,
+        "coordinate_nees": 0.7376390822707373,
+        "mean_gaussian_nll": -3.808228137795894,
+        "mean_interval_width_m": 0.03963389759469094
+      },
+      "middle": {
+        "coordinate_coverage": 0.9385398737808376,
+        "coordinate_nees": 0.9232490420090096,
+        "mean_gaussian_nll": -3.6922156020894894,
+        "mean_interval_width_m": 0.04103747772576483
+      },
+      "late": {
+        "coordinate_coverage": 0.9235513482501434,
+        "coordinate_nees": 1.0221243935854705,
+        "mean_gaussian_nll": -3.626008165760811,
+        "mean_interval_width_m": 0.04249263723356117
+      }
+    }
+  },
+  "runtime": {
+    "python": "3.10.12",
+    "torch": "2.0.1+cu118",
+    "cuda": "11.8",
+    "alltrain_elapsed_seconds": 55560.021582448855,
+    "official_elapsed_seconds": 17.959678458049893
+  },
+  "lineage": {
+    "source_revision": "2cdbff202b2b000a96c6eddf9e750999ee9f6e75",
+    "source_archive_sha256": "f0e2ac2d1166f1e95e2ca7ba70ee109a63cc7e110687c7a863cefb0cd8322d69",
+    "upstream_deform_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "alltrain_protocol_sha256": "39566ca4542f1a0afff84458123580be92ca3c95af5bda396351ed702e7d4739",
+    "official_protocol_sha256": "7761b3a8084fad60278eb82d5aa6bd96d3a3b7a6ebe2ad5d7c74d13ce8a0abcb",
+    "alltrain_result_sha256": "3bc1fa4cb95398b2b7df588896bba619c19424615fa5c087c7a6a65eb6f725d0",
+    "final_method_sha256": "c68e60970bc51e7e3338680dfb4662d316d38e0e45ab301cbf510cd74bb54e54",
+    "physical_checkpoint_sha256": "6c46bc1a8e5b89000787225fbd8ac2b7ab8d25babc6efcc551e53ecd5622e872",
+    "local_residual_model_sha256": "0376e95bc144d435d61fed14f5d40222978958dd2954ac43c9117588437f8034",
+    "method_spec_sha256": "7f091b74da2f83987f0da74afc14b9dfed87587c18b53bee006d11874a87759a",
+    "window_schedule_sha256": "5db4fe28fd2db7d38e968693637910480a2643dcec679dd4ec071cd776cb45db",
+    "authorization_sha256": "89e424efba916b99bd20cc5118f9a5ed8c5dfb8d71406440889ffd38d3ebf40b",
+    "evaluation_manifest_sha256": "de777b105ebb7bfde500667e0f5397ccdda18b106cd2065d0ef223f7f4e92cdd",
+    "prediction_sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b",
+    "prediction_size_bytes": 5082164,
+    "official_result_sha256": "c5009e47072adf4e72547cd11848d47bcb1259c3f591c8210cf53dc329ba6856"
+  }
+}
