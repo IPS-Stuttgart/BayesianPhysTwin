@@ -26,7 +26,7 @@ def test_minimal_ecosystem_smoke_preserves_contract_and_fallback_identity(
 ) -> None:
     example = _load_example()
     first = example.run_example(tmp_path / "first")
-    second = example.run_example(tmp_path / "second")
+    example.run_example(tmp_path / "second")
 
     first_observation = load_observation_belief(
         tmp_path / "first" / "prob4d_observation_belief_v1.npz"
