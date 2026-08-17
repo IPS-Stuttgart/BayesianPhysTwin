@@ -71,8 +71,8 @@ registry declarations should set the flag explicitly.
 The machine-readable registry description uses schema version 2 because each
 variant record now exposes `default`. Registry keys must equal their canonical
 family IDs, and a producer profile may not shadow another family's canonical
-ID. These checks remove lookup-precedence ambiguity before the registry is
-published.
+ID. Within a family, the canonical ID may identify only the default variant.
+These checks remove lookup-precedence ambiguity before the registry is published.
 
 The duplicate Genesis identifiers are one canonical family. New materialization
 uses `genesis-mpm-v1` and the material-trajectory transport. The earlier
