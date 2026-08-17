@@ -51,6 +51,11 @@ consumers.
 | 6 | `physx-fem-v1` | NVIDIA PhysX deformables | experimental | `physx-fem-v1` |
 | 7 | `mujoco-flex-v1` | MuJoCo Flex | experimental | `mujoco-flex-v1` |
 
+Each family must have exactly one non-legacy default variant. Canonical
+resolution therefore cannot depend on tuple or insertion order. Additional
+legacy variants are allowed only for immutable artifact compatibility. Priority
+ties are ordered deterministically by canonical family ID.
+
 The duplicate Genesis identifiers are one canonical family. New materialization
 uses `genesis-mpm-v1` and the material-trajectory transport. The earlier
 `genesis-world-mpm-v1` identifier remains a legacy transport variant so frozen
@@ -91,10 +96,12 @@ and selects the transport through exactly one of:
 - `backend_profile` for `lagrangian-export-v1`; or
 - `backend_kind` for `material-trajectory-v1`.
 
-A profile assertion may use a canonical family ID or a retained producer ID.
-Materialization fails when the requested family, runtime profile, and runtime
-schema disagree. Validation fails when a directory contains zero or multiple
-recognized artifact manifests.
+A canonical family assertion accepts any registered transport variant of that
+family. A retained transport-specific producer ID is an exact assertion. For
+example, requesting `genesis-world-mpm-v1` cannot silently accept a
+`genesis-mpm-v1` material-trajectory runtime. Materialization also fails when
+the requested family, runtime profile, and runtime schema disagree. Validation
+fails when a directory contains zero or multiple recognized artifact manifests.
 
 `python -m bayesian_phystwin.cli.material_trajectory_backend` remains a thin
 compatibility shim for the same canonical CLI. It is not a second extension
@@ -105,11 +112,12 @@ point.
 A new backend contribution must:
 
 1. add one canonical family or one variant of an existing family;
-2. use one of the two admitted transport contracts;
-3. preserve persistent material identity and the common physical-rollout map;
-4. bind exact engine, source, runtime, units, frame, and information-boundary
+2. declare exactly one non-legacy default variant per family;
+3. use one of the two admitted transport contracts;
+4. preserve persistent material identity and the common physical-rollout map;
+5. bind exact engine, source, runtime, units, frame, and information-boundary
    identities; and
-5. keep compatibility evidence separate from accuracy, calibration, physical
+6. keep compatibility evidence separate from accuracy, calibration, physical
    benefit, intervention benefit, safety, and state-of-the-art claims.
 
 Do not introduce another top-level backend contract merely because an engine
