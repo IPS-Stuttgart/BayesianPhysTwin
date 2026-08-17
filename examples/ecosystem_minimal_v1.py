@@ -173,18 +173,14 @@ def run_example(output_dir: Path) -> dict[str, Any]:
         metadata={"example_path": "fallback"},
     )
     if fallback_result.selected_belief is not baseline:
-        raise RuntimeError(
-            "rejected decision did not return the exact fallback object"
-        )
+        raise RuntimeError("rejected decision did not return the exact fallback object")
 
     accepted_payload = {
         "guard_decision_id": accepted.decision_id,
         "selection_id": accepted_result.selection.selection_id,
         "selected_role": "candidate",
         "selected_artifact_id": accepted_result.selected_belief.artifact_id,
-        "exact_candidate_identity": (
-            accepted_result.selected_belief is candidate
-        ),
+        "exact_candidate_identity": (accepted_result.selected_belief is candidate),
     }
     fallback_payload = {
         "guard_decision_id": rejected.decision_id,
