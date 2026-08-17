@@ -164,9 +164,7 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
         "bayesian_phystwin.cli.phystwin_controller_inference"
     ),
     "materialize-lagrangian-backend": ("bayesian_phystwin.cli.lagrangian_backend"),
-    "materialize-learned-twin-backend": (
-        "bayesian_phystwin.cli.learned_twin_backend"
-    ),
+    "materialize-learned-twin-backend": ("bayesian_phystwin.cli.learned_twin_backend"),
     "materialize-matphys-backend": "bayesian_phystwin.cli.matphys_backend",
     "materialize-deformmaster-backend": ("bayesian_phystwin.cli.deformmaster_backend"),
     "materialize-newton-mpm-backend": ("bayesian_phystwin.cli.newton_mpm_backend"),
