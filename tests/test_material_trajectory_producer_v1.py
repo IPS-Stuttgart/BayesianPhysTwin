@@ -14,6 +14,7 @@ from bayesian_phystwin.material_trajectory_backend_v1 import (
 )
 from bayesian_phystwin.material_trajectory_producer_v1 import (
     CallbackMaterialTrajectoryReplayV1,
+    DrakeDeformableBodyReplayV1,
     MATERIAL_TRAJECTORY_PRODUCER_PROTOCOL,
     MaterialTrajectoryReplayV1,
     produce_material_trajectory_backend,
@@ -24,6 +25,7 @@ PROMISING_BACKENDS = (
     "warp-fem-v1",
     "sofa-fem-v1",
     "position-based-dynamics-v1",
+    "drake-fem-v1",
 )
 
 
@@ -192,6 +194,48 @@ def test_callback_replay_delegates_and_rejects_noncallables() -> None:
             positions_callback=cast(Any, None),
             step_callback=lambda: None,
         )
+
+
+def test_drake_replay_transposes_and_validates_body_positions() -> None:
+    events: list[str] = []
+    expected = _frame_zero()
+
+    class _DrakeBody:
+        def __init__(self, positions: np.ndarray) -> None:
+            self.positions = positions
+
+        def GetPositions(self, context: object) -> np.ndarray:
+            assert context == "plant-context"
+            events.append("positions")
+            return self.positions
+
+    replay = DrakeDeformableBodyReplayV1(
+        deformable_body=_DrakeBody(expected.T),
+        plant_context_callback=lambda: "plant-context",
+        advance_callback=lambda: events.append("step"),
+        synchronize_callback=lambda: events.append("synchronize"),
+        context="drake-scene",
+    )
+    replay.synchronize()
+    np.testing.assert_array_equal(replay.get_material_positions_m(), expected)
+    replay.step()
+    assert replay.context == "drake-scene"
+    assert events == ["synchronize", "positions", "step"]
+
+    with pytest.raises(TypeError, match="must expose GetPositions"):
+        DrakeDeformableBodyReplayV1(
+            deformable_body=object(),
+            plant_context_callback=lambda: object(),
+            advance_callback=lambda: None,
+        )
+
+    invalid = DrakeDeformableBodyReplayV1(
+        deformable_body=_DrakeBody(np.zeros((2, 5), dtype=np.float64)),
+        plant_context_callback=lambda: "plant-context",
+        advance_callback=lambda: None,
+    )
+    with pytest.raises(ValueError, match=r"shape \(3,N\)"):
+        invalid.get_material_positions_m()
 
 
 @pytest.mark.parametrize("backend_kind", PROMISING_BACKENDS)
