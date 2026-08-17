@@ -164,8 +164,8 @@ class DrakeDeformableBodyReplayV1:
         return self.synchronize_callback()
 
     def get_material_positions_m(self) -> FloatArray:
-        get_positions = getattr(self.deformable_body, "GetPositions")
-        matrix = _to_numpy(get_positions(self.plant_context_callback()))
+        body = cast(Any, self.deformable_body)
+        matrix = _to_numpy(body.GetPositions(self.plant_context_callback()))
         _require(
             matrix.ndim == 2 and matrix.shape[0] == 3 and matrix.shape[1] >= 1,
             "Drake GetPositions must return a matrix with shape (3,N)",
