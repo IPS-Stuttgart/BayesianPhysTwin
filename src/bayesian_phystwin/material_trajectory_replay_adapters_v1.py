@@ -77,9 +77,7 @@ class DolfinxDisplacementReplayV1:
                 raise TypeError(f"{name} must be callable")
         reference = _to_numpy(self.reference_positions_m)
         _require(
-            reference.ndim == 2
-            and reference.shape[0] >= 1
-            and reference.shape[1] == 3,
+            reference.ndim == 2 and reference.shape[0] >= 1 and reference.shape[1] == 3,
             "reference_positions_m must have shape (S,3)",
         )
         _require(
