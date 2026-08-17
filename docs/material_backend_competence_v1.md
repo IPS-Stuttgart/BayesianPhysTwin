@@ -7,8 +7,9 @@ content-addressed custody. It does not establish that the external simulator is
 a useful physical prior. This protocol defines the minimum source-only evidence
 required before one registered backend may enter a fresh target experiment.
 
-The protocol applies uniformly to JAX-FEM, SOFA, Genesis MPM, MuJoCo Flex, and
-future canonical families registered by `material_backend_v1`.
+The protocol applies uniformly to JAX-FEM, Warp FEM, SOFA, Genesis MPM,
+PositionBasedDynamics XPBD/PBD, PhysX deformables, MuJoCo Flex, and future
+canonical families registered by `material_backend_v1`.
 
 ## Frozen comparison roster
 

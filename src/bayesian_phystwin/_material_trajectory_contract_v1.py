@@ -59,6 +59,12 @@ class MaterialBackendProfile:
 MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
     MappingProxyType(
         {
+            "warp-fem-v1": MaterialBackendProfile(
+                backend_kind="warp-fem-v1",
+                engine_repository="NVIDIA/warp",
+                solver_family="gpu-differentiable-fem",
+                identity_kind="mesh-node-index",
+            ),
             "sofa-fem-v1": MaterialBackendProfile(
                 backend_kind="sofa-fem-v1",
                 engine_repository="sofa-framework/sofa",
@@ -70,6 +76,20 @@ MATERIAL_BACKEND_PROFILES: Final[Mapping[str, MaterialBackendProfile]] = (
                 engine_repository="Genesis-Embodied-AI/genesis-world",
                 solver_family="material-point-method",
                 identity_kind="material-particle-index",
+            ),
+            "position-based-dynamics-v1": MaterialBackendProfile(
+                backend_kind="position-based-dynamics-v1",
+                engine_repository=(
+                    "InteractiveComputerGraphics/PositionBasedDynamics"
+                ),
+                solver_family="position-based-dynamics-xpbd",
+                identity_kind="simulation-particle-index",
+            ),
+            "physx-fem-v1": MaterialBackendProfile(
+                backend_kind="physx-fem-v1",
+                engine_repository="NVIDIA-Omniverse/PhysX",
+                solver_family="gpu-fem-deformables",
+                identity_kind="deformable-simulation-vertex-index",
             ),
             "mujoco-flex-v1": MaterialBackendProfile(
                 backend_kind="mujoco-flex-v1",

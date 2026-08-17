@@ -10,6 +10,9 @@ import pytest
 
 import bayesian_phystwin.material_backend_v1 as backend
 from bayesian_phystwin.cli import lagrangian_backend, material_trajectory_backend
+from bayesian_phystwin.material_trajectory_backend_v1 import (
+    MATERIAL_BACKEND_PROFILES as MATERIAL_TRAJECTORY_PROFILES,
+)
 
 
 def _runtime(tmp_path: Path, payload: dict[str, object]) -> Path:
@@ -55,8 +58,11 @@ def test_registry_consolidates_duplicate_genesis_profiles() -> None:
     assert isinstance(profiles, list)
     assert [item["profile_id"] for item in profiles] == [
         "jax-fem-quasistatic-v1",
+        "warp-fem-v1",
         "sofa-fem-v1",
         "genesis-mpm-v1",
+        "position-based-dynamics-v1",
+        "physx-fem-v1",
         "mujoco-flex-v1",
     ]
 
@@ -70,6 +76,23 @@ def test_registry_consolidates_duplicate_genesis_profiles() -> None:
     assert legacy.transport == "lagrangian-export-v1"
     assert legacy.legacy_alias
     assert legacy.to_record()["selected_variant"]["legacy"] is True
+
+
+def test_material_transport_profiles_match_canonical_registry() -> None:
+    material_specs = {
+        spec.profile_id: spec
+        for spec in backend.MATERIAL_BACKEND_SPECS.values()
+        if any(
+            variant.transport == "material-trajectory-v1" and not variant.legacy
+            for variant in spec.variants
+        )
+    }
+    assert set(material_specs) == set(MATERIAL_TRAJECTORY_PROFILES)
+    for profile_id, profile in MATERIAL_TRAJECTORY_PROFILES.items():
+        spec = material_specs[profile_id]
+        assert spec.engine_repository == profile.engine_repository
+        assert spec.solver_family == profile.solver_family
+        assert spec.identity_kind == profile.identity_kind
 
 
 @pytest.mark.parametrize(
