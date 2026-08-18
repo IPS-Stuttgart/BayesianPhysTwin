@@ -44,9 +44,7 @@ def _contract(
         "maximum_checked_in_workflows": maximum,
         "temporary_looking_workflow_allowlist": allowlist or [],
         "retirement_target_maximum_checked_in_workflows": target,
-        "retirement_target_maximum_temporary_looking_workflows": (
-            target_temporary
-        ),
+        "retirement_target_maximum_temporary_looking_workflows": (target_temporary),
     }
 
 
@@ -166,10 +164,7 @@ def test_checked_in_budget_is_frozen_and_repository_matches() -> None:
     assert contract["maximum_checked_in_workflows"] == 95
     assert len(contract["temporary_looking_workflow_allowlist"]) == 12
     assert contract["retirement_target_maximum_checked_in_workflows"] == 84
-    assert (
-        contract["retirement_target_maximum_temporary_looking_workflows"]
-        == 0
-    )
+    assert contract["retirement_target_maximum_temporary_looking_workflows"] == 0
 
     report = tool.validate_repository(ROOT)
     assert report["checked_in_workflow_count"] == 95
