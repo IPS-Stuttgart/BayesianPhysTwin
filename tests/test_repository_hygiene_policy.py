@@ -52,10 +52,13 @@ def test_test_fixtures_and_substantive_text_are_not_rejected(tmp_path: Path) -> 
     document.parent.mkdir(parents=True)
     document.write_text("Placeholder values are rejected.\n", encoding="utf-8")
 
-    assert module.find_repository_hygiene_violations(
-        tmp_path,
-        ("tests/fixtures/placeholder.txt", "docs/status.md"),
-    ) == ()
+    assert (
+        module.find_repository_hygiene_violations(
+            tmp_path,
+            ("tests/fixtures/placeholder.txt", "docs/status.md"),
+        )
+        == ()
+    )
 
 
 def test_noncanonical_paths_fail_closed(tmp_path: Path) -> None:

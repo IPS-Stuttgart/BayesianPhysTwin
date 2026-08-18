@@ -146,8 +146,7 @@ MATERIAL_BACKEND_EVIDENCE_STAGES: Final = (
         title="Downstream query benefit",
         required_bindings=("authorized downstream-query EvidenceDecisionV1",),
         interpretation=(
-            "A separately frozen downstream physical-query or Causal4D endpoint "
-            "passed."
+            "A separately frozen downstream physical-query or Causal4D endpoint passed."
         ),
     ),
 )
@@ -325,8 +324,7 @@ class MaterialBackendEvidenceStatusV1:
         overlap = sorted(set(source_groups) & set(target_groups))
         if overlap:
             raise ValueError(
-                "source_group_ids and target_group_ids must be disjoint: "
-                f"{overlap}"
+                f"source_group_ids and target_group_ids must be disjoint: {overlap}"
             )
         object.__setattr__(self, "source_group_ids", source_groups)
         object.__setattr__(self, "target_group_ids", target_groups)
@@ -641,9 +639,7 @@ def build_material_backend_evidence_status_v1(
 
     resolved = resolve_material_backend_profile(producer_profile_id)
     if resolved.profile_id != canonical_profile_id:
-        raise ValueError(
-            "producer_profile_id does not belong to canonical_profile_id"
-        )
+        raise ValueError("producer_profile_id does not belong to canonical_profile_id")
     normalized_runtime = _optional_digest(runtime_id, name="runtime_id")
     qualification_id: str | None = None
     source_group_ids: Sequence[str] = ()
@@ -712,8 +708,7 @@ def require_material_backend_evidence_stage(
     minimum_index = _stage_index(minimum_stage, name="minimum_stage")
     if _STAGE_INDEX[status.stage] < minimum_index:
         raise ValueError(
-            f"material backend evidence stage {status.stage} is below "
-            f"{minimum_stage}"
+            f"material backend evidence stage {status.stage} is below {minimum_stage}"
         )
     if minimum_index >= _STAGE_INDEX["numerically-qualified"]:
         verify_material_backend_evidence_status_v1(

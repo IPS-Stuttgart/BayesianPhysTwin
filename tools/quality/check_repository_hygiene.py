@@ -26,11 +26,7 @@ def tracked_repository_paths(root: Path) -> tuple[str, ...]:
         capture_output=True,
     )
     return tuple(
-        sorted(
-            os.fsdecode(value)
-            for value in completed.stdout.split(b"\0")
-            if value
-        )
+        sorted(os.fsdecode(value) for value in completed.stdout.split(b"\0") if value)
     )
 
 
