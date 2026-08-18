@@ -73,7 +73,9 @@ def _guarded() -> tuple[_Inference, _Belief, _Belief, object]:
     return inference, baseline, candidate, guarded
 
 
-def _construction() -> tuple[_Inference, _Belief, _Belief, object, CandidateBeliefConstructionReceiptV1]:
+def _construction() -> tuple[
+    _Inference, _Belief, _Belief, object, CandidateBeliefConstructionReceiptV1
+]:
     inference, baseline, candidate, guarded = _guarded()
     construction = build_candidate_belief_construction_receipt(
         inference,
@@ -302,7 +304,11 @@ def test_runtime_identity_constructor_rejects_untrusted_evidence() -> None:
         ({"source_repository": "other/repo"}, ValueError, "registered Prob4D"),
         ({"provider_manifest_id": "not-a-digest"}, ValueError, "SHA-256"),
         ({"expected_revision": "not-a-commit"}, ValueError, "Git commit"),
-        ({"revision_evidence_source": "caller_declared"}, ValueError, "independent VCS evidence"),
+        (
+            {"revision_evidence_source": "caller_declared"},
+            ValueError,
+            "independent VCS evidence",
+        ),
         (
             {"revision_evidence_source": "source_checkout", "clean_checkout": None},
             TypeError,

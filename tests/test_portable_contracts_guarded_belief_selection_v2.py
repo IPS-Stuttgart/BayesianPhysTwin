@@ -152,9 +152,7 @@ def test_nested_receipt_round_trip_detects_tampering() -> None:
         common_domain_id=guarded.guard_decision.common_domain_id,
     )
     assert (
-        CandidateBeliefConstructionReceiptV1.from_record(
-            construction.to_record()
-        )
+        CandidateBeliefConstructionReceiptV1.from_record(construction.to_record())
         == construction
     )
     receipt = bind_guarded_belief_selection_receipt(

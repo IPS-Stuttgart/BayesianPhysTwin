@@ -23,9 +23,7 @@ from ._validation import lowercase_sha256
 from .complete_belief_selection import ArtifactBelief
 from .inference.v1 import GuardedUpdateResultV1
 
-CANDIDATE_CONSTRUCTION_SCHEMA = (
-    "bayesian_phystwin.candidate_belief_construction"
-)
+CANDIDATE_CONSTRUCTION_SCHEMA = "bayesian_phystwin.candidate_belief_construction"
 CANDIDATE_CONSTRUCTION_SCHEMA_VERSION = 1
 GUARDED_SELECTION_SCHEMA = "bayesian_phystwin.guarded_belief_selection"
 GUARDED_SELECTION_SCHEMA_VERSION = 2
@@ -276,8 +274,7 @@ class GuardedBeliefSelectionReceiptV2:
             CandidateBeliefConstructionReceiptV1,
         ):
             raise TypeError(
-                "candidate_construction must be "
-                "CandidateBeliefConstructionReceiptV1"
+                "candidate_construction must be CandidateBeliefConstructionReceiptV1"
             )
         construction = CandidateBeliefConstructionReceiptV1.from_record(
             self.candidate_construction.to_record()
@@ -450,8 +447,7 @@ def bind_guarded_belief_selection_receipt(
         CandidateBeliefConstructionReceiptV1,
     ):
         raise TypeError(
-            "candidate_construction must be "
-            "CandidateBeliefConstructionReceiptV1"
+            "candidate_construction must be CandidateBeliefConstructionReceiptV1"
         )
     construction = CandidateBeliefConstructionReceiptV1.from_record(
         candidate_construction.to_record()
