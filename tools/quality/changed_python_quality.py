@@ -9,6 +9,7 @@ ratchets quality without requiring an all-at-once cleanup:
 * mature public contracts are type-checked on every run;
 * stable modules with pre-existing type debt become blocking when modified;
 * a smaller, mature subset is checked with ``mypy --strict``;
+* release versions cannot reuse another commit's canonical Git tag;
 * public-module lifecycle classifications remain fail-closed; and
 * added or modified workflows satisfy lifecycle and immutable-action policy.
 """
@@ -211,6 +212,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     _run(
         tuple(workflow_policy_command),
         label="Workflow lifecycle and immutable-action policy",
+    )
+    _run(
+        (
+            sys.executable,
+            "tools/release/check_version_identity.py",
+            "--head",
+            checkout_head,
+            "--require-complete-history",
+        ),
+        label="Release version and Git tag identity",
     )
     _run(
         (
