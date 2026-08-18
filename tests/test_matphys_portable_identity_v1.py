@@ -7,6 +7,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import bayesian_phystwin.matphys_portable_identity_v1 as portable_identity
+from bayesian_phystwin._artifact_custody import (
+    checksum_manifest_text,
+    copy_file_exact,
+    publish_staging_directory,
+)
 from bayesian_phystwin.matphys_official_producer_v1 import (
     MATPHYS_CAUSAL_PREFIX_MODE,
     MATPHYS_OFFICIAL_PIPELINE_COMPONENTS,
@@ -243,3 +249,57 @@ def test_portable_materialization_is_no_overwrite(tmp_path: Path) -> None:
 
     with pytest.raises(FileExistsError):
         materialize_matphys_portable_identity(source, output)
+
+
+def test_shared_artifact_custody_copy_and_overwrite_guards(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.bin"
+    source.write_bytes(b"portable-custody-payload")
+    destination = tmp_path / "nested" / "copy.bin"
+
+    copied = copy_file_exact(source, destination)
+    assert copied == destination.resolve()
+    assert copied.read_bytes() == source.read_bytes()
+
+    with pytest.raises(FileExistsError):
+        copy_file_exact(source, destination)
+
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    existing_output = tmp_path / "published"
+    existing_output.mkdir()
+    with pytest.raises(FileExistsError):
+        publish_staging_directory(staging, existing_output)
+
+
+def test_shared_artifact_custody_rejects_bad_checksum_rosters(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "checksum-root"
+    root.mkdir()
+    (root / "payload.bin").write_bytes(b"payload")
+
+    with pytest.raises(ValueError, match="nonempty string"):
+        checksum_manifest_text(root, [""])
+    with pytest.raises(ValueError, match="unique"):
+        checksum_manifest_text(root, ["payload.bin", "payload.bin"])
+
+
+def test_portable_identity_primitive_validators_fail_closed() -> None:
+    with pytest.raises(ValueError, match="JSON object with string keys"):
+        portable_identity._mapping({1: "bad"}, name="value")
+    with pytest.raises(ValueError, match="JSON array"):
+        portable_identity._sequence("not-an-array", name="value")
+    with pytest.raises(ValueError, match="positive integer"):
+        portable_identity._positive_integer(0, name="value")
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        portable_identity._nonnegative_integer(-1, name="value")
+    with pytest.raises(ValueError, match="finite number"):
+        portable_identity._finite_number(True, name="value")
+    with pytest.raises(ValueError, match="finite number"):
+        portable_identity._finite_number(float("nan"), name="value")
+    with pytest.raises(ValueError, match="exactly two integer indices"):
+        portable_identity._frame_range([1], name="value")
+    with pytest.raises(ValueError, match="nonempty nonnegative half-open range"):
+        portable_identity._frame_range([2, 2], name="value")
