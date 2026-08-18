@@ -304,9 +304,8 @@ class WarpFEMDisplacementReplayV1:
             raise TypeError("synchronize_callback must be callable")
 
         degree = getattr(self.displacement_field, "degree", None)
-        if (
-            isinstance(degree, (bool, np.bool_))
-            or not isinstance(degree, (int, np.integer))
+        if isinstance(degree, (bool, np.bool_)) or not isinstance(
+            degree, (int, np.integer)
         ):
             raise TypeError("Warp FEM displacement field must expose integer degree")
         _require(
@@ -343,9 +342,7 @@ class WarpFEMDisplacementReplayV1:
             displacements.shape == self._reference_positions_m.shape,
             "Warp FEM displacement and reference node rosters must match",
         )
-        positions = np.ascontiguousarray(
-            self._reference_positions_m + displacements
-        )
+        positions = np.ascontiguousarray(self._reference_positions_m + displacements)
         _require(
             np.all(np.isfinite(positions)),
             "Warp FEM absolute positions contain non-finite values",
