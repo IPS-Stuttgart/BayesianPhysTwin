@@ -8,9 +8,13 @@ import json
 import re
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, cast
 
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
+    DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     load_deform_dlo_robustness_v1_protocol,
+    validate_deform_bayesian_audit_v1,
+    verify_deform_dlo3_evaluator_bayesian_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -48,6 +52,18 @@ def _identity(path: Path) -> dict[str, object]:
     }
 
 
+def _verified_file(value: object, *, label: str) -> Path:
+    identity = _mapping(value, label=label)
+    path = Path(str(identity.get("path", ""))).resolve()
+    if (
+        not path.is_file()
+        or path.stat().st_size != int(cast(Any, identity.get("size_bytes", -1)))
+        or sha256_file(path) != identity.get("sha256")
+    ):
+        raise ValueError(f"{label} identity changed")
+    return path
+
+
 def main() -> int:
     args = _parse_args()
     protocol_path = args.protocol.resolve()
@@ -66,6 +82,9 @@ def main() -> int:
         alltrain.get("contract") != "deform-dlo3-robustness-alltrain-result-v1"
         or alltrain.get("primary_eval_read") is not False
         or alltrain.get("target_authorized") is not False
+        or alltrain.get("bayesian_audit_complete") is not True
+        or int(cast(Any, alltrain.get("bayesian_distribution_count", -1)))
+        != len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS)
         or dry_run.get("contract") != "deform-dlo3-robustness-evaluator-dry-run-v1"
         or dry_run.get("pipeline_passed") is not True
         or dry_run.get("primary_eval_read") is not False
@@ -75,6 +94,29 @@ def main() -> int:
         or not archive_path.is_file()
     ):
         raise ValueError("DLO3 readiness inputs differ")
+    final_method_path = _verified_file(
+        alltrain.get("final_method"), label="alltrain final method"
+    )
+    final_method = _read_json(final_method_path)
+    if (
+        final_method.get("contract")
+        != "deform-dlo3-robustness-alltrain-final-method-v1"
+        or final_method.get("source_bayesian_audit_complete") is not True
+        or tuple(
+            str(value)
+            for value in cast(
+                list[object], final_method.get("bayesian_ablation_distributions", [])
+            )
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or final_method.get("distribution_selection") != "none"
+        or final_method.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DLO3 alltrain Bayesian method differs")
+    bayesian_audit = validate_deform_bayesian_audit_v1(dry_run, context="evaluator")
+    bayesian_artifacts = verify_deform_dlo3_evaluator_bayesian_artifacts_v1(
+        dry_run, expected_mode="dry-run"
+    )
     alltrain_runtime = _mapping(alltrain.get("runtime"), label="alltrain runtime")
     dry_runtime = _mapping(dry_run.get("runtime"), label="dry-run runtime")
     if alltrain_runtime.get("torch") != dry_runtime.get(
@@ -92,6 +134,10 @@ def main() -> int:
         "source_revision": revision,
         "runtime": dict(alltrain_runtime),
         "dry_run_pipeline_passed": True,
+        "bayesian_audit_complete": True,
+        "bayesian_artifacts_verified": True,
+        "bayesian_audit": bayesian_audit,
+        "bayesian_artifacts": bayesian_artifacts,
         "count_only_custody_deviation_acknowledged": True,
         "target_authorized": True,
         "official_eval_read": False,

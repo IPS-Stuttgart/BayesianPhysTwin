@@ -22,9 +22,12 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     serialize_deform_local_residual_model,
 )
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
+    DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     augment_deform_local_residual_full_covariance,
     load_deform_dlo_robustness_v1_protocol,
+    validate_deform_bayesian_audit_v1,
     validate_deform_dlo3_source_manifest,
+    verify_deform_dlo3_seed_bayesian_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -115,6 +118,10 @@ def _assert_authorization(
         or primary.get("target_authorized") is not False
     ):
         raise ValueError("DLO3 primary source authorization differs")
+    primary_bayesian_audit = validate_deform_bayesian_audit_v1(
+        primary, context="source"
+    )
+    primary_bayesian_artifacts = verify_deform_dlo3_seed_bayesian_artifacts_v1(primary)
     if (
         stability.get("contract") != "deform-dlo3-training-stability-gate-v1"
         or stability.get("protocol_sha256") != protocol_digest
@@ -123,6 +130,11 @@ def _assert_authorization(
         or stability.get("alltrain_fit_authorized") is not True
         or stability.get("target_authorized") is not False
         or stability.get("primary_eval_read") is not False
+        or stability.get("bayesian_audit_complete") is not True
+        or stability.get("bayesian_artifacts_verified") is not True
+        or int(cast(Any, stability.get("bayesian_distribution_count", -1)))
+        != len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS)
+        or stability.get("bayesian_distribution_selection") != "none"
     ):
         raise ValueError("DLO3 stability authorization differs")
     for payload, contract, label in (
@@ -161,6 +173,8 @@ def _assert_authorization(
         "sensitivity_result": _identity(sensitivity_path),
         "backend_result": _identity(backend_path),
         "custody_deviation": _identity(deviation_path),
+        "primary_bayesian_audit": primary_bayesian_audit,
+        "primary_bayesian_artifacts": primary_bayesian_artifacts,
     }
 
 
@@ -211,6 +225,10 @@ def main() -> int:
         "shrinkage": 0.25,
         "covariance": "trajectory-clustered-full-coordinate-covariance-v1",
         "variance_scale": "reuse-seed42-source-calibration-without-refit",
+        "bayesian_ablation_distributions": list(
+            DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        ),
+        "source_bayesian_audit_complete": True,
         "target_selection": False,
         "target_calibration": False,
         "target_retries": False,
@@ -456,6 +474,11 @@ def main() -> int:
         "ridge": float(cast(Any, residual["ridge"])),
         "shrinkage": float(cast(Any, residual["shrinkage"])),
         "variance_scale": float(cast(Any, source_calibration["variance_scale"])),
+        "bayesian_ablation_distributions": list(
+            DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        ),
+        "source_bayesian_audit_complete": True,
+        "distribution_selection": "none",
         "runtime": {
             "python": sys.version,
             "torch": torch.__version__,
@@ -481,6 +504,8 @@ def main() -> int:
         "training_losses": losses,
         "runtime": final_method["runtime"],
         "elapsed_seconds": time.perf_counter() - started,
+        "bayesian_audit_complete": True,
+        "bayesian_distribution_count": len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS),
         "primary_eval_enumerated_by_this_runner": False,
         "primary_eval_read": False,
         "target_authorized": False,

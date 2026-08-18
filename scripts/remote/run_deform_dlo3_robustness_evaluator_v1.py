@@ -27,6 +27,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     evaluate_deform_dlo3_target_gate,
     evaluate_deform_predictive_distribution,
     load_deform_dlo_robustness_v1_protocol,
+    validate_deform_bayesian_audit_v1,
     validate_deform_dlo3_source_manifest,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
@@ -97,6 +98,9 @@ def _load_final_method(
         or result.get("primary_eval_read") is not False
         or result.get("target_authorized") is not False
         or result.get("retry_authorized") is not False
+        or result.get("bayesian_audit_complete") is not True
+        or int(cast(Any, result.get("bayesian_distribution_count", -1)))
+        != len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS)
     ):
         raise ValueError("DLO3 all-train result custody differs")
     method_path = _verified_file(result.get("final_method"), label="final method")
@@ -107,6 +111,15 @@ def _load_final_method(
         or method.get("target_selection") is not False
         or method.get("target_calibration") is not False
         or method.get("target_retries") is not False
+        or method.get("source_bayesian_audit_complete") is not True
+        or tuple(
+            str(value)
+            for value in cast(
+                list[object], method.get("bayesian_ablation_distributions", [])
+            )
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or method.get("distribution_selection") != "none"
     ):
         raise ValueError("DLO3 final method custody differs")
     return result, method, method_path
@@ -187,6 +200,8 @@ def main() -> int:
             readiness.get("contract") != "deform-dlo3-robustness-readiness-v1"
             or readiness.get("target_authorized") is not True
             or readiness.get("official_eval_read") is not False
+            or readiness.get("bayesian_audit_complete") is not True
+            or readiness.get("bayesian_artifacts_verified") is not True
             or _mapping(readiness.get("protocol"), label="readiness protocol").get(
                 "sha256"
             )
@@ -387,6 +402,9 @@ def main() -> int:
             "target_outcomes_used_for_distribution_construction": False,
             "target_outcomes_used_for_distribution_selection": False,
         }
+        bayesian_audit_verification = validate_deform_bayesian_audit_v1(
+            {"bayesian_audit": bayesian_audit}, context="evaluator"
+        )
         if args.mode == "dry-run":
             result = {
                 "schema_version": 1,
@@ -397,6 +415,7 @@ def main() -> int:
                 "pipeline_passed": True,
                 "distribution": distribution,
                 "bayesian_audit": bayesian_audit,
+                "bayesian_audit_verification": bayesian_audit_verification,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,
@@ -428,6 +447,7 @@ def main() -> int:
                 "target_gate": gate,
                 "distribution": distribution,
                 "bayesian_audit": bayesian_audit,
+                "bayesian_audit_verification": bayesian_audit_verification,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,

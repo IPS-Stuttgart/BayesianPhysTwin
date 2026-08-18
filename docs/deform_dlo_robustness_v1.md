@@ -42,6 +42,19 @@ Every covariance is constructed and sealed before scoring, every arm is
 required to preserve the point mean exactly, and none may be selected from
 source-test or target outcomes. Temporal independence is not claimed.
 
+The completeness requirement is enforced again at every downstream boundary.
+The stability operator rehashes each seed's prediction seal and NPZ, requires
+all seven named covariance arrays, checks their shapes, finite values, clamped
+support, positive-definite internal blocks, and calibrated scaling, and then
+validates all seven metric records. The all-train authorization independently
+rechecks the primary seed and requires the three-seed verification receipt.
+Readiness similarly rehashes and inspects the independent evaluator dry run.
+An omitted arm, a changed point mean, outcome-based distribution selection, or
+a stale artifact therefore prevents all-train or target authorization. A
+verifier-only source revision may follow the frozen seed runner revision, but
+both revisions and their artifact hashes must be bound; this does not authorize
+retraining, result replacement, or any target access.
+
 Outcome-bearing compact artifacts belong only in the private
 `BayesianPhysTwin-Paper` repository. The public repository retains executable
 code, the frozen protocol, and target-blind provenance receipts.

@@ -1112,6 +1112,401 @@ def evaluate_deform_predictive_distribution(
     }
 
 
+def validate_deform_bayesian_audit_v1(
+    result: Mapping[str, object],
+    *,
+    context: str,
+) -> dict[str, object]:
+    """Require the complete frozen seven-arm Bayesian audit."""
+
+    if context not in ("source", "evaluator"):
+        raise ValueError("unsupported DEFORM Bayesian audit context")
+    audit = _mapping(result.get("bayesian_audit"), label="Bayesian audit")
+    distributions = _mapping(audit.get("distributions"), label="Bayesian distributions")
+    expected = DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    if (
+        len(distributions) != len(expected)
+        or set(str(name) for name in distributions) != set(expected)
+        or audit.get("point_mean_unchanged") is not True
+        or audit.get("distribution_selection") != "none"
+    ):
+        raise ValueError("DEFORM Bayesian audit is incomplete")
+
+    normalized: dict[str, Mapping[str, object]] = {}
+    point_errors: list[float] = []
+    for name in expected:
+        metrics = _mapping(
+            distributions.get(name), label=f"Bayesian distribution {name}"
+        )
+        if (
+            metrics.get("contract") != "deform-dlo-predictive-distribution-metrics-v1"
+            or int(cast(Any, metrics.get("energy_score_sample_count", -1))) != 32
+            or int(cast(Any, metrics.get("energy_score_seed", -1))) != 0
+        ):
+            raise ValueError("DEFORM Bayesian distribution contract differs")
+        values = {
+            key: float(cast(Any, metrics.get(key, math.nan)))
+            for key in (
+                "mean_coordinate_l1_m",
+                "gaussian_nll",
+                "coordinate_nees",
+                "multivariate_nees",
+                "coordinate_coverage_90",
+                "interval_width_m",
+                "energy_score",
+            )
+        }
+        if (
+            any(not math.isfinite(value) for value in values.values())
+            or values["mean_coordinate_l1_m"] < 0.0
+            or values["coordinate_nees"] < 0.0
+            or values["multivariate_nees"] < 0.0
+            or not 0.0 <= values["coordinate_coverage_90"] <= 1.0
+            or values["interval_width_m"] <= 0.0
+        ):
+            raise ValueError("DEFORM Bayesian distribution metrics are invalid")
+        point_errors.append(values["mean_coordinate_l1_m"])
+        normalized[name] = metrics
+    if any(value != point_errors[0] for value in point_errors[1:]):
+        raise ValueError("DEFORM Bayesian distribution point means differ")
+
+    if context == "source":
+        calibration = _mapping(audit.get("calibration"), label="Bayesian calibration")
+        scores = tuple(
+            float(value)
+            for value in cast(Sequence[Any], calibration.get("trajectory_scores", ()))
+        )
+        radius = float(cast(Any, calibration.get("standardized_radius", math.nan)))
+        variance_scale = float(cast(Any, calibration.get("variance_scale", math.nan)))
+        if (
+            calibration.get("contract") != "deform-dlo-full-covariance-calibration-v1"
+            or len(scores) != 9
+            or any(not math.isfinite(value) or value < 0.0 for value in scores)
+            or int(cast(Any, calibration.get("rank", -1))) != 9
+            or calibration.get("order_statistic") != "maximum-of-nine"
+            or float(
+                cast(Any, calibration.get("nominal_coordinate_coverage", math.nan))
+            )
+            != 0.9
+            or not math.isfinite(radius)
+            or radius != max(scores)
+            or not math.isfinite(variance_scale)
+            or variance_scale < 1.0
+            or calibration.get("confidence_increase_forbidden") is not True
+            or calibration.get("source_test_opened") is not False
+            or calibration.get("official_eval_read") is not False
+            or audit.get("source_test_outcomes_used_for_covariance_construction")
+            is not False
+            or audit.get("uncalibrated")
+            != normalized["trajectory-clustered-full-coordinate-covariance-v1"]
+            or audit.get("calibrated")
+            != normalized["calibrated-full-coordinate-covariance-v1"]
+        ):
+            raise ValueError("DEFORM Bayesian source calibration differs")
+    elif (
+        audit.get("primary_distribution") != "calibrated-full-coordinate-covariance-v1"
+        or audit.get("target_outcomes_used_for_distribution_construction") is not False
+        or audit.get("target_outcomes_used_for_distribution_selection") is not False
+    ):
+        raise ValueError("DEFORM Bayesian evaluator custody differs")
+
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-bayesian-audit-verification-v1",
+        "context": context,
+        "distribution_count": len(expected),
+        "distributions": list(expected),
+        "point_mean_unchanged": True,
+        "distribution_selection": "none",
+    }
+
+
+def _verified_deform_artifact_path(value: object, *, label: str) -> Path:
+    identity = _mapping(value, label=label)
+    path = Path(str(identity.get("path", ""))).resolve()
+    digest = str(identity.get("sha256", ""))
+    size = int(cast(Any, identity.get("size_bytes", -1)))
+    if (
+        len(digest) != 64
+        or size <= 0
+        or not path.is_file()
+        or path.stat().st_size != size
+        or sha256_file(path) != digest
+    ):
+        raise ValueError(f"{label} identity changed")
+    return path
+
+
+def _verify_deform_bayesian_prediction_archive_v1(
+    path: Path,
+    *,
+    expected_case_count: int,
+    variance_scale: float,
+    source_compatibility_aliases: bool,
+) -> dict[str, object]:
+    expected_keys = {
+        label: deform_bayesian_covariance_archive_key(label)
+        for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    }
+    with np.load(path, allow_pickle=False) as archive:
+        required = {"names", "candidate", *expected_keys.values()}
+        if source_compatibility_aliases:
+            required.update(
+                {"coordinate_covariance_m2", "calibrated_coordinate_covariance_m2"}
+            )
+        elif "calibrated_coordinate_covariance_m2" not in archive.files:
+            raise ValueError("DEFORM Bayesian prediction archive is incomplete")
+        if not required.issubset(archive.files):
+            raise ValueError("DEFORM Bayesian prediction archive is incomplete")
+        names = np.asarray(archive["names"])
+        candidate = _finite_array(
+            np.asarray(archive["candidate"]), ndim=4, label="Bayesian point mean"
+        )
+        if (
+            names.shape != (expected_case_count,)
+            or candidate.shape[0] != expected_case_count
+            or candidate.shape[2] < 5
+            or candidate.shape[3] != 3
+        ):
+            raise ValueError("DEFORM Bayesian prediction archive shape differs")
+        covariance: dict[str, Array] = {}
+        for label, key in expected_keys.items():
+            values = _finite_array(
+                np.asarray(archive[key]), ndim=5, label=f"Bayesian covariance {label}"
+            )
+            if values.shape != (*candidate.shape, 3):
+                raise ValueError("DEFORM Bayesian covariance shape differs")
+            if (
+                np.count_nonzero(values[:, :, :2]) != 0
+                or np.count_nonzero(values[:, :, -2:]) != 0
+                or not np.allclose(
+                    values[:, :, 2:-2],
+                    values[:, :, 2:-2].swapaxes(-1, -2),
+                    rtol=0.0,
+                    atol=1e-12,
+                )
+                or np.min(np.linalg.eigvalsh(values[:, :, 2:-2])) <= 0.0
+            ):
+                raise ValueError("DEFORM Bayesian covariance is invalid")
+            covariance[label] = values
+        raw = covariance["trajectory-clustered-full-coordinate-covariance-v1"]
+        calibrated = covariance["calibrated-full-coordinate-covariance-v1"]
+        if (
+            not math.isfinite(variance_scale)
+            or variance_scale < 1.0
+            or not np.allclose(calibrated, raw * variance_scale, rtol=1e-12, atol=0.0)
+            or not np.array_equal(
+                np.asarray(archive["calibrated_coordinate_covariance_m2"]),
+                calibrated,
+            )
+        ):
+            raise ValueError("DEFORM Bayesian calibrated covariance differs")
+        if source_compatibility_aliases and not np.array_equal(
+            np.asarray(archive["coordinate_covariance_m2"]), raw
+        ):
+            raise ValueError("DEFORM Bayesian covariance compatibility alias differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-bayesian-prediction-archive-verification-v1",
+        "case_count": expected_case_count,
+        "distribution_count": len(expected_keys),
+        "archive_keys": expected_keys,
+        "point_mean_count": 1,
+    }
+
+
+def verify_deform_dlo3_seed_bayesian_artifacts_v1(
+    result: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash and inspect one sealed source-seed Bayesian artifact bundle."""
+
+    if (
+        result.get("contract") != "deform-dlo3-robustness-seed-result-v1"
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("target_authorized") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("held_v8_access") is not False
+    ):
+        raise ValueError("DEFORM seed Bayesian artifact custody differs")
+    audit = validate_deform_bayesian_audit_v1(result, context="source")
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="seed prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("seed prediction seal must be a JSON object")
+    expected_keys = {
+        label: deform_bayesian_covariance_archive_key(label)
+        for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    }
+    seed = int(cast(Any, result.get("seed", -1)))
+    method_identity = _mapping(result.get("method_seal"), label="seed method seal")
+    seal_method_identity = _mapping(
+        seal.get("method_seal"), label="prediction-seal method"
+    )
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-source-prediction-seal-v1"
+        or int(cast(Any, seal.get("seed", -1))) != seed
+        or _strings(
+            seal.get("bayesian_ablation_distributions"),
+            label="sealed Bayesian distributions",
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or dict(
+            _mapping(
+                seal.get("bayesian_covariance_archive_keys"),
+                label="sealed Bayesian archive keys",
+            )
+        )
+        != expected_keys
+        or seal.get("bayesian_point_means_identical") is not True
+        or seal.get("source_outcomes_scored") is not False
+        or seal.get("official_eval_read") is not False
+        or seal_method_identity.get("sha256") != method_identity.get("sha256")
+    ):
+        raise ValueError("DEFORM seed Bayesian prediction seal differs")
+    _verified_deform_artifact_path(method_identity, label="seed method seal")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="seed Bayesian predictions"
+    )
+    calibration = _mapping(
+        _mapping(result.get("bayesian_audit"), label="Bayesian audit").get(
+            "calibration"
+        ),
+        label="Bayesian calibration",
+    )
+    archive = _verify_deform_bayesian_prediction_archive_v1(
+        predictions_path,
+        expected_case_count=8,
+        variance_scale=float(cast(Any, calibration.get("variance_scale", math.nan))),
+        source_compatibility_aliases=True,
+    )
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-seed-bayesian-artifact-verification-v1",
+        "seed": seed,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "audit": audit,
+        "archive": archive,
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_evaluator_bayesian_artifacts_v1(
+    result: Mapping[str, object],
+    *,
+    expected_mode: str,
+) -> dict[str, object]:
+    """Rehash and inspect a dry-run or official evaluator Bayesian bundle."""
+
+    if expected_mode not in ("dry-run", "official"):
+        raise ValueError("unsupported DEFORM evaluator mode")
+    if expected_mode == "dry-run":
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-evaluator-dry-run-v1"
+            and result.get("primary_eval_read") is False
+            and result.get("target_authorized") is False
+            and result.get("retry_authorized") is False
+            and result.get("held_v8_access") is False
+        )
+    else:
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-official-result-v1"
+            and result.get("official_eval_read") is True
+            and result.get("retry_authorized") is False
+            and result.get("case_replacement") is False
+            and result.get("held_v8_access") is False
+        )
+    if not custody_valid:
+        raise ValueError("DEFORM evaluator Bayesian artifact custody differs")
+    audit = validate_deform_bayesian_audit_v1(result, context="evaluator")
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="evaluator prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("evaluator prediction seal must be a JSON object")
+    expected_keys = {
+        label: deform_bayesian_covariance_archive_key(label)
+        for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    }
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-evaluator-prediction-seal-v1"
+        or seal.get("mode") != expected_mode
+        or _strings(
+            seal.get("bayesian_ablation_distributions"),
+            label="evaluator Bayesian distributions",
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or dict(
+            _mapping(
+                seal.get("bayesian_covariance_archive_keys"),
+                label="evaluator Bayesian archive keys",
+            )
+        )
+        != expected_keys
+        or seal.get("bayesian_point_means_identical") is not True
+        or seal.get("outcomes_scored") is not False
+        or seal.get("target_retries") is not False
+    ):
+        raise ValueError("DEFORM evaluator Bayesian prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="evaluator Bayesian predictions"
+    )
+    distribution_count = 8 if expected_mode == "dry-run" else 14
+    # The all-train method carries the frozen seed-42 calibration scale in every arm.
+    calibrated = np.load(predictions_path, allow_pickle=False)
+    try:
+        raw = np.asarray(
+            calibrated[
+                deform_bayesian_covariance_archive_key(
+                    "trajectory-clustered-full-coordinate-covariance-v1"
+                )
+            ]
+        )
+        scaled = np.asarray(
+            calibrated[
+                deform_bayesian_covariance_archive_key(
+                    "calibrated-full-coordinate-covariance-v1"
+                )
+            ]
+        )
+        positive = raw[:, :, 2:-2] > 0.0
+        ratios = np.divide(
+            scaled[:, :, 2:-2],
+            raw[:, :, 2:-2],
+            out=np.ones_like(scaled[:, :, 2:-2]),
+            where=positive,
+        )
+        finite_ratios = ratios[positive]
+        if finite_ratios.size == 0 or not np.allclose(
+            finite_ratios, finite_ratios[0], rtol=1e-12, atol=1e-12
+        ):
+            raise ValueError("DEFORM evaluator covariance scale differs")
+        variance_scale = float(finite_ratios[0])
+    finally:
+        calibrated.close()
+    archive = _verify_deform_bayesian_prediction_archive_v1(
+        predictions_path,
+        expected_case_count=distribution_count,
+        variance_scale=variance_scale,
+        source_compatibility_aliases=False,
+    )
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-evaluator-bayesian-artifact-verification-v1",
+        "mode": expected_mode,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "audit": audit,
+        "archive": archive,
+        "verified": True,
+    }
+
+
 def evaluate_deform_dlo3_source_gate(
     candidate_predictions: Array,
     baseline_predictions: Array,
@@ -1193,6 +1588,7 @@ def evaluate_deform_dlo3_stability_gate(
         raise ValueError("DLO3 stability gate requires every frozen seed")
 
     normalized: dict[int, Mapping[str, object]] = {}
+    bayesian_verifications: dict[int, dict[str, object]] = {}
     protocol_digests: set[str] = set()
     manifest_digests: set[str] = set()
     for raw in seed_results:
@@ -1217,6 +1613,9 @@ def evaluate_deform_dlo3_stability_gate(
         )
         protocol_digests.add(str(protocol_identity.get("sha256", "")))
         manifest_digests.add(str(manifest_identity.get("sha256", "")))
+        bayesian_verifications[seed] = validate_deform_bayesian_audit_v1(
+            raw, context="source"
+        )
         normalized[seed] = raw
     if set(normalized) != set(expected_seeds):
         raise ValueError("DLO3 stability inputs omit a frozen seed")
@@ -1272,6 +1671,7 @@ def evaluate_deform_dlo3_stability_gate(
                 "source_gate_passed": passed,
                 "candidate_to_baseline_mean_ratio": mean_ratio,
                 "maximum_case_ratio": maximum_case_ratio,
+                "bayesian_audit": bayesian_verifications[seed],
             }
         )
 
@@ -1317,6 +1717,9 @@ def evaluate_deform_dlo3_stability_gate(
             "method-and-environment-attestation",
         ],
         "seed_selection": False,
+        "bayesian_audit_complete": True,
+        "bayesian_distribution_count": len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS),
+        "bayesian_distribution_selection": "none",
         "seeds": seed_records,
         "primary_eval_read": False,
         "prob4d_used": False,

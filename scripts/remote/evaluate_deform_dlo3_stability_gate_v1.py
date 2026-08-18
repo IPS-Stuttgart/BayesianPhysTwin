@@ -10,6 +10,7 @@ from pathlib import Path
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
     evaluate_deform_dlo3_stability_gate,
     load_deform_dlo_robustness_v1_protocol,
+    verify_deform_dlo3_seed_bayesian_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -36,8 +37,13 @@ def main() -> int:
     result_paths = tuple(path.resolve() for path in args.seed_result)
     results = [_read_json(path) for path in result_paths]
     gate = evaluate_deform_dlo3_stability_gate(results, protocol)
+    bayesian_artifacts = [
+        verify_deform_dlo3_seed_bayesian_artifacts_v1(result) for result in results
+    ]
     payload = {
         **gate,
+        "bayesian_artifacts_verified": True,
+        "bayesian_artifact_verifications": bayesian_artifacts,
         "protocol": {
             "path": str(protocol_path),
             "sha256": sha256_file(protocol_path),
