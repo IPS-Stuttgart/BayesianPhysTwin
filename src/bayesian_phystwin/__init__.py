@@ -61,7 +61,8 @@ class _LazyRootExportNames(Sequence[str]):
     def _load(self) -> tuple[str, ...]:
         names = self._names
         if names is None:
-            names = tuple(_ROOT_EXPORT_MODULES)
+            helper = import_module("._root_exports_v0_4", __name__)
+            names = tuple(helper.__all__)
             self._names = names
         return names
 
