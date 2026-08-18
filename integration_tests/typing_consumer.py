@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 
 from bayesian_phystwin import GaugeAwareBeliefConfig
 from bayesian_phystwin.causal4d_provider_v1 import causal4d_provider_manifest
+from bayesian_phystwin.identifiability_report_v1 import IdentifiabilityReportV1
 from bayesian_phystwin.inference.v1 import (
     ClaimBearingProb4DCandidateV1,
     CompleteBeliefGuardDecisionV1,
@@ -19,6 +20,12 @@ from bayesian_phystwin.inference.v1 import (
 )
 from bayesian_phystwin.prob4d_causal_lineage import (
     validate_prob4d_causal_observation_belief,
+)
+from bayesian_phystwin.structured_point_covariance import (
+    StructuredPointCovarianceV1,
+)
+from bayesian_phystwin.structured_point_covariance_operator_v1 import (
+    StructuredPointCovarianceOperatorV1,
 )
 from bayesian_phystwin.v1 import ObservationBeliefV1, load_observation_belief
 
@@ -46,6 +53,22 @@ def infer_candidate(
         linearization,
         physical_prediction_xyz_m=prediction,
     )
+
+
+def covariance_operator(
+    covariance: StructuredPointCovarianceV1,
+) -> StructuredPointCovarianceOperatorV1:
+    """Exercise the installed matrix-free structured covariance boundary."""
+
+    return StructuredPointCovarianceOperatorV1(covariance)
+
+
+def retain_identifiability_report(
+    report: IdentifiabilityReportV1,
+) -> IdentifiabilityReportV1:
+    """Exercise the installed identifiability report type."""
+
+    return report
 
 
 def validate_prob4d_observation(
