@@ -66,6 +66,12 @@ def test_invalid_release_line_and_first_warning_paths(
     _reset_root_symbol()
 
 
+def test_public_root_invalid_resolution_and_dir_paths() -> None:
+    with pytest.raises(AttributeError, match="has no attribute"):
+        bpt.__getattr__("DefinitelyNotAPublicExport")
+    assert _SYMBOL in bpt.__dir__()
+
+
 def test_private_roster_valid_and_invalid_resolution_paths(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
