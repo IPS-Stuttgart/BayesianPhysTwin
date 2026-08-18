@@ -10,7 +10,8 @@ ratchets quality without requiring an all-at-once cleanup:
 * stable modules with pre-existing type debt become blocking when modified;
 * a smaller, mature subset is checked with ``mypy --strict``;
 * release versions cannot reuse another commit's canonical Git tag;
-* public-module lifecycle classifications remain fail-closed; and
+* public-module lifecycle classifications remain fail-closed;
+* temporary placeholder artifacts are rejected from maintained paths; and
 * added or modified workflows satisfy lifecycle and immutable-action policy.
 """
 
@@ -33,6 +34,7 @@ _STRICT_ARTIFACT_TYPE_TARGETS = (
     "src/bayesian_phystwin/claim_bundle_v1.py",
     "src/bayesian_phystwin/evidence_decision_v1.py",
     "src/bayesian_phystwin/physical_query_v1.py",
+    "src/bayesian_phystwin/material_backend_evidence_v1.py",
 )
 
 # Public integration entry points used by independent, Prob4D, and Causal4D
@@ -229,6 +231,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             "tools/quality/check_public_module_lifecycle.py",
         ),
         label="Public module lifecycle policy",
+    )
+    _run(
+        (
+            sys.executable,
+            "tools/quality/check_repository_hygiene.py",
+        ),
+        label="Repository hygiene policy",
     )
 
     changed_package_modules = tuple(
