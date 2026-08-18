@@ -34,6 +34,11 @@ def test_frozen_protocol_loads_and_binds_two_independent_groups() -> None:
     assert protocol.simulation["base_substeps"] == 64
     assert protocol.simulation["refined_substeps"] == 128
     assert protocol.simulation["domain_padding_m"] == 0.15
+    assert protocol.simulation["grid_aligned_translation_m"] == [
+        0.15625,
+        -0.09375,
+        0.09375,
+    ]
     assert (
         protocol.simulation["controller_boundary_policy"]
         == "frame-boundary-position-velocity-overwrite-free-particles-v1"

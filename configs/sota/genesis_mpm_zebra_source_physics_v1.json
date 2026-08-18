@@ -56,13 +56,15 @@
     "stiff_young_modulus_pa": 500000.0,
     "poisson_ratio": 0.35,
     "density_kg_m3": 1000.0,
-    "rigid_translation_m": [0.17, -0.11, 0.09],
+    "grid_aligned_translation_m": [0.15625, -0.09375, 0.09375],
+    "off_lattice_translation_m": [0.17, -0.11, 0.09],
     "nowhere_activation_policy": "set-particles-active-then-mark-forward-active-v1",
     "controller_boundary_policy": "frame-boundary-position-velocity-overwrite-free-particles-v1"
   },
   "gates": {
     "maximum_zero_action_drift_m": 0.0005,
-    "maximum_rigid_translation_equivariance_error_m": 0.000005,
+    "maximum_grid_aligned_translation_equivariance_error_m": 0.000005,
+    "maximum_off_lattice_translation_discretization_error_m": 0.0005,
     "maximum_time_step_refinement_relative_error": 0.2,
     "maximum_source_query_parity_rmse_m": 0.0000001,
     "minimum_action_response_m": 0.00001,

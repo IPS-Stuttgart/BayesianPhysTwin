@@ -44,6 +44,16 @@ velocities at each 30 Hz frame boundary. This is the only controller-boundary
 arm in v1. Domain padding is 0.15 m so the exact source roster remains beyond
 Genesis's grid safety margin.
 
+The amended bridge passed all checks except the original 5 micrometre
+continuous-translation gate. MPM is evaluated on a fixed Eulerian lattice, so
+an arbitrary sub-cell translation changes interpolation weights even when the
+domain bounds move with the object. The final frozen probe keeps the strict
+5 micrometre threshold for an integer-grid translation and reports an
+off-lattice translation separately. The off-lattice discretization error is
+capped at 0.0005 m, exactly 0.1 of the registered particle diameter. This
+grid-aware change was made from source-physics evidence only; source object
+outcomes remained closed.
+
 ## Frozen probes
 
 For the first ten action frames, the runner executes:

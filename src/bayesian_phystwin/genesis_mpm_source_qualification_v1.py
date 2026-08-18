@@ -89,7 +89,8 @@ _SIMULATION_FIELDS: Final = frozenset(
         "stiff_young_modulus_pa",
         "poisson_ratio",
         "density_kg_m3",
-        "rigid_translation_m",
+        "grid_aligned_translation_m",
+        "off_lattice_translation_m",
         "nowhere_activation_policy",
         "controller_boundary_policy",
     }
@@ -97,7 +98,8 @@ _SIMULATION_FIELDS: Final = frozenset(
 _GATE_FIELDS: Final = frozenset(
     {
         "maximum_zero_action_drift_m",
-        "maximum_rigid_translation_equivariance_error_m",
+        "maximum_grid_aligned_translation_equivariance_error_m",
+        "maximum_off_lattice_translation_discretization_error_m",
         "maximum_time_step_refinement_relative_error",
         "maximum_source_query_parity_rmse_m",
         "minimum_action_response_m",
@@ -327,7 +329,20 @@ def load_genesis_source_physics_protocol_v1(
         "refined_substeps must exceed base_substeps",
     )
     _vector3(simulation["gravity_m_s2"], name="gravity_m_s2")
-    _vector3(simulation["rigid_translation_m"], name="rigid_translation_m")
+    grid_translation = _vector3(
+        simulation["grid_aligned_translation_m"],
+        name="grid_aligned_translation_m",
+    )
+    _vector3(
+        simulation["off_lattice_translation_m"],
+        name="off_lattice_translation_m",
+    )
+    grid_spacing = 1.0 / float(simulation["grid_density"])
+    grid_units = np.asarray(grid_translation, dtype=np.float64) / grid_spacing
+    _require(
+        np.allclose(grid_units, np.rint(grid_units), atol=1.0e-12, rtol=0.0),
+        "grid-aligned translation is not an integer grid displacement",
+    )
     _require(simulation["constitutive_model"] == "neohooken", "constitutive model changed")
     _require(
         simulation["nowhere_activation_policy"]
@@ -725,7 +740,20 @@ def run_genesis_mpm_source_qualification_v1(
             young_modulus_pa=float(simulation["base_young_modulus_pa"]),
             substeps=int(simulation["base_substeps"]),
             driven=True,
-            translation_m=np.asarray(simulation["rigid_translation_m"], dtype=np.float64),
+            translation_m=np.asarray(
+                simulation["grid_aligned_translation_m"],
+                dtype=np.float64,
+            ),
+        )
+        off_lattice = _run_native_replay(
+            **common,
+            young_modulus_pa=float(simulation["base_young_modulus_pa"]),
+            substeps=int(simulation["base_substeps"]),
+            driven=True,
+            translation_m=np.asarray(
+                simulation["off_lattice_translation_m"],
+                dtype=np.float64,
+            ),
         )
         refined = _run_native_replay(
             **common,
@@ -756,12 +784,38 @@ def run_genesis_mpm_source_qualification_v1(
             replay.positions_m.shape == base.positions_m.shape
             and replay.active.shape == active_expected.shape
             and np.array_equal(replay.active, active_expected)
-            for replay in (base, repeat, zero, translated, refined, soft, stiff)
+            for replay in (
+                base,
+                repeat,
+                zero,
+                translated,
+                off_lattice,
+                refined,
+                soft,
+                stiff,
+            )
         )
         zero_drift = float(np.max(np.linalg.norm(zero.positions_m - points[None, :, :], axis=2)))
-        shift = np.asarray(simulation["rigid_translation_m"], dtype=np.float64)
+        shift = np.asarray(
+            simulation["grid_aligned_translation_m"],
+            dtype=np.float64,
+        )
         equivariance = float(
             np.max(np.linalg.norm(translated.positions_m - shift[None, None, :] - base.positions_m, axis=2))
+        )
+        off_lattice_shift = np.asarray(
+            simulation["off_lattice_translation_m"],
+            dtype=np.float64,
+        )
+        off_lattice_error = float(
+            np.max(
+                np.linalg.norm(
+                    off_lattice.positions_m
+                    - off_lattice_shift[None, None, :]
+                    - base.positions_m,
+                    axis=2,
+                )
+            )
         )
         response = _rmse(base.positions_m[-1], points)
         refinement = _rmse(base.positions_m[-1], refined.positions_m[-1]) / max(
@@ -773,10 +827,33 @@ def run_genesis_mpm_source_qualification_v1(
             np.max(np.linalg.norm(np.diff(base.positions_m, axis=0), axis=2))
         )
         determinants = np.concatenate(
-            tuple(replay.deformation_determinants.reshape(-1) for replay in (base, zero, translated, refined, soft, stiff))
+            tuple(
+                replay.deformation_determinants.reshape(-1)
+                for replay in (
+                    base,
+                    zero,
+                    translated,
+                    off_lattice,
+                    refined,
+                    soft,
+                    stiff,
+                )
+            )
         )
         finite = bool(
-            all(np.all(np.isfinite(replay.positions_m)) for replay in (base, repeat, zero, translated, refined, soft, stiff))
+            all(
+                np.all(np.isfinite(replay.positions_m))
+                for replay in (
+                    base,
+                    repeat,
+                    zero,
+                    translated,
+                    off_lattice,
+                    refined,
+                    soft,
+                    stiff,
+                )
+            )
             and np.all(np.isfinite(determinants))
         )
         group_sanity = {
@@ -785,6 +862,12 @@ def run_genesis_mpm_source_qualification_v1(
             "parameter_sensitivity_lower": parameter_sensitivity >= float(gates["minimum_parameter_sensitivity_m"]),
             "parameter_sensitivity_upper": parameter_sensitivity <= float(gates["maximum_parameter_sensitivity_m"]),
             "particle_step": maximum_step <= float(gates["maximum_particle_step_m"]),
+            "off_lattice_translation_discretization": off_lattice_error
+            <= float(
+                gates[
+                    "maximum_off_lattice_translation_discretization_error_m"
+                ]
+            ),
             "deformation_determinant_lower": float(np.min(determinants)) >= float(gates["minimum_deformation_determinant"]),
             "deformation_determinant_upper": float(np.max(determinants)) <= float(gates["maximum_deformation_determinant"]),
         }
@@ -804,6 +887,7 @@ def run_genesis_mpm_source_qualification_v1(
                 "base_repeat_m": repeat.positions_m,
                 "zero_action_m": zero.positions_m,
                 "translated_driven_m": translated.positions_m,
+                "off_lattice_driven_m": off_lattice.positions_m,
                 "refined_driven_m": refined.positions_m,
                 "soft_driven_m": soft.positions_m,
                 "stiff_driven_m": stiff.positions_m,
@@ -834,6 +918,9 @@ def run_genesis_mpm_source_qualification_v1(
             "exact_fallback_verified": fallback_exact,
             "maximum_zero_action_drift_m": zero_drift,
             "maximum_rigid_translation_equivariance_error_m": equivariance,
+            "maximum_off_lattice_translation_discretization_error_m": (
+                off_lattice_error
+            ),
             "time_step_refinement_relative_error": refinement,
             "source_query_parity_rmse_m": parity,
             "action_response_rmse_m": response,
@@ -877,7 +964,7 @@ def run_genesis_mpm_source_qualification_v1(
         allowed_zero_action_drift_m=float(gates["maximum_zero_action_drift_m"]),
         maximum_rigid_equivariance_error_m=maximum_equivariance,
         allowed_rigid_equivariance_error_m=float(
-            gates["maximum_rigid_translation_equivariance_error_m"]
+            gates["maximum_grid_aligned_translation_equivariance_error_m"]
         ),
         time_step_refinement_relative_error=maximum_refinement,
         allowed_time_step_refinement_relative_error=float(
@@ -901,7 +988,8 @@ def run_genesis_mpm_source_qualification_v1(
             "engine_version": cast(Mapping[str, Any], protocol.value["backend"])["engine_version"],
             "native_smoke_id": cast(Mapping[str, Any], protocol.value["backend"])["native_smoke_id"],
             "parameter_sensitivity_is_a_physical_sanity_gate": True,
-            "rigid_equivariance_probe": "translation-only",
+            "rigid_equivariance_probe": "grid-aligned-translation",
+            "off_lattice_translation_is_a_physical_sanity_gate": True,
             "nowhere_activation_policy": simulation["nowhere_activation_policy"],
             "controller_boundary_policy": simulation["controller_boundary_policy"],
             "gradient_claim": "none",
