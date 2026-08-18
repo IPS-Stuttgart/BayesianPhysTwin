@@ -50,6 +50,10 @@ Use `binding.artifact_id` as `PhysicalQueryV1.jacobian_provider_id` for new
 bound studies. `validate_payload` rechecks actual Jacobian bytes and row order.
 Publication is atomic and no-clobber by default.
 
+The portable JSON contains array and row descriptors rather than copying the
+matrix values. A consumer receives the actual Jacobian and row roster separately
+and must verify both against the binding before using them numerically.
+
 ## Bound Prob4D decision
 
 Prob4D independently validates the portable binding before projecting its
