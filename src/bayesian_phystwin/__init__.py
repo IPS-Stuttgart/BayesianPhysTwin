@@ -18,9 +18,9 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any, Final
 
 from ._root_exports_v0_4 import (
+    __all__ as __all__,
     _ROOT_EXPORT_GROUPS as _ROOT_EXPORT_GROUPS,
     _ROOT_EXPORT_MODULES as _ROOT_EXPORT_MODULES,
-    __all__ as __all__,
 )
 
 if TYPE_CHECKING:  # pragma: no cover - static typing only
