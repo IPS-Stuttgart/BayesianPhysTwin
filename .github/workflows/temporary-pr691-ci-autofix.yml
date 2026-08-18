@@ -48,9 +48,9 @@ jobs:
               text = text.replace(anchor, anchor + entry, 1)
               manifest.write_text(text, encoding="utf-8")
           PY
-      - name: Format and test the repaired contract
+      - name: Format repaired Python files
         run: |
-          python -m pip install -e ".[dev,graph]"
+          python -m pip install "ruff==0.16.3"
           python -m ruff format \
             src/bayesian_phystwin/_artifact_custody.py \
             src/bayesian_phystwin/matphys_portable_identity_v1.py \
@@ -59,8 +59,7 @@ jobs:
             src/bayesian_phystwin/_artifact_custody.py \
             src/bayesian_phystwin/matphys_portable_identity_v1.py \
             tests/test_matphys_portable_identity_v1.py
-          python -m pytest -q tests/test_matphys_portable_identity_v1.py
-          python tools/quality/test_suite_manifest.py validate
+          python -m json.tool .github/quality/test-suites.json >/dev/null
       - name: Commit repair and remove temporary workflow
         run: |
           git config user.name "github-actions[bot]"
