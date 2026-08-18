@@ -154,6 +154,12 @@ class ClaimBearingTreeBlockProb4DUpdateV1:
         return self._update_id
 
     @property
+    def candidate_id(self) -> str:
+        """Expose the bound update identity to complete-belief selection."""
+
+        return self.update_id
+
+    @property
     def tree_block_result_id(self) -> str:
         return self.result.result_id
 

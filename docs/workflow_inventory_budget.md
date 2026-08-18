@@ -2,21 +2,20 @@
 
 ## Purpose
 
-The lifecycle policy prevents newly added or modified workflows from bypassing
-ownership, expiry, permission, concurrency, and immutable-action requirements.
-It deliberately grandfathered untouched historical files, however, so it did not
-stop the checked-in workflow inventory from remaining permanently large or from
-growing through a delete-and-replace sequence.
+The workflow lifecycle policy governs ownership, expiry, permissions,
+concurrency, and immutable action references for changed workflows. The
+inventory budget adds a repository-wide monotone ratchet: deleting a workflow
+must lower the checked-in ceiling in the same change, so freed capacity cannot
+be silently spent later.
 
-The inventory budget adds a repository-wide monotone ratchet. It does not
-reinterpret historical workflows or delete evidence-bound files. It records the
-current checked-in count and the exact temporary-looking retirement roster, then
-makes any change to either quantity explicit and testable.
+The budget is an engineering and provenance control. It does not alter an
+estimator, protocol, target-access boundary, artifact, metric, or scientific
+claim.
 
-## Frozen baseline
+## Original baseline
 
 At source revision
-`45e1f4454d50fd1970af13578f0383872814125e`, the default branch contains:
+`45e1f4454d50fd1970af13578f0383872814125e`, the default branch contained:
 
 - 95 ordinary `.yml` or `.yaml` files directly below `.github/workflows`;
 - 12 temporary-looking historical launch, inventory, report, or revalidation
@@ -24,72 +23,77 @@ At source revision
 - no managed temporary workflow in the lifecycle inventory.
 
 The machine-readable contract is
-`.github/quality/workflow-inventory-budget-v1.json`. It freezes the count and the
-sorted list of all 12 temporary-looking paths. A similarly named replacement is
-not interchangeable with an allowlisted historical file.
+`.github/quality/workflow-inventory-budget-v1.json`.
 
-## Enforced behavior
+## Completed one-shot retirement
 
-Run the checker with:
+The twelve historical one-shot files are now absent from
+`.github/workflows`. Their exact Git blobs are retained below
+`archive/github-actions/retired-one-shot-v1/`, together with a strict manifest
+that binds:
+
+- every original and archived path;
+- the original Git blob SHA-1;
+- the exact byte count;
+- the source revision from which retirement occurred; and
+- the historical contract-test blobs that continue to exercise the archived
+  workflow bytes.
+
+The active inventory is therefore exactly:
+
+- 83 checked-in workflows; and
+- zero temporary-looking workflow files.
+
+Both values are the current ratchet and the completed retirement target. No
+replacement workflow was required.
+
+Validate the active inventory with:
 
 ```bash
 python tools/quality/check_workflow_inventory_budget.py
 ```
 
-The full Python test suite also validates the checked-in repository against the
-contract. The check fails when:
+Validate exact archival preservation and the inactive original paths with:
 
-- the workflow count rises above the recorded ceiling;
-- a workflow is removed without lowering the ceiling in the same change;
-- a temporary-looking path is added, replaced, renamed, or removed without
-  updating the exact allowlist;
+```bash
+python tools/quality/check_retired_workflow_archive.py
+```
+
+The full test suite runs both checks.
+
+## Enforced behavior
+
+The inventory check fails when:
+
+- the workflow count rises above or falls below the exact recorded ceiling;
+- the temporary-looking roster differs from the exact allowlist;
 - the contract contains duplicate keys, unknown fields, coerced Boolean counts,
   invalid paths, an unsorted allowlist, or contradictory targets; or
-- a workflow path is a symlink or resolves outside the repository.
+- an active workflow path is a symlink or escapes the repository.
 
-Requiring cleanup to lower the ceiling prevents a later pull request from
-silently spending the freed capacity on another workflow. Requiring exact
-allowlist equality prevents one historical launcher from being replaced by a new
-one-shot file while preserving the same count.
+The archive check separately fails when:
 
-## Retirement target
+- a retired original path reappears under `.github/workflows`;
+- an archived workflow or historical contract-test blob changes;
+- a recorded byte count, path, total, or Git blob SHA-1 changes;
+- the archive manifest is malformed, reordered, duplicated, or noncanonical; or
+- an archive path is missing, nonregular, symlinked, or outside the repository.
 
-The current nonblocking consolidation target is:
+Restoring an archived launcher requires a separately reviewed workflow and
+protocol decision. Copying the historical file back into the active directory
+is deliberately rejected.
 
-- at most 84 checked-in workflows; and
-- zero temporary-looking workflow files.
-
-The 84-file target permits one maintained parameterized entry point if retiring
-the 12 historical launchers requires a consolidated replacement. A cleanup that
-needs no replacement should lower the ceiling further.
-
-The target is not permission to delete the 12 files blindly. Several are named
-by byte-level regression tests, source-gate caller identities, issue receipts, or
-frozen execution records. Their retirement must first preserve, in ordinary
-content-addressed artifacts or manifests:
-
-- the exact workflow path and source revision;
-- the protocol and authorization identity;
-- relevant workflow run, attempt, and artifact identifiers;
-- retained artifact digests and terminal status; and
-- the distinction between source-only, target, confirmation, and technical
-  failure boundaries.
-
-After those dependencies are migrated, the cleanup pull request removes the
-resolved workflows, deletes their paths from the allowlist, and lowers
-`maximum_checked_in_workflows` to the new exact count. The checker then makes
-that reduction irreversible without another explicit contract change.
-
-## Relationship to the lifecycle and registry audits
+## Relationship to other controls
 
 This budget complements rather than replaces
 [workflow lifecycle](workflow_lifecycle.md):
 
 - lifecycle metadata governs the safety and ownership of changed workflows;
 - the inventory budget governs aggregate count and temporary-looking identity;
+- the retired archive preserves historical bytes without activating them;
 - the scheduled lifecycle inventory reports classification and policy debt; and
 - the Actions registry audit distinguishes checked-in files from historical
-  registry entries that GitHub retains after YAML deletion.
+  registry entries retained by GitHub after YAML deletion.
 
 None of these controls establishes estimator accuracy, provider competence,
 calibrated uncertainty, target-independent evidence, deployment authorization,

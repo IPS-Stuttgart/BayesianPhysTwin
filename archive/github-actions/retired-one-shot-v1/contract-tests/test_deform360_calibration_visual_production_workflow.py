@@ -1,0 +1,309 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import yaml
+
+WORKFLOW = Path(".github/workflows/deform360-calibration-visual-production.yml")
+LAUNCHER = Path(
+    ".github/workflows/launch-deform360-calibration-visual-production-once.yml"
+)
+SCRIPT = Path("scripts/science/execute_deform360_calibration_visual_production.py")
+
+
+def _workflow() -> str:
+    return WORKFLOW.read_text(encoding="utf-8")
+
+
+def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
+    text = _workflow()
+    script = SCRIPT.read_text(encoding="utf-8")
+    parsed = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(parsed, dict)
+    assert "workflow_call:" in text
+    assert "workflow_dispatch:" not in text
+    assert "inputs.execute_authorized == true" in text
+    assert "github.event_name == 'push'" in text
+    assert "execution_scope:" in text
+    assert "default: full" in text
+    assert (
+        "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/"
+        "launch-deform360-calibration-visual-production-once.yml@refs/heads/main"
+        in text
+    )
+    assert (
+        "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/"
+        "launch-deform360-calibration-visual-smoke-once.yml@refs/heads/main" in text
+    )
+    assert "inputs.execution_scope == 'full'" in text
+    assert "inputs.execution_scope == 'technical-smoke'" in text
+    assert "inputs.resume == false" in text
+    assert "github.ref == 'refs/heads/main'" in text
+    assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
+    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" not in text
+    assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
+    assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
+    assert "command -v nvidia-smi >/dev/null 2>&1" in text
+    assert "timeout-minutes: 1320" in text
+    assert "cancel-in-progress: false" in text
+    assert "--resume" in text
+    assert "--attempt-id" in text
+    assert "command=smoke" in text
+    assert 'output_root / "technical-smoke-v1"' in script
+    smoke = script[script.index("def execute_technical_smoke(") :]
+    assert smoke.index("if run_root.exists():") < smoke.index(
+        "source_video = _verify_source("
+    )
+    assert "receipt_schema=receipt_schema" in smoke
+    assert "receipt_id=receipt_id" in smoke
+
+
+def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
+    text = LAUNCHER.read_text(encoding="utf-8")
+    parsed = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(parsed, dict)
+    assert "workflow_dispatch:" not in text
+    assert "branches: [main]" in text
+    assert (
+        text.count(
+            '      - ".github/workflows/'
+            'launch-deform360-calibration-visual-production-once.yml"'
+        )
+        == 1
+    )
+    assert (
+        "uses: ./.github/workflows/deform360-calibration-visual-production.yml" in text
+    )
+    assert "execute_authorized: true" in text
+    assert "resume: true" in text
+    assert "secrets: inherit" in text
+    assert "cancel-in-progress: false" in text
+    assert r"official raw payload opened: \`false\`" in text
+    assert r"adaptive-confirmation payloads opened: \`false\`" in text
+    assert r"confirmation payloads opened: \`false\`" in text
+    assert r"target outcomes used: \`false\`" in text
+    assert r"replacement allowed: \`false\`" in text
+    assert r"pre-payload predecessor: run \`31274946936\`" in text
+    assert r"environment-bootstrap predecessor: run \`31275886113\`" in text
+    assert r"dependency-metadata predecessor: run \`31276893637\`" in text
+    assert "2026-08-09-sole-self-hosted-layout-v4" in text
+    assert "2026-08-09-decord-runtime-validation-v5" in text
+
+
+def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
+    text = _workflow()
+    production = text[text.index("  production:") :]
+
+    exclude = "printf '%s\\n' '/_prob4d/' '/_motioncrafter/' >> .git/info/exclude"
+    assert production.count(exclude) == 1
+    assert production.index(exclude) < production.index(
+        'test -z "$(git status --porcelain=v1)"'
+    )
+    assert production.index(
+        'echo "COMPACT_ROOT=${evidence}/compact"'
+    ) < production.index("Check out exact reviewed BayesianPhysTwin main")
+    assert 'if [[ ! -d "${processed}/aligned" ]]' in production
+    assert "The frozen calibration-processed root is unavailable." in production
+
+
+def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> None:
+    text = _workflow()
+    bootstrap = text[
+        text.index("Bootstrap exact GPU producer environment") : text.index(
+            "Bootstrap exact immutable model snapshots"
+        )
+    ]
+
+    assert "if command -v uv >/dev/null 2>&1" in bootstrap
+    assert 'uv_bin="${HOME}/.local/bin/uv"' in bootstrap
+    assert '"${uv_bin}" pip install \\\n' in bootstrap
+    assert '--python "${env_root}/bin/python"' in bootstrap
+    assert '"${uv_bin}" pip check \\\n' in bootstrap
+    assert "--color never" in bootstrap
+    assert "Found 1 incompatibility" in bootstrap
+    assert "The package `decord` was built for a different platform" in bootstrap
+    assert 'test -z "${unexpected}"' in bootstrap
+    assert "grep -Fxq 'Found 1 incompatibility'" in bootstrap
+    assert '[[ "${check_output}" != *"Found 1 incompatibility"* ]]' not in bootstrap
+    assert 'dist = importlib.metadata.distribution("decord")' in bootstrap
+    assert 'dist.version != "0.6.0"' in bootstrap
+    assert "Tag: cp36-cp36m-manylinux2010_x86_64" in bootstrap
+    assert "decord resolved outside the frozen environment" in bootstrap
+    assert "cpu(0)" in bootstrap
+    assert "torch.cuda.is_available()" in bootstrap
+    assert '"${env_root}/bin/python" -m pip' not in bootstrap
+
+
+def test_visual_production_registers_but_does_not_stat_confirmation_root() -> None:
+    text = _workflow()
+
+    assert (
+        'adaptive_raw="$(realpath -m '
+        '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"' in text
+    )
+    assert 'adaptive_raw="$(realpath -e ' not in text
+    assert "adaptive.stat()" not in text
+    assert '"adaptive_confirmation_root_registered": True' in text
+    assert '"adaptive_confirmation_root_stat_performed": False' in text
+    assert '"adaptive_confirmation_payloads_opened": False' in text
+    assert r'\( -path "${official_raw}" -o -path "${adaptive_raw}" \) -prune' in text
+
+
+def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
+    text = _workflow()
+
+    assert 'AUTHORITATIVE_ADMISSION_RUN_ID: "31272512658"' in text
+    assert 'AUTHORITATIVE_ADMISSION_ARTIFACT_ID: "9026043628"' in text
+    assert "deform360-calibration-retained-source-admission-31272512658-1" in text
+    assert (
+        "sha256:d0041af0ba0cfe6e5c5bd4008c47adb3ed4cf0cf0f6754eff67a238e746c7a86"
+        in text
+    )
+    assert "715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15" in text
+    assert "run-id: ${{ env.AUTHORITATIVE_ADMISSION_RUN_ID }}" in text
+    assert "repository: ${{ github.repository }}" in text
+    assert "github-token: ${{ github.token }}" in text
+    assert "sha256sum -c SHA256SUMS" in text
+    assert (
+        "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml"
+        not in text
+    )
+    assert "needs.retained-source" not in text
+
+
+def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
+    text = _workflow()
+
+    assert "Admitted all-camera production / sole Deform360 runner" in text
+    assert "runs-on: self-hosted" in text
+    assert "runner_label_contract=self-hosted-only" in text
+    assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
+    assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
+    assert "command -v nvidia-smi >/dev/null 2>&1" in text
+    assert "nvidia-smi -L" in text
+    assert "DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360" in text
+    assert (
+        "DEFORM360_OFFICIAL_RAW_ROOT: "
+        "/mnt/lexar4tb/datasets/deform360/data-7fea8e2" in text
+    )
+    assert (
+        "DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: "
+        "/mnt/lexar4tb/datasets/deform360/"
+        "adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370"
+        in text
+    )
+    assert 'storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"' in text
+    assert 'official_raw="$(realpath -e "${DEFORM360_OFFICIAL_RAW_ROOT}")"' in text
+    assert (
+        'adaptive_raw="$(realpath -m '
+        '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"' in text
+    )
+    assert 'adaptive_raw="$(realpath -e ' not in text
+    assert "adaptive_confirmation_root_registered" in text
+    assert "adaptive_confirmation_root_stat_performed" in text
+    assert "adaptive.stat()" not in text
+    assert "adaptive_confirmation_payloads_opened=false" in text
+    production = text[text.index("  production:") :]
+    assert production.index(
+        'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"'
+    ) < production.index('storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"')
+
+
+def test_visual_production_keeps_outputs_and_cache_on_the_dataset_volume() -> None:
+    text = _workflow()
+
+    assert "${storage}/results/bayesian-phystwin/calibration-visual-production" in text
+    assert "${storage}/caches/huggingface/hub" in text
+    assert (
+        "Production output and model cache must stay on the Deform360 volume." in text
+    )
+    assert "Processed, raw, output, and cache roots must be disjoint." in text
+    assert "runner-storage-preflight.json" in text
+    assert "storage_total_bytes" in text
+    assert "storage_free_bytes" in text
+    assert 'find "${storage}" -mindepth 2 -maxdepth 6' in text
+    assert '-path "${official_raw}" -o -path "${adaptive_raw}"' in text
+
+
+def test_visual_production_has_no_caller_selected_host_paths() -> None:
+    text = _workflow()
+    call_contract = text[text.index("  workflow_call:") : text.index("\npermissions:")]
+
+    assert "processed_root" not in call_contract
+    assert "output_root" not in call_contract
+    assert "hf_cache_dir" not in call_contract
+    assert "INPUT_PROCESSED_ROOT" not in text
+    assert "INPUT_OUTPUT_ROOT" not in text
+    assert "INPUT_HF_CACHE_DIR" not in text
+    assert "VAR_PROCESSED_ROOT" in text
+    assert "VAR_OUTPUT_ROOT" in text
+    assert "VAR_HF_CACHE_DIR" in text
+
+
+def test_visual_production_pins_external_sources_and_single_model_session() -> None:
+    text = _workflow()
+    script = SCRIPT.read_text(encoding="utf-8")
+
+    assert "25d90ef7f78ba4307f4555cb636d666004e1bf66" in text
+    assert "9cb4e9679f5f34e249945544052464ef46324bc2" in text
+    assert "model_loading_policy=single-session-shared-adapter-v1" in text
+    assert "_SharedAdapterFactory" in script
+    assert "SafeMotionCrafterRunner" in script
+    assert "PinnedMotionCrafterModelSet" in script
+    assert "produced = _run(command)" not in script
+    assert "--prob4d-motioncrafter" not in text
+    assert "--prob4d-motioncrafter" not in script
+
+
+def test_visual_production_artifact_excludes_large_predictions_and_targets() -> None:
+    text = _workflow()
+    execution = text[
+        text.index("Execute the exact admitted causal-prefix scope") : text.index(
+            "Collect compact seals and accounting evidence"
+        )
+    ]
+    compact = text[text.index("Collect compact seals and accounting evidence") :]
+
+    assert "*.npz" not in compact
+    assert "predictions.json" not in compact
+    assert "technical-smoke-result.json" in compact
+    assert "confirmation-processed" not in text
+    assert "ADAPTIVE_CONFIRMATION" not in execution
+    assert "official_raw_payload_opened=false" in text
+    assert "reserved_evaluation_frames_opened=false" in text
+    assert "adaptive_confirmation_payloads_opened=false" in text
+    assert "confirmation_payloads_opened=false" in text
+    assert "target_outcomes_used=false" in text
+    assert 'echo "job_status=${{ job.status }}"' in compact
+    assert 'echo "gpu_inventory=unavailable"' in compact
+    assert "decord_metadata_exception=0.6.0-cp36-tag-runtime-verified" in compact
+    assert "replacement_allowed=true" not in text
+    assert "scientific_metrics_computed=false" in text
+    assert "Revalidate compact technical-smoke gate" in text
+    assert 'validate-smoke-bundle "${result}"' in text
+    assert 'validate-bundle "${production_result}"' in compact
+    assert '--run-root "${COMPACT_ROOT}/production"' in compact
+    assert '--admission "${COMPACT_ROOT}/admission/' in compact
+    assert "production-bundle-validation.json" in compact
+    assert '--run-root "${PRODUCTION_RUN_ROOT}"' in text
+    assert 'selected = min(admission["jobs"], key=lambda row: row["job_id"])' in text
+    assert "technical-smoke-gate.json" in text
+    assert 'validation_code}" != 0 && "${validation_code}" != 3' in text
+    assert "Enforce one-job technical-smoke advancement gate" in text
+    assert 'steps.production.outputs.terminal_code }}" = "0"' in text
+    assert 'steps.smoke-gate.outputs.authorized }}" = "true"' in text
+
+
+def test_hugging_face_token_is_not_workflow_wide() -> None:
+    text = _workflow()
+    global_env = text[text.index("env:") : text.index("jobs:")]
+
+    assert "HF_TOKEN" not in global_env
+    assert (
+        "secrets:"
+        in text[text.index("  workflow_call:") : text.index("\npermissions:")]
+    )
+    assert text.count("HF_TOKEN: ${{ secrets.HF_TOKEN }}") == 2
