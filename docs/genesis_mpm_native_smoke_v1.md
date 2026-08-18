@@ -107,12 +107,26 @@ both portable runs.
 
 ## Evidence boundary and next step
 
-This harness is infrastructure for the `native-smoke-passed` stage only. The
-next claim-bearing work for Genesis MPM remains issue #664's frozen source-physics
-qualification: equilibrium drift on source units, rigid-transform equivariance,
-time-step refinement, persistent particle identity, physical-sanity checks,
-Jacobian agreement where gradients are claimed, source-query parity, and exact
-incumbent fallback.
+The repository now separates integration maturity from scientific evidence with
+`material_backend_evidence_v1`. Under that ladder:
 
-Only after that source-physics record passes should Genesis enter the separately
-frozen source-value comparison and Prob4D/Causal4D downstream-benefit gates.
+- the dependency-free adapter tests are evidence input for T1 `adapter-tested`;
+- a **successful retained native smoke** is evidence input for T2
+  `native-runtime-replayed`;
+- `run_a.runtime_id` (identical to `run_b.runtime_id` in a passing run) is the
+  exact runtime digest; and
+- the content-addressed `smoke_id` is suitable as the T2 native-replay evidence
+  digest.
+
+The smoke does not itself publish a `MaterialBackendEvidenceStatusV1`; promotion
+must still be constructed through the fail-closed evidence builder with the T1
+binding present. In particular, T2 is not T3 `numerically-qualified`.
+
+The next claim-bearing work for Genesis MPM remains issue #664's frozen
+source-physics qualification: equilibrium drift on source units, rigid-transform
+equivariance, time-step refinement, persistent particle identity,
+physical-sanity checks, Jacobian agreement where gradients are claimed,
+source-query parity, and exact incumbent fallback.
+
+Only after a passing T3 record should Genesis enter the separately frozen source
+competence, fresh-object, and Prob4D/Causal4D downstream-benefit gates.
