@@ -26,6 +26,8 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     augment_deform_local_residual_full_covariance,
     load_deform_dlo_robustness_v1_protocol,
     validate_deform_bayesian_audit_v1,
+    validate_deform_dlo3_backend_result_v1,
+    validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
     verify_deform_dlo3_seed_bayesian_artifacts_v1,
 )
@@ -94,6 +96,7 @@ def _assert_authorization(
     backend_path: Path,
     deviation_path: Path,
 ) -> tuple[dict[str, object], dict[str, object]]:
+    protocol = load_deform_dlo_robustness_v1_protocol(protocol_path)
     protocol_digest = sha256_file(protocol_path)
     manifest_digest = sha256_file(manifest_path)
     primary = _read_json(primary_path)
@@ -155,6 +158,10 @@ def _assert_authorization(
             or payload.get("held_v8_access") is not False
         ):
             raise ValueError(f"DLO3 {label} audit differs")
+    sensitivity_verification = validate_deform_dlo3_sensitivity_result_v1(
+        sensitivity, protocol
+    )
+    backend_verification = validate_deform_dlo3_backend_result_v1(backend, protocol)
     emitted = _mapping(deviation.get("emitted_information"), label="deviation emission")
     if (
         deviation.get("contract") != "deform-dlo3-count-only-custody-deviation-v1"
@@ -175,6 +182,8 @@ def _assert_authorization(
         "custody_deviation": _identity(deviation_path),
         "primary_bayesian_audit": primary_bayesian_audit,
         "primary_bayesian_artifacts": primary_bayesian_artifacts,
+        "sensitivity_verification": sensitivity_verification,
+        "backend_verification": backend_verification,
     }
 
 

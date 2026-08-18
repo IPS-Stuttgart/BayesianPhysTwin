@@ -35,6 +35,8 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     predict_deform_local_residual_variant,
     scale_deform_coordinate_covariance,
     validate_deform_bayesian_audit_v1,
+    validate_deform_dlo3_backend_result_v1,
+    validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
     verify_deform_dlo3_evaluator_bayesian_artifacts_v1,
     verify_deform_dlo3_seed_bayesian_artifacts_v1,
@@ -773,6 +775,94 @@ def test_backend_source_gate_has_no_published_reference_shortcut() -> None:
     assert "published_reference_passed" not in gate
 
 
+def test_sensitivity_result_validator_requires_complete_fixed_matrix() -> None:
+    protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
+    targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
+    baseline = np.full_like(targets, 0.007)
+    candidate = np.full_like(targets, 0.006)
+    names = [f"case-{index}" for index in range(8)]
+    gate = evaluate_deform_dlo3_source_gate(
+        candidate, baseline, targets, names, protocol
+    )
+    labels = (
+        "pbd-5",
+        "pbd-10",
+        "pbd-20",
+        "stiffness-0.9",
+        "stiffness-1.0",
+        "stiffness-1.1",
+    )
+    result = {
+        "contract": "deform-dlo3-physics-solver-sensitivity-result-v1",
+        "variants": {label: json.loads(json.dumps(gate)) for label in labels},
+        "selection_effect": "none",
+        "nominal_replay_exact": True,
+        "source_test_opened": True,
+        "primary_eval_enumerated": False,
+        "primary_eval_read": False,
+        "target_authorized": False,
+        "retry_authorized": False,
+        "prob4d_used": False,
+        "held_v8_access": False,
+    }
+
+    verification = validate_deform_dlo3_sensitivity_result_v1(result, protocol)
+
+    assert verification["verified"] is True
+    assert verification["variant_count"] == 6
+
+    missing = json.loads(json.dumps(result))
+    del missing["variants"]["pbd-20"]
+    with pytest.raises(ValueError, match="sensitivity result differs"):
+        validate_deform_dlo3_sensitivity_result_v1(missing, protocol)
+
+    selected = json.loads(json.dumps(result))
+    selected["selection_effect"] = "best-source-test"
+    with pytest.raises(ValueError, match="sensitivity result differs"):
+        validate_deform_dlo3_sensitivity_result_v1(selected, protocol)
+
+
+def test_backend_result_validator_binds_gate_and_authorization() -> None:
+    protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
+    targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
+    backend = np.full_like(targets, 0.020)
+    candidate = np.full_like(targets, 0.018)
+    names = [f"case-{index}" for index in range(8)]
+    gate = evaluate_deform_backend_source_gate(
+        candidate, backend, targets, names, protocol
+    )
+    distributions = _seed_result(42)["bayesian_audit"]
+    assert isinstance(distributions, dict)
+    result = {
+        "contract": "deform-dlo3-pyelastica-source-result-v1",
+        "source_gate": gate,
+        "bayesian_audit": {
+            "uncalibrated": distributions["uncalibrated"],
+            "calibrated": distributions["calibrated"],
+            "point_mean_unchanged_by_calibration": True,
+        },
+        "backend_target_arm_authorized": True,
+        "primary_target_authorized": False,
+        "selection_effect": "none-after-fit",
+        "source_test_opened": True,
+        "primary_eval_enumerated": False,
+        "primary_eval_read": False,
+        "retry_authorized": False,
+        "prob4d_used": False,
+        "held_v8_access": False,
+    }
+
+    verification = validate_deform_dlo3_backend_result_v1(result, protocol)
+
+    assert verification["verified"] is True
+    assert verification["backend_target_arm_authorized"] is True
+
+    changed = json.loads(json.dumps(result))
+    changed["backend_target_arm_authorized"] = False
+    with pytest.raises(ValueError, match="target authorization differs"):
+        validate_deform_dlo3_backend_result_v1(changed, protocol)
+
+
 def test_target_gate_reports_unique_and_canonical_reference_operators() -> None:
     protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
     targets = np.zeros((14, 2, 5, 3), dtype=np.float64)
@@ -877,6 +967,8 @@ def test_alltrain_runner_requires_every_source_audit_and_guards_eval() -> None:
     assert '"deform-dlo3-count-only-custody-deviation-v1"' in source
     assert 'stability.get("bayesian_audit_complete") is not True' in source
     assert 'stability.get("bayesian_artifacts_verified") is not True' in source
+    assert "validate_deform_dlo3_sensitivity_result_v1" in source
+    assert "validate_deform_dlo3_backend_result_v1" in source
     assert (
         'source_runtime._install_eval_read_guard(data_root / "DLO3" / "eval")' in source
     )

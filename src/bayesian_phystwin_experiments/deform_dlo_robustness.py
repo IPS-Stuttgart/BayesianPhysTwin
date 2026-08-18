@@ -1792,6 +1792,222 @@ def evaluate_deform_backend_source_gate(
     }
 
 
+def _validate_deform_casewise_gate_record_v1(
+    value: object,
+    protocol: Mapping[str, object],
+    *,
+    kind: str,
+) -> dict[str, object]:
+    gate = _mapping(value, label=f"{kind} source gate")
+    if kind == "primary":
+        expected_contract = "deform-dlo3-robustness-source-gate-v1"
+        baseline_mean_key = "baseline_mean_l1_m"
+        baseline_case_key = "baseline_l1_m"
+        ratio_case_key = "candidate_to_baseline_ratio"
+        thresholds = _mapping(protocol.get("source_gate"), label="source gate")
+        minimum_improvement = float(
+            cast(Any, thresholds["minimum_relative_improvement"])
+        )
+        minimum_wins = int(cast(Any, thresholds["minimum_case_wins"]))
+        maximum_ratio_threshold = float(cast(Any, thresholds["maximum_case_ratio"]))
+    elif kind == "backend":
+        expected_contract = "deform-dlo3-pyelastica-source-gate-v1"
+        baseline_mean_key = "backend_mean_l1_m"
+        baseline_case_key = "backend_l1_m"
+        ratio_case_key = "candidate_to_backend_ratio"
+        thresholds = _mapping(
+            protocol.get("backend_portability"), label="backend portability"
+        )
+        minimum_improvement = float(
+            cast(Any, thresholds["minimum_relative_improvement_over_backend"])
+        )
+        minimum_wins = int(cast(Any, thresholds["minimum_source_test_wins"]))
+        maximum_ratio_threshold = float(
+            cast(Any, thresholds["maximum_source_test_ratio"])
+        )
+    else:
+        raise ValueError("unsupported DEFORM source gate kind")
+
+    cases_value = gate.get("cases")
+    if not isinstance(cases_value, Sequence) or isinstance(cases_value, (str, bytes)):
+        raise ValueError("DEFORM source gate cases differ")
+    cases = tuple(_mapping(case, label="source gate case") for case in cases_value)
+    candidate_mean = float(cast(Any, gate.get("candidate_mean_l1_m", math.nan)))
+    baseline_mean = float(cast(Any, gate.get(baseline_mean_key, math.nan)))
+    relative_improvement = float(cast(Any, gate.get("relative_improvement", math.nan)))
+    maximum_ratio = float(cast(Any, gate.get("maximum_case_ratio", math.nan)))
+    if (
+        gate.get("contract") != expected_contract
+        or int(cast(Any, gate.get("case_count", -1))) != 8
+        or len(cases) != 8
+        or not math.isfinite(candidate_mean)
+        or candidate_mean < 0.0
+        or not math.isfinite(baseline_mean)
+        or baseline_mean <= 0.0
+        or not math.isfinite(relative_improvement)
+        or not math.isclose(
+            relative_improvement,
+            1.0 - candidate_mean / baseline_mean,
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+    ):
+        raise ValueError("DEFORM source gate summary differs")
+
+    names: list[str] = []
+    ratios: list[float] = []
+    wins = 0
+    for case in cases:
+        name = str(case.get("name", ""))
+        candidate_error = float(cast(Any, case.get("candidate_l1_m", math.nan)))
+        baseline_error = float(cast(Any, case.get(baseline_case_key, math.nan)))
+        ratio = float(cast(Any, case.get(ratio_case_key, math.nan)))
+        candidate_wins = candidate_error < baseline_error
+        if (
+            not name
+            or not math.isfinite(candidate_error)
+            or candidate_error < 0.0
+            or not math.isfinite(baseline_error)
+            or baseline_error <= 0.0
+            or not math.isfinite(ratio)
+            or not math.isclose(
+                ratio,
+                candidate_error / baseline_error,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            )
+            or case.get("candidate_wins") is not candidate_wins
+        ):
+            raise ValueError("DEFORM source gate case differs")
+        names.append(name)
+        ratios.append(ratio)
+        wins += int(candidate_wins)
+    if len(set(names)) != 8:
+        raise ValueError("DEFORM source gate case identities differ")
+    improvement_passed = relative_improvement >= minimum_improvement
+    wins_passed = wins >= minimum_wins
+    ratio_passed = max(ratios) <= maximum_ratio_threshold
+    passed = improvement_passed and wins_passed and ratio_passed
+    if kind == "primary":
+        reference_passed = candidate_mean < float(
+            cast(Any, thresholds["maximum_candidate_l1_m"])
+        )
+        passed = passed and reference_passed
+        if gate.get("published_reference_passed") is not reference_passed:
+            raise ValueError("DEFORM source gate reference decision differs")
+    if (
+        int(cast(Any, gate.get("wins", -1))) != wins
+        or not math.isclose(maximum_ratio, max(ratios), rel_tol=1e-12, abs_tol=1e-15)
+        or gate.get("improvement_passed") is not improvement_passed
+        or gate.get("wins_passed") is not wins_passed
+        or gate.get("maximum_case_ratio_passed") is not ratio_passed
+        or gate.get("passed") is not passed
+    ):
+        raise ValueError("DEFORM source gate decision differs")
+    return {
+        "contract": expected_contract,
+        "case_count": 8,
+        "passed": passed,
+        "wins": wins,
+        "maximum_case_ratio": maximum_ratio,
+    }
+
+
+def validate_deform_dlo3_sensitivity_result_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Require every frozen solver/material sensitivity arm and no selection."""
+
+    sensitivity = _mapping(
+        protocol.get("physics_solver_sensitivity"), label="sensitivity"
+    )
+    expected = tuple(
+        f"pbd-{int(value)}"
+        for value in cast(Sequence[Any], sensitivity["pbd_iteration_values"])
+    ) + tuple(
+        f"stiffness-{float(value):.1f}"
+        for value in cast(Sequence[Any], sensitivity["joint_bend_twist_multipliers"])
+    )
+    variants = _mapping(result.get("variants"), label="sensitivity variants")
+    if (
+        result.get("contract") != "deform-dlo3-physics-solver-sensitivity-result-v1"
+        or len(variants) != len(expected)
+        or set(str(name) for name in variants) != set(expected)
+        or result.get("selection_effect") != "none"
+        or result.get("nominal_replay_exact") is not True
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("target_authorized") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("prob4d_used") is not False
+        or result.get("held_v8_access") is not False
+    ):
+        raise ValueError("DEFORM sensitivity result differs")
+    records = {
+        name: _validate_deform_casewise_gate_record_v1(
+            variants.get(name), protocol, kind="primary"
+        )
+        for name in expected
+    }
+    if variants.get("pbd-10") != variants.get("stiffness-1.0"):
+        raise ValueError("DEFORM nominal sensitivity records differ")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-sensitivity-result-verification-v1",
+        "variant_count": len(expected),
+        "variants": records,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def validate_deform_dlo3_backend_result_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate the fixed PyElastica source gate and fallback decision."""
+
+    if (
+        result.get("contract") != "deform-dlo3-pyelastica-source-result-v1"
+        or result.get("selection_effect") != "none-after-fit"
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("prob4d_used") is not False
+        or result.get("held_v8_access") is not False
+        or result.get("primary_target_authorized") is not False
+    ):
+        raise ValueError("DEFORM backend result differs")
+    gate = _validate_deform_casewise_gate_record_v1(
+        result.get("source_gate"), protocol, kind="backend"
+    )
+    if result.get("backend_target_arm_authorized") is not gate["passed"]:
+        raise ValueError("DEFORM backend target authorization differs")
+    audit = _mapping(result.get("bayesian_audit"), label="backend Bayesian audit")
+    raw = _mapping(audit.get("uncalibrated"), label="backend raw distribution")
+    calibrated = _mapping(
+        audit.get("calibrated"), label="backend calibrated distribution"
+    )
+    if (
+        raw.get("contract") != "deform-dlo-predictive-distribution-metrics-v1"
+        or calibrated.get("contract") != "deform-dlo-predictive-distribution-metrics-v1"
+        or raw.get("mean_coordinate_l1_m") != calibrated.get("mean_coordinate_l1_m")
+        or audit.get("point_mean_unchanged_by_calibration") is not True
+    ):
+        raise ValueError("DEFORM backend Bayesian audit differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-backend-result-verification-v1",
+        "source_gate": gate,
+        "backend_target_arm_authorized": gate["passed"],
+        "selection_effect": "none-after-fit",
+        "verified": True,
+    }
+
+
 def evaluate_deform_dlo3_target_gate(
     candidate_predictions: Array,
     baseline_predictions: Array,
