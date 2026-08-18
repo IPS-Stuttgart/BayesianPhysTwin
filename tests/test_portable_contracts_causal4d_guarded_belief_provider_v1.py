@@ -22,8 +22,7 @@ from bayesian_phystwin.causal4d_guarded_belief_provider_v1 import (
 
 def test_facade_reexports_exact_contract_objects() -> None:
     assert (
-        Prob4DRuntimeIdentityV1
-        is provider_runtime_identity_v1.Prob4DRuntimeIdentityV1
+        Prob4DRuntimeIdentityV1 is provider_runtime_identity_v1.Prob4DRuntimeIdentityV1
     )
     assert (
         CandidateBeliefConstructionReceiptV1
@@ -44,15 +43,11 @@ def test_facade_reexports_exact_contract_objects() -> None:
 
 
 def test_manifest_binds_versioned_contracts_without_empirical_promotion() -> None:
-    manifest = causal4d_guarded_belief_provider_v1_manifest(
-        provider_revision="a" * 40
-    )
+    manifest = causal4d_guarded_belief_provider_v1_manifest(provider_revision="a" * 40)
 
     assert manifest["provider_name"] == "bayesian-phystwin"
     assert manifest["provider_revision"] == "a" * 40
-    assert manifest["schema_version"] == (
-        CAUSAL4D_GUARDED_BELIEF_PROVIDER_API_VERSION
-    )
+    assert manifest["schema_version"] == (CAUSAL4D_GUARDED_BELIEF_PROVIDER_API_VERSION)
     assert manifest["capabilities"] == list(
         CAUSAL4D_GUARDED_BELIEF_PROVIDER_CAPABILITIES
     )
@@ -83,9 +78,7 @@ def test_manifest_rejects_malformed_explicit_revision(revision: object) -> None:
 def test_public_lifecycle_registers_the_versioned_facade() -> None:
     root = Path(__file__).resolve().parents[1]
     lifecycle = json.loads(
-        (root / "api/public-module-lifecycle-v1.json").read_text(
-            encoding="utf-8"
-        )
+        (root / "api/public-module-lifecycle-v1.json").read_text(encoding="utf-8")
     )
     assert (
         "bayesian_phystwin.causal4d_guarded_belief_provider_v1"

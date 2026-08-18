@@ -89,12 +89,8 @@ def causal4d_guarded_belief_provider_v1_manifest(
             CAUSAL4D_GUARDED_BELIEF_PROVIDER_ARTIFACT_SCHEMA_VERSIONS
         ),
         "metadata": {
-            "provider_api": (
-                "bayesian_phystwin.causal4d_guarded_belief_provider_v1"
-            ),
-            "provider_api_version": (
-                CAUSAL4D_GUARDED_BELIEF_PROVIDER_API_VERSION
-            ),
+            "provider_api": ("bayesian_phystwin.causal4d_guarded_belief_provider_v1"),
+            "provider_api_version": (CAUSAL4D_GUARDED_BELIEF_PROVIDER_API_VERSION),
             "inference_role": CAUSAL4D_GUARDED_BELIEF_PROVIDER_INFERENCE_ROLE,
             "compatibility": CAUSAL4D_GUARDED_BELIEF_PROVIDER_COMPATIBILITY,
             "runtime_identity_schema": PROB4D_RUNTIME_IDENTITY_SCHEMA,
