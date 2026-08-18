@@ -1,0 +1,113 @@
+name: Repair same-mean mixture typing
+
+on:
+  push:
+    branches:
+      - agent/same-mean-query-mixture-v1
+    paths:
+      - .agent-typing/READY
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-fix-same-mean-mixture-typing
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/same-mean-query-mixture-v1
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply and validate the exact typing repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path("src/bayesian_phystwin/predictive_query_mixture.py"): [
+                  (
+                      '''    if isinstance(value, (float, np.floating)):\n        result = float(value)\n        if not math.isfinite(result):\n            raise ValueError(f"{name} must contain only finite JSON values")\n        return result\n    if isinstance(value, Mapping):\n        result: dict[str, Any] = {}\n        for key, item in value.items():\n            canonical_key = _canonical_string(key, name=f"{name} key")\n            if canonical_key in result:\n                raise ValueError(f"{name} contains a duplicate key")\n            result[canonical_key] = _plain_json(\n                item,\n                name=f"{name}.{canonical_key}",\n            )\n        return result\n''',
+                      '''    if isinstance(value, (float, np.floating)):\n        scalar_result = float(value)\n        if not math.isfinite(scalar_result):\n            raise ValueError(f"{name} must contain only finite JSON values")\n        return scalar_result\n    if isinstance(value, Mapping):\n        mapping_result: dict[str, Any] = {}\n        for key, item in value.items():\n            canonical_key = _canonical_string(key, name=f"{name} key")\n            if canonical_key in mapping_result:\n                raise ValueError(f"{name} contains a duplicate key")\n            mapping_result[canonical_key] = _plain_json(\n                item,\n                name=f"{name}.{canonical_key}",\n            )\n        return mapping_result\n''',
+                  ),
+                  (
+                      '    result = np.empty(len(flat_residual), dtype=np.float64)\n',
+                      '    result: np.ndarray = np.empty(\n        len(flat_residual), dtype=np.float64\n    )\n',
+                  ),
+                  (
+                      '    endpoint_scores = np.empty(len(flat_residual), dtype=np.float64)\n',
+                      '    endpoint_scores: np.ndarray = np.empty(\n        len(flat_residual), dtype=np.float64\n    )\n',
+                  ),
+                  (
+                      '    scores = np.empty((len(candidate_values), len(group_ids)), dtype=np.float64)\n',
+                      '    scores: np.ndarray = np.empty(\n        (len(candidate_values), len(group_ids)), dtype=np.float64\n    )\n',
+                  ),
+              ],
+              Path("src/bayesian_phystwin/query_density_calibration.py"): [
+                  (
+                      '''    if isinstance(value, (float, np.floating)):\n        result = float(value)\n        if not math.isfinite(result):\n            raise ValueError(f"{name} must contain only finite JSON values")\n        return result\n    if isinstance(value, Mapping):\n        result: dict[str, Any] = {}\n        for key, item in value.items():\n            canonical_key = _canonical_string(key, name=f"{name} key")\n            if canonical_key in result:\n                raise ValueError(f"{name} contains a duplicate key")\n            result[canonical_key] = _plain_json(\n                item,\n                name=f"{name}.{canonical_key}",\n            )\n        return result\n''',
+                      '''    if isinstance(value, (float, np.floating)):\n        scalar_result = float(value)\n        if not math.isfinite(scalar_result):\n            raise ValueError(f"{name} must contain only finite JSON values")\n        return scalar_result\n    if isinstance(value, Mapping):\n        mapping_result: dict[str, Any] = {}\n        for key, item in value.items():\n            canonical_key = _canonical_string(key, name=f"{name} key")\n            if canonical_key in mapping_result:\n                raise ValueError(f"{name} contains a duplicate key")\n            mapping_result[canonical_key] = _plain_json(\n                item,\n                name=f"{name}.{canonical_key}",\n            )\n        return mapping_result\n''',
+                  ),
+              ],
+          }
+
+          for path, edits in replacements.items():
+              text = path.read_text(encoding="utf-8")
+              for old, new in edits:
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(
+                          f"expected one typing target in {path}, found {count}"
+                      )
+                  text = text.replace(old, new)
+              path.write_text(text, encoding="utf-8")
+          PY
+          python -m pip install -e ".[dev]"
+          python -m ruff format -- \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py
+          python -m ruff check -- \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py \
+            tests/test_covariance_only_hybrid_mixture_v1.py \
+            tests/test_query_calibration_mixture_density_v1.py
+          python -m mypy \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_covariance_only_hybrid_mixture_v1.py \
+            tests/test_query_calibration_mixture_density_v1.py
+          python -m compileall -q \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py
+          git diff --check
+
+      - name: Publish the repair and remove temporary machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py
+          git rm .agent-typing/READY
+          git rm .github/workflows/agent-fix-same-mean-mixture-typing.yml
+          git commit -m "Harden same-mean mixture typing"
+          git push origin HEAD:agent/same-mean-query-mixture-v1
