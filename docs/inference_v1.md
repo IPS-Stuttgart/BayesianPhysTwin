@@ -57,6 +57,48 @@ inference = infer_prob4d_candidate(
 `PosteriorCovarianceSemanticsV1`. Falsey objects such as `0` are rejected rather
 than interpreted as omitted configuration.
 
+## Typed anchor dependence
+
+Use `AnchorDependenceV1` whenever the candidate includes independent physical
+anchor rows. The contract binds, in anchor-row order, correlation groups, prior
+reliability, prior nominal probability, composite-likelihood weight, and an
+optional shared Gaussian bias model. Every array is copied into irreversibly
+read-only storage, and the resulting artifact identity covers the schema, group
+identifiers, array bytes, and finite JSON metadata.
+
+```python
+import numpy as np
+
+from bayesian_phystwin.inference.v1 import AnchorDependenceV1
+
+anchor_dependence = AnchorDependenceV1(
+    correlation_group_ids=("contact:left", "contact:left"),
+    prior_reliability=np.array([0.95, 0.95]),
+    prior_nominal_probability=np.array([0.99, 0.99]),
+    composite_weight=np.array([0.5, 0.5]),
+    bias_jacobian=np.ones((2, 3, 1)),
+    bias_prior_covariance=np.array([[1e-6]]),
+    metadata={"source": "force-torque-anchor-v1"},
+)
+
+inference = infer_prob4d_candidate(
+    observation,
+    linearization,
+    physical_prediction_xyz_m=physical_prediction,
+    anchor_innovation_m=anchor_innovation,
+    anchor_covariance_m2=anchor_covariance,
+    anchor_state_jacobian=anchor_state_jacobian,
+    anchor_dependence=anchor_dependence,
+)
+```
+
+The stable wrapper checks the anchor-row count, forwards exactly the six frozen
+solver inputs, and binds `anchor_dependence.artifact_id` into the candidate input
+lineage. Therefore the numerical-result, update, and candidate identities change
+whenever a dependence assumption changes. The historical individual keywords
+remain available during the 0.4 compatibility line, but mixing typed and legacy
+forms or supplying an unknown legacy keyword is rejected.
+
 ## Complete-belief selection
 
 The caller remains responsible for converting the candidate result into one
@@ -108,7 +150,7 @@ prediction.
 Before protected target outcomes are opened:
 
 1. validate the versioned observation and physical-linearization artifacts;
-2. freeze solver configuration and covariance semantics;
+2. freeze solver configuration, covariance semantics, and anchor dependence;
 3. construct the complete candidate belief without interpreting it as accepted;
 4. evaluate the separately registered closure and regret guard;
 5. finalize the complete-belief route and retain its identifier-only record;
@@ -146,7 +188,7 @@ returns the exact physical fallback object. See
 matrix, artifact bindings, and routing example.
 
 This explicit submodule is not re-exported by `bayesian_phystwin.inference.v1`;
-the existing exact 12-symbol namespace remains unchanged.
+the exact 13-symbol stable namespace remains intentionally small.
 
 ## Compatibility contract
 
