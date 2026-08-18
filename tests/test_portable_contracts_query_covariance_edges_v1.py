@@ -42,7 +42,9 @@ _HELPERS = runpy.run_path(
 _binding = cast(Callable[[], Any], _HELPERS["_binding"])
 _query = cast(Callable[[Any], Any], _HELPERS["_query"])
 _certificate = cast(Callable[[Any], Any], _HELPERS["_certificate"])
-_bound_projection = cast(Callable[[Any], dict[str, object]], _HELPERS["_bound_projection"])
+_bound_projection = cast(
+    Callable[[Any], dict[str, object]], _HELPERS["_bound_projection"]
+)
 
 
 def _sha(label: str) -> str:
@@ -149,7 +151,9 @@ def test_query_binding_constructor_and_payload_edge_contracts(tmp_path: Path) ->
     with pytest.raises(ValueError):
         replace(binding, causal_frame_stop=0, artifact_id=None)
     with pytest.raises(ValueError):
-        binding.validate_payload(np.ones((1, 2, 3), dtype=np.float64), ("row-0", "row-1"))
+        binding.validate_payload(
+            np.ones((1, 2, 3), dtype=np.float64), ("row-0", "row-1")
+        )
     with pytest.raises(TypeError):
         write_query_jacobian_binding(object(), tmp_path / "invalid.json")  # type: ignore[arg-type]
 
@@ -259,7 +263,9 @@ def test_bound_projection_rejects_schema_lineage_and_summary_substitutions() -> 
         )
 
     assert projection["schema"] == BOUND_QUERY_COVARIANCE_PROJECTION_SCHEMA
-    assert projection["claim_boundary"] == BOUND_QUERY_COVARIANCE_PROJECTION_CLAIM_BOUNDARY
+    assert (
+        projection["claim_boundary"] == BOUND_QUERY_COVARIANCE_PROJECTION_CLAIM_BOUNDARY
+    )
 
 
 def test_bound_projection_rejects_covariance_descriptor_tampering() -> None:
