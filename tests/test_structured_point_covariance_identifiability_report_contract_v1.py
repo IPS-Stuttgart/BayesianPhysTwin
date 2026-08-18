@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 import pytest
@@ -156,5 +156,3 @@ def test_identifiability_report_copies_inputs_and_binds_every_identity() -> None
     assert report.artifact_id != changed_metadata.artifact_id
     with pytest.raises(ValueError, match="does not match content"):
         _report(artifact_id="0" * 64)
-
-

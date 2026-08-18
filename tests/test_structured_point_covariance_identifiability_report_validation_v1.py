@@ -10,8 +10,6 @@ from bayesian_phystwin.bias_aware_belief import (
     PhysicalResponseBasis,
 )
 from bayesian_phystwin.identifiability_report_v1 import (
-    IDENTIFIABILITY_REPORT_CLAIM_BOUNDARY,
-    IDENTIFIABILITY_REPORT_SCHEMA,
     IdentifiabilityReportV1,
     identifiability_report_from_bases,
 )

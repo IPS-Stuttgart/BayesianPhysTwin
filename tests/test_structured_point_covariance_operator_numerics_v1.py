@@ -9,8 +9,6 @@ from bayesian_phystwin.structured_point_covariance import (
     StructuredPointCovarianceV1,
 )
 from bayesian_phystwin.structured_point_covariance_operator_v1 import (
-    STRUCTURED_POINT_COVARIANCE_OPERATOR_CLAIM_BOUNDARY,
-    STRUCTURED_POINT_COVARIANCE_OPERATOR_SCHEMA,
     StructuredPointCovarianceOperatorV1,
 )
 
@@ -152,5 +150,3 @@ def test_matrix_action_detects_nonrepresentable_overflow() -> None:
 
     with pytest.raises(ValueError, match="overflowed finite"):
         operator.matmul(np.full(3, 1e100))
-
-
