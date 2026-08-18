@@ -15,13 +15,7 @@ from __future__ import annotations
 
 import warnings
 from importlib import import_module
-from typing import Any, Final, TYPE_CHECKING
-
-from ._root_exports_v0_4 import (
-    __all__ as __all__,
-    _ROOT_EXPORT_GROUPS as _ROOT_EXPORT_GROUPS,
-    _ROOT_EXPORT_MODULES as _ROOT_EXPORT_MODULES,
-)
+from typing import TYPE_CHECKING, Any, Final
 
 if TYPE_CHECKING:  # pragma: no cover - static typing only
     from ._root_exports_v0_4 import *  # noqa: F403
@@ -30,6 +24,32 @@ _ROOT_DEPRECATION_START: Final[tuple[int, int]] = (0, 5)
 _ROOT_REMOVAL_NOT_BEFORE: Final[str] = "0.6"
 _SOURCE_FALLBACK_VERSION: Final[str] = "0.4.0"
 _WARNED_ROOT_EXPORTS: set[str] = set()
+
+
+class _LazyRootExportNames:
+    """Sequence-like historical export roster loaded only when inspected."""
+
+    _names: tuple[str, ...] | None = None
+
+    def _load(self) -> tuple[str, ...]:
+        names = self._names
+        if names is None:
+            helper = import_module("._root_exports_v0_4", __name__)
+            names = tuple(helper.__all__)
+            self._names = names
+        return names
+
+    def __iter__(self):
+        return iter(self._load())
+
+    def __len__(self) -> int:
+        return len(self._load())
+
+    def __getitem__(self, index: int) -> str:
+        return self._load()[index]
+
+
+__all__ = _LazyRootExportNames()
 
 
 def _project_version() -> str:
@@ -79,7 +99,8 @@ def _warn_historical_root_export(name: str, module_name: str) -> None:
 def __getattr__(name: str) -> Any:
     """Resolve one historical package-root export on first use."""
 
-    module_name = _ROOT_EXPORT_MODULES.get(name)
+    helper = import_module("._root_exports_v0_4", __name__)
+    module_name = helper._ROOT_EXPORT_MODULES.get(name)
     if module_name is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
@@ -90,6 +111,6 @@ def __getattr__(name: str) -> Any:
 
 
 def __dir__() -> list[str]:
-    """Expose the complete compatibility surface without importing it."""
+    """Expose the complete compatibility surface without importing owners."""
 
     return sorted(set(globals()) | set(__all__))
