@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Generic, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
@@ -30,8 +30,20 @@ from ..prospective_prob4d_update import (
     ClaimBearingProb4DCandidateV1,
     infer_claim_bearing_prob4d_candidate_from_artifacts,
 )
+from ._anchor_dependence import AnchorDependenceV1
 
 BeliefT = TypeVar("BeliefT", bound=ArtifactBelief)
+
+_LEGACY_ANCHOR_DEPENDENCE_KEYS = frozenset(
+    {
+        "anchor_correlation_group_ids",
+        "anchor_prior_reliability",
+        "anchor_prior_nominal_probability",
+        "anchor_composite_weight",
+        "anchor_bias_jacobian",
+        "anchor_bias_prior_covariance",
+    }
+)
 
 
 @runtime_checkable
@@ -229,6 +241,60 @@ def finalize_guarded_update(
     )
 
 
+def _typed_anchor_dependence_kwargs(
+    anchor_dependence: AnchorDependenceV1 | None,
+    legacy_anchor_dependence: Mapping[str, Any],
+    *,
+    anchor_innovation_m: np.ndarray | None,
+) -> tuple[dict[str, object], AnchorDependenceV1 | None]:
+    validated = optional_instance(
+        anchor_dependence,
+        AnchorDependenceV1,
+        name="anchor_dependence",
+    )
+    unknown_legacy_keys = sorted(
+        set(legacy_anchor_dependence) - _LEGACY_ANCHOR_DEPENDENCE_KEYS
+    )
+    if unknown_legacy_keys:
+        raise TypeError(
+            "unknown legacy anchor dependence keywords: "
+            + ", ".join(unknown_legacy_keys)
+        )
+    if validated is None:
+        return dict(legacy_anchor_dependence), None
+    if legacy_anchor_dependence:
+        raise ValueError(
+            "anchor_dependence cannot be combined with legacy anchor keywords"
+        )
+    if anchor_innovation_m is None:
+        raise ValueError("anchor_dependence requires anchor_innovation_m")
+    innovation = np.asarray(anchor_innovation_m)
+    if innovation.ndim != 2 or innovation.shape[1] != 3:
+        raise ValueError("anchor_innovation_m must have shape (A, 3)")
+    validated.require_anchor_count(len(innovation))
+    return validated.inference_kwargs(), validated
+
+
+def _bind_anchor_dependence_identity(
+    candidate: ClaimBearingProb4DCandidateV1,
+    anchor_dependence: AnchorDependenceV1,
+) -> ClaimBearingProb4DCandidateV1:
+    artifact_id = lowercase_sha256(
+        anchor_dependence.artifact_id,
+        name="anchor_dependence.artifact_id",
+    )
+    lineage = dict(candidate.result.input_lineage)
+    existing = lineage.get("anchor_dependence_artifact_id")
+    if existing is not None and existing != artifact_id:
+        raise ValueError(
+            "candidate lineage contradicts anchor_dependence artifact identity"
+        )
+    lineage["anchor_dependence_artifact_id"] = artifact_id
+    bound_result = replace(candidate.result, input_lineage=lineage)
+    bound_update = replace(candidate.update_v1, result=bound_result)
+    return replace(candidate, update_v1=bound_update)
+
+
 def infer_prob4d_candidate(
     observation_belief: ObservationBeliefV1,
     linearization: PhysicalLinearizationV1,
@@ -242,9 +308,15 @@ def infer_prob4d_candidate(
     anchor_state_jacobian: np.ndarray | None = None,
     config: PriorAwareGaugeConfigV1 | None = None,
     covariance_semantics: PosteriorCovarianceSemanticsV1 | None = None,
-    **anchor_dependence: Any,
+    anchor_dependence: AnchorDependenceV1 | None = None,
+    **legacy_anchor_dependence: Any,
 ) -> ClaimBearingProb4DCandidateV1:
-    """Run strict Prob4D admission and return a typed, undeployed candidate."""
+    """Run strict Prob4D admission and return a typed, undeployed candidate.
+
+    ``anchor_dependence`` is the preferred stable contract. The historical
+    individual anchor keywords remain accepted for compatibility, but callers
+    may not mix both forms in one update.
+    """
 
     if not isinstance(observation_belief, ObservationBeliefV1):
         raise TypeError("observation_belief must be an ObservationBeliefV1")
@@ -260,7 +332,12 @@ def infer_prob4d_candidate(
         PosteriorCovarianceSemanticsV1,
         name="covariance_semantics",
     )
-    return infer_claim_bearing_prob4d_candidate_from_artifacts(
+    dependence_kwargs, validated_anchor_dependence = _typed_anchor_dependence_kwargs(
+        anchor_dependence,
+        legacy_anchor_dependence,
+        anchor_innovation_m=anchor_innovation_m,
+    )
+    candidate = infer_claim_bearing_prob4d_candidate_from_artifacts(
         observation_belief,
         linearization,
         physical_prediction_xyz_m=physical_prediction_xyz_m,
@@ -272,7 +349,13 @@ def infer_prob4d_candidate(
         anchor_state_jacobian=anchor_state_jacobian,
         config=validated_config,
         covariance_semantics=validated_covariance_semantics,
-        **anchor_dependence,
+        **dependence_kwargs,
+    )
+    if validated_anchor_dependence is None:
+        return candidate
+    return _bind_anchor_dependence_identity(
+        candidate,
+        validated_anchor_dependence,
     )
 
 
