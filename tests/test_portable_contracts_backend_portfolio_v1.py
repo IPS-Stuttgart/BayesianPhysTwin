@@ -154,9 +154,7 @@ def test_source_value_result_lifts_family_admission_freeze(
 
     assert report["admission_frozen"] is False
     assert report["new_family_admission_allowed"] is True
-    assert report["source_value_qualified_profiles"] == [
-        "jax-fem-quasistatic-v1"
-    ]
+    assert report["source_value_qualified_profiles"] == ["jax-fem-quasistatic-v1"]
 
 
 @pytest.mark.parametrize("profile_id", ["", "unknown-backend-v1"])
@@ -171,7 +169,5 @@ def test_evidence_stage_lookup_rejects_non_string() -> None:
 
 
 def test_evidence_stage_type_surface() -> None:
-    stage: BackendEvidenceStageV1 = portfolio.backend_evidence_stage(
-        "genesis-mpm-v1"
-    )
+    stage: BackendEvidenceStageV1 = portfolio.backend_evidence_stage("genesis-mpm-v1")
     assert stage == "native-smoke-passed"

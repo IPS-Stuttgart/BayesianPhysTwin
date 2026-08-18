@@ -149,8 +149,7 @@ def validate_backend_portfolio() -> dict[str, object]:
                 "evidence_stage": stage,
                 "active_qualification_candidate": profile_id in active,
                 "recommendation_authorized": (
-                    _STAGE_ORDER[stage]
-                    >= _STAGE_ORDER["source-value-qualified"]
+                    _STAGE_ORDER[stage] >= _STAGE_ORDER["source-value-qualified"]
                 ),
             }
         )
