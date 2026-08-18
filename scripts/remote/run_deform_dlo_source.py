@@ -256,11 +256,16 @@ def _build_dlo_model(
     *,
     dlo_type: str,
     node_count: int,
+    pbd_iterations: int = 10,
 ) -> tuple[Any, Any]:
     if device.split(":", maxsplit=1)[0] != "cuda":
         raise ValueError("registered DEFORM source run requires a CUDA device")
     if node_count < 5:
         raise ValueError("registered DEFORM source run requires at least five nodes")
+    if pbd_iterations < 1:
+        raise ValueError(
+            "registered DEFORM source run requires positive PBD iterations"
+        )
     initialization = load_deform_dlo_initialization(
         modules.train_deform_path,
         dlo_type,
@@ -279,7 +284,7 @@ def _build_dlo_model(
     model = modules.DEFORM_sim(
         n_vert=node_count,
         n_edge=edge_count,
-        pbd_iter=10,
+        pbd_iter=pbd_iterations,
         device=device,
     )
     rest_vertices = torch.tensor(

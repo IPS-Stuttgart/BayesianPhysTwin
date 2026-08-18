@@ -18,6 +18,7 @@ class DeformDLOInitialization:
     rest_vertices_m: tuple[tuple[float, float, float], ...]
     bend_stiffness: float
     twist_stiffness: float
+    coordinate_transform: str
     source_sha256: str
 
     @property
@@ -29,7 +30,7 @@ class DeformDLOInitialization:
             "contract": "official-deform-dlo-initialization-v1",
             "dlo_type": self.dlo_type,
             "node_count": self.node_count,
-            "coordinate_transform": "raw-x-raw-z-negated-raw-y",
+            "coordinate_transform": self.coordinate_transform,
             "bend_stiffness": self.bend_stiffness,
             "twist_stiffness": self.twist_stiffness,
             "upstream_train_deform_sha256": self.source_sha256,
@@ -109,6 +110,77 @@ def _ones_multiplier(value: ast.AST) -> float | None:
     return None
 
 
+def _rest_component(value: ast.AST) -> tuple[int, int] | None:
+    sign = 1
+    if isinstance(value, ast.UnaryOp) and isinstance(value.op, ast.USub):
+        sign = -1
+        value = value.operand
+    while (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Attribute)
+        and value.func.attr == "unsqueeze"
+    ):
+        value = value.func.value
+    if not isinstance(value, ast.Subscript) or not isinstance(value.value, ast.Name):
+        return None
+    if value.value.id != "rest_vert" or not isinstance(value.slice, ast.Tuple):
+        return None
+    indices = value.slice.elts
+    if len(indices) != 3 or not isinstance(indices[-1], ast.Constant):
+        return None
+    raw_index = indices[-1].value
+    if not isinstance(raw_index, int) or raw_index not in (0, 1, 2):
+        return None
+    return raw_index, sign
+
+
+def _coordinate_transform(
+    branch: ast.If,
+) -> tuple[tuple[tuple[int, int], ...], str]:
+    candidates: list[tuple[tuple[int, int], ...]] = []
+    for statement in branch.body:
+        if (
+            not isinstance(statement, ast.Assign)
+            or len(statement.targets) != 1
+            or not isinstance(statement.targets[0], ast.Name)
+            or statement.targets[0].id != "rest_vert"
+            or not isinstance(statement.value, ast.Call)
+            or not isinstance(statement.value.func, ast.Attribute)
+            or not isinstance(statement.value.func.value, ast.Name)
+            or statement.value.func.value.id != "torch"
+            or statement.value.func.attr != "cat"
+            or not statement.value.args
+            or not isinstance(statement.value.args[0], (ast.Tuple, ast.List))
+        ):
+            continue
+        components = tuple(
+            _rest_component(value) for value in statement.value.args[0].elts
+        )
+        if len(components) == 3 and all(value is not None for value in components):
+            candidates.append(tuple(value for value in components if value is not None))
+    if len(candidates) != 1:
+        raise ValueError("upstream DEFORM coordinate transform is ambiguous")
+    transform = candidates[0]
+    if transform == ((0, 1), (2, 1), (1, -1)):
+        return transform, "raw-x-raw-z-negated-raw-y"
+    if transform == ((0, 1), (2, 1), (1, 1)):
+        return transform, "raw-x-raw-z-raw-y"
+    raise ValueError(f"unsupported upstream DEFORM coordinate transform: {transform}")
+
+
+def _transform_vertex(
+    row: tuple[float, float, float],
+    transform: tuple[tuple[int, int], ...],
+) -> tuple[float, float, float]:
+    if len(transform) != 3:
+        raise ValueError("upstream DEFORM coordinate transform must have three axes")
+    return (
+        row[transform[0][0]] * transform[0][1],
+        row[transform[1][0]] * transform[1][1],
+        row[transform[2][0]] * transform[2][1],
+    )
+
+
 @cache
 def load_deform_dlo_initialization(
     train_deform_path: str | Path,
@@ -116,12 +188,13 @@ def load_deform_dlo_initialization(
 ) -> DeformDLOInitialization:
     """Parse one official DLO branch without importing or vendoring upstream code."""
 
-    if dlo_type not in ("DLO1", "DLO2"):
+    if dlo_type not in ("DLO1", "DLO2", "DLO3", "DLO4", "DLO5"):
         raise ValueError(f"unsupported registered DEFORM DLO type: {dlo_type}")
     source = Path(train_deform_path).resolve()
     payload = source.read_bytes()
     tree = ast.parse(payload.decode("utf-8"), filename=str(source))
     branch = _branch_for_dlo(tree, dlo_type)
+    transform, transform_name = _coordinate_transform(branch)
 
     raw_vertex_candidates = []
     bend_candidates = []
@@ -164,7 +237,7 @@ def load_deform_dlo_initialization(
         or twist_stiffness <= 0.0
     ):
         raise ValueError(f"upstream {dlo_type} initialization is incomplete")
-    transformed = tuple((x, z, -y) for x, y, z in raw_vertices)
+    transformed = tuple(_transform_vertex(row, transform) for row in raw_vertices)
     if any(not all(math.isfinite(value) for value in row) for row in transformed):
         raise ValueError(f"upstream {dlo_type} rest geometry is non-finite")
     return DeformDLOInitialization(
@@ -172,5 +245,6 @@ def load_deform_dlo_initialization(
         rest_vertices_m=transformed,
         bend_stiffness=bend_stiffness,
         twist_stiffness=twist_stiffness,
+        coordinate_transform=transform_name,
         source_sha256=hashlib.sha256(payload).hexdigest(),
     )
