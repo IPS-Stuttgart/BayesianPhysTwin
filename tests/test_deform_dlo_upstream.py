@@ -8,15 +8,23 @@ from bayesian_phystwin_experiments.deform_dlo_upstream import (
 )
 
 
-def _branch(dlo_type: str, node_count: int, bend: float, twist: float) -> str:
+def _branch(
+    dlo_type: str,
+    node_count: int,
+    bend: float,
+    twist: float,
+    *,
+    negate_raw_y: bool = True,
+) -> str:
     vertices = tuple(
         (float(index), float(index) + 0.25, float(index) + 0.5)
         for index in range(node_count)
     )
     keyword = "if" if dlo_type == "DLO1" else "elif"
+    third = "-rest_vert[:, :, 1]" if negate_raw_y else "rest_vert[:, :, 1]"
     return f'''    {keyword} DLO_type == "{dlo_type}":
         rest_vert = torch.tensor({vertices!r}).unsqueeze(dim=0).to(device)
-        rest_vert = torch.cat((rest_vert[:, :, 0], rest_vert[:, :, 2]), dim=-1)
+        rest_vert = torch.cat((rest_vert[:, :, 0].unsqueeze(dim=-1), rest_vert[:, :, 2].unsqueeze(dim=-1), {third}.unsqueeze(dim=-1)), dim=-1)
         DEFORM_sim.rest_vert = nn.Parameter(rest_vert)
         DEFORM_sim.DEFORM_func.bend_stiffness = nn.Parameter(
             {bend!r} * torch.ones((1, n_edge), device=device)
@@ -32,7 +40,12 @@ def _write_fixture(path: Path, *, duplicate_dlo2: bool = False) -> bytes:
     if duplicate_dlo2:
         dlo2 += _branch("DLO2", 12, 5e-4, 3e-5).replace("elif", "if", 1)
     payload = (
-        "def train(DLO_type):\n" + _branch("DLO1", 13, 5e-5, 2e-5) + dlo2
+        "def train(DLO_type):\n"
+        + _branch("DLO1", 13, 5e-5, 2e-5)
+        + dlo2
+        + _branch("DLO3", 12, 8e-4, 5e-5, negate_raw_y=False)
+        + _branch("DLO4", 12, 8e-5, 5e-5)
+        + _branch("DLO5", 12, 8e-5, 5e-5)
     ).encode()
     path.write_bytes(payload)
     return payload
@@ -44,6 +57,7 @@ def test_extracts_official_dlo_specific_initialization(tmp_path: Path) -> None:
 
     dlo1 = load_deform_dlo_initialization(source, "DLO1")
     dlo2 = load_deform_dlo_initialization(source, "DLO2")
+    dlo3 = load_deform_dlo_initialization(source, "DLO3")
 
     assert dlo1.node_count == 13
     assert dlo1.bend_stiffness == pytest.approx(5e-5)
@@ -52,8 +66,12 @@ def test_extracts_official_dlo_specific_initialization(tmp_path: Path) -> None:
     assert dlo2.bend_stiffness == pytest.approx(5e-4)
     assert dlo2.twist_stiffness == pytest.approx(3e-5)
     assert dlo2.rest_vertices_m[1] == pytest.approx((1.0, 1.5, -1.25))
+    assert dlo3.rest_vertices_m[1] == pytest.approx((1.0, 1.5, 1.25))
+    assert dlo2.coordinate_transform == "raw-x-raw-z-negated-raw-y"
+    assert dlo3.coordinate_transform == "raw-x-raw-z-raw-y"
     assert dlo2.source_sha256 == hashlib.sha256(payload).hexdigest()
     assert dlo2.to_record()["contract"] == "official-deform-dlo-initialization-v1"
+    assert dlo3.to_record()["coordinate_transform"] == "raw-x-raw-z-raw-y"
 
 
 def test_rejects_unsupported_or_ambiguous_dlo_initialization(tmp_path: Path) -> None:

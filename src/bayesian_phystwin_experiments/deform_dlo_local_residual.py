@@ -765,6 +765,8 @@ def build_deform_local_residual_features(
     initial_states: np.ndarray,
     clamped_action: np.ndarray,
     baseline_predictions: np.ndarray,
+    *,
+    coordinate_frame: str = "initial-action-local",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Build gravity-frame local dynamics features without outcome innovations."""
 
@@ -785,6 +787,13 @@ def build_deform_local_residual_features(
     node_count = baseline.shape[2]
     internal: np.ndarray = np.arange(2, node_count - 2, dtype=np.int64)
     centers, frames = _initial_action_frames(initial)
+    if coordinate_frame == "action-centered-global":
+        frames = np.broadcast_to(
+            np.eye(3, dtype=np.float64)[None],
+            (initial.shape[0], 3, 3),
+        ).copy()
+    elif coordinate_frame != "initial-action-local":
+        raise ValueError("DEFORM local residual coordinate frame is invalid")
     action_centers = np.mean(action, axis=2)
     baseline_relative = baseline - action_centers[:, :, None, :]
     baseline_canonical = np.einsum("ntvi,nij->ntvj", baseline_relative, frames)

@@ -539,6 +539,43 @@ def test_query_features_do_not_accept_target_or_innovation() -> None:
     assert frames.shape == (6, 3, 3)
 
 
+def test_default_feature_frame_is_byte_compatible() -> None:
+    initial, action, baseline, _, _ = _problem()
+
+    default_features, default_frames = build_deform_local_residual_features(
+        initial,
+        action,
+        baseline,
+    )
+    explicit_features, explicit_frames = build_deform_local_residual_features(
+        initial,
+        action,
+        baseline,
+        coordinate_frame="initial-action-local",
+    )
+    global_features, global_frames = build_deform_local_residual_features(
+        initial,
+        action,
+        baseline,
+        coordinate_frame="action-centered-global",
+    )
+
+    assert np.array_equal(default_features, explicit_features)
+    assert np.array_equal(default_frames, explicit_frames)
+    assert not np.array_equal(default_features, global_features)
+    assert np.array_equal(
+        global_frames, np.broadcast_to(np.eye(3), global_frames.shape)
+    )
+
+    with pytest.raises(ValueError, match="coordinate frame"):
+        build_deform_local_residual_features(
+            initial,
+            action,
+            baseline,
+            coordinate_frame="target-aligned",
+        )
+
+
 def test_shrinkage_leaves_unresolved_correction_in_variance() -> None:
     initial, action, baseline, targets, names = _problem()
     model = fit_deform_local_residual(
