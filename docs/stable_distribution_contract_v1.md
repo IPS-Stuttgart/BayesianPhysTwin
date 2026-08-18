@@ -58,6 +58,16 @@ the corresponding ratchets to 560 members, 2,220,000 bytes, and 1,300 regular
 sdist members. The 3,100,000-byte sdist limit, isolated-import rules, API
 manifests, console scripts, and supported self-test list remain unchanged.
 
+Later reviewed integrations raised the ratchets to 580 wheel members,
+2,280,000 compressed wheel bytes, 1,350 regular sdist members, and 3,200,000
+compressed sdist bytes. The Genesis MPM source qualification adds two backend
+gate modules. A clean candidate build contains 576 wheel members and 2,283,461
+compressed wheel bytes; its source distribution contains 1,348 regular members
+and 3,176,535 compressed bytes. The wheel-size ratchet is therefore raised
+narrowly to 2,290,000 bytes. Member-count and source-distribution limits remain
+unchanged. This packaging adjustment does not promote Genesis: the frozen
+source-value gate rejected it and retained the incumbent through exact fallback.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
