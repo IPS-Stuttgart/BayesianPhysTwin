@@ -210,9 +210,7 @@ def test_pbd_adapter_runs_through_portable_material_producer(tmp_path: Path) -> 
     )
     assert artifact["backend_kind"] == "position-based-dynamics-v1"
     physical = load_physical_rollout_archive(
-        tmp_path
-        / "position-based-dynamics-v1"
-        / "physical-prediction.npz"
+        tmp_path / "position-based-dynamics-v1" / "physical-prediction.npz"
     )
     assert np.max(physical["prediction_m"][-1, :, 2]) > 0.0
     np.testing.assert_array_equal(
