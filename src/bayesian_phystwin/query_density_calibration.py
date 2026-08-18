@@ -80,21 +80,21 @@ def _plain_json(value: object, *, name: str = "value") -> Any:
     if isinstance(value, np.integer):
         return int(value)
     if isinstance(value, (float, np.floating)):
-        result = float(value)
-        if not math.isfinite(result):
+        scalar_result = float(value)
+        if not math.isfinite(scalar_result):
             raise ValueError(f"{name} must contain only finite JSON values")
-        return result
+        return scalar_result
     if isinstance(value, Mapping):
-        result: dict[str, Any] = {}
+        mapping_result: dict[str, Any] = {}
         for key, item in value.items():
             canonical_key = _canonical_string(key, name=f"{name} key")
-            if canonical_key in result:
+            if canonical_key in mapping_result:
                 raise ValueError(f"{name} contains a duplicate key")
-            result[canonical_key] = _plain_json(
+            mapping_result[canonical_key] = _plain_json(
                 item,
                 name=f"{name}.{canonical_key}",
             )
-        return result
+        return mapping_result
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return [
             _plain_json(item, name=f"{name}[{index}]")

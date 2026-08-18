@@ -97,21 +97,21 @@ def _plain_json(value: object, *, name: str = "value") -> Any:
     if isinstance(value, (np.integer,)):
         return int(value)
     if isinstance(value, (float, np.floating)):
-        result = float(value)
-        if not math.isfinite(result):
+        scalar_result = float(value)
+        if not math.isfinite(scalar_result):
             raise ValueError(f"{name} must contain only finite JSON values")
-        return result
+        return scalar_result
     if isinstance(value, Mapping):
-        result: dict[str, Any] = {}
+        mapping_result: dict[str, Any] = {}
         for key, item in value.items():
             canonical_key = _canonical_string(key, name=f"{name} key")
-            if canonical_key in result:
+            if canonical_key in mapping_result:
                 raise ValueError(f"{name} contains a duplicate key")
-            result[canonical_key] = _plain_json(
+            mapping_result[canonical_key] = _plain_json(
                 item,
                 name=f"{name}.{canonical_key}",
             )
-        return result
+        return mapping_result
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return [
             _plain_json(item, name=f"{name}[{index}]")
@@ -244,7 +244,7 @@ def _gaussian_log_density(
     dimension = residual.shape[-1]
     flat_residual = residual.reshape(-1, dimension)
     flat_covariance = covariance.reshape(-1, dimension, dimension)
-    result = np.empty(len(flat_residual), dtype=np.float64)
+    result: np.ndarray = np.empty(len(flat_residual), dtype=np.float64)
     constant = dimension * math.log(2.0 * math.pi)
     for index, (vector, matrix) in enumerate(
         zip(flat_residual, flat_covariance, strict=True)
@@ -719,7 +719,7 @@ def group_gaussian_mixture_energy_score(
         dimension,
     )
     flat_probability = prediction.nominal_probability.reshape(-1)
-    endpoint_scores = np.empty(len(flat_residual), dtype=np.float64)
+    endpoint_scores: np.ndarray = np.empty(len(flat_residual), dtype=np.float64)
     for index, (observed, nominal, tail, probability) in enumerate(
         zip(
             flat_residual,
@@ -1038,7 +1038,9 @@ def select_same_mean_gaussian_mixture(
         count=len(residual_values),
     )
     candidate_values = _candidate_sequence(candidates)
-    scores = np.empty((len(candidate_values), len(group_ids)), dtype=np.float64)
+    scores: np.ndarray = np.empty(
+        (len(candidate_values), len(group_ids)), dtype=np.float64
+    )
     widths = np.empty_like(scores)
     for group_index, (residual_value, covariance_value) in enumerate(
         zip(residual_values, covariance_values, strict=True)
