@@ -310,7 +310,6 @@ def test_bound_composition_rejects_all_physical_query_semantic_substitutions() -
     substitutions = [
         {"query_name": "other-query"},
         {"component_order": ("other-a", "other-b")},
-        {"physical_unit": "cm"},
         {"coordinate_frame": "other-frame"},
         {"provider_manifest_id": _sha("other-provider")},
     ]
@@ -323,6 +322,20 @@ def test_bound_composition_rejects_all_physical_query_semantic_substitutions() -
                 projection,
                 certificate,
             )
+
+    altered_unit = replace(
+        query,
+        physical_unit="cm",
+        decision_margins=replace(query.decision_margins, width_unit="cm"),
+        query_id=None,
+    )
+    with pytest.raises(ValueError):
+        compose_bound_query_covariance_treatment(
+            altered_unit,
+            binding,
+            projection,
+            certificate,
+        )
 
 
 def test_bound_projection_validated_record_remains_content_addressed() -> None:
