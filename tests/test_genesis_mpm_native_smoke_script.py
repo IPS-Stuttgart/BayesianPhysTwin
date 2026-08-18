@@ -35,15 +35,9 @@ def test_script_import_does_not_require_genesis() -> None:
     assert module.GENESIS_REVISION == "0796d27667087d0087fe09d903f8aadf7fa9adeb"
     assert module.GENESIS_SOURCE_BLOBS == {
         "__init__.py": "6313cf06d94a8203ecc77810eea5121bbeae9d99",
-        "engine/entities/mpm_entity.py": (
-            "f700601b4abb37985d4b256d54661dbd6dc1f525"
-        ),
-        "engine/solvers/mpm_solver.py": (
-            "4cf9df95858d5af114ed428d4bf302b81b4daceb"
-        ),
-        "engine/materials/MPM/elastic.py": (
-            "98ad7b8e0f19aadb1bfaf6b3ec4bb98a94fefc39"
-        ),
+        "engine/entities/mpm_entity.py": ("f700601b4abb37985d4b256d54661dbd6dc1f525"),
+        "engine/solvers/mpm_solver.py": ("4cf9df95858d5af114ed428d4bf302b81b4daceb"),
+        "engine/materials/MPM/elastic.py": ("98ad7b8e0f19aadb1bfaf6b3ec4bb98a94fefc39"),
         "options/solvers.py": "0ef3c50de61ae3754384329949ea3a0f6a077916",
     }
 
@@ -58,9 +52,7 @@ def test_git_blob_sha1_uses_git_object_identity(tmp_path: Path) -> None:
 
 def test_content_id_is_mapping_order_independent() -> None:
     module = _load_script()
-    assert module._content_id({"b": 2, "a": 1}) == module._content_id(
-        {"a": 1, "b": 2}
-    )
+    assert module._content_id({"b": 2, "a": 1}) == module._content_id({"a": 1, "b": 2})
 
 
 @pytest.mark.parametrize(
