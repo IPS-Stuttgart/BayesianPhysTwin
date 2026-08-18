@@ -65,6 +65,8 @@ def test_registry_consolidates_duplicate_genesis_profiles() -> None:
         "physx-fem-v1",
         "mujoco-flex-v1",
         "drake-fem-v1",
+        "fenicsx-fem-v1",
+        "pyelastica-cosserat-rod-v1",
     ]
 
     canonical = backend.resolve_material_backend_profile("genesis-mpm-v1")
