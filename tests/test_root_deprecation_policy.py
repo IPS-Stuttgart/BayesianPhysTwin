@@ -44,10 +44,7 @@ def test_0_5_root_access_warns_with_exact_replacement(
     _reset_symbol()
     monkeypatch.setattr(bpt, "_project_version", lambda: "0.5.0")
 
-    message = (
-        "from bayesian_phystwin.robust_likelihood import "
-        "RobustLikelihoodConfig"
-    )
+    message = "from bayesian_phystwin.robust_likelihood import RobustLikelihoodConfig"
     with pytest.warns(DeprecationWarning, match=message):
         value = getattr(bpt, _SYMBOL)
 
