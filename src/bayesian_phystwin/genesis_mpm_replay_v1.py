@@ -106,9 +106,7 @@ class GenesisMPMEntityReplayV1:
             )
             positions = np.ascontiguousarray(positions[0]).copy()
         _require(
-            positions.ndim == 2
-            and positions.shape[0] >= 1
-            and positions.shape[1] == 3,
+            positions.ndim == 2 and positions.shape[0] >= 1 and positions.shape[1] == 3,
             "Genesis MPM particle positions must have shape (N,3)",
         )
         _require(
@@ -121,9 +119,8 @@ class GenesisMPMEntityReplayV1:
         )
         particle_count = getattr(self.entity, "n_particles", None)
         if particle_count is not None:
-            if (
-                isinstance(particle_count, (bool, np.bool_))
-                or not isinstance(particle_count, (int, np.integer))
+            if isinstance(particle_count, (bool, np.bool_)) or not isinstance(
+                particle_count, (int, np.integer)
             ):
                 raise TypeError("Genesis entity n_particles must be an integer")
             _require(
