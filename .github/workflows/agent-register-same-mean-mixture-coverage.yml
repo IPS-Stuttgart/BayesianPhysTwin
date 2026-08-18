@@ -1,0 +1,71 @@
+name: Register same-mean mixture coverage
+
+on:
+  push:
+    branches:
+      - agent/same-mean-query-mixture-v1
+    paths:
+      - .agent-coverage/READY
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-register-same-mean-mixture-coverage
+  cancel-in-progress: false
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/same-mean-query-mixture-v1
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Move the focused test into the registered suite family
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_path=tests/test_covariance_only_hybrid_mixture_v1.py
+          target_path=tests/test_query_calibration_same_mean_mixture_v1.py
+          test -f "$source_path"
+          test ! -e "$target_path"
+          mv "$source_path" "$target_path"
+          python -m pip install -e ".[dev,graph]"
+          python tools/quality/test_suite_manifest.py list stable-core-coverage \
+            | grep -Fx "$target_path"
+          python -m ruff check -- "$target_path"
+          python -m ruff format --check -- "$target_path"
+          python -m mypy \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py
+          PYTHONPATH=src python -m pytest -q \
+            "$target_path" \
+            tests/test_query_calibration_mixture_density_v1.py
+          python -m compileall -q "$target_path"
+          git diff --check
+
+      - name: Publish the coverage registration and remove temporary machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            tests/test_covariance_only_hybrid_mixture_v1.py \
+            tests/test_query_calibration_same_mean_mixture_v1.py
+          git rm .agent-coverage/READY
+          git rm .github/workflows/agent-register-same-mean-mixture-coverage.yml
+          git commit -m "Register same-mean mixture coverage"
+          git push origin HEAD:agent/same-mean-query-mixture-v1
