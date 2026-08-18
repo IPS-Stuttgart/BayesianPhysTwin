@@ -22,9 +22,7 @@ from bayesian_phystwin.physical_rollout_v1 import write_deterministic_npz
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/genesis_mpm_zebra_source_value_v1.json"
-PHYSICS_EVIDENCE = (
-    ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_physics_v1"
-)
+PHYSICS_EVIDENCE = ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_physics_v1"
 VALUE_EVIDENCE = ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_value_v1"
 
 
@@ -111,7 +109,9 @@ def _synthetic_gate(
             truth=truth,
             indices=future_indices,
         )
-        incumbent = _physical_archive(root / "incumbent.npz", _trajectory(slope_m=0.0007))
+        incumbent = _physical_archive(
+            root / "incumbent.npz", _trajectory(slope_m=0.0007)
+        )
         matphys = _physical_archive(root / "matphys.npz", _trajectory(slope_m=0.0008))
         matphys_paths[group_id] = matphys
         raw_group.update(
@@ -138,12 +138,16 @@ def _synthetic_gate(
         group_grid.mkdir()
         for index, slope in enumerate(member_slopes):
             prediction = _trajectory(slope_m=slope)
-            member = _physical_archive(group_grid / f"member-{index:02d}.npz", prediction)
+            member = _physical_archive(
+                group_grid / f"member-{index:02d}.npz", prediction
+            )
             predictions.append(prediction)
             member_records.append(
                 {
                     "candidate_index": index,
-                    "young_modulus_pa": protocol_value["candidate"]["young_modulus_pa"][index],
+                    "young_modulus_pa": protocol_value["candidate"]["young_modulus_pa"][
+                        index
+                    ],
                     "weight": protocol_value["candidate"]["weights"][index],
                     "physical_archive": f"{group_id}/{member.name}",
                     "physical_archive_sha256": file_sha256(member),
@@ -171,9 +175,7 @@ def _synthetic_gate(
                 "ensemble_mean_sha256": file_sha256(mean_path),
                 "final_ensemble_spread_m": float(
                     np.sqrt(
-                        np.mean(
-                            np.var(stack[:, -1].astype(np.float64), axis=0, ddof=0)
-                        )
+                        np.mean(np.var(stack[:, -1].astype(np.float64), axis=0, ddof=0))
                     )
                 ),
             }
@@ -224,8 +226,14 @@ def _synthetic_gate(
 def test_source_value_protocol_freezes_qualification_and_two_groups() -> None:
     protocol = load_genesis_source_value_protocol_v1(PROTOCOL)
 
-    assert protocol.runtime_id == "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a"
-    assert protocol.qualification_artifact_id == "775fc43876318d7f5f01603d48cd26017a98bc69558d483e91ad58e523e38fa3"
+    assert (
+        protocol.runtime_id
+        == "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a"
+    )
+    assert (
+        protocol.qualification_artifact_id
+        == "775fc43876318d7f5f01603d48cd26017a98bc69558d483e91ad58e523e38fa3"
+    )
     assert [group.group_id for group in protocol.groups] == [
         "double_lift_zebra",
         "double_stretch_zebra",
@@ -288,9 +296,9 @@ def test_marginal_energy_score_rewards_centered_spread() -> None:
     centered[0, 0, 0, 0] = -0.001
     centered[2, 0, 0, 0] = 0.001
 
-    assert marginal_energy_score_v1(centered, outcome, valid) < marginal_energy_score_v1(
-        biased, outcome, valid
-    )
+    assert marginal_energy_score_v1(
+        centered, outcome, valid
+    ) < marginal_energy_score_v1(biased, outcome, valid)
 
 
 def test_energy_score_rejects_shape_or_empty_support() -> None:
@@ -309,7 +317,9 @@ def test_energy_score_rejects_shape_or_empty_support() -> None:
         )
 
 
-def test_passing_source_gate_scores_future_after_exact_selection(tmp_path: Path) -> None:
+def test_passing_source_gate_scores_future_after_exact_selection(
+    tmp_path: Path,
+) -> None:
     paths = _synthetic_gate(tmp_path, truth_slope_m=0.001)
     prefix_root = tmp_path / "prefix-result"
     prefix = score_genesis_source_value_prefix_v1(
@@ -354,7 +364,9 @@ def test_failed_source_gate_falls_back_without_future_file(tmp_path: Path) -> No
         selected = prefix_root / group.group_id / "selected-physical-prediction.npz"
         incumbent = paths["group_roots"][group.group_id] / group.incumbent_relative_path
         assert selected.read_bytes() == incumbent.read_bytes()
-        (paths["group_roots"][group.group_id] / group.future_outcomes_relative_path).unlink()
+        (
+            paths["group_roots"][group.group_id] / group.future_outcomes_relative_path
+        ).unlink()
 
     future = score_genesis_source_value_future_v1(
         protocol_path=paths["protocol"],

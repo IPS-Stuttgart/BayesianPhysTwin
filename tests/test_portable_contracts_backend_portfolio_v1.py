@@ -40,9 +40,7 @@ def test_portfolio_separates_implementation_and_evidence_maturity() -> None:
     assert profiles["warp-fem-v1"]["implementation_maturity"] == "supported"
     assert profiles["warp-fem-v1"]["evidence_stage"] == "registered-adapter"
     assert profiles["warp-fem-v1"]["recommendation_authorized"] is False
-    assert profiles["genesis-mpm-v1"]["evidence_stage"] == (
-        "source-physics-qualified"
-    )
+    assert profiles["genesis-mpm-v1"]["evidence_stage"] == ("source-physics-qualified")
     assert profiles["genesis-mpm-v1"]["recommendation_authorized"] is False
 
 

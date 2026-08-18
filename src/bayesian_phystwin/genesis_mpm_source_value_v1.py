@@ -64,7 +64,9 @@ def _string(value: object, *, name: str) -> str:
 
 def _digest(value: object, *, name: str) -> str:
     text = _string(value, name=name)
-    if len(text) != 64 or any(character not in "0123456789abcdef" for character in text):
+    if len(text) != 64 or any(
+        character not in "0123456789abcdef" for character in text
+    ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
     return text
 
@@ -72,8 +74,14 @@ def _digest(value: object, *, name: str) -> str:
 def _relative(value: object, *, name: str) -> PurePosixPath:
     text = _string(value, name=name)
     path = PurePosixPath(text)
-    _require(not path.is_absolute() and "\\" not in text, f"{name} must be POSIX-relative")
-    _require(path.as_posix() == text and all(part not in {"", ".", ".."} for part in path.parts), f"{name} is not canonical")
+    _require(
+        not path.is_absolute() and "\\" not in text, f"{name} must be POSIX-relative"
+    )
+    _require(
+        path.as_posix() == text
+        and all(part not in {"", ".", ".."} for part in path.parts),
+        f"{name} is not canonical",
+    )
     return path
 
 
@@ -81,7 +89,9 @@ def _finite(value: object, *, name: str, positive: bool = False) -> float:
     if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be finite")
     result = float(value)
-    _require(np.isfinite(result) and (not positive or result > 0.0), f"{name} must be finite")
+    _require(
+        np.isfinite(result) and (not positive or result > 0.0), f"{name} must be finite"
+    )
     return result
 
 
@@ -125,7 +135,9 @@ class GenesisSourceValueProtocolV1:
         return _mapping(self.value["validation_gates"], name="validation_gates")
 
 
-def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValueProtocolV1:
+def load_genesis_source_value_protocol_v1(
+    path: str | Path,
+) -> GenesisSourceValueProtocolV1:
     source = Path(path)
     value = load_strict_json_object(source, label="Genesis source-value protocol")
     _exact_fields(
@@ -143,7 +155,10 @@ def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValu
         },
         name="protocol",
     )
-    _require(value["schema"] == PROTOCOL_SCHEMA and value["schema_version"] == 1, "protocol identity changed")
+    _require(
+        value["schema"] == PROTOCOL_SCHEMA and value["schema_version"] == 1,
+        "protocol identity changed",
+    )
     qualification = _mapping(value["qualification"], name="qualification")
     _exact_fields(
         qualification,
@@ -161,9 +176,15 @@ def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValu
         qualification["source_physics_protocol_sha256"],
         name="source physics protocol",
     )
-    result_sha = _digest(qualification["source_physics_result_sha256"], name="source physics result")
-    artifact_sha = _digest(qualification["qualification_artifact_sha256"], name="qualification artifact")
-    artifact_id = _digest(qualification["qualification_artifact_id"], name="qualification artifact ID")
+    result_sha = _digest(
+        qualification["source_physics_result_sha256"], name="source physics result"
+    )
+    artifact_sha = _digest(
+        qualification["qualification_artifact_sha256"], name="qualification artifact"
+    )
+    artifact_id = _digest(
+        qualification["qualification_artifact_id"], name="qualification artifact ID"
+    )
 
     raw_groups = value["source_groups"]
     if not isinstance(raw_groups, list) or len(raw_groups) != 2:
@@ -193,20 +214,45 @@ def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValu
         controller_count = group["controller_point_count"]
         attached_count = group["attached_particle_count"]
         _require(type(frame_count) is int and frame_count >= 2, "frame_count changed")
-        _require(type(particle_count) is int and particle_count >= 1, "particle count changed")
-        _require(type(controller_count) is int and controller_count >= 1, "controller count changed")
-        _require(type(attached_count) is int and attached_count >= 1, "attached count changed")
+        _require(
+            type(particle_count) is int and particle_count >= 1,
+            "particle count changed",
+        )
+        _require(
+            type(controller_count) is int and controller_count >= 1,
+            "controller count changed",
+        )
+        _require(
+            type(attached_count) is int and attached_count >= 1,
+            "attached count changed",
+        )
         groups.append(
             GenesisValueGroupV1(
                 group_id=_string(group["group_id"], name="group_id"),
-                source_inputs_relative_path=_relative(group["source_inputs_relative_path"], name="source inputs path"),
-                source_inputs_sha256=_digest(group["source_inputs_sha256"], name="source inputs SHA-256"),
-                prefix_outcomes_relative_path=_relative(group["prefix_outcomes_relative_path"], name="prefix outcomes path"),
-                prefix_outcomes_sha256=_digest(group["prefix_outcomes_sha256"], name="prefix outcomes SHA-256"),
-                future_outcomes_relative_path=_relative(group["future_outcomes_relative_path"], name="future outcomes path"),
-                future_outcomes_sha256=_digest(group["future_outcomes_sha256"], name="future outcomes SHA-256"),
-                incumbent_relative_path=_relative(group["incumbent_relative_path"], name="incumbent path"),
-                incumbent_sha256=_digest(group["incumbent_sha256"], name="incumbent SHA-256"),
+                source_inputs_relative_path=_relative(
+                    group["source_inputs_relative_path"], name="source inputs path"
+                ),
+                source_inputs_sha256=_digest(
+                    group["source_inputs_sha256"], name="source inputs SHA-256"
+                ),
+                prefix_outcomes_relative_path=_relative(
+                    group["prefix_outcomes_relative_path"], name="prefix outcomes path"
+                ),
+                prefix_outcomes_sha256=_digest(
+                    group["prefix_outcomes_sha256"], name="prefix outcomes SHA-256"
+                ),
+                future_outcomes_relative_path=_relative(
+                    group["future_outcomes_relative_path"], name="future outcomes path"
+                ),
+                future_outcomes_sha256=_digest(
+                    group["future_outcomes_sha256"], name="future outcomes SHA-256"
+                ),
+                incumbent_relative_path=_relative(
+                    group["incumbent_relative_path"], name="incumbent path"
+                ),
+                incumbent_sha256=_digest(
+                    group["incumbent_sha256"], name="incumbent SHA-256"
+                ),
                 matphys_sha256=_digest(group["matphys_sha256"], name="MatPhys SHA-256"),
                 frame_count=frame_count,
                 material_particle_count=particle_count,
@@ -219,20 +265,51 @@ def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValu
     candidate = _mapping(value["candidate"], name="candidate")
     _exact_fields(
         candidate,
-        {"young_modulus_pa", "weights", "point_estimate", "distribution_score", "substeps", "fit_fraction"},
+        {
+            "young_modulus_pa",
+            "weights",
+            "point_estimate",
+            "distribution_score",
+            "substeps",
+            "fit_fraction",
+        },
         name="candidate",
     )
     raw_moduli = candidate["young_modulus_pa"]
     raw_weights = candidate["weights"]
-    if not isinstance(raw_moduli, list) or not isinstance(raw_weights, list) or len(raw_moduli) != 3 or len(raw_weights) != 3:
+    if (
+        not isinstance(raw_moduli, list)
+        or not isinstance(raw_weights, list)
+        or len(raw_moduli) != 3
+        or len(raw_weights) != 3
+    ):
         raise ValueError("candidate ensemble must contain exactly three members")
-    moduli = tuple(_finite(value, name="young modulus", positive=True) for value in raw_moduli)
-    weights = tuple(_finite(value, name="weight", positive=True) for value in raw_weights)
-    _require(len(set(moduli)) == 3 and np.isclose(sum(weights), 1.0), "candidate ensemble changed")
-    _require(candidate["point_estimate"] == "equal-weight-ensemble-mean", "point estimate changed")
-    _require(candidate["distribution_score"] == "equal-event-3d-marginal-energy-score", "distribution score changed")
-    _require(type(candidate["substeps"]) is int and candidate["substeps"] == 64, "substeps changed")
-    _require(np.isclose(_finite(candidate["fit_fraction"], name="fit_fraction"), 2.0 / 3.0), "fit fraction changed")
+    moduli = tuple(
+        _finite(value, name="young modulus", positive=True) for value in raw_moduli
+    )
+    weights = tuple(
+        _finite(value, name="weight", positive=True) for value in raw_weights
+    )
+    _require(
+        len(set(moduli)) == 3 and np.isclose(sum(weights), 1.0),
+        "candidate ensemble changed",
+    )
+    _require(
+        candidate["point_estimate"] == "equal-weight-ensemble-mean",
+        "point estimate changed",
+    )
+    _require(
+        candidate["distribution_score"] == "equal-event-3d-marginal-energy-score",
+        "distribution score changed",
+    )
+    _require(
+        type(candidate["substeps"]) is int and candidate["substeps"] == 64,
+        "substeps changed",
+    )
+    _require(
+        np.isclose(_finite(candidate["fit_fraction"], name="fit_fraction"), 2.0 / 3.0),
+        "fit fraction changed",
+    )
 
     gates = _mapping(value["validation_gates"], name="validation gates")
     gate_fields = {
@@ -248,7 +325,10 @@ def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValu
     _exact_fields(gates, gate_fields, name="validation gates")
     for name in gate_fields - {"required_successful_candidate_count"}:
         _finite(gates[name], name=name, positive=True)
-    _require(gates["required_successful_candidate_count"] == 3, "candidate denominator changed")
+    _require(
+        gates["required_successful_candidate_count"] == 3,
+        "candidate denominator changed",
+    )
     boundary = _mapping(value["information_boundary"], name="information boundary")
     _require(
         boundary
@@ -277,19 +357,25 @@ def load_genesis_source_value_protocol_v1(path: str | Path) -> GenesisSourceValu
 
 
 def _physics_simulation(physics_protocol_path: str | Path) -> Mapping[str, Any]:
-    value = load_strict_json_object(physics_protocol_path, label="source-physics protocol")
+    value = load_strict_json_object(
+        physics_protocol_path, label="source-physics protocol"
+    )
     return _mapping(value["simulation"], name="source-physics simulation")
 
 
 def _ordinary_file(path: str | Path, *, name: str) -> Path:
     source = Path(path).absolute()
-    _require(source.is_file() and not source.is_symlink(), f"{name} must be an ordinary file")
+    _require(
+        source.is_file() and not source.is_symlink(), f"{name} must be an ordinary file"
+    )
     return source
 
 
 def _ratio(numerator: float, denominator: float, *, name: str) -> float:
     _require(np.isfinite(numerator) and numerator >= 0.0, f"{name} numerator changed")
-    _require(np.isfinite(denominator) and denominator > 0.0, f"{name} denominator changed")
+    _require(
+        np.isfinite(denominator) and denominator > 0.0, f"{name} denominator changed"
+    )
     return float(numerator / denominator)
 
 
@@ -328,10 +414,19 @@ def generate_genesis_source_value_predictions_v1(
         file_sha256(physics_protocol_path) == protocol.qualification_protocol_sha256,
         "source-physics protocol changed",
     )
-    _require(file_sha256(physics_result_path) == protocol.qualification_result_sha256, "source-physics result changed")
-    _require(file_sha256(qualification_path) == protocol.qualification_artifact_sha256, "qualification artifact changed")
+    _require(
+        file_sha256(physics_result_path) == protocol.qualification_result_sha256,
+        "source-physics result changed",
+    )
+    _require(
+        file_sha256(qualification_path) == protocol.qualification_artifact_sha256,
+        "qualification artifact changed",
+    )
     qualification = load_material_backend_qualification_v1(qualification_path)
-    _require(qualification.artifact_id == protocol.qualification_artifact_id, "qualification artifact ID changed")
+    _require(
+        qualification.artifact_id == protocol.qualification_artifact_id,
+        "qualification artifact ID changed",
+    )
     require_qualified_material_backend_runtime(
         profile_id="genesis-mpm-v1",
         producer_profile_id="genesis-mpm-v1",
@@ -339,7 +434,10 @@ def generate_genesis_source_value_predictions_v1(
         qualification=qualification,
     )
     expected = {group.group_id for group in protocol.groups}
-    _require(set(group_roots) == expected and set(matphys_paths) == expected, "complete source roots are required")
+    _require(
+        set(group_roots) == expected and set(matphys_paths) == expected,
+        "complete source roots are required",
+    )
     output = Path(output_dir).absolute()
     if output.exists():
         raise FileExistsError(output)
@@ -357,11 +455,18 @@ def generate_genesis_source_value_predictions_v1(
         import genesis as gs
         import torch
     except ImportError as error:  # pragma: no cover
-        raise RuntimeError("native Genesis source value requires Genesis and torch") from error
+        raise RuntimeError(
+            "native Genesis source value requires Genesis and torch"
+        ) from error
     simulation = _physics_simulation(physics_protocol_path)
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
-    gs.init(backend=gs.cpu, precision=str(simulation["precision"]), seed=int(simulation["seed"]), logging_level="warning")
+    gs.init(
+        backend=gs.cpu,
+        precision=str(simulation["precision"]),
+        seed=int(simulation["seed"]),
+        logging_level="warning",
+    )
 
     records: list[dict[str, Any]] = []
     for group in protocol.groups:
@@ -369,7 +474,9 @@ def generate_genesis_source_value_predictions_v1(
         source_path = root / group.source_inputs_relative_path.as_posix()
         incumbent_path = root / group.incumbent_relative_path.as_posix()
         matphys_path = Path(matphys_paths[group.group_id]).absolute()
-        _require(file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed")
+        _require(
+            file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed"
+        )
         _require(file_sha256(matphys_path) == group.matphys_sha256, "MatPhys changed")
         arrays = load_genesis_source_inputs_v1(
             source_path,
@@ -388,7 +495,9 @@ def generate_genesis_source_value_predictions_v1(
         points = np.asarray(arrays["frame_zero_points_m"], dtype=np.float64)
         controller = np.asarray(arrays["controller_points_m"], dtype=np.float64)
         indices = np.asarray(arrays["attachment_indices"], dtype=np.int64)
-        targets = attachment_targets_m(points, controller, indices, arrays["attachment_weights"])
+        targets = attachment_targets_m(
+            points, controller, indices, arrays["attachment_weights"]
+        )
         group_dir = output / group.group_id
         group_dir.mkdir()
         member_arrays: list[dict[str, npt.NDArray[Any]]] = []
@@ -410,7 +519,9 @@ def generate_genesis_source_value_predictions_v1(
                 frame_zero_m=points,
                 action_support=np.asarray(arrays["action_support"]),
             )
-            member_path = write_deterministic_npz(group_dir / f"member-{index:02d}.npz", physical)
+            member_path = write_deterministic_npz(
+                group_dir / f"member-{index:02d}.npz", physical
+            )
             member_arrays.append(physical)
             members.append(
                 {
@@ -422,14 +533,21 @@ def generate_genesis_source_value_predictions_v1(
                     "status": "success",
                 }
             )
-        stack = np.stack([np.asarray(value["prediction_m"], dtype=np.float64) for value in member_arrays])
+        stack = np.stack(
+            [
+                np.asarray(value["prediction_m"], dtype=np.float64)
+                for value in member_arrays
+            ]
+        )
         mean = np.tensordot(np.asarray(protocol.weights), stack, axes=(0, 0))
         mean_physical = _physical_arrays(
             cast(FloatArray, mean),
             frame_zero_m=points,
             action_support=np.asarray(arrays["action_support"]),
         )
-        mean_path = write_deterministic_npz(group_dir / "ensemble-mean.npz", mean_physical)
+        mean_path = write_deterministic_npz(
+            group_dir / "ensemble-mean.npz", mean_physical
+        )
         final_spread = float(np.sqrt(np.mean(np.var(stack[:, -1], axis=0, ddof=0))))
         records.append(
             {
@@ -474,7 +592,10 @@ def _load_outcomes(
     _require(file_sha256(source) == digest, "outcome SHA-256 changed")
     with np.load(source, allow_pickle=False) as stored:
         arrays = {name: np.asarray(stored[name]) for name in stored.files}
-    _require(set(arrays) == {"object_points_m", "valid_mask", "frame_indices"}, "outcome roster changed")
+    _require(
+        set(arrays) == {"object_points_m", "valid_mask", "frame_indices"},
+        "outcome roster changed",
+    )
     points = arrays["object_points_m"]
     valid = arrays["valid_mask"]
     indices = arrays["frame_indices"]
@@ -486,15 +607,23 @@ def _load_outcomes(
         and points.dtype == np.float32,
         "outcome points changed",
     )
-    _require(valid.shape == points.shape[:2] and valid.dtype == np.bool_, "outcome validity changed")
-    _require(indices.shape == (len(points),) and indices.dtype == np.int32, "outcome frame indices changed")
+    _require(
+        valid.shape == points.shape[:2] and valid.dtype == np.bool_,
+        "outcome validity changed",
+    )
+    _require(
+        indices.shape == (len(points),) and indices.dtype == np.int32,
+        "outcome frame indices changed",
+    )
     _require(
         np.all(np.diff(indices) > 0)
         and int(indices[0]) >= 0
         and int(indices[-1]) < frame_count,
         "outcome frame order changed",
     )
-    _require(np.any(valid) and np.all(np.isfinite(points[valid])), "outcome support changed")
+    _require(
+        np.any(valid) and np.all(np.isfinite(points[valid])), "outcome support changed"
+    )
     return arrays
 
 
@@ -506,7 +635,10 @@ def marginal_energy_score_v1(
     samples = np.asarray(samples_m, dtype=np.float64)
     outcomes = np.asarray(outcomes_m, dtype=np.float64)
     valid = np.asarray(valid_mask, dtype=np.bool_)
-    _require(samples.ndim == 4 and samples.shape[1:] == outcomes.shape, "energy samples changed")
+    _require(
+        samples.ndim == 4 and samples.shape[1:] == outcomes.shape,
+        "energy samples changed",
+    )
     _require(valid.shape == outcomes.shape[:2], "energy validity changed")
     frame_scores: list[float] = []
     for frame in range(len(outcomes)):
@@ -530,13 +662,17 @@ def _metric_block(
     valid: BoolArray,
 ) -> dict[str, float]:
     return {
-        "identity_coordinate_rmse_m": _coordinate_rmse(point_prediction, outcome, valid),
+        "identity_coordinate_rmse_m": _coordinate_rmse(
+            point_prediction, outcome, valid
+        ),
         "symmetric_chamfer_m": _symmetric_chamfer(point_prediction, outcome, valid),
         "marginal_energy_score_m": marginal_energy_score_v1(samples, outcome, valid),
     }
 
 
-def _load_grid(path: Path, *, protocol: GenesisSourceValueProtocolV1) -> Mapping[str, Any]:
+def _load_grid(
+    path: Path, *, protocol: GenesisSourceValueProtocolV1
+) -> Mapping[str, Any]:
     source = _ordinary_file(path, name="Genesis source-value grid")
     value = load_strict_json_object(source, label="Genesis source-value grid")
     _exact_fields(
@@ -578,7 +714,9 @@ def _load_grid(path: Path, *, protocol: GenesisSourceValueProtocolV1) -> Mapping
         and all(character in "0123456789abcdef" for character in git_head),
         "grid Git revision changed",
     )
-    _require(implementation["git_worktree_clean"] is True, "grid worktree was not clean")
+    _require(
+        implementation["git_worktree_clean"] is True, "grid worktree was not clean"
+    )
     source_files = _mapping(implementation["source_files"], name="grid source files")
     _require(
         set(source_files)
@@ -636,7 +774,9 @@ def _load_grid(path: Path, *, protocol: GenesisSourceValueProtocolV1) -> Mapping
     for expected_group, raw_record in zip(protocol.groups, groups, strict=True):
         record = _mapping(raw_record, name="grid group")
         _exact_fields(record, group_fields, name="grid group")
-        _require(record["group_id"] == expected_group.group_id, "grid group order changed")
+        _require(
+            record["group_id"] == expected_group.group_id, "grid group order changed"
+        )
         _require(
             record["source_inputs_sha256"] == expected_group.source_inputs_sha256
             and record["incumbent_sha256"] == expected_group.incumbent_sha256
@@ -691,7 +831,9 @@ def _load_grid(path: Path, *, protocol: GenesisSourceValueProtocolV1) -> Mapping
                         "ensemble member identity changed",
                     )
             predictions.append(cast(FloatArray, arrays["prediction_m"]))
-        mean_relative = _relative(record["ensemble_mean_archive"], name="ensemble mean archive")
+        mean_relative = _relative(
+            record["ensemble_mean_archive"], name="ensemble mean archive"
+        )
         mean_archive = _ordinary_file(
             grid_root / mean_relative.as_posix(),
             name="ensemble mean archive",
@@ -707,7 +849,9 @@ def _load_grid(path: Path, *, protocol: GenesisSourceValueProtocolV1) -> Mapping
         )
         stack = np.stack(predictions)
         expected_mean = np.ascontiguousarray(
-            np.tensordot(np.asarray(protocol.weights), stack.astype(np.float64), axes=(0, 0)),
+            np.tensordot(
+                np.asarray(protocol.weights), stack.astype(np.float64), axes=(0, 0)
+            ),
             dtype=np.float32,
         )
         _require(
@@ -778,8 +922,7 @@ def _validation_checks(
     successful_candidate_count: object,
 ) -> dict[str, bool]:
     group_ratios = [
-        cast(Mapping[str, float], group["validation_ratios"])
-        for group in group_metrics
+        cast(Mapping[str, float], group["validation_ratios"]) for group in group_metrics
     ]
     spreads = [float(group["final_ensemble_spread_m"]) for group in group_metrics]
     gates = protocol.gates
@@ -788,10 +931,7 @@ def _validation_checks(
         == gates["required_successful_candidate_count"],
         "equal_group_balanced_point_improvement": float(
             np.mean(
-                [
-                    value["balanced_point_ratio_vs_persistence"]
-                    for value in group_ratios
-                ]
+                [value["balanced_point_ratio_vs_persistence"] for value in group_ratios]
             )
         )
         <= float(gates["maximum_equal_group_balanced_point_ratio_vs_persistence"]),
@@ -924,11 +1064,17 @@ def score_genesis_source_value_prefix_v1(
 ) -> dict[str, Any]:
     protocol = load_genesis_source_value_protocol_v1(protocol_path)
     expected = {group.group_id for group in protocol.groups}
-    _require(set(group_roots) == expected and set(matphys_paths) == expected, "complete source roots are required")
+    _require(
+        set(group_roots) == expected and set(matphys_paths) == expected,
+        "complete source roots are required",
+    )
     grid_root = Path(grid_dir).absolute()
     grid_path = grid_root / GRID_FILENAME
     grid = _load_grid(grid_path, protocol=protocol)
-    grid_records = {record["group_id"]: record for record in cast(list[Mapping[str, Any]], grid["groups"])}
+    grid_records = {
+        record["group_id"]: record
+        for record in cast(list[Mapping[str, Any]], grid["groups"])
+    }
     output = Path(output_dir).absolute()
     if output.exists():
         raise FileExistsError(output)
@@ -947,36 +1093,84 @@ def score_genesis_source_value_prefix_v1(
         valid = np.asarray(outcome_arrays["valid_mask"])
         frame_indices = np.asarray(outcome_arrays["frame_indices"], dtype=np.int64)
         observed_count = outcome.shape[1]
-        _require(observed_count <= group.material_particle_count, "observed count changed")
+        _require(
+            observed_count <= group.material_particle_count, "observed count changed"
+        )
         record = grid_records[group.group_id]
         members = cast(list[Mapping[str, Any]], record["members"])
         member_predictions: list[FloatArray] = []
         for member in members:
             path = grid_root / str(member["physical_archive"])
-            _require(file_sha256(path) == member["physical_archive_sha256"], "member archive changed")
-            physical = load_physical_rollout_archive(path, expected_frame_count=group.frame_count)
-            member_predictions.append(cast(FloatArray, np.asarray(physical["prediction_m"])[frame_indices, :observed_count]))
+            _require(
+                file_sha256(path) == member["physical_archive_sha256"],
+                "member archive changed",
+            )
+            physical = load_physical_rollout_archive(
+                path, expected_frame_count=group.frame_count
+            )
+            member_predictions.append(
+                cast(
+                    FloatArray,
+                    np.asarray(physical["prediction_m"])[
+                        frame_indices, :observed_count
+                    ],
+                )
+            )
         samples = cast(FloatArray, np.stack(member_predictions))
         mean_path = grid_root / str(record["ensemble_mean_archive"])
-        _require(file_sha256(mean_path) == record["ensemble_mean_sha256"], "mean archive changed")
-        mean_physical = load_physical_rollout_archive(mean_path, expected_frame_count=group.frame_count)
-        mean_prediction = cast(FloatArray, np.asarray(mean_physical["prediction_m"])[frame_indices, :observed_count])
+        _require(
+            file_sha256(mean_path) == record["ensemble_mean_sha256"],
+            "mean archive changed",
+        )
+        mean_physical = load_physical_rollout_archive(
+            mean_path, expected_frame_count=group.frame_count
+        )
+        mean_prediction = cast(
+            FloatArray,
+            np.asarray(mean_physical["prediction_m"])[frame_indices, :observed_count],
+        )
         incumbent_path = root / group.incumbent_relative_path.as_posix()
         matphys_path = Path(matphys_paths[group.group_id]).absolute()
-        _require(file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed")
+        _require(
+            file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed"
+        )
         _require(file_sha256(matphys_path) == group.matphys_sha256, "MatPhys changed")
-        incumbent = load_physical_rollout_archive(incumbent_path, expected_frame_count=group.frame_count)
-        matphys = load_physical_rollout_archive(matphys_path, expected_frame_count=group.frame_count)
-        persistence = np.asarray(incumbent["persistence_m"])[frame_indices, :observed_count]
-        incumbent_prediction = np.asarray(incumbent["prediction_m"])[frame_indices, :observed_count]
-        matphys_prediction = np.asarray(matphys["prediction_m"])[frame_indices, :observed_count]
-        split = max(1, min(len(outcome) - 1, int(np.floor(len(outcome) * float(protocol.candidate["fit_fraction"])))))
+        incumbent = load_physical_rollout_archive(
+            incumbent_path, expected_frame_count=group.frame_count
+        )
+        matphys = load_physical_rollout_archive(
+            matphys_path, expected_frame_count=group.frame_count
+        )
+        persistence = np.asarray(incumbent["persistence_m"])[
+            frame_indices, :observed_count
+        ]
+        incumbent_prediction = np.asarray(incumbent["prediction_m"])[
+            frame_indices, :observed_count
+        ]
+        matphys_prediction = np.asarray(matphys["prediction_m"])[
+            frame_indices, :observed_count
+        ]
+        split = max(
+            1,
+            min(
+                len(outcome) - 1,
+                int(np.floor(len(outcome) * float(protocol.candidate["fit_fraction"]))),
+            ),
+        )
         blocks: dict[str, Any] = {}
-        for split_name, selected in {"fit": slice(0, split), "validation": slice(split, len(outcome))}.items():
+        for split_name, selected in {
+            "fit": slice(0, split),
+            "validation": slice(split, len(outcome)),
+        }.items():
             current_outcome = cast(FloatArray, outcome[selected])
             current_valid = cast(BoolArray, valid[selected])
             blocks[split_name] = {
-                "genesis": _metric_block(mean_prediction[selected], samples[:, selected], current_outcome, current_valid),
+                "genesis": _metric_block(
+                    mean_prediction[selected],
+                    samples[:, selected],
+                    current_outcome,
+                    current_valid,
+                ),
                 "persistence": _metric_block(
                     cast(FloatArray, persistence[selected]),
                     cast(FloatArray, persistence[selected][None]),
@@ -1027,11 +1221,16 @@ def score_genesis_source_value_prefix_v1(
         target_dir.mkdir()
         target = target_dir / SELECTED_FILENAME
         shutil.copyfile(source, target)
-        _require(target.read_bytes() == source.read_bytes(), "selected archive is not byte exact")
+        _require(
+            target.read_bytes() == source.read_bytes(),
+            "selected archive is not byte exact",
+        )
         selected_records.append(
             {
                 "group_id": group.group_id,
-                "selection": "genesis_equal_ensemble_mean" if passed else "exact_incumbent_fallback",
+                "selection": "genesis_equal_ensemble_mean"
+                if passed
+                else "exact_incumbent_fallback",
                 "selected_sha256": file_sha256(target),
                 "source_sha256": file_sha256(source),
                 "byte_exact_source": True,
@@ -1122,7 +1321,9 @@ def _validate_prefix_result(
     )
     raw_checks = _mapping(prefix["validation_checks"], name="validation checks")
     _exact_fields(raw_checks, set(derived_checks), name="validation checks")
-    _require(dict(raw_checks) == derived_checks, "validation checks were not re-derived")
+    _require(
+        dict(raw_checks) == derived_checks, "validation checks were not re-derived"
+    )
     gate_passed = all(derived_checks.values())
     _require(
         prefix["validation_gate_passed"] is gate_passed
@@ -1158,7 +1359,9 @@ def _validate_prefix_result(
         expected_selection = (
             "genesis_equal_ensemble_mean" if gate_passed else "exact_incumbent_fallback"
         )
-        _require(selected["selection"] == expected_selection, "selected mechanism changed")
+        _require(
+            selected["selection"] == expected_selection, "selected mechanism changed"
+        )
         selected_path = _ordinary_file(
             prefix_root / group.group_id / SELECTED_FILENAME,
             name="selected physical prediction",
@@ -1208,7 +1411,9 @@ def score_genesis_source_value_future_v1(
     prefix_root = Path(prefix_dir).absolute()
     grid_root = Path(grid_dir).absolute()
     prefix_path = _ordinary_file(prefix_root / PREFIX_FILENAME, name="prefix result")
-    prefix = load_strict_json_object(prefix_path, label="Genesis source-value prefix result")
+    prefix = load_strict_json_object(
+        prefix_path, label="Genesis source-value prefix result"
+    )
     grid, normalized_prefix = _validate_prefix_result(
         prefix,
         protocol=protocol,
@@ -1234,9 +1439,7 @@ def score_genesis_source_value_future_v1(
         record["group_id"]: record
         for record in cast(list[Mapping[str, Any]], grid["groups"])
     }
-    prefix_metrics = {
-        group["group_id"]: group for group in normalized_prefix
-    }
+    prefix_metrics = {group["group_id"]: group for group in normalized_prefix}
     future_groups: list[dict[str, Any]] = []
     for group in protocol.groups:
         root = Path(group_roots[group.group_id]).absolute()
@@ -1254,12 +1457,16 @@ def score_genesis_source_value_future_v1(
             "future outcomes overlap the prefix",
         )
         observed_count = outcome.shape[1]
-        _require(observed_count <= group.material_particle_count, "observed count changed")
+        _require(
+            observed_count <= group.material_particle_count, "observed count changed"
+        )
         record = grid_records[group.group_id]
         members = cast(list[Mapping[str, Any]], record["members"])
         member_predictions: list[FloatArray] = []
         for member in members:
-            relative = _relative(member["physical_archive"], name="future member archive")
+            relative = _relative(
+                member["physical_archive"], name="future member archive"
+            )
             archive = _ordinary_file(
                 grid_root / relative.as_posix(),
                 name="future member archive",
@@ -1290,7 +1497,9 @@ def score_genesis_source_value_future_v1(
             matphys_paths[group.group_id],
             name="future MatPhys comparator",
         )
-        _require(file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed")
+        _require(
+            file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed"
+        )
         _require(file_sha256(matphys_path) == group.matphys_sha256, "MatPhys changed")
         physical_arrays = {
             "selected": load_physical_rollout_archive(

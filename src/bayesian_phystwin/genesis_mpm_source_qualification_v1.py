@@ -137,7 +137,9 @@ def _require(condition: bool | np.bool_, message: str) -> None:
         raise ValueError(message)
 
 
-def _exact_fields(value: Mapping[str, Any], expected: frozenset[str], name: str) -> None:
+def _exact_fields(
+    value: Mapping[str, Any], expected: frozenset[str], name: str
+) -> None:
     actual = frozenset(value)
     if actual != expected:
         missing = sorted(expected - actual)
@@ -159,14 +161,18 @@ def _canonical_string(value: object, *, name: str) -> str:
 
 def _sha256(value: object, *, name: str) -> str:
     text = _canonical_string(value, name=name)
-    if len(text) != 64 or any(character not in "0123456789abcdef" for character in text):
+    if len(text) != 64 or any(
+        character not in "0123456789abcdef" for character in text
+    ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
     return text
 
 
 def _git_revision(value: object, *, name: str) -> str:
     text = _canonical_string(value, name=name)
-    if len(text) != 40 or any(character not in "0123456789abcdef" for character in text):
+    if len(text) != 40 or any(
+        character not in "0123456789abcdef" for character in text
+    ):
         raise ValueError(f"{name} must be a full lowercase Git revision")
     return text
 
@@ -189,7 +195,9 @@ def _finite(value: object, *, name: str, positive: bool = False) -> float:
 def _vector3(value: object, *, name: str) -> tuple[float, float, float]:
     if not isinstance(value, list) or len(value) != 3:
         raise ValueError(f"{name} must be a three-element list")
-    return tuple(_finite(item, name=f"{name}[{index}]") for index, item in enumerate(value))  # type: ignore[return-value]
+    return tuple(
+        _finite(item, name=f"{name}[{index}]") for index, item in enumerate(value)
+    )  # type: ignore[return-value]
 
 
 def _canonical_relative_path(value: object, *, name: str) -> PurePosixPath:
@@ -197,7 +205,10 @@ def _canonical_relative_path(value: object, *, name: str) -> PurePosixPath:
     path = PurePosixPath(text)
     _require(not path.is_absolute(), f"{name} must be relative")
     _require("\\" not in text, f"{name} must use POSIX separators")
-    _require(all(part not in {"", ".", ".."} for part in path.parts), f"{name} is not canonical")
+    _require(
+        all(part not in {"", ".", ".."} for part in path.parts),
+        f"{name} is not canonical",
+    )
     _require(path.as_posix() == text, f"{name} is not canonical")
     return path
 
@@ -262,12 +273,16 @@ def load_genesis_source_physics_protocol_v1(
         backend["producer_profile_id"], name="producer_profile_id"
     )
     resolved = resolve_material_backend_profile(producer_profile_id)
-    _require(resolved.profile_id == canonical_profile_id, "backend profile family changed")
+    _require(
+        resolved.profile_id == canonical_profile_id, "backend profile family changed"
+    )
     _require(backend["transport"] == resolved.transport, "backend transport changed")
     _canonical_string(backend["engine_repository"], name="engine_repository")
     _git_revision(backend["engine_revision"], name="engine_revision")
     _canonical_string(backend["engine_version"], name="engine_version")
-    _sha256(backend["native_smoke_artifact_sha256"], name="native_smoke_artifact_sha256")
+    _sha256(
+        backend["native_smoke_artifact_sha256"], name="native_smoke_artifact_sha256"
+    )
     _sha256(backend["native_smoke_id"], name="native_smoke_id")
     runtime_id = _sha256(backend["runtime_id"], name="runtime_id")
 
@@ -282,7 +297,8 @@ def load_genesis_source_physics_protocol_v1(
             GenesisSourceGroupV1(
                 group_id=_canonical_string(group["group_id"], name="group_id"),
                 source_inputs_relative_path=_canonical_relative_path(
-                    group["source_inputs_relative_path"], name="source_inputs_relative_path"
+                    group["source_inputs_relative_path"],
+                    name="source_inputs_relative_path",
                 ),
                 source_inputs_sha256=_sha256(
                     group["source_inputs_sha256"], name="source_inputs_sha256"
@@ -305,13 +321,18 @@ def load_genesis_source_physics_protocol_v1(
                 ),
             )
         )
-    _require(len({group.group_id for group in groups}) == len(groups), "source group IDs must be unique")
+    _require(
+        len({group.group_id for group in groups}) == len(groups),
+        "source group IDs must be unique",
+    )
 
     simulation = _mapping(value["simulation"], name="simulation")
     _exact_fields(simulation, _SIMULATION_FIELDS, "simulation")
     _require(simulation["backend"] == "cpu", "qualification backend changed")
     _require(simulation["precision"] == "64", "qualification precision changed")
-    _require(type(simulation["seed"]) is int and simulation["seed"] >= 0, "seed changed")
+    _require(
+        type(simulation["seed"]) is int and simulation["seed"] >= 0, "seed changed"
+    )
     for name in (
         "fps",
         "particle_size_m",
@@ -322,7 +343,12 @@ def load_genesis_source_physics_protocol_v1(
         "density_kg_m3",
     ):
         _finite(simulation[name], name=name, positive=True)
-    for name in ("qualification_frame_count", "base_substeps", "refined_substeps", "grid_density"):
+    for name in (
+        "qualification_frame_count",
+        "base_substeps",
+        "refined_substeps",
+        "grid_density",
+    ):
         _positive_int(simulation[name], name=name)
     _require(
         int(simulation["refined_substeps"]) > int(simulation["base_substeps"]),
@@ -343,7 +369,9 @@ def load_genesis_source_physics_protocol_v1(
         np.allclose(grid_units, np.rint(grid_units), atol=1.0e-12, rtol=0.0),
         "grid-aligned translation is not an integer grid displacement",
     )
-    _require(simulation["constitutive_model"] == "neohooken", "constitutive model changed")
+    _require(
+        simulation["constitutive_model"] == "neohooken", "constitutive model changed"
+    )
     _require(
         simulation["nowhere_activation_policy"]
         == "set-particles-active-then-mark-forward-active-v1",
@@ -404,11 +432,19 @@ def load_genesis_source_inputs_v1(
     group: GenesisSourceGroupV1,
 ) -> dict[str, npt.NDArray[Any]]:
     source = Path(path)
-    _require(source.is_file() and not source.is_symlink(), "source inputs must be an ordinary file")
-    _require(file_sha256(source) == group.source_inputs_sha256, "source input SHA-256 changed")
+    _require(
+        source.is_file() and not source.is_symlink(),
+        "source inputs must be an ordinary file",
+    )
+    _require(
+        file_sha256(source) == group.source_inputs_sha256,
+        "source input SHA-256 changed",
+    )
     with np.load(source, allow_pickle=False) as stored:
         arrays = {name: np.asarray(stored[name]) for name in stored.files}
-    _require(frozenset(arrays) == _SOURCE_INPUT_ARRAYS, "source input array roster changed")
+    _require(
+        frozenset(arrays) == _SOURCE_INPUT_ARRAYS, "source input array roster changed"
+    )
     points = arrays["frame_zero_points_m"]
     controller = arrays["controller_points_m"]
     indices = arrays["attachment_indices"]
@@ -462,12 +498,23 @@ def attachment_targets_m(
     indices = np.asarray(attachment_indices, dtype=np.int64)
     weights = np.asarray(attachment_weights, dtype=np.float64)
     _require(points.ndim == 2 and points.shape[1] == 3, "points must have shape (N,3)")
-    _require(controller.ndim == 3 and controller.shape[2] == 3, "controller must have shape (T,C,3)")
-    _require(indices.ndim == 1 and len(indices) >= 1, "attachment indices must be one-dimensional")
-    _require(weights.shape == (len(indices), controller.shape[1]), "attachment weights changed")
+    _require(
+        controller.ndim == 3 and controller.shape[2] == 3,
+        "controller must have shape (T,C,3)",
+    )
+    _require(
+        indices.ndim == 1 and len(indices) >= 1,
+        "attachment indices must be one-dimensional",
+    )
+    _require(
+        weights.shape == (len(indices), controller.shape[1]),
+        "attachment weights changed",
+    )
     displacement = controller - controller[:1]
     weighted = np.einsum("ac,tcd->tad", weights, displacement, optimize=True)
-    return cast(FloatArray, np.ascontiguousarray(points[indices][None, :, :] + weighted))
+    return cast(
+        FloatArray, np.ascontiguousarray(points[indices][None, :, :] + weighted)
+    )
 
 
 def _host(value: object) -> npt.NDArray[Any]:
@@ -498,8 +545,12 @@ def _domain_bounds(
     deficit = np.maximum(minimum_span - span, 0.0)
     lower -= 0.5 * deficit
     upper += 0.5 * deficit
-    lower_tuple = cast(tuple[float, float, float], tuple(float(value) for value in lower))
-    upper_tuple = cast(tuple[float, float, float], tuple(float(value) for value in upper))
+    lower_tuple = cast(
+        tuple[float, float, float], tuple(float(value) for value in lower)
+    )
+    upper_tuple = cast(
+        tuple[float, float, float], tuple(float(value) for value in upper)
+    )
     return lower_tuple, upper_tuple
 
 
@@ -558,14 +609,20 @@ def _run_native_replay(
     )
     scene.build()
     all_indices = torch.arange(len(shifted_points), dtype=torch.int64)
-    entity.set_particles_active(torch.ones(len(shifted_points), dtype=torch.bool), all_indices)
+    entity.set_particles_active(
+        torch.ones(len(shifted_points), dtype=torch.bool), all_indices
+    )
     # Genesis 1.3.3 documents ``active`` as non-informative for Nowhere entities,
     # but its public set_free() guard still reads it. The emitter path likewise
     # activates particles directly. Establish the forward guard only after the
     # complete persistent roster has been activated in the solver.
     entity.active = True
-    entity.set_particles_pos(torch.as_tensor(shifted_points, dtype=torch.float64), all_indices)
-    entity.set_particles_vel(torch.zeros((len(shifted_points), 3), dtype=torch.float64), all_indices)
+    entity.set_particles_pos(
+        torch.as_tensor(shifted_points, dtype=torch.float64), all_indices
+    )
+    entity.set_particles_vel(
+        torch.zeros((len(shifted_points), 3), dtype=torch.float64), all_indices
+    )
 
     frame_count = len(shifted_targets)
     positions: list[npt.NDArray[Any]] = []
@@ -588,15 +645,23 @@ def _run_native_replay(
         target = shifted_targets[frame] if driven else shifted_targets[0]
         previous = shifted_targets[frame - 1] if driven else shifted_targets[0]
         velocity = (target - previous) / frame_dt
-        entity.set_particles_pos(torch.as_tensor(target, dtype=torch.float64), attached_tensor)
-        entity.set_particles_vel(torch.as_tensor(velocity, dtype=torch.float64), attached_tensor)
+        entity.set_particles_pos(
+            torch.as_tensor(target, dtype=torch.float64), attached_tensor
+        )
+        entity.set_particles_vel(
+            torch.as_tensor(velocity, dtype=torch.float64), attached_tensor
+        )
         scene.step()
         # The registered attachment is exact at observation boundaries. Keeping
         # these particles free during the substeps lets their prescribed
         # velocity enter P2G; Genesis defines non-free particles as zero-velocity
         # grid boundaries and would otherwise erase the action.
-        entity.set_particles_pos(torch.as_tensor(target, dtype=torch.float64), attached_tensor)
-        entity.set_particles_vel(torch.as_tensor(velocity, dtype=torch.float64), attached_tensor)
+        entity.set_particles_pos(
+            torch.as_tensor(target, dtype=torch.float64), attached_tensor
+        )
+        entity.set_particles_vel(
+            torch.as_tensor(velocity, dtype=torch.float64), attached_tensor
+        )
         record()
     return _NativeReplay(
         positions_m=cast(FloatArray, np.ascontiguousarray(np.stack(positions))),
@@ -642,7 +707,9 @@ def _git_provenance(
 
 
 def _rmse(left: npt.ArrayLike, right: npt.ArrayLike) -> float:
-    difference = np.asarray(left, dtype=np.float64) - np.asarray(right, dtype=np.float64)
+    difference = np.asarray(left, dtype=np.float64) - np.asarray(
+        right, dtype=np.float64
+    )
     return float(np.sqrt(np.mean(np.square(difference))))
 
 
@@ -666,7 +733,9 @@ def run_genesis_mpm_source_qualification_v1(
         import genesis as gs
         import torch
     except ImportError as error:  # pragma: no cover - optional native runtime
-        raise RuntimeError("native Genesis source qualification requires Genesis and torch") from error
+        raise RuntimeError(
+            "native Genesis source qualification requires Genesis and torch"
+        ) from error
 
     simulation = protocol.simulation
     torch.set_num_threads(1)
@@ -695,23 +764,37 @@ def run_genesis_mpm_source_qualification_v1(
         root = Path(group_roots[group.group_id]).absolute()
         source_path = root / group.source_inputs_relative_path.as_posix()
         incumbent_path = root / group.incumbent_relative_path.as_posix()
-        _require(incumbent_path.is_file() and not incumbent_path.is_symlink(), "incumbent must be an ordinary file")
-        _require(file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent SHA-256 changed")
+        _require(
+            incumbent_path.is_file() and not incumbent_path.is_symlink(),
+            "incumbent must be an ordinary file",
+        )
+        _require(
+            file_sha256(incumbent_path) == group.incumbent_sha256,
+            "incumbent SHA-256 changed",
+        )
         arrays = load_genesis_source_inputs_v1(source_path, group=group)
         incumbent = load_physical_rollout_archive(
             incumbent_path,
             expected_frame_count=group.frame_count,
         )
         _require(
-            incumbent["prediction_m"].shape == (group.frame_count, group.material_particle_count, 3),
+            incumbent["prediction_m"].shape
+            == (group.frame_count, group.material_particle_count, 3),
             "incumbent physical shape changed",
         )
         qualification_frames = int(simulation["qualification_frame_count"])
-        _require(qualification_frames <= group.frame_count, "qualification horizon exceeds source action")
+        _require(
+            qualification_frames <= group.frame_count,
+            "qualification horizon exceeds source action",
+        )
         points = np.asarray(arrays["frame_zero_points_m"], dtype=np.float64)
-        controller = np.asarray(arrays["controller_points_m"][:qualification_frames], dtype=np.float64)
+        controller = np.asarray(
+            arrays["controller_points_m"][:qualification_frames], dtype=np.float64
+        )
         indices = np.asarray(arrays["attachment_indices"], dtype=np.int64)
-        targets = attachment_targets_m(points, controller, indices, arrays["attachment_weights"])
+        targets = attachment_targets_m(
+            points, controller, indices, arrays["attachment_weights"]
+        )
         common = {
             "gs": gs,
             "torch": torch,
@@ -780,7 +863,9 @@ def run_genesis_mpm_source_qualification_v1(
         deterministic = bool(
             np.array_equal(base.positions_m, repeat.positions_m)
             and np.array_equal(base.active, repeat.active)
-            and np.array_equal(base.deformation_determinants, repeat.deformation_determinants)
+            and np.array_equal(
+                base.deformation_determinants, repeat.deformation_determinants
+            )
         )
         active_expected = np.ones_like(base.active, dtype=np.bool_)
         topology = all(
@@ -798,13 +883,20 @@ def run_genesis_mpm_source_qualification_v1(
                 stiff,
             )
         )
-        zero_drift = float(np.max(np.linalg.norm(zero.positions_m - points[None, :, :], axis=2)))
+        zero_drift = float(
+            np.max(np.linalg.norm(zero.positions_m - points[None, :, :], axis=2))
+        )
         shift = np.asarray(
             simulation["grid_aligned_translation_m"],
             dtype=np.float64,
         )
         equivariance = float(
-            np.max(np.linalg.norm(translated.positions_m - shift[None, None, :] - base.positions_m, axis=2))
+            np.max(
+                np.linalg.norm(
+                    translated.positions_m - shift[None, None, :] - base.positions_m,
+                    axis=2,
+                )
+            )
         )
         off_lattice_shift = np.asarray(
             simulation["off_lattice_translation_m"],
@@ -862,21 +954,22 @@ def run_genesis_mpm_source_qualification_v1(
         group_sanity = {
             "finite": finite,
             "action_response": response >= float(gates["minimum_action_response_m"]),
-            "parameter_sensitivity_lower": parameter_sensitivity >= float(gates["minimum_parameter_sensitivity_m"]),
-            "parameter_sensitivity_upper": parameter_sensitivity <= float(gates["maximum_parameter_sensitivity_m"]),
+            "parameter_sensitivity_lower": parameter_sensitivity
+            >= float(gates["minimum_parameter_sensitivity_m"]),
+            "parameter_sensitivity_upper": parameter_sensitivity
+            <= float(gates["maximum_parameter_sensitivity_m"]),
             "particle_step": maximum_step <= float(gates["maximum_particle_step_m"]),
             "off_lattice_translation_discretization": off_lattice_error
-            <= float(
-                gates[
-                    "maximum_off_lattice_translation_discretization_error_m"
-                ]
-            ),
-            "deformation_determinant_lower": float(np.min(determinants)) >= float(gates["minimum_deformation_determinant"]),
-            "deformation_determinant_upper": float(np.max(determinants)) <= float(gates["maximum_deformation_determinant"]),
+            <= float(gates["maximum_off_lattice_translation_discretization_error_m"]),
+            "deformation_determinant_lower": float(np.min(determinants))
+            >= float(gates["minimum_deformation_determinant"]),
+            "deformation_determinant_upper": float(np.max(determinants))
+            <= float(gates["maximum_deformation_determinant"]),
         }
         sanity_violations += sum(not value for value in group_sanity.values())
         units_valid = bool(
-            base.positions_m.shape == (qualification_frames, group.material_particle_count, 3)
+            base.positions_m.shape
+            == (qualification_frames, group.material_particle_count, 3)
             and base.positions_m.dtype.kind == "f"
             and parity <= float(gates["maximum_source_query_parity_rmse_m"])
         )
@@ -987,9 +1080,15 @@ def run_genesis_mpm_source_qualification_v1(
         target_outcomes_used=False,
         metadata={
             "evidence_role": "already-open-source-physics-only",
-            "engine_revision": cast(Mapping[str, Any], protocol.value["backend"])["engine_revision"],
-            "engine_version": cast(Mapping[str, Any], protocol.value["backend"])["engine_version"],
-            "native_smoke_id": cast(Mapping[str, Any], protocol.value["backend"])["native_smoke_id"],
+            "engine_revision": cast(Mapping[str, Any], protocol.value["backend"])[
+                "engine_revision"
+            ],
+            "engine_version": cast(Mapping[str, Any], protocol.value["backend"])[
+                "engine_version"
+            ],
+            "native_smoke_id": cast(Mapping[str, Any], protocol.value["backend"])[
+                "native_smoke_id"
+            ],
             "parameter_sensitivity_is_a_physical_sanity_gate": True,
             "rigid_equivariance_probe": "grid-aligned-translation",
             "off_lattice_translation_is_a_physical_sanity_gate": True,

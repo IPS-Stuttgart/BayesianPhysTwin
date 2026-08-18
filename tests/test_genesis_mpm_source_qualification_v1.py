@@ -25,7 +25,10 @@ def test_frozen_protocol_loads_and_binds_two_independent_groups() -> None:
     assert protocol.canonical_profile_id == "genesis-mpm-v1"
     assert protocol.producer_profile_id == "genesis-mpm-v1"
     assert protocol.transport == "material-trajectory-v1"
-    assert protocol.runtime_id == "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a"
+    assert (
+        protocol.runtime_id
+        == "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a"
+    )
     assert [group.group_id for group in protocol.source_groups] == [
         "double_lift_zebra",
         "double_stretch_zebra",
@@ -43,7 +46,10 @@ def test_frozen_protocol_loads_and_binds_two_independent_groups() -> None:
         protocol.simulation["controller_boundary_policy"]
         == "frame-boundary-position-velocity-overwrite-free-particles-v1"
     )
-    assert protocol.value["information_boundary"]["source_object_outcomes_allowed"] is False
+    assert (
+        protocol.value["information_boundary"]["source_object_outcomes_allowed"]
+        is False
+    )
 
 
 def test_attachment_targets_preserve_frame_zero_and_candidate_residuals() -> None:
@@ -65,7 +71,14 @@ def test_attachment_targets_preserve_frame_zero_and_candidate_residuals() -> Non
     np.testing.assert_allclose(targets[1, 1], [0.0125, 0.015, 0.0])
 
 
-def _source_archive(path: Path, *, material_count: int, frame_count: int, controller_count: int, attached: int) -> None:
+def _source_archive(
+    path: Path,
+    *,
+    material_count: int,
+    frame_count: int,
+    controller_count: int,
+    attached: int,
+) -> None:
     points = np.zeros((material_count, 3), dtype=np.float32)
     controller = np.zeros((frame_count, controller_count, 3), dtype=np.float32)
     indices = np.arange(attached, dtype=np.int32)
@@ -113,7 +126,9 @@ def test_source_loader_rejects_digest_or_roster_mutation(tmp_path: Path) -> None
         load_genesis_source_inputs_v1(source, group=group)
 
 
-def test_protocol_rejects_information_boundary_or_backend_mutation(tmp_path: Path) -> None:
+def test_protocol_rejects_information_boundary_or_backend_mutation(
+    tmp_path: Path,
+) -> None:
     value: dict[str, Any] = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     value["information_boundary"]["source_object_outcomes_allowed"] = True
     path = tmp_path / "bad-boundary.json"

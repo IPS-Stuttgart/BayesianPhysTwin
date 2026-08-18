@@ -40,7 +40,9 @@ def main() -> int:
     for name in ("predict", "score-prefix"):
         command = subparsers.add_parser(name)
         command.add_argument("--protocol", type=Path, required=True)
-        command.add_argument("--group-root", action="append", type=_binding, required=True)
+        command.add_argument(
+            "--group-root", action="append", type=_binding, required=True
+        )
         command.add_argument("--matphys", action="append", type=_binding, required=True)
         command.add_argument("--output-dir", type=Path, required=True)
     predict = subparsers.choices["predict"]

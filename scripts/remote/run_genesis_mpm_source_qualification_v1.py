@@ -29,7 +29,9 @@ def main() -> int:
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--group-root", action="append", type=_group_root, required=True)
+    parser.add_argument(
+        "--group-root", action="append", type=_group_root, required=True
+    )
     args = parser.parse_args()
     roots: dict[str, Path] = {}
     for group_id, path in args.group_root:
