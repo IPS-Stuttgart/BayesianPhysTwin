@@ -16,6 +16,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     build_deform_dlo3_source_manifest,
     calibrate_deform_full_covariance,
     deform_local_feature_indices,
+    evaluate_deform_dlo3_source_gate,
     evaluate_deform_predictive_distribution,
     fit_deform_local_residual_variant,
     load_deform_dlo_robustness_v1_protocol,
@@ -28,6 +29,7 @@ from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs" / "sota" / "deform_dlo_robustness_v1.json"
+SEED_RUNNER = ROOT / "scripts" / "remote" / "run_deform_dlo3_robustness_seed_v1.py"
 
 
 def _payload() -> dict[str, object]:
@@ -323,3 +325,46 @@ def test_full_covariance_preserves_mean_and_supports_calibration() -> None:
         >= raw_metrics["coordinate_coverage_90"]
     )
     assert np.array_equal(full["predictions"], expected["predictions"])
+
+
+def test_source_gate_uses_fixed_casewise_arithmetic() -> None:
+    protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
+    targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
+    baseline = np.full_like(targets, 0.007)
+    candidate = np.full_like(targets, 0.006)
+    names = [f"case-{index}" for index in range(8)]
+
+    gate = evaluate_deform_dlo3_source_gate(
+        candidate, baseline, targets, names, protocol
+    )
+
+    assert gate["passed"] is True
+    assert gate["wins"] == 8
+    assert gate["candidate_mean_l1_m"] == pytest.approx(0.006)
+    assert gate["relative_improvement"] == pytest.approx(1.0 - 6.0 / 7.0)
+
+    candidate[0] = 0.008
+    changed = evaluate_deform_dlo3_source_gate(
+        candidate, baseline, targets, names, protocol
+    )
+    assert changed["maximum_case_ratio"] == pytest.approx(8.0 / 7.0)
+    assert changed["maximum_case_ratio_passed"] is False
+    assert changed["passed"] is False
+
+
+def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
+    source = SEED_RUNNER.read_text(encoding="utf-8")
+
+    method_seal = source.index('method_seal_path = output_root / "method_seal.json"')
+    source_open = source.index("source_test_trajectories =")
+    prediction_seal = source.index(
+        'prediction_seal_path = output_root / "prediction_seal.json"'
+    )
+    scoring = source.index("primary_gate = evaluate_deform_dlo3_source_gate")
+    assert method_seal < source_open < prediction_seal < scoring
+    assert (
+        'source_runtime._install_eval_read_guard(data_root / "DLO3" / "eval")' in source
+    )
+    assert 'source_runtime._install_eval_read_guard(data_root / "DLO4")' in source
+    assert 'source_runtime._install_eval_read_guard(data_root / "DLO5")' in source
+    assert '"target_authorized": False' in source

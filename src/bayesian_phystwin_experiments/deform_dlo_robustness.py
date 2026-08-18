@@ -941,3 +941,71 @@ def evaluate_deform_predictive_distribution(
         "energy_score_sample_count": sample_count,
         "energy_score_seed": sample_seed,
     }
+
+
+def evaluate_deform_dlo3_source_gate(
+    candidate_predictions: Array,
+    baseline_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Evaluate the immutable eight-trajectory DLO3 advancement gate."""
+
+    candidate = _finite_array(candidate_predictions, ndim=4, label="source candidate")
+    baseline = _finite_array(baseline_predictions, ndim=4, label="source baseline")
+    observed = _finite_array(targets, ndim=4, label="source targets")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != baseline.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] != 8
+        or len(normalized_names) != 8
+        or len(set(normalized_names)) != 8
+    ):
+        raise ValueError("DLO3 source gate requires eight aligned trajectories")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    baseline_errors = np.mean(np.abs(baseline - observed), axis=(1, 2, 3))
+    if np.any(baseline_errors <= 0.0):
+        raise ValueError("DLO3 source baseline error must be positive")
+    ratios = candidate_errors / baseline_errors
+    candidate_mean = float(np.mean(candidate_errors))
+    baseline_mean = float(np.mean(baseline_errors))
+    relative_improvement = 1.0 - candidate_mean / baseline_mean
+    wins = int(np.count_nonzero(candidate_errors < baseline_errors))
+    maximum_ratio = float(np.max(ratios))
+    gate = _mapping(protocol.get("source_gate"), label="source gate")
+    improvement_passed = relative_improvement >= float(
+        cast(Any, gate["minimum_relative_improvement"])
+    )
+    wins_passed = wins >= int(cast(Any, gate["minimum_case_wins"]))
+    ratio_passed = maximum_ratio <= float(cast(Any, gate["maximum_case_ratio"]))
+    reference_passed = candidate_mean < float(cast(Any, gate["maximum_candidate_l1_m"]))
+    records = [
+        {
+            "name": name,
+            "candidate_l1_m": float(candidate_errors[index]),
+            "baseline_l1_m": float(baseline_errors[index]),
+            "candidate_to_baseline_ratio": float(ratios[index]),
+            "candidate_wins": bool(candidate_errors[index] < baseline_errors[index]),
+        }
+        for index, name in enumerate(normalized_names)
+    ]
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-robustness-source-gate-v1",
+        "case_count": 8,
+        "candidate_mean_l1_m": candidate_mean,
+        "baseline_mean_l1_m": baseline_mean,
+        "relative_improvement": relative_improvement,
+        "wins": wins,
+        "maximum_case_ratio": maximum_ratio,
+        "improvement_passed": improvement_passed,
+        "wins_passed": wins_passed,
+        "maximum_case_ratio_passed": ratio_passed,
+        "published_reference_passed": reference_passed,
+        "passed": bool(
+            improvement_passed and wins_passed and ratio_passed and reference_passed
+        ),
+        "cases": records,
+    }
