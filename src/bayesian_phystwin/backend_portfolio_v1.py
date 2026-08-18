@@ -1,6 +1,6 @@
 """Machine-readable evidence-first budget for external physical backends.
 
-The material backend registry records implementation compatibility.  This module
+The material backend registry records implementation compatibility. This module
 records the independent evidence stage and constrains active qualification work
 so adapter breadth cannot be mistaken for scientific progress.
 """
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Final, Literal, cast
+from typing import Final, Literal
 
 from .material_backend_v1 import MATERIAL_BACKEND_SPECS
 
@@ -173,7 +173,7 @@ def validate_backend_portfolio() -> dict[str, object]:
 def describe_backend_portfolio() -> dict[str, object]:
     """Return the validated evidence-stage and work-in-progress snapshot."""
 
-    return cast(dict[str, object], validate_backend_portfolio())
+    return validate_backend_portfolio()
 
 
 __all__ = [
