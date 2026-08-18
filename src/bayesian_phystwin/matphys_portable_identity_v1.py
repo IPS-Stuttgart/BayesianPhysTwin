@@ -66,13 +66,9 @@ from .matphys_official_producer_v1 import (
 
 PORTABLE_IDENTITY_SCHEMA: Final = "bayesian-phystwin.matphys-portable-identity"
 PORTABLE_IDENTITY_VERSION: Final = 1
-PORTABLE_PROPOSAL_SCHEMA: Final = (
-    "bayesian-phystwin.matphys-backend-proposal-portable"
-)
+PORTABLE_PROPOSAL_SCHEMA: Final = "bayesian-phystwin.matphys-backend-proposal-portable"
 PORTABLE_PROPOSAL_VERSION: Final = 1
-SOURCE_VERIFICATION_SCHEMA: Final = (
-    "bayesian-phystwin.matphys-source-verification"
-)
+SOURCE_VERIFICATION_SCHEMA: Final = "bayesian-phystwin.matphys-source-verification"
 SOURCE_VERIFICATION_VERSION: Final = 1
 
 PORTABLE_IDENTITY_FILENAME: Final = "matphys-portable-identity.json"
@@ -87,18 +83,12 @@ _INPUT_ROLES: Final = (
     "spring_field",
 )
 _PORTABLE_FILE_FIELDS: Final = frozenset({"role", "sha256", "byte_count"})
-_PORTABLE_SPRING_FIELDS: Final = frozenset(
-    {"role", "sha256", "byte_count", "count"}
-)
-_LOCAL_FILE_FIELDS: Final = frozenset(
-    {"role", "path", "sha256", "byte_count"}
-)
+_PORTABLE_SPRING_FIELDS: Final = frozenset({"role", "sha256", "byte_count", "count"})
+_LOCAL_FILE_FIELDS: Final = frozenset({"role", "path", "sha256", "byte_count"})
 _LOCAL_SPRING_FIELDS: Final = frozenset(
     {"role", "path", "sha256", "byte_count", "count"}
 )
-_SOURCE_BUNDLE_FIELDS: Final = frozenset(
-    {"path", "artifact_path", "artifact_sha256"}
-)
+_SOURCE_BUNDLE_FIELDS: Final = frozenset({"path", "artifact_path", "artifact_sha256"})
 _RECEIPT_FIELDS: Final = frozenset(
     {
         "schema",
@@ -268,9 +258,7 @@ def _portable_file_record(
         ),
     }
     if spring:
-        portable["count"] = _positive_integer(
-            record.get("count"), name=f"{role}.count"
-        )
+        portable["count"] = _positive_integer(record.get("count"), name=f"{role}.count")
     return portable
 
 
@@ -323,7 +311,9 @@ def _normalize_local_file(
     record = _mapping(value, name=role)
     expected = _LOCAL_SPRING_FIELDS if spring else _LOCAL_FILE_FIELDS
     require_exact_fields(record, expected=expected, name=role)
-    portable = _normalize_portable_file(record, role=role, spring=spring)
+    portable_record = dict(record)
+    portable_record.pop("path")
+    portable = _normalize_portable_file(portable_record, role=role, spring=spring)
     path = nonempty_string(record.get("path"), name=f"{role}.path")
     if verify:
         source = ordinary_file(path, name=role)
@@ -382,7 +372,9 @@ def _portable_proposal(
     spring = _portable_file_record(
         "spring_field", official.get("spring_field"), spring=True
     )
-    proposal_checkpoint = _mapping(proposal.get("checkpoint"), name="proposal checkpoint")
+    proposal_checkpoint = _mapping(
+        proposal.get("checkpoint"), name="proposal checkpoint"
+    )
     proposal_spring = _mapping(proposal.get("spring_field"), name="proposal spring")
     _require(
         proposal_checkpoint.get("sha256") == checkpoint["sha256"],
@@ -411,12 +403,8 @@ def _portable_proposal(
         "target_evidence_end_frame_exclusive": proposal[
             "target_evidence_end_frame_exclusive"
         ],
-        "target_future_observations_used": proposal[
-            "target_future_observations_used"
-        ],
-        "known_future_robot_action_used": proposal[
-            "known_future_robot_action_used"
-        ],
+        "target_future_observations_used": proposal["target_future_observations_used"],
+        "known_future_robot_action_used": proposal["known_future_robot_action_used"],
         "proposal_strength": proposal["proposal_strength"],
         "checkpoint": checkpoint,
         "spring_field": spring,
@@ -454,9 +442,7 @@ def validate_portable_matphys_proposal(value: object) -> dict[str, object]:
     training = _normalize_object_ids(
         proposal.get("training_object_ids"), name="training_object_ids"
     )
-    target = nonempty_string(
-        proposal.get("target_object_id"), name="target_object_id"
-    )
+    target = nonempty_string(proposal.get("target_object_id"), name="target_object_id")
     _require(target not in training, "portable proposal training includes target")
     _require(
         proposal.get("target_object_excluded") is True
@@ -517,8 +503,7 @@ def validate_portable_matphys_proposal(value: object) -> dict[str, object]:
     )
     normalized = {**identity, "portable_proposal_id": content_id(identity)}
     _require(
-        proposal.get("portable_proposal_id")
-        == normalized["portable_proposal_id"],
+        proposal.get("portable_proposal_id") == normalized["portable_proposal_id"],
         "portable MatPhys proposal identity changed",
     )
     return cast(dict[str, object], plain_json(normalized))
@@ -537,9 +522,8 @@ def _normalize_replay_summary(value: object) -> dict[str, object]:
     ]
     _require(
         len(frames) == len(frames_raw)
-        and len(frames) == _positive_integer(
-            summary.get("frame_count"), name="frame_count"
-        ),
+        and len(frames)
+        == _positive_integer(summary.get("frame_count"), name="frame_count"),
         "replay frame indices changed",
     )
     _require(
@@ -568,9 +552,7 @@ def _normalize_replay_summary(value: object) -> dict[str, object]:
     }
 
 
-def _expected_boundary(
-    *, mode: str, target_in_training: bool
-) -> dict[str, bool]:
+def _expected_boundary(*, mode: str, target_in_training: bool) -> dict[str, bool]:
     causal = mode == MATPHYS_CAUSAL_PREFIX_MODE
     return {
         "target_prefix_used_for_parameter_fit": True,
@@ -602,9 +584,7 @@ def _derive_certificate(
         "identity_parameters": _portable_file_record(
             "identity_parameters", official["identity_parameters"]
         ),
-        "replay_input": _portable_file_record(
-            "replay_input", official["replay_input"]
-        ),
+        "replay_input": _portable_file_record("replay_input", official["replay_input"]),
     }
     outputs = _mapping(official["outputs"], name="official outputs")
     identity: dict[str, object] = {
@@ -625,18 +605,14 @@ def _derive_certificate(
         "simulator_revision": official["simulator_revision"],
         "case_id": official["case_id"],
         "target_object_id": official["target_object_id"],
-        "checkpoint_training_object_ids": official[
-            "checkpoint_training_object_ids"
-        ],
+        "checkpoint_training_object_ids": official["checkpoint_training_object_ids"],
         "target_fit_frame_range_half_open": official[
             "target_fit_frame_range_half_open"
         ],
         "future_frame_start": official["future_frame_start"],
         "proposal_strength": official["proposal_strength"],
         "pipeline_components": official["pipeline_components"],
-        "pipeline_component_artifacts": official[
-            "pipeline_component_artifacts"
-        ],
+        "pipeline_component_artifacts": official["pipeline_component_artifacts"],
         "inputs": inputs,
         "replay_summary": official["replay_summary"],
         "source_artifacts": official["source_artifacts"],
@@ -691,10 +667,8 @@ def validate_matphys_portable_certificate(value: object) -> dict[str, object]:
     )
     _require(
         certificate.get("backend_kind") == MATPHYS_OFFICIAL_BACKEND_KIND
-        and certificate.get("parameterization")
-        == MATPHYS_OFFICIAL_PARAMETERIZATION
-        and certificate.get("rollout_backend")
-        == MATPHYS_OFFICIAL_ROLLOUT_BACKEND,
+        and certificate.get("parameterization") == MATPHYS_OFFICIAL_PARAMETERIZATION
+        and certificate.get("rollout_backend") == MATPHYS_OFFICIAL_ROLLOUT_BACKEND,
         "MatPhys portable backend semantics changed",
     )
     target = nonempty_string(
@@ -787,7 +761,9 @@ def validate_matphys_portable_certificate(value: object) -> dict[str, object]:
         mode=mode,
         target_in_training=target in training,
     )
-    _require(dict(boundary) == expected_boundary, "portable information boundary changed")
+    _require(
+        dict(boundary) == expected_boundary, "portable information boundary changed"
+    )
     identity: dict[str, object] = {
         "schema": PORTABLE_IDENTITY_SCHEMA,
         "schema_version": PORTABLE_IDENTITY_VERSION,
@@ -827,9 +803,7 @@ def validate_matphys_portable_certificate(value: object) -> dict[str, object]:
         "pipeline_components": list(components),
         "pipeline_component_artifacts": normalized_components,
         "inputs": inputs,
-        "replay_summary": _normalize_replay_summary(
-            certificate.get("replay_summary")
-        ),
+        "replay_summary": _normalize_replay_summary(certificate.get("replay_summary")),
         "source_artifacts": dict(artifacts),
         "outputs": outputs,
         "information_boundary": expected_boundary,
@@ -848,8 +822,7 @@ def validate_matphys_portable_certificate(value: object) -> dict[str, object]:
     )
     normalized = {**identity, "portable_artifact_id": content_id(identity)}
     _require(
-        certificate.get("portable_artifact_id")
-        == normalized["portable_artifact_id"],
+        certificate.get("portable_artifact_id") == normalized["portable_artifact_id"],
         "MatPhys portable artifact identity changed",
     )
     return cast(dict[str, object], plain_json(normalized))
@@ -875,9 +848,7 @@ def _derive_receipt(
         "identity_parameters": _local_file_record(
             "identity_parameters", official["identity_parameters"]
         ),
-        "replay_input": _local_file_record(
-            "replay_input", official["replay_input"]
-        ),
+        "replay_input": _local_file_record("replay_input", official["replay_input"]),
     }
     identity: dict[str, object] = {
         "schema": SOURCE_VERIFICATION_SCHEMA,
@@ -930,9 +901,7 @@ def validate_matphys_source_verification(
             bundle_raw.get("artifact_sha256"), name="source_bundle.artifact_sha256"
         ),
     }
-    locations_raw = _mapping(
-        receipt.get("source_locations"), name="source_locations"
-    )
+    locations_raw = _mapping(receipt.get("source_locations"), name="source_locations")
     _require(
         set(locations_raw) == set(_INPUT_ROLES),
         "source verification location roster changed",

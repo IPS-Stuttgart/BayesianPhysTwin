@@ -65,9 +65,7 @@ def regular_file_roster(root: str | Path) -> frozenset[str]:
         "artifact bundle must not contain symlinks",
     )
     return frozenset(
-        path.relative_to(directory).as_posix()
-        for path in descendants
-        if path.is_file()
+        path.relative_to(directory).as_posix() for path in descendants if path.is_file()
     )
 
 
@@ -143,7 +141,9 @@ def _relative_file(root: Path, relative_path: str) -> Path:
         and "." not in pure.parts,
         "checksum path must be a canonical relative POSIX path",
     )
-    return ordinary_file(root / Path(*pure.parts), name=f"checksum file {relative_path}")
+    return ordinary_file(
+        root / Path(*pure.parts), name=f"checksum file {relative_path}"
+    )
 
 
 def checksum_manifest_text(root: str | Path, relative_paths: Iterable[str]) -> str:
@@ -153,8 +153,7 @@ def checksum_manifest_text(root: str | Path, relative_paths: Iterable[str]) -> s
     paths = tuple(sorted(relative_paths))
     _require(len(paths) == len(set(paths)), "checksum paths must be unique")
     return "".join(
-        f"{file_sha256(_relative_file(directory, path))}  {path}\n"
-        for path in paths
+        f"{file_sha256(_relative_file(directory, path))}  {path}\n" for path in paths
     )
 
 

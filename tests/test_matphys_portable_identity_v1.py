@@ -72,9 +72,7 @@ def _materialize_source(
     mode: str = MATPHYS_CAUSAL_PREFIX_MODE,
 ) -> tuple[Path, dict[str, Path], dict[str, object]]:
     root.mkdir(parents=True)
-    replay = write_matphys_official_replay_input(
-        root / "replay.npz", _replay_arrays()
-    )
+    replay = write_matphys_official_replay_input(root / "replay.npz", _replay_arrays())
     checkpoint = root / "checkpoint.pth"
     checkpoint.write_bytes(b"official MatPhys checkpoint")
     spring = root / "spring.npy"
