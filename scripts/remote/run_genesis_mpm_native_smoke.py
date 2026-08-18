@@ -227,6 +227,7 @@ def _run_once(
         use_deterministic_algorithms=True,
     )
     try:
+
         def replay_factory() -> GenesisMPMEntityReplayV1:
             return _build_replay(
                 native,
@@ -260,9 +261,7 @@ def _run_once(
             "seed": seed,
         }
         source_artifacts = {
-            "scripts/remote/run_genesis_mpm_native_smoke.py": _sha256_file(
-                script_path
-            ),
+            "scripts/remote/run_genesis_mpm_native_smoke.py": _sha256_file(script_path),
             "src/bayesian_phystwin/genesis_mpm_replay_v1.py": _sha256_file(
                 adapter_path
             ),
@@ -314,8 +313,7 @@ def _run_once(
             expected_frame_count=frame_count,
         )
         zero_delta = (
-            arrays["zero_action_readout_m"]
-            - arrays["frame_zero_points_m"][None]
+            arrays["zero_action_readout_m"] - arrays["frame_zero_points_m"][None]
         )
         response = arrays["driven_readout_m"] - arrays["zero_action_readout_m"]
         return {
@@ -452,9 +450,7 @@ def run_smoke(
             "producer_revision": producer_revision,
             "runtime": {
                 "python_version": platform.python_version(),
-                "torch_version": str(
-                    getattr(native.torch, "__version__", "unknown")
-                ),
+                "torch_version": str(getattr(native.torch, "__version__", "unknown")),
                 "backend": "cpu",
                 "precision": "64",
                 "deterministic_algorithms": True,
