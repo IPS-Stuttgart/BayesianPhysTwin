@@ -23,6 +23,28 @@ The existing `preferred`, `supported`, and `experimental` labels describe
 implementation maturity only. They do not authorize a physical-performance,
 calibration, transfer, or downstream-value claim.
 
+## Executable portfolio budget
+
+The machine-readable policy is implemented in
+`bayesian_phystwin.backend_portfolio_v1`. It records an evidence stage separate
+from implementation maturity, freezes the admitted family roster, and permits at
+most two active source-qualification candidates. The current active candidates
+are JAX-FEM and Genesis MPM.
+
+Run the focused validation with:
+
+```bash
+python -c "from bayesian_phystwin.backend_portfolio_v1 import describe_backend_portfolio; print(describe_backend_portfolio())"
+pytest -q tests/test_backend_portfolio_v1.py
+```
+
+While no backend is `source-value-qualified`, adding a canonical backend family
+or exceeding the two-candidate work-in-progress budget fails the portfolio
+validator. Passing a native smoke is required before a backend can occupy an
+active qualification slot. A source-value-qualified backend leaves that source
+funnel and may lift the family-admission freeze under a separately reviewed
+registry change.
+
 ## Evidence stages
 
 | Stage | Meaning | Minimum retained evidence |
@@ -56,8 +78,9 @@ contract fallback.
 
 ## Current qualification focus
 
-Issue #664 identifies Genesis MPM and JAX-FEM as the current candidates. The
-next qualification should select one candidate and run one funnel:
+Issue #664 identifies Genesis MPM and JAX-FEM as the current candidates. They
+occupy the two allowed active slots, but source outcomes should still be produced
+through one frozen funnel at a time:
 
 1. native execution and provenance;
 2. source-physics qualification;
