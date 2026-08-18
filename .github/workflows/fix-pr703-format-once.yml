@@ -43,6 +43,7 @@ jobs:
             src/bayesian_phystwin/tree_block_sparse_prob4d.py
             tests/test_portable_contracts_guarded_belief_selection_v2.py
             tests/test_portable_contracts_provider_runtime_identity_v1.py
+            tests/test_portable_contracts_guarded_provenance_edges_v2.py
           )
           python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
@@ -51,7 +52,7 @@ jobs:
           python -m pytest -q -p no:cacheprovider \
             tests/test_portable_contracts_guarded_belief_selection_v2.py \
             tests/test_portable_contracts_provider_runtime_identity_v1.py \
-            tests/test_portable_contracts_tree_block_sparse_prob4d.py
+            tests/test_portable_contracts_guarded_provenance_edges_v2.py
           git diff --check
 
       - name: Commit repair and remove helper
@@ -63,5 +64,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git diff --cached --check
-          git commit -m 'Format guarded provenance handoff'
+          git commit -m 'Format and cover guarded provenance handoff'
           git push origin HEAD:agent/guarded-provenance-handoff-v2
