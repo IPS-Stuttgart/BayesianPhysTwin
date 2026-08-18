@@ -573,7 +573,7 @@ def _run_native_replay(
     simulation: Mapping[str, Any],
     driven: bool,
     translation_m: FloatArray | None = None,
-) -> _NativeReplay:
+) -> _NativeReplay:  # pragma: no cover - exercised by the frozen native run
     shift = np.zeros(3, dtype=np.float64) if translation_m is None else translation_m
     shifted_points = np.ascontiguousarray(points_m + shift)
     shifted_targets = np.ascontiguousarray(targets_m + shift[None, None, :])

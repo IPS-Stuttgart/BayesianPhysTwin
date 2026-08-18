@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
 import pytest
 
+import bayesian_phystwin.genesis_mpm_source_value_v1 as value_module
 from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
 from bayesian_phystwin.genesis_mpm_source_qualification_v1 import file_sha256
 from bayesian_phystwin.genesis_mpm_source_value_v1 import (
     GRID_FILENAME,
     PREFIX_FILENAME,
+    generate_genesis_source_value_predictions_v1,
     load_genesis_source_value_protocol_v1,
     marginal_energy_score_v1,
     score_genesis_source_value_future_v1,
@@ -24,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/genesis_mpm_zebra_source_value_v1.json"
 PHYSICS_EVIDENCE = ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_physics_v1"
 VALUE_EVIDENCE = ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_value_v1"
+PHYSICS_PROTOCOL = ROOT / "configs/sota/genesis_mpm_zebra_source_physics_v1.json"
 
 
 def _physical_archive(
@@ -74,6 +79,84 @@ def _write_outcome(
             },
         ),
     )
+
+
+def _source_inputs_archive(
+    path: Path,
+    *,
+    frame_count: int,
+) -> Path:
+    points = np.asarray([[0.0, 0.0, 0.0], [0.02, 0.0, 0.0]], dtype=np.float32)
+    controller: npt.NDArray[np.float32] = np.zeros(
+        (frame_count, 1, 3), dtype=np.float32
+    )
+    controller[:, 0, 0] = np.arange(frame_count, dtype=np.float32) * 0.001
+    return cast(
+        Path,
+        write_deterministic_npz(
+            path,
+            {
+                "frame_zero_points_m": points,
+                "controller_points_m": controller,
+                "attachment_indices": np.asarray([0], dtype=np.int32),
+                "attachment_weights": np.asarray([[1.0]], dtype=np.float32),
+                "action_support": np.ones(2, dtype=np.float32),
+            },
+        ),
+    )
+
+
+def _synthetic_generation_inputs(
+    tmp_path: Path,
+) -> tuple[Path, dict[str, Path], dict[str, Path]]:
+    value: dict[str, Any] = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    roots: dict[str, Path] = {}
+    matphys_paths: dict[str, Path] = {}
+    frame_count = 8
+    for raw_group in value["source_groups"]:
+        group_id = str(raw_group["group_id"])
+        root = tmp_path / "source" / group_id
+        root.mkdir(parents=True)
+        roots[group_id] = root
+        source = _source_inputs_archive(
+            root / "source-inputs.npz",
+            frame_count=frame_count,
+        )
+        incumbent = _physical_archive(
+            root / "incumbent.npz",
+            _trajectory(slope_m=0.0007, frame_count=frame_count),
+        )
+        matphys = _physical_archive(
+            root / "matphys.npz",
+            _trajectory(slope_m=0.0008, frame_count=frame_count),
+        )
+        matphys_paths[group_id] = matphys
+        raw_group.update(
+            {
+                "source_inputs_relative_path": source.name,
+                "source_inputs_sha256": file_sha256(source),
+                "incumbent_relative_path": incumbent.name,
+                "incumbent_sha256": file_sha256(incumbent),
+                "matphys_sha256": file_sha256(matphys),
+                "frame_count": frame_count,
+                "material_particle_count": 2,
+                "controller_point_count": 1,
+                "attached_particle_count": 1,
+            }
+        )
+    protocol = tmp_path / "generation-protocol.json"
+    write_atomic_json(value, protocol, overwrite=False)
+    return protocol, roots, matphys_paths
+
+
+def _fake_value_replay(**kwargs: Any) -> SimpleNamespace:
+    points = np.asarray(kwargs["points_m"], dtype=np.float64)
+    frame_count = len(np.asarray(kwargs["targets_m"]))
+    modulus = float(kwargs["young_modulus_pa"])
+    slope = {25_000.0: 0.0009, 100_000.0: 0.001, 500_000.0: 0.0011}[modulus]
+    positions = np.repeat(points[None], frame_count, axis=0)
+    positions[:, :, 0] += np.arange(frame_count, dtype=np.float64)[:, None] * slope
+    return SimpleNamespace(positions_m=np.ascontiguousarray(positions))
 
 
 def _synthetic_gate(
@@ -279,6 +362,71 @@ def test_retained_evidence_qualifies_physics_and_rejects_source_value() -> None:
     )
     assert future["status"] == "future-not-opened-validation-gate-failed"
     assert future["future_outcomes_read"] is False
+
+
+def test_prediction_generator_consumes_qualification_without_outcomes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol, roots, matphys_paths = _synthetic_generation_inputs(tmp_path)
+    fake_genesis = SimpleNamespace(cpu=object(), init=lambda **_: None)
+    fake_torch = SimpleNamespace(
+        set_num_threads=lambda _: None,
+        use_deterministic_algorithms=lambda _: None,
+    )
+    monkeypatch.setitem(sys.modules, "genesis", fake_genesis)
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setattr(value_module, "_run_native_replay", _fake_value_replay)
+    monkeypatch.setattr(
+        value_module,
+        "_git_provenance",
+        lambda *_args, **_kwargs: {
+            "git_head": "1" * 40,
+            "git_worktree_clean": True,
+            "source_files": {"synthetic.py": "2" * 64},
+        },
+    )
+
+    output = tmp_path / "grid"
+    grid = generate_genesis_source_value_predictions_v1(
+        protocol_path=protocol,
+        physics_protocol_path=PHYSICS_PROTOCOL,
+        physics_result_path=PHYSICS_EVIDENCE / "result.json",
+        qualification_path=PHYSICS_EVIDENCE / "material-backend-qualification.json",
+        group_roots=roots,
+        matphys_paths=matphys_paths,
+        output_dir=output,
+        repo_root=tmp_path,
+    )
+
+    assert grid["successful_candidate_count_per_group"] == 3
+    assert len(grid["groups"]) == 2
+    assert grid["information_boundary"] == {
+        "source_inputs_read": True,
+        "incumbent_and_matphys_predictions_read": True,
+        "prefix_outcomes_read": False,
+        "future_outcomes_read": False,
+        "target_or_held_out_artifact_read": False,
+    }
+    for group in grid["groups"]:
+        assert len(group["members"]) == 3
+        assert group["final_ensemble_spread_m"] > 0.0
+        mean_path = output / group["ensemble_mean_archive"]
+        assert file_sha256(mean_path) == group["ensemble_mean_sha256"]
+
+    with pytest.raises(FileExistsError):
+        generate_genesis_source_value_predictions_v1(
+            protocol_path=protocol,
+            physics_protocol_path=PHYSICS_PROTOCOL,
+            physics_result_path=PHYSICS_EVIDENCE / "result.json",
+            qualification_path=(
+                PHYSICS_EVIDENCE / "material-backend-qualification.json"
+            ),
+            group_roots=roots,
+            matphys_paths=matphys_paths,
+            output_dir=output,
+            repo_root=tmp_path,
+        )
 
 
 def test_marginal_energy_score_rewards_centered_spread() -> None:
