@@ -1009,3 +1009,298 @@ def evaluate_deform_dlo3_source_gate(
         ),
         "cases": records,
     }
+
+
+def evaluate_deform_dlo3_stability_gate(
+    seed_results: Sequence[Mapping[str, object]],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Aggregate the three frozen source seeds without selecting among them."""
+
+    training = _mapping(protocol.get("physical_training"), label="physical training")
+    stability = _mapping(protocol.get("training_stability"), label="stability")
+    expected_seeds = _integers(training.get("audit_seeds"), label="audit seeds")
+    if len(seed_results) != len(expected_seeds):
+        raise ValueError("DLO3 stability gate requires every frozen seed")
+
+    normalized: dict[int, Mapping[str, object]] = {}
+    protocol_digests: set[str] = set()
+    manifest_digests: set[str] = set()
+    for raw in seed_results:
+        if raw.get("contract") != "deform-dlo3-robustness-seed-result-v1":
+            raise ValueError("DLO3 stability input contract differs")
+        seed = int(cast(Any, raw.get("seed", -1)))
+        if seed in normalized or seed not in expected_seeds:
+            raise ValueError("DLO3 stability input seed differs")
+        if (
+            raw.get("source_test_opened") is not True
+            or raw.get("primary_eval_enumerated") is not False
+            or raw.get("primary_eval_read") is not False
+            or raw.get("target_authorized") is not False
+            or raw.get("retry_authorized") is not False
+            or raw.get("prob4d_used") is not False
+            or raw.get("held_v8_access") is not False
+        ):
+            raise ValueError("DLO3 stability input custody differs")
+        protocol_identity = _mapping(raw.get("protocol"), label="seed protocol")
+        manifest_identity = _mapping(
+            raw.get("source_manifest"), label="seed source manifest"
+        )
+        protocol_digests.add(str(protocol_identity.get("sha256", "")))
+        manifest_digests.add(str(manifest_identity.get("sha256", "")))
+        normalized[seed] = raw
+    if set(normalized) != set(expected_seeds):
+        raise ValueError("DLO3 stability inputs omit a frozen seed")
+    if (
+        len(protocol_digests) != 1
+        or len(manifest_digests) != 1
+        or any(len(value) != 64 for value in protocol_digests | manifest_digests)
+    ):
+        raise ValueError("DLO3 stability input lineage differs")
+
+    seed_records: list[dict[str, object]] = []
+    seed_passes = 0
+    seed_mean_ratios: list[float] = []
+    case_ratios: list[float] = []
+    for seed in expected_seeds:
+        result = normalized[seed]
+        gate = _mapping(result.get("primary_source_gate"), label="primary source gate")
+        cases = cast(Sequence[Mapping[str, object]], gate.get("cases"))
+        if (
+            gate.get("contract") != "deform-dlo3-robustness-source-gate-v1"
+            or int(cast(Any, gate.get("case_count", -1))) != 8
+            or not isinstance(cases, Sequence)
+            or len(cases) != 8
+        ):
+            raise ValueError("DLO3 seed source gate differs")
+        candidate_mean = float(cast(Any, gate.get("candidate_mean_l1_m", math.nan)))
+        baseline_mean = float(cast(Any, gate.get("baseline_mean_l1_m", math.nan)))
+        if (
+            not math.isfinite(candidate_mean)
+            or not math.isfinite(baseline_mean)
+            or baseline_mean <= 0.0
+        ):
+            raise ValueError("DLO3 seed source mean is invalid")
+        mean_ratio = candidate_mean / baseline_mean
+        maximum_case_ratio = float(cast(Any, gate.get("maximum_case_ratio", math.nan)))
+        if not math.isfinite(maximum_case_ratio) or maximum_case_ratio < 0.0:
+            raise ValueError("DLO3 seed source case ratio is invalid")
+        case_values = [
+            float(cast(Any, case.get("candidate_to_baseline_ratio", math.nan)))
+            for case in cases
+        ]
+        if any(
+            not math.isfinite(value) or value < 0.0 for value in case_values
+        ) or not math.isclose(maximum_case_ratio, max(case_values), abs_tol=1e-15):
+            raise ValueError("DLO3 seed source case records differ")
+        passed = gate.get("passed") is True
+        seed_passes += int(passed)
+        seed_mean_ratios.append(mean_ratio)
+        case_ratios.extend(case_values)
+        seed_records.append(
+            {
+                "seed": seed,
+                "source_gate_passed": passed,
+                "candidate_to_baseline_mean_ratio": mean_ratio,
+                "maximum_case_ratio": maximum_case_ratio,
+            }
+        )
+
+    minimum_passes = int(cast(Any, stability["minimum_seed_source_passes"]))
+    maximum_seed_mean_ratio = float(cast(Any, stability["maximum_seed_mean_ratio"]))
+    maximum_seed_case_ratio = float(cast(Any, stability["maximum_seed_case_ratio"]))
+    passes_requirement = seed_passes >= minimum_passes
+    mean_requirement = max(seed_mean_ratios) <= maximum_seed_mean_ratio
+    case_requirement = max(case_ratios) <= maximum_seed_case_ratio
+    primary_seed = int(cast(Any, training["primary_seed"]))
+    primary_passed = (
+        _mapping(
+            normalized[primary_seed].get("primary_source_gate"),
+            label="primary-seed source gate",
+        ).get("passed")
+        is True
+    )
+    passed = bool(
+        primary_passed and passes_requirement and mean_requirement and case_requirement
+    )
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-training-stability-gate-v1",
+        "protocol_sha256": next(iter(protocol_digests)),
+        "source_manifest_sha256": next(iter(manifest_digests)),
+        "primary_seed": primary_seed,
+        "primary_seed_passed": primary_passed,
+        "seed_source_passes": seed_passes,
+        "minimum_seed_source_passes": minimum_passes,
+        "maximum_seed_mean_ratio": max(seed_mean_ratios),
+        "maximum_seed_case_ratio": max(case_ratios),
+        "seed_passes_requirement": passes_requirement,
+        "seed_mean_ratio_requirement": mean_requirement,
+        "seed_case_ratio_requirement": case_requirement,
+        "passed": passed,
+        "alltrain_fit_authorized": passed,
+        "target_authorized": False,
+        "target_authorization_requires": [
+            "alltrain-fit-and-seal",
+            "physics-solver-sensitivity-audit",
+            "backend-portability-audit",
+            "independent-end-to-end-dry-run",
+            "method-and-environment-attestation",
+        ],
+        "seed_selection": False,
+        "seeds": seed_records,
+        "primary_eval_read": False,
+        "prob4d_used": False,
+        "held_v8_access": False,
+    }
+
+
+def evaluate_deform_backend_source_gate(
+    candidate_predictions: Array,
+    backend_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Evaluate the fixed PyElastica residual-transfer source gate."""
+
+    candidate = _finite_array(candidate_predictions, ndim=4, label="backend candidate")
+    backend = _finite_array(backend_predictions, ndim=4, label="backend baseline")
+    observed = _finite_array(targets, ndim=4, label="backend targets")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != backend.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] != 8
+        or len(normalized_names) != 8
+        or len(set(normalized_names)) != 8
+    ):
+        raise ValueError("DEFORM backend source gate requires eight trajectories")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    backend_errors = np.mean(np.abs(backend - observed), axis=(1, 2, 3))
+    if np.any(backend_errors <= 0.0):
+        raise ValueError("DEFORM backend source error must be positive")
+    ratios = candidate_errors / backend_errors
+    candidate_mean = float(np.mean(candidate_errors))
+    backend_mean = float(np.mean(backend_errors))
+    relative_improvement = 1.0 - candidate_mean / backend_mean
+    wins = int(np.count_nonzero(candidate_errors < backend_errors))
+    maximum_ratio = float(np.max(ratios))
+    contract = _mapping(protocol.get("backend_portability"), label="backend")
+    improvement_passed = relative_improvement >= float(
+        cast(Any, contract["minimum_relative_improvement_over_backend"])
+    )
+    wins_passed = wins >= int(cast(Any, contract["minimum_source_test_wins"]))
+    ratio_passed = maximum_ratio <= float(
+        cast(Any, contract["maximum_source_test_ratio"])
+    )
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-pyelastica-source-gate-v1",
+        "case_count": 8,
+        "candidate_mean_l1_m": candidate_mean,
+        "backend_mean_l1_m": backend_mean,
+        "relative_improvement": relative_improvement,
+        "wins": wins,
+        "maximum_case_ratio": maximum_ratio,
+        "improvement_passed": improvement_passed,
+        "wins_passed": wins_passed,
+        "maximum_case_ratio_passed": ratio_passed,
+        "passed": bool(improvement_passed and wins_passed and ratio_passed),
+        "cases": [
+            {
+                "name": name,
+                "candidate_l1_m": float(candidate_errors[index]),
+                "backend_l1_m": float(backend_errors[index]),
+                "candidate_to_backend_ratio": float(ratios[index]),
+                "candidate_wins": bool(candidate_errors[index] < backend_errors[index]),
+            }
+            for index, name in enumerate(normalized_names)
+        ],
+    }
+
+
+def evaluate_deform_dlo3_target_gate(
+    candidate_predictions: Array,
+    baseline_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Evaluate the preregistered one-shot DLO3 target claim gate."""
+
+    candidate = _finite_array(candidate_predictions, ndim=4, label="target candidate")
+    baseline = _finite_array(baseline_predictions, ndim=4, label="target baseline")
+    observed = _finite_array(targets, ndim=4, label="target outcomes")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != baseline.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] != 14
+        or len(normalized_names) != 14
+        or len(set(normalized_names)) != 14
+    ):
+        raise ValueError("DLO3 target gate requires fourteen unique trajectories")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    baseline_errors = np.mean(np.abs(baseline - observed), axis=(1, 2, 3))
+    if np.any(baseline_errors <= 0.0):
+        raise ValueError("DLO3 target baseline error must be positive")
+    ratios = candidate_errors / baseline_errors
+    candidate_mean = float(np.mean(candidate_errors))
+    baseline_mean = float(np.mean(baseline_errors))
+    relative_improvement = 1.0 - candidate_mean / baseline_mean
+    wins = int(np.count_nonzero(candidate_errors < baseline_errors))
+    maximum_ratio = float(np.max(ratios))
+    target = _mapping(protocol.get("target_evaluation"), label="target evaluation")
+    draw = _integers(
+        target.get("canonical_reference_draw_indices"), label="canonical draw"
+    )
+    if len(draw) != 14 or any(index < 0 or index >= 14 for index in draw):
+        raise ValueError("DLO3 canonical reference draw differs")
+    canonical_mean = float(np.mean(candidate_errors[np.asarray(draw, dtype=np.int64)]))
+    published_reference = float(cast(Any, target["published_reference_l1_m"]))
+    improvement_passed = relative_improvement >= float(
+        cast(Any, target["required_primary_relative_improvement"])
+    )
+    wins_passed = wins >= int(cast(Any, target["required_primary_case_wins"]))
+    ratio_passed = maximum_ratio <= float(
+        cast(Any, target["maximum_primary_case_ratio"])
+    )
+    unique_reference_passed = candidate_mean < published_reference
+    canonical_reference_passed = canonical_mean < published_reference
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-robustness-target-gate-v1",
+        "case_count": 14,
+        "candidate_mean_l1_m": candidate_mean,
+        "baseline_mean_l1_m": baseline_mean,
+        "relative_improvement": relative_improvement,
+        "wins": wins,
+        "maximum_case_ratio": maximum_ratio,
+        "canonical_reference_draw_mean_l1_m": canonical_mean,
+        "published_reference_l1_m": published_reference,
+        "improvement_passed": improvement_passed,
+        "wins_passed": wins_passed,
+        "maximum_case_ratio_passed": ratio_passed,
+        "all_unique_below_published_reference": unique_reference_passed,
+        "canonical_draw_below_published_reference": canonical_reference_passed,
+        "passed": bool(
+            improvement_passed
+            and wins_passed
+            and ratio_passed
+            and unique_reference_passed
+            and canonical_reference_passed
+        ),
+        "cases": [
+            {
+                "name": name,
+                "candidate_l1_m": float(candidate_errors[index]),
+                "baseline_l1_m": float(baseline_errors[index]),
+                "candidate_to_baseline_ratio": float(ratios[index]),
+                "candidate_wins": bool(
+                    candidate_errors[index] < baseline_errors[index]
+                ),
+            }
+            for index, name in enumerate(normalized_names)
+        ],
+    }
