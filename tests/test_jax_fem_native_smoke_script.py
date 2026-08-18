@@ -17,7 +17,9 @@ SCRIPT_PATH = (
 
 
 def _load_script() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("bpt_jax_fem_native_smoke", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "bpt_jax_fem_native_smoke", SCRIPT_PATH
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
