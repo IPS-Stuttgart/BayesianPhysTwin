@@ -1,0 +1,75 @@
+name: Temporary PR 691 CI autofix
+
+on:
+  push:
+    branches:
+      - agent/matphys-portable-identity-v1
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/matphys-portable-identity-v1
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Apply semantic and coverage-suite repairs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path("src/bayesian_phystwin/matphys_portable_identity_v1.py")
+          text = source.read_text(encoding="utf-8")
+          old = "    portable = _normalize_portable_file(record, role=role, spring=spring)\n"
+          new = (
+              "    portable_record = dict(record)\n"
+              "    portable_record.pop(\"path\")\n"
+              "    portable = _normalize_portable_file(\n"
+              "        portable_record, role=role, spring=spring\n"
+              "    )\n"
+          )
+          if old not in text:
+              raise SystemExit("expected local-file normalization line not found")
+          source.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          manifest = Path(".github/quality/test-suites.json")
+          text = manifest.read_text(encoding="utf-8")
+          entry = '      "tests/test_matphys_portable_identity_v1.py",\n'
+          if entry not in text:
+              anchor = '      "tests/test_matphys_official_producer_v1.py",\n'
+              if anchor not in text:
+                  raise SystemExit("stable-core MatPhys manifest anchor not found")
+              text = text.replace(anchor, anchor + entry, 1)
+              manifest.write_text(text, encoding="utf-8")
+          PY
+      - name: Format and test the repaired contract
+        run: |
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff format \
+            src/bayesian_phystwin/_artifact_custody.py \
+            src/bayesian_phystwin/matphys_portable_identity_v1.py \
+            tests/test_matphys_portable_identity_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/_artifact_custody.py \
+            src/bayesian_phystwin/matphys_portable_identity_v1.py \
+            tests/test_matphys_portable_identity_v1.py
+          python -m pytest -q tests/test_matphys_portable_identity_v1.py
+          python tools/quality/test_suite_manifest.py validate
+      - name: Commit repair and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temporary-pr691-ci-autofix.yml
+          git add \
+            .github/quality/test-suites.json \
+            src/bayesian_phystwin/_artifact_custody.py \
+            src/bayesian_phystwin/matphys_portable_identity_v1.py \
+            tests/test_matphys_portable_identity_v1.py
+          git commit -m "Fix PR 691 CI regressions"
+          git push origin HEAD:agent/matphys-portable-identity-v1
