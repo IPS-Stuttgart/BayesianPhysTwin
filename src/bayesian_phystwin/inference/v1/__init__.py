@@ -10,6 +10,7 @@ from ...physical_linearization import PhysicalLinearizationV1
 from ...posterior_covariance_semantics import PosteriorCovarianceSemanticsV1
 from ...prior_aware_gauge_belief import PriorAwareGaugeConfigV1
 from ...prospective_prob4d_update import ClaimBearingProb4DCandidateV1
+from .._anchor_dependence import AnchorDependenceV1
 from .._guarded import (
     GuardedCandidateInference,
     GuardedUpdateResultV1,
@@ -18,6 +19,7 @@ from .._guarded import (
 )
 
 __all__ = [
+    "AnchorDependenceV1",
     "ArtifactBelief",
     "ClaimBearingProb4DCandidateV1",
     "CompleteBeliefGuardDecisionV1",
