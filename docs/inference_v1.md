@@ -190,6 +190,25 @@ matrix, artifact bindings, and routing example.
 This explicit submodule is not re-exported by `bayesian_phystwin.inference.v1`;
 the exact 13-symbol stable namespace remains intentionally small.
 
+## Formal guarantees and executable regressions
+
+The supported boundary now records three narrow formal invariants:
+
+1. rejected complete-belief routing is noninterfering because it returns the
+   exact caller-owned baseline object;
+2. an invertible reparameterization inside the same retained local Gaussian
+   state subspace leaves the mapped posterior unchanged; and
+3. dense and conditional-plus-low-rank representations of the same covariance
+   produce the same linear-query covariance.
+
+The statements, preconditions, and scientific limitations are documented in
+[`formal_guarantees_v1.md`](formal_guarantees_v1.md). Their deterministic
+regressions live in
+`tests/test_portable_contracts_formal_guarantees_v1.py`, which is covered by the
+stable `test_portable_contracts*.py` suite pattern. These checks establish
+software noninterference and algebraic representation parity; they do not
+establish physical accuracy, covariance calibration, or deployment safety.
+
 ## Compatibility contract
 
 The exact ordered export surface is recorded in
