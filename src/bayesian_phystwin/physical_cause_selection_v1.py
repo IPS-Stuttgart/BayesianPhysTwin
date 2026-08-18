@@ -371,10 +371,7 @@ def _resolve_physical_cause(
             reason="source-supported-unique-cause",
         )
 
-    if (
-        policy.ambiguity_fallback
-        is PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY
-    ):
+    if policy.ambiguity_fallback is PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY:
         discrepancy = next(
             (
                 candidate
