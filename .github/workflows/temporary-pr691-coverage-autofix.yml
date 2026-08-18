@@ -1,0 +1,110 @@
+name: Temporary PR 691 coverage autofix
+
+on:
+  push:
+    branches:
+      - agent/matphys-portable-identity-v1
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/matphys-portable-identity-v1
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Add adversarial coverage tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/test_matphys_portable_identity_v1.py")
+          text = path.read_text(encoding="utf-8")
+          import_anchor = "import numpy as np\nimport pytest\n\n"
+          imports = """import numpy as np\nimport pytest\n\nimport bayesian_phystwin.matphys_portable_identity_v1 as portable_identity\nfrom bayesian_phystwin._artifact_custody import (\n    checksum_manifest_text,\n    copy_file_exact,\n    publish_staging_directory,\n)\n\n"""
+          if "from bayesian_phystwin._artifact_custody import" not in text:
+              if import_anchor not in text:
+                  raise SystemExit("test import anchor not found")
+              text = text.replace(import_anchor, imports, 1)
+
+          marker = "def test_shared_artifact_custody_copy_and_overwrite_guards"
+          if marker not in text:
+              text += r'''
+
+
+def test_shared_artifact_custody_copy_and_overwrite_guards(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.bin"
+    source.write_bytes(b"portable-custody-payload")
+    destination = tmp_path / "nested" / "copy.bin"
+
+    copied = copy_file_exact(source, destination)
+    assert copied == destination.resolve()
+    assert copied.read_bytes() == source.read_bytes()
+
+    with pytest.raises(FileExistsError):
+        copy_file_exact(source, destination)
+
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    existing_output = tmp_path / "published"
+    existing_output.mkdir()
+    with pytest.raises(FileExistsError):
+        publish_staging_directory(staging, existing_output)
+
+
+def test_shared_artifact_custody_rejects_bad_checksum_rosters(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "checksum-root"
+    root.mkdir()
+    (root / "payload.bin").write_bytes(b"payload")
+
+    with pytest.raises(ValueError, match="nonempty string"):
+        checksum_manifest_text(root, [""])
+    with pytest.raises(ValueError, match="unique"):
+        checksum_manifest_text(root, ["payload.bin", "payload.bin"])
+
+
+def test_portable_identity_primitive_validators_fail_closed() -> None:
+    with pytest.raises(ValueError, match="JSON object with string keys"):
+        portable_identity._mapping({1: "bad"}, name="value")
+    with pytest.raises(ValueError, match="JSON array"):
+        portable_identity._sequence("not-an-array", name="value")
+    with pytest.raises(ValueError, match="positive integer"):
+        portable_identity._positive_integer(0, name="value")
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        portable_identity._nonnegative_integer(-1, name="value")
+    with pytest.raises(ValueError, match="finite number"):
+        portable_identity._finite_number(True, name="value")
+    with pytest.raises(ValueError, match="finite number"):
+        portable_identity._finite_number(float("nan"), name="value")
+    with pytest.raises(ValueError, match="exactly two integer indices"):
+        portable_identity._frame_range([1], name="value")
+    with pytest.raises(ValueError, match="nonempty nonnegative half-open range"):
+        portable_identity._frame_range([2, 2], name="value")
+'''
+          path.write_text(text, encoding="utf-8")
+          PY
+      - name: Validate focused tests and style
+        run: |
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff check --fix tests/test_matphys_portable_identity_v1.py
+          python -m ruff format tests/test_matphys_portable_identity_v1.py
+          python -m ruff check tests/test_matphys_portable_identity_v1.py
+          python -m pytest -q tests/test_matphys_portable_identity_v1.py
+      - name: Commit repair and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temporary-pr691-coverage-autofix.yml
+          git add tests/test_matphys_portable_identity_v1.py
+          git commit -m "Cover MatPhys artifact custody edge cases"
+          git push origin HEAD:agent/matphys-portable-identity-v1
