@@ -24,8 +24,9 @@ filesystem order of the paper run.
 This audit used only the public paper and source at the already locked upstream
 commit. No DLO2 training trajectory, source outcome, filename, evaluation
 filename, or evaluation value was accessed.
-The machine-readable record is
-`results/sota/deform_dlo2_official_eval_v2/reference_operator_audit.json`.
+The paper-facing machine-readable record is canonical in the private
+[BayesianPhysTwin-Paper evidence bundle](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/evidence/bayesian_phystwin/deform-dlo2-local-residual-official-v7/reference_operator_audit.json).
+This public repository retains the executable protocol and audit description.
 
 ## Frozen reporting operators
 

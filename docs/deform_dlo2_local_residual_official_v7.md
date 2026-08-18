@@ -23,3 +23,8 @@ Target selection, calibration, retries, and case replacement are forbidden. A
 runtime failure after target opening is sealed and cannot authorize a retry.
 
 Protocol: `configs/sota/deform_dlo2_local_residual_official_v7.json`.
+
+This public document defines the executable protocol only. The final compact
+outcome, published-operator audit, custody record, and interpretation are
+canonical in the private
+[BayesianPhysTwin-Paper record](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform_dlo2_local_residual_official_v7_result.md).

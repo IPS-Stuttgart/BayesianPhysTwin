@@ -37,5 +37,7 @@ correct conclusion is that the frozen 6,400-update route failed. It would not
 falsify DEFORM under the public nominal training budget.
 
 The checksummed source facts, arithmetic, and information boundary are recorded
-in
-`results/sota/deform_dlo2_official_eval_v2/reference_operator_audit.json`.
+in the private
+[BayesianPhysTwin-Paper evidence bundle](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/evidence/bayesian_phystwin/deform-dlo2-local-residual-official-v7/reference_operator_audit.json).
+The public repository retains this audit description and the executable
+protocols.
