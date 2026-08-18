@@ -608,7 +608,14 @@ def _run_native_replay(
     )
 
 
-def _git_provenance(repo_root: Path) -> dict[str, Any]:
+def _git_provenance(
+    repo_root: Path,
+    *,
+    source_paths: tuple[str, ...] = (
+        "src/bayesian_phystwin/genesis_mpm_source_qualification_v1.py",
+        "scripts/remote/run_genesis_mpm_source_qualification_v1.py",
+    ),
+) -> dict[str, Any]:
     head = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=repo_root,
@@ -625,10 +632,6 @@ def _git_provenance(repo_root: Path) -> dict[str, Any]:
         text=True,
     ).stdout
     _require(status == "", "source qualification requires a clean Git worktree")
-    source_paths = (
-        "src/bayesian_phystwin/genesis_mpm_source_qualification_v1.py",
-        "scripts/remote/run_genesis_mpm_source_qualification_v1.py",
-    )
     return {
         "git_head": head,
         "git_worktree_clean": True,
