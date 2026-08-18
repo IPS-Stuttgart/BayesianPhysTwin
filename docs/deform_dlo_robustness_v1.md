@@ -35,9 +35,12 @@ passes. Failure leaves the official DEFORM candidate unchanged.
 The Bayesian audit leaves the point mean unchanged and adds full 3x3
 coordinate covariance from trajectory-clustered coefficient and residual
 uncertainty. Nine calibration trajectories set the 90% scale by the maximum
-trajectory score. Diagonal, coefficient-only, residual-only, pooled-isotropic,
-uncalibrated full-covariance, and calibrated full-covariance distributions are
-all compared without target selection. Temporal independence is not claimed.
+trajectory score. The seven frozen arms are current conservative diagonal,
+shrinkage-propagated diagonal, coefficient-only, residual-only,
+pooled-isotropic, uncalibrated full covariance, and calibrated full covariance.
+Every covariance is constructed and sealed before scoring, every arm is
+required to preserve the point mean exactly, and none may be selected from
+source-test or target outcomes. Temporal independence is not claimed.
 
 Outcome-bearing compact artifacts belong only in the private
 `BayesianPhysTwin-Paper` repository. The public repository retains executable
