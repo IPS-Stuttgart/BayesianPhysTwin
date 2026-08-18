@@ -1,9 +1,9 @@
-# SOFA, MuJoCo, and PBD material replay adapters v1
+# SOFA, MuJoCo, PBD, and Warp FEM material replay adapters v1
 
 ## Purpose
 
-`material_trajectory_engine_replays_v1` closes three concrete engine-integration
-gaps without changing the portable material-trajectory contract or adding heavy
+`material_trajectory_engine_replays_v1` closes concrete engine-integration gaps
+without changing the portable material-trajectory contract or adding heavy
 runtime dependencies to BayesianPhysTwin.
 
 It provides dependency-free replay shims for:
@@ -12,20 +12,22 @@ It provides dependency-free replay shims for:
   registered `Sofa.Simulation.animate(root, dt)` step;
 - **MuJoCo Flex** through the exact per-flex slice of `data.flexvert_xpos`, using
   `model.flex_vertadr` and `model.flex_vertnum`, with one registered
-  `mujoco.mj_step(model, data)` step; and
+  `mujoco.mj_step(model, data)` step;
 - **PositionBasedDynamics / XPBD** through pyPBD
   `SimulationModel.getParticles().getVertices()` and one registered
-  `TimeStep.step(simulation_model)` step.
+  `TimeStep.step(simulation_model)` step; and
+- **Warp FEM** through a degree-1 FEM `DiscreteField.dof_values` displacement
+  roster plus the frozen reference positions in the exact same node order.
 
 The module imports none of those simulator packages. Callers construct native
-engine objects and inject them into the structural adapters. The resulting replay
+engine objects and inject them into the structural adapters. The resulting
 objects satisfy `MaterialTrajectoryReplayV1` and can be passed directly to
 `produce_material_trajectory_backend`.
 
 This is **adapter coverage**, not backend qualification. It does not change the
-backend portfolio evidence stages, promote any adapter to an active qualification
-slot, or make any source-value, calibration, target-transfer, Prob4D-benefit, or
-Causal4D-benefit claim.
+backend portfolio evidence stages, promote any adapter to an active
+qualification slot, or make any source-value, calibration, target-transfer,
+Prob4D-benefit, or Causal4D-benefit claim.
 
 ## SOFA FEM
 
@@ -53,9 +55,10 @@ def build_replay():
 ```
 
 The adapter reads `mechanical_object.position.value`, requires floating finite
-`(N, 3)` coordinates, returns an owning contiguous copy, and advances exactly the
-registered `time_step_s`. CPU SOFA normally needs no explicit synchronization;
-a caller can provide `synchronize_callback` when its integration requires one.
+`(N, 3)` coordinates, returns an owning contiguous copy, and advances exactly
+the registered `time_step_s`. CPU SOFA normally needs no explicit
+synchronization; a caller can provide `synchronize_callback` when its integration
+requires one.
 
 The registered mechanical state must already be expressed in metres in
 `right-handed-z-up-world-v1`. Unit conversion and frame conversion belong in the
@@ -93,15 +96,15 @@ non-finite or non-floating positions, and slices that exceed the runtime data
 array.
 
 As with SOFA, the selected positions must already have the physical units and
-coordinate frame required by the portable contract. Do not replace Flex vertices
-with render mesh, skin, or contact-only coordinates.
+coordinate frame required by the portable contract. Do not replace Flex
+vertices with render mesh, skin, or contact-only coordinates.
 
 ## PositionBasedDynamics / XPBD
 
 The registered PBD identity is the global simulation-particle order. At the
 pinned upstream revision, pyPBD exposes that state directly through
-`SimulationModel.getParticles()` and `ParticleData.getVertices()` and exposes the
-native time-step surface as `TimeStep.step(SimulationModel)`.
+`SimulationModel.getParticles()` and `ParticleData.getVertices()` and exposes
+the native time-step surface as `TimeStep.step(SimulationModel)`.
 
 ```python
 from bayesian_phystwin.material_trajectory_engine_replays_v1 import (
@@ -126,8 +129,59 @@ must retain the frame-zero shape and identity.
 
 A qualifying PBD runtime must additionally bind the exact simulation-model
 construction, complete constraint graph, solver parameters, collision setup,
-assets, substeps, time step, and pyPBD/PositionBasedDynamics revision. The adapter
-itself does not infer those semantics from particle coordinates.
+assets, substeps, time step, and pyPBD/PositionBasedDynamics revision. The
+adapter itself does not infer those semantics from particle coordinates.
+
+## Warp FEM displacement fields
+
+`WarpFEMDisplacementReplayV1` addresses the common Warp FEM representation in
+which a vector-valued `DiscreteField` stores **displacements** at finite-element
+degrees of freedom rather than absolute material positions.
+
+```python
+from bayesian_phystwin.material_trajectory_engine_replays_v1 import (
+    WarpFEMDisplacementReplayV1,
+)
+
+
+def build_replay():
+    scene = build_fresh_warp_fem_scene()
+    return WarpFEMDisplacementReplayV1(
+        displacement_field=scene.displacement_field,
+        reference_positions_m=scene.reference_node_positions_m,
+        step_callback=scene.step_one_output_interval,
+        synchronize_callback=scene.synchronize,
+        context=scene,
+    )
+```
+
+The adapter is intentionally narrow:
+
+- `displacement_field.degree` must be exactly one;
+- `displacement_field.dof_values` must expose Warp's `numpy()` host-transfer
+  surface;
+- `reference_positions_m` is copied and frozen at construction;
+- the reference and displacement rosters must both be finite floating `(N, 3)`
+  arrays and retain the same shape; and
+- each capture returns
+  `reference_positions_m + displacement_field.dof_values`.
+
+Degree one is required because `warp-fem-v1` registers persistent FEM
+**mesh-node** identity. Higher-order fields introduce additional interpolation
+DOFs whose rows are not identical to a simple mesh-node roster. A higher-order
+profile would need an explicit, separately reviewed identity contract rather
+than silently reusing `warp-fem-v1`.
+
+The reference roster must correspond to the exact space partition and row order
+of `dof_values`. For a qualifying runtime, bind the basis/function-space
+construction, partition, topology, quadrature, constitutive law, contact setup,
+integrator/solver, step/substep policy, device/stream identity, and exact Warp
+revision. The adapter cannot infer those facts from the arrays alone.
+
+The caller should still provide an explicit synchronization callback for the
+stream/device used by the solver. Warp's native array `numpy()` path performs a
+host transfer, but the replay contract keeps synchronization explicit so custom
+stream ownership and producer provenance remain auditable.
 
 ## Portable producer integration
 
@@ -141,7 +195,7 @@ from bayesian_phystwin.material_trajectory_producer_v1 import (
 
 artifact = produce_material_trajectory_backend(
     output_dir=output_dir,
-    backend_kind="position-based-dynamics-v1",
+    backend_kind="warp-fem-v1",
     replay_factory=build_replay,
     driven_control=driven_control,
     zero_action_control=zero_action_control,
@@ -160,24 +214,25 @@ and Causal4D.
 ## Why these adapters
 
 SOFA exposes a standardized material-state and animation surface and is a useful
-independent FEM reference. MuJoCo exposes a stable, explicit Flex-vertex state and
-offers a fast controls-oriented deformable baseline. pyPBD exposes the global
-particle array used by its rope, rod, cloth, and soft-body models, making the
-registered XPBD/PBD family concrete without introducing another artifact type.
+independent FEM reference. MuJoCo exposes a stable, explicit Flex-vertex state
+and offers a fast controls-oriented deformable baseline. pyPBD exposes the
+global particle array used by its rope, rod, cloth, and soft-body models.
+Warp's FEM field API provides an especially direct path from a displacement DOF
+roster to the registered mesh-node material contract without importing Warp into
+the base package.
 
-Warp remains better served by `CallbackMaterialTrajectoryReplayV1`: Warp is a
-kernel framework and does not define one universal deformable-state object whose
-semantics justify a single canonical adapter. PhysX is also intentionally left on
-an explicit producer-side boundary for now: its authoritative deformable-volume
-simulation positions are GPU device buffers and require engine/CUDA-specific
-synchronization and host-copy ownership. Wrapping that copy in a nominally
-"dependency-free" class would not remove the actual integration obligation.
+PhysX remains on an explicit producer-side boundary for now: its authoritative
+deformable-volume simulation positions are GPU device buffers and require
+engine/CUDA-specific synchronization and host-copy ownership. Wrapping that copy
+in a nominally dependency-free class would not remove the actual integration
+obligation.
 
 ## Scientific next step
 
-The portfolio policy still makes JAX-FEM and Genesis MPM the active qualification
-candidates. These SOFA, MuJoCo, and PBD shims improve implementation coverage
-while those two candidates advance from native execution to source physics and
-matched source-value evidence. Another backend should enter the active
-qualification funnel only after a slot opens or materially stronger source-side
-evidence justifies replacing a current candidate.
+The portfolio policy still makes JAX-FEM and Genesis MPM the active
+qualification candidates. These SOFA, MuJoCo, PBD, and Warp shims improve
+implementation coverage while those two candidates advance from native
+execution to source physics and matched source-value evidence. Another backend
+should enter the active qualification funnel only after a slot opens or
+materially stronger source-side evidence justifies replacing a current
+candidate.
