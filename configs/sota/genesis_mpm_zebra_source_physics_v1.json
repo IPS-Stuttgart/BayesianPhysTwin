@@ -48,7 +48,7 @@
     "refined_substeps": 128,
     "grid_density": 32,
     "particle_size_m": 0.005,
-    "domain_padding_m": 0.05,
+    "domain_padding_m": 0.15,
     "gravity_m_s2": [0.0, 0.0, 0.0],
     "constitutive_model": "neohooken",
     "base_young_modulus_pa": 100000.0,
@@ -57,7 +57,8 @@
     "poisson_ratio": 0.35,
     "density_kg_m3": 1000.0,
     "rigid_translation_m": [0.17, -0.11, 0.09],
-    "nowhere_activation_policy": "set-particles-active-then-mark-forward-active-v1"
+    "nowhere_activation_policy": "set-particles-active-then-mark-forward-active-v1",
+    "controller_boundary_policy": "frame-boundary-position-velocity-overwrite-free-particles-v1"
   },
   "gates": {
     "maximum_zero_action_drift_m": 0.0005,

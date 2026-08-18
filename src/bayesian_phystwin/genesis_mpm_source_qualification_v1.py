@@ -91,6 +91,7 @@ _SIMULATION_FIELDS: Final = frozenset(
         "density_kg_m3",
         "rigid_translation_m",
         "nowhere_activation_policy",
+        "controller_boundary_policy",
     }
 )
 _GATE_FIELDS: Final = frozenset(
@@ -333,6 +334,11 @@ def load_genesis_source_physics_protocol_v1(
         == "set-particles-active-then-mark-forward-active-v1",
         "Nowhere activation policy changed",
     )
+    _require(
+        simulation["controller_boundary_policy"]
+        == "frame-boundary-position-velocity-overwrite-free-particles-v1",
+        "controller boundary policy changed",
+    )
     poisson = _finite(simulation["poisson_ratio"], name="poisson_ratio")
     _require(-1.0 < poisson < 0.5, "poisson_ratio is invalid")
 
@@ -545,9 +551,6 @@ def _run_native_replay(
     entity.active = True
     entity.set_particles_pos(torch.as_tensor(shifted_points, dtype=torch.float64), all_indices)
     entity.set_particles_vel(torch.zeros((len(shifted_points), 3), dtype=torch.float64), all_indices)
-    free = torch.ones(len(shifted_points), dtype=torch.bool)
-    free[torch.as_tensor(attachment_indices, dtype=torch.int64)] = False
-    entity.set_free(free)
 
     frame_count = len(shifted_targets)
     positions: list[npt.NDArray[Any]] = []
@@ -573,6 +576,12 @@ def _run_native_replay(
         entity.set_particles_pos(torch.as_tensor(target, dtype=torch.float64), attached_tensor)
         entity.set_particles_vel(torch.as_tensor(velocity, dtype=torch.float64), attached_tensor)
         scene.step()
+        # The registered attachment is exact at observation boundaries. Keeping
+        # these particles free during the substeps lets their prescribed
+        # velocity enter P2G; Genesis defines non-free particles as zero-velocity
+        # grid boundaries and would otherwise erase the action.
+        entity.set_particles_pos(torch.as_tensor(target, dtype=torch.float64), attached_tensor)
+        entity.set_particles_vel(torch.as_tensor(velocity, dtype=torch.float64), attached_tensor)
         record()
     return _NativeReplay(
         positions_m=cast(FloatArray, np.ascontiguousarray(np.stack(positions))),
@@ -894,6 +903,7 @@ def run_genesis_mpm_source_qualification_v1(
             "parameter_sensitivity_is_a_physical_sanity_gate": True,
             "rigid_equivariance_probe": "translation-only",
             "nowhere_activation_policy": simulation["nowhere_activation_policy"],
+            "controller_boundary_policy": simulation["controller_boundary_policy"],
             "gradient_claim": "none",
         },
     )

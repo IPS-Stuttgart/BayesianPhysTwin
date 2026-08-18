@@ -33,6 +33,11 @@ def test_frozen_protocol_loads_and_binds_two_independent_groups() -> None:
     assert protocol.protocol_sha256 == file_sha256(PROTOCOL)
     assert protocol.simulation["base_substeps"] == 64
     assert protocol.simulation["refined_substeps"] == 128
+    assert protocol.simulation["domain_padding_m"] == 0.15
+    assert (
+        protocol.simulation["controller_boundary_policy"]
+        == "frame-boundary-position-velocity-overwrite-free-particles-v1"
+    )
     assert protocol.value["information_boundary"]["source_object_outcomes_allowed"] is False
 
 

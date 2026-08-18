@@ -34,6 +34,16 @@ reported Genesis's stability recommendation, so v1 uses 64 base substeps and
 128 refinement substeps at 30 Hz; both lie below the reported maximum stable
 substep duration.
 
+That first physics attempt also exposed a distinct semantic mismatch before any
+object outcome was opened. Genesis implements `free=False` MPM particles as
+zero-velocity grid boundaries. Using that flag for moving attachments therefore
+erased their actuation velocity, produced no Young's-modulus sensitivity, and
+left the source-value gate closed. The amended bridge keeps all particles free
+during MPM substeps and overwrites registered attachment positions and
+velocities at each 30 Hz frame boundary. This is the only controller-boundary
+arm in v1. Domain padding is 0.15 m so the exact source roster remains beyond
+Genesis's grid safety margin.
+
 ## Frozen probes
 
 For the first ten action frames, the runner executes:
