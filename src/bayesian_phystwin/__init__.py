@@ -14,6 +14,7 @@ export is removed by this policy, and removal is not scheduled before 0.6.
 from __future__ import annotations
 
 import warnings
+from collections.abc import Iterator, Mapping, Sequence
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, Final
 
@@ -26,20 +27,45 @@ _SOURCE_FALLBACK_VERSION: Final[str] = "0.4.0"
 _WARNED_ROOT_EXPORTS: set[str] = set()
 
 
-class _LazyRootExportNames:
-    """Sequence-like historical export roster loaded only when inspected."""
+class _LazyRootExportModules(Mapping[str, str]):
+    """Historical root-owner mapping loaded only when inspected."""
+
+    _mapping: dict[str, str] | None = None
+
+    def _load(self) -> dict[str, str]:
+        mapping = self._mapping
+        if mapping is None:
+            helper = import_module("._root_exports_v0_4", __name__)
+            mapping = dict(helper._ROOT_EXPORT_MODULES)
+            self._mapping = mapping
+        return mapping
+
+    def __getitem__(self, key: str) -> str:
+        return self._load()[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._load())
+
+    def __len__(self) -> int:
+        return len(self._load())
+
+
+_ROOT_EXPORT_MODULES: Mapping[str, str] = _LazyRootExportModules()
+
+
+class _LazyRootExportNames(Sequence[str]):
+    """Historical export roster loaded only when inspected."""
 
     _names: tuple[str, ...] | None = None
 
     def _load(self) -> tuple[str, ...]:
         names = self._names
         if names is None:
-            helper = import_module("._root_exports_v0_4", __name__)
-            names = tuple(helper.__all__)
+            names = tuple(_ROOT_EXPORT_MODULES)
             self._names = names
         return names
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._load())
 
     def __len__(self) -> int:
@@ -49,7 +75,7 @@ class _LazyRootExportNames:
         return self._load()[index]
 
 
-__all__ = _LazyRootExportNames()
+__all__: Sequence[str] = _LazyRootExportNames()
 
 
 def _project_version() -> str:
@@ -99,8 +125,7 @@ def _warn_historical_root_export(name: str, module_name: str) -> None:
 def __getattr__(name: str) -> Any:
     """Resolve one historical package-root export on first use."""
 
-    helper = import_module("._root_exports_v0_4", __name__)
-    module_name = helper._ROOT_EXPORT_MODULES.get(name)
+    module_name = _ROOT_EXPORT_MODULES.get(name)
     if module_name is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
