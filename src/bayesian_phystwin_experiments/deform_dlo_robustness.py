@@ -24,6 +24,15 @@ from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 DEFORM_DLO_ROBUSTNESS_CONTRACT = "deform-dlo-robustness-v1"
 DEFORM_DLO_ROBUSTNESS_DOMAIN = b"deform-dlo3-robustness-v1\0"
 DEFORM_LOCAL_FEATURE_COUNT = 92
+DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS = (
+    "current-diagonal-conservative-v1",
+    "shrinkage-propagated-diagonal",
+    "coefficient-only",
+    "residual-only",
+    "pooled-isotropic",
+    "trajectory-clustered-full-coordinate-covariance-v1",
+    "calibrated-full-coordinate-covariance-v1",
+)
 Array = np.ndarray[Any, Any]
 
 
@@ -240,6 +249,12 @@ def load_deform_dlo_robustness_v1_protocol(path: str | Path) -> dict[str, object
         or bayesian.get("temporal_independence_claimed") is not False
         or int(cast(Any, bayesian.get("calibration_partition_count", -1))) != 9
         or int(cast(Any, bayesian.get("calibration_rank", -1))) != 9
+        or _strings(
+            bayesian.get("ablation_distributions"),
+            label="Bayesian ablation distributions",
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or bayesian.get("distribution_selection_from_target") is not False
         or target.get("partition") != "DLO3/eval"
         or target.get("one_shot") is not True
         or float(cast(Any, target.get("published_reference_l1_m", math.nan))) != 0.0077
@@ -804,6 +819,160 @@ def predict_deform_local_residual_full_covariance(
         "coordinate_variance_m2": np.diagonal(
             coordinate_covariance, axis1=-2, axis2=-1
         ).copy(),
+    }
+
+
+def deform_bayesian_covariance_archive_key(label: str) -> str:
+    """Return the deterministic NPZ key for one frozen covariance arm."""
+
+    if label not in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS:
+        raise ValueError(f"unsupported DEFORM Bayesian covariance arm: {label}")
+    return f"bayesian_covariance_m2__{label.replace('-', '_')}"
+
+
+def _diagonal_coordinate_covariance(coordinate_variance_m2: Array) -> Array:
+    variance = _finite_array(
+        coordinate_variance_m2,
+        ndim=4,
+        label="diagonal coordinate variance",
+    )
+    covariance = np.zeros((*variance.shape, 3), dtype=np.float64)
+    coordinate = np.arange(3)
+    covariance[..., coordinate, coordinate] = variance
+    return covariance
+
+
+def build_deform_bayesian_covariance_ablation_v1(
+    model: Mapping[str, object],
+    initial_states: Array,
+    clamped_action: Array,
+    baseline_predictions: Array,
+    *,
+    shrinkage: float,
+    variance_scale: float,
+) -> dict[str, dict[str, Array]]:
+    """Build every frozen covariance arm without changing the point prediction.
+
+    The pooled arm uses only the query covariances, never outcomes. Coefficient-only
+    and residual-only retain the unresolved-shrinkage term and variance floor so
+    that each arm remains a valid predictive distribution.
+    """
+
+    if not math.isfinite(shrinkage) or not 0.0 < shrinkage <= 1.0:
+        raise ValueError("DEFORM Bayesian ablation shrinkage is invalid")
+    baseline = _finite_array(
+        baseline_predictions,
+        ndim=4,
+        label="Bayesian ablation baseline",
+    )
+    floor = float(cast(Any, model.get("variance_floor_m2", math.nan)))
+    if not math.isfinite(floor) or floor <= 0.0:
+        raise ValueError("DEFORM Bayesian ablation variance floor is invalid")
+
+    diagonal = predict_deform_local_residual(
+        dict(model),
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    unshrunk_diagonal = predict_deform_local_residual(
+        dict(model),
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=1.0,
+    )
+    full = predict_deform_local_residual_full_covariance(
+        model,
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    point_mean = np.asarray(full["predictions"])
+    if not np.array_equal(point_mean, np.asarray(diagonal["predictions"])):
+        raise RuntimeError("DEFORM Bayesian covariance arms changed the point mean")
+
+    internal = slice(2, -2)
+    shrinkage_variance = np.zeros_like(baseline)
+    modeled_variance = np.maximum(
+        np.asarray(unshrunk_diagonal["coordinate_variance_m2"])[:, :, internal] - floor,
+        0.0,
+    )
+    correction = (point_mean[:, :, internal] - baseline[:, :, internal]) / shrinkage
+    unresolved_variance = np.square((1.0 - shrinkage) * correction)
+    shrinkage_variance[:, :, internal] = (
+        np.square(shrinkage) * modeled_variance + unresolved_variance + floor
+    )
+
+    coefficient_model = dict(model)
+    coefficient_model["residual_covariance_full"] = np.zeros_like(
+        np.asarray(model.get("residual_covariance_full")), dtype=np.float64
+    )
+    coefficient_only = predict_deform_local_residual_full_covariance(
+        coefficient_model,
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    residual_model = dict(model)
+    residual_model["coefficient_covariance_full"] = np.zeros_like(
+        np.asarray(model.get("coefficient_covariance_full")), dtype=np.float64
+    )
+    residual_only = predict_deform_local_residual_full_covariance(
+        residual_model,
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+
+    full_covariance = np.asarray(full["coordinate_covariance_m2"])
+    internal_full_covariance = full_covariance[:, :, internal]
+    pooled_variance = float(
+        np.mean(np.trace(internal_full_covariance, axis1=-2, axis2=-1) / 3.0)
+    )
+    if not math.isfinite(pooled_variance) or pooled_variance <= 0.0:
+        raise RuntimeError("DEFORM pooled covariance is nonpositive")
+    pooled_covariance = np.zeros_like(full_covariance)
+    pooled_covariance[:, :, internal] = pooled_variance * np.eye(3, dtype=np.float64)
+
+    covariances = {
+        "current-diagonal-conservative-v1": _diagonal_coordinate_covariance(
+            np.asarray(diagonal["coordinate_variance_m2"])
+        ),
+        "shrinkage-propagated-diagonal": _diagonal_coordinate_covariance(
+            shrinkage_variance
+        ),
+        "coefficient-only": np.asarray(coefficient_only["coordinate_covariance_m2"]),
+        "residual-only": np.asarray(residual_only["coordinate_covariance_m2"]),
+        "pooled-isotropic": pooled_covariance,
+        "trajectory-clustered-full-coordinate-covariance-v1": full_covariance,
+        "calibrated-full-coordinate-covariance-v1": (
+            scale_deform_coordinate_covariance(full_covariance, variance_scale)
+        ),
+    }
+    if tuple(covariances) != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS:
+        raise RuntimeError("DEFORM Bayesian covariance arm order differs")
+
+    predictions = (
+        np.asarray(diagonal["predictions"]),
+        np.asarray(coefficient_only["predictions"]),
+        np.asarray(residual_only["predictions"]),
+    )
+    if any(not np.array_equal(point_mean, values) for values in predictions):
+        raise RuntimeError("DEFORM Bayesian ablation point means differ")
+    return {
+        label: {
+            "predictions": point_mean,
+            "coordinate_covariance_m2": covariance,
+            "coordinate_variance_m2": np.diagonal(
+                covariance, axis1=-2, axis2=-1
+            ).copy(),
+        }
+        for label, covariance in covariances.items()
     }
 
 

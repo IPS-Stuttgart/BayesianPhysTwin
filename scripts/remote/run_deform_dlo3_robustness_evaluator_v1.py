@@ -21,11 +21,12 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     deserialize_deform_local_residual_model,
 )
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
+    DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
+    build_deform_bayesian_covariance_ablation_v1,
+    deform_bayesian_covariance_archive_key,
     evaluate_deform_dlo3_target_gate,
     evaluate_deform_predictive_distribution,
     load_deform_dlo_robustness_v1_protocol,
-    predict_deform_local_residual_full_covariance,
-    scale_deform_coordinate_covariance,
     validate_deform_dlo3_source_manifest,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
@@ -313,25 +314,38 @@ def main() -> int:
             node_count=12,
         )
         initial, action = local_runtime._causal_inputs(trajectories, names)
-        prediction = predict_deform_local_residual_full_covariance(
+        bayesian_predictions = build_deform_bayesian_covariance_ablation_v1(
             full_model,
             initial,
             action,
             np.asarray(baseline_rollout["predictions"]),
             shrinkage=float(cast(Any, method["shrinkage"])),
+            variance_scale=float(cast(Any, method["variance_scale"])),
         )
-        calibrated_covariance = scale_deform_coordinate_covariance(
-            prediction["coordinate_covariance_m2"],
-            float(cast(Any, method["variance_scale"])),
+        prediction = bayesian_predictions[
+            "trajectory-clustered-full-coordinate-covariance-v1"
+        ]
+        calibrated_covariance = np.asarray(
+            bayesian_predictions["calibrated-full-coordinate-covariance-v1"][
+                "coordinate_covariance_m2"
+            ]
         )
         predictions_path = output_root / "predictions.npz"
-        np.savez_compressed(
-            predictions_path,
-            names=np.asarray(names),
-            baseline=baseline_rollout["predictions"],
-            candidate=prediction["predictions"],
-            calibrated_coordinate_covariance_m2=calibrated_covariance,
+        prediction_payload: dict[str, Any] = {
+            "names": np.asarray(names),
+            "baseline": baseline_rollout["predictions"],
+            "candidate": prediction["predictions"],
+            "calibrated_coordinate_covariance_m2": calibrated_covariance,
+        }
+        prediction_payload.update(
+            {
+                deform_bayesian_covariance_archive_key(label): np.asarray(
+                    values["coordinate_covariance_m2"]
+                )
+                for label, values in bayesian_predictions.items()
+            }
         )
+        np.savez_compressed(predictions_path, **prediction_payload)
         prediction_seal = {
             "schema_version": 1,
             "contract": "deform-dlo3-robustness-evaluator-prediction-seal-v1",
@@ -339,6 +353,14 @@ def main() -> int:
             "authorization": _identity(authorization_path),
             "panel_manifest": panel_identity,
             "predictions": _identity(predictions_path),
+            "bayesian_ablation_distributions": list(
+                DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+            ),
+            "bayesian_covariance_archive_keys": {
+                label: deform_bayesian_covariance_archive_key(label)
+                for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+            },
+            "bayesian_point_means_identical": True,
             "outcomes_scored": False,
             "target_retries": False,
         }
@@ -346,11 +368,25 @@ def main() -> int:
         _write_json(prediction_seal_path, prediction_seal)
 
         targets = np.asarray(baseline_rollout["targets"])
-        distribution = evaluate_deform_predictive_distribution(
-            prediction["predictions"],
-            targets,
-            calibrated_covariance,
-        )
+        bayesian_distributions = {
+            label: evaluate_deform_predictive_distribution(
+                values["predictions"],
+                targets,
+                values["coordinate_covariance_m2"],
+            )
+            for label, values in bayesian_predictions.items()
+        }
+        distribution = bayesian_distributions[
+            "calibrated-full-coordinate-covariance-v1"
+        ]
+        bayesian_audit = {
+            "primary_distribution": "calibrated-full-coordinate-covariance-v1",
+            "distributions": bayesian_distributions,
+            "point_mean_unchanged": True,
+            "distribution_selection": "none",
+            "target_outcomes_used_for_distribution_construction": False,
+            "target_outcomes_used_for_distribution_selection": False,
+        }
         if args.mode == "dry-run":
             result = {
                 "schema_version": 1,
@@ -360,6 +396,7 @@ def main() -> int:
                 "prediction_seal": _identity(prediction_seal_path),
                 "pipeline_passed": True,
                 "distribution": distribution,
+                "bayesian_audit": bayesian_audit,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,
@@ -390,6 +427,7 @@ def main() -> int:
                 "prediction_seal": _identity(prediction_seal_path),
                 "target_gate": gate,
                 "distribution": distribution,
+                "bayesian_audit": bayesian_audit,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,

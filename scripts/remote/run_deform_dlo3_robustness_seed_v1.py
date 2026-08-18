@@ -24,15 +24,17 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     serialize_deform_local_residual_model,
 )
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
+    DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     augment_deform_local_residual_full_covariance,
+    build_deform_bayesian_covariance_ablation_v1,
     calibrate_deform_full_covariance,
+    deform_bayesian_covariance_archive_key,
     evaluate_deform_dlo3_source_gate,
     evaluate_deform_predictive_distribution,
     fit_deform_local_residual_variant,
     load_deform_dlo_robustness_v1_protocol,
     predict_deform_local_residual_full_covariance,
     predict_deform_local_residual_variant,
-    scale_deform_coordinate_covariance,
     validate_deform_dlo3_source_manifest,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
@@ -564,16 +566,21 @@ def main() -> int:
         source_test_trajectories, source_test_names
     )
     shrinkage = float(cast(Any, residual["shrinkage"]))
-    source_prediction = predict_deform_local_residual_full_covariance(
+    bayesian_predictions = build_deform_bayesian_covariance_ablation_v1(
         full_model,
         source_initial,
         source_action,
         np.asarray(source_rollout["predictions"]),
         shrinkage=shrinkage,
+        variance_scale=float(cast(Any, calibration["variance_scale"])),
     )
-    calibrated_covariance = scale_deform_coordinate_covariance(
-        source_prediction["coordinate_covariance_m2"],
-        float(cast(Any, calibration["variance_scale"])),
+    source_prediction = bayesian_predictions[
+        "trajectory-clustered-full-coordinate-covariance-v1"
+    ]
+    calibrated_covariance = np.asarray(
+        bayesian_predictions["calibrated-full-coordinate-covariance-v1"][
+            "coordinate_covariance_m2"
+        ]
     )
     mechanism_predictions = {
         "physical-only": np.asarray(source_rollout["predictions"]),
@@ -631,6 +638,14 @@ def main() -> int:
             for label, values in mechanism_predictions.items()
         }
     )
+    prediction_payload.update(
+        {
+            deform_bayesian_covariance_archive_key(label): np.asarray(
+                prediction["coordinate_covariance_m2"]
+            )
+            for label, prediction in bayesian_predictions.items()
+        }
+    )
     np.savez_compressed(predictions_path, **cast(dict[str, Any], prediction_payload))
     prediction_seal = {
         "schema_version": 1,
@@ -639,6 +654,14 @@ def main() -> int:
         "method_seal": _identity(method_seal_path),
         "predictions": _identity(predictions_path),
         "source_test_case_count": len(source_test_names),
+        "bayesian_ablation_distributions": list(
+            DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        ),
+        "bayesian_covariance_archive_keys": {
+            label: deform_bayesian_covariance_archive_key(label)
+            for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        },
+        "bayesian_point_means_identical": True,
         "source_outcomes_scored": False,
         "official_eval_read": False,
     }
@@ -664,16 +687,20 @@ def main() -> int:
         )
         for label, values in mechanism_predictions.items()
     }
-    raw_distribution = evaluate_deform_predictive_distribution(
-        np.asarray(source_prediction["predictions"]),
-        targets,
-        np.asarray(source_prediction["coordinate_covariance_m2"]),
-    )
-    calibrated_distribution = evaluate_deform_predictive_distribution(
-        np.asarray(source_prediction["predictions"]),
-        targets,
-        calibrated_covariance,
-    )
+    bayesian_distributions = {
+        label: evaluate_deform_predictive_distribution(
+            np.asarray(prediction["predictions"]),
+            targets,
+            np.asarray(prediction["coordinate_covariance_m2"]),
+        )
+        for label, prediction in bayesian_predictions.items()
+    }
+    raw_distribution = bayesian_distributions[
+        "trajectory-clustered-full-coordinate-covariance-v1"
+    ]
+    calibrated_distribution = bayesian_distributions[
+        "calibrated-full-coordinate-covariance-v1"
+    ]
     compute_matched_l1_m = _mean_l1(np.asarray(compute_rollout["predictions"]), targets)
     result = {
         "schema_version": 1,
@@ -699,7 +726,10 @@ def main() -> int:
             "calibration": calibration_record,
             "uncalibrated": raw_distribution,
             "calibrated": calibrated_distribution,
+            "distributions": bayesian_distributions,
             "point_mean_unchanged": True,
+            "distribution_selection": "none",
+            "source_test_outcomes_used_for_covariance_construction": False,
         },
         "runtime": {
             "python": sys.version,

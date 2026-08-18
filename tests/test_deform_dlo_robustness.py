@@ -16,10 +16,13 @@ from bayesian_phystwin_experiments.deform_dlo_pyelastica import (
     deform_pyelastica_parameter_bank,
 )
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
+    DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     assign_deform_dlo3_source_partitions,
     augment_deform_local_residual_full_covariance,
+    build_deform_bayesian_covariance_ablation_v1,
     build_deform_dlo3_source_manifest,
     calibrate_deform_full_covariance,
+    deform_bayesian_covariance_archive_key,
     deform_local_feature_indices,
     evaluate_deform_backend_source_gate,
     evaluate_deform_dlo3_source_gate,
@@ -420,6 +423,92 @@ def test_full_covariance_preserves_mean_and_supports_calibration() -> None:
     assert np.array_equal(full["predictions"], expected["predictions"])
 
 
+def test_bayesian_covariance_ablation_is_complete_and_mean_preserving() -> None:
+    initial, action, baseline, targets, names = _residual_problem(count=9)
+    diagonal = fit_deform_local_residual(
+        initial,
+        action,
+        baseline,
+        targets,
+        names.tolist(),
+        ridge=1.0,
+        variance_floor_m2=1e-6,
+    )
+    full_model = augment_deform_local_residual_full_covariance(
+        diagonal,
+        initial,
+        action,
+        baseline,
+        targets,
+        names.tolist(),
+    )
+    point = predict_deform_local_residual(
+        diagonal,
+        initial,
+        action,
+        baseline,
+        shrinkage=0.25,
+    )["predictions"]
+
+    arms = build_deform_bayesian_covariance_ablation_v1(
+        full_model,
+        initial,
+        action,
+        baseline,
+        shrinkage=0.25,
+        variance_scale=4.0,
+    )
+
+    assert tuple(arms) == DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    assert len(
+        {
+            deform_bayesian_covariance_archive_key(label)
+            for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        }
+    ) == len(arms)
+    for values in arms.values():
+        assert np.array_equal(values["predictions"], point)
+        covariance = values["coordinate_covariance_m2"]
+        assert covariance.shape == (*point.shape, 3)
+        assert np.count_nonzero(covariance[:, :, :2]) == 0
+        assert np.count_nonzero(covariance[:, :, -2:]) == 0
+        assert np.min(np.linalg.eigvalsh(covariance[:, :, 2:-2])) > 0.0
+
+    current = arms["current-diagonal-conservative-v1"]["coordinate_covariance_m2"]
+    propagated = arms["shrinkage-propagated-diagonal"]["coordinate_covariance_m2"]
+    current_variance = np.diagonal(current[:, :, 2:-2], axis1=-2, axis2=-1)
+    propagated_variance = np.diagonal(propagated[:, :, 2:-2], axis1=-2, axis2=-1)
+    assert np.all(propagated_variance <= current_variance + 1e-15)
+    assert np.any(propagated_variance < current_variance)
+
+    coefficient = arms["coefficient-only"]["coordinate_covariance_m2"]
+    residual = arms["residual-only"]["coordinate_covariance_m2"]
+    assert not np.array_equal(coefficient, residual)
+
+    pooled = arms["pooled-isotropic"]["coordinate_covariance_m2"][:, :, 2:-2]
+    pooled_diagonal = np.diagonal(pooled, axis1=-2, axis2=-1)
+    assert np.allclose(pooled_diagonal, pooled_diagonal.reshape(-1)[0])
+    assert (
+        np.count_nonzero(
+            pooled - np.eye(3, dtype=np.float64) * pooled_diagonal[..., None]
+        )
+        == 0
+    )
+
+    raw = arms["trajectory-clustered-full-coordinate-covariance-v1"][
+        "coordinate_covariance_m2"
+    ]
+    calibrated = arms["calibrated-full-coordinate-covariance-v1"][
+        "coordinate_covariance_m2"
+    ]
+    assert np.array_equal(calibrated, raw * 4.0)
+
+
+def test_bayesian_covariance_ablation_rejects_unknown_archive_label() -> None:
+    with pytest.raises(ValueError, match="covariance arm"):
+        deform_bayesian_covariance_archive_key("selected-from-target")
+
+
 def test_source_gate_uses_fixed_casewise_arithmetic() -> None:
     protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
     targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
@@ -574,11 +663,26 @@ def test_evaluator_authorizes_before_target_manifest_and_seals_before_score() ->
         'authorization_path = output_root / "authorization.json"'
     )
     target_manifest = source.index('stage = "target-manifest"')
+    bayesian_construction = source.index(
+        "bayesian_predictions = build_deform_bayesian_covariance_ablation_v1"
+    )
+    covariance_archive = source.index("deform_bayesian_covariance_archive_key(label):")
     prediction_seal = source.index(
         'prediction_seal_path = output_root / "prediction_seal.json"'
     )
+    distribution_scoring = source.index("bayesian_distributions = {")
     target_score = source.index("gate = evaluate_deform_dlo3_target_gate")
-    assert authorization < target_manifest < prediction_seal < target_score
+    assert (
+        authorization
+        < target_manifest
+        < bayesian_construction
+        < covariance_archive
+        < prediction_seal
+        < distribution_scoring
+        < target_score
+    )
+    assert '"distribution_selection": "none"' in source
+    assert '"target_outcomes_used_for_distribution_selection": False' in source
     assert '"retry_authorized": False' in source
     assert '"case_replacement": False' in source
 
@@ -597,11 +701,26 @@ def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
 
     method_seal = source.index('method_seal_path = output_root / "method_seal.json"')
     source_open = source.index("source_test_trajectories =")
+    bayesian_construction = source.index(
+        "bayesian_predictions = build_deform_bayesian_covariance_ablation_v1"
+    )
+    covariance_archive = source.index("deform_bayesian_covariance_archive_key(label):")
     prediction_seal = source.index(
         'prediction_seal_path = output_root / "prediction_seal.json"'
     )
+    distribution_scoring = source.index("bayesian_distributions = {")
     scoring = source.index("primary_gate = evaluate_deform_dlo3_source_gate")
-    assert method_seal < source_open < prediction_seal < scoring
+    assert (
+        method_seal
+        < source_open
+        < bayesian_construction
+        < covariance_archive
+        < prediction_seal
+        < scoring
+        < distribution_scoring
+    )
+    assert '"distribution_selection": "none"' in source
+    assert '"source_test_outcomes_used_for_covariance_construction": False' in source
     assert (
         'source_runtime._install_eval_read_guard(data_root / "DLO3" / "eval")' in source
     )
