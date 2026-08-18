@@ -9,6 +9,8 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
+from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
+
 DEFORM_DLO_ROBUSTNESS_CONTRACT = "deform-dlo-robustness-v1"
 DEFORM_DLO_ROBUSTNESS_DOMAIN = b"deform-dlo3-robustness-v1\0"
 
@@ -271,3 +273,107 @@ def assign_deform_dlo3_source_partitions(
         "source_test": tuple(ordered[fit_count + calibration_count :]),
         "identity_sha256": identities,
     }
+
+
+def build_deform_dlo3_source_manifest(
+    protocol_path: str | Path,
+    data_root: str | Path,
+) -> dict[str, object]:
+    """Hash and partition DLO3 train files without deserializing trajectories."""
+
+    protocol_source = Path(protocol_path).resolve()
+    protocol = load_deform_dlo_robustness_v1_protocol(protocol_source)
+    root = Path(data_root).resolve()
+    train_root = root / "DLO3" / "train"
+    if not train_root.is_dir():
+        raise FileNotFoundError(train_root)
+    paths = tuple(sorted(train_root.glob("*.pkl"), key=lambda path: path.name))
+    expected = int(
+        cast(Any, _mapping(protocol["data"], label="data")["train_trajectory_count"])
+    )
+    if len(paths) != expected:
+        raise ValueError(
+            f"DLO3 expected {expected} train trajectories, got {len(paths)}"
+        )
+    assignment = assign_deform_dlo3_source_partitions(
+        [path.name for path in paths], protocol
+    )
+    identities = {
+        path.name: {
+            "path": str(path),
+            "size_bytes": path.stat().st_size,
+            "sha256": sha256_file(path),
+        }
+        for path in paths
+    }
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-robustness-source-manifest-v1",
+        "protocol": {
+            "path": str(protocol_source),
+            "sha256": sha256_file(protocol_source),
+        },
+        "dlo_type": "DLO3",
+        "partition": "train",
+        "trajectory_deserialized": False,
+        "primary_eval_enumerated": False,
+        "reserve_payload_enumerated": False,
+        "official_eval_read": False,
+        "trajectories": identities,
+        "split": {
+            "fit": list(cast(tuple[str, ...], assignment["fit"])),
+            "calibration": list(cast(tuple[str, ...], assignment["calibration"])),
+            "source_test": list(cast(tuple[str, ...], assignment["source_test"])),
+        },
+        "source_identity_sha256": assignment["identity_sha256"],
+        "domain_separator_sha256": assignment["domain_separator_sha256"],
+    }
+
+
+def validate_deform_dlo3_source_manifest(
+    manifest: Mapping[str, object],
+    protocol: Mapping[str, object],
+    *,
+    protocol_sha256: str,
+    verify_files: bool,
+) -> dict[str, tuple[str, ...]]:
+    """Validate source custody and optionally rehash every bound train file."""
+
+    identity = _mapping(manifest.get("protocol"), label="manifest protocol")
+    trajectories = _mapping(manifest.get("trajectories"), label="trajectories")
+    split = _mapping(manifest.get("split"), label="manifest split")
+    if (
+        manifest.get("contract") != "deform-dlo3-robustness-source-manifest-v1"
+        or identity.get("sha256") != protocol_sha256
+        or manifest.get("dlo_type") != "DLO3"
+        or manifest.get("partition") != "train"
+        or manifest.get("trajectory_deserialized") is not False
+        or manifest.get("primary_eval_enumerated") is not False
+        or manifest.get("reserve_payload_enumerated") is not False
+        or manifest.get("official_eval_read") is not False
+    ):
+        raise ValueError("DLO3 source manifest custody differs")
+    partitions = {
+        name: _strings(split.get(name), label=f"manifest {name}")
+        for name in ("fit", "calibration", "source_test")
+    }
+    expected = assign_deform_dlo3_source_partitions(
+        tuple(str(name) for name in trajectories), protocol
+    )
+    if any(partitions[name] != expected[name] for name in partitions):
+        raise ValueError("DLO3 source manifest partition differs")
+    for name, value in trajectories.items():
+        record = _mapping(value, label=f"trajectory {name}")
+        path = Path(str(record.get("path", ""))).resolve()
+        size = int(cast(Any, record.get("size_bytes", -1)))
+        digest = str(record.get("sha256", ""))
+        if Path(name).name != name or len(digest) != 64 or size <= 0:
+            raise ValueError("DLO3 source trajectory identity is invalid")
+        if verify_files and (
+            not path.is_file()
+            or path.name != name
+            or path.stat().st_size != size
+            or sha256_file(path) != digest
+        ):
+            raise ValueError(f"DLO3 source trajectory identity changed: {name}")
+    return partitions
