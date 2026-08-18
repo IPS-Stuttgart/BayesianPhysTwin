@@ -1,28 +1,31 @@
-# SOFA and MuJoCo material replay adapters v1
+# SOFA, MuJoCo, and PBD material replay adapters v1
 
 ## Purpose
 
-`material_trajectory_engine_replays_v1` closes two concrete engine-integration
+`material_trajectory_engine_replays_v1` closes three concrete engine-integration
 gaps without changing the portable material-trajectory contract or adding heavy
 runtime dependencies to BayesianPhysTwin.
 
 It provides dependency-free replay shims for:
 
 - **SOFA FEM** through a Vec3 `MechanicalObject.position.value` state and one
-  registered `Sofa.Simulation.animate(root, dt)` step; and
+  registered `Sofa.Simulation.animate(root, dt)` step;
 - **MuJoCo Flex** through the exact per-flex slice of `data.flexvert_xpos`, using
   `model.flex_vertadr` and `model.flex_vertnum`, with one registered
-  `mujoco.mj_step(model, data)` step.
+  `mujoco.mj_step(model, data)` step; and
+- **PositionBasedDynamics / XPBD** through pyPBD
+  `SimulationModel.getParticles().getVertices()` and one registered
+  `TimeStep.step(simulation_model)` step.
 
-The module imports neither SOFA nor MuJoCo. Callers construct native engine
-objects and inject the public step callback. The resulting replay objects satisfy
-`MaterialTrajectoryReplayV1` structurally and can be passed directly to
+The module imports none of those simulator packages. Callers construct native
+engine objects and inject them into the structural adapters. The resulting replay
+objects satisfy `MaterialTrajectoryReplayV1` and can be passed directly to
 `produce_material_trajectory_backend`.
 
 This is **adapter coverage**, not backend qualification. It does not change the
-backend portfolio evidence stages, promote SOFA or MuJoCo to an active
-qualification slot, or make any source-value, calibration, target-transfer,
-Prob4D-benefit, or Causal4D-benefit claim.
+backend portfolio evidence stages, promote any adapter to an active qualification
+slot, or make any source-value, calibration, target-transfer, Prob4D-benefit, or
+Causal4D-benefit claim.
 
 ## SOFA FEM
 
@@ -85,12 +88,46 @@ def build_replay():
 MuJoCo stores all Flex vertices in the global `data.flexvert_xpos` array. The
 adapter uses `model.flex_vertadr[flex_id]` and `model.flex_vertnum[flex_id]` to
 preserve the exact registered vertex slice and order. It rejects missing or
-non-integer slice metadata, invalid flex IDs, empty/negative slices, non-finite or
-non-floating positions, and slices that exceed the runtime data array.
+non-integer slice metadata, invalid flex IDs, empty or negative slices,
+non-finite or non-floating positions, and slices that exceed the runtime data
+array.
 
 As with SOFA, the selected positions must already have the physical units and
 coordinate frame required by the portable contract. Do not replace Flex vertices
 with render mesh, skin, or contact-only coordinates.
+
+## PositionBasedDynamics / XPBD
+
+The registered PBD identity is the global simulation-particle order. At the
+pinned upstream revision, pyPBD exposes that state directly through
+`SimulationModel.getParticles()` and `ParticleData.getVertices()` and exposes the
+native time-step surface as `TimeStep.step(SimulationModel)`.
+
+```python
+from bayesian_phystwin.material_trajectory_engine_replays_v1 import (
+    PositionBasedDynamicsReplayV1,
+)
+
+
+def build_replay():
+    model, time_step = build_fresh_pypbd_scene()
+    return PositionBasedDynamicsReplayV1(
+        simulation_model=model,
+        time_step=time_step,
+        context=model,
+    )
+```
+
+The adapter records the complete global `ParticleData` roster rather than one
+render mesh or one constraint-local subset. `getVertices()` must expose finite
+floating `(N, 3)` rows in the registered metre/z-up convention. The common
+producer rejects particle insertion, deletion, or reordering because every frame
+must retain the frame-zero shape and identity.
+
+A qualifying PBD runtime must additionally bind the exact simulation-model
+construction, complete constraint graph, solver parameters, collision setup,
+assets, substeps, time step, and pyPBD/PositionBasedDynamics revision. The adapter
+itself does not infer those semantics from particle coordinates.
 
 ## Portable producer integration
 
@@ -104,7 +141,7 @@ from bayesian_phystwin.material_trajectory_producer_v1 import (
 
 artifact = produce_material_trajectory_backend(
     output_dir=output_dir,
-    backend_kind="sofa-fem-v1",  # or "mujoco-flex-v1"
+    backend_kind="position-based-dynamics-v1",
     replay_factory=build_replay,
     driven_control=driven_control,
     zero_action_control=zero_action_control,
@@ -120,26 +157,27 @@ rules remain in force. The produced `physical-prediction.npz` is therefore the
 same simulator-neutral six-array contract consumed by BayesianPhysTwin, Prob4D,
 and Causal4D.
 
-## Why these two adapters
+## Why these adapters
 
-SOFA exposes a standardized material-state and animation surface and is the most
-useful independent FEM reference among the currently registered material
-backends. MuJoCo likewise exposes a stable, explicit Flex-vertex state in its
-model/data API and offers a fast controls-oriented deformable baseline. Both can
-therefore be integrated with small structural shims rather than bespoke exporter
-formats.
+SOFA exposes a standardized material-state and animation surface and is a useful
+independent FEM reference. MuJoCo exposes a stable, explicit Flex-vertex state and
+offers a fast controls-oriented deformable baseline. pyPBD exposes the global
+particle array used by its rope, rod, cloth, and soft-body models, making the
+registered XPBD/PBD family concrete without introducing another artifact type.
 
 Warp remains better served by `CallbackMaterialTrajectoryReplayV1`: Warp is a
 kernel framework and does not define one universal deformable-state object whose
-semantics would justify a single canonical adapter. PositionBasedDynamics and
-PhysX should receive specialized shims only when one exact native state surface,
-persistent identity definition, and topology boundary are frozen.
+semantics justify a single canonical adapter. PhysX is also intentionally left on
+an explicit producer-side boundary for now: its authoritative deformable-volume
+simulation positions are GPU device buffers and require engine/CUDA-specific
+synchronization and host-copy ownership. Wrapping that copy in a nominally
+"dependency-free" class would not remove the actual integration obligation.
 
 ## Scientific next step
 
-The portfolio policy still makes JAX-FEM and Genesis MPM the active
-qualification candidates. These SOFA/MuJoCo shims improve implementation
-coverage while those two candidates advance from native execution to source
-physics and matched source-value evidence. SOFA or MuJoCo should enter the active
+The portfolio policy still makes JAX-FEM and Genesis MPM the active qualification
+candidates. These SOFA, MuJoCo, and PBD shims improve implementation coverage
+while those two candidates advance from native execution to source physics and
+matched source-value evidence. Another backend should enter the active
 qualification funnel only after a slot opens or materially stronger source-side
 evidence justifies replacing a current candidate.
