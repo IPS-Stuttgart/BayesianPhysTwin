@@ -166,6 +166,19 @@ until a selected backend passes source-physics and source-value qualification.
 Existing labels such as `preferred`, `supported`, and `experimental` are not
 evidence stages.
 
+Specialized predictive backends are tracked separately from that generic
+material-solver registry. In particular, the public DEFORM DLO pipeline is a
+fully exercised integration rather than an unsupported paper reference. On the
+frozen released DLO2 evaluation, the source-confirmed physical model plus causal
+local residual reached `7.8606 mm` mean coordinate L1 over all 14 unique
+trajectories, improving its identically trained physical checkpoint by `10.13%`
+with `14/14` paired wins. The canonical released-loader compatibility draw was
+`8.5037 mm`, below DEFORM's published `9.7 mm` reference. This supports a
+best-publicly-reported-result claim for that exact DLO2 contract only, not a
+general deformable-object or cross-benchmark state-of-the-art claim. See the
+[executable protocol](docs/deform_dlo2_local_residual_official_v7.md) and the
+[canonical result record](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform_dlo2_local_residual_official_v7_result.md).
+
 ## Documentation map
 
 - [Public claim snapshot](evidence/public_claim_snapshot_v1.json): generated
@@ -178,6 +191,9 @@ evidence stages.
   provider manifest.
 - [Evidence-first backend admission](docs/backend_admission_policy_v1.md):
   implementation-versus-evidence maturity and the qualification freeze.
+- [DEFORM DLO2 official protocol](docs/deform_dlo2_local_residual_official_v7.md):
+  specialized DLO integration, frozen evaluation, and benchmark-specific claim
+  boundary.
 - [Guarded inference API v1](docs/inference_v1.md): candidate inference,
   caller-owned guard, and exact complete-belief fallback.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,

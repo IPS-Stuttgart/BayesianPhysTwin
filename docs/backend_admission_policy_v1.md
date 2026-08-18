@@ -12,6 +12,13 @@ mistaken for scientific progress and concentrates qualification effort on the
 backends already selected in
 [issue #664](https://github.com/IPS-Stuttgart/BayesianPhysTwin/issues/664).
 
+This policy governs the interchangeable material-backend registry. Specialized
+benchmark pipelines are recorded separately. In particular, the confirmed
+[DEFORM DLO2 result](deform_dlo2_local_residual_official_v7.md) does not appear
+as a canonical material family and does not lift the registry admission freeze;
+it establishes a narrow DLO2 result under its own frozen source and official
+evaluation gates.
+
 The existing `preferred`, `supported`, and `experimental` labels describe
 implementation maturity only. They do not authorize a physical-performance,
 calibration, transfer, or downstream-value claim.

@@ -23,6 +23,21 @@ Its first-class producer and guarded-consumer interfaces are documented in
 [`matphys_backend_v1.md`](matphys_backend_v1.md). This separation prevents a
 learned parameter proposal from being mislabeled as an independent solver.
 
+This registry is likewise not an exhaustive list of specialized predictive
+backends. DEFORM uses a dedicated differentiable-rod/DLO training and evaluation
+pipeline rather than one of the interchangeable material-trajectory transports
+below. That specialized integration has completed a frozen official DLO2
+evaluation: the physical model plus causal local residual reached `7.8606 mm`
+mean coordinate L1 over all 14 unique trajectories, versus `8.7470 mm` for its
+identically trained physical checkpoint, with `14/14` paired wins. Its canonical
+released-loader compatibility result was `8.5037 mm`, below the published
+DEFORM DLO2 reference of `9.7 mm`. The result is confirmed only within that exact
+released benchmark contract; it is not evidence about cloth, volumetric
+objects, or the generic solver families in this registry. See
+[`deform_dlo2_local_residual_official_v7.md`](deform_dlo2_local_residual_official_v7.md)
+and the canonical
+[paper record](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform_dlo2_local_residual_official_v7_result.md).
+
 The canonical Python entry point is:
 
 ```python
