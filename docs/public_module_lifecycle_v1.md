@@ -41,9 +41,21 @@ root shim must continue to return the same owning objects. The lifecycle label
 does not promote these research-oriented modules into the smaller versioned
 integration API.
 
-A future compatibility line may deprecate or reorganize these modules only
-after documenting replacement imports. The registry itself emits no warnings,
-moves no files, and changes no runtime behavior.
+The warning and removal schedule is deliberately version-gated:
+
+- the complete `0.4.x` root surface remains warning-free and unchanged;
+- once the installed distribution enters the `0.5` line, first access to each
+  historical root symbol emits a `DeprecationWarning` naming its exact owning
+  module and replacement import;
+- direct imports from owning modules and the versioned APIs do not warn;
+- lazy resolution still returns and caches the original owning object; and
+- no root export is removed by the warning policy, with removal not scheduled
+  before the `0.6` compatibility line.
+
+The gate is derived from installed distribution metadata. Consequently, adding
+the dormant policy to `0.4.x` does not rewrite frozen wheels, tags, evidence, or
+runtime behavior. A later `0.5` version decision activates the warnings without
+requiring a second ad hoc root rewrite.
 
 ## Experimental modules
 
@@ -61,7 +73,9 @@ only.
 
 An importable module absent from the registry is internal or experimental and
 has no compatibility promise. Underscore-prefixed modules are always internal
-and cannot be added to the public lifecycle registry.
+and cannot be added to the public lifecycle registry. The generated private
+`_root_exports_v0_4` module exists only to preserve the frozen root symbol table
+and static re-export information; it is not a supported import surface.
 
 New public modules should be registered only when their intended lifecycle is
 clear. Adding a stable module requires a documented consumer boundary and
@@ -87,11 +101,16 @@ Add `--json` for a machine-readable report. The checker validates:
 - required stable integration identities; and
 - one regular, non-symlinked source file for every classified module.
 
-The changed-source quality ratchet executes this checker on every pull request.
-The manifest, checker, and this policy document are also included in the source
-distribution.
+The root-deprecation regressions additionally prove that `0.4.x` access is
+warning-free, `0.5` access names the exact replacement import, lazy object
+identity is preserved, repeated access is cached, and unknown attributes do not
+produce misleading warnings.
 
-A successful lifecycle check establishes software-policy consistency only. It
-does not establish estimator accuracy, covariance calibration, provider
-competence, unseen-object transfer, physical-query benefit, deployment safety,
-or state of the art.
+The changed-source quality ratchet executes the lifecycle checker on every pull
+request. The manifest, checker, and this policy document are also included in
+the source distribution.
+
+A successful lifecycle or deprecation-policy check establishes software-policy
+consistency only. It does not establish estimator accuracy, covariance
+calibration, provider competence, unseen-object transfer, physical-query
+benefit, deployment safety, or state of the art.
