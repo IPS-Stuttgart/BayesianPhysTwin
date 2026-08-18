@@ -16,6 +16,7 @@ STRICT_ARTIFACT_PATHS = (
     "src/bayesian_phystwin/claim_bundle_v1.py",
     "src/bayesian_phystwin/evidence_decision_v1.py",
     "src/bayesian_phystwin/physical_query_v1.py",
+    "src/bayesian_phystwin/material_backend_evidence_v1.py",
 )
 STRICT_INTEGRATION_PATHS = (
     "src/bayesian_phystwin/v1/__init__.py",
@@ -29,6 +30,7 @@ STRICT_MODULES = (
     "bayesian_phystwin.claim_bundle_v1",
     "bayesian_phystwin.evidence_decision_v1",
     "bayesian_phystwin.physical_query_v1",
+    "bayesian_phystwin.material_backend_evidence_v1",
     "bayesian_phystwin.v1",
     "bayesian_phystwin.causal4d_provider_v1",
     "bayesian_phystwin.prob4d_causal_lineage",
