@@ -179,11 +179,7 @@ class _NativeReplay:
             def get_tensor_map(self) -> Any:
                 def stress(u_grad: Any) -> Any:
                     mu = young / (2.0 * (1.0 + poisson))
-                    lmbda = (
-                        young
-                        * poisson
-                        / ((1.0 + poisson) * (1.0 - 2.0 * poisson))
-                    )
+                    lmbda = young * poisson / ((1.0 + poisson) * (1.0 - 2.0 * poisson))
                     epsilon = 0.5 * (u_grad + u_grad.T)
                     return (
                         lmbda * jnp.trace(epsilon) * jnp.eye(self.dim)
@@ -217,7 +213,9 @@ class _NativeReplay:
         )
         solution = self.native.solver(problem)
         if not isinstance(solution, (list, tuple)) or len(solution) != 1:
-            raise RuntimeError("JAX-FEM solver returned an unexpected solution structure")
+            raise RuntimeError(
+                "JAX-FEM solver returned an unexpected solution structure"
+            )
         return solution[0]
 
 
