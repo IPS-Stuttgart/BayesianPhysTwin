@@ -90,6 +90,7 @@ _SIMULATION_FIELDS: Final = frozenset(
         "poisson_ratio",
         "density_kg_m3",
         "rigid_translation_m",
+        "nowhere_activation_policy",
     }
 )
 _GATE_FIELDS: Final = frozenset(
@@ -327,6 +328,11 @@ def load_genesis_source_physics_protocol_v1(
     _vector3(simulation["gravity_m_s2"], name="gravity_m_s2")
     _vector3(simulation["rigid_translation_m"], name="rigid_translation_m")
     _require(simulation["constitutive_model"] == "neohooken", "constitutive model changed")
+    _require(
+        simulation["nowhere_activation_policy"]
+        == "set-particles-active-then-mark-forward-active-v1",
+        "Nowhere activation policy changed",
+    )
     poisson = _finite(simulation["poisson_ratio"], name="poisson_ratio")
     _require(-1.0 < poisson < 0.5, "poisson_ratio is invalid")
 
@@ -530,9 +536,13 @@ def _run_native_replay(
         surface=gs.surfaces.Default(vis_mode="particle"),
     )
     scene.build()
-    entity.activate()
     all_indices = torch.arange(len(shifted_points), dtype=torch.int64)
     entity.set_particles_active(torch.ones(len(shifted_points), dtype=torch.bool), all_indices)
+    # Genesis 1.3.3 documents ``active`` as non-informative for Nowhere entities,
+    # but its public set_free() guard still reads it. The emitter path likewise
+    # activates particles directly. Establish the forward guard only after the
+    # complete persistent roster has been activated in the solver.
+    entity.active = True
     entity.set_particles_pos(torch.as_tensor(shifted_points, dtype=torch.float64), all_indices)
     entity.set_particles_vel(torch.zeros((len(shifted_points), 3), dtype=torch.float64), all_indices)
     free = torch.ones(len(shifted_points), dtype=torch.bool)
@@ -883,6 +893,7 @@ def run_genesis_mpm_source_qualification_v1(
             "native_smoke_id": cast(Mapping[str, Any], protocol.value["backend"])["native_smoke_id"],
             "parameter_sensitivity_is_a_physical_sanity_gate": True,
             "rigid_equivariance_probe": "translation-only",
+            "nowhere_activation_policy": simulation["nowhere_activation_policy"],
             "gradient_claim": "none",
         },
     )

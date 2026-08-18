@@ -23,6 +23,17 @@ material identity. Registered attachment particles are fixed in the MPM entity
 and moved by the same inverse-distance controller map already present in the
 source-input artifact.
 
+Genesis 1.3.3's `Nowhere` entity intentionally starts inactive. Its public
+`activate()` helper rejects that same state before it can update the particle
+mask, while the upstream emitter path activates particles directly. The frozen
+runner follows the emitter semantics: it first activates the complete particle
+roster in the solver, then marks the entity forward-active so the public
+`set_free()` guard permits the registered fixed-particle mask. The first sealed
+attempt stopped at this API mismatch before producing a trajectory. It also
+reported Genesis's stability recommendation, so v1 uses 64 base substeps and
+128 refinement substeps at 30 Hz; both lie below the reported maximum stable
+substep duration.
+
 ## Frozen probes
 
 For the first ten action frames, the runner executes:

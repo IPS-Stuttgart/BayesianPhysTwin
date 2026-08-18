@@ -31,6 +31,8 @@ def test_frozen_protocol_loads_and_binds_two_independent_groups() -> None:
         "double_stretch_zebra",
     ]
     assert protocol.protocol_sha256 == file_sha256(PROTOCOL)
+    assert protocol.simulation["base_substeps"] == 64
+    assert protocol.simulation["refined_substeps"] == 128
     assert protocol.value["information_boundary"]["source_object_outcomes_allowed"] is False
 
 
