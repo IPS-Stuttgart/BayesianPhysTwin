@@ -32,6 +32,18 @@ Its finite parameter bank is selected on fit trajectories only; DLO3 target
 access is allowed for that arm only if its calibration and source-test gate
 passes. Failure leaves the official DEFORM candidate unchanged.
 
+The selected PyElastica parameters, full residual-covariance model, and
+calibration are sealed before source-test scoring and rehashed at all-train and
+readiness. If the source gate passes, the independent dry run must execute the
+backend path and the one-shot evaluator produces its predictions during the
+same target read as the primary arm. The backend report is descriptive and
+cannot select or alter the primary result. A target-specific backend runtime
+failure is retained without retry while the already-sealed primary arm remains
+scorable; a dry-run backend failure prevents readiness. When that source gate
+authorizes carryover, both evaluator invocations must receive the frozen
+PyElastica checkout through `--pyelastica-root`; otherwise the argument is not
+needed and the backend path remains exactly unexecuted.
+
 The Bayesian audit leaves the point mean unchanged and adds full 3x3
 coordinate covariance from trajectory-clustered coefficient and residual
 uncertainty. Nine calibration trajectories set the 90% scale by the maximum

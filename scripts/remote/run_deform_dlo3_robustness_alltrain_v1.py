@@ -29,6 +29,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     validate_deform_dlo3_backend_result_v1,
     validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
+    verify_deform_dlo3_backend_artifacts_v1,
     verify_deform_dlo3_seed_bayesian_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
@@ -162,6 +163,7 @@ def _assert_authorization(
         sensitivity, protocol
     )
     backend_verification = validate_deform_dlo3_backend_result_v1(backend, protocol)
+    backend_artifacts = verify_deform_dlo3_backend_artifacts_v1(backend, protocol)
     emitted = _mapping(deviation.get("emitted_information"), label="deviation emission")
     if (
         deviation.get("contract") != "deform-dlo3-count-only-custody-deviation-v1"
@@ -184,6 +186,7 @@ def _assert_authorization(
         "primary_bayesian_artifacts": primary_bayesian_artifacts,
         "sensitivity_verification": sensitivity_verification,
         "backend_verification": backend_verification,
+        "backend_artifacts": backend_artifacts,
     }
 
 
@@ -238,6 +241,7 @@ def main() -> int:
             DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         ),
         "source_bayesian_audit_complete": True,
+        "backend_target_arm": authorization["backend_artifacts"],
         "target_selection": False,
         "target_calibration": False,
         "target_retries": False,
@@ -487,6 +491,7 @@ def main() -> int:
             DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         ),
         "source_bayesian_audit_complete": True,
+        "backend_target_arm": authorization["backend_artifacts"],
         "distribution_selection": "none",
         "runtime": {
             "python": sys.version,

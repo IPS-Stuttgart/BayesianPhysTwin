@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
+import run_deform_dlo3_pyelastica_source_v1 as backend_runtime
 import run_deform_dlo_local_residual as local_runtime
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
@@ -20,15 +21,24 @@ import run_deform_dlo_source as source_runtime
 from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     deserialize_deform_local_residual_model,
 )
+from bayesian_phystwin_experiments.deform_dlo_pyelastica import (
+    PyElasticaParameters,
+    deform_pyelastica_parameter_bank,
+    simulate_deform_pyelastica,
+)
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
     DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     build_deform_bayesian_covariance_ablation_v1,
     deform_bayesian_covariance_archive_key,
+    evaluate_deform_backend_portability_report,
     evaluate_deform_dlo3_target_gate,
     evaluate_deform_predictive_distribution,
     load_deform_dlo_robustness_v1_protocol,
+    predict_deform_local_residual_full_covariance,
+    scale_deform_coordinate_covariance,
     validate_deform_bayesian_audit_v1,
     validate_deform_dlo3_source_manifest,
+    verify_deform_dlo3_backend_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -42,6 +52,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--source-manifest", type=Path)
     parser.add_argument("--readiness-attestation", type=Path)
+    parser.add_argument("--pyelastica-root", type=Path)
     parser.add_argument("--device", default="cuda:0")
     return parser.parse_args()
 
@@ -125,6 +136,78 @@ def _load_final_method(
     return result, method, method_path
 
 
+def _load_backend_target_arm(
+    alltrain: Mapping[str, object],
+    method: Mapping[str, object],
+    protocol: Mapping[str, object],
+    pyelastica_root: Path | None,
+) -> dict[str, object]:
+    authorization = _mapping(
+        alltrain.get("authorization"), label="alltrain authorization"
+    )
+    result_path = _verified_file(
+        authorization.get("backend_result"), label="backend source result"
+    )
+    result = _read_json(result_path)
+    artifacts = verify_deform_dlo3_backend_artifacts_v1(result, protocol)
+    final_record = dict(
+        _mapping(method.get("backend_target_arm"), label="final backend target arm")
+    )
+    if final_record != artifacts:
+        raise ValueError("DLO3 final backend target arm differs")
+    authorized = bool(artifacts["backend_target_arm_authorized"])
+    if not authorized:
+        return {
+            "authorized": False,
+            "source_result": _identity(result_path),
+            "artifacts": artifacts,
+        }
+    if pyelastica_root is None:
+        raise ValueError(
+            "authorized PyElastica target arm requires its pinned checkout"
+        )
+    backend = _mapping(protocol.get("backend_portability"), label="backend")
+    elastica = backend_runtime._load_pyelastica(
+        pyelastica_root,
+        str(backend["commit"]),
+        str(backend["version"]),
+    )
+    model_path = _verified_file(
+        artifacts.get("full_covariance_model"), label="backend full covariance model"
+    )
+    with np.load(model_path, allow_pickle=False) as archive:
+        model = deserialize_deform_local_residual_model(archive)
+        model["coefficient_covariance_full"] = np.asarray(
+            archive["coefficient_covariance_full"]
+        )
+        model["residual_covariance_full"] = np.asarray(
+            archive["residual_covariance_full"]
+        )
+    raw_parameters = _mapping(
+        artifacts.get("selected_parameters"), label="backend selected parameters"
+    )
+    parameters = PyElasticaParameters(
+        youngs_modulus_pa=float(cast(Any, raw_parameters["youngs_modulus_pa"])),
+        density_kg_m3=float(cast(Any, raw_parameters["density_kg_m3"])),
+        damping_constant=float(cast(Any, raw_parameters["damping_constant"])),
+        integration_substeps=int(cast(Any, raw_parameters["integration_substeps"])),
+    )
+    if parameters not in deform_pyelastica_parameter_bank(protocol):
+        raise ValueError("authorized PyElastica target parameters differ")
+    raw_bank = _mapping(backend.get("parameter_bank"), label="backend parameter bank")
+    return {
+        "authorized": True,
+        "source_result": _identity(result_path),
+        "artifacts": artifacts,
+        "elastica": elastica,
+        "model": model,
+        "parameters": parameters,
+        "poisson_ratio": float(cast(Any, raw_bank["poisson_ratio"])),
+        "radius_ratio": float(cast(Any, raw_bank["radius_to_mean_edge_ratio"])),
+        "variance_scale": float(cast(Any, artifacts["variance_scale"])),
+    }
+
+
 def _build_eval_manifest(
     eval_root: Path,
     *,
@@ -191,6 +274,7 @@ def main() -> int:
     output_root.mkdir(parents=True, exist_ok=True)
 
     readiness_identity: dict[str, object] | None = None
+    readiness: dict[str, object] | None = None
     if args.mode == "official":
         if args.readiness_attestation is None or args.source_manifest is not None:
             raise ValueError("official mode requires only a readiness attestation")
@@ -215,6 +299,19 @@ def main() -> int:
         readiness_identity = _identity(readiness_path)
     elif args.source_manifest is None or args.readiness_attestation is not None:
         raise ValueError("dry-run mode requires only the source manifest")
+
+    backend_arm = _load_backend_target_arm(
+        alltrain,
+        method,
+        protocol,
+        args.pyelastica_root.resolve() if args.pyelastica_root is not None else None,
+    )
+    backend_authorized = bool(backend_arm["authorized"])
+    if readiness is not None and (
+        readiness.get("backend_target_arm_authorized") is not backend_authorized
+        or readiness.get("backend_artifacts") != backend_arm["artifacts"]
+    ):
+        raise ValueError("DLO3 readiness backend target arm differs")
 
     runtime = _mapping(method.get("runtime"), label="method runtime")
     training = _mapping(protocol.get("physical_training"), label="training")
@@ -263,6 +360,8 @@ def main() -> int:
         "alltrain_result": _identity(alltrain_path),
         "final_method": _identity(method_path),
         "readiness_attestation": readiness_identity,
+        "backend_source_result": backend_arm["source_result"],
+        "backend_target_arm_authorized": backend_authorized,
         "one_shot_execution_authorized": args.mode == "official",
         "count_only_custody_deviation_acknowledged": True,
         "target_selection": False,
@@ -345,6 +444,75 @@ def main() -> int:
                 "coordinate_covariance_m2"
             ]
         )
+        backend_values: dict[str, np.ndarray] | None = None
+        if not backend_authorized:
+            backend_prediction_record: dict[str, object] = {
+                "status": "not-authorized",
+                "source_gate_authorized": False,
+                "selection_effect": "none",
+                "retry_authorized": False,
+            }
+        else:
+            stage = "backend-portability-rollout"
+            try:
+                backend_baseline = np.stack(
+                    [
+                        simulate_deform_pyelastica(
+                            trajectories[name],
+                            cast(PyElasticaParameters, backend_arm["parameters"]),
+                            elastica=backend_arm["elastica"],
+                            poisson_ratio=float(
+                                cast(Any, backend_arm["poisson_ratio"])
+                            ),
+                            radius_to_mean_edge_ratio=float(
+                                cast(Any, backend_arm["radius_ratio"])
+                            ),
+                        )
+                        for name in names
+                    ]
+                )
+                residual = _mapping(
+                    protocol.get("local_residual"), label="local residual"
+                )
+                backend_raw = predict_deform_local_residual_full_covariance(
+                    cast(Mapping[str, object], backend_arm["model"]),
+                    initial,
+                    action,
+                    backend_baseline,
+                    shrinkage=float(cast(Any, residual["shrinkage"])),
+                )
+                backend_calibrated_covariance = scale_deform_coordinate_covariance(
+                    backend_raw["coordinate_covariance_m2"],
+                    float(cast(Any, backend_arm["variance_scale"])),
+                )
+                backend_values = {
+                    "baseline": np.asarray(backend_baseline),
+                    "candidate": np.asarray(backend_raw["predictions"]),
+                    "coordinate_covariance_m2": np.asarray(
+                        backend_raw["coordinate_covariance_m2"]
+                    ),
+                    "calibrated_coordinate_covariance_m2": np.asarray(
+                        backend_calibrated_covariance
+                    ),
+                }
+                backend_prediction_record = {
+                    "status": "sealed",
+                    "source_gate_authorized": True,
+                    "selection_effect": "none",
+                    "retry_authorized": False,
+                }
+            except Exception as error:
+                if args.mode == "dry-run":
+                    raise
+                backend_prediction_record = {
+                    "status": "technical-failure",
+                    "source_gate_authorized": True,
+                    "stage": stage,
+                    "exception_type": type(error).__name__,
+                    "message": str(error),
+                    "selection_effect": "none",
+                    "retry_authorized": False,
+                }
         predictions_path = output_root / "predictions.npz"
         prediction_payload: dict[str, Any] = {
             "names": np.asarray(names),
@@ -360,6 +528,13 @@ def main() -> int:
                 for label, values in bayesian_predictions.items()
             }
         )
+        if backend_values is not None:
+            prediction_payload.update(
+                {
+                    f"backend_pyelastica_{key}": values
+                    for key, values in backend_values.items()
+                }
+            )
         np.savez_compressed(predictions_path, **prediction_payload)
         prediction_seal = {
             "schema_version": 1,
@@ -376,6 +551,7 @@ def main() -> int:
                 for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
             },
             "bayesian_point_means_identical": True,
+            "backend_portability": backend_prediction_record,
             "outcomes_scored": False,
             "target_retries": False,
         }
@@ -383,6 +559,32 @@ def main() -> int:
         _write_json(prediction_seal_path, prediction_seal)
 
         targets = np.asarray(baseline_rollout["targets"])
+        if backend_values is None:
+            backend_portability = backend_prediction_record
+        else:
+            backend_portability = {
+                "status": "scored",
+                "source_gate_authorized": True,
+                "selection_effect": "none",
+                "retry_authorized": False,
+                "report": evaluate_deform_backend_portability_report(
+                    backend_values["candidate"],
+                    backend_values["baseline"],
+                    targets,
+                    names,
+                ),
+                "uncalibrated": evaluate_deform_predictive_distribution(
+                    backend_values["candidate"],
+                    targets,
+                    backend_values["coordinate_covariance_m2"],
+                ),
+                "calibrated": evaluate_deform_predictive_distribution(
+                    backend_values["candidate"],
+                    targets,
+                    backend_values["calibrated_coordinate_covariance_m2"],
+                ),
+                "point_mean_unchanged_by_calibration": True,
+            }
         bayesian_distributions = {
             label: evaluate_deform_predictive_distribution(
                 values["predictions"],
@@ -416,6 +618,7 @@ def main() -> int:
                 "distribution": distribution,
                 "bayesian_audit": bayesian_audit,
                 "bayesian_audit_verification": bayesian_audit_verification,
+                "backend_portability": backend_portability,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,
@@ -448,6 +651,7 @@ def main() -> int:
                 "distribution": distribution,
                 "bayesian_audit": bayesian_audit,
                 "bayesian_audit_verification": bayesian_audit_verification,
+                "backend_portability": backend_portability,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,

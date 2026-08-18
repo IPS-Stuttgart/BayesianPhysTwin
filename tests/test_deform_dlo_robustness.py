@@ -9,6 +9,7 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     deform_causal_inputs,
     fit_deform_local_residual,
     predict_deform_local_residual,
+    serialize_deform_local_residual_model,
 )
 from bayesian_phystwin_experiments.deform_dlo_pyelastica import (
     deform_pyelastica_directors,
@@ -24,6 +25,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     calibrate_deform_full_covariance,
     deform_bayesian_covariance_archive_key,
     deform_local_feature_indices,
+    evaluate_deform_backend_portability_report,
     evaluate_deform_backend_source_gate,
     evaluate_deform_dlo3_source_gate,
     evaluate_deform_dlo3_stability_gate,
@@ -38,6 +40,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     validate_deform_dlo3_backend_result_v1,
     validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
+    verify_deform_dlo3_backend_artifacts_v1,
     verify_deform_dlo3_evaluator_bayesian_artifacts_v1,
     verify_deform_dlo3_seed_bayesian_artifacts_v1,
 )
@@ -172,6 +175,132 @@ def _file_identity(path: Path) -> dict[str, object]:
         "path": str(path.resolve()),
         "sha256": sha256_file(path),
         "size_bytes": path.stat().st_size,
+    }
+
+
+def _backend_result_with_artifacts(tmp_path: Path) -> dict[str, object]:
+    protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
+    feature_count = 92
+    internal_count = 8
+    dimension = feature_count + 1
+    model = {
+        "schema_version": 1,
+        "contract": "deform-dlo-local-residual-model-v1",
+        "node_count": 12,
+        "prediction_horizon": 498,
+        "feature_count": feature_count,
+        "trajectory_clusters": tuple((f"fit-{index}",) for index in range(39)),
+        "feature_location": np.zeros((internal_count, feature_count)),
+        "feature_scale": np.ones((internal_count, feature_count)),
+        "coefficients": np.zeros((internal_count, dimension, 3)),
+        "coefficient_covariance": np.zeros((internal_count, 3, dimension, dimension)),
+        "residual_variance": np.ones((internal_count, 3)) * 1e-6,
+        "ridge": 1.0,
+        "variance_floor_m2": 1e-6,
+    }
+    model_payload = serialize_deform_local_residual_model(model)
+    model_payload["coefficient_covariance_full"] = np.zeros(
+        (internal_count, 3, 3, dimension, dimension)
+    )
+    model_payload["residual_covariance_full"] = np.repeat(
+        np.eye(3, dtype=np.float64)[None] * 1e-6,
+        internal_count,
+        axis=0,
+    )
+    model_path = tmp_path / "full_covariance_model.npz"
+    np.savez_compressed(model_path, **model_payload)
+    calibration = {
+        "schema_version": 1,
+        "contract": "deform-dlo-full-covariance-calibration-v1",
+        "trajectory_scores": [2.0] * 9,
+        "rank": 9,
+        "order_statistic": "maximum-of-nine",
+        "nominal_coordinate_coverage": 0.9,
+        "standardized_radius": 2.0,
+        "gaussian_radius": 1.6448536269514722,
+        "variance_scale": 4.0,
+        "confidence_increase_forbidden": True,
+        "source_test_opened": False,
+        "primary_eval_read": False,
+    }
+    calibration_path = tmp_path / "covariance_calibration.json"
+    calibration_path.write_text(
+        json.dumps(calibration, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    protocol_identity = _file_identity(PROTOCOL)
+    method = {
+        "schema_version": 1,
+        "contract": "deform-dlo3-pyelastica-source-method-seal-v1",
+        "protocol": protocol_identity,
+        "full_covariance_model": _file_identity(model_path),
+        "covariance_calibration": _file_identity(calibration_path),
+        "selected_parameters": deform_pyelastica_parameter_bank(protocol)[
+            0
+        ].to_record(),
+        "ridge": 1.0,
+        "shrinkage": 0.25,
+        "source_test_opened": False,
+        "primary_eval_read": False,
+        "selection_effect_after_fit": "none",
+    }
+    method_path = tmp_path / "method_seal.json"
+    method_path.write_text(json.dumps(method, sort_keys=True) + "\n", encoding="utf-8")
+    backend = np.ones((8, 498, 12, 3), dtype=np.float64) * 0.02
+    candidate = backend.copy()
+    candidate[:, :, 2:-2] = 0.018
+    raw_covariance = np.ones((*backend.shape, 3), dtype=np.float64) * 1e-6
+    predictions_path = tmp_path / "source_predictions.npz"
+    np.savez_compressed(
+        predictions_path,
+        names=np.asarray([f"case-{index}" for index in range(8)]),
+        backend=backend,
+        candidate=candidate,
+        coordinate_covariance_m2=raw_covariance,
+        calibrated_coordinate_covariance_m2=raw_covariance * 4.0,
+    )
+    method_identity = _file_identity(method_path)
+    prediction_seal = {
+        "schema_version": 1,
+        "contract": "deform-dlo3-pyelastica-source-prediction-seal-v1",
+        "method_seal": method_identity,
+        "predictions": _file_identity(predictions_path),
+        "source_outcomes_scored": False,
+        "primary_eval_read": False,
+    }
+    prediction_seal_path = tmp_path / "prediction_seal.json"
+    prediction_seal_path.write_text(
+        json.dumps(prediction_seal, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    targets = np.zeros_like(backend)
+    gate = evaluate_deform_backend_source_gate(
+        candidate,
+        backend,
+        targets,
+        [f"case-{index}" for index in range(8)],
+        protocol,
+    )
+    distributions = _seed_result(42)["bayesian_audit"]
+    assert isinstance(distributions, dict)
+    return {
+        "contract": "deform-dlo3-pyelastica-source-result-v1",
+        "protocol": protocol_identity,
+        "method_seal": method_identity,
+        "prediction_seal": _file_identity(prediction_seal_path),
+        "source_gate": gate,
+        "bayesian_audit": {
+            "uncalibrated": distributions["uncalibrated"],
+            "calibrated": distributions["calibrated"],
+            "point_mean_unchanged_by_calibration": True,
+        },
+        "backend_target_arm_authorized": True,
+        "primary_target_authorized": False,
+        "selection_effect": "none-after-fit",
+        "source_test_opened": True,
+        "primary_eval_enumerated": False,
+        "primary_eval_read": False,
+        "retry_authorized": False,
+        "prob4d_used": False,
+        "held_v8_access": False,
     }
 
 
@@ -775,6 +904,72 @@ def test_backend_source_gate_has_no_published_reference_shortcut() -> None:
     assert "published_reference_passed" not in gate
 
 
+def test_backend_portability_report_is_descriptive_and_casewise() -> None:
+    targets = np.zeros((14, 2, 5, 3), dtype=np.float64)
+    backend = np.full_like(targets, 0.020)
+    candidate = np.full_like(targets, 0.018)
+    names = [f"case-{index}" for index in range(14)]
+
+    report = evaluate_deform_backend_portability_report(
+        candidate, backend, targets, names
+    )
+
+    assert report["contract"] == "deform-dlo3-backend-portability-report-v1"
+    assert report["case_count"] == 14
+    assert report["relative_improvement"] == pytest.approx(0.10)
+    assert report["wins"] == 14
+    assert report["selection_effect"] == "none"
+    assert "passed" not in report
+
+    with pytest.raises(ValueError, match="arrays do not align"):
+        evaluate_deform_backend_portability_report(
+            candidate, backend, targets, ["duplicate"] * 14
+        )
+
+
+def test_backend_artifacts_are_rehashed_for_target_carryover(tmp_path: Path) -> None:
+    protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
+    result = _backend_result_with_artifacts(tmp_path)
+
+    verification = verify_deform_dlo3_backend_artifacts_v1(result, protocol)
+
+    assert verification["verified"] is True
+    assert verification["backend_target_arm_authorized"] is True
+    assert verification["variance_scale"] == pytest.approx(4.0)
+
+    calibration_path = Path(
+        str(
+            json.loads(
+                Path(str(result["method_seal"]["path"])).read_text(encoding="utf-8")
+            )["covariance_calibration"]["path"]
+        )
+    )
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    calibration["standardized_radius"] = 1.0
+    calibration_path.write_text(
+        json.dumps(calibration, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    method_path = Path(str(result["method_seal"]["path"]))
+    method = json.loads(method_path.read_text(encoding="utf-8"))
+    method["covariance_calibration"] = _file_identity(calibration_path)
+    method_path.write_text(json.dumps(method, sort_keys=True) + "\n", encoding="utf-8")
+    result["method_seal"] = _file_identity(method_path)
+    prediction_seal_path = Path(str(result["prediction_seal"]["path"]))
+    prediction_seal = json.loads(prediction_seal_path.read_text(encoding="utf-8"))
+    prediction_seal["method_seal"] = result["method_seal"]
+    prediction_seal_path.write_text(
+        json.dumps(prediction_seal, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    result["prediction_seal"] = _file_identity(prediction_seal_path)
+    with pytest.raises(ValueError, match="covariance calibration differs"):
+        verify_deform_dlo3_backend_artifacts_v1(result, protocol)
+
+    method_path = Path(str(result["method_seal"]["path"]))
+    method_path.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="identity changed"):
+        verify_deform_dlo3_backend_artifacts_v1(result, protocol)
+
+
 def test_sensitivity_result_validator_requires_complete_fixed_matrix() -> None:
     protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
     targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
@@ -956,6 +1151,9 @@ def test_pyelastica_runner_seals_fit_and_predictions_before_source_scoring() -> 
     assert method_seal < source_open < prediction_seal < scoring
     assert '"primary_target_authorized": False' in source
     assert '"retry_authorized": False' in source
+    assert 'full_model_path = output_root / "full_covariance_model.npz"' in source
+    assert 'full_payload["coefficient_covariance_full"]' in source
+    assert 'full_payload["residual_covariance_full"]' in source
 
 
 def test_alltrain_runner_requires_every_source_audit_and_guards_eval() -> None:
@@ -969,6 +1167,8 @@ def test_alltrain_runner_requires_every_source_audit_and_guards_eval() -> None:
     assert 'stability.get("bayesian_artifacts_verified") is not True' in source
     assert "validate_deform_dlo3_sensitivity_result_v1" in source
     assert "validate_deform_dlo3_backend_result_v1" in source
+    assert "verify_deform_dlo3_backend_artifacts_v1" in source
+    assert '"backend_target_arm": authorization["backend_artifacts"]' in source
     assert (
         'source_runtime._install_eval_read_guard(data_root / "DLO3" / "eval")' in source
     )
@@ -991,12 +1191,16 @@ def test_evaluator_authorizes_before_target_manifest_and_seals_before_score() ->
     )
     distribution_scoring = source.index("bayesian_distributions = {")
     target_score = source.index("gate = evaluate_deform_dlo3_target_gate")
+    backend_rollout = source.index('stage = "backend-portability-rollout"')
+    backend_score = source.index('"report": evaluate_deform_backend_portability_report')
     assert (
         authorization
         < target_manifest
         < bayesian_construction
+        < backend_rollout
         < covariance_archive
         < prediction_seal
+        < backend_score
         < distribution_scoring
         < target_score
     )
@@ -1004,6 +1208,8 @@ def test_evaluator_authorizes_before_target_manifest_and_seals_before_score() ->
     assert '"target_outcomes_used_for_distribution_selection": False' in source
     assert '"retry_authorized": False' in source
     assert '"case_replacement": False' in source
+    assert '"backend_target_arm_authorized": backend_authorized' in source
+    assert '"status": "technical-failure"' in source
 
 
 def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
@@ -1014,6 +1220,8 @@ def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
     assert '"count_only_custody_deviation_acknowledged": True' in source
     assert '"bayesian_audit_complete": True' in source
     assert "verify_deform_dlo3_evaluator_bayesian_artifacts_v1" in source
+    assert "verify_deform_dlo3_backend_artifacts_v1" in source
+    assert 'expected_backend_status = "scored" if backend_authorized' in source
     assert '"target_authorized": True' in source
 
 

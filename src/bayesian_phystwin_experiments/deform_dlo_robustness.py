@@ -17,7 +17,11 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     _collapse_duplicate_queries,
     _finite_array,
     build_deform_local_residual_features,
+    deserialize_deform_local_residual_model,
     predict_deform_local_residual,
+)
+from bayesian_phystwin_experiments.deform_dlo_pyelastica import (
+    deform_pyelastica_parameter_bank,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -1792,6 +1796,60 @@ def evaluate_deform_backend_source_gate(
     }
 
 
+def evaluate_deform_backend_portability_report(
+    candidate_predictions: Array,
+    backend_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+) -> dict[str, object]:
+    """Report a fixed backend correction without creating a target-side gate."""
+
+    candidate = _finite_array(
+        candidate_predictions, ndim=4, label="backend portability candidate"
+    )
+    backend = _finite_array(
+        backend_predictions, ndim=4, label="backend portability baseline"
+    )
+    observed = _finite_array(targets, ndim=4, label="backend portability outcomes")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != backend.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] < 1
+        or len(normalized_names) != candidate.shape[0]
+        or len(set(normalized_names)) != len(normalized_names)
+    ):
+        raise ValueError("DEFORM backend portability arrays do not align")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    backend_errors = np.mean(np.abs(backend - observed), axis=(1, 2, 3))
+    if np.any(backend_errors <= 0.0):
+        raise ValueError("DEFORM backend portability error must be positive")
+    ratios = candidate_errors / backend_errors
+    candidate_mean = float(np.mean(candidate_errors))
+    backend_mean = float(np.mean(backend_errors))
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-backend-portability-report-v1",
+        "case_count": len(normalized_names),
+        "candidate_mean_l1_m": candidate_mean,
+        "backend_mean_l1_m": backend_mean,
+        "relative_improvement": 1.0 - candidate_mean / backend_mean,
+        "wins": int(np.count_nonzero(candidate_errors < backend_errors)),
+        "maximum_case_ratio": float(np.max(ratios)),
+        "selection_effect": "none",
+        "cases": [
+            {
+                "name": name,
+                "candidate_l1_m": float(candidate_errors[index]),
+                "backend_l1_m": float(backend_errors[index]),
+                "candidate_to_backend_ratio": float(ratios[index]),
+                "candidate_wins": bool(candidate_errors[index] < backend_errors[index]),
+            }
+            for index, name in enumerate(normalized_names)
+        ],
+    }
+
+
 def _validate_deform_casewise_gate_record_v1(
     value: object,
     protocol: Mapping[str, object],
@@ -2004,6 +2062,193 @@ def validate_deform_dlo3_backend_result_v1(
         "source_gate": gate,
         "backend_target_arm_authorized": gate["passed"],
         "selection_effect": "none-after-fit",
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_backend_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash the fixed PyElastica method needed by an authorized target arm."""
+
+    verification = validate_deform_dlo3_backend_result_v1(result, protocol)
+    protocol_identity = _mapping(result.get("protocol"), label="backend protocol")
+    method_identity = _mapping(result.get("method_seal"), label="backend method seal")
+    method_path = _verified_deform_artifact_path(
+        method_identity, label="backend method seal"
+    )
+    method = json.loads(method_path.read_text(encoding="utf-8"))
+    if not isinstance(method, Mapping):
+        raise ValueError("backend method seal must be a JSON object")
+    method_protocol = _mapping(method.get("protocol"), label="backend method protocol")
+    if (
+        method.get("contract") != "deform-dlo3-pyelastica-source-method-seal-v1"
+        or method_protocol.get("sha256") != protocol_identity.get("sha256")
+        or method.get("source_test_opened") is not False
+        or method.get("primary_eval_read") is not False
+        or method.get("selection_effect_after_fit") != "none"
+        or float(cast(Any, method.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, method.get("shrinkage", math.nan))) != 0.25
+    ):
+        raise ValueError("DEFORM backend method seal differs")
+    selected_parameters = dict(
+        _mapping(method.get("selected_parameters"), label="backend parameters")
+    )
+    bank = tuple(
+        member.to_record() for member in deform_pyelastica_parameter_bank(protocol)
+    )
+    if selected_parameters not in bank:
+        raise ValueError(
+            "DEFORM backend selected parameters differ from the frozen bank"
+        )
+
+    model_path = _verified_deform_artifact_path(
+        method.get("full_covariance_model"), label="backend full covariance model"
+    )
+    with np.load(model_path, allow_pickle=False) as archive:
+        base_model = deserialize_deform_local_residual_model(archive)
+        if not {
+            "coefficient_covariance_full",
+            "residual_covariance_full",
+        }.issubset(archive.files):
+            raise ValueError("DEFORM backend full covariance model is incomplete")
+        coefficient = _finite_array(
+            np.asarray(archive["coefficient_covariance_full"]),
+            ndim=5,
+            label="backend full coefficient covariance",
+        )
+        residual = _finite_array(
+            np.asarray(archive["residual_covariance_full"]),
+            ndim=3,
+            label="backend full residual covariance",
+        )
+    internal_count = int(cast(Any, base_model["node_count"])) - 4
+    dimension = int(cast(Any, base_model["feature_count"])) + 1
+    if (
+        int(cast(Any, base_model["node_count"])) != 12
+        or int(cast(Any, base_model["prediction_horizon"])) != 498
+        or int(cast(Any, base_model["feature_count"])) != DEFORM_LOCAL_FEATURE_COUNT
+        or coefficient.shape != (internal_count, 3, 3, dimension, dimension)
+        or residual.shape != (internal_count, 3, 3)
+        or not np.allclose(
+            coefficient,
+            coefficient.transpose(0, 2, 1, 4, 3),
+            rtol=0.0,
+            atol=1e-12,
+        )
+        or not np.allclose(residual, residual.swapaxes(1, 2), rtol=0.0, atol=1e-12)
+        or np.min(np.linalg.eigvalsh(residual)) < -1e-12
+    ):
+        raise ValueError("DEFORM backend full covariance model differs")
+
+    calibration_path = _verified_deform_artifact_path(
+        method.get("covariance_calibration"), label="backend covariance calibration"
+    )
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    if not isinstance(calibration, Mapping):
+        raise ValueError("backend covariance calibration must be a JSON object")
+    scores = tuple(
+        float(value)
+        for value in cast(Sequence[Any], calibration.get("trajectory_scores", ()))
+    )
+    radius = float(cast(Any, calibration.get("standardized_radius", math.nan)))
+    variance_scale = float(cast(Any, calibration.get("variance_scale", math.nan)))
+    if (
+        calibration.get("contract") != "deform-dlo-full-covariance-calibration-v1"
+        or len(scores) != 9
+        or any(not math.isfinite(value) or value < 0.0 for value in scores)
+        or int(cast(Any, calibration.get("rank", -1))) != 9
+        or calibration.get("order_statistic") != "maximum-of-nine"
+        or float(cast(Any, calibration.get("nominal_coordinate_coverage", math.nan)))
+        != 0.9
+        or not math.isfinite(radius)
+        or radius != max(scores)
+        or not math.isfinite(variance_scale)
+        or variance_scale < 1.0
+        or calibration.get("confidence_increase_forbidden") is not True
+        or calibration.get("source_test_opened") is not False
+        or calibration.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM backend covariance calibration differs")
+
+    prediction_seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="backend prediction seal"
+    )
+    prediction_seal = json.loads(prediction_seal_path.read_text(encoding="utf-8"))
+    if not isinstance(prediction_seal, Mapping):
+        raise ValueError("backend prediction seal must be a JSON object")
+    sealed_method = _mapping(
+        prediction_seal.get("method_seal"), label="backend sealed method"
+    )
+    if (
+        prediction_seal.get("contract")
+        != "deform-dlo3-pyelastica-source-prediction-seal-v1"
+        or sealed_method.get("sha256") != method_identity.get("sha256")
+        or prediction_seal.get("source_outcomes_scored") is not False
+        or prediction_seal.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM backend prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        prediction_seal.get("predictions"), label="backend source predictions"
+    )
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        required = {
+            "names",
+            "backend",
+            "candidate",
+            "coordinate_covariance_m2",
+            "calibrated_coordinate_covariance_m2",
+        }
+        if not required.issubset(archive.files):
+            raise ValueError("DEFORM backend source predictions are incomplete")
+        names = np.asarray(archive["names"])
+        backend = _finite_array(
+            np.asarray(archive["backend"]), ndim=4, label="backend source baseline"
+        )
+        candidate = _finite_array(
+            np.asarray(archive["candidate"]), ndim=4, label="backend source candidate"
+        )
+        raw_covariance = _finite_array(
+            np.asarray(archive["coordinate_covariance_m2"]),
+            ndim=5,
+            label="backend source covariance",
+        )
+        calibrated_covariance = _finite_array(
+            np.asarray(archive["calibrated_coordinate_covariance_m2"]),
+            ndim=5,
+            label="backend source calibrated covariance",
+        )
+    if (
+        names.shape != (8,)
+        or backend.shape != (8, 498, 12, 3)
+        or candidate.shape != backend.shape
+        or raw_covariance.shape != (*backend.shape, 3)
+        or calibrated_covariance.shape != raw_covariance.shape
+        or not np.array_equal(candidate[:, :, :2], backend[:, :, :2])
+        or not np.array_equal(candidate[:, :, -2:], backend[:, :, -2:])
+        or not np.allclose(
+            calibrated_covariance,
+            raw_covariance * variance_scale,
+            rtol=1e-12,
+            atol=0.0,
+        )
+    ):
+        raise ValueError("DEFORM backend source prediction archive differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-backend-artifact-verification-v1",
+        "backend_target_arm_authorized": verification["backend_target_arm_authorized"],
+        "selected_parameters": selected_parameters,
+        "full_covariance_model": dict(
+            _mapping(method.get("full_covariance_model"), label="backend model")
+        ),
+        "covariance_calibration": dict(
+            _mapping(method.get("covariance_calibration"), label="backend calibration")
+        ),
+        "variance_scale": variance_scale,
+        "prediction_seal_sha256": sha256_file(prediction_seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
         "verified": True,
     }
 

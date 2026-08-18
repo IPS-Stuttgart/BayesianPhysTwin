@@ -14,6 +14,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     load_deform_dlo_robustness_v1_protocol,
     validate_deform_bayesian_audit_v1,
+    verify_deform_dlo3_backend_artifacts_v1,
     verify_deform_dlo3_evaluator_bayesian_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
@@ -71,7 +72,7 @@ def main() -> int:
     dry_run_path = args.dry_run_result.resolve()
     deviation_path = args.custody_deviation.resolve()
     archive_path = args.source_archive.resolve()
-    load_deform_dlo_robustness_v1_protocol(protocol_path)
+    protocol = load_deform_dlo_robustness_v1_protocol(protocol_path)
     alltrain = _read_json(alltrain_path)
     dry_run = _read_json(dry_run_path)
     deviation = _read_json(deviation_path)
@@ -113,6 +114,32 @@ def main() -> int:
         or final_method.get("primary_eval_read") is not False
     ):
         raise ValueError("DLO3 alltrain Bayesian method differs")
+    authorization = _mapping(
+        alltrain.get("authorization"), label="alltrain authorization"
+    )
+    backend_result_path = _verified_file(
+        authorization.get("backend_result"), label="backend source result"
+    )
+    backend_result = _read_json(backend_result_path)
+    backend_artifacts = verify_deform_dlo3_backend_artifacts_v1(
+        backend_result, protocol
+    )
+    final_backend = dict(
+        _mapping(final_method.get("backend_target_arm"), label="final backend arm")
+    )
+    if final_backend != backend_artifacts:
+        raise ValueError("DLO3 final backend target arm differs")
+    dry_backend = _mapping(
+        dry_run.get("backend_portability"), label="dry-run backend portability"
+    )
+    backend_authorized = bool(backend_artifacts["backend_target_arm_authorized"])
+    expected_backend_status = "scored" if backend_authorized else "not-authorized"
+    if (
+        dry_backend.get("status") != expected_backend_status
+        or dry_backend.get("source_gate_authorized") is not backend_authorized
+        or dry_backend.get("selection_effect") != "none"
+    ):
+        raise ValueError("DLO3 backend dry-run status differs")
     bayesian_audit = validate_deform_bayesian_audit_v1(dry_run, context="evaluator")
     bayesian_artifacts = verify_deform_dlo3_evaluator_bayesian_artifacts_v1(
         dry_run, expected_mode="dry-run"
@@ -138,6 +165,9 @@ def main() -> int:
         "bayesian_artifacts_verified": True,
         "bayesian_audit": bayesian_audit,
         "bayesian_artifacts": bayesian_artifacts,
+        "backend_target_arm_authorized": backend_authorized,
+        "backend_artifacts": backend_artifacts,
+        "backend_dry_run_status": expected_backend_status,
         "count_only_custody_deviation_acknowledged": True,
         "target_authorized": True,
         "official_eval_read": False,
