@@ -520,12 +520,12 @@ def save_query_density_calibration(
             os.fsync(stream.fileno())
         try:
             os.link(temporary, target)
-        except FileExistsError:
+        except FileExistsError as error:
             existing = load_query_density_calibration(target)
             if existing.artifact_id != calibration.artifact_id:
                 raise FileExistsError(
                     "a different query density calibration was published concurrently"
-                )
+                ) from error
         _fsync_directory(target.parent)
     finally:
         temporary.unlink(missing_ok=True)
