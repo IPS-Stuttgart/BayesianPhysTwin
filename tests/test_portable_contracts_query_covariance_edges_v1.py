@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import runpy
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -44,8 +46,6 @@ _bound_projection = cast(Callable[[Any], dict[str, object]], _HELPERS["_bound_pr
 
 
 def _sha(label: str) -> str:
-    import hashlib
-
     return hashlib.sha256(label.encode("utf-8")).hexdigest()
 
 
