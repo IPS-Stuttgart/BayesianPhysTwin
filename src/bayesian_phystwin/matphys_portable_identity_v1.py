@@ -1012,8 +1012,9 @@ def validate_matphys_portable_identity(
     )
     validate_checksum_manifest(root, (PORTABLE_IDENTITY_FILENAME,))
     if verify_sources:
+        source_bundle = cast(Mapping[str, object], receipt["source_bundle"])
         source_root = ordinary_directory(
-            cast(Mapping[str, object], receipt["source_bundle"])["path"],
+            nonempty_string(source_bundle.get("path"), name="source_bundle.path"),
             name="source official MatPhys bundle",
         )
         expected_certificate, official = _derive_certificate(
