@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.metadata
 import json
+import platform
 from pathlib import Path
 from typing import Any, cast
 
@@ -92,6 +93,16 @@ def test_capture_binds_real_inventory_controls_and_lock(
     assert profile.dependency_lock is not None
     assert profile.dependency_lock.name == "evidence.lock"
     assert restored.profile_id == profile.profile_id
+
+
+def test_capture_canonicalizes_python_compiler_whitespace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(platform, "python_compiler", lambda: "Clang 22.1.3 ")
+
+    profile = capture_numerical_environment_v1()
+
+    assert profile.python_compiler == "Clang 22.1.3"
 
 
 def test_capture_rejects_incomplete_lock_arguments(tmp_path: Path) -> None:
