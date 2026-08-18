@@ -22,12 +22,20 @@ The stable category includes:
   covariance admission;
 - `bayesian_phystwin.inference.component_beliefs_v1` for semantic validation of
   the five complete-belief arms;
+- `bayesian_phystwin.structured_point_covariance` and
+  `bayesian_phystwin.structured_point_covariance_operator_v1` for exact
+  block-local plus labeled low-rank covariance representation and matrix-free
+  linear algebra;
+- `bayesian_phystwin.identifiability_report_v1` for content-addressed reporting
+  of physically reachable state modes distinguishable from a declared bias
+  subspace;
 - the public Causal4D provider-v1 and provider-v2 modules; and
 - the Prob4D causal-lineage validation bridge.
 
-The two component-admission modules remain explicit direct imports. Registering
-them as stable does not add symbols to the exact
-`bayesian_phystwin.inference.v1` export snapshot.
+The component-admission, structured-covariance, and identifiability modules
+remain explicit direct imports. Registering them as stable does not add symbols
+to the exact `bayesian_phystwin.inference.v1` or `bayesian_phystwin.v1` export
+snapshots.
 
 Stable status does not promote every implementation dependency imported by
 those modules. It applies only to the explicitly registered module identities

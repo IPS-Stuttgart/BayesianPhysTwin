@@ -50,7 +50,7 @@ object/session-level calibration while retaining coherent cross-point modes.
 
 ## Exact `ObservationBeliefV1` bridge
 
-`ObservationBeliefV1` uses a different but compatible dependence convention:
+`ObservationBeliefV1` uses a different but compatible dependencu convention:
 rows with one `factor_group_id` share the declared latent factor columns, while
 different factor groups are independent. The
 `observation_structured_covariance` adapter expands each factor group into a
@@ -138,21 +138,112 @@ Together, the adapter and archive make the named uncertainty budget suitable for
 a future Prob4D-to-BayesianPhysTwin-to-Causal4D conformance corpus without
 changing any current provider contract or frozen protocol.
 
+## Matrix-free linear algebra
+
+`StructuredPointCovarianceOperatorV1` adds exact numerical operations without
+changing the V1 covariance artifact or materializing its complete dense matrix:
+
+```python
+from bayesian_phystwin.structured_point_covariance_operator_v1 import (
+    StructuredPointCovarianceOperatorV1,
+)
+
+operator = StructuredPointCovarianceOperatorV1(covariance)
+projected_rhs = operator.matmul(rhs)
+solution = operator.solve(rhs)
+log_determinant = operator.logdet()
+samples = operator.sample(numpy.random.default_rng(7), 128)
+```
+
+The operator supports vectors and batches of right-hand sides, component-only
+matrix actions, scalar quadratic forms, component-preserving query projection,
+and zero-mean samples. Samples use shape `(sample_count, 3 * point_count)`.
+
+For
+
+\[
+D = \operatorname{blockdiag}(D_1,\ldots,D_N), \qquad
+U = [U_1,\ldots,U_C],
+\]
+
+solves use
+
+\[
+(D+UU^\mathsf{T})^{-1}b
+= D^{-1}b - D^{-1}U
+  (I+U^\mathsf{T}D^{-1}U)^{-1}U^\mathsf{T}D^{-1}b,
+\]
+
+and log determinants use
+
+\[
+\log|D+UU^\mathsf{T}|
+= \log|D| + \log|I+U^\mathsf{T}D^{-1}U|.
+\]
+
+Every solve is implemented with Cholesky factors and triangular solves; no
+explicit covariance inverse is formed. Matrix actions and sampling support
+positive-semidefinite local blocks. Solves and log determinants fail closed
+unless every local block is strictly positive definite. This restriction keeps
+the numerical contract explicit rather than introducing hidden jitter.
+
+The operator identity binds the exact structured covariance artifact and caller
+metadata. It does not create calibration or authorize an update.
+
+## Physical-state identifiability report
+
+`IdentifiabilityReportV1` turns the existing `PhysicalResponseBasis` and
+`IdentifiableStateBasis` results into a content-addressed audit:
+
+```python
+from bayesian_phystwin.identifiability_report_v1 import (
+    identifiability_report_from_bases,
+)
+
+report = identifiability_report_from_bases(
+    physical_response,
+    identifiable_basis,
+    physical_response_id=physical_response_id,
+    observation_mapping_id=observation_mapping_id,
+    bias_design_id=bias_design_id,
+    query_id=query_id,
+    minimum_identifiable_fraction_required=0.1,
+)
+```
+
+For each retained physical mode, the report records its identifiable fraction
+outside the declared observation-bias subspace. It also reports the associated
+state-bias overlap
+
+\[
+\sqrt{1-f_i^2},
+\]
+
+retained and discarded mode counts, response singular values, explained
+physical-response energy, support, and exact source identities. This makes the
+boundary explicit: a direction that the observations cannot distinguish from
+provider or camera bias remains a predictive discrepancy or prior-retained
+direction; it is not relabelled as a latent physical-state correction.
+
+The report is an audit of one supplied linearization and query. It does not prove
+a unique physical cause, calibrate the covariance, or admit the candidate.
+
 ## Diagnostic materialization
 
 `dense_covariance_m2()` exists only for bounded diagnostics and requires an
 explicit maximum state dimension. Production query evaluation should use
-`project_query_covariance()` so memory scales with the query dimension and
-retained ranks rather than quadratically with the number of points.
+`project_query_covariance()` or the matrix-free operator so memory scales with
+the query dimension and retained ranks rather than quadratically with the number
+of points.
 
 ## Information and claim boundary
 
-The contract, adapter, and archive are covariance representations, not
-uncertainty-calibration results. A non-null `calibration_artifact_id` records
-external calibration lineage; it does not by itself prove coverage. Promotion
-still requires the registered object/session-level calibration and held-out
-physical-query gates.
+The contract, adapter, archive, operator, and identifiability report are
+representations and numerical/audit surfaces, not uncertainty-calibration
+results. A non-null `calibration_artifact_id` records external calibration
+lineage; it does not by itself prove coverage. Promotion still requires the
+registered object/session-level calibration and held-out physical-query gates.
 
-This prospective representation does not alter the frozen Deform360 confirmation
-protocol. It is intended for a later protocol version or a separately registered
+These additive surfaces do not alter the frozen Deform360 confirmation protocol.
+They are intended for a later protocol version or a separately registered
 ablation after the current information boundary is complete.
