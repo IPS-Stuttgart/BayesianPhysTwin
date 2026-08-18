@@ -213,8 +213,7 @@ class AnchorDependenceV1:
             "bias_dimension": self.bias_dimension,
             "correlation_group_ids": list(self.correlation_group_ids),
             "arrays": {
-                name: _array_descriptor(value)
-                for name, value in sorted(arrays.items())
+                name: _array_descriptor(value) for name, value in sorted(arrays.items())
             },
             "metadata": plain_json(self.metadata),
         }
