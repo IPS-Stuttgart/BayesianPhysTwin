@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-checkpoint-belief-exploratory-v1",
+  "claim_boundary": "DLO1 is a post-open exploratory checkpoint-belief study. It cannot confirm SOTA or independent transfer.",
+  "source_reproduction_commit": "4ef71f16b909a8db7b60f08047010250f0b765b1",
+  "source_test_status": "post-open-exploratory-only",
+  "fresh_confirmation_dlo": "DLO2",
+  "arms": [
+    {
+      "name": "swa_tail_2",
+      "updates": [160, 280],
+      "weighting": "uniform"
+    },
+    {
+      "name": "swa_tail_3",
+      "updates": [80, 160, 280],
+      "weighting": "uniform"
+    },
+    {
+      "name": "swa_all_trained",
+      "updates": [40, 80, 160, 280],
+      "weighting": "uniform"
+    },
+    {
+      "name": "validation_softmax",
+      "updates": [40, 80, 160, 280],
+      "weighting": "validation-softmax"
+    }
+  ],
+  "validation_gate": {
+    "minimum_relative_improvement": 0.01,
+    "softmax_temperature_m": 0.002,
+    "fallback": "selected_single_exact",
+    "selection_metric": "mean-coordinate-l1-m"
+  },
+  "source_transfer_report": {
+    "evaluate_only_selected_arm": true,
+    "baseline": "selected_single",
+    "required_for_method_continuation": {
+      "relative_improvement_min": 0.01,
+      "minimum_case_wins": 5
+    }
+  },
+  "fresh_confirmation": {
+    "no_dlo1_retuning": true,
+    "same_arm_bank_and_gate": true,
+    "identical_information_only": true,
+    "official_eval_remains_closed_until_dlo2_source_gate": true
+  }
+}

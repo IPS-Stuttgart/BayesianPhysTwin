@@ -1,0 +1,35 @@
+{
+  "contract": "deform-dlo2-local-residual-source-opening-v6",
+  "development_selection_sha256": "56365ef30f511e296ffbbb0d22001fd1bc07f655ed87656b60c23c0897a2bef1",
+  "fitted_model_sha256": "ed4feae941ca9c293860d21f89846761ab2e5b9e6c64d97dc798d6b4db7acf10",
+  "fixed_arm": {
+    "name": "r1_s0p25",
+    "ridge": 1.0,
+    "selection_source": "dlo2-fit-validation-v6",
+    "shrinkage": 0.25
+  },
+  "implementation": {
+    "local_residual_module_sha256": "f224dcd2e5aae7e6daa1da33f702d14218dd93b4a0a6e226c9571df3dce76264",
+    "runner_sha256": "05fcb442608e07cf467d7e575ccfee6ee98f2a6d03f6cf01f60cd8b0fbeb42de"
+  },
+  "mode": "preflight",
+  "official_eval_read": false,
+  "parent_authorization": {
+    "development_selection_contract": "deform-dlo2-local-residual-development-v6",
+    "development_selection_sha256": "56365ef30f511e296ffbbb0d22001fd1bc07f655ed87656b60c23c0897a2bef1",
+    "official_eval_read": false,
+    "parent_result_contract": "deform-dlo2-local-residual-result-v5",
+    "parent_result_sha256": "804023b09bc960cf988fb8e6ed181b4d557c826c12d7f7a7d75a4f57e8deb876",
+    "selected_arm": "r1_s0p25",
+    "source_test_opened": false
+  },
+  "parent_protocol_sha256": "072cbdf3c971af4c78d21b8a3c7056a4670da8df8721ab46577c8c33fff08889",
+  "parent_result_sha256": "804023b09bc960cf988fb8e6ed181b4d557c826c12d7f7a7d75a4f57e8deb876",
+  "protocol_sha256": "82c4d07ce297bf27884e52f092d450ea38c4e62495695e97d69568c39c7ba470",
+  "schema_version": 1,
+  "selected_checkpoint_sha256": "b64affff638c9d47ca51f17bb7124cc4bd224facd1f7137b0042b7fa9037ea65",
+  "source_manifest_sha256": "7c5501997e6bab7b0537ef9cda932ec19312e40618f03a4fad80ffc1622a6d98",
+  "source_test_opened": false,
+  "source_trajectory_count": 8,
+  "training_result_sha256": "1f8d092bc38b03f6cdd68ef38abcb7d403d914e38ba483698579deaeea8c2572"
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-action-residual-source-v3",
+  "claim_boundary": "Post-open DLO1 method development only. No DLO2 trajectory or official DEFORM evaluation artifact may be read by this runner.",
+  "dlo_type": "DLO1",
+  "source_test_status": "post-open-development-only",
+  "official_eval_policy": "forbidden",
+  "fresh_confirmation_dlo": "DLO2",
+  "information_boundary": {
+    "dlo1_fit_and_validation_read": true,
+    "dlo1_source_test_read_only_after_validation_seal": true,
+    "dlo2_training_read": false,
+    "dlo2_source_outcome_read": false,
+    "official_eval_read": false
+  },
+  "longrun_protocol": {
+    "repository_path": "configs/sota/deform_dlo_longrun_v2.json",
+    "sha256": "a1c7ad23ccf6c83e0130efb9c9b172063892caf5b0066ca79cd6ad3b151515a0"
+  },
+  "longrun_result": {
+    "path": "/home/florianpfaff/source-only/deform-bayesian-v2/runs/longrun-v2-2060c71/longrun_result.json",
+    "sha256": "65c86db0f0ad6af9d583e1753a5752b9dac02226764415b93bd8b66a91856985"
+  },
+  "source_manifest": {
+    "repository_path": "results/sota/deform_dlo_source_v1/source_manifest.json",
+    "sha256": "570e8f65a4a9c5b5bbfeb923fcb8714885896ec041d862548b91ef6ff1599a8a"
+  },
+  "baseline": {
+    "selected_update": 6400,
+    "checkpoint_sha256": "ea2b9e83d09a05bf94eae25aa1dafb449868d4a31961b06ec7b4420216d726e0",
+    "prediction_contract": "recursive-deform-rollout-with-known-clamped-node-trajectory-v1",
+    "validation_l1_m": 0.009256238292437047,
+    "source_test_l1_m": 0.009642382734455168,
+    "reproduction_tolerance_m": 0.0000001
+  },
+  "descriptor": {
+    "sample_count": 32,
+    "query_evidence": "observed-initial-state-and-known-clamped-action-only",
+    "frame": "initial-action-gravity-frame-v1",
+    "includes": [
+      "initial-material-node-state",
+      "sampled-clamped-node-displacement",
+      "sampled-clamped-node-velocity"
+    ],
+    "forbidden": [
+      "future-unclamped-material-state",
+      "candidate-state-innovation",
+      "official-evaluation-outcome"
+    ]
+  },
+  "posterior": {
+    "operator": "trajectory-level-rbf-residual-mixture-v1",
+    "duplicate_policy": "collapse-exact-descriptor-clusters",
+    "uncertainty": "unshrunk-donor-mixture-spread-plus-floor",
+    "coordinate_variance_floor_m2": 0.000001,
+    "clamped_node_policy": "baseline-exact"
+  },
+  "candidate_bank": {
+    "neighbor_counts": [1, 2, 4, 8, 16],
+    "length_scale_multipliers": [0.5, 1.0, 2.0, 4.0],
+    "shrinkages": [0.0625, 0.125, 0.25, 0.5, 1.0],
+    "selection_metric": "trajectory-balanced-coordinate-l1-m",
+    "fallback": "selected-update-6400-byte-exact"
+  },
+  "gates": {
+    "validation": {
+      "minimum_relative_improvement": 0.01,
+      "minimum_case_wins": 6,
+      "maximum_case_ratio": 1.05
+    },
+    "source_test": {
+      "minimum_relative_improvement": 0.01,
+      "minimum_case_wins": 6,
+      "maximum_case_ratio": 1.10,
+      "maximum_candidate_l1_m": 0.0101
+    }
+  },
+  "controls": {
+    "positive": "synthetic-action-conditioned-residual-through-production-posterior",
+    "placebo": "deterministic-donor-residual-permutation",
+    "exact_fallback": true
+  },
+  "fresh_confirmation": {
+    "authorized_only_if_dlo1_source_gate_passes": true,
+    "new_protocol_required": true,
+    "train_baseline_from_scratch_on_dlo2": true,
+    "same_descriptor_posterior_bank_and_gates": true,
+    "official_eval_remains_closed_until_dlo2_source_gate": true
+  }
+}

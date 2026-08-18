@@ -165,6 +165,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     ),
     "materialize-lagrangian-backend": ("bayesian_phystwin.cli.lagrangian_backend"),
     "materialize-matphys-backend": "bayesian_phystwin.cli.matphys_backend",
+    "materialize-matphys-official-producer": (
+        "bayesian_phystwin.cli.matphys_official_producer"
+    ),
     "materialize-deformmaster-backend": ("bayesian_phystwin.cli.deformmaster_backend"),
     "materialize-newton-mpm-backend": ("bayesian_phystwin.cli.newton_mpm_backend"),
     "open-matphys-part-family-future": (

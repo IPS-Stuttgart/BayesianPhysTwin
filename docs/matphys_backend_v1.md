@@ -7,11 +7,13 @@ opt-in physical backend artifact. MatPhys is not a replacement simulator in
 this stack: it proposes `spring_Y`, and the official PhysTwin Warp simulator
 still produces the action-conditioned trajectory.
 
-This v1 boundary deliberately starts after proposal generation and Warp replay.
-Use the existing MatPhys source-training/export and PhysTwin spring-overlay
-paths to produce the candidate and zero-strength replay, then pass their sealed
-six-array archives to this adapter. The frozen scalar-stiffness Deform360 runner
-is not silently repurposed as a per-spring MatPhys producer.
+This guarded v1 consumer deliberately starts after proposal generation and Warp
+replay. The separate
+[`matphys_official_producer_v1`](matphys_official_producer_v1.md) interface now
+binds the official checkpoint, complete material pipeline, spring field, and
+fresh fixed-identity Warp replays before producing the candidate and
+zero-strength archives consumed here. The frozen scalar-stiffness Deform360
+runner is not silently repurposed as a per-spring MatPhys producer.
 
 The adapter is additive. It does not change the frozen Deform360 v6.1
 candidate, its `B0` physical fallback, or any Causal4D claim.
@@ -95,9 +97,10 @@ prefix, action, metrics, calibration audit, and exact fallback. The frozen
 Deform360 v6.1 source scorer must not be retrofitted with this backend.
 
 The currently preserved LOO22 workspace is a result summary rather than a
-portable six-array replay bundle, so this implementation has contract and
-synthetic end-to-end smoke coverage but no newly executed real-data score. A
-fresh preregistered evaluation is not justified by implementation alone. First
-reproduce one already-open development case through the full MatPhys-field plus
-Warp producer, including an exact zero-strength identity replay; only then lock
-a source-only public-data panel.
+portable six-array replay bundle. The guarded consumer and official producer
+now have contract and synthetic end-to-end coverage, but still have no newly
+executed real-data score. A fresh preregistered evaluation is not justified by
+implementation alone. First reproduce one already-open development case in
+both the published per-case parity regime and the target-excluded causal regime,
+including an exact zero-strength identity replay; only then lock a source-only
+public-data panel.

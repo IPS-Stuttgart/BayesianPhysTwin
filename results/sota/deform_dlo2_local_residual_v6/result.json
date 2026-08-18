@@ -1,0 +1,135 @@
+{
+  "alltrain_and_official_evaluation_authorized": true,
+  "claim_boundary": "Independent DLO2 source test of a shrinkage selected on DLO2 fit and validation only. Official DEFORM evaluation remains unopened.",
+  "contract": "deform-dlo2-local-residual-result-v6",
+  "fallback_byte_exact": true,
+  "fallback_used": false,
+  "fitted_model_sha256": "ed4feae941ca9c293860d21f89846761ab2e5b9e6c64d97dc798d6b4db7acf10",
+  "fixed_arm": {
+    "name": "r1_s0p25",
+    "ridge": 1.0,
+    "selection_source": "dlo2-fit-validation-v6",
+    "shrinkage": 0.25
+  },
+  "official_eval_read": false,
+  "protocol_sha256": "82c4d07ce297bf27884e52f092d450ea38c4e62495695e97d69568c39c7ba470",
+  "runtime": {
+    "cuda": "11.8",
+    "device": "cuda:0",
+    "elapsed_seconds": 31.827037224546075,
+    "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+    "torch": "2.0.1+cu118"
+  },
+  "schema_version": 1,
+  "selected_method": "dlo2-baseline-plus-validation-selected-local-residual",
+  "source_diagnostics": {
+    "correction_l2_m": [
+      0.003335293855001118,
+      0.0027873354724226337,
+      0.0025641514751656106,
+      0.0033738483146064976,
+      0.004464454288609263,
+      0.003286463380178922,
+      0.0037781498499641305,
+      0.002902030215702471
+    ],
+    "mean_coordinate_nees": 0.6044565468298855,
+    "mean_coordinate_standard_deviation_m": 0.019236421520822992,
+    "nominal_90_coordinate_coverage": 0.9554258701472557,
+    "trajectory_coverage": [
+      0.9618473895582329,
+      0.9473728246318608,
+      0.9426037483266398,
+      0.9269578313253012,
+      0.9682061579651942,
+      0.9605087014725568,
+      0.9549029451137885,
+      0.9810073627844712
+    ],
+    "trajectory_mean_nees": [
+      0.6225235750136024,
+      0.6857163471716796,
+      0.5807290536632383,
+      0.7782840612021421,
+      0.5808725511068709,
+      0.6071370351054669,
+      0.5897279841050824,
+      0.3906617672710005
+    ]
+  },
+  "source_gate": {
+    "baseline_mean_l1_m": 0.008061886989693276,
+    "candidate_mean_l1_m": 0.007314965186000749,
+    "maximum_allowed_case_ratio": 1.1,
+    "maximum_candidate_l1_m": 0.0097,
+    "maximum_case_ratio": 0.9347280353287906,
+    "minimum_case_wins": 6,
+    "minimum_relative_improvement": 0.01,
+    "passed": true,
+    "relative_improvement": 0.09264850830176974,
+    "ties": 0,
+    "trajectory_count": 8,
+    "wins": 8
+  },
+  "source_opening_sha256": "97c29029b17362038881a90a3d2541ae7486653af7d2138c2ebae10c9d915a24",
+  "source_prediction_sha256": "802d2a457c8c5a1d6ab480f141e001573630e8bdb3b14cf86bdae8e760eb2660",
+  "source_records": [
+    {
+      "baseline_l1_m": 0.007819707370008339,
+      "candidate_l1_m": 0.006975889752132304,
+      "candidate_to_baseline_ratio": 0.8920908957396018,
+      "improved": true,
+      "name": "112.pkl"
+    },
+    {
+      "baseline_l1_m": 0.008685424071360158,
+      "candidate_l1_m": 0.008059682918212345,
+      "candidate_to_baseline_ratio": 0.9279550257987782,
+      "improved": true,
+      "name": "98.pkl"
+    },
+    {
+      "baseline_l1_m": 0.006611393744886309,
+      "candidate_l1_m": 0.006139301792881768,
+      "candidate_to_baseline_ratio": 0.9285941860035657,
+      "improved": true,
+      "name": "70.pkl"
+    },
+    {
+      "baseline_l1_m": 0.009650672612977137,
+      "candidate_l1_m": 0.008512780171614859,
+      "candidate_to_baseline_ratio": 0.8820919031247451,
+      "improved": true,
+      "name": "111.pkl"
+    },
+    {
+      "baseline_l1_m": 0.009262571683954899,
+      "candidate_l1_m": 0.008443441318316957,
+      "candidate_to_baseline_ratio": 0.9115655572137832,
+      "improved": true,
+      "name": "23.pkl"
+    },
+    {
+      "baseline_l1_m": 0.008776044444806654,
+      "candidate_l1_m": 0.007711043489977254,
+      "candidate_to_baseline_ratio": 0.8786468138889578,
+      "improved": true,
+      "name": "89.pkl"
+    },
+    {
+      "baseline_l1_m": 0.007544962093370835,
+      "candidate_l1_m": 0.00705248759416672,
+      "candidate_to_baseline_ratio": 0.9347280353287906,
+      "improved": true,
+      "name": "69.pkl"
+    },
+    {
+      "baseline_l1_m": 0.006144319896181877,
+      "candidate_l1_m": 0.00562509445070379,
+      "candidate_to_baseline_ratio": 0.9154950500216082,
+      "improved": true,
+      "name": "22.pkl"
+    }
+  ],
+  "source_test_opened": true
+}

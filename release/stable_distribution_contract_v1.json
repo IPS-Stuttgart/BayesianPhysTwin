@@ -3,8 +3,8 @@
   "schema_version": 1,
   "compatibility_line": "0.4",
   "wheel": {
-    "maximum_size_bytes": 2200000,
-    "maximum_member_count": 550,
+    "maximum_size_bytes": 2220000,
+    "maximum_member_count": 560,
     "required_members": [
       "bayesian_phystwin/__init__.py",
       "bayesian_phystwin/py.typed",
@@ -18,6 +18,8 @@
       "protocols/",
       "scripts/",
       "tests/",
+      "bayesian_phystwin/experiments/",
+      "bayesian_phystwin_experiments/",
       "tools/"
     ],
     "console_scripts": {
@@ -39,6 +41,7 @@
         "forbidden_package_prefixes": [
           "bayesian_phystwin.deform360_",
           "bayesian_phystwin.experiments",
+          "bayesian_phystwin_experiments",
           "bayesian_phystwin.phystwin_",
           "bayesian_phystwin.synthetic_benchmark"
         ]
@@ -58,6 +61,7 @@
         "forbidden_package_prefixes": [
           "bayesian_phystwin.deform360_",
           "bayesian_phystwin.experiments",
+          "bayesian_phystwin_experiments",
           "bayesian_phystwin.phystwin_",
           "bayesian_phystwin.synthetic_benchmark"
         ]
@@ -77,6 +81,7 @@
         "forbidden_package_prefixes": [
           "bayesian_phystwin.deform360_",
           "bayesian_phystwin.experiments",
+          "bayesian_phystwin_experiments",
           "bayesian_phystwin.phystwin_"
         ]
       }
@@ -84,7 +89,7 @@
   },
   "sdist": {
     "maximum_size_bytes": 3100000,
-    "maximum_regular_member_count": 1260,
+    "maximum_regular_member_count": 1300,
     "required_members": [
       "release/stable_distribution_contract_v1.json",
       "docs/stable_distribution_contract_v1.md",
