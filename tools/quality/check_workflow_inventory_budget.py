@@ -11,9 +11,7 @@ from pathlib import Path, PurePosixPath
 from typing import Final
 
 _REPOSITORY_ROOT: Final = Path(__file__).resolve().parents[2]
-_DEFAULT_CONTRACT: Final = Path(
-    ".github/quality/workflow-inventory-budget-v1.json"
-)
+_DEFAULT_CONTRACT: Final = Path(".github/quality/workflow-inventory-budget-v1.json")
 _SCHEMA: Final = "bayesian-phystwin.workflow-inventory-budget"
 _SCHEMA_VERSION: Final = 1
 _WORKFLOW_DIRECTORY: Final = PurePosixPath(".github/workflows")
