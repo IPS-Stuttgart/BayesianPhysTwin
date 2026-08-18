@@ -36,6 +36,20 @@ It is not itself evidence that the backend improves a physical prediction. A
 failed record remains a complete result for that exact runtime and preserves
 every failure reason.
 
+## Contiguous evidence promotion
+
+The executable promotion chain is defined by
+[`material_backend_evidence_v1`](material_backend_evidence_v1.md). It separates
+seven stages from transport registration (T0) through downstream-query benefit
+(T6). A source or target decision cannot be attached unless every predecessor is
+present, the qualification matches the exact runtime, and source/target object or
+session rosters are disjoint.
+
+The canonical backend registry's `preferred`, `supported`, and `experimental`
+labels describe integration maturity only. They must not be used as substitutes
+for T3 numerical qualification, T4 source competence, T5 fresh-object
+validation, or T6 downstream benefit.
+
 ## Frozen comparison roster
 
 Every competence run must compare complete physical object/session groups under
