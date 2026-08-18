@@ -58,9 +58,7 @@ def test_checked_in_registry_is_valid_and_target_closed() -> None:
         "status": "valid",
         "snapshot_date": "2026-08-18",
         "action_count": 4,
-        "highest_priority_action": (
-            "covariance-only-independent-confirmation"
-        ),
+        "highest_priority_action": ("covariance-only-independent-confirmation"),
         "target_open_action_count": 0,
     }
 
