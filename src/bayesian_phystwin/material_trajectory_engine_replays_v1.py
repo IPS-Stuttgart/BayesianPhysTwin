@@ -1,12 +1,12 @@
 """Dependency-free replay adapters for common material simulators.
 
 The portable material-trajectory producer intentionally does not depend on heavy
-simulator packages.  This module provides small structural adapters for native
-SOFA ``MechanicalObject`` and MuJoCo Flex state while keeping those dependencies
-on the caller side.  Importing this module therefore never imports SOFA or
-MuJoCo.
+simulator packages. This module provides small structural adapters for native
+SOFA ``MechanicalObject``, MuJoCo Flex, and PositionBasedDynamics particle state
+while keeping those dependencies on the caller side. Importing this module
+therefore never imports SOFA, MuJoCo, or pyPBD.
 
-These adapters establish state-access compatibility only.  They do not qualify a
+These adapters establish state-access compatibility only. They do not qualify a
 backend runtime, its physical fidelity, uncertainty calibration, or downstream
 Prob4D/Causal4D value.
 """
@@ -30,6 +30,14 @@ class _SofaPositionValueV1(Protocol):
 
 class _SofaMechanicalObjectV1(Protocol):
     position: _SofaPositionValueV1
+
+
+class _PBDParticleDataV1(Protocol):
+    def getVertices(self) -> object: ...
+
+
+class _PBDSimulationModelV1(Protocol):
+    def getParticles(self) -> _PBDParticleDataV1: ...
 
 
 def _no_op() -> None:
@@ -94,8 +102,8 @@ def _material_positions(value: object, *, label: str) -> FloatArray:
 class SofaMechanicalObjectReplayV1:
     """Adapt one SOFA Vec3 ``MechanicalObject`` to material replay v1.
 
-    ``animate_callback`` is normally ``Sofa.Simulation.animate``.  The adapter
-    passes ``root_node`` and the registered output ``time_step_s`` to it.  The
+    ``animate_callback`` is normally ``Sofa.Simulation.animate``. The adapter
+    passes ``root_node`` and the registered output ``time_step_s`` to it. The
     mechanical state is read from the public ``MechanicalObject.position.value``
     surface and must already use metres in the canonical coordinate frame.
     """
@@ -139,7 +147,7 @@ class MuJoCoFlexReplayV1:
 
     MuJoCo stores all flex vertices in ``data.flexvert_xpos`` and exposes the
     per-flex slices through ``model.flex_vertadr`` and ``model.flex_vertnum``.
-    ``step_callback`` is normally ``mujoco.mj_step``.  The selected flex vertex
+    ``step_callback`` is normally ``mujoco.mj_step``. The selected flex vertex
     order is preserved exactly and must already be expressed in metres in the
     canonical coordinate frame.
     """
@@ -200,7 +208,50 @@ class MuJoCoFlexReplayV1:
         return self.step_callback(self.model, self.data)
 
 
+@dataclass(slots=True)
+class PositionBasedDynamicsReplayV1:
+    """Adapt pyPBD ``SimulationModel`` particle state to material replay v1.
+
+    The pinned pyPBD API exposes one global ``ParticleData`` object through
+    ``SimulationModel.getParticles()`` and its persistent particle rows through
+    ``ParticleData.getVertices()``. ``time_step.step(simulation_model)`` advances
+    the registered PBD/XPBD solver by one output step.
+    """
+
+    simulation_model: object
+    time_step: object
+    synchronize_callback: Callable[[], object] = _no_op
+    context: object | None = None
+
+    def __post_init__(self) -> None:
+        if not callable(getattr(self.simulation_model, "getParticles", None)):
+            raise TypeError("simulation_model must expose getParticles()")
+        if not callable(getattr(self.time_step, "step", None)):
+            raise TypeError("time_step must expose step(simulation_model)")
+        if not callable(self.synchronize_callback):
+            raise TypeError("synchronize_callback must be callable")
+
+    def synchronize(self) -> object:
+        return self.synchronize_callback()
+
+    def get_material_positions_m(self) -> FloatArray:
+        model = cast(_PBDSimulationModelV1, self.simulation_model)
+        particles = model.getParticles()
+        get_vertices = getattr(particles, "getVertices", None)
+        if not callable(get_vertices):
+            raise TypeError("pyPBD ParticleData must expose getVertices()")
+        return _material_positions(
+            get_vertices(),
+            label="PositionBasedDynamics ParticleData",
+        )
+
+    def step(self) -> object:
+        time_step = cast(Any, self.time_step)
+        return time_step.step(self.simulation_model)
+
+
 __all__ = [
     "MuJoCoFlexReplayV1",
+    "PositionBasedDynamicsReplayV1",
     "SofaMechanicalObjectReplayV1",
 ]
