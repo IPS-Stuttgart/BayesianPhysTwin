@@ -59,14 +59,11 @@ def test_dlo2_initialization_smoke_preserves_its_historical_implementation() -> 
     assert smoke["passed"] is True
     assert smoke["dlo2_source_read"] is False
     assert smoke["official_eval_read"] is False
-    assert smoke["implementation"]["parser_sha256"] == sha256_file(
-        REPOSITORY_ROOT
-        / "src"
-        / "bayesian_phystwin_experiments"
-        / "deform_dlo_upstream.py"
-    )
-    # The smoke sealed runner revision f8e9e3af and its companion verifier.
+    # The smoke sealed parser and runner revision f8e9e3af plus its verifier.
     # Historical evidence must not be rebound to later repository paths or bytes.
+    assert smoke["implementation"]["parser_sha256"] == (
+        "1efa8a00e17ae4fc1eb179bdc6c0a7edfb031c087090f00c80c4e052906693d7"
+    )
     assert smoke["implementation"]["runner_sha256"] == (
         "d5626377a6028133791b6f89b4aee02ba2444b1222177cc3599b743b55daae67"
     )
