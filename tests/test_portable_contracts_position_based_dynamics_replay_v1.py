@@ -21,6 +21,9 @@ class _ParticleData:
         self.vertices = np.ascontiguousarray(value).copy()
         self.pending = np.zeros_like(self.vertices)
 
+    def getNumberOfParticles(self) -> int:
+        return len(self.vertices)
+
     def getVertices(self) -> np.ndarray:
         return self.vertices
 
@@ -104,16 +107,77 @@ def test_pbd_replay_rejects_invalid_surface_configuration(
         PositionBasedDynamicsReplayV1(**parameters)
 
 
-def test_pbd_replay_rejects_missing_particle_vertex_surface() -> None:
+def test_pbd_replay_rejects_missing_particle_count_surface() -> None:
+    class ParticleData:
+        def getVertices(self) -> np.ndarray:
+            return _frame_zero()
+
     class Model:
-        def getParticles(self) -> object:
-            return object()
+        def getParticles(self) -> ParticleData:
+            return ParticleData()
+
+    replay = PositionBasedDynamicsReplayV1(
+        simulation_model=Model(),
+        time_step=_TimeStep(),
+    )
+    with pytest.raises(TypeError, match="getNumberOfParticles"):
+        replay.get_material_positions_m()
+
+
+def test_pbd_replay_rejects_missing_particle_vertex_surface() -> None:
+    class ParticleData:
+        def getNumberOfParticles(self) -> int:
+            return 1
+
+    class Model:
+        def getParticles(self) -> ParticleData:
+            return ParticleData()
 
     replay = PositionBasedDynamicsReplayV1(
         simulation_model=Model(),
         time_step=_TimeStep(),
     )
     with pytest.raises(TypeError, match="getVertices"):
+        replay.get_material_positions_m()
+
+
+def test_pbd_replay_rejects_empty_particles_before_vertex_view() -> None:
+    class EmptyParticleData:
+        def getNumberOfParticles(self) -> int:
+            return 0
+
+        def getVertices(self) -> object:
+            raise AssertionError("unsafe empty getVertices() call")
+
+    class Model:
+        def getParticles(self) -> EmptyParticleData:
+            return EmptyParticleData()
+
+    replay = PositionBasedDynamicsReplayV1(
+        simulation_model=Model(),
+        time_step=_TimeStep(),
+    )
+    with pytest.raises(ValueError, match="at least one particle"):
+        replay.get_material_positions_m()
+
+
+def test_pbd_replay_rejects_particle_count_view_mismatch() -> None:
+    class ParticleData:
+        def getNumberOfParticles(self) -> int:
+            return 3
+
+        def getVertices(self) -> np.ndarray:
+            return _frame_zero()
+
+    class Model:
+        def getParticles(self) -> ParticleData:
+            return ParticleData()
+
+    replay = PositionBasedDynamicsReplayV1(
+        simulation_model=Model(),
+        time_step=_TimeStep(),
+    )
+    with pytest.raises(ValueError, match="does not match"):
         replay.get_material_positions_m()
 
 
