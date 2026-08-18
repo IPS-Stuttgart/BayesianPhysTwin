@@ -8,7 +8,9 @@ import hashlib
 import importlib
 import importlib.metadata
 import json
+import os
 import platform
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -336,97 +338,107 @@ def run_smoke(
     if root.exists() or root.is_symlink():
         raise FileExistsError(root)
     root.parent.mkdir(parents=True, exist_ok=True)
-    root.mkdir()
 
     native = _load_native_modules()
     script_path = Path(__file__).resolve()
-    run_a = _run_once(
-        native,
-        root / "run-a",
-        frame_count=frame_count,
-        maximum_displacement_m=maximum_displacement_m,
-        young_modulus_pa=young_modulus_pa,
-        poisson_ratio=poisson_ratio,
-        script_path=script_path,
-    )
-    run_b = _run_once(
-        native,
-        root / "run-b",
-        frame_count=frame_count,
-        maximum_displacement_m=maximum_displacement_m,
-        young_modulus_pa=young_modulus_pa,
-        poisson_ratio=poisson_ratio,
-        script_path=script_path,
-    )
-    deterministic = run_a["portable_sha256"] == run_b["portable_sha256"]
-    if not deterministic:
-        raise RuntimeError("native JAX-FEM replay is not byte-deterministic")
+    with tempfile.TemporaryDirectory(
+        prefix=f".{root.name}.staging.",
+        dir=root.parent,
+    ) as temporary:
+        staging = Path(temporary) / root.name
+        staging.mkdir()
+        run_a = _run_once(
+            native,
+            staging / "run-a",
+            frame_count=frame_count,
+            maximum_displacement_m=maximum_displacement_m,
+            young_modulus_pa=young_modulus_pa,
+            poisson_ratio=poisson_ratio,
+            script_path=script_path,
+        )
+        run_b = _run_once(
+            native,
+            staging / "run-b",
+            frame_count=frame_count,
+            maximum_displacement_m=maximum_displacement_m,
+            young_modulus_pa=young_modulus_pa,
+            poisson_ratio=poisson_ratio,
+            script_path=script_path,
+        )
+        deterministic = run_a["portable_sha256"] == run_b["portable_sha256"]
+        if not deterministic:
+            raise RuntimeError("native JAX-FEM replay is not byte-deterministic")
 
-    response = float(run_a["maximum_driven_minus_zero_response_m"])
-    zero_drift = float(run_a["maximum_zero_action_drift_m"])
-    final_right = float(run_a["final_right_face_x_displacement_m"])
-    response_tolerance = max(1e-8, maximum_displacement_m * 1e-5)
-    if abs(final_right - maximum_displacement_m) > response_tolerance:
-        raise RuntimeError("JAX-FEM prescribed displacement was not reproduced")
-    if response <= maximum_displacement_m * 0.5:
-        raise RuntimeError("JAX-FEM driven arm did not produce a material response")
-    if zero_drift > 1e-10:
-        raise RuntimeError("JAX-FEM zero-action drift exceeds the synthetic smoke bound")
+        response = float(run_a["maximum_driven_minus_zero_response_m"])
+        zero_drift = float(run_a["maximum_zero_action_drift_m"])
+        final_right = float(run_a["final_right_face_x_displacement_m"])
+        response_tolerance = max(1e-8, maximum_displacement_m * 1e-5)
+        if abs(final_right - maximum_displacement_m) > response_tolerance:
+            raise RuntimeError("JAX-FEM prescribed displacement was not reproduced")
+        if response <= maximum_displacement_m * 0.5:
+            raise RuntimeError("JAX-FEM driven arm did not produce a material response")
+        if zero_drift > 1e-10:
+            raise RuntimeError(
+                "JAX-FEM zero-action drift exceeds the synthetic smoke bound"
+            )
 
-    devices = [
-        {
-            "platform": str(getattr(device, "platform", "unknown")),
-            "id": str(getattr(device, "id", "unknown")),
-            "device_kind": str(getattr(device, "device_kind", "unknown")),
+        devices = [
+            {
+                "platform": str(getattr(device, "platform", "unknown")),
+                "id": str(getattr(device, "id", "unknown")),
+                "device_kind": str(getattr(device, "device_kind", "unknown")),
+            }
+            for device in native.jax.devices()
+        ]
+        descriptor: dict[str, Any] = {
+            "schema": SMOKE_SCHEMA,
+            "claim_boundary": (
+                "Synthetic native-execution and provenance smoke only; no "
+                "source-value, fresh-object, calibration, or Causal4D benefit claim."
+            ),
+            "backend_profile": "jax-fem-quasistatic-v1",
+            "engine": {
+                "repository": JAX_FEM_REPOSITORY,
+                "revision": JAX_FEM_REVISION,
+                "version": JAX_FEM_VERSION,
+                "source_records": native.source_records,
+            },
+            "runtime": {
+                "python_version": platform.python_version(),
+                "jax_version": str(getattr(native.jax, "__version__", "unknown")),
+                "jax_enable_x64": bool(
+                    getattr(native.jax.config, "jax_enable_x64", True)
+                ),
+                "devices": devices,
+            },
+            "problem": {
+                "element_type": "HEX8",
+                "point_count": len(_POINTS_M),
+                "cell_count": len(_CELLS),
+                "frame_count": frame_count,
+                "maximum_displacement_m": maximum_displacement_m,
+                "young_modulus_pa": young_modulus_pa,
+                "poisson_ratio": poisson_ratio,
+            },
+            "checks": {
+                "installed_source_matches_pinned_git_blobs": True,
+                "portable_replay_byte_deterministic": deterministic,
+                "maximum_zero_action_drift_m": zero_drift,
+                "maximum_driven_minus_zero_response_m": response,
+                "final_right_face_x_displacement_m": final_right,
+            },
+            "run_a": run_a,
+            "run_b": run_b,
+            "future_outcomes_read": False,
+            "dataset_payload_read": False,
         }
-        for device in native.jax.devices()
-    ]
-    descriptor: dict[str, Any] = {
-        "schema": SMOKE_SCHEMA,
-        "claim_boundary": (
-            "Synthetic native-execution and provenance smoke only; no source-value, "
-            "fresh-object, calibration, or Causal4D benefit claim."
-        ),
-        "backend_profile": "jax-fem-quasistatic-v1",
-        "engine": {
-            "repository": JAX_FEM_REPOSITORY,
-            "revision": JAX_FEM_REVISION,
-            "version": JAX_FEM_VERSION,
-            "source_records": native.source_records,
-        },
-        "runtime": {
-            "python_version": platform.python_version(),
-            "jax_version": str(getattr(native.jax, "__version__", "unknown")),
-            "jax_enable_x64": bool(native.jax.config.jax_enable_x64),
-            "devices": devices,
-        },
-        "problem": {
-            "element_type": "HEX8",
-            "point_count": len(_POINTS_M),
-            "cell_count": len(_CELLS),
-            "frame_count": frame_count,
-            "maximum_displacement_m": maximum_displacement_m,
-            "young_modulus_pa": young_modulus_pa,
-            "poisson_ratio": poisson_ratio,
-        },
-        "checks": {
-            "installed_source_matches_pinned_git_blobs": True,
-            "portable_replay_byte_deterministic": deterministic,
-            "maximum_zero_action_drift_m": zero_drift,
-            "maximum_driven_minus_zero_response_m": response,
-            "final_right_face_x_displacement_m": final_right,
-        },
-        "run_a": run_a,
-        "run_b": run_b,
-        "future_outcomes_read": False,
-        "dataset_payload_read": False,
-    }
-    descriptor["smoke_id"] = _content_id(descriptor)
-    result_path = root / "jax-fem-native-smoke.json"
-    result_path.write_text(
-        json.dumps(descriptor, indent=2, sort_keys=True, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+        descriptor["smoke_id"] = _content_id(descriptor)
+        result_path = staging / "jax-fem-native-smoke.json"
+        result_path.write_text(
+            json.dumps(descriptor, indent=2, sort_keys=True, allow_nan=False) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(staging, root)
     return descriptor
 
 
