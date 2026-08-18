@@ -151,5 +151,3 @@ def test_matrix_actions_reject_malformed_right_hand_sides(
 ) -> None:
     with pytest.raises(ValueError, match=match):
         _operator().matmul(rhs)
-
-
