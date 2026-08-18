@@ -1,0 +1,78 @@
+name: Repair same-mean mixture quality
+
+on:
+  push:
+    branches:
+      - agent/same-mean-query-mixture-v1
+    paths:
+      - .agent-repair/ruff-b904
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-fix-same-mean-mixture-quality
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact repair branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/same-mean-query-mixture-v1
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Apply and validate the exact repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/query_density_calibration.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''        except FileExistsError:\n            existing = load_query_density_calibration(target)\n            if existing.artifact_id != calibration.artifact_id:\n                raise FileExistsError(\n                    "a different query density calibration was published concurrently"\n                )\n'''
+          new = '''        except FileExistsError as error:\n            existing = load_query_density_calibration(target)\n            if existing.artifact_id != calibration.artifact_id:\n                raise FileExistsError(\n                    "a different query density calibration was published concurrently"\n                ) from error\n'''
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one repair target, found {text.count(old)}")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          python -m pip install -e ".[dev]"
+          python -m ruff check -- \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py \
+            tests/test_covariance_only_hybrid_mixture_v1.py \
+            tests/test_query_calibration_mixture_density_v1.py
+          python -m ruff format --check -- \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py \
+            tests/test_covariance_only_hybrid_mixture_v1.py \
+            tests/test_query_calibration_mixture_density_v1.py
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_covariance_only_hybrid_mixture_v1.py \
+            tests/test_query_calibration_mixture_density_v1.py
+          python -m compileall -q \
+            src/bayesian_phystwin/predictive_query_mixture.py \
+            src/bayesian_phystwin/query_density_calibration.py
+          git diff --check
+
+      - name: Publish the repair and remove temporary machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/bayesian_phystwin/query_density_calibration.py
+          git rm .agent-repair/ruff-b904
+          git rm .github/workflows/agent-fix-same-mean-mixture-quality.yml
+          git commit -m "Fix query density exception chaining"
+          git push origin HEAD:agent/same-mean-query-mixture-v1
