@@ -33,6 +33,8 @@ class _SofaMechanicalObjectV1(Protocol):
 
 
 class _PBDParticleDataV1(Protocol):
+    def getNumberOfParticles(self) -> object: ...
+
     def getVertices(self) -> object: ...
 
 
@@ -237,13 +239,31 @@ class PositionBasedDynamicsReplayV1:
     def get_material_positions_m(self) -> FloatArray:
         model = cast(_PBDSimulationModelV1, self.simulation_model)
         particles = model.getParticles()
+        get_particle_count = getattr(particles, "getNumberOfParticles", None)
+        if not callable(get_particle_count):
+            raise TypeError(
+                "pyPBD ParticleData must expose getNumberOfParticles()"
+            )
+        particle_count = _nonnegative_integer(
+            get_particle_count(),
+            name="pyPBD particle count",
+        )
+        _require(
+            particle_count >= 1,
+            "pyPBD ParticleData must contain at least one particle",
+        )
         get_vertices = getattr(particles, "getVertices", None)
         if not callable(get_vertices):
             raise TypeError("pyPBD ParticleData must expose getVertices()")
-        return _material_positions(
+        positions = _material_positions(
             get_vertices(),
             label="PositionBasedDynamics ParticleData",
         )
+        _require(
+            len(positions) == particle_count,
+            "pyPBD particle count does not match getVertices()",
+        )
+        return positions
 
     def step(self) -> object:
         time_step = cast(Any, self.time_step)
