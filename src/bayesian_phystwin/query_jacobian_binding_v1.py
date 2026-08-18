@@ -6,7 +6,7 @@ import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,7 +20,7 @@ from ._portable_contracts import (
     write_atomic_json,
 )
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 QUERY_JACOBIAN_BINDING_SCHEMA: Final = "bayesian_phystwin.query_jacobian_binding"
 QUERY_JACOBIAN_BINDING_VERSION: Final = 1
