@@ -90,7 +90,12 @@ def test_warp_fem_replay_adds_displacements_to_frozen_reference() -> None:
 @pytest.mark.parametrize(
     ("field", "kwargs", "error", "message"),
     (
-        (_WarpField(np.zeros((4, 3))), {"step_callback": None}, TypeError, "step_callback"),
+        (
+            _WarpField(np.zeros((4, 3))),
+            {"step_callback": None},
+            TypeError,
+            "step_callback",
+        ),
         (
             _WarpField(np.zeros((4, 3))),
             {"synchronize_callback": None},
