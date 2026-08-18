@@ -37,41 +37,21 @@ def _positive_integer(value: object, *, name: str) -> int:
     return int(value)
 
 
-def _host_array(value: object) -> npt.NDArray[Any]:
-    """Copy a common host-visible array facade into contiguous NumPy memory."""
-
-    current = value
-    block_until_ready = getattr(current, "block_until_ready", None)
-    if callable(block_until_ready):
-        synchronized = block_until_ready()
-        if synchronized is not None:
-            current = synchronized
-    detach = getattr(current, "detach", None)
-    if callable(detach):
-        current = detach()
-    cpu = getattr(current, "cpu", None)
-    if callable(cpu):
-        current = cpu()
-    to_numpy = getattr(current, "numpy", None)
-    if callable(to_numpy):
-        current = to_numpy()
-    return np.ascontiguousarray(np.asarray(current)).copy()
-
-
 @dataclass(slots=True)
 class PhysXDeformableVolumeReplayV1:
     """Adapt one PhysX deformable-volume simulation mesh to material replay v1.
 
-    ``read_sim_position_inv_mass_callback`` must return the host-visible copy of
-    ``PxDeformableVolume::getSimPositionInvMassBufferD()`` in simulation-mesh
-    vertex order. PhysX stores one ``PxVec4`` per simulation vertex: XYZ position
-    followed by inverse mass. The callback therefore must return floating
-    ``(simulation_vertex_count, 4)`` data.
+    ``read_sim_position_inv_mass_callback`` must return an already host-visible
+    copy of ``PxDeformableVolume::getSimPositionInvMassBufferD()`` in
+    simulation-mesh vertex order. PhysX stores one ``PxVec4`` per simulation
+    vertex: XYZ position followed by inverse mass. The callback therefore must
+    return NumPy-compatible floating ``(simulation_vertex_count, 4)`` data.
 
     ``synchronize_callback`` is intentionally mandatory. The owning PhysX/CUDA
     producer must ensure simulation tasks have finished and that the device-to-
     host copy is complete before the read callback is evaluated. This adapter
-    does not import PhysX, allocate CUDA memory, or infer synchronization.
+    does not import PhysX, allocate CUDA memory, infer synchronization, or copy a
+    device pointer itself.
     """
 
     simulation_vertex_count: int
@@ -97,7 +77,9 @@ class PhysXDeformableVolumeReplayV1:
         return self.synchronize_callback()
 
     def get_material_positions_m(self) -> FloatArray:
-        state = _host_array(self.read_sim_position_inv_mass_callback())
+        state = np.ascontiguousarray(
+            np.asarray(self.read_sim_position_inv_mass_callback())
+        ).copy()
         expected_shape = (self.simulation_vertex_count, 4)
         _require(
             state.shape == expected_shape,
