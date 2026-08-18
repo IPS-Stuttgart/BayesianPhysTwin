@@ -1,0 +1,90 @@
+{
+  "claim_boundary": "Source-only numerical qualification of one exact Genesis MPM runtime on two already-open PhysTwin source actions. It is not a source-value, fresh-object, calibration, Causal4D, DEFORM, or state-of-the-art claim.",
+  "failure_reasons": [],
+  "implementation": {
+    "git_head": "f00b6b1eee28dfab4869f8a81c6bc4b54a2c7e0d",
+    "git_worktree_clean": true,
+    "source_files": {
+      "scripts/remote/run_genesis_mpm_source_qualification_v1.py": "2f1c33b6dc370b87b3a5833be22a9106e0e6bf0a9bfa2c89588b4eb31b6e822f",
+      "src/bayesian_phystwin/genesis_mpm_source_qualification_v1.py": "3f2c0ece24e3729f2b04fd4d7bf582b36c4fc60ce0394fa57d67df9497dd6e2c"
+    }
+  },
+  "information_boundary": {
+    "incumbent_predictions_read": true,
+    "source_inputs_read": true,
+    "source_object_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "protocol_sha256": "0cf992eaff27433803f973ce508a4ce1fdb37d7b36472c54169479dd51213cd1",
+  "qualification_artifact_id": "775fc43876318d7f5f01603d48cd26017a98bc69558d483e91ad58e523e38fa3",
+  "qualified": true,
+  "result_id": "8fe326afb13e3c7ec11cc4e0c5bc2f257e61f08c02a6aed2da6b9c207b0a9379",
+  "runtime_id": "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a",
+  "schema": "bayesian-phystwin.genesis-mpm-source-physics-result",
+  "schema_version": 1,
+  "source_groups": [
+    {
+      "action_response_rmse_m": 0.0011704309382220921,
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "group_id": "double_lift_zebra",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "maximum_deformation_determinant": 1.0038399948425092,
+      "maximum_off_lattice_translation_discretization_error_m": 0.0003124207753038639,
+      "maximum_particle_step_m": 0.0053824316228108186,
+      "maximum_rigid_translation_equivariance_error_m": 2.445074124424818e-15,
+      "maximum_zero_action_drift_m": 0.0,
+      "minimum_deformation_determinant": 0.9926356585553807,
+      "parameter_sensitivity_rmse_m": 0.0004960757090621754,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "off_lattice_translation_discretization": true,
+        "parameter_sensitivity_lower": true,
+        "parameter_sensitivity_upper": true,
+        "particle_step": true
+      },
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "source_query_parity_rmse_m": 0.0,
+      "time_step_refinement_relative_error": 0.04498107726792147,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "da7c60309039b07836801e04b9fe9dcb965e5d83e03e9f8fe5d2c9705238171f",
+      "units_coordinate_entity_order_valid": true
+    },
+    {
+      "action_response_rmse_m": 8.609055455239939e-05,
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "group_id": "double_stretch_zebra",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "maximum_deformation_determinant": 1.0001932337791983,
+      "maximum_off_lattice_translation_discretization_error_m": 1.537447384053014e-05,
+      "maximum_particle_step_m": 0.0032403057543830176,
+      "maximum_rigid_translation_equivariance_error_m": 2.5553318828870535e-15,
+      "maximum_zero_action_drift_m": 0.0,
+      "minimum_deformation_determinant": 0.9996084972325282,
+      "parameter_sensitivity_rmse_m": 4.797752738628429e-05,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "off_lattice_translation_discretization": true,
+        "parameter_sensitivity_lower": true,
+        "parameter_sensitivity_upper": true,
+        "particle_step": true
+      },
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "source_query_parity_rmse_m": 0.0,
+      "time_step_refinement_relative_error": 0.06746808710690738,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "570ce2848eb770f51da460ede3ef343c9ad8ddde6a062f3b260e9fa4126ac7e1",
+      "units_coordinate_entity_order_valid": true
+    }
+  ],
+  "source_value_scoring_authorized": true
+}

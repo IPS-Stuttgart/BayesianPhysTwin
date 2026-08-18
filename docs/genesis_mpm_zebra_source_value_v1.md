@@ -1,5 +1,9 @@
 # Genesis MPM source-value gate v1
 
+**Retained decision:** failed; exact incumbent fallback selected and source
+future outcomes left unopened. See
+[`genesis_mpm_zebra_source_value_v1_result.md`](genesis_mpm_zebra_source_value_v1_result.md).
+
 The source-physics-qualified Genesis runtime is evaluated as a fixed,
 equal-weight ensemble at 25, 100, and 500 kPa. All three full controller-driven
 predictions are sealed before prefix outcomes are opened. No material parameter

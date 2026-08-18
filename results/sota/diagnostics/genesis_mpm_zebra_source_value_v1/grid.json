@@ -1,0 +1,96 @@
+{
+  "grid_id": "bb0b06e25e061f717bb7f205fc0b85019fadb08ef554860f3798dd851ba51341",
+  "groups": [
+    {
+      "ensemble_mean_archive": "double_lift_zebra/ensemble-mean.npz",
+      "ensemble_mean_sha256": "26bb1e60c2b3a4d9813e000c1481d4f450978ec50fb8bc3637fa318386e08d4b",
+      "final_ensemble_spread_m": 0.007199754325038864,
+      "group_id": "double_lift_zebra",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "matphys_sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+      "members": [
+        {
+          "candidate_index": 0,
+          "physical_archive": "double_lift_zebra/member-00.npz",
+          "physical_archive_sha256": "f6c187498044198b93c01120e2cf9a263134be28c378a650cd73ba1a6770a898",
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 25000.0
+        },
+        {
+          "candidate_index": 1,
+          "physical_archive": "double_lift_zebra/member-01.npz",
+          "physical_archive_sha256": "3461891f59d31cc9753a9cccf54f0c26b9f83ccafc536ee927be1d4056f9500a",
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        },
+        {
+          "candidate_index": 2,
+          "physical_archive": "double_lift_zebra/member-02.npz",
+          "physical_archive_sha256": "1557c2729ceb833d8e0a38f5f99b6615662bf7a60e238342fe6c78eac6f76240",
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 500000.0
+        }
+      ],
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7"
+    },
+    {
+      "ensemble_mean_archive": "double_stretch_zebra/ensemble-mean.npz",
+      "ensemble_mean_sha256": "d6907ed575254626017223783c284abdcb183fbc7747f5871be1582dd4e6111a",
+      "final_ensemble_spread_m": 0.0038002293427091796,
+      "group_id": "double_stretch_zebra",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "matphys_sha256": "f633dd863da1a9da82433821328fe3cccbb94cc1ae08c29d51ff2f85f4ef51ae",
+      "members": [
+        {
+          "candidate_index": 0,
+          "physical_archive": "double_stretch_zebra/member-00.npz",
+          "physical_archive_sha256": "3e1a28fdf108ada2bc1960eb4195e4acdfcad4a7e2569b573e34db8f831735cb",
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 25000.0
+        },
+        {
+          "candidate_index": 1,
+          "physical_archive": "double_stretch_zebra/member-01.npz",
+          "physical_archive_sha256": "de284a1923dba68546fc720a5ddee804421222b1f35e08ae5a92d37c422094e8",
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        },
+        {
+          "candidate_index": 2,
+          "physical_archive": "double_stretch_zebra/member-02.npz",
+          "physical_archive_sha256": "fff79365a0c99657882b0fd8a3e4943269293399f2e3fba7ff58d8bbba0fae0f",
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 500000.0
+        }
+      ],
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a"
+    }
+  ],
+  "implementation": {
+    "git_head": "82353b14212598d9d0f5bec609117ffe84f0f77c",
+    "git_worktree_clean": true,
+    "source_files": {
+      "scripts/remote/run_genesis_mpm_source_value_v1.py": "a95099b0ee519bb96002aa1725739f4ca8674c0d704659baf65f5d5042fea657",
+      "src/bayesian_phystwin/genesis_mpm_source_qualification_v1.py": "afdd4eed024176960cbf27763f4c0781de17b191f53ddce3659177b08136e644",
+      "src/bayesian_phystwin/genesis_mpm_source_value_v1.py": "77f94c3dda5fcb6d8774c7e03e583dea2d9a731f9d9c4b687da083e9ec10708b"
+    }
+  },
+  "information_boundary": {
+    "future_outcomes_read": false,
+    "incumbent_and_matphys_predictions_read": true,
+    "prefix_outcomes_read": false,
+    "source_inputs_read": true,
+    "target_or_held_out_artifact_read": false
+  },
+  "protocol_sha256": "eddfa2b48d6b8797ed12804d029d47ffa2d89ada5e1ac5bb8bfe0271103b3700",
+  "qualification_artifact_id": "775fc43876318d7f5f01603d48cd26017a98bc69558d483e91ad58e523e38fa3",
+  "schema": "bayesian-phystwin.genesis-mpm-source-value-grid",
+  "schema_version": 1,
+  "successful_candidate_count_per_group": 3
+}

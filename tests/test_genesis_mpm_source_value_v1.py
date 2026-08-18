@@ -22,6 +22,10 @@ from bayesian_phystwin.physical_rollout_v1 import write_deterministic_npz
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/genesis_mpm_zebra_source_value_v1.json"
+PHYSICS_EVIDENCE = (
+    ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_physics_v1"
+)
+VALUE_EVIDENCE = ROOT / "results/sota/diagnostics/genesis_mpm_zebra_source_value_v1"
 
 
 def _physical_archive(
@@ -229,6 +233,44 @@ def test_source_value_protocol_freezes_qualification_and_two_groups() -> None:
     assert protocol.young_moduli_pa == (25000.0, 100000.0, 500000.0)
     assert np.isclose(sum(protocol.weights), 1.0)
     assert protocol.value["information_boundary"]["no_replacement"] is True
+
+
+def test_retained_evidence_qualifies_physics_and_rejects_source_value() -> None:
+    physics_path = PHYSICS_EVIDENCE / "result.json"
+    qualification_path = PHYSICS_EVIDENCE / "material-backend-qualification.json"
+    grid_path = VALUE_EVIDENCE / "grid.json"
+    prefix_path = VALUE_EVIDENCE / "prefix-result.json"
+    future_path = VALUE_EVIDENCE / "future-result.json"
+
+    assert file_sha256(physics_path) == (
+        "e7e3a8172a4760a8ebc8f9cda16812c811037674dc08a9e2dc0b4810d826b0da"
+    )
+    assert file_sha256(qualification_path) == (
+        "cc263bb7890af19c1f7bdae40f6c5f701d90f105a1e9c70bf386d2accb39561d"
+    )
+    assert file_sha256(grid_path) == (
+        "caf35f48bd570ebcac836b5ccd37b9a22dd559ec810460710f567042afa3e2db"
+    )
+    assert file_sha256(prefix_path) == (
+        "657a3c2d72395f33a33e6dacdff2e619db4a12959a533a6f425ec572b6cf58d9"
+    )
+    assert file_sha256(future_path) == (
+        "3eacaa761b0ee4148f9600a4212c3e714e9d173fa7f3b55e0fcf9488dcbd8e0d"
+    )
+    physics = json.loads(physics_path.read_text(encoding="utf-8"))
+    prefix = json.loads(prefix_path.read_text(encoding="utf-8"))
+    future = json.loads(future_path.read_text(encoding="utf-8"))
+    assert physics["qualified"] is True
+    assert physics["source_value_scoring_authorized"] is True
+    assert prefix["validation_gate_passed"] is False
+    assert prefix["future_scoring_authorized"] is False
+    assert all(
+        record["selection"] == "exact_incumbent_fallback"
+        and record["selected_sha256"] == record["source_sha256"]
+        for record in prefix["selected_predictions"]
+    )
+    assert future["status"] == "future-not-opened-validation-gate-failed"
+    assert future["future_outcomes_read"] is False
 
 
 def test_marginal_energy_score_rewards_centered_spread() -> None:

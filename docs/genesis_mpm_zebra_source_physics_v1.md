@@ -19,9 +19,9 @@ unread during this stage. No target or held-v8 artifact is in scope.
 
 Genesis is initialized with `morphs.Nowhere`, then populated with the exact
 4,607- or 4,208-particle source roster. Particle order is therefore the source
-material identity. Registered attachment particles are fixed in the MPM entity
-and moved by the same inverse-distance controller map already present in the
-source-input artifact.
+material identity. Registered attachment particles and their frame-boundary
+targets are supplied by the same inverse-distance controller map already present
+in the source-input artifact.
 
 Genesis 1.3.3's `Nowhere` entity intentionally starts inactive. Its public
 `activate()` helper rejects that same state before it can update the particle
@@ -75,3 +75,7 @@ If any check fails, source-value scoring remains closed and the existing
 incumbent archives remain the exact fallback. Passing authorizes only a new,
 separately frozen source-value comparison. It does not modify or reinterpret
 the confirmed DEFORM DLO2 result.
+
+The retained run passed this gate. Its separately frozen source-value comparison
+then failed and preserved exact incumbent fallback; see
+[`genesis_mpm_zebra_source_value_v1_result.md`](genesis_mpm_zebra_source_value_v1_result.md).

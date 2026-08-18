@@ -40,6 +40,10 @@ def test_portfolio_separates_implementation_and_evidence_maturity() -> None:
     assert profiles["warp-fem-v1"]["implementation_maturity"] == "supported"
     assert profiles["warp-fem-v1"]["evidence_stage"] == "registered-adapter"
     assert profiles["warp-fem-v1"]["recommendation_authorized"] is False
+    assert profiles["genesis-mpm-v1"]["evidence_stage"] == (
+        "source-physics-qualified"
+    )
+    assert profiles["genesis-mpm-v1"]["recommendation_authorized"] is False
 
 
 def test_stage_roster_must_match_the_canonical_registry(
@@ -170,4 +174,4 @@ def test_evidence_stage_lookup_rejects_non_string() -> None:
 
 def test_evidence_stage_type_surface() -> None:
     stage: BackendEvidenceStageV1 = portfolio.backend_evidence_stage("genesis-mpm-v1")
-    assert stage == "native-smoke-passed"
+    assert stage == "source-physics-qualified"
