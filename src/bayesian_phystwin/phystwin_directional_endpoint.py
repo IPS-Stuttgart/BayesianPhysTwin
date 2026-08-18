@@ -56,9 +56,7 @@ def _validate_filter_parameters(
         not np.isfinite(outlier_variance_multiplier)
         or outlier_variance_multiplier <= 1.0
     ):
-        raise ValueError(
-            "outlier_variance_multiplier must be finite and exceed one"
-        )
+        raise ValueError("outlier_variance_multiplier must be finite and exceed one")
 
 
 def _cholesky_factor_and_logdet(
@@ -242,8 +240,7 @@ def _robust_linear_update(
         innovation,
     )
     updated_mean = (
-        probability[:, None] * inlier_mean
-        + (1.0 - probability)[:, None] * outlier_mean
+        probability[:, None] * inlier_mean + (1.0 - probability)[:, None] * outlier_mean
     )
     inlier_covariance = _joseph_covariance_update(
         covariance,
@@ -259,17 +256,10 @@ def _robust_linear_update(
     )
     inlier_offset = inlier_mean - updated_mean
     outlier_offset = outlier_mean - updated_mean
-    updated_covariance = (
-        probability[:, None, None]
-        * (
-            inlier_covariance
-            + np.einsum("mi,mj->mij", inlier_offset, inlier_offset)
-        )
-        + (1.0 - probability)[:, None, None]
-        * (
-            outlier_covariance
-            + np.einsum("mi,mj->mij", outlier_offset, outlier_offset)
-        )
+    updated_covariance = probability[:, None, None] * (
+        inlier_covariance + np.einsum("mi,mj->mij", inlier_offset, inlier_offset)
+    ) + (1.0 - probability)[:, None, None] * (
+        outlier_covariance + np.einsum("mi,mj->mij", outlier_offset, outlier_offset)
     )
     return updated_mean, _repair_roundoff_psd(updated_covariance), probability
 
@@ -375,11 +365,14 @@ def robust_directional_endpoint(
                 inlier_prior=inlier_prior,
                 outlier_variance_multiplier=outlier_variance_multiplier,
             )
-            scalar_variance = np.trace(
-                covariance[full_indices],
-                axis1=1,
-                axis2=2,
-            ) / 3.0
+            scalar_variance = (
+                np.trace(
+                    covariance[full_indices],
+                    axis1=1,
+                    axis2=2,
+                )
+                / 3.0
+            )
             covariance[full_indices] = scalar_variance[:, None, None] * identity_3[None]
             source_update_count[full_indices] += 1
 
