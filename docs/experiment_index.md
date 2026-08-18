@@ -208,9 +208,12 @@ Use the following placement rule when adding work:
    the root README.
 2. Put each experimental protocol, controls, status, and command sequence in a
    dedicated document under `docs/`.
-3. Put frozen machine-readable evidence under `results/` or the evidence
-   location named by the protocol.
-4. Put current paper scope and claim status in `BayesianPhysTwin-Paper`.
+3. Put implementation fixtures and compact protocol or source-gate receipts
+   required for executable verification under `results/` or the location named
+   by the protocol.
+4. Put finalized paper-facing outcome evidence, interpretation, claim tests, and
+   current claim status in `BayesianPhysTwin-Paper`; do not maintain duplicate
+   editable outcome bundles here.
 5. Put Causal4D-specific methods and acquisition status in the Causal4D
    repository.
 

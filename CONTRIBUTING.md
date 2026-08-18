@@ -141,3 +141,10 @@ run records exact source revisions, configuration and input identities, output
 digests, statistical units, access boundaries, failure accounting, and the
 registered decision. Negative results and rejected gates are scientific evidence
 and must not be discarded or retuned on the same target cohort.
+
+After paper-facing evidence is migrated, remove duplicate outcome bytes and
+claim-specific tests from the public active tree. Keep executable code, frozen
+protocols, configurations, source tags, schemas, and implementation/source-gate
+receipts public. Relocation does not erase earlier public Git history; record the
+origin blobs and digests in the paper-side migration manifest instead of
+rewriting repository history.

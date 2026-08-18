@@ -195,10 +195,16 @@ tests/                   unit, conformance, and integration tests
 examples/                small synthetic inputs and demos
 configs/                 frozen experiment and compute configurations
 scripts/                 local and remote execution helpers
-docs/                    contracts, protocols, evidence, and experiment index
+docs/                    contracts, protocols, public boundaries, and experiment index
 evidence/                public machine-readable claim status
-results/                 compact frozen evidence and audit artifacts
+results/                 implementation fixtures and protocol/source-gate receipts
 ```
+
+Finalized paper-facing result evidence, interpretation, and claim tests belong
+in the private
+[BayesianPhysTwin-Paper](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper)
+repository. This public repository retains the executable method, frozen
+protocols, source tags, and compact receipts required to validate behavior.
 
 Large datasets, checkpoints, rendered videos, and raw runs remain outside git in
 ignored paths such as `data/`, `checkpoints/`, `runs/`, and `outputs/`.

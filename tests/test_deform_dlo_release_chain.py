@@ -15,13 +15,6 @@ INITIALIZATION_SMOKE = (
     / "deform_dlo2_initialization_amendment_v1"
     / "construction_smoke.json"
 )
-REFERENCE_OPERATOR_AUDIT = (
-    REPOSITORY_ROOT
-    / "results"
-    / "sota"
-    / "deform_dlo2_official_eval_v2"
-    / "reference_operator_audit.json"
-)
 
 
 def _load(name: str) -> dict[str, object]:
@@ -82,18 +75,39 @@ def test_dlo2_initialization_smoke_preserves_its_historical_implementation() -> 
     )
 
 
-def test_dlo2_reference_operator_audit_is_target_free() -> None:
-    audit = json.loads(REFERENCE_OPERATOR_AUDIT.read_text(encoding="utf-8"))
-    boundary = audit["information_boundary"]
+def test_dlo2_reference_operator_contract_is_public_and_target_blind() -> None:
+    official = _load("deform_dlo2_official_eval_v2.json")
+    evaluation = official["evaluation"]
+    operator = evaluation["published_reference_operator"]
 
-    assert audit["paper"]["metric"] == "average-l1-over-500-step-prediction"
-    assert audit["released_loader"]["eval_draw"]["unique_index_count"] == 9
-    assert (
-        audit["training_budget_audit"]["released_upstream"]["nominal_total_updates"]
-        == 69800
-    )
-    assert audit["training_budget_audit"]["locked_longrun_v2"]["total_updates"] == 6400
-    assert all(value is False for value in boundary.values())
+    assert evaluation["metric"] == "mean-coordinate-l1-m"
+    assert evaluation["published_reference_l1_m"] == 0.0097
+    assert operator["preceding_train_population"] == 56
+    assert operator["preceding_train_draw_count"] == 56
+    assert operator["eval_population"] == 14
+    assert operator["eval_draw_count"] == 14
+    assert operator["canonical_unique_index_count"] == 9
+    assert operator["canonical_eval_indices"] == [
+        1,
+        7,
+        9,
+        7,
+        11,
+        7,
+        13,
+        8,
+        8,
+        6,
+        8,
+        5,
+        8,
+        4,
+    ]
+    assert operator["upstream_glob_order"] == "unspecified"
+    assert official["methods"]["target_selection"] is False
+    assert official["methods"]["target_calibration"] is False
+    assert official["methods"]["target_retries"] is False
+    assert official["methods"]["case_replacement"] is False
 
 
 def test_deform_release_chain_preserves_the_selected_method_family() -> None:
