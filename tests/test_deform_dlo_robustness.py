@@ -27,6 +27,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     deform_local_feature_indices,
     evaluate_deform_backend_portability_report,
     evaluate_deform_backend_source_gate,
+    evaluate_deform_compute_matched_report,
     evaluate_deform_dlo3_source_gate,
     evaluate_deform_dlo3_stability_gate,
     evaluate_deform_dlo3_target_gate,
@@ -37,11 +38,14 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     predict_deform_local_residual_variant,
     scale_deform_coordinate_covariance,
     validate_deform_bayesian_audit_v1,
+    validate_deform_compute_matched_report_v1,
+    validate_deform_dlo3_alltrain_compute_match_v1,
     validate_deform_dlo3_backend_result_v1,
     validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
     verify_deform_dlo3_backend_artifacts_v1,
     verify_deform_dlo3_evaluator_bayesian_artifacts_v1,
+    verify_deform_dlo3_evaluator_compute_matched_artifacts_v1,
     verify_deform_dlo3_seed_bayesian_artifacts_v1,
     verify_deform_dlo3_seed_diagnostic_artifacts_v1,
     verify_deform_dlo3_sensitivity_artifacts_v1,
@@ -312,6 +316,7 @@ def _bayesian_prediction_archive(
     *,
     case_count: int,
     include_source_alias: bool,
+    include_compute_control: bool = False,
     omit_arm: str | None = None,
 ) -> None:
     candidate = np.zeros((case_count, 3, 6, 3), dtype=np.float64)
@@ -322,6 +327,9 @@ def _bayesian_prediction_archive(
         "candidate": candidate,
         "calibrated_coordinate_covariance_m2": raw * 4.0,
     }
+    if include_compute_control:
+        payload["baseline"] = np.full_like(candidate, 0.008)
+        payload["compute_matched_physical"] = np.full_like(candidate, 0.007)
     if include_source_alias:
         payload["coordinate_covariance_m2"] = raw
     for index, label in enumerate(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS):
@@ -651,7 +659,24 @@ def _evaluator_result_with_artifacts(tmp_path: Path) -> dict[str, object]:
         predictions_path,
         case_count=8,
         include_source_alias=False,
+        include_compute_control=True,
     )
+    compute_checkpoint = tmp_path / "alltrain_compute.pt"
+    compute_checkpoint.write_bytes(b"compute")
+    compute_match = tmp_path / "alltrain_compute_match.json"
+    compute_match.write_text('{"contract":"compute"}\n', encoding="utf-8")
+    compute_verification = {
+        "contract": "deform-dlo3-alltrain-compute-match-verification-v1",
+        "verified": True,
+    }
+    sealed_compute = {
+        "status": "sealed",
+        "checkpoint": _file_identity(compute_checkpoint),
+        "compute_match": _file_identity(compute_match),
+        "compute_match_verification": compute_verification,
+        "selection_effect": "none",
+        "retry_authorized": False,
+    }
     seal = {
         "schema_version": 1,
         "contract": "deform-dlo3-robustness-evaluator-prediction-seal-v1",
@@ -665,11 +690,16 @@ def _evaluator_result_with_artifacts(tmp_path: Path) -> dict[str, object]:
             for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         },
         "bayesian_point_means_identical": True,
+        "compute_matched_control": sealed_compute,
         "outcomes_scored": False,
         "target_retries": False,
     }
     seal_path = tmp_path / "evaluator_prediction_seal.json"
     seal_path.write_text(json.dumps(seal, sort_keys=True) + "\n", encoding="utf-8")
+    targets = np.zeros((8, 3, 6, 3), dtype=np.float64)
+    candidate = np.zeros_like(targets)
+    baseline = np.full_like(targets, 0.008)
+    compute = np.full_like(targets, 0.007)
     return {
         "contract": "deform-dlo3-robustness-evaluator-dry-run-v1",
         "prediction_seal": _file_identity(seal_path),
@@ -680,6 +710,21 @@ def _evaluator_result_with_artifacts(tmp_path: Path) -> dict[str, object]:
             "distribution_selection": "none",
             "target_outcomes_used_for_distribution_construction": False,
             "target_outcomes_used_for_distribution_selection": False,
+        },
+        "compute_matched_control": {
+            "status": "scored",
+            "checkpoint": sealed_compute["checkpoint"],
+            "compute_match": sealed_compute["compute_match"],
+            "compute_match_verification": compute_verification,
+            "selection_effect": "none",
+            "retry_authorized": False,
+            "report": evaluate_deform_compute_matched_report(
+                candidate,
+                baseline,
+                compute,
+                targets,
+                [f"case-{index}" for index in range(8)],
+            ),
         },
         "primary_eval_read": False,
         "target_authorized": False,
@@ -1132,6 +1177,27 @@ def test_evaluator_bayesian_artifact_verifier_checks_dry_run(
     assert verification["archive"]["case_count"] == 8
 
 
+def test_evaluator_compute_matched_artifacts_are_sealed_before_scoring(
+    tmp_path: Path,
+) -> None:
+    result = _evaluator_result_with_artifacts(tmp_path)
+
+    verification = verify_deform_dlo3_evaluator_compute_matched_artifacts_v1(
+        result, expected_mode="dry-run"
+    )
+
+    assert verification["verified"] is True
+    assert verification["status"] == "scored"
+    assert verification["report"]["case_count"] == 8
+
+    changed = json.loads(json.dumps(result))
+    changed["compute_matched_control"]["selection_effect"] = "best-target"
+    with pytest.raises(ValueError, match="scored arm differs"):
+        verify_deform_dlo3_evaluator_compute_matched_artifacts_v1(
+            changed, expected_mode="dry-run"
+        )
+
+
 def test_source_gate_uses_fixed_casewise_arithmetic() -> None:
     protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
     targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
@@ -1194,6 +1260,63 @@ def test_backend_portability_report_is_descriptive_and_casewise() -> None:
         evaluate_deform_backend_portability_report(
             candidate, backend, targets, ["duplicate"] * 14
         )
+
+
+def test_compute_matched_report_is_descriptive_and_self_consistent() -> None:
+    targets = np.zeros((8, 2, 5, 3), dtype=np.float64)
+    registered = np.full_like(targets, 0.008)
+    compute = np.full_like(targets, 0.007)
+    candidate = np.full_like(targets, 0.006)
+    names = [f"case-{index}" for index in range(8)]
+
+    report = evaluate_deform_compute_matched_report(
+        candidate, registered, compute, targets, names
+    )
+    verification = validate_deform_compute_matched_report_v1(
+        report, expected_case_count=8
+    )
+
+    assert report["candidate_relative_improvement_over_compute_matched"] == (
+        pytest.approx(1.0 - 6.0 / 7.0)
+    )
+    assert report["compute_matched_relative_improvement_over_registered"] == (
+        pytest.approx(1.0 - 7.0 / 8.0)
+    )
+    assert report["selection_effect"] == "none"
+    assert "passed" not in report
+    assert verification["verified"] is True
+
+    changed = json.loads(json.dumps(report))
+    changed["cases"][0]["candidate_to_compute_matched_ratio"] = 0.5
+    with pytest.raises(ValueError, match="report case differs"):
+        validate_deform_compute_matched_report_v1(changed, expected_case_count=8)
+
+
+def test_alltrain_compute_match_requires_exact_timing_rule() -> None:
+    protocol = load_deform_dlo_robustness_v1_protocol(PROTOCOL)
+    record = {
+        "contract": "deform-dlo3-alltrain-compute-match-v1",
+        "seed": 42,
+        "local_residual_wall_seconds": 2.1,
+        "median_update_seconds_6301_6400": 1.0,
+        "additional_updates": 3,
+        "start_update": 6400,
+        "end_update": 6403,
+        "selection_effect": "none",
+        "target_selection": False,
+        "target_calibration": False,
+        "target_retries": False,
+        "primary_eval_read": False,
+    }
+
+    verification = validate_deform_dlo3_alltrain_compute_match_v1(record, protocol)
+
+    assert verification["additional_updates"] == 3
+    assert verification["verified"] is True
+
+    record["additional_updates"] = 2
+    with pytest.raises(ValueError, match="compute match differs"):
+        validate_deform_dlo3_alltrain_compute_match_v1(record, protocol)
 
 
 def test_backend_artifacts_are_rehashed_for_target_carryover(tmp_path: Path) -> None:
@@ -1503,6 +1626,10 @@ def test_alltrain_runner_requires_every_source_audit_and_guards_eval() -> None:
     assert "verify_deform_dlo3_seed_diagnostic_artifacts_v1" in source
     assert "verify_deform_dlo3_stability_artifacts_v1" in source
     assert "verify_deform_dlo3_sensitivity_artifacts_v1" in source
+    assert "validate_deform_dlo3_alltrain_compute_match_v1" in source
+    assert "schedule_updates = registered_updates + maximum_extra" in source
+    assert '"selection_effect": "none"' in source
+    assert '"target_selection": False' in source
     assert 'sensitivity_artifacts.get("parent_seed_result_sha256")' in source
     assert "validate_deform_dlo3_backend_result_v1" in source
     assert "verify_deform_dlo3_backend_artifacts_v1" in source
@@ -1520,6 +1647,7 @@ def test_evaluator_authorizes_before_target_manifest_and_seals_before_score() ->
         'authorization_path = output_root / "authorization.json"'
     )
     target_manifest = source.index('stage = "target-manifest"')
+    compute_rollout = source.index('stage = "compute-matched-rollout"')
     bayesian_construction = source.index(
         "bayesian_predictions = build_deform_bayesian_covariance_ablation_v1"
     )
@@ -1531,13 +1659,16 @@ def test_evaluator_authorizes_before_target_manifest_and_seals_before_score() ->
     target_score = source.index("gate = evaluate_deform_dlo3_target_gate")
     backend_rollout = source.index('stage = "backend-portability-rollout"')
     backend_score = source.index('"report": evaluate_deform_backend_portability_report')
+    compute_score = source.index('"report": evaluate_deform_compute_matched_report')
     assert (
         authorization
         < target_manifest
+        < compute_rollout
         < bayesian_construction
         < backend_rollout
         < covariance_archive
         < prediction_seal
+        < compute_score
         < backend_score
         < distribution_scoring
         < target_score
@@ -1548,6 +1679,7 @@ def test_evaluator_authorizes_before_target_manifest_and_seals_before_score() ->
     assert '"case_replacement": False' in source
     assert '"backend_target_arm_authorized": backend_authorized' in source
     assert '"status": "technical-failure"' in source
+    assert 'readiness.get("compute_matched_control_verified") is not True' in source
 
 
 def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
@@ -1559,6 +1691,8 @@ def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
     assert '"bayesian_audit_complete": True' in source
     assert 'final_method.get("source_diagnostics_verified") is not True' in source
     assert "verify_deform_dlo3_evaluator_bayesian_artifacts_v1" in source
+    assert "verify_deform_dlo3_evaluator_compute_matched_artifacts_v1" in source
+    assert '"compute_matched_control_verified": True' in source
     assert "verify_deform_dlo3_backend_artifacts_v1" in source
     assert 'expected_backend_status = "scored" if backend_authorized' in source
     assert '"target_authorized": True' in source

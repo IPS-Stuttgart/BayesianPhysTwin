@@ -24,8 +24,15 @@ The mechanism audit separates the physical backbone, action conditioning,
 local coordinate frame, intercept-only correction, shrinkage, and persistence
 backbone. The compute control spends the measured residual-fit wall time on
 additional official DEFORM updates using the same schedule continuation. The
-solver audit evaluates 5/10/20 PBD iterations and joint bend/twist multipliers
-of 0.9/1.0/1.1 without selecting among them.
+all-56 refit repeats that timing operation, seals both the registered
+update-6400 checkpoint and the resulting compute-matched checkpoint, and rolls
+both through the independent dry run and the one-shot evaluation. Its report is
+descriptive: it has no pass field and cannot select the candidate, replace the
+registered physical baseline, or affect the primary gate. A compute-control
+failure blocks readiness in the dry run; after the one-shot target read, a
+technical failure is retained without retry while the primary sealed result
+remains scorable. The solver audit evaluates 5/10/20 PBD iterations and joint
+bend/twist multipliers of 0.9/1.0/1.1 without selecting among them.
 
 Backend portability is a separately gated PyElastica 1.0.0 Cosserat-rod arm.
 Its finite parameter bank is selected on fit trajectories only; DLO3 target
@@ -44,10 +51,14 @@ authorizes carryover, both evaluator invocations must receive the frozen
 PyElastica checkout through `--pyelastica-root`; otherwise the argument is not
 needed and the backend path remains exactly unexecuted.
 
-The same downstream authorization rehashes the compute-matched checkpoint,
-every mechanism-model archive and prediction arm, and all six solver/material
-sensitivity prediction pairs. A JSON score without its exact sealed NPZ and
-parent lineage is therefore insufficient to authorize all-train or target use.
+The same downstream authorization rehashes each source compute-matched
+checkpoint, every mechanism-model archive and prediction arm, and all six
+solver/material sensitivity prediction pairs. Readiness separately rehashes
+the all-56 registered and compute-matched checkpoints, recomputes the exact
+ceiling timing rule, checks the deterministic schedule continuation and dry-run
+prediction seal, and records that target selection remains false. A JSON score
+without its exact sealed NPZ and parent lineage is therefore insufficient to
+authorize all-train or target use.
 
 The Bayesian audit leaves the point mean unchanged and adds full 3x3
 coordinate covariance from trajectory-clustered coefficient and residual

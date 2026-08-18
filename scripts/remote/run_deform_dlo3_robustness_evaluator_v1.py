@@ -31,12 +31,14 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     build_deform_bayesian_covariance_ablation_v1,
     deform_bayesian_covariance_archive_key,
     evaluate_deform_backend_portability_report,
+    evaluate_deform_compute_matched_report,
     evaluate_deform_dlo3_target_gate,
     evaluate_deform_predictive_distribution,
     load_deform_dlo_robustness_v1_protocol,
     predict_deform_local_residual_full_covariance,
     scale_deform_coordinate_covariance,
     validate_deform_bayesian_audit_v1,
+    validate_deform_dlo3_alltrain_compute_match_v1,
     validate_deform_dlo3_source_manifest,
     verify_deform_dlo3_backend_artifacts_v1,
 )
@@ -116,6 +118,24 @@ def _load_final_method(
         raise ValueError("DLO3 all-train result custody differs")
     method_path = _verified_file(result.get("final_method"), label="final method")
     method = _read_json(method_path)
+    result_compute = dict(
+        _mapping(result.get("compute_match"), label="alltrain compute match")
+    )
+    method_compute = dict(
+        _mapping(method.get("compute_match"), label="method compute match")
+    )
+    result_compute_verification = dict(
+        _mapping(
+            result.get("compute_match_verification"),
+            label="alltrain compute verification",
+        )
+    )
+    method_compute_verification = dict(
+        _mapping(
+            method.get("compute_match_verification"),
+            label="method compute verification",
+        )
+    )
     if (
         method.get("contract") != "deform-dlo3-robustness-alltrain-final-method-v1"
         or method.get("primary_eval_read") is not False
@@ -123,6 +143,7 @@ def _load_final_method(
         or method.get("target_calibration") is not False
         or method.get("target_retries") is not False
         or method.get("source_bayesian_audit_complete") is not True
+        or method.get("source_diagnostics_verified") is not True
         or tuple(
             str(value)
             for value in cast(
@@ -131,6 +152,8 @@ def _load_final_method(
         )
         != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         or method.get("distribution_selection") != "none"
+        or result_compute != method_compute
+        or result_compute_verification != method_compute_verification
     ):
         raise ValueError("DLO3 final method custody differs")
     return result, method, method_path
@@ -286,6 +309,7 @@ def main() -> int:
             or readiness.get("official_eval_read") is not False
             or readiness.get("bayesian_audit_complete") is not True
             or readiness.get("bayesian_artifacts_verified") is not True
+            or readiness.get("compute_matched_control_verified") is not True
             or _mapping(readiness.get("protocol"), label="readiness protocol").get(
                 "sha256"
             )
@@ -329,20 +353,129 @@ def main() -> int:
     checkpoint_path = _verified_file(
         method.get("physical_checkpoint"), label="physical checkpoint"
     )
+    compute_checkpoint_path = _verified_file(
+        method.get("compute_matched_checkpoint"),
+        label="compute-matched checkpoint",
+    )
+    compute_match_path = _verified_file(
+        method.get("compute_match"), label="compute-matched record"
+    )
+    compute_match = _read_json(compute_match_path)
     schedule_path = _verified_file(method.get("window_schedule"), label="schedule")
     method_spec_path = _verified_file(method.get("method_spec"), label="method spec")
+    method_spec = _read_json(method_spec_path)
     local_model_path = _verified_file(
         method.get("full_covariance_model"), label="full covariance model"
     )
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    compute_checkpoint = torch.load(
+        compute_checkpoint_path, map_location="cpu", weights_only=True
+    )
+    compute_contract = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
+    compute_verification = validate_deform_dlo3_alltrain_compute_match_v1(
+        compute_match, protocol
+    )
+    compute_updates = int(cast(Any, compute_verification["additional_updates"]))
+    registered_updates = int(cast(Any, training["total_updates"]))
+    primary_seed = int(cast(Any, training["primary_seed"]))
     if (
-        checkpoint.get("update") != 6400
+        method_spec.get("contract") != "deform-dlo3-robustness-alltrain-method-spec-v1"
+        or method_spec.get("compute_matched_control")
+        != "frozen-wall-time-equivalent-DEFORM-continuation-v1"
+        or method_spec.get("official_eval_read") is not False
+        or method.get("compute_match_verification") != compute_verification
+        or alltrain.get("compute_match_verification") != compute_verification
+        or dict(_mapping(alltrain.get("compute_match"), label="alltrain compute"))
+        != dict(_mapping(method.get("compute_match"), label="method compute"))
+    ):
+        raise ValueError("DLO3 compute-matched method record differs")
+    with np.load(schedule_path, allow_pickle=False) as schedule:
+        fit_names = [str(value) for value in np.asarray(schedule["fit_names"])]
+        trajectory_indices = np.asarray(schedule["trajectory_indices"])
+        start_indices = np.asarray(schedule["start_indices"])
+    alltrain_authorization = _mapping(
+        alltrain.get("authorization"), label="alltrain authorization"
+    )
+    source_manifest_path = _verified_file(
+        alltrain_authorization.get("source_manifest"), label="source manifest"
+    )
+    source_manifest = _read_json(source_manifest_path)
+    source_partitions = validate_deform_dlo3_source_manifest(
+        source_manifest,
+        protocol,
+        protocol_sha256=sha256_file(protocol_path),
+        verify_files=False,
+    )
+    expected_fit_names = sorted(
+        name for values in source_partitions.values() for name in values
+    )
+    maximum_extra = int(cast(Any, compute_contract["maximum_additional_updates"]))
+    expected_trajectory_indices, expected_start_indices = source_runtime._make_schedule(
+        fit_names=fit_names,
+        updates=registered_updates + maximum_extra,
+        batch_size=int(cast(Any, training["batch_size"])),
+        frame_count=int(
+            cast(Any, _mapping(protocol["data"], label="data")["frame_count"])
+        ),
+        horizon=int(cast(Any, training["unroll_horizon_frames"])),
+        seed=primary_seed,
+    )
+    if (
+        fit_names != expected_fit_names
+        or len(fit_names) != 56
+        or len(set(fit_names)) != 56
+        or not np.array_equal(trajectory_indices, expected_trajectory_indices)
+        or not np.array_equal(start_indices, expected_start_indices)
+    ):
+        raise ValueError("DLO3 compute-matched schedule continuation differs")
+    checkpoint_identities = tuple(
+        dict(_mapping(value, label="alltrain checkpoint"))
+        for value in cast(list[object], alltrain.get("checkpoints", []))
+    )
+    physical_identity = dict(
+        _mapping(method.get("physical_checkpoint"), label="physical checkpoint")
+    )
+    compute_identity = dict(
+        _mapping(
+            method.get("compute_matched_checkpoint"),
+            label="compute-matched checkpoint",
+        )
+    )
+    if (
+        checkpoint.get("update") != registered_updates
+        or checkpoint.get("seed") != primary_seed
         or checkpoint.get("protocol_sha256") != sha256_file(protocol_path)
         or checkpoint.get("schedule_sha256") != sha256_file(schedule_path)
         or checkpoint.get("method_spec_sha256") != sha256_file(method_spec_path)
         or checkpoint.get("official_eval_read") is not False
     ):
         raise ValueError("DLO3 evaluator checkpoint lineage differs")
+    if (
+        compute_checkpoint.get("update") != registered_updates + compute_updates
+        or compute_checkpoint.get("seed") != primary_seed
+        or compute_checkpoint.get("protocol_sha256") != sha256_file(protocol_path)
+        or compute_checkpoint.get("schedule_sha256") != sha256_file(schedule_path)
+        or compute_checkpoint.get("method_spec_sha256") != sha256_file(method_spec_path)
+        or compute_checkpoint.get("official_eval_read") is not False
+        or physical_identity not in checkpoint_identities
+        or compute_identity not in checkpoint_identities
+    ):
+        raise ValueError("DLO3 compute-matched checkpoint lineage differs")
+    if readiness is not None and (
+        readiness.get("physical_checkpoint") != _identity(checkpoint_path)
+        or readiness.get("compute_matched_checkpoint")
+        != _identity(compute_checkpoint_path)
+        or readiness.get("compute_matched_record") != _identity(compute_match_path)
+        or readiness.get("compute_match_verification") != compute_verification
+        or _mapping(
+            readiness.get("compute_matched_dry_run"),
+            label="readiness compute-matched dry run",
+        ).get("status")
+        != "scored"
+    ):
+        raise ValueError("DLO3 readiness compute-matched lineage differs")
     with np.load(local_model_path, allow_pickle=False) as archive:
         full_model = deserialize_deform_local_residual_model(archive)
         full_model["coefficient_covariance_full"] = np.asarray(
@@ -362,6 +495,9 @@ def main() -> int:
         "readiness_attestation": readiness_identity,
         "backend_source_result": backend_arm["source_result"],
         "backend_target_arm_authorized": backend_authorized,
+        "compute_matched_checkpoint": _identity(compute_checkpoint_path),
+        "compute_matched_record": _identity(compute_match_path),
+        "compute_match_verification": compute_verification,
         "one_shot_execution_authorized": args.mode == "official",
         "count_only_custody_deviation_acknowledged": True,
         "target_selection": False,
@@ -427,6 +563,47 @@ def main() -> int:
             dlo_type="DLO3",
             node_count=12,
         )
+        stage = "compute-matched-rollout"
+        try:
+            compute_rollout = posterior_runtime._evaluate_state(
+                compute_checkpoint["model_state_dict"],
+                trajectories,
+                modules=modules,
+                torch=torch,
+                device=args.device,
+                dlo_type="DLO3",
+                node_count=12,
+            )
+            compute_values = np.asarray(compute_rollout["predictions"])
+            if (
+                compute_values.shape
+                != np.asarray(baseline_rollout["predictions"]).shape
+                or not np.isfinite(compute_values).all()
+            ):
+                raise ValueError("compute-matched rollout is invalid")
+            compute_prediction_record: dict[str, object] = {
+                "status": "sealed",
+                "checkpoint": _identity(compute_checkpoint_path),
+                "compute_match": _identity(compute_match_path),
+                "compute_match_verification": compute_verification,
+                "selection_effect": "none",
+                "retry_authorized": False,
+            }
+        except Exception as error:
+            if args.mode == "dry-run":
+                raise
+            compute_values = None
+            compute_prediction_record = {
+                "status": "technical-failure",
+                "stage": stage,
+                "exception_type": type(error).__name__,
+                "message": str(error),
+                "checkpoint": _identity(compute_checkpoint_path),
+                "compute_match": _identity(compute_match_path),
+                "compute_match_verification": compute_verification,
+                "selection_effect": "none",
+                "retry_authorized": False,
+            }
         initial, action = local_runtime._causal_inputs(trajectories, names)
         bayesian_predictions = build_deform_bayesian_covariance_ablation_v1(
             full_model,
@@ -520,6 +697,8 @@ def main() -> int:
             "candidate": prediction["predictions"],
             "calibrated_coordinate_covariance_m2": calibrated_covariance,
         }
+        if compute_values is not None:
+            prediction_payload["compute_matched_physical"] = compute_values
         prediction_payload.update(
             {
                 deform_bayesian_covariance_archive_key(label): np.asarray(
@@ -552,6 +731,7 @@ def main() -> int:
             },
             "bayesian_point_means_identical": True,
             "backend_portability": backend_prediction_record,
+            "compute_matched_control": compute_prediction_record,
             "outcomes_scored": False,
             "target_retries": False,
         }
@@ -559,6 +739,24 @@ def main() -> int:
         _write_json(prediction_seal_path, prediction_seal)
 
         targets = np.asarray(baseline_rollout["targets"])
+        if compute_values is None:
+            compute_matched_control = compute_prediction_record
+        else:
+            compute_matched_control = {
+                "status": "scored",
+                "checkpoint": _identity(compute_checkpoint_path),
+                "compute_match": _identity(compute_match_path),
+                "compute_match_verification": compute_verification,
+                "selection_effect": "none",
+                "retry_authorized": False,
+                "report": evaluate_deform_compute_matched_report(
+                    np.asarray(prediction["predictions"]),
+                    np.asarray(baseline_rollout["predictions"]),
+                    compute_values,
+                    targets,
+                    names,
+                ),
+            }
         if backend_values is None:
             backend_portability = backend_prediction_record
         else:
@@ -619,6 +817,7 @@ def main() -> int:
                 "bayesian_audit": bayesian_audit,
                 "bayesian_audit_verification": bayesian_audit_verification,
                 "backend_portability": backend_portability,
+                "compute_matched_control": compute_matched_control,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,
@@ -652,6 +851,7 @@ def main() -> int:
                 "bayesian_audit": bayesian_audit,
                 "bayesian_audit_verification": bayesian_audit_verification,
                 "backend_portability": backend_portability,
+                "compute_matched_control": compute_matched_control,
                 "runtime": {
                     "python": sys.version,
                     "torch": torch.__version__,

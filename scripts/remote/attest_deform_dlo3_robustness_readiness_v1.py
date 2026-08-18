@@ -14,8 +14,10 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     load_deform_dlo_robustness_v1_protocol,
     validate_deform_bayesian_audit_v1,
+    validate_deform_dlo3_alltrain_compute_match_v1,
     verify_deform_dlo3_backend_artifacts_v1,
     verify_deform_dlo3_evaluator_bayesian_artifacts_v1,
+    verify_deform_dlo3_evaluator_compute_matched_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -115,6 +117,46 @@ def main() -> int:
         or final_method.get("primary_eval_read") is not False
     ):
         raise ValueError("DLO3 alltrain Bayesian method differs")
+    physical_checkpoint_path = _verified_file(
+        final_method.get("physical_checkpoint"), label="physical checkpoint"
+    )
+    compute_checkpoint_path = _verified_file(
+        final_method.get("compute_matched_checkpoint"),
+        label="compute-matched checkpoint",
+    )
+    compute_match_path = _verified_file(
+        final_method.get("compute_match"), label="compute-matched record"
+    )
+    compute_match = _read_json(compute_match_path)
+    compute_verification = validate_deform_dlo3_alltrain_compute_match_v1(
+        compute_match, protocol
+    )
+    physical_identity = dict(
+        _mapping(final_method.get("physical_checkpoint"), label="physical checkpoint")
+    )
+    compute_identity = dict(
+        _mapping(
+            final_method.get("compute_matched_checkpoint"),
+            label="compute-matched checkpoint",
+        )
+    )
+    checkpoint_identities = tuple(
+        dict(_mapping(value, label="alltrain checkpoint"))
+        for value in cast(list[object], alltrain.get("checkpoints", []))
+    )
+    if (
+        int(cast(Any, physical_identity.get("update", -1)))
+        != int(cast(Any, compute_verification["start_update"]))
+        or int(cast(Any, compute_identity.get("update", -1)))
+        != int(cast(Any, compute_verification["end_update"]))
+        or physical_identity not in checkpoint_identities
+        or compute_identity not in checkpoint_identities
+        or dict(_mapping(alltrain.get("compute_match"), label="alltrain compute"))
+        != dict(_mapping(final_method.get("compute_match"), label="method compute"))
+        or alltrain.get("compute_match_verification") != compute_verification
+        or final_method.get("compute_match_verification") != compute_verification
+    ):
+        raise ValueError("DLO3 alltrain compute-matched lineage differs")
     authorization = _mapping(
         alltrain.get("authorization"), label="alltrain authorization"
     )
@@ -145,6 +187,34 @@ def main() -> int:
     bayesian_artifacts = verify_deform_dlo3_evaluator_bayesian_artifacts_v1(
         dry_run, expected_mode="dry-run"
     )
+    compute_artifacts = verify_deform_dlo3_evaluator_compute_matched_artifacts_v1(
+        dry_run, expected_mode="dry-run"
+    )
+    dry_authorization_path = _verified_file(
+        dry_run.get("authorization"), label="dry-run authorization"
+    )
+    dry_authorization = _read_json(dry_authorization_path)
+    if (
+        compute_artifacts.get("status") != "scored"
+        or compute_artifacts.get("selection_effect") != "none"
+        or dry_authorization.get("contract")
+        != "deform-dlo3-robustness-evaluator-authorization-v1"
+        or dry_authorization.get("mode") != "dry-run"
+        or dry_authorization.get("protocol") != _identity(protocol_path)
+        or dry_authorization.get("alltrain_result") != _identity(alltrain_path)
+        or dry_authorization.get("final_method") != _identity(final_method_path)
+        or dry_authorization.get("compute_matched_checkpoint")
+        != _identity(compute_checkpoint_path)
+        or dry_authorization.get("compute_matched_record")
+        != _identity(compute_match_path)
+        or dry_authorization.get("compute_match_verification") != compute_verification
+        or dry_authorization.get("one_shot_execution_authorized") is not False
+        or dry_authorization.get("target_selection") is not False
+        or dry_authorization.get("target_calibration") is not False
+        or dry_authorization.get("target_retries") is not False
+        or dry_authorization.get("official_eval_read") is not False
+    ):
+        raise ValueError("DLO3 compute-matched dry-run lineage differs")
     alltrain_runtime = _mapping(alltrain.get("runtime"), label="alltrain runtime")
     dry_runtime = _mapping(dry_run.get("runtime"), label="dry-run runtime")
     if alltrain_runtime.get("torch") != dry_runtime.get(
@@ -166,6 +236,12 @@ def main() -> int:
         "bayesian_artifacts_verified": True,
         "bayesian_audit": bayesian_audit,
         "bayesian_artifacts": bayesian_artifacts,
+        "physical_checkpoint": _identity(physical_checkpoint_path),
+        "compute_matched_checkpoint": _identity(compute_checkpoint_path),
+        "compute_matched_record": _identity(compute_match_path),
+        "compute_match_verification": compute_verification,
+        "compute_matched_dry_run": compute_artifacts,
+        "compute_matched_control_verified": True,
         "backend_target_arm_authorized": backend_authorized,
         "backend_artifacts": backend_artifacts,
         "backend_dry_run_status": expected_backend_status,

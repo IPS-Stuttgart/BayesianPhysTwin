@@ -1850,6 +1850,457 @@ def evaluate_deform_backend_portability_report(
     }
 
 
+def evaluate_deform_compute_matched_report(
+    candidate_predictions: Array,
+    registered_physical_predictions: Array,
+    compute_matched_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+) -> dict[str, object]:
+    """Report the frozen wall-time-equivalent physical control without selection."""
+
+    candidate = _finite_array(
+        candidate_predictions, ndim=4, label="compute-matched candidate"
+    )
+    registered = _finite_array(
+        registered_physical_predictions,
+        ndim=4,
+        label="registered physical baseline",
+    )
+    compute_matched = _finite_array(
+        compute_matched_predictions,
+        ndim=4,
+        label="compute-matched physical baseline",
+    )
+    observed = _finite_array(targets, ndim=4, label="compute-matched outcomes")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != registered.shape
+        or candidate.shape != compute_matched.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] < 1
+        or len(normalized_names) != candidate.shape[0]
+        or len(set(normalized_names)) != len(normalized_names)
+    ):
+        raise ValueError("DEFORM compute-matched arrays do not align")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    registered_errors = np.mean(np.abs(registered - observed), axis=(1, 2, 3))
+    compute_errors = np.mean(np.abs(compute_matched - observed), axis=(1, 2, 3))
+    if np.any(registered_errors <= 0.0) or np.any(compute_errors <= 0.0):
+        raise ValueError("DEFORM compute-matched baseline error must be positive")
+    candidate_mean = float(np.mean(candidate_errors))
+    registered_mean = float(np.mean(registered_errors))
+    compute_mean = float(np.mean(compute_errors))
+    candidate_ratios = candidate_errors / compute_errors
+    compute_ratios = compute_errors / registered_errors
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-compute-matched-report-v1",
+        "case_count": len(normalized_names),
+        "candidate_mean_l1_m": candidate_mean,
+        "registered_physical_mean_l1_m": registered_mean,
+        "compute_matched_physical_mean_l1_m": compute_mean,
+        "candidate_relative_improvement_over_compute_matched": (
+            1.0 - candidate_mean / compute_mean
+        ),
+        "compute_matched_relative_improvement_over_registered": (
+            1.0 - compute_mean / registered_mean
+        ),
+        "candidate_wins_over_compute_matched": int(
+            np.count_nonzero(candidate_errors < compute_errors)
+        ),
+        "compute_matched_wins_over_registered": int(
+            np.count_nonzero(compute_errors < registered_errors)
+        ),
+        "maximum_candidate_to_compute_matched_ratio": float(np.max(candidate_ratios)),
+        "maximum_compute_matched_to_registered_ratio": float(np.max(compute_ratios)),
+        "selection_effect": "none",
+        "cases": [
+            {
+                "name": name,
+                "candidate_l1_m": float(candidate_errors[index]),
+                "registered_physical_l1_m": float(registered_errors[index]),
+                "compute_matched_physical_l1_m": float(compute_errors[index]),
+                "candidate_to_compute_matched_ratio": float(candidate_ratios[index]),
+                "compute_matched_to_registered_ratio": float(compute_ratios[index]),
+                "candidate_wins_over_compute_matched": bool(
+                    candidate_errors[index] < compute_errors[index]
+                ),
+                "compute_matched_wins_over_registered": bool(
+                    compute_errors[index] < registered_errors[index]
+                ),
+            }
+            for index, name in enumerate(normalized_names)
+        ],
+    }
+
+
+def validate_deform_dlo3_alltrain_compute_match_v1(
+    value: object,
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate the target-blind all-train compute-matching arithmetic."""
+
+    record = _mapping(value, label="all-train compute match")
+    compute = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
+    training = _mapping(protocol.get("physical_training"), label="physical training")
+    local_seconds = float(
+        cast(Any, record.get("local_residual_wall_seconds", math.nan))
+    )
+    update_seconds = float(
+        cast(Any, record.get("median_update_seconds_6301_6400", math.nan))
+    )
+    additional_updates = int(cast(Any, record.get("additional_updates", -1)))
+    start_update = int(cast(Any, record.get("start_update", -1)))
+    end_update = int(cast(Any, record.get("end_update", -1)))
+    expected_additional = (
+        int(math.ceil(local_seconds / update_seconds))
+        if math.isfinite(local_seconds)
+        and local_seconds > 0.0
+        and math.isfinite(update_seconds)
+        and update_seconds > 0.0
+        else -1
+    )
+    if (
+        record.get("contract") != "deform-dlo3-alltrain-compute-match-v1"
+        or int(cast(Any, record.get("seed", -1)))
+        != int(cast(Any, training["primary_seed"]))
+        or additional_updates != expected_additional
+        or additional_updates < int(cast(Any, compute["minimum_additional_updates"]))
+        or additional_updates > int(cast(Any, compute["maximum_additional_updates"]))
+        or start_update != int(cast(Any, compute["start_update"]))
+        or end_update != start_update + additional_updates
+        or record.get("selection_effect") != "none"
+        or record.get("target_selection") is not False
+        or record.get("target_calibration") is not False
+        or record.get("target_retries") is not False
+        or record.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM all-train compute match differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-alltrain-compute-match-verification-v1",
+        "seed": int(cast(Any, record["seed"])),
+        "local_residual_wall_seconds": local_seconds,
+        "median_update_seconds_6301_6400": update_seconds,
+        "additional_updates": additional_updates,
+        "start_update": start_update,
+        "end_update": end_update,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def validate_deform_compute_matched_report_v1(
+    value: object,
+    *,
+    expected_case_count: int,
+) -> dict[str, object]:
+    """Validate a descriptive compute-matched report without making a gate."""
+
+    report = _mapping(value, label="compute-matched report")
+    cases_value = report.get("cases")
+    if not isinstance(cases_value, Sequence) or isinstance(cases_value, (str, bytes)):
+        raise ValueError("DEFORM compute-matched report cases differ")
+    cases = tuple(_mapping(case, label="compute-matched case") for case in cases_value)
+    candidate_mean = float(cast(Any, report.get("candidate_mean_l1_m", math.nan)))
+    registered_mean = float(
+        cast(Any, report.get("registered_physical_mean_l1_m", math.nan))
+    )
+    compute_mean = float(
+        cast(Any, report.get("compute_matched_physical_mean_l1_m", math.nan))
+    )
+    relative_candidate = float(
+        cast(
+            Any,
+            report.get("candidate_relative_improvement_over_compute_matched", math.nan),
+        )
+    )
+    relative_compute = float(
+        cast(
+            Any,
+            report.get(
+                "compute_matched_relative_improvement_over_registered", math.nan
+            ),
+        )
+    )
+    if (
+        report.get("contract") != "deform-dlo3-compute-matched-report-v1"
+        or int(cast(Any, report.get("case_count", -1))) != expected_case_count
+        or len(cases) != expected_case_count
+        or expected_case_count < 1
+        or not math.isfinite(candidate_mean)
+        or candidate_mean < 0.0
+        or not math.isfinite(registered_mean)
+        or registered_mean <= 0.0
+        or not math.isfinite(compute_mean)
+        or compute_mean <= 0.0
+        or not math.isclose(
+            relative_candidate,
+            1.0 - candidate_mean / compute_mean,
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            relative_compute,
+            1.0 - compute_mean / registered_mean,
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or report.get("selection_effect") != "none"
+        or "passed" in report
+    ):
+        raise ValueError("DEFORM compute-matched report summary differs")
+
+    names: list[str] = []
+    candidate_values: list[float] = []
+    registered_values: list[float] = []
+    compute_values: list[float] = []
+    candidate_ratios: list[float] = []
+    compute_ratios: list[float] = []
+    candidate_wins = 0
+    compute_wins = 0
+    for case in cases:
+        name = str(case.get("name", ""))
+        candidate_error = float(cast(Any, case.get("candidate_l1_m", math.nan)))
+        registered_error = float(
+            cast(Any, case.get("registered_physical_l1_m", math.nan))
+        )
+        compute_error = float(
+            cast(Any, case.get("compute_matched_physical_l1_m", math.nan))
+        )
+        candidate_ratio = float(
+            cast(Any, case.get("candidate_to_compute_matched_ratio", math.nan))
+        )
+        compute_ratio = float(
+            cast(Any, case.get("compute_matched_to_registered_ratio", math.nan))
+        )
+        candidate_won = candidate_error < compute_error
+        compute_won = compute_error < registered_error
+        if (
+            not name
+            or not math.isfinite(candidate_error)
+            or candidate_error < 0.0
+            or not math.isfinite(registered_error)
+            or registered_error <= 0.0
+            or not math.isfinite(compute_error)
+            or compute_error <= 0.0
+            or not math.isclose(
+                candidate_ratio,
+                candidate_error / compute_error,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            )
+            or not math.isclose(
+                compute_ratio,
+                compute_error / registered_error,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            )
+            or case.get("candidate_wins_over_compute_matched") is not candidate_won
+            or case.get("compute_matched_wins_over_registered") is not compute_won
+        ):
+            raise ValueError("DEFORM compute-matched report case differs")
+        names.append(name)
+        candidate_values.append(candidate_error)
+        registered_values.append(registered_error)
+        compute_values.append(compute_error)
+        candidate_ratios.append(candidate_ratio)
+        compute_ratios.append(compute_ratio)
+        candidate_wins += int(candidate_won)
+        compute_wins += int(compute_won)
+    if (
+        len(set(names)) != expected_case_count
+        or not math.isclose(
+            candidate_mean,
+            float(np.mean(candidate_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            registered_mean,
+            float(np.mean(registered_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            compute_mean,
+            float(np.mean(compute_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or int(cast(Any, report.get("candidate_wins_over_compute_matched", -1)))
+        != candidate_wins
+        or int(cast(Any, report.get("compute_matched_wins_over_registered", -1)))
+        != compute_wins
+        or not math.isclose(
+            float(
+                cast(
+                    Any,
+                    report.get("maximum_candidate_to_compute_matched_ratio", math.nan),
+                )
+            ),
+            max(candidate_ratios),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            float(
+                cast(
+                    Any,
+                    report.get("maximum_compute_matched_to_registered_ratio", math.nan),
+                )
+            ),
+            max(compute_ratios),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+    ):
+        raise ValueError("DEFORM compute-matched report aggregate differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-compute-matched-report-verification-v1",
+        "case_count": expected_case_count,
+        "case_names": names,
+        "candidate_wins_over_compute_matched": candidate_wins,
+        "compute_matched_wins_over_registered": compute_wins,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_evaluator_compute_matched_artifacts_v1(
+    result: Mapping[str, object],
+    *,
+    expected_mode: str,
+) -> dict[str, object]:
+    """Rehash the evaluator's sealed compute-matched prediction arm."""
+
+    if expected_mode not in ("dry-run", "official"):
+        raise ValueError("unsupported DEFORM evaluator mode")
+    if expected_mode == "dry-run":
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-evaluator-dry-run-v1"
+            and result.get("primary_eval_read") is False
+            and result.get("target_authorized") is False
+            and result.get("retry_authorized") is False
+            and result.get("held_v8_access") is False
+        )
+    else:
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-official-result-v1"
+            and result.get("official_eval_read") is True
+            and result.get("retry_authorized") is False
+            and result.get("case_replacement") is False
+            and result.get("held_v8_access") is False
+        )
+    if not custody_valid:
+        raise ValueError("DEFORM evaluator compute-matched custody differs")
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="evaluator prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("evaluator prediction seal must be a JSON object")
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-evaluator-prediction-seal-v1"
+        or seal.get("mode") != expected_mode
+        or seal.get("outcomes_scored") is not False
+        or seal.get("target_retries") is not False
+    ):
+        raise ValueError("DEFORM evaluator compute-matched seal differs")
+    sealed_control = _mapping(
+        seal.get("compute_matched_control"), label="sealed compute-matched control"
+    )
+    result_control = _mapping(
+        result.get("compute_matched_control"), label="compute-matched control"
+    )
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="evaluator predictions"
+    )
+    expected_case_count = 8 if expected_mode == "dry-run" else 14
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        names = tuple(str(value) for value in np.asarray(archive["names"]))
+        required = ("candidate", "baseline")
+        if any(key not in archive.files for key in required):
+            raise ValueError("DEFORM evaluator compute-matched archive differs")
+        candidate = _finite_array(
+            np.asarray(archive["candidate"]), ndim=4, label="sealed candidate"
+        )
+        baseline = _finite_array(
+            np.asarray(archive["baseline"]), ndim=4, label="sealed baseline"
+        )
+        compute_present = "compute_matched_physical" in archive.files
+        compute_values = (
+            _finite_array(
+                np.asarray(archive["compute_matched_physical"]),
+                ndim=4,
+                label="sealed compute-matched physical",
+            )
+            if compute_present
+            else None
+        )
+    if (
+        len(names) != expected_case_count
+        or len(set(names)) != expected_case_count
+        or candidate.shape != baseline.shape
+        or candidate.shape[0] != expected_case_count
+    ):
+        raise ValueError("DEFORM evaluator compute-matched archive differs")
+
+    status = str(result_control.get("status", ""))
+    if status == "scored":
+        if (
+            sealed_control.get("status") != "sealed"
+            or sealed_control.get("selection_effect") != "none"
+            or sealed_control.get("retry_authorized") is not False
+            or result_control.get("selection_effect") != "none"
+            or result_control.get("retry_authorized") is not False
+            or any(
+                result_control.get(field) != sealed_control.get(field)
+                for field in (
+                    "checkpoint",
+                    "compute_match",
+                    "compute_match_verification",
+                )
+            )
+            or compute_values is None
+            or compute_values.shape != candidate.shape
+        ):
+            raise ValueError("DEFORM evaluator compute-matched scored arm differs")
+        report = validate_deform_compute_matched_report_v1(
+            result_control.get("report"), expected_case_count=expected_case_count
+        )
+        if tuple(cast(Sequence[str], report["case_names"])) != names:
+            raise ValueError("DEFORM compute-matched report identity order differs")
+    elif status == "technical-failure":
+        if (
+            expected_mode != "official"
+            or dict(result_control) != dict(sealed_control)
+            or result_control.get("stage") != "compute-matched-rollout"
+            or result_control.get("selection_effect") != "none"
+            or result_control.get("retry_authorized") is not False
+            or compute_present
+        ):
+            raise ValueError("DEFORM evaluator compute-matched failure differs")
+        report = None
+    else:
+        raise ValueError("DEFORM evaluator compute-matched status differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-evaluator-compute-matched-artifact-verification-v1",
+        "mode": expected_mode,
+        "status": status,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "report": report,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
 def _validate_deform_casewise_gate_record_v1(
     value: object,
     protocol: Mapping[str, object],

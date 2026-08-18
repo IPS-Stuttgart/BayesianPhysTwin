@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -26,6 +27,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     augment_deform_local_residual_full_covariance,
     load_deform_dlo_robustness_v1_protocol,
     validate_deform_bayesian_audit_v1,
+    validate_deform_dlo3_alltrain_compute_match_v1,
     validate_deform_dlo3_backend_result_v1,
     validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
@@ -220,6 +222,9 @@ def main() -> int:
     protocol_path = args.protocol.resolve()
     manifest_path = args.source_manifest.resolve()
     protocol = load_deform_dlo_robustness_v1_protocol(protocol_path)
+    compute_contract = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
     primary, authorization = _assert_authorization(
         protocol_path=protocol_path,
         manifest_path=manifest_path,
@@ -262,6 +267,9 @@ def main() -> int:
         "shrinkage": 0.25,
         "covariance": "trajectory-clustered-full-coordinate-covariance-v1",
         "variance_scale": "reuse-seed42-source-calibration-without-refit",
+        "compute_matched_control": (
+            "frozen-wall-time-equivalent-DEFORM-continuation-v1"
+        ),
         "bayesian_ablation_distributions": list(
             DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         ),
@@ -334,10 +342,12 @@ def main() -> int:
         device=args.device,
     )
     registered_updates = int(cast(Any, training["total_updates"]))
+    maximum_extra = int(cast(Any, compute_contract["maximum_additional_updates"]))
+    schedule_updates = registered_updates + maximum_extra
     updates = 1 if args.mode == "smoke" else registered_updates
     trajectory_indices, start_indices = source_runtime._make_schedule(
         fit_names=all_names,
-        updates=registered_updates,
+        updates=schedule_updates,
         batch_size=int(cast(Any, training["batch_size"])),
         frame_count=500,
         horizon=int(cast(Any, training["unroll_horizon_frames"])),
@@ -442,6 +452,7 @@ def main() -> int:
     state = torch.load(final_checkpoint_path, map_location="cpu", weights_only=True)[
         "model_state_dict"
     ]
+    local_started = time.perf_counter()
     rollout = posterior_runtime._evaluate_state(
         state,
         trajectories,
@@ -466,6 +477,61 @@ def main() -> int:
     np.savez_compressed(
         local_model_path, **serialize_deform_local_residual_model(local_model)
     )
+    local_wall_seconds = time.perf_counter() - local_started
+    recent = np.asarray(
+        [float(cast(Any, record["seconds"])) for record in losses[-100:]],
+        dtype=np.float64,
+    )
+    median_update_seconds = float(np.median(recent))
+    if not math.isfinite(median_update_seconds) or median_update_seconds <= 0.0:
+        raise RuntimeError("all-train compute-matched update duration is invalid")
+    additional_updates = int(math.ceil(local_wall_seconds / median_update_seconds))
+    minimum_extra = int(cast(Any, compute_contract["minimum_additional_updates"]))
+    if not minimum_extra <= additional_updates <= maximum_extra:
+        raise RuntimeError("all-train compute-matched update count is outside bounds")
+    compute_match = {
+        "schema_version": 1,
+        "contract": "deform-dlo3-alltrain-compute-match-v1",
+        "seed": seed,
+        "local_residual_wall_seconds": local_wall_seconds,
+        "median_update_seconds_6301_6400": median_update_seconds,
+        "additional_updates": additional_updates,
+        "start_update": registered_updates,
+        "end_update": registered_updates + additional_updates,
+        "selection_effect": "none",
+        "target_selection": False,
+        "target_calibration": False,
+        "target_retries": False,
+        "primary_eval_read": False,
+    }
+    compute_match_verification = validate_deform_dlo3_alltrain_compute_match_v1(
+        compute_match, protocol
+    )
+    compute_match_path = output_root / "compute_match.json"
+    _write_json(compute_match_path, compute_match)
+    for offset in range(additional_updates):
+        schedule_index = registered_updates + offset
+        batch = source_runtime._assemble_batch(
+            trajectories,
+            orientations,
+            all_names,
+            trajectory_indices[schedule_index],
+            start_indices[schedule_index],
+            horizon=int(cast(Any, training["unroll_horizon_frames"])),
+            torch=torch,
+            device=args.device,
+        )
+        source_runtime._train_update(
+            modules=modules,
+            model_function=model_function,
+            model=model,
+            optimizer=optimizer,
+            batch=batch,
+            torch=torch,
+            device=args.device,
+        )
+    torch.cuda.synchronize(args.device)
+    compute_checkpoint_path = save_checkpoint(registered_updates + additional_updates)
     full_model = augment_deform_local_residual_full_covariance(
         local_model,
         initial,
@@ -509,6 +575,12 @@ def main() -> int:
         "method_spec": _identity(method_spec_path),
         "window_schedule": _identity(schedule_path),
         "physical_checkpoint": _identity(final_checkpoint_path, update=6400),
+        "compute_matched_checkpoint": _identity(
+            compute_checkpoint_path,
+            update=registered_updates + additional_updates,
+        ),
+        "compute_match": _identity(compute_match_path),
+        "compute_match_verification": compute_match_verification,
         "local_residual_model": _identity(local_model_path),
         "full_covariance_model": _identity(full_model_path),
         "covariance_calibration": _identity(calibration_path),
@@ -545,6 +617,8 @@ def main() -> int:
         "claim_boundary": "All 56 DLO3 train trajectories only; official evaluation unopened.",
         "authorization": authorization,
         "final_method": _identity(final_method_path),
+        "compute_match": _identity(compute_match_path),
+        "compute_match_verification": compute_match_verification,
         "checkpoints": checkpoints,
         "training_losses": losses,
         "runtime": final_method["runtime"],
