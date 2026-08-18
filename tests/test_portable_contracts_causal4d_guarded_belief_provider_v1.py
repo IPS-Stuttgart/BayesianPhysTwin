@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin import guarded_belief_selection_v2
-from bayesian_phystwin import provider_runtime_identity_v1
+from bayesian_phystwin import guarded_belief_selection_v2, provider_runtime_identity_v1
 from bayesian_phystwin.causal4d_guarded_belief_provider_v1 import (
     CAUSAL4D_GUARDED_BELIEF_PROVIDER_API_VERSION,
     CAUSAL4D_GUARDED_BELIEF_PROVIDER_ARTIFACT_SCHEMA_VERSIONS,
