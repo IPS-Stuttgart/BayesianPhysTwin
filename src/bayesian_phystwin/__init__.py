@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import warnings
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final, TYPE_CHECKING
 
 from ._root_exports_v0_4 import (
     __all__ as __all__,
