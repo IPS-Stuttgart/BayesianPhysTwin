@@ -1,0 +1,82 @@
+{
+  "schema": "bayesian-phystwin.genesis-mpm-source-physics-protocol",
+  "schema_version": 1,
+  "protocol_label": "genesis-mpm-zebra-source-physics-v1",
+  "claim_boundary": "Source-only numerical qualification of one exact Genesis MPM runtime on two already-open PhysTwin source actions. It is not a source-value, fresh-object, calibration, Causal4D, DEFORM, or state-of-the-art claim.",
+  "backend": {
+    "canonical_profile_id": "genesis-mpm-v1",
+    "producer_profile_id": "genesis-mpm-v1",
+    "transport": "material-trajectory-v1",
+    "engine_repository": "https://github.com/Genesis-Embodied-AI/genesis-world",
+    "engine_revision": "0796d27667087d0087fe09d903f8aadf7fa9adeb",
+    "engine_version": "1.3.3",
+    "native_smoke_artifact_sha256": "2d2e6cae1b5b369a351cff9fb801c75fe0381c27baa68e0d63489faef754d923",
+    "native_smoke_id": "c79b2dc8c6c7a86a2d32720f86641793992bc779dcd7b44da0dde89efed1d72f",
+    "runtime_id": "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a"
+  },
+  "source_groups": [
+    {
+      "group_id": "double_lift_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "frame_count": 58,
+      "material_particle_count": 4607,
+      "controller_point_count": 30,
+      "attached_particle_count": 107
+    },
+    {
+      "group_id": "double_stretch_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "frame_count": 198,
+      "material_particle_count": 4208,
+      "controller_point_count": 30,
+      "attached_particle_count": 16
+    }
+  ],
+  "simulation": {
+    "backend": "cpu",
+    "precision": "64",
+    "seed": 0,
+    "fps": 30.0,
+    "qualification_frame_count": 10,
+    "base_substeps": 4,
+    "refined_substeps": 8,
+    "grid_density": 32,
+    "particle_size_m": 0.005,
+    "domain_padding_m": 0.05,
+    "gravity_m_s2": [0.0, 0.0, 0.0],
+    "constitutive_model": "neohooken",
+    "base_young_modulus_pa": 100000.0,
+    "soft_young_modulus_pa": 25000.0,
+    "stiff_young_modulus_pa": 500000.0,
+    "poisson_ratio": 0.35,
+    "density_kg_m3": 1000.0,
+    "rigid_translation_m": [0.17, -0.11, 0.09]
+  },
+  "gates": {
+    "maximum_zero_action_drift_m": 0.0005,
+    "maximum_rigid_translation_equivariance_error_m": 0.000005,
+    "maximum_time_step_refinement_relative_error": 0.2,
+    "maximum_source_query_parity_rmse_m": 0.0000001,
+    "minimum_action_response_m": 0.00001,
+    "minimum_parameter_sensitivity_m": 0.00001,
+    "maximum_parameter_sensitivity_m": 0.1,
+    "maximum_particle_step_m": 0.05,
+    "minimum_deformation_determinant": 0.05,
+    "maximum_deformation_determinant": 20.0
+  },
+  "information_boundary": {
+    "frame_zero_geometry_allowed": true,
+    "known_full_controller_trajectory_allowed": true,
+    "incumbent_prediction_allowed_for_query_parity_and_exact_fallback": true,
+    "source_object_outcomes_allowed": false,
+    "target_or_held_out_artifact_access_allowed": false,
+    "future_scoring_authorized": false,
+    "no_replacement": true
+  }
+}
