@@ -41,6 +41,10 @@ root shim must continue to return the same owning objects. The lifecycle label
 does not promote these research-oriented modules into the smaller versioned
 integration API.
 
+The compatibility roster and symbol-to-owner table are themselves loaded only
+when root exports are inspected or resolved. A plain package import therefore
+does not eagerly import the generated roster or any historical owner module.
+
 The warning and removal schedule is deliberately version-gated:
 
 - the complete `0.4.x` root surface remains warning-free and unchanged;
