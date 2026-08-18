@@ -3,8 +3,9 @@
 The portable material-trajectory producer intentionally does not depend on heavy
 simulator packages. This module provides small structural adapters for native
 SOFA ``MechanicalObject``, MuJoCo Flex, PositionBasedDynamics particle state,
-and Warp FEM displacement fields while keeping those dependencies on the caller
-side. Importing this module therefore never imports SOFA, MuJoCo, pyPBD, or Warp.
+Genesis MPM entity state, and Warp FEM displacement fields while keeping those
+dependencies on the caller side. Importing this module therefore never imports
+SOFA, MuJoCo, pyPBD, Genesis, or Warp.
 
 These adapters establish state-access compatibility only. They do not qualify a
 backend runtime, its physical fidelity, uncertainty calibration, or downstream
@@ -45,6 +46,15 @@ class _PBDSimulationModelV1(Protocol):
 class _WarpDiscreteFieldV1(Protocol):
     degree: object
     dof_values: object
+
+
+class _GenesisMPMEntityV1(Protocol):
+    def get_state(self) -> object: ...
+
+
+class _GenesisMPMStateV1(Protocol):
+    pos: object
+    active: object
 
 
 def _no_op() -> None:
@@ -89,6 +99,12 @@ def _integer_vector(owner: object, name: str) -> npt.NDArray[np.int64]:
 
 
 def _host_value(value: object) -> object:
+    detach = getattr(value, "detach", None)
+    if callable(detach):
+        value = detach()
+    cpu = getattr(value, "cpu", None)
+    if callable(cpu):
+        value = cpu()
     to_numpy = getattr(value, "numpy", None)
     if callable(to_numpy):
         return to_numpy()
@@ -281,6 +297,125 @@ class PositionBasedDynamicsReplayV1:
 
 
 @dataclass(slots=True)
+class GenesisMPMEntityReplayV1:
+    """Adapt one Genesis ``MPMEntity`` to fixed-material replay v1.
+
+    Genesis exposes entity-local particle state through ``entity.get_state()``.
+    Its ``pos`` and ``active`` arrays have shapes ``(B,N,3)`` and ``(B,N)``.
+    This adapter selects one registered environment, freezes its active-particle
+    roster at construction, and rejects later insertion, deletion, or activity
+    changes rather than silently changing material identity.
+    """
+
+    entity: object
+    step_callback: Callable[[], object]
+    environment_index: int = 0
+    synchronize_callback: Callable[[], object] = _no_op
+    context: object | None = None
+    _particle_count: int = field(init=False, repr=False)
+    _active_mask: npt.NDArray[np.bool_] = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        if not callable(getattr(self.entity, "get_state", None)):
+            raise TypeError("Genesis MPM entity must expose get_state()")
+        if not callable(self.step_callback):
+            raise TypeError("step_callback must be callable")
+        if not callable(self.synchronize_callback):
+            raise TypeError("synchronize_callback must be callable")
+        self.environment_index = _nonnegative_integer(
+            self.environment_index,
+            name="environment_index",
+        )
+        positions, active = self._read_entity_state()
+        self._particle_count = positions.shape[0]
+        self._active_mask = np.ascontiguousarray(active, dtype=np.bool_)
+        _require(
+            np.any(self._active_mask),
+            "Genesis MPM environment must contain at least one active particle",
+        )
+
+    def _read_entity_state(
+        self,
+    ) -> tuple[FloatArray, npt.NDArray[np.bool_]]:
+        entity = cast(_GenesisMPMEntityV1, self.entity)
+        state = entity.get_state()
+        if state is None:
+            raise ValueError("Genesis MPM entity returned no active state")
+        if not hasattr(state, "pos") or not hasattr(state, "active"):
+            raise TypeError("Genesis MPM state must expose pos and active arrays")
+        genesis_state = cast(_GenesisMPMStateV1, state)
+
+        positions = np.ascontiguousarray(
+            np.asarray(_host_value(genesis_state.pos))
+        ).copy()
+        active = np.ascontiguousarray(
+            np.asarray(_host_value(genesis_state.active))
+        ).copy()
+        _require(
+            positions.ndim == 3
+            and positions.shape[0] >= 1
+            and positions.shape[1] >= 1
+            and positions.shape[2] == 3,
+            "Genesis MPM positions must have shape (B,N,3)",
+        )
+        _require(
+            np.issubdtype(positions.dtype, np.floating),
+            "Genesis MPM positions must be floating point",
+        )
+        _require(
+            active.ndim == 2 and active.shape == positions.shape[:2],
+            "Genesis MPM active mask must have shape (B,N)",
+        )
+        _require(
+            np.issubdtype(active.dtype, np.bool_)
+            or np.issubdtype(active.dtype, np.integer),
+            "Genesis MPM active mask must be boolean or integer",
+        )
+        if np.issubdtype(active.dtype, np.integer):
+            _require(
+                np.all((active == 0) | (active == 1)),
+                "Genesis MPM integer active mask must contain only zero or one",
+            )
+        _require(
+            self.environment_index < positions.shape[0],
+            "environment_index exceeds the Genesis MPM batch",
+        )
+
+        selected_positions = np.ascontiguousarray(
+            positions[self.environment_index]
+        ).copy()
+        selected_active = np.ascontiguousarray(
+            active[self.environment_index], dtype=np.bool_
+        )
+        _require(
+            np.all(np.isfinite(selected_positions[selected_active])),
+            "Genesis MPM active positions contain non-finite values",
+        )
+        return cast(FloatArray, selected_positions), selected_active
+
+    def synchronize(self) -> object:
+        return self.synchronize_callback()
+
+    def get_material_positions_m(self) -> FloatArray:
+        positions, active = self._read_entity_state()
+        _require(
+            len(positions) == self._particle_count,
+            "Genesis MPM particle count changed during replay",
+        )
+        _require(
+            np.array_equal(active, self._active_mask),
+            "Genesis MPM active-particle roster changed during replay",
+        )
+        return cast(
+            FloatArray,
+            np.ascontiguousarray(positions[self._active_mask]).copy(),
+        )
+
+    def step(self) -> object:
+        return self.step_callback()
+
+
+@dataclass(slots=True)
 class WarpFEMDisplacementReplayV1:
     """Adapt a degree-1 Warp FEM displacement field to material replay v1.
 
@@ -354,6 +489,7 @@ class WarpFEMDisplacementReplayV1:
 
 
 __all__ = [
+    "GenesisMPMEntityReplayV1",
     "MuJoCoFlexReplayV1",
     "PositionBasedDynamicsReplayV1",
     "SofaMechanicalObjectReplayV1",
