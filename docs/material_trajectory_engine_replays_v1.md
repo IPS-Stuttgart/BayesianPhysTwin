@@ -1,4 +1,4 @@
-# SOFA, MuJoCo, PBD, and Warp FEM material replay adapters v1
+# SOFA, MuJoCo, PBD, Genesis MPM, and Warp FEM replay adapters v1
 
 ## Purpose
 
@@ -16,6 +16,8 @@ It provides dependency-free replay shims for:
 - **PositionBasedDynamics / XPBD** through pyPBD
   `SimulationModel.getParticles().getVertices()` and one registered
   `TimeStep.step(simulation_model)` step; and
+- **Genesis MPM** through one `MPMEntity.get_state()` particle roster and a
+  registered `Scene.step()` output interval; and
 - **Warp FEM** through a degree-1 FEM `DiscreteField.dof_values` displacement
   roster plus the frozen reference positions in the exact same node order.
 
@@ -132,6 +134,43 @@ construction, complete constraint graph, solver parameters, collision setup,
 assets, substeps, time step, and pyPBD/PositionBasedDynamics revision. The
 adapter itself does not infer those semantics from particle coordinates.
 
+## Genesis MPM entity state
+
+Genesis exposes the dynamic state of one MPM entity through
+`MPMEntity.get_state()`. The public state carries particle positions and active
+membership with shapes `(B,N,3)` and `(B,N)`. Select one environment explicitly:
+
+```python
+from bayesian_phystwin.material_trajectory_engine_replays_v1 import (
+    GenesisMPMEntityReplayV1,
+)
+
+
+def build_replay():
+    scene, deformable = build_fresh_genesis_mpm_scene()
+    return GenesisMPMEntityReplayV1(
+        entity=deformable,
+        environment_index=0,
+        step_callback=scene.step,
+        synchronize_callback=synchronize_genesis_device,
+        context=scene,
+    )
+```
+
+The adapter detaches and moves tensor-like state to the host before converting
+it to NumPy. At construction it freezes the selected environment's complete
+particle count and active mask. Every later capture must preserve both exactly;
+particle insertion, deletion, activation, or deactivation fails closed rather
+than changing the registered material identity. Only initially active particles
+are published, in their original entity-local row order.
+
+The selected positions must already be metres in
+`right-handed-z-up-world-v1`. A qualifying producer must additionally bind the
+entity construction, particle sampling and order, constitutive model, grid and
+boundary configuration, rigid/MPM coupling, time step and substeps, device,
+Genesis revision, and the exact scene-step wrapper. The adapter deliberately
+does not reach into private solver fields or use renderer particles.
+
 ## Warp FEM displacement fields
 
 `WarpFEMDisplacementReplayV1` addresses the common Warp FEM representation in
@@ -195,7 +234,7 @@ from bayesian_phystwin.material_trajectory_producer_v1 import (
 
 artifact = produce_material_trajectory_backend(
     output_dir=output_dir,
-    backend_kind="warp-fem-v1",
+    backend_kind="genesis-mpm-v1",
     replay_factory=build_replay,
     driven_control=driven_control,
     zero_action_control=zero_action_control,
@@ -217,6 +256,9 @@ SOFA exposes a standardized material-state and animation surface and is a useful
 independent FEM reference. MuJoCo exposes a stable, explicit Flex-vertex state
 and offers a fast controls-oriented deformable baseline. pyPBD exposes the
 global particle array used by its rope, rod, cloth, and soft-body models.
+Genesis exposes entity-local MPM state without requiring BayesianPhysTwin to
+import its runtime, making the active MPM qualification candidate executable
+through the same fixed-identity producer contract.
 Warp's FEM field API provides an especially direct path from a displacement DOF
 roster to the registered mesh-node material contract without importing Warp into
 the base package.
@@ -230,7 +272,7 @@ obligation.
 ## Scientific next step
 
 The portfolio policy still makes JAX-FEM and Genesis MPM the active
-qualification candidates. These SOFA, MuJoCo, PBD, and Warp shims improve
+qualification candidates. These SOFA, MuJoCo, PBD, Genesis, and Warp shims improve
 implementation coverage while those two candidates advance from native
 execution to source physics and matched source-value evidence. Another backend
 should enter the active qualification funnel only after a slot opens or
