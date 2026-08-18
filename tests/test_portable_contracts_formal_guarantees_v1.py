@@ -131,9 +131,7 @@ def _linear_gaussian_posterior(
     observation_covariance: np.ndarray,
     observation: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    innovation_covariance = (
-        design @ covariance @ design.T + observation_covariance
-    )
+    innovation_covariance = design @ covariance @ design.T + observation_covariance
     gain = np.linalg.solve(
         innovation_covariance,
         design @ covariance,
@@ -144,9 +142,7 @@ def _linear_gaussian_posterior(
         residual_map @ covariance @ residual_map.T
         + gain @ observation_covariance @ gain.T
     )
-    return posterior_mean, 0.5 * (
-        posterior_covariance + posterior_covariance.T
-    )
+    return posterior_mean, 0.5 * (posterior_covariance + posterior_covariance.T)
 
 
 def test_retained_basis_reparameterization_preserves_posterior() -> None:
@@ -230,8 +226,7 @@ def test_dense_and_low_rank_query_covariance_are_equivalent() -> None:
     dense = conditional + factor @ factor.T
     projected_dense = query @ dense @ query.T
     projected_factorized = (
-        query @ conditional @ query.T
-        + (query @ factor) @ (query @ factor).T
+        query @ conditional @ query.T + (query @ factor) @ (query @ factor).T
     )
 
     np.testing.assert_allclose(
