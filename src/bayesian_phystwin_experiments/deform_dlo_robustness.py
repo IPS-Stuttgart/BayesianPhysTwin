@@ -7,12 +7,41 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from statistics import NormalDist
 from typing import Any, cast
 
+import numpy as np
+
+from bayesian_phystwin.numerical_linear_algebra_v1 import solve_spd
+from bayesian_phystwin_experiments.deform_dlo_local_residual import (
+    _collapse_duplicate_queries,
+    _finite_array,
+    build_deform_local_residual_features,
+    predict_deform_local_residual,
+)
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 DEFORM_DLO_ROBUSTNESS_CONTRACT = "deform-dlo-robustness-v1"
 DEFORM_DLO_ROBUSTNESS_DOMAIN = b"deform-dlo3-robustness-v1\0"
+DEFORM_LOCAL_FEATURE_COUNT = 92
+Array = np.ndarray[Any, Any]
+
+
+def deform_local_feature_indices(arm: str) -> tuple[int, ...]:
+    """Return the predeclared feature subset for one mechanism arm."""
+
+    if arm in ("full-local", "full-global"):
+        return tuple(range(DEFORM_LOCAL_FEATURE_COUNT))
+    if arm == "intercept-only":
+        return ()
+    if arm == "full-no-action":
+        action_dependent = set(range(24, 66)) | {69, 70} | set(range(80, 92))
+        return tuple(
+            index
+            for index in range(DEFORM_LOCAL_FEATURE_COUNT)
+            if index not in action_dependent
+        )
+    raise ValueError(f"unsupported DEFORM mechanism arm: {arm}")
 
 
 def _mapping(value: object, *, label: str) -> Mapping[str, object]:
@@ -377,3 +406,538 @@ def validate_deform_dlo3_source_manifest(
         ):
             raise ValueError(f"DLO3 source trajectory identity changed: {name}")
     return partitions
+
+
+def fit_deform_local_residual_variant(
+    initial_states: Array,
+    clamped_action: Array,
+    baseline_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+    *,
+    ridge: float,
+    arm: str,
+) -> dict[str, object]:
+    """Fit a predeclared reduced-feature residual arm for mechanism diagnosis."""
+
+    initial = _finite_array(initial_states, ndim=4, label="variant initial states")
+    action = _finite_array(clamped_action, ndim=4, label="variant action")
+    baseline = _finite_array(baseline_predictions, ndim=4, label="variant baseline")
+    observed = _finite_array(targets, ndim=4, label="variant targets")
+    if (
+        baseline.shape != observed.shape
+        or initial.shape[0] != baseline.shape[0]
+        or action.shape[:2] != baseline.shape[:2]
+        or len(names) != baseline.shape[0]
+        or len(set(names)) != len(names)
+    ):
+        raise ValueError("DEFORM residual variant arrays do not align")
+    if not math.isfinite(ridge) or ridge <= 0.0:
+        raise ValueError("DEFORM residual variant ridge must be positive")
+    feature_indices = deform_local_feature_indices(arm)
+    coordinate_frame = (
+        "action-centered-global" if arm == "full-global" else "initial-action-local"
+    )
+    initial, action, baseline, observed, grouped_names = _collapse_duplicate_queries(
+        initial,
+        action,
+        baseline,
+        observed,
+        names,
+    )
+    full_features, frames = build_deform_local_residual_features(
+        initial,
+        action,
+        baseline,
+        coordinate_frame=coordinate_frame,
+    )
+    features = full_features[..., feature_indices]
+    residual_global = observed - baseline
+    residual_canonical = np.einsum("ntvi,nij->ntvj", residual_global, frames)
+    internal: Array = np.arange(2, baseline.shape[2] - 2, dtype=np.int64)
+    residual_canonical = residual_canonical[:, :, internal]
+    trajectory_count, horizon, internal_count, feature_count = features.shape
+    feature_location = np.zeros((internal_count, feature_count), dtype=np.float64)
+    feature_scale = np.ones_like(feature_location)
+    coefficients = np.zeros((internal_count, feature_count + 1, 3), dtype=np.float64)
+    penalty = np.eye(feature_count + 1, dtype=np.float64) * ridge
+    penalty[0, 0] = 0.0
+    for node in range(internal_count):
+        raw_x = features[:, :, node]
+        location = np.mean(raw_x, axis=(0, 1))
+        scale = np.std(raw_x, axis=(0, 1))
+        scale = np.where(scale > 1e-10, scale, 1.0)
+        standardized = (raw_x - location) / scale
+        design = np.concatenate(
+            (
+                np.ones((trajectory_count, horizon, 1), dtype=np.float64),
+                standardized,
+            ),
+            axis=2,
+        )
+        flat_design = design.reshape(-1, feature_count + 1)
+        response = residual_canonical[:, :, node].reshape(-1, 3)
+        solved = solve_spd(
+            flat_design.T @ flat_design + penalty,
+            flat_design.T @ response,
+            compute_covariance=False,
+        )
+        feature_location[node] = location
+        feature_scale[node] = scale
+        coefficients[node] = solved.solution
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-local-residual-variant-v1",
+        "arm": arm,
+        "coordinate_frame": coordinate_frame,
+        "node_count": baseline.shape[2],
+        "prediction_horizon": baseline.shape[1],
+        "full_feature_count": DEFORM_LOCAL_FEATURE_COUNT,
+        "feature_indices": feature_indices,
+        "trajectory_clusters": grouped_names,
+        "feature_location": feature_location,
+        "feature_scale": feature_scale,
+        "coefficients": coefficients,
+        "ridge": ridge,
+    }
+
+
+def predict_deform_local_residual_variant(
+    model: Mapping[str, object],
+    initial_states: Array,
+    clamped_action: Array,
+    baseline_predictions: Array,
+    *,
+    shrinkage: float,
+) -> dict[str, Array]:
+    """Predict one fixed mechanism arm without changing clamped nodes."""
+
+    if not math.isfinite(shrinkage) or not 0.0 <= shrinkage <= 1.0:
+        raise ValueError("DEFORM residual variant shrinkage is invalid")
+    baseline = _finite_array(
+        baseline_predictions, ndim=4, label="variant query baseline"
+    )
+    if (
+        int(cast(Any, model.get("node_count", -1))) != baseline.shape[2]
+        or int(cast(Any, model.get("prediction_horizon", -1))) != baseline.shape[1]
+    ):
+        raise ValueError("DEFORM residual variant shape differs")
+    coordinate_frame = str(model.get("coordinate_frame", ""))
+    full_features, frames = build_deform_local_residual_features(
+        initial_states,
+        clamped_action,
+        baseline,
+        coordinate_frame=coordinate_frame,
+    )
+    feature_indices = tuple(
+        int(value) for value in cast(Sequence[Any], model.get("feature_indices", ()))
+    )
+    features = full_features[..., feature_indices]
+    location = _finite_array(
+        np.asarray(model.get("feature_location")),
+        ndim=2,
+        label="variant feature location",
+    )
+    scale = _finite_array(
+        np.asarray(model.get("feature_scale")),
+        ndim=2,
+        label="variant feature scale",
+    )
+    coefficients = _finite_array(
+        np.asarray(model.get("coefficients")),
+        ndim=3,
+        label="variant coefficients",
+    )
+    internal_count = baseline.shape[2] - 4
+    feature_count = len(feature_indices)
+    if (
+        location.shape != (internal_count, feature_count)
+        or scale.shape != location.shape
+        or coefficients.shape != (internal_count, feature_count + 1, 3)
+    ):
+        raise ValueError("DEFORM residual variant model arrays do not align")
+    means = []
+    for node in range(internal_count):
+        standardized = (features[:, :, node] - location[node]) / scale[node]
+        design = np.concatenate(
+            (
+                np.ones((*standardized.shape[:2], 1), dtype=np.float64),
+                standardized,
+            ),
+            axis=2,
+        )
+        means.append(np.einsum("ntd,dc->ntc", design, coefficients[node]))
+    correction_canonical = np.stack(means, axis=2)
+    correction_global = np.einsum("ntvj,nij->ntvi", correction_canonical, frames)
+    internal: Array = np.arange(2, baseline.shape[2] - 2, dtype=np.int64)
+    candidate = baseline.copy()
+    candidate[:, :, internal] += shrinkage * correction_global
+    return {
+        "predictions": candidate,
+        "correction_l2_m": np.sqrt(
+            np.mean(np.square(shrinkage * correction_global), axis=(1, 2, 3))
+        ),
+    }
+
+
+def augment_deform_local_residual_full_covariance(
+    model: Mapping[str, object],
+    initial_states: Array,
+    clamped_action: Array,
+    baseline_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+) -> dict[str, object]:
+    """Add trajectory-clustered cross-coordinate covariance to a fitted model."""
+
+    initial = _finite_array(initial_states, ndim=4, label="covariance initial states")
+    action = _finite_array(clamped_action, ndim=4, label="covariance action")
+    baseline = _finite_array(baseline_predictions, ndim=4, label="covariance baseline")
+    observed = _finite_array(targets, ndim=4, label="covariance targets")
+    if (
+        baseline.shape != observed.shape
+        or initial.shape[0] != baseline.shape[0]
+        or action.shape[:2] != baseline.shape[:2]
+        or len(names) != baseline.shape[0]
+    ):
+        raise ValueError("DEFORM full-covariance arrays do not align")
+    initial, action, baseline, observed, _ = _collapse_duplicate_queries(
+        initial,
+        action,
+        baseline,
+        observed,
+        names,
+    )
+    features, frames = build_deform_local_residual_features(initial, action, baseline)
+    location = _finite_array(
+        np.asarray(model.get("feature_location")),
+        ndim=2,
+        label="covariance feature location",
+    )
+    scale = _finite_array(
+        np.asarray(model.get("feature_scale")),
+        ndim=2,
+        label="covariance feature scale",
+    )
+    coefficients = _finite_array(
+        np.asarray(model.get("coefficients")),
+        ndim=3,
+        label="covariance coefficients",
+    )
+    residual_global = observed - baseline
+    residual_canonical = np.einsum("ntvi,nij->ntvj", residual_global, frames)
+    internal: Array = np.arange(2, baseline.shape[2] - 2, dtype=np.int64)
+    residual_canonical = residual_canonical[:, :, internal]
+    trajectory_count, horizon, internal_count, feature_count = features.shape
+    if (
+        feature_count != DEFORM_LOCAL_FEATURE_COUNT
+        or location.shape != (internal_count, feature_count)
+        or scale.shape != location.shape
+        or coefficients.shape != (internal_count, feature_count + 1, 3)
+    ):
+        raise ValueError("DEFORM full-covariance model arrays do not align")
+    ridge = float(cast(Any, model.get("ridge", math.nan)))
+    if not math.isfinite(ridge) or ridge <= 0.0:
+        raise ValueError("DEFORM full-covariance ridge is invalid")
+    dimension = feature_count + 1
+    coefficient_covariance = np.zeros(
+        (internal_count, 3, 3, dimension, dimension), dtype=np.float64
+    )
+    residual_covariance = np.zeros((internal_count, 3, 3), dtype=np.float64)
+    penalty = np.eye(dimension, dtype=np.float64) * ridge
+    penalty[0, 0] = 0.0
+    cluster_correction = trajectory_count / max(1, trajectory_count - 1)
+    for node in range(internal_count):
+        standardized = (features[:, :, node] - location[node]) / scale[node]
+        design = np.concatenate(
+            (
+                np.ones((trajectory_count, horizon, 1), dtype=np.float64),
+                standardized,
+            ),
+            axis=2,
+        )
+        flat_design = design.reshape(-1, dimension)
+        response = residual_canonical[:, :, node].reshape(-1, 3)
+        solved = solve_spd(
+            flat_design.T @ flat_design + penalty,
+            flat_design.T @ response,
+            compute_covariance=True,
+        )
+        bread = solved.covariance
+        if bread is None:
+            raise RuntimeError("DEFORM full-covariance solve omitted covariance")
+        fit_residual = residual_canonical[:, :, node] - np.einsum(
+            "ntd,dc->ntc", design, coefficients[node]
+        )
+        scores = np.einsum("ntd,ntc->ndc", design, fit_residual)
+        for left in range(3):
+            for right in range(3):
+                meat = scores[:, :, left].T @ scores[:, :, right] * cluster_correction
+                coefficient_covariance[node, left, right] = bread @ meat @ bread
+        flat_residual = fit_residual.reshape(-1, 3)
+        residual_covariance[node] = (
+            flat_residual.T @ flat_residual / flat_residual.shape[0]
+        )
+    coefficient_covariance = 0.5 * (
+        coefficient_covariance + coefficient_covariance.transpose(0, 2, 1, 4, 3)
+    )
+    residual_covariance = 0.5 * (
+        residual_covariance + residual_covariance.transpose(0, 2, 1)
+    )
+    result = dict(model)
+    result["full_covariance_contract"] = (
+        "trajectory-clustered-full-coordinate-covariance-v1"
+    )
+    result["coefficient_covariance_full"] = coefficient_covariance
+    result["residual_covariance_full"] = residual_covariance
+    return result
+
+
+def _project_psd(values: Array) -> Array:
+    symmetric = 0.5 * (values + np.swapaxes(values, -1, -2))
+    eigenvalues, eigenvectors = np.linalg.eigh(symmetric)
+    clipped = np.maximum(eigenvalues, 0.0)
+    return cast(
+        Array,
+        np.asarray(
+            np.einsum("...ik,...k,...jk->...ij", eigenvectors, clipped, eigenvectors),
+            dtype=np.float64,
+        ),
+    )
+
+
+def predict_deform_local_residual_full_covariance(
+    model: Mapping[str, object],
+    initial_states: Array,
+    clamped_action: Array,
+    baseline_predictions: Array,
+    *,
+    shrinkage: float,
+    variance_mode: str = "conservative",
+) -> dict[str, Array]:
+    """Predict the unchanged point mean and a full coordinate covariance."""
+
+    if not math.isfinite(shrinkage) or not 0.0 < shrinkage <= 1.0:
+        raise ValueError("DEFORM full-covariance shrinkage is invalid")
+    if variance_mode not in ("conservative", "shrinkage-propagated"):
+        raise ValueError("DEFORM full-covariance variance mode is invalid")
+    baseline = _finite_array(
+        baseline_predictions, ndim=4, label="full-covariance query baseline"
+    )
+    point = predict_deform_local_residual(
+        dict(model),
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    features, frames = build_deform_local_residual_features(
+        initial_states, clamped_action, baseline
+    )
+    location = _finite_array(
+        np.asarray(model.get("feature_location")),
+        ndim=2,
+        label="full-covariance feature location",
+    )
+    scale = _finite_array(
+        np.asarray(model.get("feature_scale")),
+        ndim=2,
+        label="full-covariance feature scale",
+    )
+    coefficient_covariance = _finite_array(
+        np.asarray(model.get("coefficient_covariance_full")),
+        ndim=5,
+        label="full coefficient covariance",
+    )
+    residual_covariance = _finite_array(
+        np.asarray(model.get("residual_covariance_full")),
+        ndim=3,
+        label="full residual covariance",
+    )
+    internal_count = baseline.shape[2] - 4
+    feature_count = features.shape[3]
+    dimension = feature_count + 1
+    if coefficient_covariance.shape != (
+        internal_count,
+        3,
+        3,
+        dimension,
+        dimension,
+    ) or residual_covariance.shape != (internal_count, 3, 3):
+        raise ValueError("DEFORM full-covariance model arrays do not align")
+    canonical_covariances = []
+    for node in range(internal_count):
+        standardized = (features[:, :, node] - location[node]) / scale[node]
+        design = np.concatenate(
+            (
+                np.ones((*standardized.shape[:2], 1), dtype=np.float64),
+                standardized,
+            ),
+            axis=2,
+        )
+        epistemic = np.einsum(
+            "ntd,abde,nte->ntab",
+            design,
+            coefficient_covariance[node],
+            design,
+        )
+        canonical_covariances.append(epistemic + residual_covariance[node])
+    canonical = np.stack(canonical_covariances, axis=2)
+    global_covariance = np.einsum("nia,ntvab,njb->ntvij", frames, canonical, frames)
+    correction = (np.asarray(point["predictions"]) - baseline) / shrinkage
+    internal: Array = np.arange(2, baseline.shape[2] - 2, dtype=np.int64)
+    correction_internal = correction[:, :, internal]
+    unresolved = (1.0 - shrinkage) * correction_internal
+    unresolved_covariance = np.einsum("...i,...j->...ij", unresolved, unresolved)
+    if variance_mode == "shrinkage-propagated":
+        global_covariance = np.square(shrinkage) * global_covariance
+    global_covariance = _project_psd(global_covariance + unresolved_covariance)
+    floor = float(cast(Any, model.get("variance_floor_m2", math.nan)))
+    if not math.isfinite(floor) or floor <= 0.0:
+        raise ValueError("DEFORM full-covariance variance floor is invalid")
+    global_covariance += floor * np.eye(3, dtype=np.float64)
+    coordinate_covariance = np.zeros((*baseline.shape, 3), dtype=np.float64)
+    coordinate_covariance[:, :, internal] = global_covariance
+    return {
+        **point,
+        "coordinate_covariance_m2": coordinate_covariance,
+        "coordinate_variance_m2": np.diagonal(
+            coordinate_covariance, axis1=-2, axis2=-1
+        ).copy(),
+    }
+
+
+def calibrate_deform_full_covariance(
+    predictions: Array,
+    targets: Array,
+    coordinate_covariance_m2: Array,
+    *,
+    nominal_coverage: float = 0.90,
+) -> dict[str, object]:
+    """Calibrate with the maximum of nine trajectory-level p90 scores."""
+
+    predicted = _finite_array(predictions, ndim=4, label="calibration predictions")
+    observed = _finite_array(targets, ndim=4, label="calibration targets")
+    covariance = _finite_array(
+        coordinate_covariance_m2, ndim=5, label="calibration covariance"
+    )
+    if (
+        predicted.shape != observed.shape
+        or covariance.shape != (*predicted.shape, 3)
+        or predicted.shape[0] != 9
+        or nominal_coverage != 0.90
+    ):
+        raise ValueError("DEFORM full-covariance calibration contract differs")
+    internal = slice(2, -2)
+    variance = np.diagonal(covariance[:, :, internal], axis1=-2, axis2=-1)
+    if np.any(variance <= 0.0):
+        raise ValueError("DEFORM full-covariance calibration variance is nonpositive")
+    standardized = np.abs(
+        predicted[:, :, internal] - observed[:, :, internal]
+    ) / np.sqrt(variance)
+    scores = np.quantile(
+        standardized.reshape(9, -1),
+        nominal_coverage,
+        axis=1,
+        method="higher",
+    )
+    radius = float(np.max(scores))
+    gaussian_radius = NormalDist().inv_cdf(0.5 + nominal_coverage / 2.0)
+    variance_scale = max(1.0, np.square(radius / gaussian_radius))
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-full-covariance-calibration-v1",
+        "trajectory_scores": scores,
+        "rank": 9,
+        "order_statistic": "maximum-of-nine",
+        "nominal_coordinate_coverage": nominal_coverage,
+        "standardized_radius": radius,
+        "gaussian_radius": gaussian_radius,
+        "variance_scale": float(variance_scale),
+        "confidence_increase_forbidden": True,
+    }
+
+
+def scale_deform_coordinate_covariance(
+    coordinate_covariance_m2: Array,
+    variance_scale: float,
+) -> Array:
+    """Apply one source-calibrated scalar without changing the point mean."""
+
+    covariance = _finite_array(
+        coordinate_covariance_m2, ndim=5, label="coordinate covariance"
+    )
+    if not math.isfinite(variance_scale) or variance_scale < 1.0:
+        raise ValueError("DEFORM covariance scale must not increase confidence")
+    return cast(Array, np.asarray(covariance * variance_scale, dtype=np.float64))
+
+
+def evaluate_deform_predictive_distribution(
+    predictions: Array,
+    targets: Array,
+    coordinate_covariance_m2: Array,
+    *,
+    sample_count: int = 32,
+    sample_seed: int = 0,
+) -> dict[str, object]:
+    """Evaluate point accuracy, calibration, and a deterministic energy score."""
+
+    predicted = _finite_array(predictions, ndim=4, label="distribution predictions")
+    observed = _finite_array(targets, ndim=4, label="distribution targets")
+    covariance = _finite_array(
+        coordinate_covariance_m2, ndim=5, label="distribution covariance"
+    )
+    if predicted.shape != observed.shape or covariance.shape != (*predicted.shape, 3):
+        raise ValueError("DEFORM predictive distribution arrays do not align")
+    if sample_count <= 1 or sample_seed < 0:
+        raise ValueError("DEFORM energy-score sampling contract is invalid")
+    internal = slice(2, -2)
+    mean = predicted[:, :, internal].reshape(-1, 3)
+    truth = observed[:, :, internal].reshape(-1, 3)
+    matrices = covariance[:, :, internal].reshape(-1, 3, 3)
+    eigenvalues, eigenvectors = np.linalg.eigh(
+        0.5 * (matrices + matrices.transpose(0, 2, 1))
+    )
+    if np.any(eigenvalues <= 0.0):
+        raise ValueError("DEFORM predictive covariance must be positive definite")
+    inverse = np.einsum(
+        "...ik,...k,...jk->...ij",
+        eigenvectors,
+        1.0 / eigenvalues,
+        eigenvectors,
+    )
+    error = truth - mean
+    mahalanobis = np.einsum("pi,pij,pj->p", error, inverse, error)
+    log_determinant = np.sum(np.log(eigenvalues), axis=1)
+    gaussian_nll = 0.5 * (3.0 * math.log(2.0 * math.pi) + log_determinant + mahalanobis)
+    variance = np.diagonal(matrices, axis1=-2, axis2=-1)
+    coordinate_nees = np.square(error) / variance
+    radius = NormalDist().inv_cdf(0.95)
+    covered = np.abs(error) <= radius * np.sqrt(variance)
+    root = np.einsum(
+        "...ik,...k,...jk->...ij",
+        eigenvectors,
+        np.sqrt(eigenvalues),
+        eigenvectors,
+    )
+    rng = np.random.default_rng(sample_seed)
+    standard_a = rng.standard_normal((sample_count, mean.shape[0], 3))
+    standard_b = rng.standard_normal((sample_count, mean.shape[0], 3))
+    sample_a = mean[None] + np.einsum("pij,spj->spi", root, standard_a)
+    sample_b = mean[None] + np.einsum("pij,spj->spi", root, standard_b)
+    energy_score = np.mean(
+        np.linalg.norm(sample_a - truth[None], axis=2)
+    ) - 0.5 * np.mean(np.linalg.norm(sample_a - sample_b, axis=2))
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-predictive-distribution-metrics-v1",
+        "mean_coordinate_l1_m": float(np.mean(np.abs(error))),
+        "gaussian_nll": float(np.mean(gaussian_nll)),
+        "coordinate_nees": float(np.mean(coordinate_nees)),
+        "multivariate_nees": float(np.mean(mahalanobis) / 3.0),
+        "coordinate_coverage_90": float(np.mean(covered)),
+        "interval_width_m": float(np.mean(2.0 * radius * np.sqrt(variance))),
+        "energy_score": float(energy_score),
+        "energy_score_sample_count": sample_count,
+        "energy_score_seed": sample_seed,
+    }
