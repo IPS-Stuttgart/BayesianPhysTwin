@@ -188,7 +188,7 @@ _PAYLOAD_FIELDS: Final = _DESCRIPTOR_FIELDS | {"artifact_id"}
 def _optional_digest(value: object, *, name: str) -> str | None:
     if value is None:
         return None
-    return sha256_digest(value, name=name)
+    return cast(str, sha256_digest(value, name=name))
 
 
 def _canonical_groups(
@@ -574,9 +574,9 @@ def verify_material_backend_evidence_status_v1(
                 "target_decision is required to verify this evidence stage"
             )
         runtime_id = status.runtime_id
-        source_id = status.source_decision_id
+        parent_source_id = status.source_decision_id
         assert runtime_id is not None
-        assert source_id is not None
+        assert parent_source_id is not None
         target_id = _require_stage_decision(
             target_decision,
             role="fresh-object-validation",
@@ -584,7 +584,7 @@ def verify_material_backend_evidence_status_v1(
             producer_profile_id=status.producer_profile_id,
             runtime_id=runtime_id,
             parent_key="source_decision_id",
-            parent_id=source_id,
+            parent_id=parent_source_id,
             target_facing=True,
         )
         if target_id != status.target_decision_id:
@@ -598,9 +598,9 @@ def verify_material_backend_evidence_status_v1(
                 "downstream_decision is required to verify this evidence stage"
             )
         runtime_id = status.runtime_id
-        target_id = status.target_decision_id
+        parent_target_id = status.target_decision_id
         assert runtime_id is not None
-        assert target_id is not None
+        assert parent_target_id is not None
         downstream_id = _require_stage_decision(
             downstream_decision,
             role="downstream-query-benefit",
@@ -608,7 +608,7 @@ def verify_material_backend_evidence_status_v1(
             producer_profile_id=status.producer_profile_id,
             runtime_id=runtime_id,
             parent_key="target_decision_id",
-            parent_id=target_id,
+            parent_id=parent_target_id,
             target_facing=True,
         )
         if downstream_id != status.downstream_decision_id:
