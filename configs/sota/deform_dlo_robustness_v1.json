@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-robustness-v1",
+  "claim_boundary": "Prospective transfer of the frozen DLO2 local-residual recipe to one untouched DLO3 evaluation, with source-only mechanism, compute, stability, sensitivity, backend, and uncertainty audits fixed before any DLO3 trajectory payload is read.",
+  "prob4d_used": false,
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "train_script_sha256": "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
+  },
+  "parent_method": {
+    "repository": "https://github.com/FlorianPfaff/BayesianPhysTwin",
+    "source_revision": "2cdbff202b2b000a96c6eddf9e750999ee9f6e75",
+    "source_archive_sha256": "f0e2ac2d1166f1e95e2ca7ba70ee109a63cc7e110687c7a863cefb0cd8322d69",
+    "source_tag": "deform-dlo2-local-residual-official-v7-source",
+    "arm": "r1_s0p25"
+  },
+  "freshness": {
+    "primary_dlo": "DLO3",
+    "reserve_dlos": ["DLO4", "DLO5"],
+    "project_payload_previously_read": false,
+    "upstream_authored_training_logs_are_not_project_development": true,
+    "primary_eval_read": false,
+    "reserve_payload_read": false,
+    "reserve_substitution": false,
+    "target_opening": "one-shot-after-all-required-source-gates-and-method-attestation"
+  },
+  "data": {
+    "train_partition": "DLO3/train",
+    "eval_partition": "DLO3/eval",
+    "train_trajectory_count": 56,
+    "eval_trajectory_count": 14,
+    "frame_count": 500,
+    "node_count": 12,
+    "coordinate_transform": "raw-x-raw-z-raw-y",
+    "known_action_nodes": [0, 1, -2, -1]
+  },
+  "source_split": {
+    "domain_separator": "deform-dlo3-robustness-v1\u0000",
+    "identity_operator": "sha256-domain-separated-utf8-basename-v1",
+    "ordering": "ascending-hex-digest-v1",
+    "fit_count": 39,
+    "calibration_count": 9,
+    "source_test_count": 8,
+    "manifest_before_payload_read": true
+  },
+  "physical_training": {
+    "backend": "official-DEFORM-PBD",
+    "primary_seed": 42,
+    "audit_seeds": [42, 43, 44],
+    "unroll_horizon_frames": 50,
+    "batch_size": 32,
+    "total_updates": 6400,
+    "checkpoint_updates": [0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400],
+    "optimizer": "official-sgd-parameter-groups-v1",
+    "pbd_iterations": 10,
+    "cublas_workspace_config": ":4096:8",
+    "source_fit_policy": "fit-39-only",
+    "final_fit_policy": "all-56-train",
+    "target_seed_selection": false
+  },
+  "local_residual": {
+    "query_evidence": "two-observed-states-known-future-clamped-action-and-baseline-rollout-only",
+    "future_free_node_truth": "fit-calibrate-or-score-only",
+    "operator": "per-node-trajectory-grouped-bayesian-ridge-v1",
+    "ridge": 1.0,
+    "shrinkage": 0.25,
+    "coordinate_variance_floor_m2": 0.000001,
+    "duplicate_policy": "collapse-exact-causal-query-clusters",
+    "clamped_node_policy": "baseline-exact",
+    "fallback": "matching-physical-checkpoint-exact",
+    "source_reselection": false,
+    "target_reselection": false
+  },
+  "source_gate": {
+    "required_for_target": true,
+    "minimum_relative_improvement": 0.01,
+    "minimum_case_wins": 6,
+    "maximum_case_ratio": 1.10,
+    "maximum_candidate_l1_m": 0.0077,
+    "require_all_source_test_cases": true
+  },
+  "mechanism_ablation": {
+    "partition": "source-test-only-after-primary-prediction-seal",
+    "selection_effect": "none",
+    "arms": [
+      "physical-only",
+      "persistence-plus-full-local",
+      "physical-plus-intercept-only",
+      "physical-plus-full-no-action",
+      "physical-plus-full-global-frame",
+      "physical-plus-full-local-unshrunk",
+      "physical-plus-full-local-fixed"
+    ]
+  },
+  "compute_matched_control": {
+    "baseline": "official-DEFORM-PBD",
+    "start_update": 6400,
+    "timed_components": [
+      "baseline-rollout-for-residual-fit",
+      "feature-construction",
+      "bayesian-ridge-fit",
+      "model-serialization"
+    ],
+    "update_time_estimator": "median-updates-6301-through-6400",
+    "additional_update_rule": "ceil-local-residual-wall-seconds-divided-by-median-update-seconds",
+    "minimum_additional_updates": 1,
+    "maximum_additional_updates": 512,
+    "schedule_continuation": "same-seed-same-sampler-next-updates",
+    "target_selection": false
+  },
+  "training_stability": {
+    "primary_seed": 42,
+    "audit_seeds": [43, 44],
+    "minimum_seed_source_passes": 2,
+    "maximum_seed_mean_ratio": 1.10,
+    "maximum_seed_case_ratio": 1.25,
+    "required_for_target": true,
+    "seed_ensemble": "equal-weight-diagnostic-only",
+    "seed_selection": false
+  },
+  "physics_solver_sensitivity": {
+    "partition": "source-test-before-target",
+    "pbd_iteration_values": [5, 10, 20],
+    "joint_bend_twist_multipliers": [0.9, 1.0, 1.1],
+    "material_parameter_source": "learned-seed-42-update-6400-checkpoint",
+    "local_residual_model": "nominal-fit-unchanged",
+    "selection_effect": "none",
+    "failure_policy": "preserve-and-report-no-retry"
+  },
+  "backend_portability": {
+    "backend": "PyElastica-CosseratRod",
+    "repository": "https://github.com/GazzolaLab/PyElastica",
+    "version": "1.0.0",
+    "commit": "b087f1399f9be2fdd2fcf3768689f7735a96f7ab",
+    "partition": "fit-calibration-source-test-only-before-gate",
+    "query_evidence": "two-observed-states-known-future-clamped-action-only",
+    "parameter_bank": {
+      "youngs_modulus_pa": [100000.0, 1000000.0, 10000000.0],
+      "density_kg_m3": [900.0, 1200.0],
+      "damping_constant": [0.1, 1.0],
+      "integration_substeps": [2, 4, 8],
+      "poisson_ratio": 0.45,
+      "radius_to_mean_edge_ratio": 0.05
+    },
+    "selection_partition": "fit-only",
+    "gate_partition": "calibration-then-source-test",
+    "minimum_relative_improvement_over_backend": 0.01,
+    "minimum_source_test_wins": 6,
+    "maximum_source_test_ratio": 1.10,
+    "target_authorized_only_if_source_gate_passes": true,
+    "failure_fallback": "official-DEFORM-primary-unchanged"
+  },
+  "bayesian_audit": {
+    "point_mean": "unchanged-r1-s0p25",
+    "primary_covariance": "trajectory-clustered-full-coordinate-covariance-v1",
+    "cross_coordinate_covariance": true,
+    "temporal_independence_claimed": false,
+    "calibration_partition_count": 9,
+    "calibration_score": "trajectory-p90-absolute-standardized-coordinate-error",
+    "nominal_coordinate_coverage": 0.90,
+    "calibration_rank": 9,
+    "calibration_order_statistic": "maximum-of-nine",
+    "ablation_distributions": [
+      "current-diagonal-conservative-v1",
+      "shrinkage-propagated-diagonal",
+      "coefficient-only",
+      "residual-only",
+      "pooled-isotropic",
+      "trajectory-clustered-full-coordinate-covariance-v1",
+      "calibrated-full-coordinate-covariance-v1"
+    ],
+    "metrics": [
+      "mean-coordinate-l1-m",
+      "gaussian-nll",
+      "coordinate-nees",
+      "multivariate-nees",
+      "coordinate-coverage-90",
+      "interval-width-m",
+      "energy-score"
+    ],
+    "distribution_selection_from_target": false
+  },
+  "target_evaluation": {
+    "partition": "DLO3/eval",
+    "one_shot": true,
+    "failure_policy": "seal-failure-no-retry-v1",
+    "all_cases_sorted_once": true,
+    "canonical_reference_draw_indices": [1, 7, 9, 7, 11, 7, 13, 8, 8, 6, 8, 5, 8, 4],
+    "published_reference_l1_m": 0.0077,
+    "published_reference_source": "DEFORM-CoRL-2024-DLO3-Table-1-average-L1",
+    "target_selection": false,
+    "target_calibration": false,
+    "target_retries": false,
+    "case_replacement": false,
+    "required_primary_relative_improvement": 0.01,
+    "required_primary_case_wins": 8,
+    "maximum_primary_case_ratio": 1.10,
+    "require_below_published_reference_all_unique": true,
+    "require_below_published_reference_canonical_draw": true
+  },
+  "custody": {
+    "source_manifest_before_source_payload": true,
+    "source_prediction_seal_before_source_test_outcomes": true,
+    "independent_end_to_end_dry_run_before_target": true,
+    "method_and_environment_attestation_before_target": true,
+    "target_authorization_before_target_enumeration": true,
+    "target_outcomes_may_not_change_any_arm": true,
+    "compact_results_private_paper_repository_only": true,
+    "public_repository_contains_code_protocol_and_target_blind_receipts_only": true,
+    "held_v8_access": false
+  }
+}
