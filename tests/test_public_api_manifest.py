@@ -78,7 +78,7 @@ def test_guarded_inference_api_matches_snapshot() -> None:
         "project_version": "0.4.0",
         "compatibility_line": "0.4",
         "policy": "exact-guarded-inference-export-surface",
-        "symbol_count": 12,
+        "symbol_count": 13,
         "status": "matched",
     }
 
