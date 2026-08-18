@@ -241,9 +241,7 @@ class PositionBasedDynamicsReplayV1:
         particles = model.getParticles()
         get_particle_count = getattr(particles, "getNumberOfParticles", None)
         if not callable(get_particle_count):
-            raise TypeError(
-                "pyPBD ParticleData must expose getNumberOfParticles()"
-            )
+            raise TypeError("pyPBD ParticleData must expose getNumberOfParticles()")
         particle_count = _nonnegative_integer(
             get_particle_count(),
             name="pyPBD particle count",
