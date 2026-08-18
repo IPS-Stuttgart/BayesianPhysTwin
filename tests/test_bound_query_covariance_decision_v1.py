@@ -80,9 +80,7 @@ def _query(binding: QueryJacobianBindingV1) -> PhysicalQueryV1:
             MARGINAL_GAUGE_COVARIANCE,
             COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE,
         ),
-        principal_covariance_treatment=(
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
+        principal_covariance_treatment=(COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
         primary_proper_score=GAUSSIAN_NLL_PER_DIMENSION,
         decision_margins=PhysicalQueryDecisionMarginsV1(
             practical_equivalence_score=0.3,
@@ -196,9 +194,7 @@ def _bound_projection(binding: QueryJacobianBindingV1) -> dict[str, object]:
         "schema": BOUND_QUERY_COVARIANCE_PROJECTION_SCHEMA,
         "schema_version": BOUND_QUERY_COVARIANCE_PROJECTION_VERSION,
         "query_jacobian_binding_id": binding.artifact_id,
-        "source_observation_artifact_id": (
-            binding.source_observation_artifact_id
-        ),
+        "source_observation_artifact_id": (binding.source_observation_artifact_id),
         "provider_manifest_id": binding.provider_manifest_id,
         "query_jacobian_sha256": binding.query_jacobian_sha256,
         "row_ids_sha256": binding.row_ids_sha256,
@@ -233,9 +229,7 @@ def test_bound_composition_authorizes_and_binds_projection_artifact() -> None:
     assert decision.authorized
     assert decision.projection_summary_id == projection["artifact_id"]
     assert decision.metadata["query_jacobian_binding_id"] == binding.artifact_id
-    assert decision.metadata["query_jacobian_sha256"] == (
-        binding.query_jacobian_sha256
-    )
+    assert decision.metadata["query_jacobian_sha256"] == (binding.query_jacobian_sha256)
     assert decision.metadata["row_ids_sha256"] == binding.row_ids_sha256
 
 
