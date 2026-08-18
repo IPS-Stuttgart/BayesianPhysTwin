@@ -16,7 +16,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, overload
 
 if TYPE_CHECKING:  # pragma: no cover - static typing only
     from ._root_exports_v0_4 import *  # noqa: F403
@@ -72,7 +72,13 @@ class _LazyRootExportNames(Sequence[str]):
     def __len__(self) -> int:
         return len(self._load())
 
-    def __getitem__(self, index: int) -> str:
+    @overload
+    def __getitem__(self, index: int) -> str: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[str, ...]: ...
+
+    def __getitem__(self, index: int | slice) -> str | tuple[str, ...]:
         return self._load()[index]
 
 
