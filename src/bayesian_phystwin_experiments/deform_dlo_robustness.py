@@ -1913,6 +1913,8 @@ def _validate_deform_casewise_gate_record_v1(
         raise ValueError("DEFORM source gate summary differs")
 
     names: list[str] = []
+    candidate_values: list[float] = []
+    baseline_values: list[float] = []
     ratios: list[float] = []
     wins = 0
     for case in cases:
@@ -1938,6 +1940,8 @@ def _validate_deform_casewise_gate_record_v1(
         ):
             raise ValueError("DEFORM source gate case differs")
         names.append(name)
+        candidate_values.append(candidate_error)
+        baseline_values.append(baseline_error)
         ratios.append(ratio)
         wins += int(candidate_wins)
     if len(set(names)) != 8:
@@ -1954,7 +1958,19 @@ def _validate_deform_casewise_gate_record_v1(
         if gate.get("published_reference_passed") is not reference_passed:
             raise ValueError("DEFORM source gate reference decision differs")
     if (
-        int(cast(Any, gate.get("wins", -1))) != wins
+        not math.isclose(
+            candidate_mean,
+            float(np.mean(candidate_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            baseline_mean,
+            float(np.mean(baseline_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or int(cast(Any, gate.get("wins", -1))) != wins
         or not math.isclose(maximum_ratio, max(ratios), rel_tol=1e-12, abs_tol=1e-15)
         or gate.get("improvement_passed") is not improvement_passed
         or gate.get("wins_passed") is not wins_passed
@@ -1968,6 +1984,366 @@ def _validate_deform_casewise_gate_record_v1(
         "passed": passed,
         "wins": wins,
         "maximum_case_ratio": maximum_ratio,
+    }
+
+
+def verify_deform_dlo3_seed_diagnostic_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash the frozen mechanism and compute-matched source controls."""
+
+    if (
+        result.get("contract") != "deform-dlo3-robustness-seed-result-v1"
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("target_authorized") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("prob4d_used") is not False
+        or result.get("held_v8_access") is not False
+    ):
+        raise ValueError("DEFORM seed diagnostic artifact custody differs")
+    training = _mapping(protocol.get("physical_training"), label="physical training")
+    residual = _mapping(protocol.get("local_residual"), label="local residual")
+    compute_contract = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
+    expected_arms = _strings(
+        _mapping(protocol.get("mechanism_ablation"), label="mechanism ablation").get(
+            "arms"
+        ),
+        label="mechanism arms",
+    )
+    seed = int(cast(Any, result.get("seed", -1)))
+    if seed not in _integers(training.get("audit_seeds"), label="audit seeds"):
+        raise ValueError("DEFORM seed diagnostic identity differs")
+
+    result_protocol = _mapping(result.get("protocol"), label="seed protocol")
+    result_manifest = _mapping(result.get("source_manifest"), label="seed manifest")
+    method_identity = _mapping(result.get("method_seal"), label="seed method seal")
+    method_path = _verified_deform_artifact_path(
+        method_identity, label="seed diagnostic method seal"
+    )
+    method = json.loads(method_path.read_text(encoding="utf-8"))
+    if not isinstance(method, Mapping):
+        raise ValueError("seed diagnostic method seal must be a JSON object")
+    if (
+        method.get("contract") != "deform-dlo3-robustness-source-method-seal-v1"
+        or int(cast(Any, method.get("seed", -1))) != seed
+        or _mapping(method.get("protocol"), label="method protocol").get("sha256")
+        != result_protocol.get("sha256")
+        or _mapping(method.get("source_manifest"), label="method manifest").get(
+            "sha256"
+        )
+        != result_manifest.get("sha256")
+        or float(cast(Any, method.get("ridge", math.nan)))
+        != float(cast(Any, residual["ridge"]))
+        or float(cast(Any, method.get("shrinkage", math.nan)))
+        != float(cast(Any, residual["shrinkage"]))
+        or method.get("source_test_opened") is not False
+        or method.get("official_eval_read") is not False
+        or method.get("target_selection") is not False
+    ):
+        raise ValueError("DEFORM seed diagnostic method seal differs")
+
+    physical_identity = dict(
+        _mapping(method.get("physical_checkpoint"), label="physical checkpoint")
+    )
+    compute_identity = dict(
+        _mapping(
+            method.get("compute_matched_checkpoint"),
+            label="compute-matched checkpoint",
+        )
+    )
+    _verified_deform_artifact_path(physical_identity, label="physical checkpoint")
+    _verified_deform_artifact_path(compute_identity, label="compute-matched checkpoint")
+    for field, label in (
+        ("local_residual_model", "local residual model"),
+        ("full_covariance_model", "full covariance model"),
+    ):
+        _verified_deform_artifact_path(method.get(field), label=label)
+    calibration_path = _verified_deform_artifact_path(
+        method.get("covariance_calibration"), label="covariance calibration"
+    )
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    source_calibration = _mapping(
+        _mapping(result.get("bayesian_audit"), label="Bayesian audit").get(
+            "calibration"
+        ),
+        label="source calibration",
+    )
+    if calibration != source_calibration:
+        raise ValueError("DEFORM seed diagnostic calibration differs")
+
+    expected_models = {
+        "persistence-plus-full-local": ("full-local", "initial-action-local"),
+        "physical-plus-intercept-only": (
+            "intercept-only",
+            "initial-action-local",
+        ),
+        "physical-plus-full-no-action": (
+            "full-no-action",
+            "initial-action-local",
+        ),
+        "physical-plus-full-global-frame": (
+            "full-global",
+            "action-centered-global",
+        ),
+    }
+    model_identities = _mapping(
+        method.get("mechanism_models"), label="mechanism models"
+    )
+    if set(str(label) for label in model_identities) != set(expected_models):
+        raise ValueError("DEFORM seed diagnostic mechanism model set differs")
+    verified_models: dict[str, str] = {}
+    for label, (arm, coordinate_frame) in expected_models.items():
+        path = _verified_deform_artifact_path(
+            model_identities.get(label), label=f"mechanism model {label}"
+        )
+        with np.load(path, allow_pickle=False) as archive:
+            required = {
+                "arm",
+                "coordinate_frame",
+                "node_count",
+                "prediction_horizon",
+                "feature_indices",
+                "feature_location",
+                "feature_scale",
+                "coefficients",
+                "ridge",
+            }
+            if set(archive.files) != required:
+                raise ValueError("DEFORM seed diagnostic mechanism model differs")
+            feature_indices = tuple(
+                int(value) for value in np.asarray(archive["feature_indices"])
+            )
+            location = np.asarray(archive["feature_location"], dtype=np.float64)
+            scale = np.asarray(archive["feature_scale"], dtype=np.float64)
+            coefficients = _finite_array(
+                np.asarray(archive["coefficients"]),
+                ndim=3,
+                label="mechanism coefficients",
+            )
+            if (
+                tuple(str(value) for value in np.asarray(archive["arm"])) != (arm,)
+                or tuple(
+                    str(value) for value in np.asarray(archive["coordinate_frame"])
+                )
+                != (coordinate_frame,)
+                or tuple(int(value) for value in np.asarray(archive["node_count"]))
+                != (12,)
+                or tuple(
+                    int(value) for value in np.asarray(archive["prediction_horizon"])
+                )
+                != (498,)
+                or feature_indices != deform_local_feature_indices(arm)
+                or location.ndim != 2
+                or scale.ndim != 2
+                or not np.isfinite(location).all()
+                or not np.isfinite(scale).all()
+                or location.shape != (8, len(feature_indices))
+                or scale.shape != location.shape
+                or coefficients.shape != (8, len(feature_indices) + 1, 3)
+                or np.any(scale <= 0.0)
+                or tuple(float(value) for value in np.asarray(archive["ridge"]))
+                != (float(cast(Any, residual["ridge"])),)
+            ):
+                raise ValueError("DEFORM seed diagnostic mechanism model differs")
+        verified_models[label] = sha256_file(path)
+
+    compute = _mapping(result.get("compute_match"), label="compute match")
+    local_seconds = float(
+        cast(Any, compute.get("local_residual_wall_seconds", math.nan))
+    )
+    update_seconds = float(cast(Any, compute.get("median_update_seconds_6301_6400")))
+    additional_updates = int(cast(Any, compute.get("additional_updates", -1)))
+    expected_additional = (
+        int(math.ceil(local_seconds / update_seconds))
+        if math.isfinite(local_seconds)
+        and local_seconds > 0.0
+        and math.isfinite(update_seconds)
+        and update_seconds > 0.0
+        else -1
+    )
+    start_update = int(cast(Any, compute.get("start_update", -1)))
+    end_update = int(cast(Any, compute.get("end_update", -1)))
+    source_mean = float(cast(Any, compute.get("source_mean_l1_m", math.nan)))
+    compute_checkpoint = dict(
+        _mapping(compute.get("checkpoint"), label="compute result checkpoint")
+    )
+    if (
+        compute.get("contract") != "deform-dlo3-compute-match-v1"
+        or int(cast(Any, compute.get("seed", -1))) != seed
+        or not math.isfinite(source_mean)
+        or source_mean < 0.0
+        or additional_updates != expected_additional
+        or additional_updates
+        < int(cast(Any, compute_contract["minimum_additional_updates"]))
+        or additional_updates
+        > int(cast(Any, compute_contract["maximum_additional_updates"]))
+        or start_update != int(cast(Any, compute_contract["start_update"]))
+        or end_update != start_update + additional_updates
+        or compute.get("source_test_opened") is not False
+        or compute.get("official_eval_read") is not False
+        or compute_checkpoint != compute_identity
+        or int(cast(Any, compute_checkpoint.get("update", -1))) != end_update
+        or dict(_mapping(result.get("physical_checkpoint"), label="result checkpoint"))
+        != physical_identity
+        or int(cast(Any, physical_identity.get("update", -1))) != start_update
+    ):
+        raise ValueError("DEFORM seed compute-matched control differs")
+
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="seed diagnostic prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("seed diagnostic prediction seal must be a JSON object")
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-source-prediction-seal-v1"
+        or int(cast(Any, seal.get("seed", -1))) != seed
+        or _mapping(seal.get("method_seal"), label="sealed method").get("sha256")
+        != method_identity.get("sha256")
+        or int(cast(Any, seal.get("source_test_case_count", -1))) != 8
+        or seal.get("source_outcomes_scored") is not False
+        or seal.get("official_eval_read") is not False
+    ):
+        raise ValueError("DEFORM seed diagnostic prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="seed diagnostic predictions"
+    )
+    required_predictions = {
+        "names",
+        "physical",
+        "compute_matched_physical",
+        "candidate",
+    } | {f"mechanism_{label}" for label in expected_arms}
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        if not required_predictions.issubset(archive.files):
+            raise ValueError("DEFORM seed diagnostic predictions are incomplete")
+        names = tuple(str(value) for value in np.asarray(archive["names"]))
+        predictions = {
+            key: _finite_array(
+                np.asarray(archive[key]), ndim=4, label=f"diagnostic prediction {key}"
+            )
+            for key in required_predictions
+            if key != "names"
+        }
+    expected_shape = (8, 498, 12, 3)
+    if (
+        len(names) != 8
+        or len(set(names)) != 8
+        or any(values.shape != expected_shape for values in predictions.values())
+        or not np.array_equal(
+            predictions["mechanism_physical-only"], predictions["physical"]
+        )
+        or not np.array_equal(
+            predictions["mechanism_physical-plus-full-local-fixed"],
+            predictions["candidate"],
+        )
+    ):
+        raise ValueError("DEFORM seed diagnostic prediction archive differs")
+
+    mechanism_results = _mapping(
+        result.get("mechanism_ablation"), label="mechanism results"
+    )
+    if set(str(label) for label in mechanism_results) != set(expected_arms):
+        raise ValueError("DEFORM seed diagnostic mechanism result set differs")
+    verified_gates: dict[str, dict[str, object]] = {}
+    for label in expected_arms:
+        raw_gate = _mapping(mechanism_results.get(label), label=f"mechanism {label}")
+        cases = cast(Sequence[Mapping[str, object]], raw_gate.get("cases"))
+        if tuple(str(case.get("name", "")) for case in cases) != names:
+            raise ValueError("DEFORM seed diagnostic mechanism case order differs")
+        verified_gates[label] = _validate_deform_casewise_gate_record_v1(
+            raw_gate, protocol, kind="primary"
+        )
+    physical_gate = _mapping(
+        mechanism_results.get("physical-only"), label="physical-only mechanism"
+    )
+    if float(cast(Any, physical_gate.get("candidate_mean_l1_m", math.nan))) != float(
+        cast(Any, physical_gate.get("baseline_mean_l1_m", math.nan))
+    ) or any(
+        float(cast(Any, case.get("candidate_to_baseline_ratio", math.nan))) != 1.0
+        for case in cast(Sequence[Mapping[str, object]], physical_gate.get("cases"))
+    ):
+        raise ValueError("DEFORM physical-only mechanism control differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-seed-diagnostic-artifact-verification-v1",
+        "seed": seed,
+        "mechanism_arm_count": len(expected_arms),
+        "mechanism_models": verified_models,
+        "mechanism_gates": verified_gates,
+        "compute_matched_additional_updates": additional_updates,
+        "compute_matched_source_mean_l1_m": source_mean,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_stability_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Recompute the frozen three-seed gate from every rehashed source bundle."""
+
+    identities_value = result.get("seed_results")
+    if not isinstance(identities_value, Sequence) or isinstance(
+        identities_value, (str, bytes)
+    ):
+        raise ValueError("DEFORM stability seed identities differ")
+    identities = tuple(
+        _mapping(value, label="stability seed identity") for value in identities_value
+    )
+    if len(identities) != 3:
+        raise ValueError("DEFORM stability seed identities differ")
+    paths = tuple(
+        _verified_deform_artifact_path(value, label="stability seed result")
+        for value in identities
+    )
+    seed_results: list[Mapping[str, object]] = []
+    for path in paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, Mapping):
+            raise ValueError("stability seed result must be a JSON object")
+        seed_results.append(payload)
+    gate = evaluate_deform_dlo3_stability_gate(seed_results, protocol)
+    if any(result.get(key) != value for key, value in gate.items()):
+        raise ValueError("DEFORM stability gate replay differs")
+    bayesian = [
+        verify_deform_dlo3_seed_bayesian_artifacts_v1(seed_result)
+        for seed_result in seed_results
+    ]
+    diagnostics = [
+        verify_deform_dlo3_seed_diagnostic_artifacts_v1(seed_result, protocol)
+        for seed_result in seed_results
+    ]
+    if (
+        result.get("bayesian_artifacts_verified") is not True
+        or result.get("bayesian_artifact_verifications") != bayesian
+        or result.get("diagnostic_artifacts_verified") is not True
+        or result.get("diagnostic_artifact_verifications") != diagnostics
+        or int(cast(Any, result.get("diagnostic_seed_count", -1))) != 3
+        or _mapping(result.get("protocol"), label="stability protocol").get("sha256")
+        != gate["protocol_sha256"]
+    ):
+        raise ValueError("DEFORM stability artifact verification differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-stability-artifact-verification-v1",
+        "seed_count": 3,
+        "seed_result_sha256s": [sha256_file(path) for path in paths],
+        "seed_result_sha256_by_seed": {
+            str(int(cast(Any, seed_result["seed"]))): sha256_file(path)
+            for seed_result, path in zip(seed_results, paths, strict=True)
+        },
+        "bayesian_artifacts_verified": True,
+        "diagnostic_artifacts_verified": True,
+        "gate_passed": gate["passed"],
+        "verified": True,
     }
 
 
@@ -2018,6 +2394,132 @@ def validate_deform_dlo3_sensitivity_result_v1(
         "variants": records,
         "selection_effect": "none",
         "verified": True,
+    }
+
+
+def verify_deform_dlo3_sensitivity_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash the complete frozen solver/material sensitivity matrix."""
+
+    verification = validate_deform_dlo3_sensitivity_result_v1(result, protocol)
+    sensitivity = _mapping(
+        protocol.get("physics_solver_sensitivity"), label="sensitivity"
+    )
+    labels = tuple(
+        f"pbd-{int(value)}"
+        for value in cast(Sequence[Any], sensitivity["pbd_iteration_values"])
+    ) + tuple(
+        f"stiffness-{float(value):.1f}"
+        for value in cast(Sequence[Any], sensitivity["joint_bend_twist_multipliers"])
+    )
+    parent_path = _verified_deform_artifact_path(
+        result.get("seed_result"), label="sensitivity parent seed result"
+    )
+    parent = json.loads(parent_path.read_text(encoding="utf-8"))
+    if not isinstance(parent, Mapping):
+        raise ValueError("sensitivity parent result must be a JSON object")
+    parent_protocol = _mapping(parent.get("protocol"), label="parent protocol")
+    parent_manifest = _mapping(parent.get("source_manifest"), label="parent manifest")
+    if (
+        parent.get("contract") != "deform-dlo3-robustness-seed-result-v1"
+        or _mapping(result.get("protocol"), label="sensitivity protocol").get("sha256")
+        != parent_protocol.get("sha256")
+        or _mapping(result.get("source_manifest"), label="sensitivity manifest").get(
+            "sha256"
+        )
+        != parent_manifest.get("sha256")
+    ):
+        raise ValueError("DEFORM sensitivity parent lineage differs")
+    parent_seal_path = _verified_deform_artifact_path(
+        parent.get("prediction_seal"), label="parent prediction seal"
+    )
+    parent_seal = json.loads(parent_seal_path.read_text(encoding="utf-8"))
+    if not isinstance(parent_seal, Mapping):
+        raise ValueError("parent prediction seal must be a JSON object")
+    parent_predictions_path = _verified_deform_artifact_path(
+        parent_seal.get("predictions"), label="parent source predictions"
+    )
+    with np.load(parent_predictions_path, allow_pickle=False) as archive:
+        parent_names = tuple(str(value) for value in np.asarray(archive["names"]))
+        parent_candidate = _finite_array(
+            np.asarray(archive["candidate"]),
+            ndim=4,
+            label="parent source candidate",
+        )
+
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="sensitivity prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("sensitivity prediction seal must be a JSON object")
+    if (
+        seal.get("contract") != "deform-dlo3-sensitivity-prediction-seal-v1"
+        or int(cast(Any, seal.get("variant_count", -1))) != len(labels)
+        or seal.get("source_outcomes_scored") is not False
+        or seal.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM sensitivity prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="sensitivity predictions"
+    )
+    required = {"names"} | {
+        f"{prefix}_{label}" for prefix in ("physical", "candidate") for label in labels
+    }
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        if set(archive.files) != required:
+            raise ValueError("DEFORM sensitivity prediction matrix differs")
+        names = tuple(str(value) for value in np.asarray(archive["names"]))
+        arrays = {
+            key: _finite_array(
+                np.asarray(archive[key]), ndim=4, label=f"sensitivity {key}"
+            )
+            for key in required
+            if key != "names"
+        }
+    expected_shape = (8, 498, 12, 3)
+    if (
+        names != parent_names
+        or len(set(names)) != 8
+        or any(values.shape != expected_shape for values in arrays.values())
+        or not np.array_equal(arrays["candidate_pbd-10"], parent_candidate)
+        or not np.array_equal(
+            arrays["candidate_pbd-10"], arrays["candidate_stiffness-1.0"]
+        )
+        or not np.array_equal(
+            arrays["physical_pbd-10"], arrays["physical_stiffness-1.0"]
+        )
+    ):
+        raise ValueError("DEFORM sensitivity nominal replay artifact differs")
+    variants = _mapping(result.get("variants"), label="sensitivity variants")
+    nominal = _mapping(variants.get("pbd-10"), label="nominal sensitivity gate")
+    nominal_baseline = float(cast(Any, nominal.get("baseline_mean_l1_m", math.nan)))
+    nominal_cases = tuple(
+        float(cast(Any, case.get("baseline_l1_m", math.nan)))
+        for case in cast(Sequence[Mapping[str, object]], nominal.get("cases"))
+    )
+    for label in labels:
+        gate = _mapping(variants.get(label), label=f"sensitivity gate {label}")
+        cases = cast(Sequence[Mapping[str, object]], gate.get("cases"))
+        if (
+            tuple(str(case.get("name", "")) for case in cases) != names
+            or float(cast(Any, gate.get("baseline_mean_l1_m", math.nan)))
+            != nominal_baseline
+            or tuple(
+                float(cast(Any, case.get("baseline_l1_m", math.nan))) for case in cases
+            )
+            != nominal_cases
+        ):
+            raise ValueError("DEFORM sensitivity score lineage differs")
+    return {
+        **verification,
+        "contract": "deform-dlo3-sensitivity-artifact-verification-v1",
+        "parent_seed_result_sha256": sha256_file(parent_path),
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "artifact_matrix_verified": True,
     }
 
 

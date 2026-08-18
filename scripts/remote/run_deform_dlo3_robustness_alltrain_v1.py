@@ -31,6 +31,9 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     validate_deform_dlo3_source_manifest,
     verify_deform_dlo3_backend_artifacts_v1,
     verify_deform_dlo3_seed_bayesian_artifacts_v1,
+    verify_deform_dlo3_seed_diagnostic_artifacts_v1,
+    verify_deform_dlo3_sensitivity_artifacts_v1,
+    verify_deform_dlo3_stability_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -126,6 +129,10 @@ def _assert_authorization(
         primary, context="source"
     )
     primary_bayesian_artifacts = verify_deform_dlo3_seed_bayesian_artifacts_v1(primary)
+    primary_diagnostic_artifacts = verify_deform_dlo3_seed_diagnostic_artifacts_v1(
+        primary, protocol
+    )
+    stability_artifacts = verify_deform_dlo3_stability_artifacts_v1(stability, protocol)
     if (
         stability.get("contract") != "deform-dlo3-training-stability-gate-v1"
         or stability.get("protocol_sha256") != protocol_digest
@@ -136,6 +143,8 @@ def _assert_authorization(
         or stability.get("primary_eval_read") is not False
         or stability.get("bayesian_audit_complete") is not True
         or stability.get("bayesian_artifacts_verified") is not True
+        or stability.get("diagnostic_artifacts_verified") is not True
+        or int(cast(Any, stability.get("diagnostic_seed_count", -1))) != 3
         or int(cast(Any, stability.get("bayesian_distribution_count", -1)))
         != len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS)
         or stability.get("bayesian_distribution_selection") != "none"
@@ -162,6 +171,19 @@ def _assert_authorization(
     sensitivity_verification = validate_deform_dlo3_sensitivity_result_v1(
         sensitivity, protocol
     )
+    sensitivity_artifacts = verify_deform_dlo3_sensitivity_artifacts_v1(
+        sensitivity, protocol
+    )
+    primary_digest = sha256_file(primary_path)
+    if (
+        _mapping(
+            stability_artifacts.get("seed_result_sha256_by_seed"),
+            label="stability seed digests",
+        ).get("42")
+        != primary_digest
+        or sensitivity_artifacts.get("parent_seed_result_sha256") != primary_digest
+    ):
+        raise ValueError("DLO3 primary diagnostic lineage differs")
     backend_verification = validate_deform_dlo3_backend_result_v1(backend, protocol)
     backend_artifacts = verify_deform_dlo3_backend_artifacts_v1(backend, protocol)
     emitted = _mapping(deviation.get("emitted_information"), label="deviation emission")
@@ -184,7 +206,10 @@ def _assert_authorization(
         "custody_deviation": _identity(deviation_path),
         "primary_bayesian_audit": primary_bayesian_audit,
         "primary_bayesian_artifacts": primary_bayesian_artifacts,
+        "primary_diagnostic_artifacts": primary_diagnostic_artifacts,
+        "stability_artifacts": stability_artifacts,
         "sensitivity_verification": sensitivity_verification,
+        "sensitivity_artifacts": sensitivity_artifacts,
         "backend_verification": backend_verification,
         "backend_artifacts": backend_artifacts,
     }
@@ -241,6 +266,9 @@ def main() -> int:
             DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         ),
         "source_bayesian_audit_complete": True,
+        "source_diagnostics_verified": True,
+        "primary_diagnostic_artifacts": authorization["primary_diagnostic_artifacts"],
+        "sensitivity_artifacts": authorization["sensitivity_artifacts"],
         "backend_target_arm": authorization["backend_artifacts"],
         "target_selection": False,
         "target_calibration": False,
@@ -491,6 +519,9 @@ def main() -> int:
             DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
         ),
         "source_bayesian_audit_complete": True,
+        "source_diagnostics_verified": True,
+        "primary_diagnostic_artifacts": authorization["primary_diagnostic_artifacts"],
+        "sensitivity_artifacts": authorization["sensitivity_artifacts"],
         "backend_target_arm": authorization["backend_artifacts"],
         "distribution_selection": "none",
         "runtime": {

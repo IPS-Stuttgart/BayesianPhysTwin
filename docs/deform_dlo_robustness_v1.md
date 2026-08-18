@@ -44,6 +44,11 @@ authorizes carryover, both evaluator invocations must receive the frozen
 PyElastica checkout through `--pyelastica-root`; otherwise the argument is not
 needed and the backend path remains exactly unexecuted.
 
+The same downstream authorization rehashes the compute-matched checkpoint,
+every mechanism-model archive and prediction arm, and all six solver/material
+sensitivity prediction pairs. A JSON score without its exact sealed NPZ and
+parent lineage is therefore insufficient to authorize all-train or target use.
+
 The Bayesian audit leaves the point mean unchanged and adds full 3x3
 coordinate covariance from trajectory-clustered coefficient and residual
 uncertainty. Nine calibration trajectories set the 90% scale by the maximum

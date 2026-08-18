@@ -103,6 +103,7 @@ def main() -> int:
         final_method.get("contract")
         != "deform-dlo3-robustness-alltrain-final-method-v1"
         or final_method.get("source_bayesian_audit_complete") is not True
+        or final_method.get("source_diagnostics_verified") is not True
         or tuple(
             str(value)
             for value in cast(
