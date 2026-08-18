@@ -37,16 +37,10 @@ COMMON_ACTION_FIELDS: Final = frozenset(
     }
 )
 OPTIONAL_ACTION_FIELDS: Final = frozenset({"active_candidates"})
-ALLOWED_DOMAINS: Final = frozenset(
-    {"bayesian-phystwin", "prob4d", "causal4d"}
-)
-ALLOWED_TARGET_ACCESS: Final = frozenset(
-    {"closed", "forbidden", "not-applicable"}
-)
+ALLOWED_DOMAINS: Final = frozenset({"bayesian-phystwin", "prob4d", "causal4d"})
+ALLOWED_TARGET_ACCESS: Final = frozenset({"closed", "forbidden", "not-applicable"})
 REPOSITORY_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-BLOCKER_PATTERN: Final = re.compile(
-    r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$"
-)
+BLOCKER_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$")
 DATE_PATTERN: Final = re.compile(r"^20[0-9]{2}-[01][0-9]-[0-3][0-9]$")
 REQUIRED_ACTIONS: Final = {
     "covariance-only-independent-confirmation": {
@@ -277,8 +271,7 @@ def validate_registry(path: Path = DEFAULT_REGISTRY) -> dict[str, object]:
         "action_count": len(actions),
         "highest_priority_action": action_ids[0],
         "target_open_action_count": sum(
-            action["target_access"] not in {"closed", "forbidden"}
-            for action in actions
+            action["target_access"] not in {"closed", "forbidden"} for action in actions
         ),
     }
 
