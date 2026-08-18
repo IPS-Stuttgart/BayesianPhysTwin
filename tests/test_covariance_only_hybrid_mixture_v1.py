@@ -259,9 +259,7 @@ def test_source_selection_can_choose_a_broad_tail_without_changing_mean() -> Non
         np.asarray([[0.1], [-0.2], [-4.5]], dtype=np.float64),
         np.asarray([[0.0], [0.3], [4.0]], dtype=np.float64),
     ]
-    covariance_groups = [
-        _covariance(1.0, endpoint_count=3) for _ in residual_groups
-    ]
+    covariance_groups = [_covariance(1.0, endpoint_count=3) for _ in residual_groups]
 
     selection = select_same_mean_gaussian_mixture(
         development_group_ids=["object-c", "object-a", "object-b"],
@@ -503,9 +501,7 @@ def test_record_contract_rejects_shape_flags_probability_order_and_forgery() -> 
         point_prediction_changed=False,
     )
     with pytest.raises(ValueError, match="incompatible"):
-        SameMeanGaussianMixtureRecordV1(
-            **{**common, "covariance_shape": (1, 2, 2)}
-        )
+        SameMeanGaussianMixtureRecordV1(**{**common, "covariance_shape": (1, 2, 2)})
     for field_name, expected in (
         ("tail_dominates_nominal", "tail_dominates"),
         ("mean_object_identity_preserved", "mean_object"),
@@ -718,9 +714,7 @@ def test_selection_artifact_validates_arrays_reference_freeze_and_identity() -> 
         ),
     ):
         with pytest.raises(ValueError, match=match):
-            SameMeanGaussianMixtureSelectionV1(
-                **{**common, field_name: value}
-            )
+            SameMeanGaussianMixtureSelectionV1(**{**common, field_name: value})
     with pytest.raises(ValueError, match="must name one"):
         SameMeanGaussianMixtureSelectionV1(
             **{**common, "reference_candidate_id": DIGEST_A}

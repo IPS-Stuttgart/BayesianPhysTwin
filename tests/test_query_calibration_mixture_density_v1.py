@@ -65,12 +65,8 @@ def test_group_density_nonconformity_is_the_maximum_endpoint_score() -> None:
     score = group_density_nonconformity(residual, prediction)
 
     endpoint_scores = -np.log(
-        0.9
-        * np.exp(-(residual[:, 0] ** 2) / 2.0)
-        / np.sqrt(2.0 * np.pi)
-        + 0.1
-        * np.exp(-(residual[:, 0] ** 2) / 18.0)
-        / np.sqrt(18.0 * np.pi)
+        0.9 * np.exp(-(residual[:, 0] ** 2) / 2.0) / np.sqrt(2.0 * np.pi)
+        + 0.1 * np.exp(-(residual[:, 0] ** 2) / 18.0) / np.sqrt(18.0 * np.pi)
     )
     assert score == pytest.approx(float(np.max(endpoint_scores)))
 
@@ -289,6 +285,7 @@ def test_fsync_directory_tolerates_open_and_fsync_failures(
     module._fsync_directory(tmp_path)
 
     monkeypatch.setattr(module.os, "open", lambda *args, **kwargs: 7)
+
     def fail_fsync(descriptor):
         raise OSError
 
@@ -352,13 +349,9 @@ def test_calibration_record_rejects_score_shape_empty_rank_type_and_unfrozen() -
             }
         )
     with pytest.raises(ValueError, match="must be an integer"):
-        QueryDensityCalibrationV1(
-            **{**common, "finite_sample_rank": True}
-        )
+        QueryDensityCalibrationV1(**{**common, "finite_sample_rank": True})
     with pytest.raises(ValueError, match="must be frozen"):
-        QueryDensityCalibrationV1(
-            **{**common, "predictor_frozen_before_scores": False}
-        )
+        QueryDensityCalibrationV1(**{**common, "predictor_frozen_before_scores": False})
 
 
 def test_from_dict_rejects_schema_field_and_group_drift() -> None:

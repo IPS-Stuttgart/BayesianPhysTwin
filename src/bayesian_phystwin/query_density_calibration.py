@@ -366,15 +366,11 @@ class QueryDensityCalibrationV1:
             nominal_coverage=values["nominal_coverage"],
             finite_sample_rank=values["finite_sample_rank"],
             density_score_threshold=values["density_score_threshold"],
-            predictor_frozen_before_scores=values[
-                "predictor_frozen_before_scores"
-            ],
+            predictor_frozen_before_scores=values["predictor_frozen_before_scores"],
             calibration_outcomes_used_for_selection=values[
                 "calibration_outcomes_used_for_selection"
             ],
-            calibration_groups_independent=values[
-                "calibration_groups_independent"
-            ],
+            calibration_groups_independent=values["calibration_groups_independent"],
             metadata=values["metadata"],
             artifact_id=values["artifact_id"],
         )

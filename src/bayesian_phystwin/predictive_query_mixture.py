@@ -207,8 +207,10 @@ def _probability_schedule(value: object, *, shape: tuple[int, ...]) -> np.ndarra
         broadcast = np.broadcast_to(np.asarray(raw, dtype=np.float64), shape)
     except ValueError as error:
         raise ValueError(f"nominal_probability must broadcast to {shape}") from error
-    if not np.all(np.isfinite(broadcast)) or np.any(broadcast <= 0.0) or np.any(
-        broadcast >= 1.0
+    if (
+        not np.all(np.isfinite(broadcast))
+        or np.any(broadcast <= 0.0)
+        or np.any(broadcast >= 1.0)
     ):
         raise ValueError("nominal_probability must lie strictly inside (0, 1)")
     return np.array(broadcast, dtype=np.float64, copy=True, order="C")
@@ -220,9 +222,7 @@ def _tail_dominates_nominal(
     *,
     tolerance: float,
 ) -> None:
-    excess = 0.5 * (
-        (tail - nominal) + np.swapaxes(tail - nominal, -1, -2)
-    )
+    excess = 0.5 * ((tail - nominal) + np.swapaxes(tail - nominal, -1, -2))
     minimum = float(np.min(np.linalg.eigvalsh(excess), initial=0.0))
     if minimum < -tolerance:
         raise ValueError(
@@ -252,9 +252,7 @@ def _gaussian_log_density(
         cholesky = np.linalg.cholesky(matrix)
         whitened = np.linalg.solve(cholesky, vector)
         log_determinant = 2.0 * float(np.sum(np.log(np.diag(cholesky))))
-        result[index] = -0.5 * (
-            constant + log_determinant + float(whitened @ whitened)
-        )
+        result[index] = -0.5 * (constant + log_determinant + float(whitened @ whitened))
     return result.reshape(residual.shape[:-1])
 
 
@@ -297,8 +295,7 @@ class SameMeanGaussianMixtureCandidateV1:
     @property
     def is_gaussian_reference(self) -> bool:
         return (
-            self.tail_covariance_scale == 1.0
-            and self.tail_isotropic_variance_m2 == 0.0
+            self.tail_covariance_scale == 1.0 and self.tail_isotropic_variance_m2 == 0.0
         )
 
     def descriptor(self) -> dict[str, Any]:
@@ -599,9 +596,7 @@ def gaussian_mixture_negative_log_density(
     """Return endpoint-wise negative log density for residuals from the mean."""
 
     if not isinstance(prediction, SameMeanGaussianMixturePredictionV1):
-        raise TypeError(
-            "prediction must be a SameMeanGaussianMixturePredictionV1"
-        )
+        raise TypeError("prediction must be a SameMeanGaussianMixturePredictionV1")
     residual = _residual_array(residual_m, mean_shape=prediction.mean_m.shape)
     nominal_log = _gaussian_log_density(
         residual,
@@ -636,9 +631,7 @@ def gaussian_mixture_moment_covariance(
     """Return the exact same-mean mixture covariance without collapsing density."""
 
     if not isinstance(prediction, SameMeanGaussianMixturePredictionV1):
-        raise TypeError(
-            "prediction must be a SameMeanGaussianMixturePredictionV1"
-        )
+        raise TypeError("prediction must be a SameMeanGaussianMixturePredictionV1")
     probability = prediction.nominal_probability[..., None, None]
     moment = (
         probability * prediction.nominal_covariance_m2
@@ -1057,9 +1050,7 @@ def select_same_mean_gaussian_mixture(
         if residual.ndim == 1:
             residual = residual[None, :]
         if residual.ndim != 2 or residual.shape[0] == 0 or residual.shape[1] == 0:
-            raise ValueError(
-                f"residual_groups[{group_index}] must have shape (M, D)"
-            )
+            raise ValueError(f"residual_groups[{group_index}] must have shape (M, D)")
         mean = np.zeros_like(residual, dtype=np.float64, order="C")
         covariance = _real_array(
             covariance_value,
@@ -1068,8 +1059,7 @@ def select_same_mean_gaussian_mixture(
         expected = residual.shape + (residual.shape[-1],)
         if covariance.shape != expected:
             raise ValueError(
-                f"nominal_covariance_groups[{group_index}] must have shape "
-                f"{expected}"
+                f"nominal_covariance_groups[{group_index}] must have shape {expected}"
             )
         for candidate_index, candidate in enumerate(candidate_values):
             prediction = compose_candidate_same_mean_gaussian_mixture(
@@ -1108,9 +1098,7 @@ def select_same_mean_gaussian_mixture(
         maximum_worst_group_regret=maximum_worst_group_regret,
         maximum_width_ratio=maximum_width_ratio,
         density_floor_variance_m2=density_floor_variance_m2,
-        grid_frozen_before_development_scores=(
-            grid_frozen_before_development_scores
-        ),
+        grid_frozen_before_development_scores=(grid_frozen_before_development_scores),
         target_outcomes_used=target_outcomes_used,
         metadata={} if metadata is None else metadata,
     )
