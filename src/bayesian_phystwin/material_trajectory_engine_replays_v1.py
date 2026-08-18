@@ -2,9 +2,9 @@
 
 The portable material-trajectory producer intentionally does not depend on heavy
 simulator packages. This module provides small structural adapters for native
-SOFA ``MechanicalObject``, MuJoCo Flex, and PositionBasedDynamics particle state
-while keeping those dependencies on the caller side. Importing this module
-therefore never imports SOFA, MuJoCo, or pyPBD.
+SOFA ``MechanicalObject``, MuJoCo Flex, PositionBasedDynamics particle state,
+and Warp FEM displacement fields while keeping those dependencies on the caller
+side. Importing this module therefore never imports SOFA, MuJoCo, pyPBD, or Warp.
 
 These adapters establish state-access compatibility only. They do not qualify a
 backend runtime, its physical fidelity, uncertainty calibration, or downstream
@@ -40,6 +40,11 @@ class _PBDParticleDataV1(Protocol):
 
 class _PBDSimulationModelV1(Protocol):
     def getParticles(self) -> _PBDParticleDataV1: ...
+
+
+class _WarpDiscreteFieldV1(Protocol):
+    degree: object
+    dof_values: object
 
 
 def _no_op() -> None:
@@ -83,8 +88,15 @@ def _integer_vector(owner: object, name: str) -> npt.NDArray[np.int64]:
     return np.ascontiguousarray(array, dtype=np.int64)
 
 
+def _host_value(value: object) -> object:
+    to_numpy = getattr(value, "numpy", None)
+    if callable(to_numpy):
+        return to_numpy()
+    return value
+
+
 def _material_positions(value: object, *, label: str) -> FloatArray:
-    positions = np.ascontiguousarray(np.asarray(value)).copy()
+    positions = np.ascontiguousarray(np.asarray(_host_value(value))).copy()
     _require(
         positions.ndim == 2 and positions.shape[0] >= 1 and positions.shape[1] == 3,
         f"{label} positions must have shape (N,3)",
@@ -268,8 +280,85 @@ class PositionBasedDynamicsReplayV1:
         return time_step.step(self.simulation_model)
 
 
+@dataclass(slots=True)
+class WarpFEMDisplacementReplayV1:
+    """Adapt a degree-1 Warp FEM displacement field to material replay v1.
+
+    ``displacement_field`` is a Warp FEM ``DiscreteField`` whose ``dof_values``
+    are three-dimensional nodal displacements. ``reference_positions_m`` is the
+    fixed node roster in the exact same partition/order. The adapter adds the
+    displacement DOFs to that frozen reference and returns absolute positions.
+    """
+
+    displacement_field: object
+    reference_positions_m: object
+    step_callback: Callable[[], object]
+    synchronize_callback: Callable[[], object] = _no_op
+    context: object | None = None
+    _reference_positions_m: FloatArray = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        if not callable(self.step_callback):
+            raise TypeError("step_callback must be callable")
+        if not callable(self.synchronize_callback):
+            raise TypeError("synchronize_callback must be callable")
+
+        degree = getattr(self.displacement_field, "degree", None)
+        if (
+            isinstance(degree, (bool, np.bool_))
+            or not isinstance(degree, (int, np.integer))
+        ):
+            raise TypeError("Warp FEM displacement field must expose integer degree")
+        _require(
+            int(degree) == 1,
+            "Warp FEM displacement replay requires a degree-1 nodal field",
+        )
+
+        dof_values = getattr(self.displacement_field, "dof_values", None)
+        if dof_values is None or not callable(getattr(dof_values, "numpy", None)):
+            raise TypeError(
+                "Warp FEM displacement_field.dof_values must expose Warp array numpy()"
+            )
+
+        self._reference_positions_m = _material_positions(
+            self.reference_positions_m,
+            label="Warp FEM reference",
+        )
+
+    def synchronize(self) -> object:
+        return self.synchronize_callback()
+
+    def get_material_positions_m(self) -> FloatArray:
+        field_value = cast(_WarpDiscreteFieldV1, self.displacement_field)
+        dof_values = getattr(field_value, "dof_values", None)
+        if dof_values is None or not callable(getattr(dof_values, "numpy", None)):
+            raise TypeError(
+                "Warp FEM displacement_field.dof_values must expose Warp array numpy()"
+            )
+        displacements = _material_positions(
+            dof_values,
+            label="Warp FEM displacement",
+        )
+        _require(
+            displacements.shape == self._reference_positions_m.shape,
+            "Warp FEM displacement and reference node rosters must match",
+        )
+        positions = np.ascontiguousarray(
+            self._reference_positions_m + displacements
+        )
+        _require(
+            np.all(np.isfinite(positions)),
+            "Warp FEM absolute positions contain non-finite values",
+        )
+        return cast(FloatArray, positions)
+
+    def step(self) -> object:
+        return self.step_callback()
+
+
 __all__ = [
     "MuJoCoFlexReplayV1",
     "PositionBasedDynamicsReplayV1",
     "SofaMechanicalObjectReplayV1",
+    "WarpFEMDisplacementReplayV1",
 ]
