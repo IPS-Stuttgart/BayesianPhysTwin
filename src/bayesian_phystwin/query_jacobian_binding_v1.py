@@ -55,9 +55,7 @@ _BINDING_FIELDS: Final = frozenset(
     }
 )
 _ARRAY_DESCRIPTOR_FIELDS: Final = frozenset({"dtype", "shape", "sha256"})
-_ROW_BINDING_FIELDS: Final = frozenset(
-    {"schema", "schema_version", "count", "sha256"}
-)
+_ROW_BINDING_FIELDS: Final = frozenset({"schema", "schema_version", "count", "sha256"})
 
 
 def _mapping(value: object, *, name: str) -> Mapping[str, Any]:
