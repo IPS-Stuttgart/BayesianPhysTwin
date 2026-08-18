@@ -7,6 +7,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Added a first-class official MatPhys producer contract that binds the complete
+  parameter/preprocessing lineage and fresh fixed-identity Warp replays, while
+  keeping published per-case parity strictly separate from target-excluded
+  causal-prefix transfer.
 - Added a strict, producer-attested DeformMaster backend boundary that rejects
   all-frame router, initialization, or frame-offset inputs; binds checkpoint
   training-object exclusion; and materializes causal surface rollouts into the

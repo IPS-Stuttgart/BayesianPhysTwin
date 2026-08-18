@@ -16,6 +16,13 @@ They differ only in producer/runtime metadata and artifact custody. New engines
 must therefore extend one canonical registry rather than create a third public
 artifact family.
 
+MatPhys is deliberately not registered as another simulator family: it predicts
+spring/contact parameters and still uses the official PhysTwin Warp simulator.
+Its first-class producer and guarded-consumer interfaces are documented in
+[`matphys_official_producer_v1.md`](matphys_official_producer_v1.md) and
+[`matphys_backend_v1.md`](matphys_backend_v1.md). This separation prevents a
+learned parameter proposal from being mislabeled as an independent solver.
+
 The canonical Python entry point is:
 
 ```python

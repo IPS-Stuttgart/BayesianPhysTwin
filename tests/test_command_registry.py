@@ -20,10 +20,10 @@ from bayesian_phystwin.cli.command_registry import (
 
 def test_registry_is_complete_and_unambiguous() -> None:
     validate_registry()
-    assert len(COMMANDS) == 92
+    assert len(COMMANDS) == 93
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
-    assert len(COMMANDS_BY_LEGACY_ALIAS) == 90
+    assert len(COMMANDS_BY_LEGACY_ALIAS) == 91
     assert len(COMMANDS_BY_PREVIOUS_ROUTE) == 47
     assert set(STABLE_ROUTES) == {
         command.command_id
@@ -36,7 +36,7 @@ def test_registry_covers_all_lifecycle_states() -> None:
     counts = {status: len(iter_commands(status=status)) for status in CommandStatus}
     assert counts == {
         CommandStatus.STABLE: 7,
-        CommandStatus.EXPERIMENT: 38,
+        CommandStatus.EXPERIMENT: 39,
         CommandStatus.DIAGNOSTIC: 22,
         CommandStatus.ARCHIVED: 25,
     }
@@ -84,6 +84,17 @@ def test_matphys_backend_is_a_registered_experiment() -> None:
         "bpt experiment run materialize-matphys-backend"
     )
     assert command.owner == "matphys-backend-v1"
+    assert command.optional_dependencies == ()
+
+
+def test_official_matphys_producer_is_a_registered_experiment() -> None:
+    command = find_command_metadata("materialize-matphys-official-producer")
+    assert command is not None
+    assert command.status is CommandStatus.EXPERIMENT
+    assert command.canonical_command == (
+        "bpt experiment run materialize-matphys-official-producer"
+    )
+    assert command.owner == "matphys-official-producer-v1"
     assert command.optional_dependencies == ()
 
 

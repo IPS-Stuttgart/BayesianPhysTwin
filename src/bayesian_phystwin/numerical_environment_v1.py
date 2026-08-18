@@ -460,7 +460,7 @@ def capture_numerical_environment_v1(
     return NumericalEnvironmentV1(
         python_implementation=platform.python_implementation(),
         python_version=platform.python_version(),
-        python_compiler=platform.python_compiler(),
+        python_compiler=platform.python_compiler().strip(),
         numpy_version=numpy_version,
         numpy_configuration_text=_capture_numpy_configuration(),
         scipy_version=distribution_versions.get("scipy"),
