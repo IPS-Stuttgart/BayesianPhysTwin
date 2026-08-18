@@ -586,9 +586,7 @@ def test_minimum_stage_and_save_api_validate_argument_types(tmp_path: Path) -> N
         producer_profile_id="jax-fem-quasistatic-v1",
         adapter_evidence_id=DIGEST_B,
     )
-    assert (
-        require_material_backend_evidence_stage(adapter, "adapter-tested") is adapter
-    )
+    assert require_material_backend_evidence_stage(adapter, "adapter-tested") is adapter
     with pytest.raises(ValueError, match="minimum_stage"):
         require_material_backend_evidence_stage(
             adapter,
