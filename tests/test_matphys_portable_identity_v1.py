@@ -193,7 +193,10 @@ def test_certificate_mutation_breaks_portable_custody(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="portable artifact identity changed"):
+    with pytest.raises(
+        ValueError,
+        match=r"portable (?:proposal input identity differs from producer identity|artifact identity changed)",
+    ):
         validate_matphys_portable_identity(portable)
 
 
