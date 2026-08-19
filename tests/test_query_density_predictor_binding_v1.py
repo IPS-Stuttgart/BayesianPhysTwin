@@ -7,10 +7,12 @@ import pytest
 
 from bayesian_phystwin.predictive_query_mixture import (
     SameMeanGaussianMixtureCandidateV1,
+    SameMeanGaussianMixturePredictionV1,
     SameMeanGaussianMixtureSelectionV1,
     compose_same_mean_gaussian_mixture,
 )
 from bayesian_phystwin.query_density_calibration import (
+    QueryDensityCalibrationV1,
     density_region_contains,
     fit_query_density_calibration,
 )
@@ -20,7 +22,9 @@ def _digest(label: str) -> str:
     return hashlib.sha256(label.encode("utf-8")).hexdigest()
 
 
-def _prediction(predictor_id: str):
+def _prediction(
+    predictor_id: str | None,
+) -> SameMeanGaussianMixturePredictionV1:
     mean = np.zeros((2, 3), dtype=np.float64)
     covariance = np.broadcast_to(
         0.01 * np.eye(3, dtype=np.float64),
@@ -30,13 +34,17 @@ def _prediction(predictor_id: str):
         mean,
         covariance,
         covariance,
-        reference_predictor_id=predictor_id,
+        reference_predictor_id="last-residual-v1",
         nominal_covariance_id="nominal-covariance",
         tail_covariance_id="tail-covariance",
+        complete_predictor_id=predictor_id,
     )
 
 
-def _fit(prediction, predictor_id: str):
+def _fit(
+    prediction: SameMeanGaussianMixturePredictionV1,
+    predictor_id: str,
+) -> QueryDensityCalibrationV1:
     return fit_query_density_calibration(
         calibration_group_ids=["group-a"],
         residual_groups=[np.zeros_like(prediction.mean_m)],
@@ -77,6 +85,22 @@ def test_selection_rejects_non_gaussian_reference_candidate() -> None:
             grid_frozen_before_development_scores=True,
             target_outcomes_used=False,
         )
+
+
+def test_prediction_record_binds_complete_predictor_identity() -> None:
+    predictor_id = _digest("predictor-a")
+
+    prediction = _prediction(predictor_id)
+
+    assert prediction.record.reference_predictor_id == "last-residual-v1"
+    assert prediction.record.complete_predictor_id == predictor_id
+
+
+def test_calibration_fit_rejects_unbound_prediction() -> None:
+    predictor_id = _digest("predictor-a")
+
+    with pytest.raises(ValueError, match="not bound to a complete predictor_id"):
+        _fit(_prediction(None), predictor_id)
 
 
 def test_calibration_fit_rejects_prediction_from_other_predictor() -> None:
