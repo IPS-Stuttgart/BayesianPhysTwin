@@ -885,6 +885,11 @@ class SameMeanGaussianMixtureSelectionV1:
         candidate_ids = [str(candidate.candidate_id) for candidate in candidates]
         if reference_id not in candidate_ids:
             raise ValueError("reference_candidate_id must name one candidate")
+        reference_candidate = candidates[candidate_ids.index(reference_id)]
+        if not reference_candidate.is_gaussian_reference:
+            raise ValueError(
+                "reference_candidate_id must name an exact Gaussian candidate"
+            )
         regret = _finite_real(
             self.maximum_worst_group_regret,
             name="maximum_worst_group_regret",
