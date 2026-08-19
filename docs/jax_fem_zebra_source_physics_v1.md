@@ -1,5 +1,9 @@
 # JAX-FEM source-physics qualification v1
 
+**Retained decision:** passed for the exact pinned runtime. The separately
+frozen full-horizon value arm later failed its pre-prefix physical gate; see
+[`jax_fem_zebra_source_value_v1_result.md`](jax_fem_zebra_source_value_v1_result.md).
+
 ## Question
 
 Can the exact pinned JAX-FEM runtime construct and solve a physically admissible

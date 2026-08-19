@@ -33,7 +33,7 @@ def test_portfolio_separates_implementation_and_evidence_maturity() -> None:
     assert profiles["jax-fem-quasistatic-v1"] == {
         "profile_id": "jax-fem-quasistatic-v1",
         "implementation_maturity": "preferred",
-        "evidence_stage": "native-smoke-passed",
+        "evidence_stage": "source-physics-qualified",
         "active_qualification_candidate": True,
         "recommendation_authorized": False,
     }

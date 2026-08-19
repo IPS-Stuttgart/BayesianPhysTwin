@@ -19,9 +19,9 @@ is not empirical evidence.
    confirmatory acquisition.
 3. Freeze support feasibility for a separately versioned real Prob4D provider
    before source residuals are opened.
-4. Qualify Genesis MPM or JAX-FEM through the existing source-physics and
-   source-value gates. No new backend family may enter the canonical registry
-   before one active candidate reaches source value.
+4. Advance Genesis MPM or JAX-FEM beyond their retained source-physics passes
+   and failed first source-value arms. No new backend family may enter the
+   canonical registry before one active candidate reaches source value.
 
 Each entry names its owning issue, next gate, blockers, target-access state, and
 forbidden post-outcome actions. Priorities must be unique, ordered, and

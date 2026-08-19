@@ -28,6 +28,7 @@ from bayesian_phystwin.physical_rollout_v1 import write_deterministic_npz
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/jax_fem_zebra_source_value_v1.json"
 PHYSICS_EVIDENCE = ROOT / "results/sota/diagnostics/jax_fem_zebra_source_physics_v1"
+VALUE_EVIDENCE = ROOT / "results/sota/diagnostics/jax_fem_zebra_source_value_v1"
 PHYSICS_PROTOCOL = ROOT / "configs/sota/jax_fem_zebra_source_physics_v1.json"
 
 
@@ -341,9 +342,11 @@ def test_source_value_protocol_freezes_qualification_and_two_groups() -> None:
     assert protocol.value["information_boundary"]["no_replacement"] is True
 
 
-def test_retained_evidence_qualifies_source_physics() -> None:
+def test_retained_evidence_qualifies_physics_and_rejects_value_pre_prefix() -> None:
     physics_path = PHYSICS_EVIDENCE / "result.json"
     qualification_path = PHYSICS_EVIDENCE / "material-backend-qualification.json"
+    grid_path = VALUE_EVIDENCE / "grid.json"
+    rejection_path = VALUE_EVIDENCE / "pre-prefix-result.json"
 
     assert file_sha256(physics_path) == (
         "ec8c7cb9b9e1a7f833d7857fc51ae3f86d83175bad9336d423d6d8856cacfbcf"
@@ -351,9 +354,41 @@ def test_retained_evidence_qualifies_source_physics() -> None:
     assert file_sha256(qualification_path) == (
         "68140e971e6758e5f1be015a0f0606d3dbfea8f97dd1541f5cea972659d9361c"
     )
+    assert file_sha256(grid_path) == (
+        "3bb6bf8afa878e7fd262344d8cb4ec3260fd16303e2776d8f884cc0d9d675414"
+    )
+    assert file_sha256(rejection_path) == (
+        "39cd7fdda39673f8fb102e452d19e1f37ac0b6d786fbd16c5a5d66e52610a019"
+    )
+
     physics = json.loads(physics_path.read_text(encoding="utf-8"))
+    grid = json.loads(grid_path.read_text(encoding="utf-8"))
+    rejection = json.loads(rejection_path.read_text(encoding="utf-8"))
     assert physics["qualified"] is True
     assert physics["source_value_scoring_authorized"] is True
+    assert grid["information_boundary"]["prefix_outcomes_read"] is False
+    assert grid["information_boundary"]["future_outcomes_read"] is False
+    assert rejection["result_id"] == content_id(
+        {key: value for key, value in rejection.items() if key != "result_id"}
+    )
+    assert rejection["physical_gate_passed"] is False
+    assert rejection["prefix_scoring_authorized"] is False
+    assert rejection["physical_checks"] == {
+        "full_horizon_contact_projection": True,
+        "full_horizon_deformation_determinants": False,
+        "full_horizon_node_displacement": False,
+    }
+    assert rejection["information_boundary"] == {
+        "prefix_outcomes_read": False,
+        "future_outcomes_read": False,
+        "target_or_held_out_artifact_read": False,
+    }
+    assert all(
+        record["selection"] == "exact_incumbent_fallback"
+        and record["byte_exact_source"] is True
+        and record["selected_sha256"] == record["source_sha256"]
+        for record in rejection["selected_predictions"]
+    )
 
 
 def test_prediction_generator_consumes_qualification_without_outcomes(

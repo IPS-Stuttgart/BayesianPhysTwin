@@ -1,5 +1,10 @@
 # JAX-FEM source-value gate v1
 
+**Retained decision:** failed the outcome-blind full-horizon physical gate;
+prefix and future outcomes remained unopened, and both source groups selected
+the byte-exact incumbent fallback. See
+[`jax_fem_zebra_source_value_v1_result.md`](jax_fem_zebra_source_value_v1_result.md).
+
 The source-physics-qualified JAX-FEM runtime is evaluated as a fixed,
 equal-weight Poisson-ratio ensemble at `0.20`, `0.35`, and `0.45`, with Young's
 modulus fixed at 100 kPa. Under this quasistatic displacement-only Dirichlet
