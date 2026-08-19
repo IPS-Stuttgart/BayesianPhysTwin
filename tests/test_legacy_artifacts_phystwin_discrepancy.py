@@ -351,7 +351,9 @@ def test_cli_forwards_verified_input_identities(
         captured["summary"] = summary
         captured["output_path"] = output_path
 
-    monkeypatch.setattr(discrepancy_cli, "calibrate_phystwin_profile_discrepancy", fake_calibrate)
+    monkeypatch.setattr(
+        discrepancy_cli, "calibrate_phystwin_profile_discrepancy", fake_calibrate
+    )
     monkeypatch.setattr(discrepancy_cli, "write_discrepancy_summary", fake_write)
     monkeypatch.setattr(sys, "argv", _cli_arguments())
 
