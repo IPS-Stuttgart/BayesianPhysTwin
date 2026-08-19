@@ -552,16 +552,15 @@ def predict_deform_local_residual_variant(
         int(value) for value in cast(Sequence[Any], model.get("feature_indices", ()))
     )
     features = full_features[..., feature_indices]
-    location = _finite_array(
-        np.asarray(model.get("feature_location")),
-        ndim=2,
-        label="variant feature location",
-    )
-    scale = _finite_array(
-        np.asarray(model.get("feature_scale")),
-        ndim=2,
-        label="variant feature scale",
-    )
+    # The preregistered intercept-only arm deliberately has zero feature
+    # columns.  Its normalization matrices are therefore finite (N, 0)
+    # arrays, while the shared non-empty array validator rejects them.
+    location = np.asarray(model.get("feature_location"), dtype=np.float64)
+    scale = np.asarray(model.get("feature_scale"), dtype=np.float64)
+    if location.ndim != 2 or not np.isfinite(location).all():
+        raise ValueError("variant feature location must be a finite 2-D array")
+    if scale.ndim != 2 or not np.isfinite(scale).all():
+        raise ValueError("variant feature scale must be a finite 2-D array")
     coefficients = _finite_array(
         np.asarray(model.get("coefficients")),
         ndim=3,

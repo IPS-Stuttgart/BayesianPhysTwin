@@ -1,0 +1,49 @@
+{
+  "contract": "deform-dlo3-robustness-preseal-runtime-failure-v1",
+  "dlo4_dlo5_reserve_access": false,
+  "failure_class": "source-independent-zero-feature-validation-defect",
+  "held_v8_access": false,
+  "official_eval_read": false,
+  "original_source_archive_sha256": "108a38c5330dca23a6dee66b6ee4436cdcce47bd9b5a821cbd800c41d98df54d",
+  "original_source_revision": "bd5cfb14845acb1c5396554caea30b542f975ec9",
+  "point_method_changed": false,
+  "reason": "The intercept-only diagnostic correctly serialized zero-width feature-location and feature-scale matrices, but the shared non-empty array validator rejected those matrices during source-panel prediction.",
+  "recorded_at_utc": "2026-08-19T08:17:48Z",
+  "replacement_execution_authorized": false,
+  "runs": [
+    {
+      "completed_updates": 6400,
+      "failure_at_utc": "2026-08-19T04:10:38.955255679Z",
+      "log_sha256": "857b155f3a6a0b3f55da6503872e179869d78a0a396dd02f336d7ff8aabf80d4",
+      "method_seal_sha256": "96b2733e9365eeed0136afd5998594757503dcd5d90c19fa99bfd347432c5814",
+      "official_eval_read": false,
+      "prediction_seal_exists": false,
+      "process_absent": true,
+      "seed": 42,
+      "source_predictions_exist": false,
+      "source_result_exists": false,
+      "source_test_metrics_scored": false,
+      "source_test_payload_processing_entered": true
+    },
+    {
+      "completed_updates": 6400,
+      "failure_at_utc": "2026-08-19T04:10:41.041290078Z",
+      "log_sha256": "e3f9360ce4319c36c1cebc8a5d375d41c2ac3d02825ca29a969a1924b34eaf81",
+      "method_seal_sha256": "2bca7dfddd280f7d1534e6f60f70e6ee44723df560bd929ce7b7304b936a3f74",
+      "official_eval_read": false,
+      "prediction_seal_exists": false,
+      "process_absent": true,
+      "seed": 43,
+      "source_predictions_exist": false,
+      "source_result_exists": false,
+      "source_test_metrics_scored": false,
+      "source_test_payload_processing_entered": true
+    }
+  ],
+  "schema_version": 1,
+  "seed_44_launched": false,
+  "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+  "source_or_target_gate_changed": false,
+  "source_panel_outcome_claim": "none",
+  "target_accessed": false
+}

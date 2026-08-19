@@ -87,4 +87,25 @@ Outcome-bearing compact artifacts belong only in the private
 `BayesianPhysTwin-Paper` repository. The public repository retains executable
 code, the frozen protocol, and target-blind provenance receipts.
 
+## Pre-seal runtime failure and replacement boundary
+
+The first replacement execution at source commit `bd5cfb148` completed the
+registered 6,400 updates for seeds 42 and 43 and wrote both method seals. Both
+processes then failed before prediction sealing because the intercept-only
+diagnostic's valid zero-width normalization matrices were passed through a
+validator that required non-empty arrays. Source-panel processing had begun,
+but no prediction archive, source result, source score, target access, or
+reserve access was produced. The target-blind receipt is
+`results/sota/deform_dlo3_robustness_v2/preseal_runtime_failure.json`.
+
+The correction permits finite `(internal_nodes, 0)` normalization matrices
+only for the already declared zero-feature arm. It does not change the physical
+checkpoint, local-residual point method, feature subsets, shrinkage, covariance
+construction, gate, or target policy. Every mechanism predictor is now executed
+on calibration inputs before the method seal and before source-panel
+processing. The failed roots remain immutable. Any completion from their exact
+method seals or any replacement execution requires a separately versioned,
+explicit authorization; it is not an automatic retry. DLO4 and DLO5 remain
+unopened reserves and cannot replace DLO3.
+
 Protocol: `configs/sota/deform_dlo_robustness_v1.json`.

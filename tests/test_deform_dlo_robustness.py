@@ -905,6 +905,37 @@ def test_mechanism_feature_subsets_are_fixed() -> None:
         deform_local_feature_indices("selected-from-target")
 
 
+def test_intercept_only_variant_supports_zero_feature_matrices() -> None:
+    initial, action, baseline, targets, names = _residual_problem()
+    variant = fit_deform_local_residual_variant(
+        initial[:9],
+        action[:9],
+        baseline[:9],
+        targets[:9],
+        names[:9].tolist(),
+        ridge=1.0,
+        arm="intercept-only",
+    )
+
+    internal_count = baseline.shape[2] - 4
+    assert np.asarray(variant["feature_location"]).shape == (internal_count, 0)
+    assert np.asarray(variant["feature_scale"]).shape == (internal_count, 0)
+    prediction = predict_deform_local_residual_variant(
+        variant,
+        initial[9:],
+        action[9:],
+        baseline[9:],
+        shrinkage=0.25,
+    )["predictions"]
+
+    assert prediction.shape == baseline[9:].shape
+    assert np.isfinite(prediction).all()
+    assert np.array_equal(
+        prediction[:, :, (0, 1, -2, -1)],
+        baseline[9:, :, (0, 1, -2, -1)],
+    )
+
+
 def test_full_variant_preserves_frozen_point_operator() -> None:
     initial, action, baseline, targets, names = _residual_problem()
     frozen = fit_deform_local_residual(
@@ -1701,6 +1732,7 @@ def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
 def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
     source = SEED_RUNNER.read_text(encoding="utf-8")
 
+    mechanism_preflight = source.index("calibration_baselines = {")
     method_seal = source.index('method_seal_path = output_root / "method_seal.json"')
     source_open = source.index("source_test_trajectories =")
     bayesian_construction = source.index(
@@ -1713,7 +1745,8 @@ def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
     distribution_scoring = source.index("bayesian_distributions = {")
     scoring = source.index("primary_gate = evaluate_deform_dlo3_source_gate")
     assert (
-        method_seal
+        mechanism_preflight
+        < method_seal
         < source_open
         < bayesian_construction
         < covariance_archive

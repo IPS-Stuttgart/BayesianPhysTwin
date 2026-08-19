@@ -451,6 +451,28 @@ def main() -> int:
             arm="full-local",
         ),
     }
+    calibration_baselines = {
+        "persistence-plus-full-local": np.asarray(calibration_rollout["persistence"]),
+        "physical-plus-intercept-only": np.asarray(calibration_rollout["predictions"]),
+        "physical-plus-full-no-action": np.asarray(calibration_rollout["predictions"]),
+        "physical-plus-full-global-frame": np.asarray(
+            calibration_rollout["predictions"]
+        ),
+    }
+    for label, variant in mechanism_models.items():
+        baseline = calibration_baselines[label]
+        smoke_prediction = predict_deform_local_residual_variant(
+            variant,
+            calibration_initial,
+            calibration_action,
+            baseline,
+            shrinkage=float(cast(Any, residual["shrinkage"])),
+        )["predictions"]
+        if (
+            smoke_prediction.shape != baseline.shape
+            or not np.isfinite(smoke_prediction).all()
+        ):
+            raise RuntimeError(f"calibration mechanism preflight failed for {label}")
     mechanism_identities: dict[str, dict[str, object]] = {}
     mechanism_root = output_root / "mechanism_models"
     mechanism_root.mkdir(parents=True, exist_ok=True)
