@@ -127,4 +127,13 @@ seals. The compact receipt is
 it records that no source-test payload was deserialized, opened, or scored.
 The recovery decision remains pending.
 
+On 2026-08-19 the user explicitly authorized exactly one source-only
+completion each for seeds 42 and 43. The separately versioned authorization is
+`configs/sota/deform_dlo3_method_seal_completion_authorization_v1.json`. It
+binds merged implementation revision `68feea8a`, source archive SHA-256
+`111ac9b2c2d74976277a8aba1b52663788e109ec67b796e98e619c83919e56f7`,
+and the original immutable method-seal lineage. It does not authorize
+retraining, refitting, checkpoint continuation, seed 44, official DLO3
+evaluation, DLO4/DLO5, or held-v8 access.
+
 Protocol: `configs/sota/deform_dlo_robustness_v1.json`.
