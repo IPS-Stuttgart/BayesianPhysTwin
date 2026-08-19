@@ -174,7 +174,10 @@ def _require_prediction_predictor(
 ) -> None:
     if not isinstance(prediction, SameMeanGaussianMixturePredictionV1):
         raise TypeError("prediction must be a SameMeanGaussianMixturePredictionV1")
-    if prediction.record.reference_predictor_id != predictor_id:
+    complete_predictor_id = prediction.record.complete_predictor_id
+    if complete_predictor_id is None:
+        raise ValueError("prediction is not bound to a complete predictor_id")
+    if complete_predictor_id != predictor_id:
         raise ValueError("prediction does not match predictor_id")
 
 
