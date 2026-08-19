@@ -59,6 +59,12 @@ from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs" / "sota" / "deform_dlo_robustness_v1.json"
 RECOVERY_LOCK = ROOT / "configs" / "sota" / "deform_dlo3_method_seal_recovery_v1.json"
+RECOVERY_AUTHORIZATION = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform_dlo3_method_seal_completion_authorization_v1.json"
+)
 RECOVERY_VALIDATION = (
     ROOT
     / "results"
@@ -1796,6 +1802,36 @@ def test_method_seal_recovery_lock_is_pending_and_exact() -> None:
     assert policy["refitting"] is False
     assert policy["checkpoint_continuation"] is False
     assert policy["maximum_completions_per_seed"] == 1
+
+
+def test_method_seal_completion_authorization_is_exact_and_source_only() -> None:
+    authorization = load_deform_dlo3_method_seal_recovery_v1(RECOVERY_AUTHORIZATION)
+
+    decision = authorization["decision"]
+    assert isinstance(decision, dict)
+    assert decision["status"] == "authorized"
+    assert decision["source_completion_authorized"] is True
+    assert decision["permitted_operation"] == ("complete-source-from-exact-method-seal")
+    assert decision["implementation_source_revision"] == (
+        "68feea8ae5852b7713f498cfaba81cdac744a000"
+    )
+    assert decision["implementation_archive_sha256"] == (
+        "111ac9b2c2d74976277a8aba1b52663788e109ec67b796e98e619c83919e56f7"
+    )
+    assert decision["seed_44_authorized"] is False
+    policy = authorization["recovery_policy"]
+    assert isinstance(policy, dict)
+    assert policy["eligible_seeds"] == [42, 43]
+    assert policy["maximum_completions_per_seed"] == 1
+    assert policy["retraining"] is False
+    assert policy["refitting"] is False
+    assert policy["checkpoint_continuation"] is False
+    custody = authorization["custody"]
+    assert isinstance(custody, dict)
+    assert custody["official_eval_read"] is False
+    assert custody["dlo4_dlo5_reserve_access"] is False
+    assert custody["held_v8_access"] is False
+    assert custody["target_retry"] is False
 
 
 def test_method_seal_recovery_validation_is_target_blind() -> None:
