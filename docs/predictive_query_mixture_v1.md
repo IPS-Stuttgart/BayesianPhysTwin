@@ -73,6 +73,30 @@ implicitly. A caller with a positive-semidefinite model covariance must freeze a
 observation variance or other density floor before scoring and pass it through
 `density_floor_variance_m2`.
 
+`reference_predictor_id` is the readable identity of the fixed point-prediction
+policy. It is intentionally distinct from `complete_predictor_id`, which is the
+lowercase SHA-256 identity of the complete frozen predictive density. Source or
+development construction may omit `complete_predictor_id` while the mixture is
+still being selected. Every prediction used for calibration or confirmation
+must instead be composed with the finalized identity:
+
+```python
+mixture = compose_same_mean_gaussian_mixture(
+    reference_mean_m,
+    nominal_covariance_m2,
+    tail_covariance_m2,
+    reference_predictor_id="last-residual-policy-v1",
+    nominal_covariance_id="structured-query-covariance-v1",
+    tail_covariance_id="source-frozen-tail-v1",
+    complete_predictor_id=complete_predictor_id,
+    nominal_probability=0.90,
+)
+```
+
+The calibration API fails closed when this typed binding is absent or differs
+from the calibration artifact's `predictor_id`; a matching caller argument alone
+cannot authorize a prediction from another density policy.
+
 ## Source-frozen scalar candidates
 
 `SameMeanGaussianMixtureCandidateV1` supplies a deliberately low-dimensional
@@ -110,7 +134,9 @@ prediction = compose_candidate_same_mean_gaussian_mixture(
 A candidate with `tail_covariance_scale=1` and zero tail nugget is exactly the
 single-Gaussian reference, independent of its nominal probability. This gives
 source selection an exact statistical fallback rather than requiring a separate
-implementation path.
+implementation path. `SameMeanGaussianMixtureSelectionV1` validates that the
+candidate named by `reference_candidate_id` really has this exact Gaussian
+parameterization; an arbitrary mixture cannot be relabelled as the fallback.
 
 ## Group-balanced source selection
 
@@ -240,6 +266,10 @@ Taking the maximum within each group targets simultaneous coverage of every
 registered endpoint in one future physical object/session. Frames, coordinates,
 tracks, cameras, and points do not increase the calibration sample size.
 
+Every member of `calibration_mixture_predictions` and the later
+`confirmation_prediction` must carry the same frozen `complete_predictor_id`
+that is supplied as `predictor_id` below:
+
 ```python
 from bayesian_phystwin.query_density_calibration import (
     fit_query_density_calibration,
@@ -304,7 +334,10 @@ This implementation establishes:
 
 - exact point-mean identity;
 - a valid same-mean broad-tail density family;
-- deterministic group-balanced source selection with a Gaussian reference;
+- deterministic group-balanced source selection with a validated Gaussian
+  reference;
+- a typed binding between calibration/confirmation predictions and the complete
+  predictor identity;
 - exact mixture log scoring and deterministic paired energy scoring;
 - finite-group density-level calibration; and
 - content-addressed, fail-closed artifacts.
