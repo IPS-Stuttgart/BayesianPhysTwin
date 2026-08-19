@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-seed44-source-execution-authorization-v1",
+  "claim_boundary": "Authorization for exactly one frozen source-only seed-44 stability execution. This does not authorize all-train, official DLO3 evaluation, DLO4/DLO5, retry, replacement, selection, or held-v8 access.",
+  "implementation": {
+    "source_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+    "source_archive_sha256": "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862",
+    "runner": {
+      "repository_path": "scripts/remote/run_deform_dlo3_robustness_seed_v1.py",
+      "sha256": "7ce1d86936f6669dcb5f17431c0a4aa899563f41aa75701b221d384543181064"
+    },
+    "protocol": {
+      "repository_path": "configs/sota/deform_dlo_robustness_v1.json",
+      "sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c"
+    },
+    "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+    "upstream_revision": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "verified_predecessor_completions": {
+    "42": {
+      "prediction_seal_sha256": "55d3b3783acc8841001146494ddcf636203bbeaae191dd7f809e5e81308f6daa",
+      "source_predictions_sha256": "6f47848effb09e6ed0a70c32c218b3504ab96084df4ee98b244fff13a6fae970",
+      "source_result_sha256": "fb80995a9504c6d7fe34bd320f5586cf9ca2d971f481e42a3b43fb642de53f2f",
+      "bayesian_artifacts_verified": true,
+      "diagnostic_artifacts_verified": true,
+      "official_eval_read": false,
+      "held_v8_access": false
+    },
+    "43": {
+      "prediction_seal_sha256": "355bd7ad2835f2f6b54121b1d85a2cb85a4e77197bdf78ee0d3d5c4108ee02ae",
+      "source_predictions_sha256": "cdec9a02ad9f0d1ef900dfc7201fea1c8726df2ea01754fabb4460526f8e6ec8",
+      "source_result_sha256": "6696686ca1263cf918597ee29f65fae4958c0e8dee5efd985643cf8d3b733bdd",
+      "bayesian_artifacts_verified": true,
+      "diagnostic_artifacts_verified": true,
+      "official_eval_read": false,
+      "held_v8_access": false
+    }
+  },
+  "execution_policy": {
+    "authorized_seed": 44,
+    "registered_audit_seeds": [42, 43, 44],
+    "maximum_preflight_executions": 1,
+    "maximum_smoke_executions": 1,
+    "maximum_production_executions": 1,
+    "production_mode": "run",
+    "production_output_name": "seed-44-run-da487c26",
+    "preflight_output_name": "seed-44-preflight-da487c26",
+    "smoke_output_name": "seed-44-smoke-da487c26",
+    "new_empty_output_root_required": true,
+    "prediction_seal_required_before_source_scoring": true,
+    "source_reselection": false,
+    "source_case_replacement": false,
+    "seed_selection": false,
+    "retraining_after_outcome": false,
+    "retry_after_failure": false,
+    "automatic_repair_after_failure": false
+  },
+  "decision": {
+    "status": "authorized",
+    "seed_44_source_execution_authorized": true,
+    "reason": "Seed 44 is the preregistered third member of the fixed stability audit. The user instructed the registered experiment chain to proceed after the exact seed-42 and seed-43 completions were independently verified and frozen."
+  },
+  "custody": {
+    "source_test_outcomes_used_for_method_change": false,
+    "source_test_outcomes_used_for_seed_selection": false,
+    "alltrain_fit_authorized": false,
+    "official_dlo3_eval_enumerated": false,
+    "official_dlo3_eval_read": false,
+    "dlo4_dlo5_reserve_access": false,
+    "target_selection": false,
+    "target_calibration": false,
+    "target_retry": false,
+    "prob4d_used": false,
+    "held_v8_access": false
+  }
+}

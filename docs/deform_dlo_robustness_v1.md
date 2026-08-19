@@ -136,4 +136,16 @@ and the original immutable method-seal lineage. It does not authorize
 retraining, refitting, checkpoint continuation, seed 44, official DLO3
 evaluation, DLO4/DLO5, or held-v8 access.
 
+After both exact completions were independently rehashed and frozen, the
+registered third stability seed was separately authorized in
+`configs/sota/deform_dlo3_seed44_source_execution_authorization_v1.json`. It
+permits one preflight, one smoke, and one production source execution for seed
+44 from exact implementation revision `da487c26` and archive SHA-256
+`46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862`.
+The authorization file SHA-256 is
+`886586b15da2552ae247811a7cae379b036700bc511542e02ce274ce8bcc99d4`.
+The predecessor outcomes are represented publicly by hashes only. This does
+not authorize a retry, method change, all-56 fit, official DLO3 evaluation,
+DLO4/DLO5 access, or held-v8 access.
+
 Protocol: `configs/sota/deform_dlo_robustness_v1.json`.
