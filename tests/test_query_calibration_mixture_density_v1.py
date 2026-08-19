@@ -36,6 +36,7 @@ def _prediction(endpoint_count: int = 2):
         reference_predictor_id="last-residual-v1",
         nominal_covariance_id="core-v1",
         tail_covariance_id="tail-v1",
+        complete_predictor_id=DIGEST_A,
         nominal_probability=0.9,
     )
 
