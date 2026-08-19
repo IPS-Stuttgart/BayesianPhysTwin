@@ -1,0 +1,110 @@
+{
+  "claim_boundary": "Source-only numerical qualification of one exact JAX-FEM runtime on two already-open PhysTwin source actions. It is not a source-value, fresh-object, calibration, Causal4D, DEFORM, or state-of-the-art claim.",
+  "failure_reasons": [],
+  "implementation": {
+    "git_head": "b09c44c5f0f82ff6a1aa4942c64ff64ba5d82f98",
+    "git_worktree_clean": true,
+    "source_files": {
+      "scripts/remote/run_jax_fem_source_qualification_v1.py": "49027ccfada4a9db4310a0abadcf0c16cf01b78697dcb10e96efd8ea65863ce9",
+      "src/bayesian_phystwin/jax_fem_source_qualification_v1.py": "ec99943695618231262d83b9c7be9c252801883f5d18404d23141e7333d10ff6"
+    }
+  },
+  "information_boundary": {
+    "incumbent_predictions_read": true,
+    "source_inputs_read": true,
+    "source_object_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "protocol_sha256": "cc8b0fcdfb32de925bc2cafee53b2600385f150eba6e5f514f42e097d9623047",
+  "qualification_artifact_id": "9173b58fb3048b8f6466536e0df64e693345665fe93610c90a6677a5f5905dbc",
+  "qualified": true,
+  "result_id": "8ca73df67ba39be25906b63c74ba90b55adc69410b76579833a075cf1698f01f",
+  "runtime_id": "20c46dfa402712247416730e82289d4d4cd46096cab8c15b49ddb84a69d02a81",
+  "schema": "bayesian-phystwin.jax-fem-source-physics-result",
+  "schema_version": 1,
+  "source_groups": [
+    {
+      "action_response_rmse_m": 0.008588101684980975,
+      "base_cell_count": 25447,
+      "coarse_cell_count": 26156,
+      "contact_patch_sizes": [
+        40,
+        67
+      ],
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "group_id": "double_lift_zebra",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "maximum_contact_projection_error_m": 0.004209251193279527,
+      "maximum_deformation_determinant": 1.064745143810235,
+      "maximum_node_displacement_m": 0.02461770983780642,
+      "maximum_rigid_equivariance_error_m": 1.0420019106223905e-11,
+      "maximum_zero_action_drift_m": 0.0,
+      "mesh_connectivity_sensitivity_relative_error": 0.0075390764003085186,
+      "minimum_deformation_determinant": 0.961280484384238,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "contact_projection": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "mesh_connectivity_sensitivity": true,
+        "node_displacement": true,
+        "poisson_sensitivity_lower": true,
+        "poisson_sensitivity_upper": true,
+        "young_modulus_unidentifiable_under_dirichlet_loading": true
+      },
+      "poisson_sensitivity_rmse_m": 0.00015348276980698932,
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "source_query_parity_rmse_m": 0.0,
+      "time_step_refinement_relative_error": 0.0,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "ba4be9f2bba523ba83df8b5eece9e79111ae929d7882a32d22344d4207984aa2",
+      "units_coordinate_entity_order_valid": true,
+      "young_modulus_invariance_rmse_m": 9.083310966963907e-13
+    },
+    {
+      "action_response_rmse_m": 0.0009005490020114227,
+      "base_cell_count": 23140,
+      "coarse_cell_count": 23874,
+      "contact_patch_sizes": [
+        7,
+        9
+      ],
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "group_id": "double_stretch_zebra",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "maximum_contact_projection_error_m": 3.122502256758253e-17,
+      "maximum_deformation_determinant": 1.0120696904683173,
+      "maximum_node_displacement_m": 0.0021669850734627313,
+      "maximum_rigid_equivariance_error_m": 3.735731169655612e-13,
+      "maximum_zero_action_drift_m": 0.0,
+      "mesh_connectivity_sensitivity_relative_error": 0.027863348262576793,
+      "minimum_deformation_determinant": 0.9918971809800431,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "contact_projection": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "mesh_connectivity_sensitivity": true,
+        "node_displacement": true,
+        "poisson_sensitivity_lower": true,
+        "poisson_sensitivity_upper": true,
+        "young_modulus_unidentifiable_under_dirichlet_loading": true
+      },
+      "poisson_sensitivity_rmse_m": 2.039807008610568e-05,
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "source_query_parity_rmse_m": 0.0,
+      "time_step_refinement_relative_error": 0.0,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "66b329ef4581a6ea418e47e5ac751df15ca75a2faed01809225dd2d961487b9c",
+      "units_coordinate_entity_order_valid": true,
+      "young_modulus_invariance_rmse_m": 5.5541013207811714e-14
+    }
+  ],
+  "source_value_scoring_authorized": true
+}
