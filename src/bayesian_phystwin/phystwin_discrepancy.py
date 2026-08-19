@@ -47,6 +47,23 @@ def _validate_sha256(value: str, *, name: str) -> str:
     return value
 
 
+def _strict_boolean_array(value: object, *, name: str) -> np.ndarray:
+    """Admit Boolean or exact numeric 0/1 arrays without truth coercion."""
+
+    raw = np.asarray(value)
+    if raw.dtype.kind == "b":
+        return np.array(raw, dtype=np.bool_, copy=True, order="C")
+    if raw.dtype.kind not in "iuf":
+        raise ValueError(
+            f"{name} must contain booleans or exact numeric 0/1 values"
+        )
+    if not np.all(np.isfinite(raw)) or np.any((raw != 0) & (raw != 1)):
+        raise ValueError(
+            f"{name} must contain booleans or exact numeric 0/1 values"
+        )
+    return np.array(raw, dtype=np.bool_, copy=True, order="C")
+
+
 def _load_verified_profile(
     path: str | Path,
     *,
@@ -266,8 +283,14 @@ def calibrate_phystwin_profile_discrepancy(
         ),
     )
     observed = np.asarray(data["object_points"], dtype=float)
-    visible = np.asarray(data["object_visibilities"], dtype=bool)
-    motion_valid = np.asarray(data["object_motions_valid"], dtype=bool)
+    visible = _strict_boolean_array(
+        data["object_visibilities"],
+        name="object_visibilities",
+    )
+    motion_valid = _strict_boolean_array(
+        data["object_motions_valid"],
+        name="object_motions_valid",
+    )
     if not config.test_start_frame < len(observed):
         raise ValueError("test_start_frame must be below the frame count")
     valid = _target_frame_validity(visible, motion_valid)

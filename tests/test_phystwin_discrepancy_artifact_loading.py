@@ -184,6 +184,59 @@ def test_profile_digest_mismatch_prevents_numpy_loading(
         )
 
 
+@pytest.mark.parametrize(
+    ("key", "invalid_value"),
+    (
+        ("object_visibilities", float("nan")),
+        ("object_motions_valid", 2.0),
+    ),
+)
+def test_masks_reject_truth_coercion(
+    tmp_path: Path,
+    key: str,
+    invalid_value: float,
+) -> None:
+    final_data, _, profile, profile_digest, _, _ = _fixture(tmp_path)
+    payload = pickle.loads(final_data.read_bytes())
+    invalid_mask = np.asarray(payload[key], dtype=float)
+    invalid_mask[0, 0] = invalid_value
+    payload[key] = invalid_mask
+    final_digest = _write_pickle(final_data, payload)
+
+    with pytest.raises(ValueError, match="exact numeric 0/1 values"):
+        calibrate_phystwin_profile_discrepancy(
+            final_data,
+            profile,
+            config=_config(),
+            final_data_sha256=final_digest,
+            profile_sha256=profile_digest,
+        )
+
+
+def test_masks_accept_exact_numeric_zero_one(tmp_path: Path) -> None:
+    final_data, _, profile, profile_digest, _, _ = _fixture(tmp_path)
+    payload = pickle.loads(final_data.read_bytes())
+    payload["object_visibilities"] = np.asarray(
+        payload["object_visibilities"],
+        dtype=float,
+    )
+    payload["object_motions_valid"] = np.asarray(
+        payload["object_motions_valid"],
+        dtype=np.int64,
+    )
+    final_digest = _write_pickle(final_data, payload)
+
+    summary = calibrate_phystwin_profile_discrepancy(
+        final_data,
+        profile,
+        config=_config(),
+        final_data_sha256=final_digest,
+        profile_sha256=profile_digest,
+    )
+
+    assert summary["schema_version"] == 2
+
+
 def test_reference_path_and_digest_are_conjunctive(tmp_path: Path) -> None:
     final_data, final_digest, profile, profile_digest, reference, _ = _fixture(
         tmp_path
