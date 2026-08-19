@@ -25,7 +25,6 @@ _PROFILE_REQUIRED_ARRAYS: Final = (
     "epistemic_variance",
 )
 _COPY_CHUNK_SIZE_BYTES: Final = 1024 * 1024
-_SNAPSHOT_MEMORY_LIMIT_BYTES: Final = 16 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -72,10 +71,7 @@ def _load_verified_profile(
     digest = hashlib.sha256()
     with (
         source.open("rb") as stream,
-        tempfile.SpooledTemporaryFile(
-            max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
-            mode="w+b",
-        ) as snapshot,
+        tempfile.TemporaryFile(mode="w+b") as snapshot,
     ):
         while block := stream.read(_COPY_CHUNK_SIZE_BYTES):
             digest.update(block)
