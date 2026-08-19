@@ -188,6 +188,52 @@ def test_protocol_rejects_boundary_or_mesh_policy_mutation(tmp_path: Path) -> No
         load_jax_fem_source_physics_protocol_v1(bad_mesh)
 
 
+@pytest.mark.parametrize(
+    ("validator", "message"),
+    [
+        (
+            lambda: qualification_module._exact_fields(
+                {}, frozenset({"required"}), "record"
+            ),
+            "fields changed",
+        ),
+        (lambda: qualification_module._mapping([], name="record"), "mapping"),
+        (
+            lambda: qualification_module._canonical_string(" ", name="label"),
+            "canonical nonempty string",
+        ),
+        (lambda: qualification_module._sha256("0" * 63, name="digest"), "SHA-256"),
+        (
+            lambda: qualification_module._git_revision("0" * 39, name="revision"),
+            "Git revision",
+        ),
+        (lambda: qualification_module._positive_int(0, name="count"), "positive"),
+        (
+            lambda: qualification_module._nonnegative_int(-1, name="index"),
+            "nonnegative",
+        ),
+        (lambda: qualification_module._finite(True, name="value"), "finite"),
+        (
+            lambda: qualification_module._finite(
+                float("nan"), name="value", positive=True
+            ),
+            "positive and finite",
+        ),
+        (lambda: qualification_module._vector3([0.0, 1.0], name="axis"), "three"),
+        (
+            lambda: qualification_module._integer_list([], name="indices"),
+            "nonempty integer list",
+        ),
+    ],
+)
+def test_protocol_scalar_validators_fail_closed(
+    validator: Any,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        validator()
+
+
 def _source_archive(path: Path, *, points: npt.NDArray[np.float32]) -> None:
     frame_count = 10
     controller = np.zeros((frame_count, 2, 3), dtype=np.float32)

@@ -48,6 +48,10 @@ def test_repository_manifest_expands_deterministically() -> None:
     }
     assert set(suites["core-contracts"]) <= set(suites["stable-core-coverage"])
     assert set(suites["provider-contract"]) <= set(suites["stable-core-coverage"])
+    assert {
+        "tests/test_jax_fem_source_qualification_v1.py",
+        "tests/test_jax_fem_source_value_v1.py",
+    } <= set(suites["stable-core-coverage"])
     for files in suites.values():
         assert files
         assert len(files) == len(set(files))
