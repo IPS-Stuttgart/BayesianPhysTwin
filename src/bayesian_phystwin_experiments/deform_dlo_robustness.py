@@ -17,13 +17,29 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     _collapse_duplicate_queries,
     _finite_array,
     build_deform_local_residual_features,
+    deserialize_deform_local_residual_model,
     predict_deform_local_residual,
+)
+from bayesian_phystwin_experiments.deform_dlo_pyelastica import (
+    deform_pyelastica_parameter_bank,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 DEFORM_DLO_ROBUSTNESS_CONTRACT = "deform-dlo-robustness-v1"
 DEFORM_DLO_ROBUSTNESS_DOMAIN = b"deform-dlo3-robustness-v1\0"
+DEFORM_DLO3_METHOD_SEAL_RECOVERY_CONTRACT = (
+    "deform-dlo3-robustness-method-seal-recovery-v1"
+)
 DEFORM_LOCAL_FEATURE_COUNT = 92
+DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS = (
+    "current-diagonal-conservative-v1",
+    "shrinkage-propagated-diagonal",
+    "coefficient-only",
+    "residual-only",
+    "pooled-isotropic",
+    "trajectory-clustered-full-coordinate-covariance-v1",
+    "calibrated-full-coordinate-covariance-v1",
+)
 Array = np.ndarray[Any, Any]
 
 
@@ -66,6 +82,164 @@ def _strings(value: object, *, label: str) -> tuple[str, ...]:
     if not result or any(not item for item in result):
         raise ValueError(f"{label} must not be empty")
     return result
+
+
+def load_deform_dlo3_method_seal_recovery_v1(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the exact, source-independent DLO3 method-seal recovery decision."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if (
+        payload.get("schema_version") != 1
+        or payload.get("contract") != DEFORM_DLO3_METHOD_SEAL_RECOVERY_CONTRACT
+    ):
+        raise ValueError("unsupported DEFORM DLO3 method-seal recovery contract")
+
+    parent = _mapping(payload.get("failed_execution"), label="failed execution")
+    failure = _mapping(parent.get("failure_receipt"), label="failure receipt")
+    smoke = _mapping(
+        parent.get("calibration_mechanism_preflight"),
+        label="calibration mechanism preflight",
+    )
+    if (
+        parent.get("source_revision") != "bd5cfb14845acb1c5396554caea30b542f975ec9"
+        or parent.get("source_archive_sha256")
+        != "108a38c5330dca23a6dee66b6ee4436cdcce47bd9b5a821cbd800c41d98df54d"
+        or parent.get("protocol_sha256")
+        != "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c"
+        or parent.get("source_manifest_sha256")
+        != "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb"
+        or failure.get("repository_path")
+        != "results/sota/deform_dlo3_robustness_v2/preseal_runtime_failure.json"
+        or failure.get("sha256")
+        != "121152a8de974e3aa401989ff13f3676e91826a4f419c38fb12d716a56a0f369"
+        or smoke.get("repository_path")
+        != "results/sota/deform_dlo3_robustness_v2/calibration_mechanism_preflight_smoke.json"
+        or smoke.get("sha256")
+        != "e412ee526f23d9eceb15a10d41dde456b4e0a8f29e873707967a2ae6514af00d"
+        or smoke.get("source_revision") != "1c019fda8c2c2bc38558f200e885c741b0f68afb"
+        or smoke.get("source_archive_sha256")
+        != "8bd7a469fcbd4450195ea46fed320b659c5ddefaaa3ba452553cb9446a317928"
+    ):
+        raise ValueError("DEFORM DLO3 recovery parent lineage differs")
+
+    expected_seeds = {
+        "42": {
+            "method_seal_sha256": (
+                "96b2733e9365eeed0136afd5998594757503dcd5d90c19fa99bfd347432c5814"
+            ),
+            "compute_match_sha256": (
+                "fde6e9e3efe389da915f206f3af8730fa8fa6242296549064914a68e315d0ef5"
+            ),
+            "failure_log_sha256": (
+                "857b155f3a6a0b3f55da6503872e179869d78a0a396dd02f336d7ff8aabf80d4"
+            ),
+        },
+        "43": {
+            "method_seal_sha256": (
+                "2bca7dfddd280f7d1534e6f60f70e6ee44723df560bd929ce7b7304b936a3f74"
+            ),
+            "compute_match_sha256": (
+                "64cf726a5c9998d0ab7a2fdae00feb0bd718c0b205fe6b9423915cbb42dfe0c9"
+            ),
+            "failure_log_sha256": (
+                "e3f9360ce4319c36c1cebc8a5d375d41c2ac3d02825ca29a969a1924b34eaf81"
+            ),
+        },
+    }
+    seed_records = _mapping(payload.get("seed_artifacts"), label="seed artifacts")
+    if set(str(seed) for seed in seed_records) != set(expected_seeds):
+        raise ValueError("DEFORM DLO3 recovery seed set differs")
+    for seed, expected in expected_seeds.items():
+        record = _mapping(seed_records.get(seed), label=f"seed {seed} artifacts")
+        if (
+            any(record.get(key) != value for key, value in expected.items())
+            or int(cast(Any, record.get("completed_updates", -1))) != 6400
+            or record.get("method_seal_exists") is not True
+            or record.get("prediction_seal_exists") is not False
+            or record.get("source_predictions_exist") is not False
+            or record.get("source_result_exists") is not False
+        ):
+            raise ValueError(f"DEFORM DLO3 recovery seed {seed} lineage differs")
+
+    policy = _mapping(payload.get("recovery_policy"), label="recovery policy")
+    output_names = _mapping(
+        policy.get("completion_output_names"), label="recovery output names"
+    )
+    if (
+        _integers(policy.get("eligible_seeds"), label="eligible recovery seeds")
+        != (42, 43)
+        or policy.get("reuse_exact_method_seals") is not True
+        or policy.get("retraining") is not False
+        or policy.get("refitting") is not False
+        or policy.get("checkpoint_continuation") is not False
+        or policy.get("seed_selection") is not False
+        or policy.get("source_reselection") is not False
+        or policy.get("source_case_replacement") is not False
+        or int(cast(Any, policy.get("maximum_completions_per_seed", -1))) != 1
+        or policy.get("output_root_policy") != "new-empty-root-per-seed"
+        or dict(output_names)
+        != {
+            "42": "seed-42-method-seal-completion-v1",
+            "43": "seed-43-method-seal-completion-v1",
+        }
+    ):
+        raise ValueError("DEFORM DLO3 recovery policy differs")
+
+    decision = _mapping(payload.get("decision"), label="recovery decision")
+    authorized = decision.get("source_completion_authorized")
+    if not isinstance(authorized, bool):
+        raise ValueError("DEFORM DLO3 recovery authorization must be boolean")
+    expected_status = "authorized" if authorized else "pending"
+    expected_operation = (
+        "complete-source-from-exact-method-seal"
+        if authorized
+        else "artifact-validation-only"
+    )
+    implementation_revision = decision.get("implementation_source_revision")
+    implementation_archive = decision.get("implementation_archive_sha256")
+    valid_revision = (
+        isinstance(implementation_revision, str)
+        and len(implementation_revision) == 40
+        and set(implementation_revision) <= set("0123456789abcdef")
+    )
+    valid_archive = (
+        isinstance(implementation_archive, str)
+        and len(implementation_archive) == 64
+        and set(implementation_archive) <= set("0123456789abcdef")
+    )
+    if (
+        decision.get("status") != expected_status
+        or decision.get("permitted_operation") != expected_operation
+        or decision.get("seed_44_authorized") is not False
+        or not isinstance(decision.get("reason"), str)
+        or not str(decision.get("reason", "")).strip()
+        or (authorized and (not valid_revision or not valid_archive))
+        or (
+            not authorized
+            and (
+                implementation_revision is not None
+                or implementation_archive is not None
+            )
+        )
+    ):
+        raise ValueError("DEFORM DLO3 recovery decision differs")
+
+    custody = _mapping(payload.get("custody"), label="recovery custody")
+    if (
+        custody.get("source_test_outcomes_used_for_method_change") is not False
+        or custody.get("official_eval_read") is not False
+        or custody.get("dlo4_dlo5_reserve_access") is not False
+        or custody.get("held_v8_access") is not False
+        or custody.get("target_selection") is not False
+        or custody.get("target_calibration") is not False
+        or custody.get("target_retry") is not False
+        or custody.get("prob4d_used") is not False
+    ):
+        raise ValueError("DEFORM DLO3 recovery custody differs")
+    return payload
 
 
 def load_deform_dlo_robustness_v1_protocol(path: str | Path) -> dict[str, object]:
@@ -240,6 +414,12 @@ def load_deform_dlo_robustness_v1_protocol(path: str | Path) -> dict[str, object
         or bayesian.get("temporal_independence_claimed") is not False
         or int(cast(Any, bayesian.get("calibration_partition_count", -1))) != 9
         or int(cast(Any, bayesian.get("calibration_rank", -1))) != 9
+        or _strings(
+            bayesian.get("ablation_distributions"),
+            label="Bayesian ablation distributions",
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or bayesian.get("distribution_selection_from_target") is not False
         or target.get("partition") != "DLO3/eval"
         or target.get("one_shot") is not True
         or float(cast(Any, target.get("published_reference_l1_m", math.nan))) != 0.0077
@@ -533,16 +713,15 @@ def predict_deform_local_residual_variant(
         int(value) for value in cast(Sequence[Any], model.get("feature_indices", ()))
     )
     features = full_features[..., feature_indices]
-    location = _finite_array(
-        np.asarray(model.get("feature_location")),
-        ndim=2,
-        label="variant feature location",
-    )
-    scale = _finite_array(
-        np.asarray(model.get("feature_scale")),
-        ndim=2,
-        label="variant feature scale",
-    )
+    # The preregistered intercept-only arm deliberately has zero feature
+    # columns.  Its normalization matrices are therefore finite (N, 0)
+    # arrays, while the shared non-empty array validator rejects them.
+    location = np.asarray(model.get("feature_location"), dtype=np.float64)
+    scale = np.asarray(model.get("feature_scale"), dtype=np.float64)
+    if location.ndim != 2 or not np.isfinite(location).all():
+        raise ValueError("variant feature location must be a finite 2-D array")
+    if scale.ndim != 2 or not np.isfinite(scale).all():
+        raise ValueError("variant feature scale must be a finite 2-D array")
     coefficients = _finite_array(
         np.asarray(model.get("coefficients")),
         ndim=3,
@@ -807,6 +986,160 @@ def predict_deform_local_residual_full_covariance(
     }
 
 
+def deform_bayesian_covariance_archive_key(label: str) -> str:
+    """Return the deterministic NPZ key for one frozen covariance arm."""
+
+    if label not in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS:
+        raise ValueError(f"unsupported DEFORM Bayesian covariance arm: {label}")
+    return f"bayesian_covariance_m2__{label.replace('-', '_')}"
+
+
+def _diagonal_coordinate_covariance(coordinate_variance_m2: Array) -> Array:
+    variance = _finite_array(
+        coordinate_variance_m2,
+        ndim=4,
+        label="diagonal coordinate variance",
+    )
+    covariance = np.zeros((*variance.shape, 3), dtype=np.float64)
+    coordinate = np.arange(3)
+    covariance[..., coordinate, coordinate] = variance
+    return covariance
+
+
+def build_deform_bayesian_covariance_ablation_v1(
+    model: Mapping[str, object],
+    initial_states: Array,
+    clamped_action: Array,
+    baseline_predictions: Array,
+    *,
+    shrinkage: float,
+    variance_scale: float,
+) -> dict[str, dict[str, Array]]:
+    """Build every frozen covariance arm without changing the point prediction.
+
+    The pooled arm uses only the query covariances, never outcomes. Coefficient-only
+    and residual-only retain the unresolved-shrinkage term and variance floor so
+    that each arm remains a valid predictive distribution.
+    """
+
+    if not math.isfinite(shrinkage) or not 0.0 < shrinkage <= 1.0:
+        raise ValueError("DEFORM Bayesian ablation shrinkage is invalid")
+    baseline = _finite_array(
+        baseline_predictions,
+        ndim=4,
+        label="Bayesian ablation baseline",
+    )
+    floor = float(cast(Any, model.get("variance_floor_m2", math.nan)))
+    if not math.isfinite(floor) or floor <= 0.0:
+        raise ValueError("DEFORM Bayesian ablation variance floor is invalid")
+
+    diagonal = predict_deform_local_residual(
+        dict(model),
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    unshrunk_diagonal = predict_deform_local_residual(
+        dict(model),
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=1.0,
+    )
+    full = predict_deform_local_residual_full_covariance(
+        model,
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    point_mean = np.asarray(full["predictions"])
+    if not np.array_equal(point_mean, np.asarray(diagonal["predictions"])):
+        raise RuntimeError("DEFORM Bayesian covariance arms changed the point mean")
+
+    internal = slice(2, -2)
+    shrinkage_variance = np.zeros_like(baseline)
+    modeled_variance = np.maximum(
+        np.asarray(unshrunk_diagonal["coordinate_variance_m2"])[:, :, internal] - floor,
+        0.0,
+    )
+    correction = (point_mean[:, :, internal] - baseline[:, :, internal]) / shrinkage
+    unresolved_variance = np.square((1.0 - shrinkage) * correction)
+    shrinkage_variance[:, :, internal] = (
+        np.square(shrinkage) * modeled_variance + unresolved_variance + floor
+    )
+
+    coefficient_model = dict(model)
+    coefficient_model["residual_covariance_full"] = np.zeros_like(
+        np.asarray(model.get("residual_covariance_full")), dtype=np.float64
+    )
+    coefficient_only = predict_deform_local_residual_full_covariance(
+        coefficient_model,
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+    residual_model = dict(model)
+    residual_model["coefficient_covariance_full"] = np.zeros_like(
+        np.asarray(model.get("coefficient_covariance_full")), dtype=np.float64
+    )
+    residual_only = predict_deform_local_residual_full_covariance(
+        residual_model,
+        initial_states,
+        clamped_action,
+        baseline,
+        shrinkage=shrinkage,
+    )
+
+    full_covariance = np.asarray(full["coordinate_covariance_m2"])
+    internal_full_covariance = full_covariance[:, :, internal]
+    pooled_variance = float(
+        np.mean(np.trace(internal_full_covariance, axis1=-2, axis2=-1) / 3.0)
+    )
+    if not math.isfinite(pooled_variance) or pooled_variance <= 0.0:
+        raise RuntimeError("DEFORM pooled covariance is nonpositive")
+    pooled_covariance = np.zeros_like(full_covariance)
+    pooled_covariance[:, :, internal] = pooled_variance * np.eye(3, dtype=np.float64)
+
+    covariances = {
+        "current-diagonal-conservative-v1": _diagonal_coordinate_covariance(
+            np.asarray(diagonal["coordinate_variance_m2"])
+        ),
+        "shrinkage-propagated-diagonal": _diagonal_coordinate_covariance(
+            shrinkage_variance
+        ),
+        "coefficient-only": np.asarray(coefficient_only["coordinate_covariance_m2"]),
+        "residual-only": np.asarray(residual_only["coordinate_covariance_m2"]),
+        "pooled-isotropic": pooled_covariance,
+        "trajectory-clustered-full-coordinate-covariance-v1": full_covariance,
+        "calibrated-full-coordinate-covariance-v1": (
+            scale_deform_coordinate_covariance(full_covariance, variance_scale)
+        ),
+    }
+    if tuple(covariances) != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS:
+        raise RuntimeError("DEFORM Bayesian covariance arm order differs")
+
+    predictions = (
+        np.asarray(diagonal["predictions"]),
+        np.asarray(coefficient_only["predictions"]),
+        np.asarray(residual_only["predictions"]),
+    )
+    if any(not np.array_equal(point_mean, values) for values in predictions):
+        raise RuntimeError("DEFORM Bayesian ablation point means differ")
+    return {
+        label: {
+            "predictions": point_mean,
+            "coordinate_covariance_m2": covariance,
+            "coordinate_variance_m2": np.diagonal(
+                covariance, axis1=-2, axis2=-1
+            ).copy(),
+        }
+        for label, covariance in covariances.items()
+    }
+
+
 def calibrate_deform_full_covariance(
     predictions: Array,
     targets: Array,
@@ -943,6 +1276,401 @@ def evaluate_deform_predictive_distribution(
     }
 
 
+def validate_deform_bayesian_audit_v1(
+    result: Mapping[str, object],
+    *,
+    context: str,
+) -> dict[str, object]:
+    """Require the complete frozen seven-arm Bayesian audit."""
+
+    if context not in ("source", "evaluator"):
+        raise ValueError("unsupported DEFORM Bayesian audit context")
+    audit = _mapping(result.get("bayesian_audit"), label="Bayesian audit")
+    distributions = _mapping(audit.get("distributions"), label="Bayesian distributions")
+    expected = DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    if (
+        len(distributions) != len(expected)
+        or set(str(name) for name in distributions) != set(expected)
+        or audit.get("point_mean_unchanged") is not True
+        or audit.get("distribution_selection") != "none"
+    ):
+        raise ValueError("DEFORM Bayesian audit is incomplete")
+
+    normalized: dict[str, Mapping[str, object]] = {}
+    point_errors: list[float] = []
+    for name in expected:
+        metrics = _mapping(
+            distributions.get(name), label=f"Bayesian distribution {name}"
+        )
+        if (
+            metrics.get("contract") != "deform-dlo-predictive-distribution-metrics-v1"
+            or int(cast(Any, metrics.get("energy_score_sample_count", -1))) != 32
+            or int(cast(Any, metrics.get("energy_score_seed", -1))) != 0
+        ):
+            raise ValueError("DEFORM Bayesian distribution contract differs")
+        values = {
+            key: float(cast(Any, metrics.get(key, math.nan)))
+            for key in (
+                "mean_coordinate_l1_m",
+                "gaussian_nll",
+                "coordinate_nees",
+                "multivariate_nees",
+                "coordinate_coverage_90",
+                "interval_width_m",
+                "energy_score",
+            )
+        }
+        if (
+            any(not math.isfinite(value) for value in values.values())
+            or values["mean_coordinate_l1_m"] < 0.0
+            or values["coordinate_nees"] < 0.0
+            or values["multivariate_nees"] < 0.0
+            or not 0.0 <= values["coordinate_coverage_90"] <= 1.0
+            or values["interval_width_m"] <= 0.0
+        ):
+            raise ValueError("DEFORM Bayesian distribution metrics are invalid")
+        point_errors.append(values["mean_coordinate_l1_m"])
+        normalized[name] = metrics
+    if any(value != point_errors[0] for value in point_errors[1:]):
+        raise ValueError("DEFORM Bayesian distribution point means differ")
+
+    if context == "source":
+        calibration = _mapping(audit.get("calibration"), label="Bayesian calibration")
+        scores = tuple(
+            float(value)
+            for value in cast(Sequence[Any], calibration.get("trajectory_scores", ()))
+        )
+        radius = float(cast(Any, calibration.get("standardized_radius", math.nan)))
+        variance_scale = float(cast(Any, calibration.get("variance_scale", math.nan)))
+        if (
+            calibration.get("contract") != "deform-dlo-full-covariance-calibration-v1"
+            or len(scores) != 9
+            or any(not math.isfinite(value) or value < 0.0 for value in scores)
+            or int(cast(Any, calibration.get("rank", -1))) != 9
+            or calibration.get("order_statistic") != "maximum-of-nine"
+            or float(
+                cast(Any, calibration.get("nominal_coordinate_coverage", math.nan))
+            )
+            != 0.9
+            or not math.isfinite(radius)
+            or radius != max(scores)
+            or not math.isfinite(variance_scale)
+            or variance_scale < 1.0
+            or calibration.get("confidence_increase_forbidden") is not True
+            or calibration.get("source_test_opened") is not False
+            or calibration.get("official_eval_read") is not False
+            or audit.get("source_test_outcomes_used_for_covariance_construction")
+            is not False
+            or audit.get("uncalibrated")
+            != normalized["trajectory-clustered-full-coordinate-covariance-v1"]
+            or audit.get("calibrated")
+            != normalized["calibrated-full-coordinate-covariance-v1"]
+        ):
+            raise ValueError("DEFORM Bayesian source calibration differs")
+    elif (
+        audit.get("primary_distribution") != "calibrated-full-coordinate-covariance-v1"
+        or audit.get("target_outcomes_used_for_distribution_construction") is not False
+        or audit.get("target_outcomes_used_for_distribution_selection") is not False
+    ):
+        raise ValueError("DEFORM Bayesian evaluator custody differs")
+
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-bayesian-audit-verification-v1",
+        "context": context,
+        "distribution_count": len(expected),
+        "distributions": list(expected),
+        "point_mean_unchanged": True,
+        "distribution_selection": "none",
+    }
+
+
+def _verified_deform_artifact_path(value: object, *, label: str) -> Path:
+    identity = _mapping(value, label=label)
+    path = Path(str(identity.get("path", ""))).resolve()
+    digest = str(identity.get("sha256", ""))
+    size = int(cast(Any, identity.get("size_bytes", -1)))
+    if (
+        len(digest) != 64
+        or size <= 0
+        or not path.is_file()
+        or path.stat().st_size != size
+        or sha256_file(path) != digest
+    ):
+        raise ValueError(f"{label} identity changed")
+    return path
+
+
+def _verify_deform_bayesian_prediction_archive_v1(
+    path: Path,
+    *,
+    expected_case_count: int,
+    variance_scale: float,
+    source_compatibility_aliases: bool,
+) -> dict[str, object]:
+    expected_keys = {
+        label: deform_bayesian_covariance_archive_key(label)
+        for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    }
+    with np.load(path, allow_pickle=False) as archive:
+        required = {"names", "candidate", *expected_keys.values()}
+        if source_compatibility_aliases:
+            required.update(
+                {"coordinate_covariance_m2", "calibrated_coordinate_covariance_m2"}
+            )
+        elif "calibrated_coordinate_covariance_m2" not in archive.files:
+            raise ValueError("DEFORM Bayesian prediction archive is incomplete")
+        if not required.issubset(archive.files):
+            raise ValueError("DEFORM Bayesian prediction archive is incomplete")
+        names = np.asarray(archive["names"])
+        candidate = _finite_array(
+            np.asarray(archive["candidate"]), ndim=4, label="Bayesian point mean"
+        )
+        if (
+            names.shape != (expected_case_count,)
+            or candidate.shape[0] != expected_case_count
+            or candidate.shape[2] < 5
+            or candidate.shape[3] != 3
+        ):
+            raise ValueError("DEFORM Bayesian prediction archive shape differs")
+        covariance: dict[str, Array] = {}
+        for label, key in expected_keys.items():
+            values = _finite_array(
+                np.asarray(archive[key]), ndim=5, label=f"Bayesian covariance {label}"
+            )
+            if values.shape != (*candidate.shape, 3):
+                raise ValueError("DEFORM Bayesian covariance shape differs")
+            if (
+                np.count_nonzero(values[:, :, :2]) != 0
+                or np.count_nonzero(values[:, :, -2:]) != 0
+                or not np.allclose(
+                    values[:, :, 2:-2],
+                    values[:, :, 2:-2].swapaxes(-1, -2),
+                    rtol=0.0,
+                    atol=1e-12,
+                )
+                or np.min(np.linalg.eigvalsh(values[:, :, 2:-2])) <= 0.0
+            ):
+                raise ValueError("DEFORM Bayesian covariance is invalid")
+            covariance[label] = values
+        raw = covariance["trajectory-clustered-full-coordinate-covariance-v1"]
+        calibrated = covariance["calibrated-full-coordinate-covariance-v1"]
+        if (
+            not math.isfinite(variance_scale)
+            or variance_scale < 1.0
+            or not np.allclose(calibrated, raw * variance_scale, rtol=1e-12, atol=0.0)
+            or not np.array_equal(
+                np.asarray(archive["calibrated_coordinate_covariance_m2"]),
+                calibrated,
+            )
+        ):
+            raise ValueError("DEFORM Bayesian calibrated covariance differs")
+        if source_compatibility_aliases and not np.array_equal(
+            np.asarray(archive["coordinate_covariance_m2"]), raw
+        ):
+            raise ValueError("DEFORM Bayesian covariance compatibility alias differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo-bayesian-prediction-archive-verification-v1",
+        "case_count": expected_case_count,
+        "distribution_count": len(expected_keys),
+        "archive_keys": expected_keys,
+        "point_mean_count": 1,
+    }
+
+
+def verify_deform_dlo3_seed_bayesian_artifacts_v1(
+    result: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash and inspect one sealed source-seed Bayesian artifact bundle."""
+
+    if (
+        result.get("contract") != "deform-dlo3-robustness-seed-result-v1"
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("target_authorized") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("held_v8_access") is not False
+    ):
+        raise ValueError("DEFORM seed Bayesian artifact custody differs")
+    audit = validate_deform_bayesian_audit_v1(result, context="source")
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="seed prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("seed prediction seal must be a JSON object")
+    expected_keys = {
+        label: deform_bayesian_covariance_archive_key(label)
+        for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    }
+    seed = int(cast(Any, result.get("seed", -1)))
+    method_identity = _mapping(result.get("method_seal"), label="seed method seal")
+    seal_method_identity = _mapping(
+        seal.get("method_seal"), label="prediction-seal method"
+    )
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-source-prediction-seal-v1"
+        or int(cast(Any, seal.get("seed", -1))) != seed
+        or _strings(
+            seal.get("bayesian_ablation_distributions"),
+            label="sealed Bayesian distributions",
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or dict(
+            _mapping(
+                seal.get("bayesian_covariance_archive_keys"),
+                label="sealed Bayesian archive keys",
+            )
+        )
+        != expected_keys
+        or seal.get("bayesian_point_means_identical") is not True
+        or seal.get("source_outcomes_scored") is not False
+        or seal.get("official_eval_read") is not False
+        or seal_method_identity.get("sha256") != method_identity.get("sha256")
+    ):
+        raise ValueError("DEFORM seed Bayesian prediction seal differs")
+    _verified_deform_artifact_path(method_identity, label="seed method seal")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="seed Bayesian predictions"
+    )
+    calibration = _mapping(
+        _mapping(result.get("bayesian_audit"), label="Bayesian audit").get(
+            "calibration"
+        ),
+        label="Bayesian calibration",
+    )
+    archive = _verify_deform_bayesian_prediction_archive_v1(
+        predictions_path,
+        expected_case_count=8,
+        variance_scale=float(cast(Any, calibration.get("variance_scale", math.nan))),
+        source_compatibility_aliases=True,
+    )
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-seed-bayesian-artifact-verification-v1",
+        "seed": seed,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "audit": audit,
+        "archive": archive,
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_evaluator_bayesian_artifacts_v1(
+    result: Mapping[str, object],
+    *,
+    expected_mode: str,
+) -> dict[str, object]:
+    """Rehash and inspect a dry-run or official evaluator Bayesian bundle."""
+
+    if expected_mode not in ("dry-run", "official"):
+        raise ValueError("unsupported DEFORM evaluator mode")
+    if expected_mode == "dry-run":
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-evaluator-dry-run-v1"
+            and result.get("primary_eval_read") is False
+            and result.get("target_authorized") is False
+            and result.get("retry_authorized") is False
+            and result.get("held_v8_access") is False
+        )
+    else:
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-official-result-v1"
+            and result.get("official_eval_read") is True
+            and result.get("retry_authorized") is False
+            and result.get("case_replacement") is False
+            and result.get("held_v8_access") is False
+        )
+    if not custody_valid:
+        raise ValueError("DEFORM evaluator Bayesian artifact custody differs")
+    audit = validate_deform_bayesian_audit_v1(result, context="evaluator")
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="evaluator prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("evaluator prediction seal must be a JSON object")
+    expected_keys = {
+        label: deform_bayesian_covariance_archive_key(label)
+        for label in DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+    }
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-evaluator-prediction-seal-v1"
+        or seal.get("mode") != expected_mode
+        or _strings(
+            seal.get("bayesian_ablation_distributions"),
+            label="evaluator Bayesian distributions",
+        )
+        != DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        or dict(
+            _mapping(
+                seal.get("bayesian_covariance_archive_keys"),
+                label="evaluator Bayesian archive keys",
+            )
+        )
+        != expected_keys
+        or seal.get("bayesian_point_means_identical") is not True
+        or seal.get("outcomes_scored") is not False
+        or seal.get("target_retries") is not False
+    ):
+        raise ValueError("DEFORM evaluator Bayesian prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="evaluator Bayesian predictions"
+    )
+    distribution_count = 8 if expected_mode == "dry-run" else 14
+    # The all-train method carries the frozen seed-42 calibration scale in every arm.
+    calibrated = np.load(predictions_path, allow_pickle=False)
+    try:
+        raw = np.asarray(
+            calibrated[
+                deform_bayesian_covariance_archive_key(
+                    "trajectory-clustered-full-coordinate-covariance-v1"
+                )
+            ]
+        )
+        scaled = np.asarray(
+            calibrated[
+                deform_bayesian_covariance_archive_key(
+                    "calibrated-full-coordinate-covariance-v1"
+                )
+            ]
+        )
+        positive = raw[:, :, 2:-2] > 0.0
+        ratios = np.divide(
+            scaled[:, :, 2:-2],
+            raw[:, :, 2:-2],
+            out=np.ones_like(scaled[:, :, 2:-2]),
+            where=positive,
+        )
+        finite_ratios = ratios[positive]
+        if finite_ratios.size == 0 or not np.allclose(
+            finite_ratios, finite_ratios[0], rtol=1e-12, atol=1e-12
+        ):
+            raise ValueError("DEFORM evaluator covariance scale differs")
+        variance_scale = float(finite_ratios[0])
+    finally:
+        calibrated.close()
+    archive = _verify_deform_bayesian_prediction_archive_v1(
+        predictions_path,
+        expected_case_count=distribution_count,
+        variance_scale=variance_scale,
+        source_compatibility_aliases=False,
+    )
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-evaluator-bayesian-artifact-verification-v1",
+        "mode": expected_mode,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "audit": audit,
+        "archive": archive,
+        "verified": True,
+    }
+
+
 def evaluate_deform_dlo3_source_gate(
     candidate_predictions: Array,
     baseline_predictions: Array,
@@ -1024,6 +1752,7 @@ def evaluate_deform_dlo3_stability_gate(
         raise ValueError("DLO3 stability gate requires every frozen seed")
 
     normalized: dict[int, Mapping[str, object]] = {}
+    bayesian_verifications: dict[int, dict[str, object]] = {}
     protocol_digests: set[str] = set()
     manifest_digests: set[str] = set()
     for raw in seed_results:
@@ -1048,6 +1777,9 @@ def evaluate_deform_dlo3_stability_gate(
         )
         protocol_digests.add(str(protocol_identity.get("sha256", "")))
         manifest_digests.add(str(manifest_identity.get("sha256", "")))
+        bayesian_verifications[seed] = validate_deform_bayesian_audit_v1(
+            raw, context="source"
+        )
         normalized[seed] = raw
     if set(normalized) != set(expected_seeds):
         raise ValueError("DLO3 stability inputs omit a frozen seed")
@@ -1103,6 +1835,7 @@ def evaluate_deform_dlo3_stability_gate(
                 "source_gate_passed": passed,
                 "candidate_to_baseline_mean_ratio": mean_ratio,
                 "maximum_case_ratio": maximum_case_ratio,
+                "bayesian_audit": bayesian_verifications[seed],
             }
         )
 
@@ -1148,6 +1881,9 @@ def evaluate_deform_dlo3_stability_gate(
             "method-and-environment-attestation",
         ],
         "seed_selection": False,
+        "bayesian_audit_complete": True,
+        "bayesian_distribution_count": len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS),
+        "bayesian_distribution_selection": "none",
         "seeds": seed_records,
         "primary_eval_read": False,
         "prob4d_used": False,
@@ -1217,6 +1953,1416 @@ def evaluate_deform_backend_source_gate(
             }
             for index, name in enumerate(normalized_names)
         ],
+    }
+
+
+def evaluate_deform_backend_portability_report(
+    candidate_predictions: Array,
+    backend_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+) -> dict[str, object]:
+    """Report a fixed backend correction without creating a target-side gate."""
+
+    candidate = _finite_array(
+        candidate_predictions, ndim=4, label="backend portability candidate"
+    )
+    backend = _finite_array(
+        backend_predictions, ndim=4, label="backend portability baseline"
+    )
+    observed = _finite_array(targets, ndim=4, label="backend portability outcomes")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != backend.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] < 1
+        or len(normalized_names) != candidate.shape[0]
+        or len(set(normalized_names)) != len(normalized_names)
+    ):
+        raise ValueError("DEFORM backend portability arrays do not align")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    backend_errors = np.mean(np.abs(backend - observed), axis=(1, 2, 3))
+    if np.any(backend_errors <= 0.0):
+        raise ValueError("DEFORM backend portability error must be positive")
+    ratios = candidate_errors / backend_errors
+    candidate_mean = float(np.mean(candidate_errors))
+    backend_mean = float(np.mean(backend_errors))
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-backend-portability-report-v1",
+        "case_count": len(normalized_names),
+        "candidate_mean_l1_m": candidate_mean,
+        "backend_mean_l1_m": backend_mean,
+        "relative_improvement": 1.0 - candidate_mean / backend_mean,
+        "wins": int(np.count_nonzero(candidate_errors < backend_errors)),
+        "maximum_case_ratio": float(np.max(ratios)),
+        "selection_effect": "none",
+        "cases": [
+            {
+                "name": name,
+                "candidate_l1_m": float(candidate_errors[index]),
+                "backend_l1_m": float(backend_errors[index]),
+                "candidate_to_backend_ratio": float(ratios[index]),
+                "candidate_wins": bool(candidate_errors[index] < backend_errors[index]),
+            }
+            for index, name in enumerate(normalized_names)
+        ],
+    }
+
+
+def evaluate_deform_compute_matched_report(
+    candidate_predictions: Array,
+    registered_physical_predictions: Array,
+    compute_matched_predictions: Array,
+    targets: Array,
+    names: Sequence[str],
+) -> dict[str, object]:
+    """Report the frozen wall-time-equivalent physical control without selection."""
+
+    candidate = _finite_array(
+        candidate_predictions, ndim=4, label="compute-matched candidate"
+    )
+    registered = _finite_array(
+        registered_physical_predictions,
+        ndim=4,
+        label="registered physical baseline",
+    )
+    compute_matched = _finite_array(
+        compute_matched_predictions,
+        ndim=4,
+        label="compute-matched physical baseline",
+    )
+    observed = _finite_array(targets, ndim=4, label="compute-matched outcomes")
+    normalized_names = tuple(str(name) for name in names)
+    if (
+        candidate.shape != registered.shape
+        or candidate.shape != compute_matched.shape
+        or candidate.shape != observed.shape
+        or candidate.shape[0] < 1
+        or len(normalized_names) != candidate.shape[0]
+        or len(set(normalized_names)) != len(normalized_names)
+    ):
+        raise ValueError("DEFORM compute-matched arrays do not align")
+    candidate_errors = np.mean(np.abs(candidate - observed), axis=(1, 2, 3))
+    registered_errors = np.mean(np.abs(registered - observed), axis=(1, 2, 3))
+    compute_errors = np.mean(np.abs(compute_matched - observed), axis=(1, 2, 3))
+    if np.any(registered_errors <= 0.0) or np.any(compute_errors <= 0.0):
+        raise ValueError("DEFORM compute-matched baseline error must be positive")
+    candidate_mean = float(np.mean(candidate_errors))
+    registered_mean = float(np.mean(registered_errors))
+    compute_mean = float(np.mean(compute_errors))
+    candidate_ratios = candidate_errors / compute_errors
+    compute_ratios = compute_errors / registered_errors
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-compute-matched-report-v1",
+        "case_count": len(normalized_names),
+        "candidate_mean_l1_m": candidate_mean,
+        "registered_physical_mean_l1_m": registered_mean,
+        "compute_matched_physical_mean_l1_m": compute_mean,
+        "candidate_relative_improvement_over_compute_matched": (
+            1.0 - candidate_mean / compute_mean
+        ),
+        "compute_matched_relative_improvement_over_registered": (
+            1.0 - compute_mean / registered_mean
+        ),
+        "candidate_wins_over_compute_matched": int(
+            np.count_nonzero(candidate_errors < compute_errors)
+        ),
+        "compute_matched_wins_over_registered": int(
+            np.count_nonzero(compute_errors < registered_errors)
+        ),
+        "maximum_candidate_to_compute_matched_ratio": float(np.max(candidate_ratios)),
+        "maximum_compute_matched_to_registered_ratio": float(np.max(compute_ratios)),
+        "selection_effect": "none",
+        "cases": [
+            {
+                "name": name,
+                "candidate_l1_m": float(candidate_errors[index]),
+                "registered_physical_l1_m": float(registered_errors[index]),
+                "compute_matched_physical_l1_m": float(compute_errors[index]),
+                "candidate_to_compute_matched_ratio": float(candidate_ratios[index]),
+                "compute_matched_to_registered_ratio": float(compute_ratios[index]),
+                "candidate_wins_over_compute_matched": bool(
+                    candidate_errors[index] < compute_errors[index]
+                ),
+                "compute_matched_wins_over_registered": bool(
+                    compute_errors[index] < registered_errors[index]
+                ),
+            }
+            for index, name in enumerate(normalized_names)
+        ],
+    }
+
+
+def validate_deform_dlo3_alltrain_compute_match_v1(
+    value: object,
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate the target-blind all-train compute-matching arithmetic."""
+
+    record = _mapping(value, label="all-train compute match")
+    compute = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
+    training = _mapping(protocol.get("physical_training"), label="physical training")
+    local_seconds = float(
+        cast(Any, record.get("local_residual_wall_seconds", math.nan))
+    )
+    update_seconds = float(
+        cast(Any, record.get("median_update_seconds_6301_6400", math.nan))
+    )
+    additional_updates = int(cast(Any, record.get("additional_updates", -1)))
+    start_update = int(cast(Any, record.get("start_update", -1)))
+    end_update = int(cast(Any, record.get("end_update", -1)))
+    expected_additional = (
+        int(math.ceil(local_seconds / update_seconds))
+        if math.isfinite(local_seconds)
+        and local_seconds > 0.0
+        and math.isfinite(update_seconds)
+        and update_seconds > 0.0
+        else -1
+    )
+    if (
+        record.get("contract") != "deform-dlo3-alltrain-compute-match-v1"
+        or int(cast(Any, record.get("seed", -1)))
+        != int(cast(Any, training["primary_seed"]))
+        or additional_updates != expected_additional
+        or additional_updates < int(cast(Any, compute["minimum_additional_updates"]))
+        or additional_updates > int(cast(Any, compute["maximum_additional_updates"]))
+        or start_update != int(cast(Any, compute["start_update"]))
+        or end_update != start_update + additional_updates
+        or record.get("selection_effect") != "none"
+        or record.get("target_selection") is not False
+        or record.get("target_calibration") is not False
+        or record.get("target_retries") is not False
+        or record.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM all-train compute match differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-alltrain-compute-match-verification-v1",
+        "seed": int(cast(Any, record["seed"])),
+        "local_residual_wall_seconds": local_seconds,
+        "median_update_seconds_6301_6400": update_seconds,
+        "additional_updates": additional_updates,
+        "start_update": start_update,
+        "end_update": end_update,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def validate_deform_compute_matched_report_v1(
+    value: object,
+    *,
+    expected_case_count: int,
+) -> dict[str, object]:
+    """Validate a descriptive compute-matched report without making a gate."""
+
+    report = _mapping(value, label="compute-matched report")
+    cases_value = report.get("cases")
+    if not isinstance(cases_value, Sequence) or isinstance(cases_value, (str, bytes)):
+        raise ValueError("DEFORM compute-matched report cases differ")
+    cases = tuple(_mapping(case, label="compute-matched case") for case in cases_value)
+    candidate_mean = float(cast(Any, report.get("candidate_mean_l1_m", math.nan)))
+    registered_mean = float(
+        cast(Any, report.get("registered_physical_mean_l1_m", math.nan))
+    )
+    compute_mean = float(
+        cast(Any, report.get("compute_matched_physical_mean_l1_m", math.nan))
+    )
+    relative_candidate = float(
+        cast(
+            Any,
+            report.get("candidate_relative_improvement_over_compute_matched", math.nan),
+        )
+    )
+    relative_compute = float(
+        cast(
+            Any,
+            report.get(
+                "compute_matched_relative_improvement_over_registered", math.nan
+            ),
+        )
+    )
+    if (
+        report.get("contract") != "deform-dlo3-compute-matched-report-v1"
+        or int(cast(Any, report.get("case_count", -1))) != expected_case_count
+        or len(cases) != expected_case_count
+        or expected_case_count < 1
+        or not math.isfinite(candidate_mean)
+        or candidate_mean < 0.0
+        or not math.isfinite(registered_mean)
+        or registered_mean <= 0.0
+        or not math.isfinite(compute_mean)
+        or compute_mean <= 0.0
+        or not math.isclose(
+            relative_candidate,
+            1.0 - candidate_mean / compute_mean,
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            relative_compute,
+            1.0 - compute_mean / registered_mean,
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or report.get("selection_effect") != "none"
+        or "passed" in report
+    ):
+        raise ValueError("DEFORM compute-matched report summary differs")
+
+    names: list[str] = []
+    candidate_values: list[float] = []
+    registered_values: list[float] = []
+    compute_values: list[float] = []
+    candidate_ratios: list[float] = []
+    compute_ratios: list[float] = []
+    candidate_wins = 0
+    compute_wins = 0
+    for case in cases:
+        name = str(case.get("name", ""))
+        candidate_error = float(cast(Any, case.get("candidate_l1_m", math.nan)))
+        registered_error = float(
+            cast(Any, case.get("registered_physical_l1_m", math.nan))
+        )
+        compute_error = float(
+            cast(Any, case.get("compute_matched_physical_l1_m", math.nan))
+        )
+        candidate_ratio = float(
+            cast(Any, case.get("candidate_to_compute_matched_ratio", math.nan))
+        )
+        compute_ratio = float(
+            cast(Any, case.get("compute_matched_to_registered_ratio", math.nan))
+        )
+        candidate_won = candidate_error < compute_error
+        compute_won = compute_error < registered_error
+        if (
+            not name
+            or not math.isfinite(candidate_error)
+            or candidate_error < 0.0
+            or not math.isfinite(registered_error)
+            or registered_error <= 0.0
+            or not math.isfinite(compute_error)
+            or compute_error <= 0.0
+            or not math.isclose(
+                candidate_ratio,
+                candidate_error / compute_error,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            )
+            or not math.isclose(
+                compute_ratio,
+                compute_error / registered_error,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            )
+            or case.get("candidate_wins_over_compute_matched") is not candidate_won
+            or case.get("compute_matched_wins_over_registered") is not compute_won
+        ):
+            raise ValueError("DEFORM compute-matched report case differs")
+        names.append(name)
+        candidate_values.append(candidate_error)
+        registered_values.append(registered_error)
+        compute_values.append(compute_error)
+        candidate_ratios.append(candidate_ratio)
+        compute_ratios.append(compute_ratio)
+        candidate_wins += int(candidate_won)
+        compute_wins += int(compute_won)
+    if (
+        len(set(names)) != expected_case_count
+        or not math.isclose(
+            candidate_mean,
+            float(np.mean(candidate_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            registered_mean,
+            float(np.mean(registered_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            compute_mean,
+            float(np.mean(compute_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or int(cast(Any, report.get("candidate_wins_over_compute_matched", -1)))
+        != candidate_wins
+        or int(cast(Any, report.get("compute_matched_wins_over_registered", -1)))
+        != compute_wins
+        or not math.isclose(
+            float(
+                cast(
+                    Any,
+                    report.get("maximum_candidate_to_compute_matched_ratio", math.nan),
+                )
+            ),
+            max(candidate_ratios),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            float(
+                cast(
+                    Any,
+                    report.get("maximum_compute_matched_to_registered_ratio", math.nan),
+                )
+            ),
+            max(compute_ratios),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+    ):
+        raise ValueError("DEFORM compute-matched report aggregate differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-compute-matched-report-verification-v1",
+        "case_count": expected_case_count,
+        "case_names": names,
+        "candidate_wins_over_compute_matched": candidate_wins,
+        "compute_matched_wins_over_registered": compute_wins,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_evaluator_compute_matched_artifacts_v1(
+    result: Mapping[str, object],
+    *,
+    expected_mode: str,
+) -> dict[str, object]:
+    """Rehash the evaluator's sealed compute-matched prediction arm."""
+
+    if expected_mode not in ("dry-run", "official"):
+        raise ValueError("unsupported DEFORM evaluator mode")
+    if expected_mode == "dry-run":
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-evaluator-dry-run-v1"
+            and result.get("primary_eval_read") is False
+            and result.get("target_authorized") is False
+            and result.get("retry_authorized") is False
+            and result.get("held_v8_access") is False
+        )
+    else:
+        custody_valid = (
+            result.get("contract") == "deform-dlo3-robustness-official-result-v1"
+            and result.get("official_eval_read") is True
+            and result.get("retry_authorized") is False
+            and result.get("case_replacement") is False
+            and result.get("held_v8_access") is False
+        )
+    if not custody_valid:
+        raise ValueError("DEFORM evaluator compute-matched custody differs")
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="evaluator prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("evaluator prediction seal must be a JSON object")
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-evaluator-prediction-seal-v1"
+        or seal.get("mode") != expected_mode
+        or seal.get("outcomes_scored") is not False
+        or seal.get("target_retries") is not False
+    ):
+        raise ValueError("DEFORM evaluator compute-matched seal differs")
+    sealed_control = _mapping(
+        seal.get("compute_matched_control"), label="sealed compute-matched control"
+    )
+    result_control = _mapping(
+        result.get("compute_matched_control"), label="compute-matched control"
+    )
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="evaluator predictions"
+    )
+    expected_case_count = 8 if expected_mode == "dry-run" else 14
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        names = tuple(str(value) for value in np.asarray(archive["names"]))
+        required = ("candidate", "baseline")
+        if any(key not in archive.files for key in required):
+            raise ValueError("DEFORM evaluator compute-matched archive differs")
+        candidate = _finite_array(
+            np.asarray(archive["candidate"]), ndim=4, label="sealed candidate"
+        )
+        baseline = _finite_array(
+            np.asarray(archive["baseline"]), ndim=4, label="sealed baseline"
+        )
+        compute_present = "compute_matched_physical" in archive.files
+        compute_values = (
+            _finite_array(
+                np.asarray(archive["compute_matched_physical"]),
+                ndim=4,
+                label="sealed compute-matched physical",
+            )
+            if compute_present
+            else None
+        )
+    if (
+        len(names) != expected_case_count
+        or len(set(names)) != expected_case_count
+        or candidate.shape != baseline.shape
+        or candidate.shape[0] != expected_case_count
+    ):
+        raise ValueError("DEFORM evaluator compute-matched archive differs")
+
+    status = str(result_control.get("status", ""))
+    if status == "scored":
+        if (
+            sealed_control.get("status") != "sealed"
+            or sealed_control.get("selection_effect") != "none"
+            or sealed_control.get("retry_authorized") is not False
+            or result_control.get("selection_effect") != "none"
+            or result_control.get("retry_authorized") is not False
+            or any(
+                result_control.get(field) != sealed_control.get(field)
+                for field in (
+                    "checkpoint",
+                    "compute_match",
+                    "compute_match_verification",
+                )
+            )
+            or compute_values is None
+            or compute_values.shape != candidate.shape
+        ):
+            raise ValueError("DEFORM evaluator compute-matched scored arm differs")
+        report = validate_deform_compute_matched_report_v1(
+            result_control.get("report"), expected_case_count=expected_case_count
+        )
+        if tuple(cast(Sequence[str], report["case_names"])) != names:
+            raise ValueError("DEFORM compute-matched report identity order differs")
+    elif status == "technical-failure":
+        if (
+            expected_mode != "official"
+            or dict(result_control) != dict(sealed_control)
+            or result_control.get("stage") != "compute-matched-rollout"
+            or result_control.get("selection_effect") != "none"
+            or result_control.get("retry_authorized") is not False
+            or compute_present
+        ):
+            raise ValueError("DEFORM evaluator compute-matched failure differs")
+        report = None
+    else:
+        raise ValueError("DEFORM evaluator compute-matched status differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-evaluator-compute-matched-artifact-verification-v1",
+        "mode": expected_mode,
+        "status": status,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "report": report,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def _validate_deform_casewise_gate_record_v1(
+    value: object,
+    protocol: Mapping[str, object],
+    *,
+    kind: str,
+) -> dict[str, object]:
+    gate = _mapping(value, label=f"{kind} source gate")
+    if kind == "primary":
+        expected_contract = "deform-dlo3-robustness-source-gate-v1"
+        baseline_mean_key = "baseline_mean_l1_m"
+        baseline_case_key = "baseline_l1_m"
+        ratio_case_key = "candidate_to_baseline_ratio"
+        thresholds = _mapping(protocol.get("source_gate"), label="source gate")
+        minimum_improvement = float(
+            cast(Any, thresholds["minimum_relative_improvement"])
+        )
+        minimum_wins = int(cast(Any, thresholds["minimum_case_wins"]))
+        maximum_ratio_threshold = float(cast(Any, thresholds["maximum_case_ratio"]))
+    elif kind == "backend":
+        expected_contract = "deform-dlo3-pyelastica-source-gate-v1"
+        baseline_mean_key = "backend_mean_l1_m"
+        baseline_case_key = "backend_l1_m"
+        ratio_case_key = "candidate_to_backend_ratio"
+        thresholds = _mapping(
+            protocol.get("backend_portability"), label="backend portability"
+        )
+        minimum_improvement = float(
+            cast(Any, thresholds["minimum_relative_improvement_over_backend"])
+        )
+        minimum_wins = int(cast(Any, thresholds["minimum_source_test_wins"]))
+        maximum_ratio_threshold = float(
+            cast(Any, thresholds["maximum_source_test_ratio"])
+        )
+    else:
+        raise ValueError("unsupported DEFORM source gate kind")
+
+    cases_value = gate.get("cases")
+    if not isinstance(cases_value, Sequence) or isinstance(cases_value, (str, bytes)):
+        raise ValueError("DEFORM source gate cases differ")
+    cases = tuple(_mapping(case, label="source gate case") for case in cases_value)
+    candidate_mean = float(cast(Any, gate.get("candidate_mean_l1_m", math.nan)))
+    baseline_mean = float(cast(Any, gate.get(baseline_mean_key, math.nan)))
+    relative_improvement = float(cast(Any, gate.get("relative_improvement", math.nan)))
+    maximum_ratio = float(cast(Any, gate.get("maximum_case_ratio", math.nan)))
+    if (
+        gate.get("contract") != expected_contract
+        or int(cast(Any, gate.get("case_count", -1))) != 8
+        or len(cases) != 8
+        or not math.isfinite(candidate_mean)
+        or candidate_mean < 0.0
+        or not math.isfinite(baseline_mean)
+        or baseline_mean <= 0.0
+        or not math.isfinite(relative_improvement)
+        or not math.isclose(
+            relative_improvement,
+            1.0 - candidate_mean / baseline_mean,
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+    ):
+        raise ValueError("DEFORM source gate summary differs")
+
+    names: list[str] = []
+    candidate_values: list[float] = []
+    baseline_values: list[float] = []
+    ratios: list[float] = []
+    wins = 0
+    for case in cases:
+        name = str(case.get("name", ""))
+        candidate_error = float(cast(Any, case.get("candidate_l1_m", math.nan)))
+        baseline_error = float(cast(Any, case.get(baseline_case_key, math.nan)))
+        ratio = float(cast(Any, case.get(ratio_case_key, math.nan)))
+        candidate_wins = candidate_error < baseline_error
+        if (
+            not name
+            or not math.isfinite(candidate_error)
+            or candidate_error < 0.0
+            or not math.isfinite(baseline_error)
+            or baseline_error <= 0.0
+            or not math.isfinite(ratio)
+            or not math.isclose(
+                ratio,
+                candidate_error / baseline_error,
+                rel_tol=1e-12,
+                abs_tol=1e-15,
+            )
+            or case.get("candidate_wins") is not candidate_wins
+        ):
+            raise ValueError("DEFORM source gate case differs")
+        names.append(name)
+        candidate_values.append(candidate_error)
+        baseline_values.append(baseline_error)
+        ratios.append(ratio)
+        wins += int(candidate_wins)
+    if len(set(names)) != 8:
+        raise ValueError("DEFORM source gate case identities differ")
+    improvement_passed = relative_improvement >= minimum_improvement
+    wins_passed = wins >= minimum_wins
+    ratio_passed = max(ratios) <= maximum_ratio_threshold
+    passed = improvement_passed and wins_passed and ratio_passed
+    if kind == "primary":
+        reference_passed = candidate_mean < float(
+            cast(Any, thresholds["maximum_candidate_l1_m"])
+        )
+        passed = passed and reference_passed
+        if gate.get("published_reference_passed") is not reference_passed:
+            raise ValueError("DEFORM source gate reference decision differs")
+    if (
+        not math.isclose(
+            candidate_mean,
+            float(np.mean(candidate_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or not math.isclose(
+            baseline_mean,
+            float(np.mean(baseline_values)),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        or int(cast(Any, gate.get("wins", -1))) != wins
+        or not math.isclose(maximum_ratio, max(ratios), rel_tol=1e-12, abs_tol=1e-15)
+        or gate.get("improvement_passed") is not improvement_passed
+        or gate.get("wins_passed") is not wins_passed
+        or gate.get("maximum_case_ratio_passed") is not ratio_passed
+        or gate.get("passed") is not passed
+    ):
+        raise ValueError("DEFORM source gate decision differs")
+    return {
+        "contract": expected_contract,
+        "case_count": 8,
+        "passed": passed,
+        "wins": wins,
+        "maximum_case_ratio": maximum_ratio,
+    }
+
+
+def verify_deform_dlo3_seed_diagnostic_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash the frozen mechanism and compute-matched source controls."""
+
+    if (
+        result.get("contract") != "deform-dlo3-robustness-seed-result-v1"
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("target_authorized") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("prob4d_used") is not False
+        or result.get("held_v8_access") is not False
+    ):
+        raise ValueError("DEFORM seed diagnostic artifact custody differs")
+    training = _mapping(protocol.get("physical_training"), label="physical training")
+    residual = _mapping(protocol.get("local_residual"), label="local residual")
+    compute_contract = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
+    expected_arms = _strings(
+        _mapping(protocol.get("mechanism_ablation"), label="mechanism ablation").get(
+            "arms"
+        ),
+        label="mechanism arms",
+    )
+    seed = int(cast(Any, result.get("seed", -1)))
+    if seed not in _integers(training.get("audit_seeds"), label="audit seeds"):
+        raise ValueError("DEFORM seed diagnostic identity differs")
+
+    result_protocol = _mapping(result.get("protocol"), label="seed protocol")
+    result_manifest = _mapping(result.get("source_manifest"), label="seed manifest")
+    method_identity = _mapping(result.get("method_seal"), label="seed method seal")
+    method_path = _verified_deform_artifact_path(
+        method_identity, label="seed diagnostic method seal"
+    )
+    method = json.loads(method_path.read_text(encoding="utf-8"))
+    if not isinstance(method, Mapping):
+        raise ValueError("seed diagnostic method seal must be a JSON object")
+    if (
+        method.get("contract") != "deform-dlo3-robustness-source-method-seal-v1"
+        or int(cast(Any, method.get("seed", -1))) != seed
+        or _mapping(method.get("protocol"), label="method protocol").get("sha256")
+        != result_protocol.get("sha256")
+        or _mapping(method.get("source_manifest"), label="method manifest").get(
+            "sha256"
+        )
+        != result_manifest.get("sha256")
+        or float(cast(Any, method.get("ridge", math.nan)))
+        != float(cast(Any, residual["ridge"]))
+        or float(cast(Any, method.get("shrinkage", math.nan)))
+        != float(cast(Any, residual["shrinkage"]))
+        or method.get("source_test_opened") is not False
+        or method.get("official_eval_read") is not False
+        or method.get("target_selection") is not False
+    ):
+        raise ValueError("DEFORM seed diagnostic method seal differs")
+
+    physical_identity = dict(
+        _mapping(method.get("physical_checkpoint"), label="physical checkpoint")
+    )
+    compute_identity = dict(
+        _mapping(
+            method.get("compute_matched_checkpoint"),
+            label="compute-matched checkpoint",
+        )
+    )
+    _verified_deform_artifact_path(physical_identity, label="physical checkpoint")
+    _verified_deform_artifact_path(compute_identity, label="compute-matched checkpoint")
+    for field, label in (
+        ("local_residual_model", "local residual model"),
+        ("full_covariance_model", "full covariance model"),
+    ):
+        _verified_deform_artifact_path(method.get(field), label=label)
+    calibration_path = _verified_deform_artifact_path(
+        method.get("covariance_calibration"), label="covariance calibration"
+    )
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    source_calibration = _mapping(
+        _mapping(result.get("bayesian_audit"), label="Bayesian audit").get(
+            "calibration"
+        ),
+        label="source calibration",
+    )
+    if calibration != source_calibration:
+        raise ValueError("DEFORM seed diagnostic calibration differs")
+
+    expected_models = {
+        "persistence-plus-full-local": ("full-local", "initial-action-local"),
+        "physical-plus-intercept-only": (
+            "intercept-only",
+            "initial-action-local",
+        ),
+        "physical-plus-full-no-action": (
+            "full-no-action",
+            "initial-action-local",
+        ),
+        "physical-plus-full-global-frame": (
+            "full-global",
+            "action-centered-global",
+        ),
+    }
+    model_identities = _mapping(
+        method.get("mechanism_models"), label="mechanism models"
+    )
+    if set(str(label) for label in model_identities) != set(expected_models):
+        raise ValueError("DEFORM seed diagnostic mechanism model set differs")
+    verified_models: dict[str, str] = {}
+    for label, (arm, coordinate_frame) in expected_models.items():
+        path = _verified_deform_artifact_path(
+            model_identities.get(label), label=f"mechanism model {label}"
+        )
+        with np.load(path, allow_pickle=False) as archive:
+            required = {
+                "arm",
+                "coordinate_frame",
+                "node_count",
+                "prediction_horizon",
+                "feature_indices",
+                "feature_location",
+                "feature_scale",
+                "coefficients",
+                "ridge",
+            }
+            if set(archive.files) != required:
+                raise ValueError("DEFORM seed diagnostic mechanism model differs")
+            feature_indices = tuple(
+                int(value) for value in np.asarray(archive["feature_indices"])
+            )
+            location = np.asarray(archive["feature_location"], dtype=np.float64)
+            scale = np.asarray(archive["feature_scale"], dtype=np.float64)
+            coefficients = _finite_array(
+                np.asarray(archive["coefficients"]),
+                ndim=3,
+                label="mechanism coefficients",
+            )
+            if (
+                tuple(str(value) for value in np.asarray(archive["arm"])) != (arm,)
+                or tuple(
+                    str(value) for value in np.asarray(archive["coordinate_frame"])
+                )
+                != (coordinate_frame,)
+                or tuple(int(value) for value in np.asarray(archive["node_count"]))
+                != (12,)
+                or tuple(
+                    int(value) for value in np.asarray(archive["prediction_horizon"])
+                )
+                != (498,)
+                or feature_indices != deform_local_feature_indices(arm)
+                or location.ndim != 2
+                or scale.ndim != 2
+                or not np.isfinite(location).all()
+                or not np.isfinite(scale).all()
+                or location.shape != (8, len(feature_indices))
+                or scale.shape != location.shape
+                or coefficients.shape != (8, len(feature_indices) + 1, 3)
+                or np.any(scale <= 0.0)
+                or tuple(float(value) for value in np.asarray(archive["ridge"]))
+                != (float(cast(Any, residual["ridge"])),)
+            ):
+                raise ValueError("DEFORM seed diagnostic mechanism model differs")
+        verified_models[label] = sha256_file(path)
+
+    compute = _mapping(result.get("compute_match"), label="compute match")
+    local_seconds = float(
+        cast(Any, compute.get("local_residual_wall_seconds", math.nan))
+    )
+    update_seconds = float(cast(Any, compute.get("median_update_seconds_6301_6400")))
+    additional_updates = int(cast(Any, compute.get("additional_updates", -1)))
+    expected_additional = (
+        int(math.ceil(local_seconds / update_seconds))
+        if math.isfinite(local_seconds)
+        and local_seconds > 0.0
+        and math.isfinite(update_seconds)
+        and update_seconds > 0.0
+        else -1
+    )
+    start_update = int(cast(Any, compute.get("start_update", -1)))
+    end_update = int(cast(Any, compute.get("end_update", -1)))
+    source_mean = float(cast(Any, compute.get("source_mean_l1_m", math.nan)))
+    compute_checkpoint = dict(
+        _mapping(compute.get("checkpoint"), label="compute result checkpoint")
+    )
+    if (
+        compute.get("contract") != "deform-dlo3-compute-match-v1"
+        or int(cast(Any, compute.get("seed", -1))) != seed
+        or not math.isfinite(source_mean)
+        or source_mean < 0.0
+        or additional_updates != expected_additional
+        or additional_updates
+        < int(cast(Any, compute_contract["minimum_additional_updates"]))
+        or additional_updates
+        > int(cast(Any, compute_contract["maximum_additional_updates"]))
+        or start_update != int(cast(Any, compute_contract["start_update"]))
+        or end_update != start_update + additional_updates
+        or compute.get("source_test_opened") is not False
+        or compute.get("official_eval_read") is not False
+        or compute_checkpoint != compute_identity
+        or int(cast(Any, compute_checkpoint.get("update", -1))) != end_update
+        or dict(_mapping(result.get("physical_checkpoint"), label="result checkpoint"))
+        != physical_identity
+        or int(cast(Any, physical_identity.get("update", -1))) != start_update
+    ):
+        raise ValueError("DEFORM seed compute-matched control differs")
+
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="seed diagnostic prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("seed diagnostic prediction seal must be a JSON object")
+    if (
+        seal.get("contract") != "deform-dlo3-robustness-source-prediction-seal-v1"
+        or int(cast(Any, seal.get("seed", -1))) != seed
+        or _mapping(seal.get("method_seal"), label="sealed method").get("sha256")
+        != method_identity.get("sha256")
+        or int(cast(Any, seal.get("source_test_case_count", -1))) != 8
+        or seal.get("source_outcomes_scored") is not False
+        or seal.get("official_eval_read") is not False
+    ):
+        raise ValueError("DEFORM seed diagnostic prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="seed diagnostic predictions"
+    )
+    required_predictions = {
+        "names",
+        "physical",
+        "compute_matched_physical",
+        "candidate",
+    } | {f"mechanism_{label}" for label in expected_arms}
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        if not required_predictions.issubset(archive.files):
+            raise ValueError("DEFORM seed diagnostic predictions are incomplete")
+        names = tuple(str(value) for value in np.asarray(archive["names"]))
+        predictions = {
+            key: _finite_array(
+                np.asarray(archive[key]), ndim=4, label=f"diagnostic prediction {key}"
+            )
+            for key in required_predictions
+            if key != "names"
+        }
+    expected_shape = (8, 498, 12, 3)
+    if (
+        len(names) != 8
+        or len(set(names)) != 8
+        or any(values.shape != expected_shape for values in predictions.values())
+        or not np.array_equal(
+            predictions["mechanism_physical-only"], predictions["physical"]
+        )
+        or not np.array_equal(
+            predictions["mechanism_physical-plus-full-local-fixed"],
+            predictions["candidate"],
+        )
+    ):
+        raise ValueError("DEFORM seed diagnostic prediction archive differs")
+
+    mechanism_results = _mapping(
+        result.get("mechanism_ablation"), label="mechanism results"
+    )
+    if set(str(label) for label in mechanism_results) != set(expected_arms):
+        raise ValueError("DEFORM seed diagnostic mechanism result set differs")
+    verified_gates: dict[str, dict[str, object]] = {}
+    for label in expected_arms:
+        raw_gate = _mapping(mechanism_results.get(label), label=f"mechanism {label}")
+        cases = cast(Sequence[Mapping[str, object]], raw_gate.get("cases"))
+        if tuple(str(case.get("name", "")) for case in cases) != names:
+            raise ValueError("DEFORM seed diagnostic mechanism case order differs")
+        verified_gates[label] = _validate_deform_casewise_gate_record_v1(
+            raw_gate, protocol, kind="primary"
+        )
+    physical_gate = _mapping(
+        mechanism_results.get("physical-only"), label="physical-only mechanism"
+    )
+    if float(cast(Any, physical_gate.get("candidate_mean_l1_m", math.nan))) != float(
+        cast(Any, physical_gate.get("baseline_mean_l1_m", math.nan))
+    ) or any(
+        float(cast(Any, case.get("candidate_to_baseline_ratio", math.nan))) != 1.0
+        for case in cast(Sequence[Mapping[str, object]], physical_gate.get("cases"))
+    ):
+        raise ValueError("DEFORM physical-only mechanism control differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-seed-diagnostic-artifact-verification-v1",
+        "seed": seed,
+        "mechanism_arm_count": len(expected_arms),
+        "mechanism_models": verified_models,
+        "mechanism_gates": verified_gates,
+        "compute_matched_additional_updates": additional_updates,
+        "compute_matched_source_mean_l1_m": source_mean,
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_stability_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Recompute the frozen three-seed gate from every rehashed source bundle."""
+
+    identities_value = result.get("seed_results")
+    if not isinstance(identities_value, Sequence) or isinstance(
+        identities_value, (str, bytes)
+    ):
+        raise ValueError("DEFORM stability seed identities differ")
+    identities = tuple(
+        _mapping(value, label="stability seed identity") for value in identities_value
+    )
+    if len(identities) != 3:
+        raise ValueError("DEFORM stability seed identities differ")
+    paths = tuple(
+        _verified_deform_artifact_path(value, label="stability seed result")
+        for value in identities
+    )
+    seed_results: list[Mapping[str, object]] = []
+    for path in paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, Mapping):
+            raise ValueError("stability seed result must be a JSON object")
+        seed_results.append(payload)
+    gate = evaluate_deform_dlo3_stability_gate(seed_results, protocol)
+    if any(result.get(key) != value for key, value in gate.items()):
+        raise ValueError("DEFORM stability gate replay differs")
+    bayesian = [
+        verify_deform_dlo3_seed_bayesian_artifacts_v1(seed_result)
+        for seed_result in seed_results
+    ]
+    diagnostics = [
+        verify_deform_dlo3_seed_diagnostic_artifacts_v1(seed_result, protocol)
+        for seed_result in seed_results
+    ]
+    if (
+        result.get("bayesian_artifacts_verified") is not True
+        or result.get("bayesian_artifact_verifications") != bayesian
+        or result.get("diagnostic_artifacts_verified") is not True
+        or result.get("diagnostic_artifact_verifications") != diagnostics
+        or int(cast(Any, result.get("diagnostic_seed_count", -1))) != 3
+        or _mapping(result.get("protocol"), label="stability protocol").get("sha256")
+        != gate["protocol_sha256"]
+    ):
+        raise ValueError("DEFORM stability artifact verification differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-stability-artifact-verification-v1",
+        "seed_count": 3,
+        "seed_result_sha256s": [sha256_file(path) for path in paths],
+        "seed_result_sha256_by_seed": {
+            str(int(cast(Any, seed_result["seed"]))): sha256_file(path)
+            for seed_result, path in zip(seed_results, paths, strict=True)
+        },
+        "bayesian_artifacts_verified": True,
+        "diagnostic_artifacts_verified": True,
+        "gate_passed": gate["passed"],
+        "verified": True,
+    }
+
+
+def validate_deform_dlo3_sensitivity_result_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Require every frozen solver/material sensitivity arm and no selection."""
+
+    sensitivity = _mapping(
+        protocol.get("physics_solver_sensitivity"), label="sensitivity"
+    )
+    expected = tuple(
+        f"pbd-{int(value)}"
+        for value in cast(Sequence[Any], sensitivity["pbd_iteration_values"])
+    ) + tuple(
+        f"stiffness-{float(value):.1f}"
+        for value in cast(Sequence[Any], sensitivity["joint_bend_twist_multipliers"])
+    )
+    variants = _mapping(result.get("variants"), label="sensitivity variants")
+    if (
+        result.get("contract") != "deform-dlo3-physics-solver-sensitivity-result-v1"
+        or len(variants) != len(expected)
+        or set(str(name) for name in variants) != set(expected)
+        or result.get("selection_effect") != "none"
+        or result.get("nominal_replay_exact") is not True
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("target_authorized") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("prob4d_used") is not False
+        or result.get("held_v8_access") is not False
+    ):
+        raise ValueError("DEFORM sensitivity result differs")
+    records = {
+        name: _validate_deform_casewise_gate_record_v1(
+            variants.get(name), protocol, kind="primary"
+        )
+        for name in expected
+    }
+    if variants.get("pbd-10") != variants.get("stiffness-1.0"):
+        raise ValueError("DEFORM nominal sensitivity records differ")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-sensitivity-result-verification-v1",
+        "variant_count": len(expected),
+        "variants": records,
+        "selection_effect": "none",
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_sensitivity_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash the complete frozen solver/material sensitivity matrix."""
+
+    verification = validate_deform_dlo3_sensitivity_result_v1(result, protocol)
+    sensitivity = _mapping(
+        protocol.get("physics_solver_sensitivity"), label="sensitivity"
+    )
+    labels = tuple(
+        f"pbd-{int(value)}"
+        for value in cast(Sequence[Any], sensitivity["pbd_iteration_values"])
+    ) + tuple(
+        f"stiffness-{float(value):.1f}"
+        for value in cast(Sequence[Any], sensitivity["joint_bend_twist_multipliers"])
+    )
+    parent_path = _verified_deform_artifact_path(
+        result.get("seed_result"), label="sensitivity parent seed result"
+    )
+    parent = json.loads(parent_path.read_text(encoding="utf-8"))
+    if not isinstance(parent, Mapping):
+        raise ValueError("sensitivity parent result must be a JSON object")
+    parent_protocol = _mapping(parent.get("protocol"), label="parent protocol")
+    parent_manifest = _mapping(parent.get("source_manifest"), label="parent manifest")
+    if (
+        parent.get("contract") != "deform-dlo3-robustness-seed-result-v1"
+        or _mapping(result.get("protocol"), label="sensitivity protocol").get("sha256")
+        != parent_protocol.get("sha256")
+        or _mapping(result.get("source_manifest"), label="sensitivity manifest").get(
+            "sha256"
+        )
+        != parent_manifest.get("sha256")
+    ):
+        raise ValueError("DEFORM sensitivity parent lineage differs")
+    parent_seal_path = _verified_deform_artifact_path(
+        parent.get("prediction_seal"), label="parent prediction seal"
+    )
+    parent_seal = json.loads(parent_seal_path.read_text(encoding="utf-8"))
+    if not isinstance(parent_seal, Mapping):
+        raise ValueError("parent prediction seal must be a JSON object")
+    parent_predictions_path = _verified_deform_artifact_path(
+        parent_seal.get("predictions"), label="parent source predictions"
+    )
+    with np.load(parent_predictions_path, allow_pickle=False) as archive:
+        parent_names = tuple(str(value) for value in np.asarray(archive["names"]))
+        parent_candidate = _finite_array(
+            np.asarray(archive["candidate"]),
+            ndim=4,
+            label="parent source candidate",
+        )
+
+    seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="sensitivity prediction seal"
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    if not isinstance(seal, Mapping):
+        raise ValueError("sensitivity prediction seal must be a JSON object")
+    if (
+        seal.get("contract") != "deform-dlo3-sensitivity-prediction-seal-v1"
+        or int(cast(Any, seal.get("variant_count", -1))) != len(labels)
+        or seal.get("source_outcomes_scored") is not False
+        or seal.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM sensitivity prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        seal.get("predictions"), label="sensitivity predictions"
+    )
+    required = {"names"} | {
+        f"{prefix}_{label}" for prefix in ("physical", "candidate") for label in labels
+    }
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        if set(archive.files) != required:
+            raise ValueError("DEFORM sensitivity prediction matrix differs")
+        names = tuple(str(value) for value in np.asarray(archive["names"]))
+        arrays = {
+            key: _finite_array(
+                np.asarray(archive[key]), ndim=4, label=f"sensitivity {key}"
+            )
+            for key in required
+            if key != "names"
+        }
+    expected_shape = (8, 498, 12, 3)
+    if (
+        names != parent_names
+        or len(set(names)) != 8
+        or any(values.shape != expected_shape for values in arrays.values())
+        or not np.array_equal(arrays["candidate_pbd-10"], parent_candidate)
+        or not np.array_equal(
+            arrays["candidate_pbd-10"], arrays["candidate_stiffness-1.0"]
+        )
+        or not np.array_equal(
+            arrays["physical_pbd-10"], arrays["physical_stiffness-1.0"]
+        )
+    ):
+        raise ValueError("DEFORM sensitivity nominal replay artifact differs")
+    variants = _mapping(result.get("variants"), label="sensitivity variants")
+    nominal = _mapping(variants.get("pbd-10"), label="nominal sensitivity gate")
+    nominal_baseline = float(cast(Any, nominal.get("baseline_mean_l1_m", math.nan)))
+    nominal_cases = tuple(
+        float(cast(Any, case.get("baseline_l1_m", math.nan)))
+        for case in cast(Sequence[Mapping[str, object]], nominal.get("cases"))
+    )
+    for label in labels:
+        gate = _mapping(variants.get(label), label=f"sensitivity gate {label}")
+        cases = cast(Sequence[Mapping[str, object]], gate.get("cases"))
+        if (
+            tuple(str(case.get("name", "")) for case in cases) != names
+            or float(cast(Any, gate.get("baseline_mean_l1_m", math.nan)))
+            != nominal_baseline
+            or tuple(
+                float(cast(Any, case.get("baseline_l1_m", math.nan))) for case in cases
+            )
+            != nominal_cases
+        ):
+            raise ValueError("DEFORM sensitivity score lineage differs")
+    return {
+        **verification,
+        "contract": "deform-dlo3-sensitivity-artifact-verification-v1",
+        "parent_seed_result_sha256": sha256_file(parent_path),
+        "prediction_seal_sha256": sha256_file(seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "artifact_matrix_verified": True,
+    }
+
+
+def validate_deform_dlo3_backend_result_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate the fixed PyElastica source gate and fallback decision."""
+
+    if (
+        result.get("contract") != "deform-dlo3-pyelastica-source-result-v1"
+        or result.get("selection_effect") != "none-after-fit"
+        or result.get("source_test_opened") is not True
+        or result.get("primary_eval_enumerated") is not False
+        or result.get("primary_eval_read") is not False
+        or result.get("retry_authorized") is not False
+        or result.get("prob4d_used") is not False
+        or result.get("held_v8_access") is not False
+        or result.get("primary_target_authorized") is not False
+    ):
+        raise ValueError("DEFORM backend result differs")
+    gate = _validate_deform_casewise_gate_record_v1(
+        result.get("source_gate"), protocol, kind="backend"
+    )
+    if result.get("backend_target_arm_authorized") is not gate["passed"]:
+        raise ValueError("DEFORM backend target authorization differs")
+    audit = _mapping(result.get("bayesian_audit"), label="backend Bayesian audit")
+    raw = _mapping(audit.get("uncalibrated"), label="backend raw distribution")
+    calibrated = _mapping(
+        audit.get("calibrated"), label="backend calibrated distribution"
+    )
+    if (
+        raw.get("contract") != "deform-dlo-predictive-distribution-metrics-v1"
+        or calibrated.get("contract") != "deform-dlo-predictive-distribution-metrics-v1"
+        or raw.get("mean_coordinate_l1_m") != calibrated.get("mean_coordinate_l1_m")
+        or audit.get("point_mean_unchanged_by_calibration") is not True
+    ):
+        raise ValueError("DEFORM backend Bayesian audit differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-backend-result-verification-v1",
+        "source_gate": gate,
+        "backend_target_arm_authorized": gate["passed"],
+        "selection_effect": "none-after-fit",
+        "verified": True,
+    }
+
+
+def verify_deform_dlo3_backend_artifacts_v1(
+    result: Mapping[str, object],
+    protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Rehash the fixed PyElastica method needed by an authorized target arm."""
+
+    verification = validate_deform_dlo3_backend_result_v1(result, protocol)
+    protocol_identity = _mapping(result.get("protocol"), label="backend protocol")
+    method_identity = _mapping(result.get("method_seal"), label="backend method seal")
+    method_path = _verified_deform_artifact_path(
+        method_identity, label="backend method seal"
+    )
+    method = json.loads(method_path.read_text(encoding="utf-8"))
+    if not isinstance(method, Mapping):
+        raise ValueError("backend method seal must be a JSON object")
+    method_protocol = _mapping(method.get("protocol"), label="backend method protocol")
+    if (
+        method.get("contract") != "deform-dlo3-pyelastica-source-method-seal-v1"
+        or method_protocol.get("sha256") != protocol_identity.get("sha256")
+        or method.get("source_test_opened") is not False
+        or method.get("primary_eval_read") is not False
+        or method.get("selection_effect_after_fit") != "none"
+        or float(cast(Any, method.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, method.get("shrinkage", math.nan))) != 0.25
+    ):
+        raise ValueError("DEFORM backend method seal differs")
+    selected_parameters = dict(
+        _mapping(method.get("selected_parameters"), label="backend parameters")
+    )
+    bank = tuple(
+        member.to_record() for member in deform_pyelastica_parameter_bank(protocol)
+    )
+    if selected_parameters not in bank:
+        raise ValueError(
+            "DEFORM backend selected parameters differ from the frozen bank"
+        )
+
+    model_path = _verified_deform_artifact_path(
+        method.get("full_covariance_model"), label="backend full covariance model"
+    )
+    with np.load(model_path, allow_pickle=False) as archive:
+        base_model = deserialize_deform_local_residual_model(archive)
+        if not {
+            "coefficient_covariance_full",
+            "residual_covariance_full",
+        }.issubset(archive.files):
+            raise ValueError("DEFORM backend full covariance model is incomplete")
+        coefficient = _finite_array(
+            np.asarray(archive["coefficient_covariance_full"]),
+            ndim=5,
+            label="backend full coefficient covariance",
+        )
+        residual = _finite_array(
+            np.asarray(archive["residual_covariance_full"]),
+            ndim=3,
+            label="backend full residual covariance",
+        )
+    internal_count = int(cast(Any, base_model["node_count"])) - 4
+    dimension = int(cast(Any, base_model["feature_count"])) + 1
+    if (
+        int(cast(Any, base_model["node_count"])) != 12
+        or int(cast(Any, base_model["prediction_horizon"])) != 498
+        or int(cast(Any, base_model["feature_count"])) != DEFORM_LOCAL_FEATURE_COUNT
+        or coefficient.shape != (internal_count, 3, 3, dimension, dimension)
+        or residual.shape != (internal_count, 3, 3)
+        or not np.allclose(
+            coefficient,
+            coefficient.transpose(0, 2, 1, 4, 3),
+            rtol=0.0,
+            atol=1e-12,
+        )
+        or not np.allclose(residual, residual.swapaxes(1, 2), rtol=0.0, atol=1e-12)
+        or np.min(np.linalg.eigvalsh(residual)) < -1e-12
+    ):
+        raise ValueError("DEFORM backend full covariance model differs")
+
+    calibration_path = _verified_deform_artifact_path(
+        method.get("covariance_calibration"), label="backend covariance calibration"
+    )
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    if not isinstance(calibration, Mapping):
+        raise ValueError("backend covariance calibration must be a JSON object")
+    scores = tuple(
+        float(value)
+        for value in cast(Sequence[Any], calibration.get("trajectory_scores", ()))
+    )
+    radius = float(cast(Any, calibration.get("standardized_radius", math.nan)))
+    variance_scale = float(cast(Any, calibration.get("variance_scale", math.nan)))
+    if (
+        calibration.get("contract") != "deform-dlo-full-covariance-calibration-v1"
+        or len(scores) != 9
+        or any(not math.isfinite(value) or value < 0.0 for value in scores)
+        or int(cast(Any, calibration.get("rank", -1))) != 9
+        or calibration.get("order_statistic") != "maximum-of-nine"
+        or float(cast(Any, calibration.get("nominal_coordinate_coverage", math.nan)))
+        != 0.9
+        or not math.isfinite(radius)
+        or radius != max(scores)
+        or not math.isfinite(variance_scale)
+        or variance_scale < 1.0
+        or calibration.get("confidence_increase_forbidden") is not True
+        or calibration.get("source_test_opened") is not False
+        or calibration.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM backend covariance calibration differs")
+
+    prediction_seal_path = _verified_deform_artifact_path(
+        result.get("prediction_seal"), label="backend prediction seal"
+    )
+    prediction_seal = json.loads(prediction_seal_path.read_text(encoding="utf-8"))
+    if not isinstance(prediction_seal, Mapping):
+        raise ValueError("backend prediction seal must be a JSON object")
+    sealed_method = _mapping(
+        prediction_seal.get("method_seal"), label="backend sealed method"
+    )
+    if (
+        prediction_seal.get("contract")
+        != "deform-dlo3-pyelastica-source-prediction-seal-v1"
+        or sealed_method.get("sha256") != method_identity.get("sha256")
+        or prediction_seal.get("source_outcomes_scored") is not False
+        or prediction_seal.get("primary_eval_read") is not False
+    ):
+        raise ValueError("DEFORM backend prediction seal differs")
+    predictions_path = _verified_deform_artifact_path(
+        prediction_seal.get("predictions"), label="backend source predictions"
+    )
+    with np.load(predictions_path, allow_pickle=False) as archive:
+        required = {
+            "names",
+            "backend",
+            "candidate",
+            "coordinate_covariance_m2",
+            "calibrated_coordinate_covariance_m2",
+        }
+        if not required.issubset(archive.files):
+            raise ValueError("DEFORM backend source predictions are incomplete")
+        names = np.asarray(archive["names"])
+        backend = _finite_array(
+            np.asarray(archive["backend"]), ndim=4, label="backend source baseline"
+        )
+        candidate = _finite_array(
+            np.asarray(archive["candidate"]), ndim=4, label="backend source candidate"
+        )
+        raw_covariance = _finite_array(
+            np.asarray(archive["coordinate_covariance_m2"]),
+            ndim=5,
+            label="backend source covariance",
+        )
+        calibrated_covariance = _finite_array(
+            np.asarray(archive["calibrated_coordinate_covariance_m2"]),
+            ndim=5,
+            label="backend source calibrated covariance",
+        )
+    if (
+        names.shape != (8,)
+        or backend.shape != (8, 498, 12, 3)
+        or candidate.shape != backend.shape
+        or raw_covariance.shape != (*backend.shape, 3)
+        or calibrated_covariance.shape != raw_covariance.shape
+        or not np.array_equal(candidate[:, :, :2], backend[:, :, :2])
+        or not np.array_equal(candidate[:, :, -2:], backend[:, :, -2:])
+        or not np.allclose(
+            calibrated_covariance,
+            raw_covariance * variance_scale,
+            rtol=1e-12,
+            atol=0.0,
+        )
+    ):
+        raise ValueError("DEFORM backend source prediction archive differs")
+    return {
+        "schema_version": 1,
+        "contract": "deform-dlo3-backend-artifact-verification-v1",
+        "backend_target_arm_authorized": verification["backend_target_arm_authorized"],
+        "selected_parameters": selected_parameters,
+        "full_covariance_model": dict(
+            _mapping(method.get("full_covariance_model"), label="backend model")
+        ),
+        "covariance_calibration": dict(
+            _mapping(method.get("covariance_calibration"), label="backend calibration")
+        ),
+        "variance_scale": variance_scale,
+        "prediction_seal_sha256": sha256_file(prediction_seal_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "verified": True,
     }
 
 

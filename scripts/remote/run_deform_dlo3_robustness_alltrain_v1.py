@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -22,9 +23,19 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     serialize_deform_local_residual_model,
 )
 from bayesian_phystwin_experiments.deform_dlo_robustness import (
+    DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     augment_deform_local_residual_full_covariance,
     load_deform_dlo_robustness_v1_protocol,
+    validate_deform_bayesian_audit_v1,
+    validate_deform_dlo3_alltrain_compute_match_v1,
+    validate_deform_dlo3_backend_result_v1,
+    validate_deform_dlo3_sensitivity_result_v1,
     validate_deform_dlo3_source_manifest,
+    verify_deform_dlo3_backend_artifacts_v1,
+    verify_deform_dlo3_seed_bayesian_artifacts_v1,
+    verify_deform_dlo3_seed_diagnostic_artifacts_v1,
+    verify_deform_dlo3_sensitivity_artifacts_v1,
+    verify_deform_dlo3_stability_artifacts_v1,
 )
 from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
@@ -91,6 +102,7 @@ def _assert_authorization(
     backend_path: Path,
     deviation_path: Path,
 ) -> tuple[dict[str, object], dict[str, object]]:
+    protocol = load_deform_dlo_robustness_v1_protocol(protocol_path)
     protocol_digest = sha256_file(protocol_path)
     manifest_digest = sha256_file(manifest_path)
     primary = _read_json(primary_path)
@@ -115,6 +127,14 @@ def _assert_authorization(
         or primary.get("target_authorized") is not False
     ):
         raise ValueError("DLO3 primary source authorization differs")
+    primary_bayesian_audit = validate_deform_bayesian_audit_v1(
+        primary, context="source"
+    )
+    primary_bayesian_artifacts = verify_deform_dlo3_seed_bayesian_artifacts_v1(primary)
+    primary_diagnostic_artifacts = verify_deform_dlo3_seed_diagnostic_artifacts_v1(
+        primary, protocol
+    )
+    stability_artifacts = verify_deform_dlo3_stability_artifacts_v1(stability, protocol)
     if (
         stability.get("contract") != "deform-dlo3-training-stability-gate-v1"
         or stability.get("protocol_sha256") != protocol_digest
@@ -123,6 +143,13 @@ def _assert_authorization(
         or stability.get("alltrain_fit_authorized") is not True
         or stability.get("target_authorized") is not False
         or stability.get("primary_eval_read") is not False
+        or stability.get("bayesian_audit_complete") is not True
+        or stability.get("bayesian_artifacts_verified") is not True
+        or stability.get("diagnostic_artifacts_verified") is not True
+        or int(cast(Any, stability.get("diagnostic_seed_count", -1))) != 3
+        or int(cast(Any, stability.get("bayesian_distribution_count", -1)))
+        != len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS)
+        or stability.get("bayesian_distribution_selection") != "none"
     ):
         raise ValueError("DLO3 stability authorization differs")
     for payload, contract, label in (
@@ -143,6 +170,24 @@ def _assert_authorization(
             or payload.get("held_v8_access") is not False
         ):
             raise ValueError(f"DLO3 {label} audit differs")
+    sensitivity_verification = validate_deform_dlo3_sensitivity_result_v1(
+        sensitivity, protocol
+    )
+    sensitivity_artifacts = verify_deform_dlo3_sensitivity_artifacts_v1(
+        sensitivity, protocol
+    )
+    primary_digest = sha256_file(primary_path)
+    if (
+        _mapping(
+            stability_artifacts.get("seed_result_sha256_by_seed"),
+            label="stability seed digests",
+        ).get("42")
+        != primary_digest
+        or sensitivity_artifacts.get("parent_seed_result_sha256") != primary_digest
+    ):
+        raise ValueError("DLO3 primary diagnostic lineage differs")
+    backend_verification = validate_deform_dlo3_backend_result_v1(backend, protocol)
+    backend_artifacts = verify_deform_dlo3_backend_artifacts_v1(backend, protocol)
     emitted = _mapping(deviation.get("emitted_information"), label="deviation emission")
     if (
         deviation.get("contract") != "deform-dlo3-count-only-custody-deviation-v1"
@@ -161,6 +206,14 @@ def _assert_authorization(
         "sensitivity_result": _identity(sensitivity_path),
         "backend_result": _identity(backend_path),
         "custody_deviation": _identity(deviation_path),
+        "primary_bayesian_audit": primary_bayesian_audit,
+        "primary_bayesian_artifacts": primary_bayesian_artifacts,
+        "primary_diagnostic_artifacts": primary_diagnostic_artifacts,
+        "stability_artifacts": stability_artifacts,
+        "sensitivity_verification": sensitivity_verification,
+        "sensitivity_artifacts": sensitivity_artifacts,
+        "backend_verification": backend_verification,
+        "backend_artifacts": backend_artifacts,
     }
 
 
@@ -169,6 +222,9 @@ def main() -> int:
     protocol_path = args.protocol.resolve()
     manifest_path = args.source_manifest.resolve()
     protocol = load_deform_dlo_robustness_v1_protocol(protocol_path)
+    compute_contract = _mapping(
+        protocol.get("compute_matched_control"), label="compute-matched control"
+    )
     primary, authorization = _assert_authorization(
         protocol_path=protocol_path,
         manifest_path=manifest_path,
@@ -211,6 +267,17 @@ def main() -> int:
         "shrinkage": 0.25,
         "covariance": "trajectory-clustered-full-coordinate-covariance-v1",
         "variance_scale": "reuse-seed42-source-calibration-without-refit",
+        "compute_matched_control": (
+            "frozen-wall-time-equivalent-DEFORM-continuation-v1"
+        ),
+        "bayesian_ablation_distributions": list(
+            DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        ),
+        "source_bayesian_audit_complete": True,
+        "source_diagnostics_verified": True,
+        "primary_diagnostic_artifacts": authorization["primary_diagnostic_artifacts"],
+        "sensitivity_artifacts": authorization["sensitivity_artifacts"],
+        "backend_target_arm": authorization["backend_artifacts"],
         "target_selection": False,
         "target_calibration": False,
         "target_retries": False,
@@ -275,10 +342,12 @@ def main() -> int:
         device=args.device,
     )
     registered_updates = int(cast(Any, training["total_updates"]))
+    maximum_extra = int(cast(Any, compute_contract["maximum_additional_updates"]))
+    schedule_updates = registered_updates + maximum_extra
     updates = 1 if args.mode == "smoke" else registered_updates
     trajectory_indices, start_indices = source_runtime._make_schedule(
         fit_names=all_names,
-        updates=registered_updates,
+        updates=schedule_updates,
         batch_size=int(cast(Any, training["batch_size"])),
         frame_count=500,
         horizon=int(cast(Any, training["unroll_horizon_frames"])),
@@ -383,6 +452,7 @@ def main() -> int:
     state = torch.load(final_checkpoint_path, map_location="cpu", weights_only=True)[
         "model_state_dict"
     ]
+    local_started = time.perf_counter()
     rollout = posterior_runtime._evaluate_state(
         state,
         trajectories,
@@ -407,6 +477,61 @@ def main() -> int:
     np.savez_compressed(
         local_model_path, **serialize_deform_local_residual_model(local_model)
     )
+    local_wall_seconds = time.perf_counter() - local_started
+    recent = np.asarray(
+        [float(cast(Any, record["seconds"])) for record in losses[-100:]],
+        dtype=np.float64,
+    )
+    median_update_seconds = float(np.median(recent))
+    if not math.isfinite(median_update_seconds) or median_update_seconds <= 0.0:
+        raise RuntimeError("all-train compute-matched update duration is invalid")
+    additional_updates = int(math.ceil(local_wall_seconds / median_update_seconds))
+    minimum_extra = int(cast(Any, compute_contract["minimum_additional_updates"]))
+    if not minimum_extra <= additional_updates <= maximum_extra:
+        raise RuntimeError("all-train compute-matched update count is outside bounds")
+    compute_match = {
+        "schema_version": 1,
+        "contract": "deform-dlo3-alltrain-compute-match-v1",
+        "seed": seed,
+        "local_residual_wall_seconds": local_wall_seconds,
+        "median_update_seconds_6301_6400": median_update_seconds,
+        "additional_updates": additional_updates,
+        "start_update": registered_updates,
+        "end_update": registered_updates + additional_updates,
+        "selection_effect": "none",
+        "target_selection": False,
+        "target_calibration": False,
+        "target_retries": False,
+        "primary_eval_read": False,
+    }
+    compute_match_verification = validate_deform_dlo3_alltrain_compute_match_v1(
+        compute_match, protocol
+    )
+    compute_match_path = output_root / "compute_match.json"
+    _write_json(compute_match_path, compute_match)
+    for offset in range(additional_updates):
+        schedule_index = registered_updates + offset
+        batch = source_runtime._assemble_batch(
+            trajectories,
+            orientations,
+            all_names,
+            trajectory_indices[schedule_index],
+            start_indices[schedule_index],
+            horizon=int(cast(Any, training["unroll_horizon_frames"])),
+            torch=torch,
+            device=args.device,
+        )
+        source_runtime._train_update(
+            modules=modules,
+            model_function=model_function,
+            model=model,
+            optimizer=optimizer,
+            batch=batch,
+            torch=torch,
+            device=args.device,
+        )
+    torch.cuda.synchronize(args.device)
+    compute_checkpoint_path = save_checkpoint(registered_updates + additional_updates)
     full_model = augment_deform_local_residual_full_covariance(
         local_model,
         initial,
@@ -450,12 +575,27 @@ def main() -> int:
         "method_spec": _identity(method_spec_path),
         "window_schedule": _identity(schedule_path),
         "physical_checkpoint": _identity(final_checkpoint_path, update=6400),
+        "compute_matched_checkpoint": _identity(
+            compute_checkpoint_path,
+            update=registered_updates + additional_updates,
+        ),
+        "compute_match": _identity(compute_match_path),
+        "compute_match_verification": compute_match_verification,
         "local_residual_model": _identity(local_model_path),
         "full_covariance_model": _identity(full_model_path),
         "covariance_calibration": _identity(calibration_path),
         "ridge": float(cast(Any, residual["ridge"])),
         "shrinkage": float(cast(Any, residual["shrinkage"])),
         "variance_scale": float(cast(Any, source_calibration["variance_scale"])),
+        "bayesian_ablation_distributions": list(
+            DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS
+        ),
+        "source_bayesian_audit_complete": True,
+        "source_diagnostics_verified": True,
+        "primary_diagnostic_artifacts": authorization["primary_diagnostic_artifacts"],
+        "sensitivity_artifacts": authorization["sensitivity_artifacts"],
+        "backend_target_arm": authorization["backend_artifacts"],
+        "distribution_selection": "none",
         "runtime": {
             "python": sys.version,
             "torch": torch.__version__,
@@ -477,10 +617,14 @@ def main() -> int:
         "claim_boundary": "All 56 DLO3 train trajectories only; official evaluation unopened.",
         "authorization": authorization,
         "final_method": _identity(final_method_path),
+        "compute_match": _identity(compute_match_path),
+        "compute_match_verification": compute_match_verification,
         "checkpoints": checkpoints,
         "training_losses": losses,
         "runtime": final_method["runtime"],
         "elapsed_seconds": time.perf_counter() - started,
+        "bayesian_audit_complete": True,
+        "bayesian_distribution_count": len(DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS),
         "primary_eval_enumerated_by_this_runner": False,
         "primary_eval_read": False,
         "target_authorized": False,

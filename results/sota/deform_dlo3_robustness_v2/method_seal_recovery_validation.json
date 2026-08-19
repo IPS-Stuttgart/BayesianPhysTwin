@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-method-seal-recovery-validation-receipt-v1",
+  "claim_boundary": "Target-blind artifact validation only; no DLO3 source-test payload was deserialized, opened, or scored.",
+  "implementation": {
+    "source_revision": "2bf68e85c4a97bd098f18b399f28906bf1bfc151",
+    "source_archive_sha256": "4e5d5674932d94a8530807f7c4d4f16a470ff2f61ef20b80f5293c0c9455e713"
+  },
+  "recovery_lock_sha256": "6013b5f5af7ecaa7af320cd8efd371b66894db27c7a458d739996cb1255bb5ab",
+  "seeds": {
+    "42": {
+      "validation_sha256": "30c0a5d05d80f4f3a8495475e55e46f5c12b61bc2eca103af568fc374d717f43",
+      "validation_size_bytes": 2080,
+      "parent_method_seal_sha256": "96b2733e9365eeed0136afd5998594757503dcd5d90c19fa99bfd347432c5814",
+      "parent_compute_match_sha256": "fde6e9e3efe389da915f206f3af8730fa8fa6242296549064914a68e315d0ef5",
+      "failure_log_sha256": "857b155f3a6a0b3f55da6503872e179869d78a0a396dd02f336d7ff8aabf80d4",
+      "verified": true
+    },
+    "43": {
+      "validation_sha256": "148fcd51e0544c639d5c63d4cc29883942476dc361816adb517763208388de9f",
+      "validation_size_bytes": 2080,
+      "parent_method_seal_sha256": "2bca7dfddd280f7d1534e6f60f70e6ee44723df560bd929ce7b7304b936a3f74",
+      "parent_compute_match_sha256": "64cf726a5c9998d0ab7a2fdae00feb0bd718c0b205fe6b9423915cbb42dfe0c9",
+      "failure_log_sha256": "e3f9360ce4319c36c1cebc8a5d375d41c2ac3d02825ca29a969a1924b34eaf81",
+      "verified": true
+    }
+  },
+  "source_completion_authorized": false,
+  "source_payload_deserialized": false,
+  "source_test_opened": false,
+  "source_test_scored": false,
+  "official_eval_read": false,
+  "dlo4_dlo5_reserve_access": false,
+  "held_v8_access": false,
+  "seed_44_authorized": false
+}

@@ -307,10 +307,6 @@ def main() -> int:
         ridge=float(cast(Any, residual["ridge"])),
         variance_floor_m2=float(cast(Any, residual["coordinate_variance_floor_m2"])),
     )
-    local_model_path = output_root / "local_residual_model.npz"
-    np.savez_compressed(
-        local_model_path, **serialize_deform_local_residual_model(local_model)
-    )
     full_model = augment_deform_local_residual_full_covariance(
         local_model,
         fit_initial,
@@ -319,6 +315,15 @@ def main() -> int:
         fit_targets,
         fit_names,
     )
+    full_model_path = output_root / "full_covariance_model.npz"
+    full_payload = serialize_deform_local_residual_model(full_model)
+    full_payload["coefficient_covariance_full"] = np.asarray(
+        full_model["coefficient_covariance_full"]
+    )
+    full_payload["residual_covariance_full"] = np.asarray(
+        full_model["residual_covariance_full"]
+    )
+    np.savez_compressed(full_model_path, **full_payload)
     calibration_baseline = _simulate_panel(
         calibration_panel,
         calibration_names,
@@ -359,7 +364,7 @@ def main() -> int:
         "protocol": _identity(protocol_path),
         "source_manifest": _identity(manifest_path),
         "fit_selection": _identity(selection_path),
-        "local_residual_model": _identity(local_model_path),
+        "full_covariance_model": _identity(full_model_path),
         "covariance_calibration": _identity(calibration_path),
         "selected_parameters": selected.to_record(),
         "ridge": float(cast(Any, residual["ridge"])),
