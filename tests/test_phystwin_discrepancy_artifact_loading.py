@@ -37,12 +37,8 @@ def _fixture(tmp_path: Path) -> tuple[Path, str, Path, str, Path, str]:
         final_data,
         {
             "object_points": observed,
-            "object_visibilities": np.ones(
-                (frame_count, track_count), dtype=bool
-            ),
-            "object_motions_valid": np.ones(
-                (frame_count, track_count), dtype=bool
-            ),
+            "object_visibilities": np.ones((frame_count, track_count), dtype=bool),
+            "object_motions_valid": np.ones((frame_count, track_count), dtype=bool),
         },
     )
     profile = tmp_path / "parameter_profile.npz"
@@ -238,9 +234,7 @@ def test_masks_accept_exact_numeric_zero_one(tmp_path: Path) -> None:
 
 
 def test_reference_path_and_digest_are_conjunctive(tmp_path: Path) -> None:
-    final_data, final_digest, profile, profile_digest, reference, _ = _fixture(
-        tmp_path
-    )
+    final_data, final_digest, profile, profile_digest, reference, _ = _fixture(tmp_path)
 
     with pytest.raises(ValueError, match="must be supplied together"):
         calibrate_phystwin_profile_discrepancy(

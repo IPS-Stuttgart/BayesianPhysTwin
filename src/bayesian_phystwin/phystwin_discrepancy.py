@@ -54,13 +54,9 @@ def _strict_boolean_array(value: object, *, name: str) -> np.ndarray:
     if raw.dtype.kind == "b":
         return np.array(raw, dtype=np.bool_, copy=True, order="C")
     if raw.dtype.kind not in "iuf":
-        raise ValueError(
-            f"{name} must contain booleans or exact numeric 0/1 values"
-        )
+        raise ValueError(f"{name} must contain booleans or exact numeric 0/1 values")
     if not np.all(np.isfinite(raw)) or np.any((raw != 0) & (raw != 1)):
-        raise ValueError(
-            f"{name} must contain booleans or exact numeric 0/1 values"
-        )
+        raise ValueError(f"{name} must contain booleans or exact numeric 0/1 values")
     return np.array(raw, dtype=np.bool_, copy=True, order="C")
 
 
@@ -170,12 +166,15 @@ def _calibrate_candidate(
         config,
     )
     candidates: list[dict[str, object]] = []
-    selected: tuple[
-        float,
-        float,
-        np.ndarray,
-        dict[str, dict[str, float | int]],
-    ] | None = None
+    selected: (
+        tuple[
+            float,
+            float,
+            np.ndarray,
+            dict[str, dict[str, float | int]],
+        ]
+        | None
+    ) = None
     for decay in config.decay_candidates:
         discrepancy = causal_model_discrepancy_variance(
             observed,
@@ -193,9 +192,7 @@ def _calibrate_candidate(
             discrepancy,
             config,
         )
-        validation_nees = float(
-            calibration["validation"]["mean_nees_per_coordinate"]
-        )
+        validation_nees = float(calibration["validation"]["mean_nees_per_coordinate"])
         score = abs(float(np.log(validation_nees)))
         candidates.append(
             {
@@ -260,9 +257,7 @@ def calibrate_phystwin_profile_discrepancy(
         raise ValueError("at least one decay candidate is required")
     if any(not 0.0 <= value < 1.0 for value in config.decay_candidates):
         raise ValueError("decay candidates must be in [0, 1)")
-    if (reference_trajectory_path is None) != (
-        reference_trajectory_sha256 is None
-    ):
+    if (reference_trajectory_path is None) != (reference_trajectory_sha256 is None):
         raise ValueError(
             "reference trajectory path and SHA-256 must be supplied together"
         )
