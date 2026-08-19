@@ -1,5 +1,7 @@
 import json
 import math
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +35,7 @@ from bayesian_phystwin_experiments.deform_dlo_robustness import (
     evaluate_deform_dlo3_target_gate,
     evaluate_deform_predictive_distribution,
     fit_deform_local_residual_variant,
+    load_deform_dlo3_method_seal_recovery_v1,
     load_deform_dlo_robustness_v1_protocol,
     predict_deform_local_residual_full_covariance,
     predict_deform_local_residual_variant,
@@ -55,7 +58,11 @@ from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs" / "sota" / "deform_dlo_robustness_v1.json"
+RECOVERY_LOCK = ROOT / "configs" / "sota" / "deform_dlo3_method_seal_recovery_v1.json"
 SEED_RUNNER = ROOT / "scripts" / "remote" / "run_deform_dlo3_robustness_seed_v1.py"
+RECOVERY_RUNNER = (
+    ROOT / "scripts" / "remote" / "run_deform_dlo3_method_seal_recovery_v1.py"
+)
 STABILITY_RUNNER = (
     ROOT / "scripts" / "remote" / "evaluate_deform_dlo3_stability_gate_v1.py"
 )
@@ -1762,3 +1769,125 @@ def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
     assert 'source_runtime._install_eval_read_guard(data_root / "DLO4")' in source
     assert 'source_runtime._install_eval_read_guard(data_root / "DLO5")' in source
     assert '"target_authorized": False' in source
+
+
+def test_method_seal_recovery_lock_is_pending_and_exact() -> None:
+    recovery = load_deform_dlo3_method_seal_recovery_v1(RECOVERY_LOCK)
+
+    decision = recovery["decision"]
+    assert isinstance(decision, dict)
+    assert decision["status"] == "pending"
+    assert decision["source_completion_authorized"] is False
+    assert decision["permitted_operation"] == "artifact-validation-only"
+    assert decision["implementation_source_revision"] is None
+    assert decision["implementation_archive_sha256"] is None
+    assert decision["seed_44_authorized"] is False
+    policy = recovery["recovery_policy"]
+    assert isinstance(policy, dict)
+    assert policy["eligible_seeds"] == [42, 43]
+    assert policy["retraining"] is False
+    assert policy["refitting"] is False
+    assert policy["checkpoint_continuation"] is False
+    assert policy["maximum_completions_per_seed"] == 1
+
+
+def test_method_seal_recovery_lock_rejects_incoherent_authorization(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(RECOVERY_LOCK.read_text(encoding="utf-8"))
+    payload["decision"]["source_completion_authorized"] = True
+    path = tmp_path / "incoherent.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="recovery decision"):
+        load_deform_dlo3_method_seal_recovery_v1(path)
+
+    payload["decision"]["status"] = "authorized"
+    payload["decision"]["permitted_operation"] = (
+        "complete-source-from-exact-method-seal"
+    )
+    payload["decision"]["implementation_source_revision"] = "1" * 40
+    payload["decision"]["implementation_archive_sha256"] = "2" * 64
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    authorized = load_deform_dlo3_method_seal_recovery_v1(path)
+    assert authorized["decision"]["source_completion_authorized"] is True
+
+
+def test_method_seal_recovery_runner_cannot_train_or_open_source_early() -> None:
+    source = RECOVERY_RUNNER.read_text(encoding="utf-8")
+
+    authorization = source.index(
+        'decision.get("source_completion_authorized") is not True'
+    )
+    output_creation = source.index("output_root.mkdir(parents=True, exist_ok=True)")
+    file_verification = source.index("verify_files=True")
+    recovery_method_seal = source.index(
+        'recovery_method_seal_path = output_root / "recovery_method_seal.json"'
+    )
+    source_open = source.index("source_test_trajectories =")
+    prediction_seal = source.index(
+        'prediction_seal_path = output_root / "prediction_seal.json"'
+    )
+    scoring = source.index("primary_gate = evaluate_deform_dlo3_source_gate")
+    assert (
+        authorization
+        < output_creation
+        < file_verification
+        < recovery_method_seal
+        < source_open
+        < prediction_seal
+        < scoring
+    )
+    assert "_train_update" not in source
+    assert "fit_deform_local_residual" not in source
+    assert "fit_deform_local_residual_variant" not in source
+    assert '"retraining": False' in source
+    assert '"refitting": False' in source
+    assert '"checkpoint_continuation": False' in source
+    assert (
+        'source_runtime._install_eval_read_guard(data_root / "DLO3" / "eval")' in source
+    )
+    assert 'source_runtime._install_eval_read_guard(data_root / "DLO4")' in source
+    assert 'source_runtime._install_eval_read_guard(data_root / "DLO5")' in source
+    assert '"retry_authorized": False' in source
+    assert '"held_v8_access": False' in source
+
+
+def test_pending_method_seal_recovery_complete_mode_writes_nothing(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "seed-42-method-seal-completion-v1"
+    missing = tmp_path / "intentionally-missing"
+    completed = subprocess.run(
+        (
+            sys.executable,
+            str(RECOVERY_RUNNER),
+            "--mode",
+            "complete",
+            "--recovery-lock",
+            str(RECOVERY_LOCK),
+            "--failure-receipt",
+            str(missing),
+            "--calibration-smoke",
+            str(missing),
+            "--protocol",
+            str(missing),
+            "--source-manifest",
+            str(missing),
+            "--failed-root",
+            str(missing),
+            "--failure-log",
+            str(missing),
+            "--output-root",
+            str(output_root),
+            "--seed",
+            "42",
+        ),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "source completion is not authorized" in completed.stderr
+    assert not output_root.exists()

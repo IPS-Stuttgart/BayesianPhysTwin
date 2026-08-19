@@ -27,6 +27,9 @@ from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 
 DEFORM_DLO_ROBUSTNESS_CONTRACT = "deform-dlo-robustness-v1"
 DEFORM_DLO_ROBUSTNESS_DOMAIN = b"deform-dlo3-robustness-v1\0"
+DEFORM_DLO3_METHOD_SEAL_RECOVERY_CONTRACT = (
+    "deform-dlo3-robustness-method-seal-recovery-v1"
+)
 DEFORM_LOCAL_FEATURE_COUNT = 92
 DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS = (
     "current-diagonal-conservative-v1",
@@ -79,6 +82,164 @@ def _strings(value: object, *, label: str) -> tuple[str, ...]:
     if not result or any(not item for item in result):
         raise ValueError(f"{label} must not be empty")
     return result
+
+
+def load_deform_dlo3_method_seal_recovery_v1(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the exact, source-independent DLO3 method-seal recovery decision."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if (
+        payload.get("schema_version") != 1
+        or payload.get("contract") != DEFORM_DLO3_METHOD_SEAL_RECOVERY_CONTRACT
+    ):
+        raise ValueError("unsupported DEFORM DLO3 method-seal recovery contract")
+
+    parent = _mapping(payload.get("failed_execution"), label="failed execution")
+    failure = _mapping(parent.get("failure_receipt"), label="failure receipt")
+    smoke = _mapping(
+        parent.get("calibration_mechanism_preflight"),
+        label="calibration mechanism preflight",
+    )
+    if (
+        parent.get("source_revision") != "bd5cfb14845acb1c5396554caea30b542f975ec9"
+        or parent.get("source_archive_sha256")
+        != "108a38c5330dca23a6dee66b6ee4436cdcce47bd9b5a821cbd800c41d98df54d"
+        or parent.get("protocol_sha256")
+        != "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c"
+        or parent.get("source_manifest_sha256")
+        != "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb"
+        or failure.get("repository_path")
+        != "results/sota/deform_dlo3_robustness_v2/preseal_runtime_failure.json"
+        or failure.get("sha256")
+        != "121152a8de974e3aa401989ff13f3676e91826a4f419c38fb12d716a56a0f369"
+        or smoke.get("repository_path")
+        != "results/sota/deform_dlo3_robustness_v2/calibration_mechanism_preflight_smoke.json"
+        or smoke.get("sha256")
+        != "e412ee526f23d9eceb15a10d41dde456b4e0a8f29e873707967a2ae6514af00d"
+        or smoke.get("source_revision") != "1c019fda8c2c2bc38558f200e885c741b0f68afb"
+        or smoke.get("source_archive_sha256")
+        != "8bd7a469fcbd4450195ea46fed320b659c5ddefaaa3ba452553cb9446a317928"
+    ):
+        raise ValueError("DEFORM DLO3 recovery parent lineage differs")
+
+    expected_seeds = {
+        "42": {
+            "method_seal_sha256": (
+                "96b2733e9365eeed0136afd5998594757503dcd5d90c19fa99bfd347432c5814"
+            ),
+            "compute_match_sha256": (
+                "fde6e9e3efe389da915f206f3af8730fa8fa6242296549064914a68e315d0ef5"
+            ),
+            "failure_log_sha256": (
+                "857b155f3a6a0b3f55da6503872e179869d78a0a396dd02f336d7ff8aabf80d4"
+            ),
+        },
+        "43": {
+            "method_seal_sha256": (
+                "2bca7dfddd280f7d1534e6f60f70e6ee44723df560bd929ce7b7304b936a3f74"
+            ),
+            "compute_match_sha256": (
+                "64cf726a5c9998d0ab7a2fdae00feb0bd718c0b205fe6b9423915cbb42dfe0c9"
+            ),
+            "failure_log_sha256": (
+                "e3f9360ce4319c36c1cebc8a5d375d41c2ac3d02825ca29a969a1924b34eaf81"
+            ),
+        },
+    }
+    seed_records = _mapping(payload.get("seed_artifacts"), label="seed artifacts")
+    if set(str(seed) for seed in seed_records) != set(expected_seeds):
+        raise ValueError("DEFORM DLO3 recovery seed set differs")
+    for seed, expected in expected_seeds.items():
+        record = _mapping(seed_records.get(seed), label=f"seed {seed} artifacts")
+        if (
+            any(record.get(key) != value for key, value in expected.items())
+            or int(cast(Any, record.get("completed_updates", -1))) != 6400
+            or record.get("method_seal_exists") is not True
+            or record.get("prediction_seal_exists") is not False
+            or record.get("source_predictions_exist") is not False
+            or record.get("source_result_exists") is not False
+        ):
+            raise ValueError(f"DEFORM DLO3 recovery seed {seed} lineage differs")
+
+    policy = _mapping(payload.get("recovery_policy"), label="recovery policy")
+    output_names = _mapping(
+        policy.get("completion_output_names"), label="recovery output names"
+    )
+    if (
+        _integers(policy.get("eligible_seeds"), label="eligible recovery seeds")
+        != (42, 43)
+        or policy.get("reuse_exact_method_seals") is not True
+        or policy.get("retraining") is not False
+        or policy.get("refitting") is not False
+        or policy.get("checkpoint_continuation") is not False
+        or policy.get("seed_selection") is not False
+        or policy.get("source_reselection") is not False
+        or policy.get("source_case_replacement") is not False
+        or int(cast(Any, policy.get("maximum_completions_per_seed", -1))) != 1
+        or policy.get("output_root_policy") != "new-empty-root-per-seed"
+        or dict(output_names)
+        != {
+            "42": "seed-42-method-seal-completion-v1",
+            "43": "seed-43-method-seal-completion-v1",
+        }
+    ):
+        raise ValueError("DEFORM DLO3 recovery policy differs")
+
+    decision = _mapping(payload.get("decision"), label="recovery decision")
+    authorized = decision.get("source_completion_authorized")
+    if not isinstance(authorized, bool):
+        raise ValueError("DEFORM DLO3 recovery authorization must be boolean")
+    expected_status = "authorized" if authorized else "pending"
+    expected_operation = (
+        "complete-source-from-exact-method-seal"
+        if authorized
+        else "artifact-validation-only"
+    )
+    implementation_revision = decision.get("implementation_source_revision")
+    implementation_archive = decision.get("implementation_archive_sha256")
+    valid_revision = (
+        isinstance(implementation_revision, str)
+        and len(implementation_revision) == 40
+        and set(implementation_revision) <= set("0123456789abcdef")
+    )
+    valid_archive = (
+        isinstance(implementation_archive, str)
+        and len(implementation_archive) == 64
+        and set(implementation_archive) <= set("0123456789abcdef")
+    )
+    if (
+        decision.get("status") != expected_status
+        or decision.get("permitted_operation") != expected_operation
+        or decision.get("seed_44_authorized") is not False
+        or not isinstance(decision.get("reason"), str)
+        or not str(decision.get("reason", "")).strip()
+        or (authorized and (not valid_revision or not valid_archive))
+        or (
+            not authorized
+            and (
+                implementation_revision is not None
+                or implementation_archive is not None
+            )
+        )
+    ):
+        raise ValueError("DEFORM DLO3 recovery decision differs")
+
+    custody = _mapping(payload.get("custody"), label="recovery custody")
+    if (
+        custody.get("source_test_outcomes_used_for_method_change") is not False
+        or custody.get("official_eval_read") is not False
+        or custody.get("dlo4_dlo5_reserve_access") is not False
+        or custody.get("held_v8_access") is not False
+        or custody.get("target_selection") is not False
+        or custody.get("target_calibration") is not False
+        or custody.get("target_retry") is not False
+        or custody.get("prob4d_used") is not False
+    ):
+        raise ValueError("DEFORM DLO3 recovery custody differs")
+    return payload
 
 
 def load_deform_dlo_robustness_v1_protocol(path: str | Path) -> dict[str, object]:

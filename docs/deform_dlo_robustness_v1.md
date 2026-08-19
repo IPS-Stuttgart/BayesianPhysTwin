@@ -108,4 +108,17 @@ method seals or any replacement execution requires a separately versioned,
 explicit authorization; it is not an automatic retry. DLO4 and DLO5 remain
 unopened reserves and cannot replace DLO3.
 
+The pending recovery record is
+`configs/sota/deform_dlo3_method_seal_recovery_v1.json`. It binds the two
+method seals, compute-match records, failure logs, source manifest, failure
+receipt, and calibration-only preflight by SHA-256. Its only permitted action
+is artifact validation: `source_completion_authorized` is false. The separate
+recovery runner cannot train, refit, continue a checkpoint, select a seed, or
+substitute a source case. A future completion would require changing the
+decision coherently in a new source revision, would use one fixed empty output
+root per seed, would bind and verify the exact authorized implementation
+revision and source archive before any write, and would seal the recovered
+predictions before scoring. No such completion has been authorized or
+executed.
+
 Protocol: `configs/sota/deform_dlo_robustness_v1.json`.
