@@ -14,7 +14,9 @@ from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
 from bayesian_phystwin.jax_fem_source_qualification_v1 import file_sha256
 from bayesian_phystwin.jax_fem_source_value_v1 import (
     GRID_FILENAME,
+    PRE_PREFIX_FILENAME,
     PREFIX_FILENAME,
+    finalize_jax_fem_source_value_pre_prefix_v1,
     generate_jax_fem_source_value_predictions_v1,
     load_jax_fem_source_value_protocol_v1,
     marginal_energy_score_v1,
@@ -563,6 +565,40 @@ def test_failed_source_gate_falls_back_without_future_file(tmp_path: Path) -> No
     )
     assert future["status"] == "future-not-opened-validation-gate-failed"
     assert future["future_outcomes_read"] is False
+
+
+def test_pre_prefix_physical_failure_falls_back_without_outcomes(
+    tmp_path: Path,
+) -> None:
+    paths = _synthetic_gate(tmp_path, truth_slope_m=0.001)
+    protocol = load_jax_fem_source_value_protocol_v1(paths["protocol"])
+    for group in protocol.groups:
+        (paths["group_roots"][group.group_id] / group.prefix_outcomes_relative_path).unlink()
+        (paths["group_roots"][group.group_id] / group.future_outcomes_relative_path).unlink()
+    grid_path = paths["grid_root"] / GRID_FILENAME
+    grid = json.loads(grid_path.read_text(encoding="utf-8"))
+    grid["groups"][1]["members"][2]["minimum_deformation_determinant"] = -1.0
+    identity = dict(grid)
+    identity.pop("grid_id")
+    grid["grid_id"] = content_id(identity)
+    grid_path.write_text(json.dumps(grid, sort_keys=True), encoding="utf-8")
+
+    output = tmp_path / "pre-prefix"
+    result = finalize_jax_fem_source_value_pre_prefix_v1(
+        protocol_path=paths["protocol"],
+        group_roots=paths["group_roots"],
+        grid_dir=paths["grid_root"],
+        output_dir=output,
+    )
+
+    assert result["physical_gate_passed"] is False
+    assert result["prefix_scoring_authorized"] is False
+    assert result["information_boundary"]["prefix_outcomes_read"] is False
+    assert (output / PRE_PREFIX_FILENAME).is_file()
+    for group in protocol.groups:
+        selected = output / group.group_id / "selected-physical-prediction.npz"
+        incumbent = paths["group_roots"][group.group_id] / group.incumbent_relative_path
+        assert selected.read_bytes() == incumbent.read_bytes()
 
 
 def test_rejects_rehashed_future_authorization_bit(tmp_path: Path) -> None:

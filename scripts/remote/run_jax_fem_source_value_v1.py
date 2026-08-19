@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from bayesian_phystwin.jax_fem_source_value_v1 import (
+    finalize_jax_fem_source_value_pre_prefix_v1,
     generate_jax_fem_source_value_predictions_v1,
     score_jax_fem_source_value_future_v1,
     score_jax_fem_source_value_prefix_v1,
@@ -52,6 +53,13 @@ def main() -> int:
     predict.add_argument("--repo-root", type=Path, required=True)
     prefix = subparsers.choices["score-prefix"]
     prefix.add_argument("--grid-dir", type=Path, required=True)
+    pre_prefix = subparsers.add_parser("finalize-pre-prefix")
+    pre_prefix.add_argument("--protocol", type=Path, required=True)
+    pre_prefix.add_argument(
+        "--group-root", action="append", type=_binding, required=True
+    )
+    pre_prefix.add_argument("--grid-dir", type=Path, required=True)
+    pre_prefix.add_argument("--output-dir", type=Path, required=True)
     future = subparsers.add_parser("score-future")
     future.add_argument("--protocol", type=Path, required=True)
     future.add_argument("--group-root", action="append", type=_binding, required=True)
@@ -79,6 +87,13 @@ def main() -> int:
             protocol_path=args.protocol,
             group_roots=roots,
             matphys_paths=_bindings(args.matphys),
+            grid_dir=args.grid_dir,
+            output_dir=args.output_dir,
+        )
+    elif args.command == "finalize-pre-prefix":
+        result = finalize_jax_fem_source_value_pre_prefix_v1(
+            protocol_path=args.protocol,
+            group_roots=roots,
             grid_dir=args.grid_dir,
             output_dir=args.output_dir,
         )

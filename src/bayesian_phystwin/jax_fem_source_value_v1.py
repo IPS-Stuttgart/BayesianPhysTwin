@@ -38,9 +38,11 @@ PROTOCOL_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-protocol"
 GRID_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-grid"
 PREFIX_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-prefix-result"
 FUTURE_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-future-result"
+PRE_PREFIX_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-pre-prefix-result"
 GRID_FILENAME: Final = "jax-fem-source-value-grid.json"
 PREFIX_FILENAME: Final = "jax-fem-source-value-prefix-result.json"
 FUTURE_FILENAME: Final = "jax-fem-source-value-future-result.json"
+PRE_PREFIX_FILENAME: Final = "jax-fem-source-value-pre-prefix-result.json"
 SELECTED_FILENAME: Final = "selected-physical-prediction.npz"
 
 
@@ -750,7 +752,10 @@ def _metric_block(
 
 
 def _load_grid(
-    path: Path, *, protocol: JaxFemSourceValueProtocolV1
+    path: Path,
+    *,
+    protocol: JaxFemSourceValueProtocolV1,
+    enforce_physical_gate: bool = True,
 ) -> Mapping[str, Any]:
     source = _ordinary_file(path, name="JaxFem source-value grid")
     value = load_strict_json_object(source, label="JaxFem source-value grid")
@@ -879,13 +884,16 @@ def _load_grid(
             record["maximum_contact_projection_error_m"],
             name="maximum contact projection error",
         )
-        _require(
-            contact_error
-            <= float(
-                protocol.gates["maximum_full_horizon_contact_projection_error_m"]
-            ),
-            "full-horizon contact projection gate failed",
-        )
+        if enforce_physical_gate:
+            _require(
+                contact_error
+                <= float(
+                    protocol.gates[
+                        "maximum_full_horizon_contact_projection_error_m"
+                    ]
+                ),
+                "full-horizon contact projection gate failed",
+            )
         members = record["members"]
         _require(
             isinstance(members, list) and len(members) == len(protocol.poisson_ratios),
@@ -916,19 +924,26 @@ def _load_grid(
                 member["maximum_node_displacement_m"],
                 name="maximum node displacement",
             )
-            _require(
-                minimum_determinant
-                >= float(
-                    protocol.gates["minimum_full_horizon_deformation_determinant"]
+            if enforce_physical_gate:
+                _require(
+                    minimum_determinant
+                    >= float(
+                        protocol.gates[
+                            "minimum_full_horizon_deformation_determinant"
+                        ]
+                    )
+                    and maximum_determinant
+                    <= float(
+                        protocol.gates[
+                            "maximum_full_horizon_deformation_determinant"
+                        ]
+                    )
+                    and maximum_displacement
+                    <= float(
+                        protocol.gates["maximum_full_horizon_node_displacement_m"]
+                    ),
+                    "full-horizon physical sanity gate failed",
                 )
-                and maximum_determinant
-                <= float(
-                    protocol.gates["maximum_full_horizon_deformation_determinant"]
-                )
-                and maximum_displacement
-                <= float(protocol.gates["maximum_full_horizon_node_displacement_m"]),
-                "full-horizon physical sanity gate failed",
-            )
             archive_relative = _relative(
                 member["physical_archive"],
                 name="member archive",
@@ -999,6 +1014,143 @@ def _load_grid(
             "final ensemble spread changed",
         )
     return cast(Mapping[str, Any], value)
+
+
+def _grid_physical_checks(
+    grid: Mapping[str, Any], *, protocol: JaxFemSourceValueProtocolV1
+) -> tuple[dict[str, bool], list[dict[str, Any]]]:
+    gates = protocol.gates
+    details: list[dict[str, Any]] = []
+    contact_ok = True
+    displacement_ok = True
+    determinant_ok = True
+    for raw_group in cast(list[Mapping[str, Any]], grid["groups"]):
+        contact_error = float(raw_group["maximum_contact_projection_error_m"])
+        group_contact_ok = contact_error <= float(
+            gates["maximum_full_horizon_contact_projection_error_m"]
+        )
+        members: list[dict[str, Any]] = []
+        for raw_member in cast(list[Mapping[str, Any]], raw_group["members"]):
+            minimum_determinant = float(
+                raw_member["minimum_deformation_determinant"]
+            )
+            maximum_determinant = float(
+                raw_member["maximum_deformation_determinant"]
+            )
+            maximum_displacement = float(raw_member["maximum_node_displacement_m"])
+            member_determinant_ok = minimum_determinant >= float(
+                gates["minimum_full_horizon_deformation_determinant"]
+            ) and maximum_determinant <= float(
+                gates["maximum_full_horizon_deformation_determinant"]
+            )
+            member_displacement_ok = maximum_displacement <= float(
+                gates["maximum_full_horizon_node_displacement_m"]
+            )
+            determinant_ok = determinant_ok and member_determinant_ok
+            displacement_ok = displacement_ok and member_displacement_ok
+            members.append(
+                {
+                    "candidate_index": raw_member["candidate_index"],
+                    "poisson_ratio": raw_member["poisson_ratio"],
+                    "minimum_deformation_determinant": minimum_determinant,
+                    "maximum_deformation_determinant": maximum_determinant,
+                    "maximum_node_displacement_m": maximum_displacement,
+                    "deformation_determinant_gate_passed": member_determinant_ok,
+                    "node_displacement_gate_passed": member_displacement_ok,
+                }
+            )
+        contact_ok = contact_ok and group_contact_ok
+        details.append(
+            {
+                "group_id": raw_group["group_id"],
+                "maximum_contact_projection_error_m": contact_error,
+                "contact_projection_gate_passed": group_contact_ok,
+                "members": members,
+            }
+        )
+    checks = {
+        "full_horizon_contact_projection": contact_ok,
+        "full_horizon_deformation_determinants": determinant_ok,
+        "full_horizon_node_displacement": displacement_ok,
+    }
+    return checks, details
+
+
+def finalize_jax_fem_source_value_pre_prefix_v1(
+    *,
+    protocol_path: str | Path,
+    group_roots: Mapping[str, str | Path],
+    grid_dir: str | Path,
+    output_dir: str | Path,
+) -> dict[str, Any]:
+    """Apply the outcome-blind physical gate before any prefix may be opened."""
+
+    protocol = load_jax_fem_source_value_protocol_v1(protocol_path)
+    expected = {group.group_id for group in protocol.groups}
+    _require(set(group_roots) == expected, "complete source roots are required")
+    grid_root = Path(grid_dir).absolute()
+    grid_path = grid_root / GRID_FILENAME
+    grid = _load_grid(
+        grid_path,
+        protocol=protocol,
+        enforce_physical_gate=False,
+    )
+    checks, details = _grid_physical_checks(grid, protocol=protocol)
+    passed = all(checks.values())
+    output = Path(output_dir).absolute()
+    if output.exists():
+        raise FileExistsError(output)
+    output.mkdir(parents=True)
+    fallback_records: list[dict[str, Any]] = []
+    if not passed:
+        for group in protocol.groups:
+            source = _ordinary_file(
+                Path(group_roots[group.group_id]).absolute()
+                / group.incumbent_relative_path.as_posix(),
+                name="pre-prefix incumbent fallback",
+            )
+            _require(
+                file_sha256(source) == group.incumbent_sha256,
+                "pre-prefix incumbent changed",
+            )
+            target_dir = output / group.group_id
+            target_dir.mkdir()
+            target = target_dir / SELECTED_FILENAME
+            shutil.copyfile(source, target)
+            _require(target.read_bytes() == source.read_bytes(), "fallback changed")
+            fallback_records.append(
+                {
+                    "group_id": group.group_id,
+                    "selection": "exact_incumbent_fallback",
+                    "selected_sha256": file_sha256(target),
+                    "source_sha256": file_sha256(source),
+                    "byte_exact_source": True,
+                }
+            )
+    identity: dict[str, Any] = {
+        "schema": PRE_PREFIX_SCHEMA,
+        "schema_version": 1,
+        "protocol_sha256": protocol.sha256,
+        "grid_sha256": file_sha256(grid_path),
+        "physical_checks": checks,
+        "physical_details": details,
+        "physical_gate_passed": passed,
+        "prefix_scoring_authorized": passed,
+        "selected_predictions": fallback_records,
+        "status": (
+            "prefix-scoring-authorized"
+            if passed
+            else "pre-prefix-physical-gate-failed-exact-fallback"
+        ),
+        "information_boundary": {
+            "prefix_outcomes_read": False,
+            "future_outcomes_read": False,
+            "target_or_held_out_artifact_read": False,
+        },
+    }
+    result = {**identity, "result_id": content_id(identity)}
+    write_atomic_json(result, output / PRE_PREFIX_FILENAME, overwrite=False)
+    return result
 
 
 def _validation_ratios(metrics: Mapping[str, Any]) -> dict[str, float]:
@@ -1768,8 +1920,10 @@ def score_jax_fem_source_value_future_v1(
 __all__ = [
     "FUTURE_FILENAME",
     "GRID_FILENAME",
+    "PRE_PREFIX_FILENAME",
     "PREFIX_FILENAME",
     "JaxFemSourceValueProtocolV1",
+    "finalize_jax_fem_source_value_pre_prefix_v1",
     "generate_jax_fem_source_value_predictions_v1",
     "load_jax_fem_source_value_protocol_v1",
     "marginal_energy_score_v1",
