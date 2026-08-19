@@ -1864,11 +1864,15 @@ def test_seed44_source_execution_authorization_is_exact_and_target_blind() -> No
 
     predecessors = authorization["verified_predecessor_completions"]
     assert set(predecessors) == {"42", "43"}
-    assert all(record["bayesian_artifacts_verified"] for record in predecessors.values())
+    assert all(
+        record["bayesian_artifacts_verified"] for record in predecessors.values()
+    )
     assert all(
         record["diagnostic_artifacts_verified"] for record in predecessors.values()
     )
-    assert all(record["official_eval_read"] is False for record in predecessors.values())
+    assert all(
+        record["official_eval_read"] is False for record in predecessors.values()
+    )
     assert all(record["held_v8_access"] is False for record in predecessors.values())
 
     policy = authorization["execution_policy"]
