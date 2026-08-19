@@ -65,6 +65,12 @@ RECOVERY_AUTHORIZATION = (
     / "sota"
     / "deform_dlo3_method_seal_completion_authorization_v1.json"
 )
+SEED44_AUTHORIZATION = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform_dlo3_seed44_source_execution_authorization_v1.json"
+)
 RECOVERY_VALIDATION = (
     ROOT
     / "results"
@@ -1832,6 +1838,71 @@ def test_method_seal_completion_authorization_is_exact_and_source_only() -> None
     assert custody["dlo4_dlo5_reserve_access"] is False
     assert custody["held_v8_access"] is False
     assert custody["target_retry"] is False
+
+
+def test_seed44_source_execution_authorization_is_exact_and_target_blind() -> None:
+    assert sha256_file(SEED44_AUTHORIZATION) == (
+        "886586b15da2552ae247811a7cae379b036700bc511542e02ce274ce8bcc99d4"
+    )
+    authorization = json.loads(SEED44_AUTHORIZATION.read_text(encoding="utf-8"))
+
+    assert authorization["contract"] == (
+        "deform-dlo3-seed44-source-execution-authorization-v1"
+    )
+    implementation = authorization["implementation"]
+    assert implementation["source_revision"] == (
+        "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a"
+    )
+    assert implementation["source_archive_sha256"] == (
+        "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862"
+    )
+    assert implementation["runner"]["sha256"] == sha256_file(SEED_RUNNER)
+    assert implementation["protocol"]["sha256"] == sha256_file(PROTOCOL)
+    assert implementation["source_manifest_sha256"] == (
+        "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb"
+    )
+
+    predecessors = authorization["verified_predecessor_completions"]
+    assert set(predecessors) == {"42", "43"}
+    assert all(
+        record["bayesian_artifacts_verified"] for record in predecessors.values()
+    )
+    assert all(
+        record["diagnostic_artifacts_verified"] for record in predecessors.values()
+    )
+    assert all(
+        record["official_eval_read"] is False for record in predecessors.values()
+    )
+    assert all(record["held_v8_access"] is False for record in predecessors.values())
+
+    policy = authorization["execution_policy"]
+    assert policy["authorized_seed"] == 44
+    assert policy["registered_audit_seeds"] == [42, 43, 44]
+    assert policy["maximum_preflight_executions"] == 1
+    assert policy["maximum_smoke_executions"] == 1
+    assert policy["maximum_production_executions"] == 1
+    assert policy["production_mode"] == "run"
+    assert policy["production_output_name"] == "seed-44-run-da487c26"
+    assert policy["new_empty_output_root_required"] is True
+    assert policy["prediction_seal_required_before_source_scoring"] is True
+    assert policy["source_reselection"] is False
+    assert policy["source_case_replacement"] is False
+    assert policy["seed_selection"] is False
+    assert policy["retry_after_failure"] is False
+    assert policy["automatic_repair_after_failure"] is False
+
+    decision = authorization["decision"]
+    assert decision["status"] == "authorized"
+    assert decision["seed_44_source_execution_authorized"] is True
+    custody = authorization["custody"]
+    assert custody["source_test_outcomes_used_for_method_change"] is False
+    assert custody["source_test_outcomes_used_for_seed_selection"] is False
+    assert custody["alltrain_fit_authorized"] is False
+    assert custody["official_dlo3_eval_enumerated"] is False
+    assert custody["official_dlo3_eval_read"] is False
+    assert custody["dlo4_dlo5_reserve_access"] is False
+    assert custody["target_retry"] is False
+    assert custody["held_v8_access"] is False
 
 
 def test_method_seal_recovery_validation_is_target_blind() -> None:
