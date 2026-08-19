@@ -167,6 +167,17 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _require_prediction_predictor(
+    prediction: SameMeanGaussianMixturePredictionV1,
+    *,
+    predictor_id: str,
+) -> None:
+    if not isinstance(prediction, SameMeanGaussianMixturePredictionV1):
+        raise TypeError("prediction must be a SameMeanGaussianMixturePredictionV1")
+    if prediction.record.reference_predictor_id != predictor_id:
+        raise ValueError("prediction does not match predictor_id")
+
+
 def group_density_nonconformity(
     residual_m: object,
     prediction: SameMeanGaussianMixturePredictionV1,
@@ -404,6 +415,12 @@ def fit_query_density_calibration(
         calibration_group_ids,
         count=len(residual_values),
     )
+    canonical_predictor_id = _sha256(predictor_id, name="predictor_id")
+    for prediction in prediction_values:
+        _require_prediction_predictor(
+            prediction,
+            predictor_id=canonical_predictor_id,
+        )
     coverage = _open_probability(nominal_coverage, name="nominal_coverage")
     rank = _finite_sample_rank(len(group_ids), coverage)
     scores = np.asarray(
@@ -419,7 +436,7 @@ def fit_query_density_calibration(
     )
     threshold = float(np.partition(scores, rank - 1)[rank - 1])
     return QueryDensityCalibrationV1(
-        predictor_id=predictor_id,
+        predictor_id=canonical_predictor_id,
         query_set_id=query_set_id,
         grouping_rule_id=grouping_rule_id,
         guard_id=guard_id,
@@ -449,8 +466,13 @@ def density_region_contains(
 
     if not isinstance(calibration, QueryDensityCalibrationV1):
         raise TypeError("calibration must be a QueryDensityCalibrationV1")
-    if _sha256(predictor_id, name="predictor_id") != calibration.predictor_id:
+    canonical_predictor_id = _sha256(predictor_id, name="predictor_id")
+    if canonical_predictor_id != calibration.predictor_id:
         raise ValueError("predictor_id does not match the calibration artifact")
+    _require_prediction_predictor(
+        prediction,
+        predictor_id=canonical_predictor_id,
+    )
     scores = gaussian_mixture_negative_log_density(residual_m, prediction)
     return scores <= calibration.density_score_threshold
 
