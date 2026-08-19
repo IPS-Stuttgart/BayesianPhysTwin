@@ -850,7 +850,12 @@ def deformation_determinants_v1(
         ),
         axis=2,
     )
-    inverse_reference = np.linalg.inv(reference_edges)
+    reference_system = np.swapaxes(reference_edges, 1, 2)
+    reference_condition = np.linalg.cond(reference_edges)
+    _require(
+        np.all(np.isfinite(reference_condition)),
+        "reference tetrahedra are numerically singular",
+    )
     result: list[npt.NDArray[Any]] = []
     for frame in deformed:
         cells_frame = frame[tetrahedra]
@@ -862,7 +867,11 @@ def deformation_determinants_v1(
             ),
             axis=2,
         )
-        result.append(np.linalg.det(current_edges @ inverse_reference))
+        gradient_transpose = np.linalg.solve(
+            reference_system,
+            np.swapaxes(current_edges, 1, 2),
+        )
+        result.append(np.linalg.det(np.swapaxes(gradient_transpose, 1, 2)))
     return cast(FloatArray, np.ascontiguousarray(np.stack(result)))
 
 

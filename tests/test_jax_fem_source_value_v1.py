@@ -236,7 +236,9 @@ def _synthetic_gate(
             member_records.append(
                 {
                     "candidate_index": index,
-                    "poisson_ratio": protocol_value["candidate"]["poisson_ratio"][index],
+                    "poisson_ratio": protocol_value["candidate"]["poisson_ratio"][
+                        index
+                    ],
                     "young_modulus_pa": protocol_value["candidate"]["young_modulus_pa"],
                     "weight": protocol_value["candidate"]["weights"][index],
                     "physical_archive": f"{group_id}/{member.name}",
@@ -292,8 +294,7 @@ def _synthetic_gate(
             "git_head": "1" * 40,
             "git_worktree_clean": True,
             "source_files": {
-                "src/bayesian_phystwin/jax_fem_source_qualification_v1.py": "2"
-                * 64,
+                "src/bayesian_phystwin/jax_fem_source_qualification_v1.py": "2" * 64,
                 "src/bayesian_phystwin/jax_fem_source_value_v1.py": "3" * 64,
                 "scripts/remote/run_jax_fem_source_value_v1.py": "4" * 64,
             },
@@ -431,7 +432,9 @@ def test_prediction_generator_consumes_qualification_without_outcomes(
         "load_jax_fem_source_physics_protocol_v1",
         lambda _path: fake_physics,
     )
-    monkeypatch.setattr(value_module, "_load_native_modules", lambda _protocol: object())
+    monkeypatch.setattr(
+        value_module, "_load_native_modules", lambda _protocol: object()
+    )
     monkeypatch.setattr(
         value_module,
         "contact_patch_local_indices_v1",
@@ -608,8 +611,12 @@ def test_pre_prefix_physical_failure_falls_back_without_outcomes(
     paths = _synthetic_gate(tmp_path, truth_slope_m=0.001)
     protocol = load_jax_fem_source_value_protocol_v1(paths["protocol"])
     for group in protocol.groups:
-        (paths["group_roots"][group.group_id] / group.prefix_outcomes_relative_path).unlink()
-        (paths["group_roots"][group.group_id] / group.future_outcomes_relative_path).unlink()
+        (
+            paths["group_roots"][group.group_id] / group.prefix_outcomes_relative_path
+        ).unlink()
+        (
+            paths["group_roots"][group.group_id] / group.future_outcomes_relative_path
+        ).unlink()
     grid_path = paths["grid_root"] / GRID_FILENAME
     grid = json.loads(grid_path.read_text(encoding="utf-8"))
     grid["groups"][1]["members"][2]["minimum_deformation_determinant"] = -1.0

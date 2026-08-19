@@ -488,9 +488,7 @@ def generate_jax_fem_source_value_predictions_v1(
         physics_protocol.runtime_id == protocol.runtime_id,
         "source-value runtime differs from source physics",
     )
-    physics_groups = {
-        group.group_id: group for group in physics_protocol.source_groups
-    }
+    physics_groups = {group.group_id: group for group in physics_protocol.source_groups}
     _require(set(physics_groups) == expected, "source-physics group roster changed")
     simulation = physics_protocol.simulation
     _require(
@@ -527,8 +525,7 @@ def generate_jax_fem_source_value_predictions_v1(
             and physics_group.controller_point_count == group.controller_point_count
             and physics_group.attached_node_count == group.attached_particle_count
             and physics_group.expected_base_cell_count == group.base_cell_count
-            and physics_group.expected_contact_patch_sizes
-            == group.contact_patch_sizes,
+            and physics_group.expected_contact_patch_sizes == group.contact_patch_sizes,
             "source-value group differs from the qualified source-physics group",
         )
         arrays = load_jax_fem_source_inputs_v1(source_path, group=physics_group)
@@ -606,7 +603,9 @@ def generate_jax_fem_source_value_predictions_v1(
                         np.max(replay.deformation_determinants)
                     ),
                     "maximum_node_displacement_m": float(
-                        np.max(np.linalg.norm(replay.positions_m - points[None], axis=2))
+                        np.max(
+                            np.linalg.norm(replay.positions_m - points[None], axis=2)
+                        )
                     ),
                     "status": "success",
                 }
@@ -888,9 +887,7 @@ def _load_grid(
             _require(
                 contact_error
                 <= float(
-                    protocol.gates[
-                        "maximum_full_horizon_contact_projection_error_m"
-                    ]
+                    protocol.gates["maximum_full_horizon_contact_projection_error_m"]
                 ),
                 "full-horizon contact projection gate failed",
             )
@@ -928,15 +925,11 @@ def _load_grid(
                 _require(
                     minimum_determinant
                     >= float(
-                        protocol.gates[
-                            "minimum_full_horizon_deformation_determinant"
-                        ]
+                        protocol.gates["minimum_full_horizon_deformation_determinant"]
                     )
                     and maximum_determinant
                     <= float(
-                        protocol.gates[
-                            "maximum_full_horizon_deformation_determinant"
-                        ]
+                        protocol.gates["maximum_full_horizon_deformation_determinant"]
                     )
                     and maximum_displacement
                     <= float(
@@ -1031,12 +1024,8 @@ def _grid_physical_checks(
         )
         members: list[dict[str, Any]] = []
         for raw_member in cast(list[Mapping[str, Any]], raw_group["members"]):
-            minimum_determinant = float(
-                raw_member["minimum_deformation_determinant"]
-            )
-            maximum_determinant = float(
-                raw_member["maximum_deformation_determinant"]
-            )
+            minimum_determinant = float(raw_member["minimum_deformation_determinant"])
+            maximum_determinant = float(raw_member["maximum_deformation_determinant"])
             maximum_displacement = float(raw_member["maximum_node_displacement_m"])
             member_determinant_ok = minimum_determinant >= float(
                 gates["minimum_full_horizon_deformation_determinant"]
