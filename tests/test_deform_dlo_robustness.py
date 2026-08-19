@@ -59,6 +59,13 @@ from bayesian_phystwin_experiments.deform_dlo_source import sha256_file
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs" / "sota" / "deform_dlo_robustness_v1.json"
 RECOVERY_LOCK = ROOT / "configs" / "sota" / "deform_dlo3_method_seal_recovery_v1.json"
+RECOVERY_VALIDATION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "method_seal_recovery_validation.json"
+)
 SEED_RUNNER = ROOT / "scripts" / "remote" / "run_deform_dlo3_robustness_seed_v1.py"
 RECOVERY_RUNNER = (
     ROOT / "scripts" / "remote" / "run_deform_dlo3_method_seal_recovery_v1.py"
@@ -1789,6 +1796,24 @@ def test_method_seal_recovery_lock_is_pending_and_exact() -> None:
     assert policy["refitting"] is False
     assert policy["checkpoint_continuation"] is False
     assert policy["maximum_completions_per_seed"] == 1
+
+
+def test_method_seal_recovery_validation_is_target_blind() -> None:
+    receipt = json.loads(RECOVERY_VALIDATION.read_text(encoding="utf-8"))
+
+    assert receipt["contract"] == (
+        "deform-dlo3-method-seal-recovery-validation-receipt-v1"
+    )
+    assert receipt["recovery_lock_sha256"] == sha256_file(RECOVERY_LOCK)
+    assert set(receipt["seeds"]) == {"42", "43"}
+    assert all(record["verified"] is True for record in receipt["seeds"].values())
+    assert receipt["source_completion_authorized"] is False
+    assert receipt["source_payload_deserialized"] is False
+    assert receipt["source_test_opened"] is False
+    assert receipt["source_test_scored"] is False
+    assert receipt["official_eval_read"] is False
+    assert receipt["dlo4_dlo5_reserve_access"] is False
+    assert receipt["held_v8_access"] is False
 
 
 def test_method_seal_recovery_lock_rejects_incoherent_authorization(

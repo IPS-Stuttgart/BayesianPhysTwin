@@ -121,4 +121,10 @@ revision and source archive before any write, and would seal the recovered
 predictions before scoring. No such completion has been authorized or
 executed.
 
+The artifact-only validator subsequently passed for both exact parent method
+seals. The compact receipt is
+`results/sota/deform_dlo3_robustness_v2/method_seal_recovery_validation.json`;
+it records that no source-test payload was deserialized, opened, or scored.
+The recovery decision remains pending.
+
 Protocol: `configs/sota/deform_dlo_robustness_v1.json`.
