@@ -328,6 +328,7 @@ class SameMeanGaussianMixtureRecordV1:
     tail_dominates_nominal: bool
     mean_object_identity_preserved: bool
     point_prediction_changed: bool
+    complete_predictor_id: str | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
     artifact_id: str | None = None
 
@@ -359,6 +360,12 @@ class SameMeanGaussianMixtureRecordV1:
             name="density_floor_variance_m2",
             minimum=0.0,
         )
+        complete_predictor_id = self.complete_predictor_id
+        if complete_predictor_id is not None:
+            complete_predictor_id = _sha256(
+                complete_predictor_id,
+                name="complete_predictor_id",
+            )
         object.__setattr__(
             self,
             "reference_predictor_id",
@@ -385,6 +392,7 @@ class SameMeanGaussianMixtureRecordV1:
         )
         object.__setattr__(self, "mean_shape", mean_shape)
         object.__setattr__(self, "covariance_shape", covariance_shape)
+        object.__setattr__(self, "complete_predictor_id", complete_predictor_id)
         for field_name in (
             "reference_mean_sha256",
             "nominal_covariance_sha256",
@@ -429,6 +437,7 @@ class SameMeanGaussianMixtureRecordV1:
             "tail_dominates_nominal": self.tail_dominates_nominal,
             "mean_object_identity_preserved": self.mean_object_identity_preserved,
             "point_prediction_changed": self.point_prediction_changed,
+            "complete_predictor_id": self.complete_predictor_id,
             "metadata": _plain_json(self.metadata, name="metadata"),
         }
 
@@ -452,6 +461,7 @@ def compose_same_mean_gaussian_mixture(
     reference_predictor_id: str,
     nominal_covariance_id: str,
     tail_covariance_id: str,
+    complete_predictor_id: str | None = None,
     nominal_probability: object = 0.90,
     density_floor_variance_m2: float = 0.0,
     covariance_tolerance: float = 1e-10,
@@ -524,6 +534,7 @@ def compose_same_mean_gaussian_mixture(
         tail_dominates_nominal=True,
         mean_object_identity_preserved=True,
         point_prediction_changed=False,
+        complete_predictor_id=complete_predictor_id,
         metadata={} if metadata is None else metadata,
     )
     result = SameMeanGaussianMixturePredictionV1(
@@ -545,6 +556,7 @@ def compose_candidate_same_mean_gaussian_mixture(
     *,
     reference_predictor_id: str,
     nominal_covariance_id: str,
+    complete_predictor_id: str | None = None,
     density_floor_variance_m2: float = 0.0,
     covariance_tolerance: float = 1e-10,
     metadata: Mapping[str, Any] | None = None,
@@ -582,6 +594,7 @@ def compose_candidate_same_mean_gaussian_mixture(
         reference_predictor_id=reference_predictor_id,
         nominal_covariance_id=nominal_covariance_id,
         tail_covariance_id=f"same-mean-mixture-tail:{candidate.candidate_id}",
+        complete_predictor_id=complete_predictor_id,
         nominal_probability=candidate.nominal_probability,
         density_floor_variance_m2=density_floor_variance_m2,
         covariance_tolerance=covariance_tolerance,
