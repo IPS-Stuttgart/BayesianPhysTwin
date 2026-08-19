@@ -38,7 +38,7 @@ Run the focused validation with:
 
 ```bash
 python -c "from bayesian_phystwin.backend_portfolio_v1 import describe_backend_portfolio; print(describe_backend_portfolio())"
-pytest -q tests/test_backend_portfolio_v1.py
+pytest -q tests/test_portable_contracts_backend_portfolio_v1.py
 ```
 
 While no backend is `source-value-qualified`, adding a canonical backend family
