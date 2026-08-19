@@ -1,0 +1,73 @@
+{
+  "schema": "bayesian-phystwin.genesis-mpm-source-value-protocol",
+  "schema_version": 1,
+  "protocol_label": "genesis-mpm-zebra-source-value-v1",
+  "claim_boundary": "Two-action already-open source-value gate for the exact source-physics-qualified Genesis MPM runtime. It is not a fresh-object, calibration, DEFORM, Causal4D, target, or state-of-the-art claim.",
+  "qualification": {
+    "runtime_id": "aecd2a170f974a166495da0c8692631acebf09d7b605c4ec0f9621f49434132a",
+    "source_physics_protocol_sha256": "0cf992eaff27433803f973ce508a4ce1fdb37d7b36472c54169479dd51213cd1",
+    "source_physics_result_sha256": "e7e3a8172a4760a8ebc8f9cda16812c811037674dc08a9e2dc0b4810d826b0da",
+    "qualification_artifact_sha256": "cc263bb7890af19c1f7bdae40f6c5f701d90f105a1e9c70bf386d2accb39561d",
+    "qualification_artifact_id": "775fc43876318d7f5f01603d48cd26017a98bc69558d483e91ad58e523e38fa3"
+  },
+  "source_groups": [
+    {
+      "group_id": "double_lift_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "prefix_outcomes_relative_path": "source-bundle/prefix-outcomes.npz",
+      "prefix_outcomes_sha256": "db0018d3581f8cc760746bdc84d96d77214a213fd3242490bb5adaa396772540",
+      "future_outcomes_relative_path": "source-bundle/future-outcomes.npz",
+      "future_outcomes_sha256": "f0483f987b40a0a3d3cbb408535fbac4a5fdecdd9894923bbec10f40dcdb324d",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "matphys_sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+      "frame_count": 58,
+      "material_particle_count": 4607,
+      "controller_point_count": 30,
+      "attached_particle_count": 107
+    },
+    {
+      "group_id": "double_stretch_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "prefix_outcomes_relative_path": "source-bundle/prefix-outcomes.npz",
+      "prefix_outcomes_sha256": "003db2c831f58c65a855e95e2889327abf2893cd2e2e613fe638edf614977c73",
+      "future_outcomes_relative_path": "source-bundle/future-outcomes.npz",
+      "future_outcomes_sha256": "4853e7b7073620e8aad86b4a06137e9385df11edd8793e6ddded5e36bc014d46",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "matphys_sha256": "f633dd863da1a9da82433821328fe3cccbb94cc1ae08c29d51ff2f85f4ef51ae",
+      "frame_count": 198,
+      "material_particle_count": 4208,
+      "controller_point_count": 30,
+      "attached_particle_count": 16
+    }
+  ],
+  "candidate": {
+    "young_modulus_pa": [25000.0, 100000.0, 500000.0],
+    "weights": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+    "point_estimate": "equal-weight-ensemble-mean",
+    "distribution_score": "equal-event-3d-marginal-energy-score",
+    "substeps": 64,
+    "fit_fraction": 0.6666666666666666
+  },
+  "validation_gates": {
+    "maximum_equal_group_balanced_point_ratio_vs_persistence": 0.95,
+    "maximum_worst_group_balanced_point_ratio_vs_persistence": 1.0,
+    "maximum_equal_group_energy_ratio_vs_persistence": 0.95,
+    "maximum_equal_group_identity_ratio_vs_incumbent": 1.05,
+    "maximum_equal_group_chamfer_ratio_vs_incumbent": 1.05,
+    "minimum_final_ensemble_spread_m": 0.00001,
+    "maximum_final_ensemble_spread_m": 0.1,
+    "required_successful_candidate_count": 3
+  },
+  "information_boundary": {
+    "prediction_uses_frame_zero_geometry_and_known_action_only": true,
+    "prefix_outcomes_open_only_after_all_predictions_sealed": true,
+    "future_outcomes_open_only_after_validation_gate": true,
+    "target_or_held_out_artifact_access_allowed": false,
+    "failure_policy": "byte-exact-incumbent-per-source-group",
+    "no_replacement": true
+  }
+}
