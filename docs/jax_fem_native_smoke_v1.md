@@ -92,16 +92,14 @@ JAX version and devices, physical problem, numerical checks, portable artifact
 IDs, and SHA-256 hashes. It also records that no dataset payload, future
 observation, or target outcome was read.
 
-## Next gate
+## Completed qualification path
 
-A passing native smoke should be archived as evidence for issue #664 and then
-used to freeze the JAX-FEM source-physics qualification protocol. The next
-experiment should add the preregistered zero-action, rigid-equivariance,
-load-step/mesh-refinement, physical-sanity, parameter-sensitivity, finite-
-difference Jacobian (if gradients are claimed), source-parity, and exact-
-fallback checks required by `MaterialBackendQualificationV1`.
+The retained native smoke was used to freeze the JAX-FEM source-physics
+qualification. That gate passed. The separately frozen full-horizon value arm
+then failed its outcome-blind physical gate before prefix observations were
+opened. JAX-FEM is therefore `source-physics-qualified`, not
+`source-value-qualified`; the exact incumbent fallback remains selected. See
+[`jax_fem_zebra_source_value_v1_result.md`](jax_fem_zebra_source_value_v1_result.md).
 
-Only after those source-only checks pass should JAX-FEM enter the matched
-source-value comparison. Genesis MPM remains the second selected candidate; new
-backend families remain outside the main registry while the admission freeze is
-active.
+Genesis MPM remains the second selected candidate. New backend families remain
+outside the main registry while the admission freeze is active.

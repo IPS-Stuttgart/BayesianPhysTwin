@@ -272,9 +272,9 @@ obligation.
 ## Scientific next step
 
 The portfolio policy still makes JAX-FEM and Genesis MPM the active
-qualification candidates. These SOFA, MuJoCo, PBD, Genesis, and Warp shims improve
-implementation coverage while those two candidates advance from native
-execution to source physics and matched source-value evidence. Another backend
-should enter the active qualification funnel only after a slot opens or
-materially stronger source-side evidence justifies replacing a current
-candidate.
+qualification candidates. These SOFA, MuJoCo, PBD, Genesis, and Warp shims
+improve implementation coverage while those two candidates remain
+source-physics-qualified but below source value after their first frozen value
+arms failed. Another backend should enter the active qualification funnel only
+after a slot opens or materially stronger source-side evidence justifies
+replacing a current candidate.

@@ -68,6 +68,16 @@ narrowly to 2,290,000 bytes. Member-count and source-distribution limits remain
 unchanged. This packaging adjustment does not promote Genesis: the frozen
 source-value gate rejected it and retained the incumbent through exact fallback.
 
+The JAX-FEM source qualification adds two reviewed backend-gate modules. A
+clean candidate build contains 580 wheel members and 2,324,144 compressed
+wheel bytes; its source distribution contains 1,357 regular members and
+3,229,248 compressed bytes. The corresponding ratchets are therefore raised
+narrowly to 2,330,000 wheel bytes, 1,360 regular sdist members, and 3,240,000
+sdist bytes. The wheel-member limit remains unchanged. This packaging change
+does not promote JAX-FEM: its frozen linear small-strain quasistatic
+source-value arm was rejected before outcome access, and exact fallback
+preserved the incumbent.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
