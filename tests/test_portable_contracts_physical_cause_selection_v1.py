@@ -111,8 +111,7 @@ def test_constants_and_records_are_content_addressed() -> None:
     assert PHYSICAL_CAUSE_DECISION_SCHEMA in decision.to_record()["schema"]
     assert decision.to_record()["schema_version"] == PHYSICAL_CAUSE_DECISION_VERSION
     assert (
-        decision.to_record()["claim_boundary"]
-        == PHYSICAL_CAUSE_DECISION_CLAIM_BOUNDARY
+        decision.to_record()["claim_boundary"] == PHYSICAL_CAUSE_DECISION_CLAIM_BOUNDARY
     )
     assert len(candidate.candidate_id) == 64
     assert len(decision.policy_id) == 64
@@ -339,9 +338,7 @@ def test_ambiguous_attribution_can_choose_near_best_discrepancy() -> None:
         _policy(
             baseline,
             tie_tolerance=0.02,
-            ambiguity_fallback=(
-                PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY
-            ),
+            ambiguity_fallback=(PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY),
         ),
     )
 
@@ -379,9 +376,7 @@ def test_discrepancy_fallback_policy_does_not_select_a_non_near_discrepancy() ->
         _policy(
             baseline,
             tie_tolerance=0.02,
-            ambiguity_fallback=(
-                PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY
-            ),
+            ambiguity_fallback=(PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY),
         ),
     )
 
