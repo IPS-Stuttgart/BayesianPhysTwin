@@ -83,9 +83,7 @@ def _candidate_evidence(
         cause=candidate.cause,
         belief_id=candidate.belief_id,
         construction_id=candidate.construction_id,
-        candidate_score_id=_digest(
-            f"score-{candidate.cause.value}-{score_suffix}"
-        ),
+        candidate_score_id=_digest(f"score-{candidate.cause.value}-{score_suffix}"),
         upper_regret=candidate.upper_regret,
         inference_admissible=candidate.inference_admissible,
         evaluated_group_count=group_count,
