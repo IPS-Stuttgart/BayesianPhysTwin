@@ -118,8 +118,12 @@ The grouped grid below is a two-scale profile posterior, not a posterior over
 dense springs, damping, contact, or topology. The processed motion cue is not a
 calibrated replacement for raw tracker confidence or mask-boundary uncertainty.
 
-The input files are Python pickles. Load only trusted official or locally
-generated artifacts.
+Some released PhysTwin inputs are Python pickles. Pickle can execute code and is
+not a portable artifact format. The current discrepancy-calibration route loads
+legacy pickles only after matching their exact bytes to lowercase SHA-256
+digests supplied from an independently trusted manifest or protocol lock. New
+artifacts should use JSON/NPZ contracts; a digest proves byte identity, not that
+an arbitrary pickle is intrinsically safe.
 
 ## Grouped Parameter Profile
 
@@ -155,16 +159,37 @@ unstable extreme grid corners.
 
 ## Causal Model Discrepancy
 
-Calibrate a saved profile without rerunning the simulator:
+Calibrate a saved profile without rerunning the simulator. Obtain the trusted
+input digests from the frozen run manifest or protocol lock; the `sha256sum`
+commands below illustrate the required values but are not a substitute for an
+independent trust source when files may be untrusted.
 
 ```bash
-bpt-calibrate-phystwin-discrepancy \
+FINAL_DATA_SHA256=$(sha256sum final_data.pkl | cut -d' ' -f1)
+PROFILE_SHA256=$(sha256sum parameter_profile.npz | cut -d' ' -f1)
+REFERENCE_SHA256=$(sha256sum inference.pkl | cut -d' ' -f1)
+
+bpt experiment run calibrate-phystwin-discrepancy \
   final_data.pkl parameter_profile.npz runs/CASE/discrepancy.json \
+  --final-data-sha256 "$FINAL_DATA_SHA256" \
+  --parameter-profile-sha256 "$PROFILE_SHA256" \
   --fit-end-frame 48 \
   --test-start-frame 64 \
   --observation-variance 2.5e-5 \
-  --reference-trajectory inference.pkl
+  --reference-trajectory inference.pkl \
+  --reference-trajectory-sha256 "$REFERENCE_SHA256"
 ```
+
+The final-data pickle must contain `object_points`, `object_visibilities`, and
+`object_motions_valid`. The optional reference pickle must contain a dense NumPy
+array. `parameter_profile.npz` is loaded with `allow_pickle=False` and must
+contain `posterior_mean_trajectory` and `epistemic_variance`. All three inputs
+are loaded from verified byte snapshots, so a source-file replacement during
+loading cannot alter the analyzed payload.
+
+Summary schema version 2 records only each input's role, format, and SHA-256.
+Host-local absolute paths are deliberately excluded from semantic evidence;
+execution-local paths belong in a `RunManifestV2` or other runtime envelope.
 
 The fixed observation variance remains the perception term. A separate model
 discrepancy variance is estimated from residual moments after subtracting the
