@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-pyelastica-artifact-recovery-failure-v1",
+  "status": "failed_closed",
+  "execution_source_revision": "0aac09feb0d9eb096b1d7094df7d33e29de136a9",
+  "execution_source_archive_sha256": "5337079af82163dbd5845950e4f6053c7646673730686de6cec798c804b6a0ad",
+  "recovery_lock_sha256": "794a93dc495da0c6f08d93e77e697c3600b1a98149a5f68bfb21731ce039e723",
+  "failure_stage": "exact-point-prediction-replay",
+  "failure_type": "source-independent-floating-point-reassociation",
+  "output_root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/pyelastica-recovery-run-0aac09fe",
+  "artifacts": {
+    "preflight_sha256": "1624b239397b6205799cd73212f65bfe7e80ba6bbacb7708c0785e8a1500b96c",
+    "partial_full_covariance_model_sha256": "6b51db4e2cf65b4d3373f6fe3f6879be03f6d9ba53beb345f6ef751c684ee92f",
+    "failure_log_sha256": "c19ebe87f954c8f8fb2e64d8ceaf57c14d629dbd8e2317636840483249897542"
+  },
+  "target_blind_diagnostic": {
+    "point_maximum_absolute_delta": 1.1102230246251565e-16,
+    "point_mean_absolute_delta": 2.8316980435330913e-19,
+    "coordinate_covariance_maximum_absolute_delta": 1.1903238811283856e-14,
+    "coordinate_covariance_mean_absolute_delta": 2.346327136826296e-16,
+    "source_outcomes_scored": false
+  },
+  "recovered_method_sealed": false,
+  "recovered_prediction_sealed": false,
+  "recovered_result_written": false,
+  "source_score_recomputed": false,
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "retry_authorized": false,
+  "prob4d_used": false,
+  "held_v8_access": false
+}

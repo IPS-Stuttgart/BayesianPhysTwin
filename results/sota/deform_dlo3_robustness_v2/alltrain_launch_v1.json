@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-robustness-alltrain-launch-v1",
+  "status": "running",
+  "implementation_source_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+  "implementation_source_archive_sha256": "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862",
+  "protocol_sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c",
+  "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+  "primary_seed_result_sha256": "fb80995a9504c6d7fe34bd320f5586cf9ca2d971f481e42a3b43fb642de53f2f",
+  "stability_gate_sha256": "a84b702e5d41f86ad8555f7ad55b793d9ebfa137078cb016bb4fd963e474898d",
+  "sensitivity_result_sha256": "73124c4532f31fb3b688a24771a453394a0ece4a2f1c5a0c0d5f0dfe2cee94ce",
+  "backend_result_sha256": "3dd85208baffb16812163d76b5c18bb00cd0ea5d5ef7885d9db2fbc574571557",
+  "custody_deviation_sha256": "b7d8d505a746e2fcaede9f9ebec1d84edd32bd1407780cace847e446da509143",
+  "preflight": {
+    "method_spec_sha256": "fa806ba706280fb1e695d2a2e29685146993f283620d246d50b0cabbcfd885cd",
+    "preflight_sha256": "8ed0885e462700c73b403d062526d3594afecfa57f0d70febb30f8a05ba3e7fe",
+    "train_trajectory_count": 56,
+    "passed": true
+  },
+  "smoke": {
+    "method_spec_sha256": "fa806ba706280fb1e695d2a2e29685146993f283620d246d50b0cabbcfd885cd",
+    "preflight_sha256": "9a6edea3359d837386ec579ce8d20a80657586204f46d646a82f68135c61f981",
+    "window_schedule_sha256": "692f35fa45dba87ebcb9196f388ea793d98086e7d053bd1212da8703c8c5bf78",
+    "smoke_result_sha256": "8bf504e166b14866cb369c996ab43d9381e1fdac886453794c8a8f66075bf72e",
+    "completed_updates": 1,
+    "passed": true
+  },
+  "production": {
+    "host": "gpuserver4090",
+    "gpu_index": 0,
+    "gpu_uuid": "GPU-050afb3b-ea5c-2dba-7cf0-c2e5a15eaf4a",
+    "wrapper_pid": 2015679,
+    "python_pid": 2015681,
+    "output_root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2",
+    "log_path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2.log",
+    "requested_updates": 6400,
+    "duplicate_runs": 0
+  },
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "target_authorized": false,
+  "retry_authorized": false,
+  "prob4d_used": false,
+  "held_v8_access": false
+}

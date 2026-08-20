@@ -51,6 +51,21 @@ authorizes carryover, both evaluator invocations must receive the frozen
 PyElastica checkout through `--pyelastica-root`; otherwise the argument is not
 needed and the backend path remains exactly unexecuted.
 
+The first passing source execution used the full covariance in memory but
+persisted only its local-model projection. The exact-array recovery v1 failed
+closed before resealing: floating-point reassociation changed the point mean by
+at most `1.11e-16` and covariance by at most `1.20e-14`. Its target-blind failure
+receipt is retained under `results/sota/deform_dlo3_robustness_v2/`.
+
+The superseding lock
+`configs/sota/deform_dlo3_pyelastica_artifact_recovery_v2.json` fixes a standard
+floating-point `gamma_n` bound before another execution: 93 reduction terms for
+the point operation and `39 * 498` for covariance construction. The recovery
+must still reproduce the selected fit error exactly and copy the sealed
+prediction archive byte for byte. It cannot rerun parameter selection,
+recompute a source score, change the source gate, authorize a retry, or access a
+target.
+
 The same downstream authorization rehashes each source compute-matched
 checkpoint, every mechanism-model archive and prediction arm, and all six
 solver/material sensitivity prediction pairs. Readiness separately rehashes

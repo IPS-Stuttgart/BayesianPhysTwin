@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-pyelastica-artifact-recovery-provenance-v2",
+  "status": "passed",
+  "execution_source_revision": "10dcf05412117143165c4a65dd26c077a8e277ac",
+  "execution_source_archive_sha256": "0ffdf4ad7adb0f06f2f67abe97cb2f8663d3bd77454919919a805e6ee3060665",
+  "recovery_lock_sha256": "50eb9b4b058e510730a9fe45b2b60c0771ba979366e5927de4bb3dd87d3fa619",
+  "original_source_result_sha256": "762433ceb8d9fab63494ec26cf6df043da7cd83ce113a914d7656166b83b9d3c",
+  "recovered_artifacts": {
+    "full_covariance_model_sha256": "6b51db4e2cf65b4d3373f6fe3f6879be03f6d9ba53beb345f6ef751c684ee92f",
+    "method_seal_sha256": "0a27f6e9f502c4fa98d8e9c82b6791612cb4b92205ea6993eba64ced2d68dcea",
+    "source_predictions_sha256": "c8658f04aa81af1895f7f010d03a08e945fca7b63342b341eaa889408f5b69c8",
+    "prediction_seal_sha256": "714b4a186a93a6afeeff040cd734ec29eac7bb20dc9cc6c3534a6753d8e17828",
+    "source_result_sha256": "3dd85208baffb16812163d76b5c18bb00cd0ea5d5ef7885d9db2fbc574571557",
+    "recovery_receipt_sha256": "b53641d4259ef0b333d8dff8f9907992cf798490b05166b6c283e85cf74f7b83"
+  },
+  "replay": {
+    "selected_fit_error_exact": true,
+    "point_maximum_absolute_delta": 1.1102230246251565e-16,
+    "point_absolute_tolerance": 2.0650148258028338e-14,
+    "coordinate_covariance_maximum_absolute_delta": 1.1903238811283856e-14,
+    "coordinate_covariance_absolute_tolerance": 4.312550316872556e-12,
+    "source_predictions_file_byte_identical": true,
+    "source_gate_recomputed": false
+  },
+  "fit_parameter_reselection": false,
+  "source_score_recomputation": false,
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "retry_authorized": false,
+  "prob4d_used": false,
+  "held_v8_access": false
+}
