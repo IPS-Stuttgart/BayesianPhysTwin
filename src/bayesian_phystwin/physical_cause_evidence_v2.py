@@ -500,14 +500,10 @@ class PhysicalCauseAttributionDecisionV2:
         for certificate in self.certificates[1:]:
             for name in fields:
                 if getattr(certificate, name) != getattr(first, name):
-                    raise ValueError(
-                        f"regret certificate {name} differs across causes"
-                    )
+                    raise ValueError(f"regret certificate {name} differs across causes")
         if first.baseline_belief_id != self.baseline_belief_id:
             raise ValueError("decision baseline differs from regret certificates")
-        candidate_ids = {
-            item.cause: _candidate_id(item) for item in self.certificates
-        }
+        candidate_ids = {item.cause: _candidate_id(item) for item in self.certificates}
         pair_fields = (
             "baseline_belief_id",
             "common_domain_id",
@@ -548,11 +544,7 @@ class PhysicalCauseAttributionDecisionV2:
                 )
             return
         selected = next(
-            (
-                item
-                for item in self.certificates
-                if item.cause is self.selected_cause
-            ),
+            (item for item in self.certificates if item.cause is self.selected_cause),
             None,
         )
         if selected is None:
