@@ -41,7 +41,7 @@ bound `U[c]` together with the exact:
 - source-evidence partition;
 - complete candidate-universe identity;
 - independent source object/session identities;
-- harmful-group definition and upper probability bound;
+- common harmful-group margin and upper probability bound;
 - registered stratum upper-regret bounds; and
 - familywise confidence level and information-order declarations.
 
@@ -62,6 +62,9 @@ units.
 The certificate requires the candidate universe and all thresholds to be frozen
 before source scores, forbids target-outcome use, and requires independent
 physical source groups. These declarations are part of the content identity.
+Every candidate in one attribution decision must use the same baseline, domain,
+query, source partition, proper score, grouping rule, candidate universe,
+confidence level, independent groups, and harmful-group margin.
 
 ## Paired cause separation
 
@@ -73,7 +76,14 @@ the baseline; they do not establish which of two nonbaseline causes is better.
 R[left] - R[right]
 ```
 
-on the same source groups, proper-score universe, and frozen candidate universe.
+The pairwise artifact repeats the exact baseline, domain, query, source-evidence,
+proper-score, grouping-rule, source-group, and candidate-universe identities.
+This prevents an interval computed for another query, score, partition, or group
+semantics from being substituted merely because the candidate IDs match. It also
+requires the pairwise procedure and candidate universe to have been frozen
+before source scores, requires independent physical groups, and forbids target
+outcomes.
+
 For a preregistered pairwise advantage `m`:
 
 ```text
@@ -87,6 +97,21 @@ when the operationally selected source-eligible cause is separated from **every*
 other source-eligible cause. Missing pairwise evidence or an interval crossing
 the registered equivalence region is an ambiguity result, not permission to use
 a point estimate or arbitrary tolerance.
+
+## Exact belief and decision binding
+
+The attribution decision binds both the exact baseline belief and the exact
+selected belief. A baseline decision must name that baseline identity. A
+nonbaseline decision must name the candidate belief carried by the selected
+cause's regret certificate. Substituting another candidate or an approximately
+equal reconstructed belief fails validation.
+
+The minimum-improvement, harm-probability, stratum-regret, source-group-count,
+and pairwise-advantage thresholds are themselves part of the content-addressed
+decision. The decision requires an explicit declaration that these thresholds
+were frozen before source scores and rejects any target-outcome use. A valid
+operational decision ID alone therefore cannot authorize claim-facing
+attribution under newly chosen thresholds.
 
 ## Physical transport scope
 
@@ -105,7 +130,9 @@ nonlinear replay closure and held-out transport evidence.
 
 A same-object transport result must not be promoted into unseen-object material
 transfer. Likewise, predictive improvement under the action used for inference
-is not itself held-out physical transport evidence.
+is not itself held-out physical transport evidence. The referenced nonlinear and
+transport artifacts must be validated under their owning typed contracts before
+their content identities are supplied here; an arbitrary digest is not evidence.
 
 ## Operational selection versus scientific attribution
 
