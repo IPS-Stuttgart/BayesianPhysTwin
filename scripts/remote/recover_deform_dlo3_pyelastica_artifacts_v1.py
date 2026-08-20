@@ -126,9 +126,8 @@ def _assert_array_equivalent(
     maximum_delta = (
         float(np.max(np.abs(left - right))) if left.shape == right.shape else math.inf
     )
-    if (
-        left.shape != right.shape
-        or not np.allclose(left, right, rtol=0.0, atol=tolerance)
+    if left.shape != right.shape or not np.allclose(
+        left, right, rtol=0.0, atol=tolerance
     ):
         raise ValueError(f"{label} exceeds its floating-point replay bound")
     return {
@@ -212,18 +211,14 @@ def main() -> int:
         label="floating-point replay equivalence",
     )
     epsilon = float(np.finfo(np.float64).eps)
-    point_reduction_terms = int(
-        cast(Any, equivalence.get("point_reduction_terms", -1))
-    )
+    point_reduction_terms = int(cast(Any, equivalence.get("point_reduction_terms", -1)))
     covariance_reduction_terms = int(
         cast(Any, equivalence.get("covariance_reduction_terms", -1))
     )
     if (
         equivalence.get("dtype") != "float64"
-        or equivalence.get("formula")
-        != "gamma_n_times_max_one_reference_scale"
-        or float(cast(Any, equivalence.get("machine_epsilon", math.nan)))
-        != epsilon
+        or equivalence.get("formula") != "gamma_n_times_max_one_reference_scale"
+        or float(cast(Any, equivalence.get("machine_epsilon", math.nan))) != epsilon
         or float(cast(Any, equivalence.get("relative_tolerance", math.nan))) != 0.0
         or point_reduction_terms != 93
         or covariance_reduction_terms != 39 * 498
@@ -300,7 +295,9 @@ def main() -> int:
     )
     output_root = args.output_root.resolve()
     if output_root.exists() and any(output_root.iterdir()):
-        raise RuntimeError(f"PyElastica recovery output root is not empty: {output_root}")
+        raise RuntimeError(
+            f"PyElastica recovery output root is not empty: {output_root}"
+        )
     output_root.mkdir(parents=True, exist_ok=True)
     upstream = source_runtime._assert_upstream(
         args.upstream_root,
@@ -386,9 +383,7 @@ def main() -> int:
         sealed_backend = np.asarray(archive["backend"])
         sealed_candidate = np.asarray(archive["candidate"])
         sealed_covariance = np.asarray(archive["coordinate_covariance_m2"])
-        sealed_calibrated = np.asarray(
-            archive["calibrated_coordinate_covariance_m2"]
-        )
+        sealed_calibrated = np.asarray(archive["calibrated_coordinate_covariance_m2"])
     if source_names != list(partitions["source_test"]):
         raise ValueError("sealed PyElastica source names differ")
     source_panel = source_runtime._load_named_trajectories(
@@ -490,9 +485,7 @@ def main() -> int:
     }
     recovered_result_path = output_root / "source_result.json"
     _write_json(recovered_result_path, recovered_result)
-    verification = verify_deform_dlo3_backend_artifacts_v1(
-        recovered_result, protocol
-    )
+    verification = verify_deform_dlo3_backend_artifacts_v1(recovered_result, protocol)
     receipt = {
         "schema_version": 1,
         "contract": "deform-dlo3-pyelastica-artifact-recovery-receipt-v2",

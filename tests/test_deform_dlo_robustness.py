@@ -90,16 +90,10 @@ PYELASTICA_RUNNER = (
     ROOT / "scripts" / "remote" / "run_deform_dlo3_pyelastica_source_v1.py"
 )
 PYELASTICA_RECOVERY_LOCK = (
-    ROOT
-    / "configs"
-    / "sota"
-    / "deform_dlo3_pyelastica_artifact_recovery_v2.json"
+    ROOT / "configs" / "sota" / "deform_dlo3_pyelastica_artifact_recovery_v2.json"
 )
 PYELASTICA_RECOVERY_RUNNER = (
-    ROOT
-    / "scripts"
-    / "remote"
-    / "recover_deform_dlo3_pyelastica_artifacts_v1.py"
+    ROOT / "scripts" / "remote" / "recover_deform_dlo3_pyelastica_artifacts_v1.py"
 )
 PYELASTICA_RECOVERY_V1_FAILURE = (
     ROOT
@@ -1727,9 +1721,7 @@ def test_pyelastica_artifact_recovery_lock_is_fixed_and_target_blind() -> None:
 
 
 def test_pyelastica_exact_recovery_failure_is_retained_target_blind() -> None:
-    failure = json.loads(
-        PYELASTICA_RECOVERY_V1_FAILURE.read_text(encoding="utf-8")
-    )
+    failure = json.loads(PYELASTICA_RECOVERY_V1_FAILURE.read_text(encoding="utf-8"))
 
     assert failure["contract"] == (
         "deform-dlo3-pyelastica-artifact-recovery-failure-v1"
@@ -1793,7 +1785,8 @@ def test_pyelastica_artifact_recovery_replays_without_rescoring_or_selection() -
     assert "fit_deform_local_residual(" not in source
     assert '"source_gate_recomputed": False' in source
     assert "gamma = reduction_terms * epsilon" in source
-    assert "np.allclose(left, right, rtol=0.0, atol=tolerance)" in source
+    assert "np.allclose(" in source
+    assert "left, right, rtol=0.0, atol=tolerance" in source
     assert '"fit_parameter_reselection": False' in source
     assert '"source_score_recomputation": False' in source
     assert '"primary_eval_read": False' in source
