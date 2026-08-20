@@ -89,6 +89,18 @@ SENSITIVITY_RUNNER = ROOT / "scripts" / "remote" / "run_deform_dlo3_sensitivity_
 PYELASTICA_RUNNER = (
     ROOT / "scripts" / "remote" / "run_deform_dlo3_pyelastica_source_v1.py"
 )
+PYELASTICA_RECOVERY_LOCK = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform_dlo3_pyelastica_artifact_recovery_v1.json"
+)
+PYELASTICA_RECOVERY_RUNNER = (
+    ROOT
+    / "scripts"
+    / "remote"
+    / "recover_deform_dlo3_pyelastica_artifacts_v1.py"
+)
 ALLTRAIN_RUNNER = (
     ROOT / "scripts" / "remote" / "run_deform_dlo3_robustness_alltrain_v1.py"
 )
@@ -1667,6 +1679,92 @@ def test_pyelastica_runner_seals_fit_and_predictions_before_source_scoring() -> 
     assert 'full_model_path = output_root / "full_covariance_model.npz"' in source
     assert 'full_payload["coefficient_covariance_full"]' in source
     assert 'full_payload["residual_covariance_full"]' in source
+
+
+def test_pyelastica_artifact_recovery_lock_is_exact_and_target_blind() -> None:
+    lock = json.loads(PYELASTICA_RECOVERY_LOCK.read_text(encoding="utf-8"))
+
+    assert lock["contract"] == "deform-dlo3-pyelastica-artifact-recovery-v1"
+    assert (
+        lock["permitted_operation"]
+        == "persist-already-computed-full-covariance-and-reseal-byte-identical-predictions"
+    )
+    assert lock["protocol_sha256"] == sha256_file(PROTOCOL)
+    assert lock["source_manifest_sha256"] == (
+        "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb"
+    )
+    assert set(lock["original_artifact_sha256s"]) == {
+        "fit_selection",
+        "local_residual_model",
+        "covariance_calibration",
+        "method_seal",
+        "source_predictions",
+        "prediction_seal",
+        "source_result",
+    }
+    assert lock["required_replay"] == {
+        "selected_fit_error_exact": True,
+        "point_predictions_exact": True,
+        "coordinate_covariance_exact": True,
+        "calibrated_coordinate_covariance_exact": True,
+        "source_predictions_file_byte_identical": True,
+        "source_gate_recomputed": False,
+    }
+    assert all(value is False for value in lock["custody"].values())
+
+
+def test_pyelastica_artifact_recovery_replays_without_rescoring_or_selection() -> None:
+    source = PYELASTICA_RECOVERY_RUNNER.read_text(encoding="utf-8")
+
+    original_validation = source.index(
+        "validate_deform_dlo3_backend_result_v1(original, protocol)"
+    )
+    output_creation = source.index("output_root.mkdir(parents=True, exist_ok=True)")
+    target_guard = source.index(
+        'source_runtime._install_eval_read_guard(data_root / "DLO3" / "eval")'
+    )
+    fit_open = source.index("fit = source_runtime._load_named_trajectories")
+    fit_replay = source.index("fit_predictions = backend_runtime._simulate_panel")
+    covariance_write = source.index(
+        'full_model_path = output_root / "full_covariance_model.npz"'
+    )
+    source_open = source.index("source_panel = source_runtime._load_named_trajectories")
+    point_replay = source.index("np.asarray(replay[\"predictions\"])")
+    method_seal = source.index(
+        'recovered_method_path = output_root / "method_seal.json"'
+    )
+    prediction_seal = source.index(
+        'recovered_prediction_seal_path = output_root / "prediction_seal.json"'
+    )
+    result_write = source.index(
+        'recovered_result_path = output_root / "source_result.json"'
+    )
+    verification = source.index("verify_deform_dlo3_backend_artifacts_v1(")
+    assert (
+        original_validation
+        < output_creation
+        < target_guard
+        < fit_open
+        < fit_replay
+        < covariance_write
+        < source_open
+        < point_replay
+        < method_seal
+        < prediction_seal
+        < result_write
+        < verification
+    )
+    assert "evaluate_deform_backend_source_gate" not in source
+    assert "evaluate_deform_predictive_distribution" not in source
+    assert "fit_deform_local_residual(" not in source
+    assert '"source_gate_recomputed": False' in source
+    assert '"fit_parameter_reselection": False' in source
+    assert '"source_score_recomputation": False' in source
+    assert '"primary_eval_read": False' in source
+    assert '"retry_authorized": False' in source
+    assert '"held_v8_access": False' in source
+    assert 'source_runtime._install_eval_read_guard(data_root / "DLO4")' in source
+    assert 'source_runtime._install_eval_read_guard(data_root / "DLO5")' in source
 
 
 def test_alltrain_runner_requires_every_source_audit_and_guards_eval() -> None:

@@ -51,6 +51,15 @@ authorizes carryover, both evaluator invocations must receive the frozen
 PyElastica checkout through `--pyelastica-root`; otherwise the argument is not
 needed and the backend path remains exactly unexecuted.
 
+The first passing source execution used the full covariance in memory but
+persisted only its local-model projection. The locked artifact recovery in
+`configs/sota/deform_dlo3_pyelastica_artifact_recovery_v1.json` may persist that
+missing fit-derived intermediate without rerunning the parameter bank or
+recomputing a source score. It must reproduce the selected fit error, sealed
+point prediction, raw covariance, and calibrated covariance exactly, and copy
+the sealed prediction archive byte for byte. Any mismatch fails closed. The
+recovery cannot change the source gate, authorize a retry, or access a target.
+
 The same downstream authorization rehashes each source compute-matched
 checkpoint, every mechanism-model archive and prediction arm, and all six
 solver/material sensitivity prediction pairs. Readiness separately rehashes
