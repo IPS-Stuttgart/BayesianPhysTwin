@@ -1,10 +1,10 @@
 """Claim-facing evidence certificates for physical-cause attribution.
 
-The v1 physical-cause selector is an operational router.  This module adds a
-non-breaking evidence layer for stronger scientific attribution.  It binds
+The v1 physical-cause selector is an operational router. This module adds a
+non-breaking evidence layer for stronger scientific attribution. It binds
 simultaneous baseline-relative regret, paired cause comparisons, independent
 physical source groups, nonlinear closure, and (for physical causes) held-out
-transport evidence.  It never changes a selected complete belief.
+transport evidence. It never changes a selected complete belief.
 """
 
 from __future__ import annotations
@@ -119,7 +119,10 @@ class PhysicalCauseRegretCertificateV2:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.cause, PhysicalCause) or self.cause is PhysicalCause.BASELINE:
+        if (
+            not isinstance(self.cause, PhysicalCause)
+            or self.cause is PhysicalCause.BASELINE
+        ):
             raise ValueError("cause must be a nonbaseline PhysicalCause")
         for name in (
             "baseline_belief_id",
@@ -143,7 +146,10 @@ class PhysicalCauseRegretCertificateV2:
         object.__setattr__(
             self,
             "simultaneous_upper_regret",
-            _finite_real(self.simultaneous_upper_regret, name="simultaneous_upper_regret"),
+            _finite_real(
+                self.simultaneous_upper_regret,
+                name="simultaneous_upper_regret",
+            ),
         )
         harm_margin = _finite_real(self.harm_margin, name="harm_margin")
         if harm_margin < 0.0:
@@ -179,7 +185,10 @@ class PhysicalCauseRegretCertificateV2:
         object.__setattr__(
             self,
             "metadata",
-            frozen_finite_json_mapping(self.metadata, name="regret-certificate metadata"),
+            frozen_finite_json_mapping(
+                self.metadata,
+                name="regret-certificate metadata",
+            ),
         )
 
     @property
@@ -207,8 +216,12 @@ class PhysicalCauseRegretCertificateV2:
             "confidence_level": self.confidence_level,
             "stratum_upper_regrets": plain_json(self.stratum_upper_regrets),
             "bounds_simultaneous": self.bounds_simultaneous,
-            "thresholds_frozen_before_source_scores": self.thresholds_frozen_before_source_scores,
-            "candidate_universe_frozen_before_source_scores": self.candidate_universe_frozen_before_source_scores,
+            "thresholds_frozen_before_source_scores": (
+                self.thresholds_frozen_before_source_scores
+            ),
+            "candidate_universe_frozen_before_source_scores": (
+                self.candidate_universe_frozen_before_source_scores
+            ),
             "target_outcomes_used": self.target_outcomes_used,
             "source_groups_independent": self.source_groups_independent,
             "metadata": plain_json(self.metadata),
@@ -227,13 +240,22 @@ class PhysicalCausePairwiseCertificateV2:
     right_cause: PhysicalCause
     left_candidate_id: str
     right_candidate_id: str
+    baseline_belief_id: str
+    common_domain_id: str
+    registered_query_id: str
+    source_evidence_id: str
+    proper_score_id: str
+    grouping_rule_id: str
     source_group_ids: tuple[str, ...]
     candidate_universe_id: str
     lower_regret_difference: float
     upper_regret_difference: float
     confidence_level: float
     bounds_simultaneous: bool = True
+    pairwise_procedure_frozen_before_source_scores: bool = True
+    candidate_universe_frozen_before_source_scores: bool = True
     target_outcomes_used: bool = False
+    source_groups_independent: bool = True
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -245,15 +267,31 @@ class PhysicalCausePairwiseCertificateV2:
                 raise ValueError(f"{name} must be a nonbaseline PhysicalCause")
         if self.left_cause.value >= self.right_cause.value:
             raise ValueError("pairwise causes must use canonical lexical order")
-        for name in ("left_candidate_id", "right_candidate_id", "candidate_universe_id"):
+        for name in (
+            "left_candidate_id",
+            "right_candidate_id",
+            "baseline_belief_id",
+            "common_domain_id",
+            "registered_query_id",
+            "source_evidence_id",
+            "proper_score_id",
+            "grouping_rule_id",
+            "candidate_universe_id",
+        ):
             object.__setattr__(self, name, _sha256(getattr(self, name), name=name))
         object.__setattr__(
             self,
             "source_group_ids",
             _canonical_group_ids(self.source_group_ids, name="source_group_ids"),
         )
-        lower = _finite_real(self.lower_regret_difference, name="lower_regret_difference")
-        upper = _finite_real(self.upper_regret_difference, name="upper_regret_difference")
+        lower = _finite_real(
+            self.lower_regret_difference,
+            name="lower_regret_difference",
+        )
+        upper = _finite_real(
+            self.upper_regret_difference,
+            name="upper_regret_difference",
+        )
         if lower > upper:
             raise ValueError("pairwise lower bound must not exceed upper bound")
         object.__setattr__(self, "lower_regret_difference", lower)
@@ -262,7 +300,13 @@ class PhysicalCausePairwiseCertificateV2:
         if not 0.0 < confidence < 1.0:
             raise ValueError("confidence_level must lie in (0, 1)")
         object.__setattr__(self, "confidence_level", confidence)
-        for name, expected in (("bounds_simultaneous", True), ("target_outcomes_used", False)):
+        for name, expected in (
+            ("bounds_simultaneous", True),
+            ("pairwise_procedure_frozen_before_source_scores", True),
+            ("candidate_universe_frozen_before_source_scores", True),
+            ("target_outcomes_used", False),
+            ("source_groups_independent", True),
+        ):
             value = genuine_boolean(getattr(self, name), name=name)
             if value is not expected:
                 raise ValueError(f"{name} must be {str(expected).lower()}")
@@ -270,7 +314,10 @@ class PhysicalCausePairwiseCertificateV2:
         object.__setattr__(
             self,
             "metadata",
-            frozen_finite_json_mapping(self.metadata, name="pairwise-certificate metadata"),
+            frozen_finite_json_mapping(
+                self.metadata,
+                name="pairwise-certificate metadata",
+            ),
         )
 
     @property
@@ -285,13 +332,26 @@ class PhysicalCausePairwiseCertificateV2:
             "right_cause": self.right_cause.value,
             "left_candidate_id": self.left_candidate_id,
             "right_candidate_id": self.right_candidate_id,
+            "baseline_belief_id": self.baseline_belief_id,
+            "common_domain_id": self.common_domain_id,
+            "registered_query_id": self.registered_query_id,
+            "source_evidence_id": self.source_evidence_id,
+            "proper_score_id": self.proper_score_id,
+            "grouping_rule_id": self.grouping_rule_id,
             "source_group_ids": list(self.source_group_ids),
             "candidate_universe_id": self.candidate_universe_id,
             "lower_regret_difference": self.lower_regret_difference,
             "upper_regret_difference": self.upper_regret_difference,
             "confidence_level": self.confidence_level,
             "bounds_simultaneous": self.bounds_simultaneous,
+            "pairwise_procedure_frozen_before_source_scores": (
+                self.pairwise_procedure_frozen_before_source_scores
+            ),
+            "candidate_universe_frozen_before_source_scores": (
+                self.candidate_universe_frozen_before_source_scores
+            ),
             "target_outcomes_used": self.target_outcomes_used,
+            "source_groups_independent": self.source_groups_independent,
             "metadata": plain_json(self.metadata),
         }
 
@@ -313,7 +373,10 @@ def _candidate_id(certificate: PhysicalCauseRegretCertificateV2) -> str:
     )
 
 
-def _pair_key(a: PhysicalCause, b: PhysicalCause) -> tuple[PhysicalCause, PhysicalCause]:
+def _pair_key(
+    a: PhysicalCause,
+    b: PhysicalCause,
+) -> tuple[PhysicalCause, PhysicalCause]:
     return (a, b) if a.value < b.value else (b, a)
 
 
@@ -322,6 +385,7 @@ class PhysicalCauseAttributionDecisionV2:
     """Claim-facing decision without changing the operational complete belief."""
 
     operational_decision_id: str
+    baseline_belief_id: str
     selected_cause: PhysicalCause
     selected_belief_id: str
     certificates: tuple[PhysicalCauseRegretCertificateV2, ...]
@@ -334,6 +398,8 @@ class PhysicalCauseAttributionDecisionV2:
     pairwise_advantage: float = 0.0
     nonlinear_closure_id: str | None = None
     transport_evidence_id: str | None = None
+    decision_thresholds_frozen_before_source_scores: bool = True
+    target_outcomes_used: bool = False
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -341,6 +407,11 @@ class PhysicalCauseAttributionDecisionV2:
             self,
             "operational_decision_id",
             _sha256(self.operational_decision_id, name="operational_decision_id"),
+        )
+        object.__setattr__(
+            self,
+            "baseline_belief_id",
+            _sha256(self.baseline_belief_id, name="baseline_belief_id"),
         )
         if not isinstance(self.selected_cause, PhysicalCause):
             raise TypeError("selected_cause must be a PhysicalCause")
@@ -353,9 +424,16 @@ class PhysicalCauseAttributionDecisionV2:
         if len({item.cause for item in certs}) != len(certs):
             raise ValueError("at most one regret certificate per cause is permitted")
         object.__setattr__(self, "certificates", certs)
-        pairs = tuple(sorted(self.pairwise_certificates, key=lambda item: (item.left_cause.value, item.right_cause.value)))
+        pairs = tuple(
+            sorted(
+                self.pairwise_certificates,
+                key=lambda item: (item.left_cause.value, item.right_cause.value),
+            )
+        )
         if len({item.cause_key for item in pairs}) != len(pairs):
-            raise ValueError("at most one pairwise certificate per cause pair is permitted")
+            raise ValueError(
+                "at most one pairwise certificate per cause pair is permitted"
+            )
         object.__setattr__(self, "pairwise_certificates", pairs)
         for name in (
             "minimum_improvement",
@@ -369,7 +447,10 @@ class PhysicalCauseAttributionDecisionV2:
             if name == "maximum_harm_probability" and value > 1.0:
                 raise ValueError("maximum_harm_probability must lie in [0, 1]")
             object.__setattr__(self, name, value)
-        if type(self.minimum_source_group_count) is not int or self.minimum_source_group_count < 1:
+        if (
+            type(self.minimum_source_group_count) is not int
+            or self.minimum_source_group_count < 1
+        ):
             raise ValueError("minimum_source_group_count must be a positive integer")
         required = tuple(sorted(set(self.required_strata)))
         if any(type(item) is not str or not item for item in required):
@@ -379,12 +460,24 @@ class PhysicalCauseAttributionDecisionV2:
             value = getattr(self, name)
             if value is not None:
                 object.__setattr__(self, name, _sha256(value, name=name))
+        for name, expected in (
+            ("decision_thresholds_frozen_before_source_scores", True),
+            ("target_outcomes_used", False),
+        ):
+            value = genuine_boolean(getattr(self, name), name=name)
+            if value is not expected:
+                raise ValueError(f"{name} must be {str(expected).lower()}")
+            object.__setattr__(self, name, value)
         object.__setattr__(
             self,
             "metadata",
-            frozen_finite_json_mapping(self.metadata, name="attribution-decision metadata"),
+            frozen_finite_json_mapping(
+                self.metadata,
+                name="attribution-decision metadata",
+            ),
         )
         self._validate_common_evidence_domain()
+        self._validate_selected_belief_binding()
 
     def _validate_common_evidence_domain(self) -> None:
         if not self.certificates:
@@ -402,23 +495,70 @@ class PhysicalCauseAttributionDecisionV2:
             "candidate_universe_id",
             "source_group_ids",
             "confidence_level",
+            "harm_margin",
         )
         for certificate in self.certificates[1:]:
             for name in fields:
                 if getattr(certificate, name) != getattr(first, name):
-                    raise ValueError(f"regret certificate {name} differs across causes")
-        candidate_ids = {item.cause: _candidate_id(item) for item in self.certificates}
+                    raise ValueError(
+                        f"regret certificate {name} differs across causes"
+                    )
+        if first.baseline_belief_id != self.baseline_belief_id:
+            raise ValueError("decision baseline differs from regret certificates")
+        candidate_ids = {
+            item.cause: _candidate_id(item) for item in self.certificates
+        }
+        pair_fields = (
+            "baseline_belief_id",
+            "common_domain_id",
+            "registered_query_id",
+            "source_evidence_id",
+            "proper_score_id",
+            "grouping_rule_id",
+            "candidate_universe_id",
+            "source_group_ids",
+            "confidence_level",
+        )
         for pair in self.pairwise_certificates:
-            if pair.source_group_ids != first.source_group_ids:
-                raise ValueError("pairwise source groups differ from regret certificates")
-            if pair.candidate_universe_id != first.candidate_universe_id:
-                raise ValueError("pairwise candidate universe differs from regret certificates")
-            if pair.confidence_level != first.confidence_level:
-                raise ValueError("pairwise confidence level differs from regret certificates")
-            if pair.left_cause not in candidate_ids or pair.right_cause not in candidate_ids:
-                raise ValueError("pairwise certificate references an unregistered cause")
-            if pair.left_candidate_id != candidate_ids[pair.left_cause] or pair.right_candidate_id != candidate_ids[pair.right_cause]:
-                raise ValueError("pairwise certificate does not bind registered candidates")
+            for name in pair_fields:
+                if getattr(pair, name) != getattr(first, name):
+                    raise ValueError(
+                        f"pairwise certificate {name} differs from regret certificates"
+                    )
+            if (
+                pair.left_cause not in candidate_ids
+                or pair.right_cause not in candidate_ids
+            ):
+                raise ValueError(
+                    "pairwise certificate references an unregistered cause"
+                )
+            if (
+                pair.left_candidate_id != candidate_ids[pair.left_cause]
+                or pair.right_candidate_id != candidate_ids[pair.right_cause]
+            ):
+                raise ValueError(
+                    "pairwise certificate does not bind registered candidates"
+                )
+
+    def _validate_selected_belief_binding(self) -> None:
+        if self.selected_cause is PhysicalCause.BASELINE:
+            if self.selected_belief_id != self.baseline_belief_id:
+                raise ValueError(
+                    "baseline selection must bind the exact baseline belief"
+                )
+            return
+        selected = next(
+            (
+                item
+                for item in self.certificates
+                if item.cause is self.selected_cause
+            ),
+            None,
+        )
+        if selected is None:
+            raise ValueError("selected cause has no regret certificate")
+        if self.selected_belief_id != selected.candidate_belief_id:
+            raise ValueError("selected belief does not match the selected cause")
 
     @property
     def eligible_causes(self) -> tuple[PhysicalCause, ...]:
@@ -433,7 +573,10 @@ class PhysicalCauseAttributionDecisionV2:
                 continue
             if set(certificate.stratum_upper_regrets) != required:
                 continue
-            if any(value > self.maximum_stratum_regret for value in certificate.stratum_upper_regrets.values()):
+            if any(
+                value > self.maximum_stratum_regret
+                for value in certificate.stratum_upper_regrets.values()
+            ):
                 continue
             result.append(certificate.cause)
         return tuple(result)
@@ -464,30 +607,45 @@ class PhysicalCauseAttributionDecisionV2:
     def selected_physical_attribution_claim_ready(self) -> bool:
         if not self.paired_attribution_resolved:
             return False
-        if self.selected_cause not in {PhysicalCause.PHYSICAL_STATE, PhysicalCause.PHYSICAL_PARAMETER}:
+        if self.selected_cause not in {
+            PhysicalCause.PHYSICAL_STATE,
+            PhysicalCause.PHYSICAL_PARAMETER,
+        }:
             return True
-        return self.nonlinear_closure_id is not None and self.transport_evidence_id is not None
+        return (
+            self.nonlinear_closure_id is not None
+            and self.transport_evidence_id is not None
+        )
 
     def descriptor(self) -> dict[str, Any]:
         return {
             "schema": PHYSICAL_CAUSE_ATTRIBUTION_DECISION_SCHEMA,
             "schema_version": PHYSICAL_CAUSE_EVIDENCE_VERSION,
             "operational_decision_id": self.operational_decision_id,
+            "baseline_belief_id": self.baseline_belief_id,
             "selected_cause": self.selected_cause.value,
             "selected_belief_id": self.selected_belief_id,
             "certificate_ids": [item.certificate_id for item in self.certificates],
-            "pairwise_certificate_ids": [item.certificate_id for item in self.pairwise_certificates],
+            "pairwise_certificate_ids": [
+                item.certificate_id for item in self.pairwise_certificates
+            ],
             "minimum_improvement": self.minimum_improvement,
             "maximum_harm_probability": self.maximum_harm_probability,
             "maximum_stratum_regret": self.maximum_stratum_regret,
             "required_strata": list(self.required_strata),
             "minimum_source_group_count": self.minimum_source_group_count,
             "pairwise_advantage": self.pairwise_advantage,
+            "decision_thresholds_frozen_before_source_scores": (
+                self.decision_thresholds_frozen_before_source_scores
+            ),
+            "target_outcomes_used": self.target_outcomes_used,
             "eligible_causes": [item.value for item in self.eligible_causes],
             "paired_attribution_resolved": self.paired_attribution_resolved,
             "nonlinear_closure_id": self.nonlinear_closure_id,
             "transport_evidence_id": self.transport_evidence_id,
-            "selected_physical_attribution_claim_ready": self.selected_physical_attribution_claim_ready,
+            "selected_physical_attribution_claim_ready": (
+                self.selected_physical_attribution_claim_ready
+            ),
             "metadata": plain_json(self.metadata),
             "claim_boundary": PHYSICAL_CAUSE_ATTRIBUTION_CLAIM_BOUNDARY,
         }
