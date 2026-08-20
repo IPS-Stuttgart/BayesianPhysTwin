@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-robustness-postrun-execution-plan-v1",
+  "status": "frozen-before-alltrain-completion",
+  "implementation_source_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+  "implementation_source_archive": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/bpt-dlo3-auth-da487c26.tar.gz",
+    "sha256": "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862"
+  },
+  "runtime": {
+    "python": "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+    "pythonpath": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/src:/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/scripts/remote",
+    "device": "cuda:0"
+  },
+  "frozen_inputs": {
+    "protocol": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/configs/sota/deform_dlo_robustness_v1.json",
+      "sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c"
+    },
+    "source_manifest": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v1/deform-dlo3-source-manifest-bbf75a0b.json",
+      "sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb"
+    },
+    "custody_deviation": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/configs/sota/deform_dlo3_count_only_custody_deviation_v1.json",
+      "sha256": "b7d8d505a746e2fcaede9f9ebec1d84edd32bd1407780cace847e446da509143"
+    },
+    "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+    "pyelastica_root": "/home/florianpfaff/source-only/PyElastica-b087f139",
+    "pyelastica_revision": "b087f1399f9be2fdd2fcf3768689f7735a96f7ab"
+  },
+  "alltrain": {
+    "launch_count": 1,
+    "output_root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2",
+    "result_path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2/alltrain_result.json",
+    "completion_required": true,
+    "retry_authorized": false
+  },
+  "dry_run": {
+    "launch_count": 0,
+    "maximum_launch_count": 1,
+    "output_root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/evaluator-dry-run-da487c26-backend-v2",
+    "result_path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/evaluator-dry-run-da487c26-backend-v2/dry_run_result.json",
+    "allowed_only_after_alltrain_verification": true,
+    "failure_blocks_readiness": true,
+    "retry_authorized": false,
+    "command": [
+      "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/scripts/remote/run_deform_dlo3_robustness_evaluator_v1.py",
+      "--mode",
+      "dry-run",
+      "--protocol",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/configs/sota/deform_dlo_robustness_v1.json",
+      "--alltrain-result",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2/alltrain_result.json",
+      "--upstream-root",
+      "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+      "--output-root",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/evaluator-dry-run-da487c26-backend-v2",
+      "--source-manifest",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v1/deform-dlo3-source-manifest-bbf75a0b.json",
+      "--pyelastica-root",
+      "/home/florianpfaff/source-only/PyElastica-b087f139",
+      "--device",
+      "cuda:0"
+    ]
+  },
+  "readiness": {
+    "attestation_count": 0,
+    "maximum_attestation_count": 1,
+    "output_path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/readiness-da487c26-backend-v2.json",
+    "allowed_only_after_dry_run_passes": true,
+    "command": [
+      "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/scripts/remote/attest_deform_dlo3_robustness_readiness_v1.py",
+      "--protocol",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/configs/sota/deform_dlo_robustness_v1.json",
+      "--alltrain-result",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2/alltrain_result.json",
+      "--dry-run-result",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/evaluator-dry-run-da487c26-backend-v2/dry_run_result.json",
+      "--custody-deviation",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/configs/sota/deform_dlo3_count_only_custody_deviation_v1.json",
+      "--source-archive",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/bpt-dlo3-auth-da487c26.tar.gz",
+      "--source-revision",
+      "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+      "--output",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/readiness-da487c26-backend-v2.json"
+    ]
+  },
+  "official": {
+    "launch_count": 0,
+    "maximum_launch_count": 1,
+    "output_root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/official-eval-da487c26-backend-v2",
+    "result_path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/official-eval-da487c26-backend-v2/official_result.json",
+    "authorized": false,
+    "authorization_condition": "readiness-attestation-target_authorized-true",
+    "retry_authorized": false,
+    "case_replacement": false,
+    "command": [
+      "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/scripts/remote/run_deform_dlo3_robustness_evaluator_v1.py",
+      "--mode",
+      "official",
+      "--protocol",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/authorization-source-da487c26/configs/sota/deform_dlo_robustness_v1.json",
+      "--alltrain-result",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/alltrain-run-da487c26-backend-v2/alltrain_result.json",
+      "--upstream-root",
+      "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+      "--output-root",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/official-eval-da487c26-backend-v2",
+      "--readiness-attestation",
+      "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/readiness-da487c26-backend-v2.json",
+      "--pyelastica-root",
+      "/home/florianpfaff/source-only/PyElastica-b087f139",
+      "--device",
+      "cuda:0"
+    ]
+  },
+  "script_sha256s": {
+    "run_deform_dlo3_robustness_alltrain_v1.py": "4fdbd7a173ee2c6fdf8ceed60cf6aef8fcd27930fbcb53ee4d421baccc959492",
+    "run_deform_dlo3_robustness_evaluator_v1.py": "a25d18b09153c5ccfe8ae8dbcb88de1df6eea6449e8304d68c6db532eefe7c64",
+    "attest_deform_dlo3_robustness_readiness_v1.py": "9bd15139180029e08dd8ff2c1210016af7db609eb2fb16beebcae80bf0ef4d43"
+  },
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "dlo4_dlo5_access": false,
+  "target_selection": false,
+  "target_calibration": false,
+  "prob4d_used": false,
+  "held_v8_access": false
+}

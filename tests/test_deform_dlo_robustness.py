@@ -111,6 +111,16 @@ EVALUATOR_RUNNER = (
 READINESS_RUNNER = (
     ROOT / "scripts" / "remote" / "attest_deform_dlo3_robustness_readiness_v1.py"
 )
+POSTRUN_PLAN = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "postrun_execution_plan_v1.json"
+)
+ALLTRAIN_LAUNCH = (
+    ROOT / "results" / "sota" / "deform_dlo3_robustness_v2" / "alltrain_launch_v1.json"
+)
 
 
 def _payload() -> dict[str, object]:
@@ -1880,6 +1890,49 @@ def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
     assert "verify_deform_dlo3_backend_artifacts_v1" in source
     assert 'expected_backend_status = "scored" if backend_authorized' in source
     assert '"target_authorized": True' in source
+
+
+def test_postrun_plan_freezes_one_way_target_custody() -> None:
+    plan = json.loads(POSTRUN_PLAN.read_text(encoding="utf-8"))
+    launch = json.loads(ALLTRAIN_LAUNCH.read_text(encoding="utf-8"))
+
+    assert plan["contract"] == "deform-dlo3-robustness-postrun-execution-plan-v1"
+    assert plan["status"] == "frozen-before-alltrain-completion"
+    assert plan["alltrain"]["launch_count"] == 1
+    assert plan["alltrain"]["retry_authorized"] is False
+    assert plan["dry_run"]["launch_count"] == 0
+    assert plan["dry_run"]["maximum_launch_count"] == 1
+    assert plan["dry_run"]["failure_blocks_readiness"] is True
+    assert plan["dry_run"]["retry_authorized"] is False
+    assert plan["readiness"]["attestation_count"] == 0
+    assert plan["readiness"]["maximum_attestation_count"] == 1
+    assert plan["official"]["launch_count"] == 0
+    assert plan["official"]["maximum_launch_count"] == 1
+    assert plan["official"]["authorized"] is False
+    assert plan["official"]["retry_authorized"] is False
+    assert plan["official"]["case_replacement"] is False
+
+    dry_command = plan["dry_run"]["command"]
+    official_command = plan["official"]["command"]
+    assert dry_command[dry_command.index("--mode") + 1] == "dry-run"
+    assert "--source-manifest" in dry_command
+    assert "--readiness-attestation" not in dry_command
+    assert official_command[official_command.index("--mode") + 1] == "official"
+    assert "--readiness-attestation" in official_command
+    assert "--source-manifest" not in official_command
+
+    script_hashes = plan["script_sha256s"]
+    assert script_hashes[ALLTRAIN_RUNNER.name] == sha256_file(ALLTRAIN_RUNNER)
+    assert script_hashes[EVALUATOR_RUNNER.name] == sha256_file(EVALUATOR_RUNNER)
+    assert script_hashes[READINESS_RUNNER.name] == sha256_file(READINESS_RUNNER)
+    assert plan["primary_eval_enumerated"] is False
+    assert plan["primary_eval_read"] is False
+    assert plan["dlo4_dlo5_access"] is False
+    assert plan["target_selection"] is False
+    assert plan["target_calibration"] is False
+    assert plan["prob4d_used"] is False
+    assert plan["held_v8_access"] is False
+    assert launch["postrun_execution_plan_sha256"] == sha256_file(POSTRUN_PLAN)
 
 
 def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
