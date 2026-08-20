@@ -1,0 +1,132 @@
+{
+  "grid_id": "0ef5fc38fac835b0e82301276e5fca2d1bb5002a485d7d59b9041f074d4b2c03",
+  "groups": [
+    {
+      "base_cell_count": 25447,
+      "contact_patch_sizes": [
+        40,
+        67
+      ],
+      "ensemble_mean_archive": "double_lift_zebra/ensemble-mean.npz",
+      "ensemble_mean_sha256": "e5bc078ffa190e5ca4567edf06af11854da2b6928cdf50d91fb86ad5099163e2",
+      "final_ensemble_spread_m": 0.0003371187332596878,
+      "group_id": "double_lift_zebra",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "matphys_sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+      "maximum_contact_projection_error_m": 0.014572851750157191,
+      "members": [
+        {
+          "candidate_index": 0,
+          "maximum_deformation_determinant": 1.4019888191515595,
+          "maximum_node_displacement_m": 0.2913019837406255,
+          "minimum_deformation_determinant": 0.6635739876519053,
+          "physical_archive": "double_lift_zebra/member-00.npz",
+          "physical_archive_sha256": "b0b76ef2b8d61b2dffdff85f550e0272901a5c159f23bd01e058560887928f39",
+          "poisson_ratio": 0.2,
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        },
+        {
+          "candidate_index": 1,
+          "maximum_deformation_determinant": 1.5706429794924737,
+          "maximum_node_displacement_m": 0.2918476655962365,
+          "minimum_deformation_determinant": 0.6867393960612438,
+          "physical_archive": "double_lift_zebra/member-01.npz",
+          "physical_archive_sha256": "b9e25e6c19321e52fb5b1ca508fc7c3d638846a32e88b62b223292acc41dc457",
+          "poisson_ratio": 0.35,
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        },
+        {
+          "candidate_index": 2,
+          "maximum_deformation_determinant": 1.803037004360564,
+          "maximum_node_displacement_m": 0.29054416383714565,
+          "minimum_deformation_determinant": 0.4710504314585087,
+          "physical_archive": "double_lift_zebra/member-02.npz",
+          "physical_archive_sha256": "aaf5b5916754b78ef56040b3a614167daf10269b53f412a74373b0e76c177615",
+          "poisson_ratio": 0.45,
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        }
+      ],
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7"
+    },
+    {
+      "base_cell_count": 23140,
+      "contact_patch_sizes": [
+        7,
+        9
+      ],
+      "ensemble_mean_archive": "double_stretch_zebra/ensemble-mean.npz",
+      "ensemble_mean_sha256": "214c6f7532f909244ec605759004c6c162d01dbbcf6883def4087fa336980f5e",
+      "final_ensemble_spread_m": 0.00038600605129676864,
+      "group_id": "double_stretch_zebra",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "matphys_sha256": "f633dd863da1a9da82433821328fe3cccbb94cc1ae08c29d51ff2f85f4ef51ae",
+      "maximum_contact_projection_error_m": 6.206335383118183e-17,
+      "members": [
+        {
+          "candidate_index": 0,
+          "maximum_deformation_determinant": 37.19444490893436,
+          "maximum_node_displacement_m": 0.5671362522153574,
+          "minimum_deformation_determinant": -8.83811043254675,
+          "physical_archive": "double_stretch_zebra/member-00.npz",
+          "physical_archive_sha256": "0a245d1f082e7c172ee2b647768dc3dd4430c7273e26a79034632ef0a8657f28",
+          "poisson_ratio": 0.2,
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        },
+        {
+          "candidate_index": 1,
+          "maximum_deformation_determinant": 37.517130923873694,
+          "maximum_node_displacement_m": 0.5701648011530251,
+          "minimum_deformation_determinant": -8.16341668107989,
+          "physical_archive": "double_stretch_zebra/member-01.npz",
+          "physical_archive_sha256": "309c7eebdb6233881e98588cec0c39fcaf8784390b35c5b1687638558f53bbf5",
+          "poisson_ratio": 0.35,
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        },
+        {
+          "candidate_index": 2,
+          "maximum_deformation_determinant": 34.373508339369955,
+          "maximum_node_displacement_m": 0.5685101890576085,
+          "minimum_deformation_determinant": -19.1488335484129,
+          "physical_archive": "double_stretch_zebra/member-02.npz",
+          "physical_archive_sha256": "853d5206cdc7b85b043368b18b164956a17608bc9e4662ae8ca7b21b9e41e0f1",
+          "poisson_ratio": 0.45,
+          "status": "success",
+          "weight": 0.3333333333333333,
+          "young_modulus_pa": 100000.0
+        }
+      ],
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a"
+    }
+  ],
+  "implementation": {
+    "git_head": "5eb25d4c462d599431e4d0c0ee10a6f36e4805bb",
+    "git_worktree_clean": true,
+    "source_files": {
+      "scripts/remote/run_jax_fem_source_value_v1.py": "1093cf2560627cf16b3a404a0a97c57851fb2fa40f4e87a7f66496d46f193ecb",
+      "src/bayesian_phystwin/jax_fem_source_qualification_v1.py": "ec99943695618231262d83b9c7be9c252801883f5d18404d23141e7333d10ff6",
+      "src/bayesian_phystwin/jax_fem_source_value_v1.py": "3fc95a4ef069758e6d0c126c5773cc207d9255cb8d88d3371ea45449e0d28d95"
+    }
+  },
+  "information_boundary": {
+    "future_outcomes_read": false,
+    "incumbent_and_matphys_predictions_read": true,
+    "prefix_outcomes_read": false,
+    "source_inputs_read": true,
+    "target_or_held_out_artifact_read": false
+  },
+  "protocol_sha256": "95ce6f77b79c87742f4cc5a421e091c8f12d7825a10ac8b6371add9e2d0c6340",
+  "qualification_artifact_id": "9173b58fb3048b8f6466536e0df64e693345665fe93610c90a6677a5f5905dbc",
+  "schema": "bayesian-phystwin.jax-fem-source-value-grid",
+  "schema_version": 1,
+  "successful_candidate_count_per_group": 3
+}

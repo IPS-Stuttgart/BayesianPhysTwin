@@ -29,10 +29,14 @@ The machine-readable policy is implemented in
 `bayesian_phystwin.backend_portfolio_v1`. It records an evidence stage separate
 from implementation maturity, freezes the admitted family roster, and permits at
 most two active source-qualification candidates. The current active candidates
-are JAX-FEM and Genesis MPM. Genesis has passed source physics but failed its
-frozen source-value gate; it remains active below the recommendation threshold
-with exact incumbent fallback. The retained result is documented in
-[`genesis_mpm_zebra_source_value_v1_result.md`](genesis_mpm_zebra_source_value_v1_result.md).
+are JAX-FEM and Genesis MPM. Both have passed source physics and failed their
+first frozen source-value arms. Genesis failed its prefix value gate; JAX-FEM's
+small-strain quasistatic arm failed the outcome-blind full-horizon physical gate
+before prefix access. Both remain below the recommendation threshold with exact
+incumbent fallback. The retained results are documented in
+[`genesis_mpm_zebra_source_value_v1_result.md`](genesis_mpm_zebra_source_value_v1_result.md)
+and
+[`jax_fem_zebra_source_value_v1_result.md`](jax_fem_zebra_source_value_v1_result.md).
 
 Run the focused validation with:
 

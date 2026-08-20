@@ -3,18 +3,28 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
-import pickle
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Final
 
 import numpy as np
 
+from ._artifact_custody import ordinary_file
+from .legacy_artifacts import load_trusted_legacy_phystwin_pickle
 from .phystwin_profile import (
     causal_model_discrepancy_variance,
     predictive_observation_calibration,
 )
+
+PHYSTWIN_DISCREPANCY_SUMMARY_SCHEMA_VERSION: Final = 2
+_PROFILE_REQUIRED_ARRAYS: Final = (
+    "posterior_mean_trajectory",
+    "epistemic_variance",
+)
+_COPY_CHUNK_SIZE_BYTES: Final = 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -25,17 +35,64 @@ class PhysTwinDiscrepancyConfig:
     decay_candidates: tuple[float, ...] = (0.0, 0.5, 0.8, 0.9, 0.95, 0.98, 0.99)
 
 
-def _load_pickle(path: str | Path) -> Any:
-    with Path(path).open("rb") as handle:
-        return pickle.load(handle)
+def _validate_sha256(value: str, *, name: str) -> str:
+    if (
+        type(value) is not str
+        or value != value.lower()
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+    return value
 
 
-def _sha256(path: str | Path) -> str:
+def _strict_boolean_array(value: object, *, name: str) -> np.ndarray:
+    """Admit Boolean or exact numeric 0/1 arrays without truth coercion."""
+
+    raw = np.asarray(value)
+    if raw.dtype.kind == "b":
+        return np.array(raw, dtype=np.bool_, copy=True, order="C")
+    if raw.dtype.kind not in "iuf":
+        raise ValueError(f"{name} must contain booleans or exact numeric 0/1 values")
+    if not np.all(np.isfinite(raw)) or np.any((raw != 0) & (raw != 1)):
+        raise ValueError(f"{name} must contain booleans or exact numeric 0/1 values")
+    return np.array(raw, dtype=np.bool_, copy=True, order="C")
+
+
+def _load_verified_profile(
+    path: str | Path,
+    *,
+    expected_sha256: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Load exactly one digest-verified, non-pickled profile NPZ snapshot."""
+
+    expected = _validate_sha256(expected_sha256, name="profile_sha256")
+    source = ordinary_file(path, name="PhysTwin parameter profile")
     digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
+    with (
+        source.open("rb") as stream,
+        tempfile.TemporaryFile(mode="w+b") as snapshot,
+    ):
+        while block := stream.read(_COPY_CHUNK_SIZE_BYTES):
             digest.update(block)
-    return digest.hexdigest()
+            snapshot.write(block)
+        if not hmac.compare_digest(digest.hexdigest(), expected):
+            raise ValueError(
+                "PhysTwin parameter profile SHA-256 mismatch; refusing to load"
+            )
+        snapshot.seek(0)
+        with np.load(snapshot, allow_pickle=False) as profile:
+            missing = sorted(set(_PROFILE_REQUIRED_ARRAYS) - set(profile.files))
+            if missing:
+                raise ValueError(
+                    "PhysTwin parameter profile is missing arrays: "
+                    + ", ".join(missing)
+                )
+            posterior_mean = np.asarray(
+                profile["posterior_mean_trajectory"], dtype=float
+            ).copy()
+            epistemic = np.asarray(profile["epistemic_variance"], dtype=float).copy()
+    return posterior_mean, epistemic
 
 
 def _target_frame_validity(
@@ -105,7 +162,15 @@ def _calibrate_candidate(
         config,
     )
     candidates: list[dict[str, object]] = []
-    selected: tuple[float, float, np.ndarray, dict[str, dict[str, float | int]]] | None = None
+    selected: (
+        tuple[
+            float,
+            float,
+            np.ndarray,
+            dict[str, dict[str, float | int]],
+        ]
+        | None
+    ) = None
     for decay in config.decay_candidates:
         discrepancy = causal_model_discrepancy_variance(
             observed,
@@ -123,9 +188,7 @@ def _calibrate_candidate(
             discrepancy,
             config,
         )
-        validation_nees = float(
-            calibration["validation"]["mean_nees_per_coordinate"]
-        )
+        validation_nees = float(calibration["validation"]["mean_nees_per_coordinate"])
         score = abs(float(np.log(validation_nees)))
         candidates.append(
             {
@@ -170,9 +233,17 @@ def calibrate_phystwin_profile_discrepancy(
     profile_path: str | Path,
     *,
     config: PhysTwinDiscrepancyConfig,
+    final_data_sha256: str,
+    profile_sha256: str,
     reference_trajectory_path: str | Path | None = None,
+    reference_trajectory_sha256: str | None = None,
 ) -> dict[str, object]:
-    """Calibrate saved posterior and optional reference trajectories causally."""
+    """Calibrate one digest-bound posterior and optional reference trajectory.
+
+    Legacy pickle digests must come from an independently trusted manifest or
+    protocol lock. The semantic summary records only role, format, and digest;
+    host-local paths are deliberately excluded.
+    """
 
     if not 1 < config.fit_end_frame < config.test_start_frame:
         raise ValueError("frame split must satisfy 1 < fit_end < test_start")
@@ -182,33 +253,64 @@ def calibrate_phystwin_profile_discrepancy(
         raise ValueError("at least one decay candidate is required")
     if any(not 0.0 <= value < 1.0 for value in config.decay_candidates):
         raise ValueError("decay candidates must be in [0, 1)")
+    if (reference_trajectory_path is None) != (reference_trajectory_sha256 is None):
+        raise ValueError(
+            "reference trajectory path and SHA-256 must be supplied together"
+        )
 
-    data = _load_pickle(final_data_path)
+    final_digest = _validate_sha256(
+        final_data_sha256,
+        name="final_data_sha256",
+    )
+    profile_digest = _validate_sha256(profile_sha256, name="profile_sha256")
+    data = load_trusted_legacy_phystwin_pickle(
+        final_data_path,
+        expected_sha256=final_digest,
+        artifact_kind="mapping",
+        required_keys=(
+            "object_points",
+            "object_visibilities",
+            "object_motions_valid",
+        ),
+    )
     observed = np.asarray(data["object_points"], dtype=float)
-    visible = np.asarray(data["object_visibilities"], dtype=bool)
-    motion_valid = np.asarray(data["object_motions_valid"], dtype=bool)
+    visible = _strict_boolean_array(
+        data["object_visibilities"],
+        name="object_visibilities",
+    )
+    motion_valid = _strict_boolean_array(
+        data["object_motions_valid"],
+        name="object_motions_valid",
+    )
     if not config.test_start_frame < len(observed):
         raise ValueError("test_start_frame must be below the frame count")
     valid = _target_frame_validity(visible, motion_valid)
-    with np.load(profile_path) as profile:
-        posterior_mean = np.asarray(profile["posterior_mean_trajectory"], dtype=float)
-        epistemic = np.asarray(profile["epistemic_variance"], dtype=float)
+    posterior_mean, epistemic = _load_verified_profile(
+        profile_path,
+        expected_sha256=profile_digest,
+    )
     result: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": PHYSTWIN_DISCREPANCY_SUMMARY_SCHEMA_VERSION,
         "config": asdict(config),
         "contract": {
             "target": "hard-valid direct track coordinates",
             "observation_variance": "fixed perception term",
-            "model_discrepancy_variance": "causal residual moment after removing observation and epistemic terms",
+            "model_discrepancy_variance": (
+                "causal residual moment after removing observation and epistemic terms"
+            ),
+            "input_identity": (
+                "externally supplied SHA-256 verified against the exact loaded bytes"
+            ),
+            "path_policy": "host-local paths are excluded from semantic evidence",
         },
         "inputs": {
             "final_data": {
-                "path": str(Path(final_data_path).resolve()),
-                "sha256": _sha256(final_data_path),
+                "format": "trusted_legacy_pickle_mapping",
+                "sha256": final_digest,
             },
             "profile": {
-                "path": str(Path(profile_path).resolve()),
-                "sha256": _sha256(profile_path),
+                "format": "numpy_npz_no_pickle",
+                "sha256": profile_digest,
             },
         },
         "posterior": _calibrate_candidate(
@@ -220,11 +322,25 @@ def calibrate_phystwin_profile_discrepancy(
         ),
     }
     if reference_trajectory_path is not None:
-        reference = np.asarray(_load_pickle(reference_trajectory_path), dtype=float)
+        assert reference_trajectory_sha256 is not None
+        reference_digest = _validate_sha256(
+            reference_trajectory_sha256,
+            name="reference_trajectory_sha256",
+        )
+        reference = np.asarray(
+            load_trusted_legacy_phystwin_pickle(
+                reference_trajectory_path,
+                expected_sha256=reference_digest,
+                artifact_kind="ndarray",
+            ),
+            dtype=float,
+        )
         reference = reference[: len(observed), : observed.shape[1]]
-        result["inputs"]["reference_trajectory"] = {
-            "path": str(Path(reference_trajectory_path).resolve()),
-            "sha256": _sha256(reference_trajectory_path),
+        inputs = result["inputs"]
+        assert isinstance(inputs, dict)
+        inputs["reference_trajectory"] = {
+            "format": "trusted_legacy_pickle_ndarray",
+            "sha256": reference_digest,
         }
         result["reference"] = _calibrate_candidate(
             observed,

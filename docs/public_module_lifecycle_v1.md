@@ -22,6 +22,10 @@ The stable category includes:
   covariance admission;
 - `bayesian_phystwin.inference.component_beliefs_v1` for semantic validation of
   the five complete-belief arms;
+- [`bayesian_phystwin.physical_cause_selection_v1`](physical_cause_selection_v1.md)
+  for source-calibrated routing
+  among baseline, observation-bias, readout-discrepancy, physical-parameter, and
+  physical-state complete beliefs;
 - `bayesian_phystwin.structured_point_covariance` and
   `bayesian_phystwin.structured_point_covariance_operator_v1` for exact
   block-local plus labeled low-rank covariance representation and matrix-free
@@ -34,10 +38,11 @@ The stable category includes:
 - the public Causal4D provider-v1 and provider-v2 modules; and
 - the Prob4D causal-lineage validation bridge.
 
-The component-admission, structured-covariance, and identifiability modules
-remain explicit direct imports. Registering them as stable does not add symbols
-to the exact `bayesian_phystwin.inference.v1` or `bayesian_phystwin.v1` export
-snapshots. The guarded Causal4D provider is likewise an additive integration
+The component-admission, physical-cause, structured-covariance, and
+identifiability modules remain explicit direct imports. Registering them as
+stable does not by itself add symbols to `bayesian_phystwin.v1`; symbols exposed
+through `bayesian_phystwin.inference.v1` remain governed by its exact API
+snapshot. The guarded Causal4D provider is likewise an additive integration
 facade; its implementation modules are not separate downstream compatibility
 boundaries.
 

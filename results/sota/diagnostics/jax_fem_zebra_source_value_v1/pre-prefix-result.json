@@ -1,0 +1,106 @@
+{
+  "grid_sha256": "3bb6bf8afa878e7fd262344d8cb4ec3260fd16303e2776d8f884cc0d9d675414",
+  "information_boundary": {
+    "future_outcomes_read": false,
+    "prefix_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "physical_checks": {
+    "full_horizon_contact_projection": true,
+    "full_horizon_deformation_determinants": false,
+    "full_horizon_node_displacement": false
+  },
+  "physical_details": [
+    {
+      "contact_projection_gate_passed": true,
+      "group_id": "double_lift_zebra",
+      "maximum_contact_projection_error_m": 0.014572851750157191,
+      "members": [
+        {
+          "candidate_index": 0,
+          "deformation_determinant_gate_passed": true,
+          "maximum_deformation_determinant": 1.4019888191515595,
+          "maximum_node_displacement_m": 0.2913019837406255,
+          "minimum_deformation_determinant": 0.6635739876519053,
+          "node_displacement_gate_passed": true,
+          "poisson_ratio": 0.2
+        },
+        {
+          "candidate_index": 1,
+          "deformation_determinant_gate_passed": true,
+          "maximum_deformation_determinant": 1.5706429794924737,
+          "maximum_node_displacement_m": 0.2918476655962365,
+          "minimum_deformation_determinant": 0.6867393960612438,
+          "node_displacement_gate_passed": true,
+          "poisson_ratio": 0.35
+        },
+        {
+          "candidate_index": 2,
+          "deformation_determinant_gate_passed": false,
+          "maximum_deformation_determinant": 1.803037004360564,
+          "maximum_node_displacement_m": 0.29054416383714565,
+          "minimum_deformation_determinant": 0.4710504314585087,
+          "node_displacement_gate_passed": true,
+          "poisson_ratio": 0.45
+        }
+      ]
+    },
+    {
+      "contact_projection_gate_passed": true,
+      "group_id": "double_stretch_zebra",
+      "maximum_contact_projection_error_m": 6.206335383118183e-17,
+      "members": [
+        {
+          "candidate_index": 0,
+          "deformation_determinant_gate_passed": false,
+          "maximum_deformation_determinant": 37.19444490893436,
+          "maximum_node_displacement_m": 0.5671362522153574,
+          "minimum_deformation_determinant": -8.83811043254675,
+          "node_displacement_gate_passed": false,
+          "poisson_ratio": 0.2
+        },
+        {
+          "candidate_index": 1,
+          "deformation_determinant_gate_passed": false,
+          "maximum_deformation_determinant": 37.517130923873694,
+          "maximum_node_displacement_m": 0.5701648011530251,
+          "minimum_deformation_determinant": -8.16341668107989,
+          "node_displacement_gate_passed": false,
+          "poisson_ratio": 0.35
+        },
+        {
+          "candidate_index": 2,
+          "deformation_determinant_gate_passed": false,
+          "maximum_deformation_determinant": 34.373508339369955,
+          "maximum_node_displacement_m": 0.5685101890576085,
+          "minimum_deformation_determinant": -19.1488335484129,
+          "node_displacement_gate_passed": false,
+          "poisson_ratio": 0.45
+        }
+      ]
+    }
+  ],
+  "physical_gate_passed": false,
+  "prefix_scoring_authorized": false,
+  "protocol_sha256": "95ce6f77b79c87742f4cc5a421e091c8f12d7825a10ac8b6371add9e2d0c6340",
+  "result_id": "aa0f41632a239936cdc309a69fac86ad7ba6e7a09f8b43ef9d069011c01acaf5",
+  "schema": "bayesian-phystwin.jax-fem-source-value-pre-prefix-result",
+  "schema_version": 1,
+  "selected_predictions": [
+    {
+      "byte_exact_source": true,
+      "group_id": "double_lift_zebra",
+      "selected_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "selection": "exact_incumbent_fallback",
+      "source_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+    },
+    {
+      "byte_exact_source": true,
+      "group_id": "double_stretch_zebra",
+      "selected_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "selection": "exact_incumbent_fallback",
+      "source_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd"
+    }
+  ],
+  "status": "pre-prefix-physical-gate-failed-exact-fallback"
+}
