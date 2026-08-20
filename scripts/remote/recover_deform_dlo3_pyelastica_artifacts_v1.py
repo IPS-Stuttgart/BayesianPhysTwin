@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import shutil
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -107,9 +108,39 @@ def _locked_digest(
         raise ValueError(f"{label} differs from the recovery lock")
 
 
-def _assert_array_exact(actual: Array, expected: Array, *, label: str) -> None:
-    if actual.shape != expected.shape or not np.array_equal(actual, expected):
-        raise ValueError(f"{label} does not replay exactly")
+def _assert_array_equivalent(
+    actual: Array,
+    expected: Array,
+    *,
+    reduction_terms: int,
+    label: str,
+) -> dict[str, object]:
+    left = np.asarray(actual, dtype=np.float64)
+    right = np.asarray(expected, dtype=np.float64)
+    epsilon = float(np.finfo(np.float64).eps)
+    if reduction_terms < 1 or reduction_terms * epsilon >= 1.0:
+        raise ValueError(f"{label} reduction count is invalid")
+    gamma = reduction_terms * epsilon / (1.0 - reduction_terms * epsilon)
+    scale = max(1.0, float(np.max(np.abs(right))))
+    tolerance = gamma * scale
+    maximum_delta = (
+        float(np.max(np.abs(left - right))) if left.shape == right.shape else math.inf
+    )
+    if (
+        left.shape != right.shape
+        or not np.allclose(left, right, rtol=0.0, atol=tolerance)
+    ):
+        raise ValueError(f"{label} exceeds its floating-point replay bound")
+    return {
+        "label": label,
+        "reduction_terms": reduction_terms,
+        "machine_epsilon": epsilon,
+        "gamma_n": gamma,
+        "reference_scale": scale,
+        "absolute_tolerance": tolerance,
+        "maximum_absolute_delta": maximum_delta,
+        "numerically_equivalent": True,
+    }
 
 
 def _selected_parameter(
@@ -149,7 +180,7 @@ def main() -> int:
     protocol = load_deform_dlo_robustness_v1_protocol(protocol_path)
     manifest = _read_json(manifest_path)
     if (
-        lock.get("contract") != "deform-dlo3-pyelastica-artifact-recovery-v1"
+        lock.get("contract") != "deform-dlo3-pyelastica-artifact-recovery-v2"
         or lock.get("permitted_operation")
         != "persist-already-computed-full-covariance-and-reseal-byte-identical-predictions"
         or lock.get("protocol_sha256") != sha256_file(protocol_path)
@@ -167,15 +198,37 @@ def main() -> int:
             required_replay.get(key) is not True
             for key in (
                 "selected_fit_error_exact",
-                "point_predictions_exact",
-                "coordinate_covariance_exact",
-                "calibrated_coordinate_covariance_exact",
+                "point_predictions_numerically_equivalent",
+                "coordinate_covariance_numerically_equivalent",
+                "calibrated_coordinate_covariance_numerically_equivalent",
                 "source_predictions_file_byte_identical",
             )
         )
         or required_replay.get("source_gate_recomputed") is not False
     ):
         raise ValueError("PyElastica recovery replay contract differs")
+    equivalence = _mapping(
+        lock.get("floating_point_equivalence"),
+        label="floating-point replay equivalence",
+    )
+    epsilon = float(np.finfo(np.float64).eps)
+    point_reduction_terms = int(
+        cast(Any, equivalence.get("point_reduction_terms", -1))
+    )
+    covariance_reduction_terms = int(
+        cast(Any, equivalence.get("covariance_reduction_terms", -1))
+    )
+    if (
+        equivalence.get("dtype") != "float64"
+        or equivalence.get("formula")
+        != "gamma_n_times_max_one_reference_scale"
+        or float(cast(Any, equivalence.get("machine_epsilon", math.nan)))
+        != epsilon
+        or float(cast(Any, equivalence.get("relative_tolerance", math.nan))) != 0.0
+        or point_reduction_terms != 93
+        or covariance_reduction_terms != 39 * 498
+    ):
+        raise ValueError("PyElastica floating-point replay contract differs")
     _locked_digest(
         lock, "source_result", original_result_path, label="original source result"
     )
@@ -265,7 +318,7 @@ def main() -> int:
     )
     preflight = {
         "schema_version": 1,
-        "contract": "deform-dlo3-pyelastica-artifact-recovery-preflight-v1",
+        "contract": "deform-dlo3-pyelastica-artifact-recovery-preflight-v2",
         "mode": args.mode,
         "recovery_lock": _identity(lock_path),
         "protocol": _identity(protocol_path),
@@ -356,17 +409,22 @@ def main() -> int:
         replay["coordinate_covariance_m2"],
         float(cast(Any, calibration["variance_scale"])),
     )
-    _assert_array_exact(
-        np.asarray(replay["predictions"]), sealed_candidate, label="point prediction"
+    point_equivalence = _assert_array_equivalent(
+        np.asarray(replay["predictions"]),
+        sealed_candidate,
+        reduction_terms=point_reduction_terms,
+        label="point prediction",
     )
-    _assert_array_exact(
+    covariance_equivalence = _assert_array_equivalent(
         np.asarray(replay["coordinate_covariance_m2"]),
         sealed_covariance,
+        reduction_terms=covariance_reduction_terms,
         label="coordinate covariance",
     )
-    _assert_array_exact(
+    calibrated_equivalence = _assert_array_equivalent(
         replay_calibrated,
         sealed_calibrated,
+        reduction_terms=covariance_reduction_terms,
         label="calibrated coordinate covariance",
     )
 
@@ -377,15 +435,15 @@ def main() -> int:
     _copy_exact(calibration_path, copied_calibration)
     _copy_exact(predictions_path, copied_predictions)
     recovery_lineage = {
-        "contract": "deform-dlo3-pyelastica-artifact-recovery-replay-v1",
+        "contract": "deform-dlo3-pyelastica-artifact-recovery-replay-v2",
         "recovery_lock": _identity(lock_path),
         "original_source_result": _identity(original_result_path),
         "original_method_seal": _identity(method_path),
         "original_prediction_seal": _identity(prediction_seal_path),
         "selected_fit_error_exact": True,
-        "point_predictions_exact": True,
-        "coordinate_covariance_exact": True,
-        "calibrated_coordinate_covariance_exact": True,
+        "point_prediction_equivalence": point_equivalence,
+        "coordinate_covariance_equivalence": covariance_equivalence,
+        "calibrated_coordinate_covariance_equivalence": calibrated_equivalence,
         "source_predictions_file_byte_identical": True,
         "source_gate_recomputed": False,
         "fit_parameter_reselection": False,
@@ -437,7 +495,7 @@ def main() -> int:
     )
     receipt = {
         "schema_version": 1,
-        "contract": "deform-dlo3-pyelastica-artifact-recovery-receipt-v1",
+        "contract": "deform-dlo3-pyelastica-artifact-recovery-receipt-v2",
         "recovery": recovery_lineage,
         "recovered_source_result": _identity(recovered_result_path),
         "recovered_method_seal": _identity(recovered_method_path),

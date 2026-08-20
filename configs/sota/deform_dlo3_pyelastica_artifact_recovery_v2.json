@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "contract": "deform-dlo3-pyelastica-artifact-recovery-v2",
+  "claim_boundary": "Recover one missing fit-derived full-covariance artifact from the already sealed PyElastica source method. No parameter selection, source scoring, target access, or claim change is authorized.",
+  "supersedes": {
+    "contract": "deform-dlo3-pyelastica-artifact-recovery-v1",
+    "reason": "The exact-array replay gate failed on source-independent floating-point reassociation while remaining within machine-precision forward-error bounds. The failed execution is retained verbatim."
+  },
+  "original_source_revision": "7c304f79aeea92bd93b852d18db8f5ba1e2d5017",
+  "original_source_archive_sha256": "ec74c4e3f84137aec061731f10800b8060d902cc2e16a26ebe3b1431cf7fed35",
+  "protocol_sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c",
+  "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+  "original_artifact_sha256s": {
+    "fit_selection": "2e70982cc7912e3e01f7ce93a2a6d6900023fe278b46c682d2d63ad525632f85",
+    "local_residual_model": "1087d173672be0290c5d9f3825b0ca6e73332056ffe2980d2744066c50215fe8",
+    "covariance_calibration": "a9b5305eb374673d1ffc7c2640722250e88b630d99d7af966269dac92c89515a",
+    "method_seal": "8a6ce0df2310c650b92aab7ee45ee8d23f1083778d4bd3e573d41ba198559652",
+    "source_predictions": "c8658f04aa81af1895f7f010d03a08e945fca7b63342b341eaa889408f5b69c8",
+    "prediction_seal": "6bf2b1f055386a41f5253744859afae7a8c9843335283b8c517803194af973d5",
+    "source_result": "762433ceb8d9fab63494ec26cf6df043da7cd83ce113a914d7656166b83b9d3c"
+  },
+  "permitted_operation": "persist-already-computed-full-covariance-and-reseal-byte-identical-predictions",
+  "floating_point_equivalence": {
+    "dtype": "float64",
+    "formula": "gamma_n_times_max_one_reference_scale",
+    "machine_epsilon": 2.220446049250313e-16,
+    "point_reduction_terms": 93,
+    "covariance_reduction_terms": 19422,
+    "covariance_reduction_derivation": "39 frozen fit trajectories times 498 prediction frames",
+    "relative_tolerance": 0.0
+  },
+  "required_replay": {
+    "selected_fit_error_exact": true,
+    "point_predictions_numerically_equivalent": true,
+    "coordinate_covariance_numerically_equivalent": true,
+    "calibrated_coordinate_covariance_numerically_equivalent": true,
+    "source_predictions_file_byte_identical": true,
+    "source_gate_recomputed": false
+  },
+  "custody": {
+    "fit_parameter_reselection": false,
+    "source_score_recomputation": false,
+    "primary_eval_enumeration": false,
+    "primary_eval_read": false,
+    "dlo4_dlo5_read": false,
+    "retry_authorized": false,
+    "prob4d_used": false,
+    "held_v8_access": false
+  }
+}

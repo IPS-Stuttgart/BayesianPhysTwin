@@ -93,13 +93,20 @@ PYELASTICA_RECOVERY_LOCK = (
     ROOT
     / "configs"
     / "sota"
-    / "deform_dlo3_pyelastica_artifact_recovery_v1.json"
+    / "deform_dlo3_pyelastica_artifact_recovery_v2.json"
 )
 PYELASTICA_RECOVERY_RUNNER = (
     ROOT
     / "scripts"
     / "remote"
     / "recover_deform_dlo3_pyelastica_artifacts_v1.py"
+)
+PYELASTICA_RECOVERY_V1_FAILURE = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "pyelastica_artifact_recovery_v1_failure.json"
 )
 ALLTRAIN_RUNNER = (
     ROOT / "scripts" / "remote" / "run_deform_dlo3_robustness_alltrain_v1.py"
@@ -1681,10 +1688,10 @@ def test_pyelastica_runner_seals_fit_and_predictions_before_source_scoring() -> 
     assert 'full_payload["residual_covariance_full"]' in source
 
 
-def test_pyelastica_artifact_recovery_lock_is_exact_and_target_blind() -> None:
+def test_pyelastica_artifact_recovery_lock_is_fixed_and_target_blind() -> None:
     lock = json.loads(PYELASTICA_RECOVERY_LOCK.read_text(encoding="utf-8"))
 
-    assert lock["contract"] == "deform-dlo3-pyelastica-artifact-recovery-v1"
+    assert lock["contract"] == "deform-dlo3-pyelastica-artifact-recovery-v2"
     assert (
         lock["permitted_operation"]
         == "persist-already-computed-full-covariance-and-reseal-byte-identical-predictions"
@@ -1704,13 +1711,40 @@ def test_pyelastica_artifact_recovery_lock_is_exact_and_target_blind() -> None:
     }
     assert lock["required_replay"] == {
         "selected_fit_error_exact": True,
-        "point_predictions_exact": True,
-        "coordinate_covariance_exact": True,
-        "calibrated_coordinate_covariance_exact": True,
+        "point_predictions_numerically_equivalent": True,
+        "coordinate_covariance_numerically_equivalent": True,
+        "calibrated_coordinate_covariance_numerically_equivalent": True,
         "source_predictions_file_byte_identical": True,
         "source_gate_recomputed": False,
     }
+    equivalence = lock["floating_point_equivalence"]
+    assert equivalence["formula"] == "gamma_n_times_max_one_reference_scale"
+    assert equivalence["machine_epsilon"] == np.finfo(np.float64).eps
+    assert equivalence["point_reduction_terms"] == 93
+    assert equivalence["covariance_reduction_terms"] == 39 * 498
+    assert equivalence["relative_tolerance"] == 0.0
     assert all(value is False for value in lock["custody"].values())
+
+
+def test_pyelastica_exact_recovery_failure_is_retained_target_blind() -> None:
+    failure = json.loads(
+        PYELASTICA_RECOVERY_V1_FAILURE.read_text(encoding="utf-8")
+    )
+
+    assert failure["contract"] == (
+        "deform-dlo3-pyelastica-artifact-recovery-failure-v1"
+    )
+    assert failure["status"] == "failed_closed"
+    assert failure["failure_stage"] == "exact-point-prediction-replay"
+    assert failure["recovered_method_sealed"] is False
+    assert failure["recovered_prediction_sealed"] is False
+    assert failure["recovered_result_written"] is False
+    assert failure["target_blind_diagnostic"]["source_outcomes_scored"] is False
+    assert failure["source_score_recomputed"] is False
+    assert failure["primary_eval_enumerated"] is False
+    assert failure["primary_eval_read"] is False
+    assert failure["retry_authorized"] is False
+    assert failure["held_v8_access"] is False
 
 
 def test_pyelastica_artifact_recovery_replays_without_rescoring_or_selection() -> None:
@@ -1729,7 +1763,7 @@ def test_pyelastica_artifact_recovery_replays_without_rescoring_or_selection() -
         'full_model_path = output_root / "full_covariance_model.npz"'
     )
     source_open = source.index("source_panel = source_runtime._load_named_trajectories")
-    point_replay = source.index("np.asarray(replay[\"predictions\"])")
+    point_replay = source.index("point_equivalence = _assert_array_equivalent")
     method_seal = source.index(
         'recovered_method_path = output_root / "method_seal.json"'
     )
@@ -1758,6 +1792,8 @@ def test_pyelastica_artifact_recovery_replays_without_rescoring_or_selection() -
     assert "evaluate_deform_predictive_distribution" not in source
     assert "fit_deform_local_residual(" not in source
     assert '"source_gate_recomputed": False' in source
+    assert "gamma = reduction_terms * epsilon" in source
+    assert "np.allclose(left, right, rtol=0.0, atol=tolerance)" in source
     assert '"fit_parameter_reselection": False' in source
     assert '"source_score_recomputation": False' in source
     assert '"primary_eval_read": False' in source
