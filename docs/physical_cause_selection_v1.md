@@ -68,6 +68,9 @@ ambiguous. There are only two permitted ambiguity outcomes:
 
 An ambiguous decision never promotes a physical-state or physical-parameter
 candidate merely because it has the numerically smallest point estimate.
+Selection is object-preserving: `select_physical_cause` returns the exact input
+baseline or candidate object by identity; it does not reconstruct a belief from
+the decision record.
 
 ## Example
 
