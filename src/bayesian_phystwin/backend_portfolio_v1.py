@@ -48,10 +48,10 @@ _ADMISSION_FREEZE_BASELINE: Final = frozenset(
 _EVIDENCE_STAGE_BY_PROFILE: Final[Mapping[str, BackendEvidenceStageV1]] = (
     MappingProxyType(
         {
-            "jax-fem-quasistatic-v1": "native-smoke-passed",
+            "jax-fem-quasistatic-v1": "source-physics-qualified",
             "warp-fem-v1": "registered-adapter",
             "sofa-fem-v1": "registered-adapter",
-            "genesis-mpm-v1": "native-smoke-passed",
+            "genesis-mpm-v1": "source-physics-qualified",
             "position-based-dynamics-v1": "registered-adapter",
             "physx-fem-v1": "registered-adapter",
             "mujoco-flex-v1": "registered-adapter",

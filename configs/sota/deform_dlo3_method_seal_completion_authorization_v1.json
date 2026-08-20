@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-robustness-method-seal-recovery-v1",
+  "claim_boundary": "Explicit authorization for exactly one source-only completion each of seeds 42 and 43 from their exact immutable method seals. Seed 44 and all official or reserve evaluation remain unauthorized.",
+  "failed_execution": {
+    "source_revision": "bd5cfb14845acb1c5396554caea30b542f975ec9",
+    "source_archive_sha256": "108a38c5330dca23a6dee66b6ee4436cdcce47bd9b5a821cbd800c41d98df54d",
+    "protocol_sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c",
+    "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+    "failure_receipt": {
+      "repository_path": "results/sota/deform_dlo3_robustness_v2/preseal_runtime_failure.json",
+      "sha256": "121152a8de974e3aa401989ff13f3676e91826a4f419c38fb12d716a56a0f369"
+    },
+    "calibration_mechanism_preflight": {
+      "repository_path": "results/sota/deform_dlo3_robustness_v2/calibration_mechanism_preflight_smoke.json",
+      "sha256": "e412ee526f23d9eceb15a10d41dde456b4e0a8f29e873707967a2ae6514af00d",
+      "source_revision": "1c019fda8c2c2bc38558f200e885c741b0f68afb",
+      "source_archive_sha256": "8bd7a469fcbd4450195ea46fed320b659c5ddefaaa3ba452553cb9446a317928"
+    }
+  },
+  "seed_artifacts": {
+    "42": {
+      "completed_updates": 6400,
+      "method_seal_sha256": "96b2733e9365eeed0136afd5998594757503dcd5d90c19fa99bfd347432c5814",
+      "compute_match_sha256": "fde6e9e3efe389da915f206f3af8730fa8fa6242296549064914a68e315d0ef5",
+      "failure_log_sha256": "857b155f3a6a0b3f55da6503872e179869d78a0a396dd02f336d7ff8aabf80d4",
+      "method_seal_exists": true,
+      "prediction_seal_exists": false,
+      "source_predictions_exist": false,
+      "source_result_exists": false
+    },
+    "43": {
+      "completed_updates": 6400,
+      "method_seal_sha256": "2bca7dfddd280f7d1534e6f60f70e6ee44723df560bd929ce7b7304b936a3f74",
+      "compute_match_sha256": "64cf726a5c9998d0ab7a2fdae00feb0bd718c0b205fe6b9423915cbb42dfe0c9",
+      "failure_log_sha256": "e3f9360ce4319c36c1cebc8a5d375d41c2ac3d02825ca29a969a1924b34eaf81",
+      "method_seal_exists": true,
+      "prediction_seal_exists": false,
+      "source_predictions_exist": false,
+      "source_result_exists": false
+    }
+  },
+  "recovery_policy": {
+    "eligible_seeds": [42, 43],
+    "reuse_exact_method_seals": true,
+    "retraining": false,
+    "refitting": false,
+    "checkpoint_continuation": false,
+    "seed_selection": false,
+    "source_reselection": false,
+    "source_case_replacement": false,
+    "maximum_completions_per_seed": 1,
+    "output_root_policy": "new-empty-root-per-seed",
+    "completion_output_names": {
+      "42": "seed-42-method-seal-completion-v1",
+      "43": "seed-43-method-seal-completion-v1"
+    }
+  },
+  "decision": {
+    "status": "authorized",
+    "source_completion_authorized": true,
+    "permitted_operation": "complete-source-from-exact-method-seal",
+    "implementation_source_revision": "68feea8ae5852b7713f498cfaba81cdac744a000",
+    "implementation_archive_sha256": "111ac9b2c2d74976277a8aba1b52663788e109ec67b796e98e619c83919e56f7",
+    "seed_44_authorized": false,
+    "reason": "The user explicitly authorized one source-only completion each for seeds 42 and 43 on 2026-08-19. This does not authorize retraining, retry, seed 44, official DLO3 evaluation, DLO4/DLO5, or held-v8 access."
+  },
+  "custody": {
+    "source_test_outcomes_used_for_method_change": false,
+    "official_eval_read": false,
+    "dlo4_dlo5_reserve_access": false,
+    "held_v8_access": false,
+    "target_selection": false,
+    "target_calibration": false,
+    "target_retry": false,
+    "prob4d_used": false
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "schema": "bayesian-phystwin.jax-fem-source-physics-protocol",
+  "schema_version": 1,
+  "protocol_label": "jax-fem-zebra-source-physics-v1",
+  "claim_boundary": "Source-only numerical qualification of one exact JAX-FEM runtime on two already-open PhysTwin source actions. It is not a source-value, fresh-object, calibration, Causal4D, DEFORM, or state-of-the-art claim.",
+  "backend": {
+    "canonical_profile_id": "jax-fem-quasistatic-v1",
+    "producer_profile_id": "jax-fem-quasistatic-v1",
+    "transport": "lagrangian-export-v1",
+    "engine_repository": "https://github.com/deepmodeling/jax-fem",
+    "engine_revision": "82c6993c16704e38611f9cb91a5b70f1c690daee",
+    "engine_version": "0.0.12",
+    "native_smoke_artifact_sha256": "0f22f9715f3ad1a96b19df58ada32ac30ca3b6e0268f4dc0e63f860e6a8cd899",
+    "native_smoke_id": "c0b78b3537034611fa1df9715ddf450154d64b799d10b0ced475cd4e10a3dccc",
+    "runtime_id": "20c46dfa402712247416730e82289d4d4cd46096cab8c15b49ddb84a69d02a81",
+    "installed_source_sha256": {
+      "jax_fem/generate_mesh.py": "927c23cad0b19d6038de27051e31483e99a127d5d22c3e0133d7d4ff80a6317e",
+      "jax_fem/problem.py": "c242210fa126f1d9b973ece59d0a53323869d04b127e65f0c98357b60ce316a2",
+      "jax_fem/solver.py": "97bb0e0266a9f5040fce4dbbcbd606cc1f21213073800d15c567a9490a5a7074"
+    },
+    "runtime_versions": {
+      "python": "3.12.13",
+      "jax": "0.4.38",
+      "jax_fem": "0.0.12",
+      "numpy": "2.2.6",
+      "scipy": "1.15.2"
+    }
+  },
+  "source_groups": [
+    {
+      "group_id": "double_lift_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "frame_count": 58,
+      "material_node_count": 4607,
+      "controller_point_count": 30,
+      "attached_node_count": 107,
+      "expected_contact_patch_sizes": [40, 67],
+      "expected_base_cell_count": 25447,
+      "expected_coarse_cell_count": 26156
+    },
+    {
+      "group_id": "double_stretch_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "frame_count": 198,
+      "material_node_count": 4208,
+      "controller_point_count": 30,
+      "attached_node_count": 16,
+      "expected_contact_patch_sizes": [7, 9],
+      "expected_base_cell_count": 23140,
+      "expected_coarse_cell_count": 23874
+    }
+  ],
+  "simulation": {
+    "backend": "cpu",
+    "precision": "64",
+    "seed": 0,
+    "qualification_frame_count": 10,
+    "base_frame_indices": [0, 3, 6, 9],
+    "refined_frame_indices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "base_mesh_max_edge_m": 0.025,
+    "coarse_mesh_max_edge_m": 0.03,
+    "minimum_tetrahedron_shape_ratio": 0.0001,
+    "contact_cluster_radius_m": 0.015,
+    "element_type": "TET4",
+    "constitutive_model": "small-strain-isotropic-linear-elasticity",
+    "young_modulus_pa": 100000.0,
+    "young_modulus_probe_low_pa": 25000.0,
+    "young_modulus_probe_high_pa": 500000.0,
+    "low_poisson_ratio": 0.2,
+    "base_poisson_ratio": 0.35,
+    "high_poisson_ratio": 0.45,
+    "solver": "scipy-spsolve",
+    "rigid_transform_rotation_axis": [1.0, 2.0, 3.0],
+    "rigid_transform_angle_rad": 0.37,
+    "rigid_transform_translation_m": [0.13, -0.08, 0.11],
+    "mesh_policy": "deterministic-delaunay-qbb-qc-qz-q12-edge-shape-filter-v1",
+    "contact_boundary_policy": "weighted-controller-targets-rigid-se3-connected-patches-v1",
+    "load_step_refinement_semantics": "independent-quasistatic-shared-source-frame-parity-v1"
+  },
+  "gates": {
+    "maximum_zero_action_drift_m": 0.0000000001,
+    "maximum_rigid_equivariance_error_m": 0.000001,
+    "maximum_time_step_refinement_relative_error": 0.000001,
+    "maximum_mesh_connectivity_sensitivity_relative_error": 0.05,
+    "maximum_source_query_parity_rmse_m": 0.0000001,
+    "minimum_action_response_m": 0.0001,
+    "minimum_poisson_sensitivity_m": 0.00001,
+    "maximum_poisson_sensitivity_m": 0.005,
+    "maximum_young_modulus_invariance_error_m": 0.000000001,
+    "maximum_contact_projection_error_m": 0.005,
+    "maximum_node_displacement_m": 0.05,
+    "minimum_deformation_determinant": 0.5,
+    "maximum_deformation_determinant": 2.0
+  },
+  "information_boundary": {
+    "frame_zero_geometry_allowed": true,
+    "known_full_controller_trajectory_allowed": true,
+    "incumbent_prediction_allowed_for_query_parity_and_exact_fallback": true,
+    "source_object_outcomes_allowed": false,
+    "target_or_held_out_artifact_access_allowed": false,
+    "future_scoring_authorized": false,
+    "no_replacement": true
+  }
+}
