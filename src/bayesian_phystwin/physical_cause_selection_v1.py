@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import numpy as np
 
@@ -74,7 +74,7 @@ def _finite_real(
 
 
 def _sha256(value: object, *, name: str) -> str:
-    return literal_lower_hex(value, name=name, lengths={64})
+    return cast(str, literal_lower_hex(value, name=name, lengths={64}))
 
 
 def _optional_sha256(value: object, *, name: str) -> str | None:
@@ -235,7 +235,7 @@ class PhysicalCauseCandidateV1:
 
     @property
     def candidate_id(self) -> str:
-        return content_id(self.descriptor())
+        return cast(str, content_id(self.descriptor()))
 
 
 @dataclass(frozen=True, slots=True)
@@ -301,7 +301,7 @@ class PhysicalCauseDecisionPolicyV1:
 
     @property
     def policy_id(self) -> str:
-        return content_id(self.descriptor())
+        return cast(str, content_id(self.descriptor()))
 
 
 @dataclass(frozen=True, slots=True)
@@ -500,7 +500,7 @@ class PhysicalCauseDecisionV1:
 
     @property
     def decision_id(self) -> str:
-        return content_id(self.descriptor())
+        return cast(str, content_id(self.descriptor()))
 
     def to_record(self) -> dict[str, Any]:
         return {**self.descriptor(), "decision_id": self.decision_id}
