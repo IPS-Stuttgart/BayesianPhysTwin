@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import pytest
 
+import bayesian_phystwin.physical_cause_selection_v2 as selection_v2
 from bayesian_phystwin.physical_cause_selection_v1 import (
     PhysicalCause,
     PhysicalCauseAmbiguityFallback,
@@ -415,9 +416,7 @@ def test_ambiguous_family_can_select_bound_discrepancy_fallback() -> None:
             baseline,
             evidence,
             tie_tolerance=0.02,
-            ambiguity_fallback=(
-                PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY
-            ),
+            ambiguity_fallback=(PhysicalCauseAmbiguityFallback.READOUT_DISCREPANCY),
         ),
         evidence,
     )
@@ -496,3 +495,219 @@ def test_invalid_contract_values_fail_closed() -> None:
         replace(bound, cause=cast(Any, "physical_state"))
     with pytest.raises(ValueError, match="finite JSON"):
         replace(_policy(baseline, evidence), metadata={"bad": float("inf")})
+
+
+def test_finite_real_validation_covers_every_fail_closed_path() -> None:
+    class BrokenArray:
+        def __array__(self, *_args: object, **_kwargs: object) -> object:
+            raise TypeError("broken array conversion")
+
+    baseline = DummyBelief(_digest("baseline"))
+    pair = _candidate(
+        PhysicalCause.READOUT_DISCREPANCY,
+        "discrepancy",
+        upper_regret=-0.20,
+    )
+    evidence = _evidence_set([pair[1]])
+    bound = evidence.candidate_evidence[0]
+    policy = _policy(baseline, evidence)
+
+    with pytest.raises(ValueError, match="finite real number"):
+        replace(bound, upper_regret=cast(Any, BrokenArray()))
+    with pytest.raises(ValueError, match="finite real number"):
+        replace(bound, upper_regret=cast(Any, [0.1]))
+    with pytest.raises(ValueError, match="finite real number"):
+        replace(bound, upper_regret=cast(Any, "not-a-number"))
+    with pytest.raises(ValueError, match="finite real number"):
+        replace(bound, upper_regret=float("inf"))
+    with pytest.raises(ValueError, match="at least"):
+        replace(policy, minimum_improvement=-0.1)
+    with pytest.raises(ValueError, match="at most"):
+        replace(evidence, confidence_level=1.1)
+
+
+def test_registered_candidate_family_validation_is_exhaustive() -> None:
+    pair = _candidate(
+        PhysicalCause.READOUT_DISCREPANCY,
+        "discrepancy",
+        upper_regret=-0.20,
+    )
+    evidence = _evidence_set([pair[1]])
+
+    with pytest.raises(TypeError, match="sequence of PhysicalCause"):
+        replace(evidence, registered_candidate_causes=cast(Any, "physical_state"))
+    with pytest.raises(ValueError, match="must not be empty"):
+        replace(evidence, registered_candidate_causes=())
+    with pytest.raises(TypeError, match="contain PhysicalCause"):
+        replace(
+            evidence,
+            registered_candidate_causes=(cast(Any, "physical_state"),),
+        )
+    with pytest.raises(ValueError, match="baseline"):
+        replace(evidence, registered_candidate_causes=(PhysicalCause.BASELINE,))
+    with pytest.raises(ValueError, match="duplicate"):
+        replace(
+            evidence,
+            registered_candidate_causes=(
+                PhysicalCause.READOUT_DISCREPANCY,
+                PhysicalCause.READOUT_DISCREPANCY,
+            ),
+        )
+
+
+def test_evidence_set_rejects_malformed_or_nonunique_candidate_records() -> None:
+    discrepancy_pair = _candidate(
+        PhysicalCause.READOUT_DISCREPANCY,
+        "discrepancy",
+        upper_regret=-0.20,
+    )
+    evidence = _evidence_set([discrepancy_pair[1]])
+    bound = evidence.candidate_evidence[0]
+
+    with pytest.raises(ValueError, match="baseline"):
+        replace(bound, cause=PhysicalCause.BASELINE)
+    with pytest.raises(TypeError, match="sequence"):
+        replace(evidence, candidate_evidence=cast(Any, "not-evidence"))
+    with pytest.raises(TypeError, match="contain"):
+        replace(evidence, candidate_evidence=(cast(Any, object()),))
+    with pytest.raises(ValueError, match="registered candidate family"):
+        replace(
+            evidence,
+            registered_candidate_causes=(PhysicalCause.PHYSICAL_STATE,),
+        )
+
+    state_pair = _candidate(
+        PhysicalCause.PHYSICAL_STATE,
+        "state",
+        upper_regret=-0.25,
+    )
+    two_candidate_evidence = _evidence_set(
+        [discrepancy_pair[1], state_pair[1]]
+    )
+    first, second = two_candidate_evidence.candidate_evidence
+    duplicate = replace(second, candidate_id=first.candidate_id)
+    with pytest.raises(ValueError, match="candidate IDs must be unique"):
+        replace(
+            two_candidate_evidence,
+            candidate_evidence=(first, duplicate),
+        )
+
+
+def test_policy_and_decision_reject_wrong_runtime_types() -> None:
+    baseline = DummyBelief(_digest("baseline"))
+    pair = _candidate(
+        PhysicalCause.READOUT_DISCREPANCY,
+        "discrepancy",
+        upper_regret=-0.20,
+    )
+    evidence = _evidence_set([pair[1]])
+    policy = _policy(baseline, evidence)
+    _, decision = select_physical_cause_v2(
+        baseline,
+        [pair],
+        policy,
+        evidence,
+    )
+
+    with pytest.raises(TypeError, match="ambiguity_fallback"):
+        replace(policy, ambiguity_fallback=cast(Any, "baseline"))
+    with pytest.raises(TypeError, match="policy"):
+        replace(decision, policy=cast(Any, object()))
+    with pytest.raises(TypeError, match="source_evidence"):
+        replace(decision, source_evidence=cast(Any, object()))
+    with pytest.raises(TypeError, match="routed_decision"):
+        replace(decision, routed_decision=cast(Any, object()))
+
+
+def test_selector_rejects_every_malformed_public_input() -> None:
+    baseline = DummyBelief(_digest("baseline"))
+    pair = _candidate(
+        PhysicalCause.READOUT_DISCREPANCY,
+        "discrepancy",
+        upper_regret=-0.20,
+    )
+    evidence = _evidence_set([pair[1]])
+    policy = _policy(baseline, evidence)
+
+    with pytest.raises(TypeError, match="policy"):
+        select_physical_cause_v2(
+            baseline,
+            [pair],
+            cast(Any, object()),
+            evidence,
+        )
+    with pytest.raises(TypeError, match="source_evidence"):
+        select_physical_cause_v2(
+            baseline,
+            [pair],
+            policy,
+            cast(Any, object()),
+        )
+    with pytest.raises(ValueError, match="baseline belief"):
+        select_physical_cause_v2(
+            baseline,
+            [pair],
+            replace(policy, baseline_belief_id=_digest("other-baseline")),
+            evidence,
+        )
+    with pytest.raises(TypeError, match="belief/candidate pairs"):
+        select_physical_cause_v2(
+            baseline,
+            cast(Any, "not-pairs"),
+            policy,
+            evidence,
+        )
+    with pytest.raises(TypeError, match=r"candidates\[0\]"):
+        select_physical_cause_v2(
+            baseline,
+            [cast(Any, [pair[0], pair[1]])],
+            policy,
+            evidence,
+        )
+    with pytest.raises(TypeError, match="PhysicalCauseCandidateV1"):
+        select_physical_cause_v2(
+            baseline,
+            [(pair[0], cast(Any, object()))],
+            policy,
+            evidence,
+        )
+    with pytest.raises(ValueError, match="belief does not match"):
+        select_physical_cause_v2(
+            baseline,
+            [(DummyBelief(_digest("other-belief")), pair[1])],
+            policy,
+            evidence,
+        )
+
+
+def test_selector_asserts_the_returned_belief_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    baseline = DummyBelief(_digest("baseline"))
+    pair = _candidate(
+        PhysicalCause.READOUT_DISCREPANCY,
+        "discrepancy",
+        upper_regret=-0.20,
+    )
+    evidence = _evidence_set([pair[1]])
+    policy = _policy(baseline, evidence)
+    _, valid_decision = select_physical_cause_v2(
+        baseline,
+        [pair],
+        policy,
+        evidence,
+    )
+    impostor = DummyBelief(_digest("impostor"))
+
+    monkeypatch.setattr(
+        selection_v2,
+        "select_physical_cause",
+        lambda *_args, **_kwargs: (impostor, valid_decision.routed_decision),
+    )
+    with pytest.raises(AssertionError, match="selected belief identity"):
+        select_physical_cause_v2(
+            baseline,
+            [pair],
+            policy,
+            evidence,
+        )
