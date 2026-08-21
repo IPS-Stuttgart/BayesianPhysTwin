@@ -14,9 +14,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER_PATH = ROOT / "tools/quality/check_ecosystem_current_actions.py"
-ISSUE_CHECKER_PATH = (
-    ROOT / "tools/quality/check_ecosystem_action_issue_states.py"
-)
+ISSUE_CHECKER_PATH = ROOT / "tools/quality/check_ecosystem_action_issue_states.py"
 REGISTRY_PATH = ROOT / "api/ecosystem-current-actions-v1.json"
 RECORDS_PATH = ROOT / "api/ecosystem-action-records-v1.json"
 
@@ -99,9 +97,7 @@ def _fake_issue_fetcher(
     def fetch(repository: str, issue_number: int) -> dict[str, object]:
         return {
             "number": issue_number,
-            "html_url": (
-                f"https://github.com/{repository}/issues/{issue_number}"
-            ),
+            "html_url": (f"https://github.com/{repository}/issues/{issue_number}"),
             "state": expected[(repository, issue_number)],
         }
 
@@ -119,14 +115,11 @@ def test_checked_in_registry_is_generated_and_target_closed() -> None:
         "snapshot_date": "2026-08-21",
         "action_count": 3,
         "terminal_action_count": 1,
-        "highest_priority_action": (
-            "covariance-only-independent-confirmation"
-        ),
+        "highest_priority_action": ("covariance-only-independent-confirmation"),
         "target_open_action_count": 0,
     }
-    assert (
-        checker.render_registry_text(RECORDS_PATH)
-        == REGISTRY_PATH.read_text(encoding="utf-8")
+    assert checker.render_registry_text(RECORDS_PATH) == REGISTRY_PATH.read_text(
+        encoding="utf-8"
     )
 
 
@@ -221,9 +214,7 @@ def test_terminal_records_cannot_be_removed(tmp_path: Path) -> None:
     payload = _records_payload()
     record = _record(payload, "material-backend-qualification")
     terminal_records = cast(list[str], record["terminal_records"])
-    terminal_records.remove(
-        "docs/jax_fem_zebra_source_value_v1_result.md"
-    )
+    terminal_records.remove("docs/jax_fem_zebra_source_value_v1_result.md")
 
     with pytest.raises(
         checker.EcosystemCurrentActionsError,
@@ -280,9 +271,7 @@ def test_online_issue_state_audit_rejects_closed_current_issue() -> None:
 
 
 def test_online_issue_state_audit_rejects_open_terminal_issue() -> None:
-    fetch = _fake_issue_fetcher(
-        {("IPS-Stuttgart/BayesianPhysTwin", 664): "open"}
-    )
+    fetch = _fake_issue_fetcher({("IPS-Stuttgart/BayesianPhysTwin", 664): "open"})
 
     with pytest.raises(
         issue_checker.EcosystemIssueStateError,
