@@ -71,18 +71,10 @@ SOURCE_TERMINAL_FIELDS: Final = SOURCE_COMMON_FIELDS | {
     "terminal_records",
 }
 
-ALLOWED_DOMAINS: Final = frozenset(
-    {"bayesian-phystwin", "prob4d", "causal4d"}
-)
-ALLOWED_TARGET_ACCESS: Final = frozenset(
-    {"closed", "forbidden", "not-applicable"}
-)
-REPOSITORY_PATTERN: Final = re.compile(
-    r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
-)
-BLOCKER_PATTERN: Final = re.compile(
-    r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$"
-)
+ALLOWED_DOMAINS: Final = frozenset({"bayesian-phystwin", "prob4d", "causal4d"})
+ALLOWED_TARGET_ACCESS: Final = frozenset({"closed", "forbidden", "not-applicable"})
+REPOSITORY_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+BLOCKER_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$")
 DATE_PATTERN: Final = re.compile(r"^20[0-9]{2}-[01][0-9]-[0-3][0-9]$")
 RECORD_PATH_PATTERN: Final = re.compile(
     r"^docs/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.md$"
@@ -373,9 +365,7 @@ def derive_current_registry(
     """Derive the public current-action snapshot from lifecycle records."""
 
     records = cast(list[dict[str, Any]], action_records["records"])
-    current = [
-        record for record in records if record["lifecycle"] == "current"
-    ]
+    current = [record for record in records if record["lifecycle"] == "current"]
     current.sort(key=lambda item: cast(int, item["priority"]))
     priorities = [cast(int, item["priority"]) for item in current]
     if priorities != list(range(1, len(current) + 1)):
@@ -435,9 +425,7 @@ def _check_expected(
     ):
         if record[field] != expected[field]:
             _fail(f"{action_id} {field} changed")
-    required_blockers = set(
-        cast(set[str], expected.get("required_blockers", set()))
-    )
+    required_blockers = set(cast(set[str], expected.get("required_blockers", set())))
     if not required_blockers.issubset(set(record["blocked_by"])):
         _fail(f"{action_id} lost a required blocker")
     required_forbidden = cast(set[str], expected["required_forbidden"])
@@ -449,12 +437,8 @@ def _validate_required_lifecycle(
     action_records: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     records = cast(list[dict[str, Any]], action_records["records"])
-    current = [
-        record for record in records if record["lifecycle"] == "current"
-    ]
-    terminal = [
-        record for record in records if record["lifecycle"] == "terminal"
-    ]
+    current = [record for record in records if record["lifecycle"] == "current"]
+    terminal = [record for record in records if record["lifecycle"] == "terminal"]
     current_ids = {cast(str, record["action_id"]) for record in current}
     terminal_ids = {cast(str, record["action_id"]) for record in terminal}
     if current_ids != set(REQUIRED_CURRENT_ACTIONS):
@@ -462,18 +446,14 @@ def _validate_required_lifecycle(
     if terminal_ids != set(REQUIRED_TERMINAL_ACTIONS):
         _fail("required terminal ecosystem action roster changed")
 
-    current_by_id = {
-        cast(str, record["action_id"]): record for record in current
-    }
+    current_by_id = {cast(str, record["action_id"]): record for record in current}
     for action_id, expected in REQUIRED_CURRENT_ACTIONS.items():
         record = current_by_id[action_id]
         _check_expected(record, expected, action_id=action_id)
         if "active_candidates" in record:
             _fail(f"{action_id} cannot carry active_candidates")
 
-    terminal_by_id = {
-        cast(str, record["action_id"]): record for record in terminal
-    }
+    terminal_by_id = {cast(str, record["action_id"]): record for record in terminal}
     for action_id, expected in REQUIRED_TERMINAL_ACTIONS.items():
         record = terminal_by_id[action_id]
         _check_expected(record, expected, action_id=action_id)
@@ -518,8 +498,7 @@ def validate_registry(
         "terminal_action_count": len(terminal),
         "highest_priority_action": action_ids[0],
         "target_open_action_count": sum(
-            action["target_access"] not in {"closed", "forbidden"}
-            for action in current
+            action["target_access"] not in {"closed", "forbidden"} for action in current
         ),
     }
 
