@@ -208,6 +208,53 @@ Separate pointwise confidence intervals for several causes are not a
 simultaneous candidate-family certificate merely because each interval has the
 same nominal confidence level.
 
+## Selective source-risk guarantee
+
+Let \(a_0\) denote the exact physical baseline, let \(\mathcal A\) be the frozen
+nonbaseline candidate family, and let
+
+\[
+\Delta R_a = R(a)-R(a_0)
+\]
+
+be source-domain proper-score regret, so lower is better. Suppose the registered
+simultaneous procedure produces upper bounds \(U_a\) satisfying
+
+\[
+\Pr\!\left(\forall a\in\mathcal A:\ \Delta R_a\le U_a\right)
+\ge 1-\alpha.
+\]
+
+For a frozen improvement margin \(m\ge 0\), the routing rule admits a
+nonbaseline candidate only when its cause-specific support is admissible and
+
+\[
+U_a < -m.
+\]
+
+Therefore, on the simultaneous-confidence event, every nonbaseline belief that
+V2 can return satisfies
+
+\[
+R(a) < R(a_0)-m.
+\]
+
+This remains true when an ambiguity policy selects a readout-discrepancy
+candidate: that candidate first had to enter the eligible set under the same
+strict bound. If no candidate enters, or if ambiguity falls back to baseline,
+the exact caller-owned baseline object is returned.
+
+The proof is immediate from simultaneous coverage and the strict eligibility
+condition: \(\Delta R_a\le U_a<-m\). The substantive requirement is not the
+algebra but the V2 binding that prevents candidate, score, roster, interval, or
+target-evidence substitution after the bound was computed.
+
+This is a selective **source-domain** risk statement. It is not an unseen-domain
+guarantee, a deployment-safety theorem, or evidence that the selected cause is
+the unique data-generating mechanism. The confidence statement is only as valid
+as the registered independent-group definition and simultaneous interval
+procedure.
+
 ## Relationship to V1
 
 V2 deliberately reuses:
