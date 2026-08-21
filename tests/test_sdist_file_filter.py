@@ -18,7 +18,7 @@ class _FakeSdist:
     last_release_tree: ClassVar[tuple[str, tuple[str, ...]] | None] = None
 
     def make_release_tree(self, base_dir: str, files: list[str]) -> None:
-        type(self).last_release_tree = (base_dir, tuple(files))
+        _FakeSdist.last_release_tree = (base_dir, tuple(files))
 
 
 def _load_setup(
