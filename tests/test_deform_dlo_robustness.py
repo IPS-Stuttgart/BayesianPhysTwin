@@ -128,6 +128,13 @@ ALLTRAIN_COMPLETION = (
     / "deform_dlo3_robustness_v2"
     / "alltrain_completion_v1.json"
 )
+DRY_RUN_FAILURE = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "evaluator_dry_run_failure_v1.json"
+)
 
 
 def _payload() -> dict[str, object]:
@@ -1973,6 +1980,44 @@ def test_alltrain_completion_receipt_is_target_blind_and_exact() -> None:
         "target_selection",
         "target_calibration",
         "retry_authorized",
+        "prob4d_used",
+        "dlo4_dlo5_access",
+        "held_v8_access",
+    ):
+        assert receipt[boundary] is False
+
+
+def test_evaluator_dry_run_failure_closes_downstream_custody() -> None:
+    receipt = json.loads(DRY_RUN_FAILURE.read_text(encoding="utf-8"))
+
+    assert receipt["contract"] == (
+        "deform-dlo3-robustness-evaluator-dry-run-failure-v1"
+    )
+    assert receipt["status"] == "technical-failure-before-evaluation"
+    assert receipt["execution"]["launch_count"] == 1
+    assert receipt["execution"]["exit_code"] == 1
+    assert receipt["execution"]["output_file_count"] == 0
+    assert receipt["failure"] == {
+        "stage": "pyelastica-import-before-evaluation",
+        "exception_type": "ModuleNotFoundError",
+        "missing_module": "numba",
+        "message": "No module named 'numba'",
+        "source_independent_runtime_failure": True,
+        "scientific_result": False,
+    }
+    assert receipt["decision"] == {
+        "dry_run_passed": False,
+        "readiness_authorized": False,
+        "official_evaluation_authorized": False,
+        "retry_authorized": False,
+        "environment_repair_authorized": False,
+    }
+    for boundary in (
+        "primary_eval_enumerated",
+        "primary_eval_read",
+        "target_outcomes_opened",
+        "target_selection",
+        "target_calibration",
         "prob4d_used",
         "dlo4_dlo5_access",
         "held_v8_access",
