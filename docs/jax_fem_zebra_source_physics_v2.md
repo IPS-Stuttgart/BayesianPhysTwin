@@ -1,6 +1,8 @@
 # JAX-FEM finite-deformation source qualification v2
 
-**Status:** protocol and implementation frozen; source-only execution pending.
+**Decision:** passed for the exact pinned runtime. This authorizes only the
+separately frozen source-value stage; it is not an accuracy or backend-selection
+result.
 
 ## Question
 
@@ -78,3 +80,30 @@ python scripts/remote/run_jax_fem_hyperelastic_source_qualification_v2.py \
 An existing output directory is a hard error. Failure is preserved without
 retry, parameter changes, group replacement, or outcome access. A pass permits
 only the pre-registered full-horizon source prediction and its physical gate.
+
+## Frozen result
+
+The one source-only execution used BayesianPhysTwin commit
+`54178900fc566d8493fabc6b6808c5d3908b539c` and exact source archive SHA-256
+`527e9bb9f38a05c9150354d66555ca9e7af2ef0232fec8b8b2c325dceed8b1bf`.
+It completed 218 native nonlinear solves without replacement or retry.
+
+| Artifact | SHA-256 or content ID |
+| --- | --- |
+| Source-physics result | `10c2bd94436b3b4414f30becd859667ddab88c0445aa17c950186fc6e1f434e3` |
+| Backend qualification | `e2f0797d0778b6143a076debb4b2596baffd430477e55b0499b45d1b68d51ef6` |
+| Qualification artifact ID | `820df616afcd911af2999aa3b208f8d2da1e2acbe62521bc9d1980fc317aba50` |
+| Result ID | `3f59667602963b0623d1c0c0df687ca90c009415f9d47ec1f890a53f6764da45` |
+| Lift trajectory archive | `fba703f07c1b8ff2190f397aa3cc3c820ba7303a0b3bc426484684466ff240ea` |
+| Stretch trajectory archive | `f4ce6ee982452f77b90e38f029a95c59c23e3d6819285a6b48b058ede1cd0c48` |
+
+| Source group | Response | Mesh sensitivity | Continuation error | Poisson sensitivity | Determinants |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `double_lift_zebra` | 8.442 mm | 0.748% | `1.15e-9` | 0.111 mm | 0.959 to 1.067 |
+| `double_stretch_zebra` | 0.900 mm | 2.744% | `4.89e-7` | 0.0128 mm | 0.990 to 1.013 |
+
+Both groups had exact replay, zero rest drift, sub-femtometre rigid-coordinate
+error, source-node parity, bounded contact projection, Young-modulus invariance,
+and byte-identical fallback. The result and qualification replay with
+`source_object_outcomes_read=false` and
+`target_or_held_out_artifact_read=false`.
