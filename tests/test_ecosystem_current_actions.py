@@ -267,9 +267,7 @@ def test_online_issue_state_audit_accepts_current_lifecycle() -> None:
 
 
 def test_online_issue_state_audit_rejects_closed_current_issue() -> None:
-    fetch = _fake_issue_fetcher(
-        {("IPS-Stuttgart/Prob4D", 49): "closed"}
-    )
+    fetch = _fake_issue_fetcher({("IPS-Stuttgart/Prob4D", 49): "closed"})
 
     with pytest.raises(
         issue_checker.EcosystemIssueStateError,
