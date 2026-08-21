@@ -1,0 +1,76 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Ecosystem action drift
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ecosystem-action-drift.yml"
+      - "api/ecosystem-action-records-v1.json"
+      - "api/ecosystem-current-actions-v1.json"
+      - "docs/ecosystem_current_actions_v1.md"
+      - "tests/test_ecosystem_current_actions.py"
+      - "tools/quality/check_ecosystem_action_issue_states.py"
+      - "tools/quality/check_ecosystem_current_actions.py"
+      - "tools/quality/render_ecosystem_current_actions.py"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ecosystem-action-drift.yml"
+      - "api/ecosystem-action-records-v1.json"
+      - "api/ecosystem-current-actions-v1.json"
+      - "docs/ecosystem_current_actions_v1.md"
+      - "tests/test_ecosystem_current_actions.py"
+      - "tools/quality/check_ecosystem_action_issue_states.py"
+      - "tools/quality/check_ecosystem_current_actions.py"
+      - "tools/quality/render_ecosystem_current_actions.py"
+  schedule:
+    - cron: "29 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: ecosystem-action-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Generated snapshot and owning-issue lifecycle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify generated action snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/quality/render_ecosystem_current_actions.py --check
+          python tools/quality/check_ecosystem_current_actions.py
+
+      - name: Verify owning GitHub issue states
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/quality/check_ecosystem_action_issue_states.py
+
+      - name: Run focused lifecycle tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install pytest
+          pytest -q tests/test_ecosystem_current_actions.py
