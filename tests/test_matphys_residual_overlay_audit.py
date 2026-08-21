@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import pickle
+from pathlib import Path
 from typing import cast
 
+import numpy as np
 import pytest
 
 from bayesian_phystwin_experiments.matphys_residual_overlay_audit import (
     METRICS,
+    _load_pickle_array,
     summarize_matphys_overlay_rows,
 )
 
@@ -85,3 +89,17 @@ def test_summary_rejects_nonpositive_backbone_metric() -> None:
 
     with pytest.raises(ValueError, match="backbone metric"):
         summarize_matphys_overlay_rows([row])
+
+
+def test_track_loader_preserves_missing_identity_coordinates(tmp_path: Path) -> None:
+    path = tmp_path / "tracks.pkl"
+    tracks = np.zeros((3, 2, 3), dtype=np.float32)
+    tracks[1, 0] = np.nan
+    with path.open("wb") as handle:
+        pickle.dump(tracks, handle)
+
+    loaded = _load_pickle_array(path, require_finite=False)
+
+    assert np.isnan(loaded[1, 0]).all()
+    with pytest.raises(ValueError, match="non-finite prediction"):
+        _load_pickle_array(path, require_finite=True)

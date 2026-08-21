@@ -61,12 +61,14 @@ def _validated_identity(value: object, *, label: str) -> Path:
     return source
 
 
-def _load_pickle_array(path: Path) -> np.ndarray:
+def _load_pickle_array(path: Path, *, require_finite: bool) -> np.ndarray:
     with path.open("rb") as handle:
         value = pickle.load(handle)
     result = np.asarray(value)
-    if result.ndim != 3 or result.shape[-1] != 3 or not np.isfinite(result).all():
-        raise ValueError(f"{path} is not a finite trajectory array")
+    if result.ndim != 3 or result.shape[-1] != 3:
+        raise ValueError(f"{path} is not a trajectory array")
+    if require_finite and not np.isfinite(result).all():
+        raise ValueError(f"{path} contains non-finite prediction coordinates")
     return result
 
 
@@ -84,10 +86,12 @@ def _case_metrics(
         raise ValueError(f"{case}: final_data.pkl is malformed")
     observed = np.asarray(data["object_points"], dtype=float)
     visible = np.asarray(data["object_visibilities"], dtype=bool)
-    tracks = _load_pickle_array(data_root / case / "gt_track_3d.pkl")
-    trajectory: np.ndarray = _load_pickle_array(trajectory_path).astype(
-        float, copy=False
+    tracks = _load_pickle_array(
+        data_root / case / "gt_track_3d.pkl", require_finite=False
     )
+    trajectory: np.ndarray = _load_pickle_array(
+        trajectory_path, require_finite=True
+    ).astype(float, copy=False)
     return official_metrics_by_frame(
         trajectory,
         observed,
