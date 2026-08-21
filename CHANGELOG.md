@@ -7,6 +7,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Synchronized the machine-readable ecosystem action registry with the terminal
+  Genesis MPM and JAX-FEM source-value decisions, selected CUT3R recurrent-online
+  as the sole current real-provider candidate, and added a live fail-closed audit
+  for closed owning issues, closed blockers, and pull requests misidentified as
+  issues.
 - Added a first-class official MatPhys producer contract that binds the complete
   parameter/preprocessing lineage and fresh fixed-identity Warp replays, while
   keeping published per-case parity strictly separate from target-excluded

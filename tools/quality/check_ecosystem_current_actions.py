@@ -5,9 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+from collections.abc import Callable, Mapping
+from functools import partial
 from pathlib import Path
 from typing import Any, Final, NoReturn, cast
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 DEFAULT_REGISTRY: Final = ROOT / "api/ecosystem-current-actions-v1.json"
@@ -40,8 +45,13 @@ OPTIONAL_ACTION_FIELDS: Final = frozenset({"active_candidates"})
 ALLOWED_DOMAINS: Final = frozenset({"bayesian-phystwin", "prob4d", "causal4d"})
 ALLOWED_TARGET_ACCESS: Final = frozenset({"closed", "forbidden", "not-applicable"})
 REPOSITORY_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-BLOCKER_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$")
+BLOCKER_PATTERN: Final = re.compile(
+    r"^(?P<repository>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)"
+    r"#(?P<issue>[1-9][0-9]*)$"
+)
 DATE_PATTERN: Final = re.compile(r"^20[0-9]{2}-[01][0-9]-[0-3][0-9]$")
+GITHUB_API_VERSION: Final = "2022-11-28"
+GITHUB_USER_AGENT: Final = "BayesianPhysTwin-current-action-audit/1"
 REQUIRED_ACTIONS: Final = {
     "covariance-only-independent-confirmation": {
         "domain": "bayesian-phystwin",
@@ -70,26 +80,18 @@ REQUIRED_ACTIONS: Final = {
         "domain": "prob4d",
         "owning_repository": "IPS-Stuttgart/Prob4D",
         "owning_issue": 49,
-        "status": "separately-versioned-provider-required",
+        "status": "cut3r-source-bundle-pending",
         "target_access": "closed",
+        "required_candidates": ["cut3r-recurrent-online-v1"],
         "required_forbidden": {
-            "reuse-opened-motioncrafter-or-deform360-targets",
+            "add-provider-architecture-before-source-localization",
             "relax-support-after-outcomes",
-        },
-    },
-    "material-backend-qualification": {
-        "domain": "bayesian-phystwin",
-        "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
-        "owning_issue": 664,
-        "status": "source-qualification-active",
-        "target_access": "closed",
-        "required_candidates": ["genesis-mpm-v1", "jax-fem-v1"],
-        "required_forbidden": {
-            "admit-new-backend-family",
-            "open-fresh-target-before-source-value",
+            "reuse-opened-motioncrafter-or-deform360-targets",
         },
     },
 }
+
+IssueLoader = Callable[[str, int], Mapping[str, object]]
 
 
 class EcosystemCurrentActionsError(ValueError):
@@ -225,7 +227,143 @@ def load_registry(path: Path) -> dict[str, Any]:
     return payload
 
 
-def validate_registry(path: Path = DEFAULT_REGISTRY) -> dict[str, object]:
+def fetch_github_issue(
+    repository: str,
+    issue_number: int,
+    *,
+    token: str | None = None,
+    token_repository: str | None = None,
+    timeout_seconds: float = 10.0,
+) -> Mapping[str, object]:
+    """Fetch one GitHub issue without using any repository payload."""
+
+    if REPOSITORY_PATTERN.fullmatch(repository) is None:
+        _fail("GitHub issue repository is not canonical")
+    _positive_integer(issue_number, name="GitHub issue number")
+    if (
+        isinstance(timeout_seconds, bool)
+        or not isinstance(timeout_seconds, int | float)
+        or timeout_seconds <= 0.0
+    ):
+        _fail("GitHub timeout must be positive")
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        "User-Agent": GITHUB_USER_AGENT,
+    }
+    if token and (token_repository is None or repository == token_repository):
+        headers["Authorization"] = f"Bearer {token}"
+    url = f"https://api.github.com/repos/{repository}/issues/{issue_number}"
+    request = Request(url, headers=headers, method="GET")
+    try:
+        with urlopen(request, timeout=float(timeout_seconds)) as response:
+            raw_bytes = response.read()
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        raise EcosystemCurrentActionsError(
+            f"cannot read GitHub issue {repository}#{issue_number}: {exc}"
+        ) from exc
+    try:
+        raw = json.loads(raw_bytes.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise EcosystemCurrentActionsError(
+            f"GitHub issue {repository}#{issue_number} returned invalid JSON"
+        ) from exc
+    if type(raw) is not dict:
+        _fail(f"GitHub issue {repository}#{issue_number} returned a non-object")
+    return cast(dict[str, object], raw)
+
+
+def _parse_blocker(reference: str) -> tuple[str, int]:
+    match = BLOCKER_PATTERN.fullmatch(reference)
+    if match is None:  # pragma: no cover - load_registry validates this first.
+        _fail(f"blocker {reference!r} is not canonical")
+    return match.group("repository"), int(match.group("issue"))
+
+
+def _require_open_issue(
+    payload: Mapping[str, object],
+    *,
+    reference: str,
+    role: str,
+) -> None:
+    if "pull_request" in payload:
+        _fail(f"{role} {reference} resolves to a pull request, not an issue")
+    state = payload.get("state")
+    if state != "open":
+        rendered_state = state if isinstance(state, str) else "invalid-state"
+        _fail(
+            f"{role} {reference} is {rendered_state}; "
+            "current-action references must remain open"
+        )
+
+
+def validate_github_issue_states(
+    payload: Mapping[str, object],
+    *,
+    issue_loader: IssueLoader,
+) -> dict[str, object]:
+    """Verify that every owning issue and live blocker is still an open issue."""
+
+    actions = cast(list[dict[str, Any]], payload["actions"])
+    cache: dict[tuple[str, int], Mapping[str, object]] = {}
+    action_references: set[tuple[str, int]] = set()
+    blocker_references: set[tuple[str, int]] = set()
+
+    def load(reference: tuple[str, int]) -> Mapping[str, object]:
+        if reference not in cache:
+            try:
+                loaded = issue_loader(*reference)
+            except EcosystemCurrentActionsError:
+                raise
+            except Exception as exc:
+                repository, issue_number = reference
+                raise EcosystemCurrentActionsError(
+                    f"cannot read GitHub issue {repository}#{issue_number}: {exc}"
+                ) from exc
+            if not isinstance(loaded, Mapping):
+                repository, issue_number = reference
+                _fail(
+                    f"GitHub issue {repository}#{issue_number} returned a non-mapping"
+                )
+            cache[reference] = loaded
+        return cache[reference]
+
+    for action in actions:
+        action_id = cast(str, action["action_id"])
+        repository = cast(str, action["owning_repository"])
+        issue_number = cast(int, action["owning_issue"])
+        reference = (repository, issue_number)
+        action_references.add(reference)
+        _require_open_issue(
+            load(reference),
+            reference=f"{repository}#{issue_number}",
+            role=f"{action_id} owning issue",
+        )
+
+        for blocker in cast(list[str], action["blocked_by"]):
+            blocker_reference = _parse_blocker(blocker)
+            blocker_references.add(blocker_reference)
+            _require_open_issue(
+                load(blocker_reference),
+                reference=blocker,
+                role=f"{action_id} blocker",
+            )
+
+    return {
+        "github_status": "valid",
+        "github_reference_count": len(cache),
+        "github_action_issue_count": len(action_references),
+        "github_blocker_issue_count": len(blocker_references),
+    }
+
+
+def validate_registry(
+    path: Path = DEFAULT_REGISTRY,
+    *,
+    check_github: bool = False,
+    issue_loader: IssueLoader | None = None,
+) -> dict[str, object]:
     """Validate ordering and all non-negotiable current-action boundaries."""
 
     payload = load_registry(path)
@@ -265,7 +403,7 @@ def validate_registry(path: Path = DEFAULT_REGISTRY) -> dict[str, object]:
         elif "active_candidates" in action:
             _fail(f"{action_id} cannot carry active_candidates")
 
-    return {
+    report: dict[str, object] = {
         "status": "valid",
         "snapshot_date": payload["snapshot_date"],
         "action_count": len(actions),
@@ -274,6 +412,10 @@ def validate_registry(path: Path = DEFAULT_REGISTRY) -> dict[str, object]:
             action["target_access"] not in {"closed", "forbidden"} for action in actions
         ),
     }
+    if check_github:
+        loader = fetch_github_issue if issue_loader is None else issue_loader
+        report.update(validate_github_issue_states(payload, issue_loader=loader))
+    return report
 
 
 def main() -> int:
@@ -284,9 +426,36 @@ def main() -> int:
         type=Path,
         default=DEFAULT_REGISTRY,
     )
+    parser.add_argument(
+        "--check-github",
+        action="store_true",
+        help="require every owning issue and blocker to remain an open issue",
+    )
+    parser.add_argument(
+        "--github-token-env",
+        default="GITHUB_TOKEN",
+        help="environment variable holding a token for the current repository",
+    )
+    parser.add_argument(
+        "--github-token-repository-env",
+        default="GITHUB_REPOSITORY",
+        help="environment variable naming the repository scoped by that token",
+    )
     args = parser.parse_args()
+
+    issue_loader: IssueLoader | None = None
+    if args.check_github:
+        issue_loader = partial(
+            fetch_github_issue,
+            token=os.environ.get(args.github_token_env),
+            token_repository=os.environ.get(args.github_token_repository_env),
+        )
     try:
-        report = validate_registry(args.path)
+        report = validate_registry(
+            args.path,
+            check_github=args.check_github,
+            issue_loader=issue_loader,
+        )
     except EcosystemCurrentActionsError as exc:
         parser.exit(1, f"ecosystem current-action validation failed: {exc}\n")
     print(json.dumps(report, indent=2, sort_keys=True))
