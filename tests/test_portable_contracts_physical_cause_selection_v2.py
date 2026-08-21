@@ -581,9 +581,7 @@ def test_evidence_set_rejects_malformed_or_nonunique_candidate_records() -> None
         "state",
         upper_regret=-0.25,
     )
-    two_candidate_evidence = _evidence_set(
-        [discrepancy_pair[1], state_pair[1]]
-    )
+    two_candidate_evidence = _evidence_set([discrepancy_pair[1], state_pair[1]])
     first, second = two_candidate_evidence.candidate_evidence
     duplicate = replace(second, candidate_id=first.candidate_id)
     with pytest.raises(ValueError, match="candidate IDs must be unique"):
