@@ -92,9 +92,7 @@ def validate_issue_states(
         actual_number = issue.get("number")
         if actual_number != issue_number:
             _fail(f"{action_id} owning issue number does not match GitHub")
-        expected_url = (
-            f"https://github.com/{repository}/issues/{issue_number}"
-        )
+        expected_url = f"https://github.com/{repository}/issues/{issue_number}"
         if issue.get("html_url") != expected_url:
             _fail(f"{action_id} owning issue URL does not match GitHub")
         actual_state = issue.get("state")
