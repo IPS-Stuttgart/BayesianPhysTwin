@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "audit_id": "matphys-residual-overlay-audit-v1",
+  "status": "post-open-exploratory-result",
+  "completed_utc": "2026-08-22",
+  "objective": "Test whether the already frozen causal residual overlays improve raw trajectories from the object-disjoint MatPhys spring-proposal family.",
+  "claim_boundary": "This is a matched post-open audit of already frozen PhysTwin-22 artifacts. It is not a fresh confirmation, an independent reproduction of published MatPhys, a calibration result, or a state-of-the-art claim.",
+  "matphys_interface": "MatPhys proposes an object-disjoint spring field; the official PhysTwin/Warp backend produces the physical trajectory.",
+  "frozen_inputs": {
+    "family_selection": {
+      "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/backbone_family_selection.json",
+      "sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890"
+    },
+    "future_summary": {
+      "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/future_open_v1/backbone_family_future.json",
+      "sha256": "6560317dbaebaf99b46328e526febf4a276d6183163284bc56b0d473dfa5b9d9"
+    },
+    "data_root": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types",
+    "target_or_held_v8_access": false
+  },
+  "implementation": {
+    "git_revision": "6ae54ae84ec66b42303a03d73a1bb2445c9322a2",
+    "analyzer_module": {
+      "path": "src/bayesian_phystwin_experiments/matphys_residual_overlay_audit.py",
+      "sha256": "5cc4e0090b670f15e00c58e03e293b05e7a493d86bd32d816b2d956204652e0d"
+    },
+    "runner": {
+      "path": "scripts/remote/analyze_matphys_residual_overlay_v1.py",
+      "sha256": "460b797b845dd6d06e90c0f60a04d4502308590d79a05640d1d2274b937933d3"
+    }
+  },
+  "comparison": {
+    "primary_subset": "The eight cases whose frozen object-disjoint family selector chose a nonzero MatPhys spring proposal.",
+    "secondary_subset": "All 22 cases, including 14 exact PhysTwin alpha-zero fallbacks.",
+    "methods": {
+      "backbone": "raw prefix-selected physical trajectory",
+      "bayesian_anchor": "frozen causal Bayesian residual anchor",
+      "last_residual": "frozen causal last-residual point control",
+      "validation_selected": "pre-existing prefix-selected operational overlay"
+    },
+    "selection_changed": false,
+    "future_used_for_selection": false,
+    "online_supervision": "The frozen overlay selector uses permitted prefix manual 3D tracks."
+  },
+  "evidence": {
+    "path": "results/sota/diagnostics/matphys_residual_overlay_audit_v1/result.json",
+    "sha256": "db5d7ce2bd78aa0a8150c10c026a4ab63bf9a730d94aa70bb758e6101e5e2388",
+    "bytes": 171103,
+    "remote_origin": "/mnt/corsair/florianpfaff/matphys-residual-overlay-audit-v1-6ae54ae8/result.json"
+  },
+  "decision": {
+    "transfer_supported": true,
+    "bayesian_point_novelty_supported": false,
+    "reason": "The Bayesian anchor improves the nonzero MatPhys subset on both point metrics, but the last-residual control has slightly lower aggregate point error.",
+    "recommended_next_test": "Freeze a genuinely fresh accepted-MatPhys cohort and compare raw MatPhys, last residual, Bayesian anchor, and calibrated predictive distributions without revisiting this opened cohort."
+  }
+}

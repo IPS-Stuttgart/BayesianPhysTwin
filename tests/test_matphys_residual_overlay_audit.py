@@ -93,7 +93,7 @@ def test_summary_rejects_nonpositive_backbone_metric() -> None:
 
 def test_track_loader_preserves_missing_identity_coordinates(tmp_path: Path) -> None:
     path = tmp_path / "tracks.pkl"
-    tracks = np.zeros((3, 2, 3), dtype=np.float32)
+    tracks: np.ndarray = np.zeros((3, 2, 3), dtype=np.float32)
     tracks[1, 0] = np.nan
     with path.open("wb") as handle:
         pickle.dump(tracks, handle)
