@@ -82,9 +82,13 @@ requiring a second ad hoc root rewrite.
 
 Experimental modules are dataset-specific, benchmark-specific, or
 research-lifecycle surfaces. The current registry classifies every Deform360
-root owner and `synthetic_benchmark` as experimental. Exact revisions and frozen
-artifacts remain reproducible, but current-main forward compatibility is not
-promised outside separately versioned contracts that those modules may consume.
+root owner, `synthetic_benchmark`, and the direct-import
+[`query_identifiability_certificate_v2`](query_identifiability_certificate_v2.md)
+as experimental. The query certificate formalizes a local kernel-inclusion test,
+but its finite-tolerance diagnostics and coordinates remain study-frozen rather
+than a compatibility promise. Exact revisions and frozen artifacts remain
+reproducible, but current-main forward compatibility is not promised outside
+separately versioned contracts that those modules may consume.
 
 Experimental status does not authorize target access, confirmation access,
 retuning, deployment, or a scientific claim. It is software lifecycle metadata
