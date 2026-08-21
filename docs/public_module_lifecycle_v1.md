@@ -23,9 +23,12 @@ The stable category includes:
 - `bayesian_phystwin.inference.component_beliefs_v1` for semantic validation of
   the five complete-belief arms;
 - [`bayesian_phystwin.physical_cause_selection_v1`](physical_cause_selection_v1.md)
-  for source-calibrated routing
-  among baseline, observation-bias, readout-discrepancy, physical-parameter, and
-  physical-state complete beliefs;
+  for the original source-calibrated routing among baseline, observation-bias,
+  readout-discrepancy, physical-parameter, and physical-state complete beliefs;
+- [`bayesian_phystwin.physical_cause_selection_v2`](physical_cause_selection_v2.md)
+  for target-facing routing that additionally binds every candidate to one exact
+  simultaneous source comparison over the same domain, query, Jacobian, group
+  roster, proper score, score table, and interval procedure;
 - `bayesian_phystwin.structured_point_covariance` and
   `bayesian_phystwin.structured_point_covariance_operator_v1` for exact
   block-local plus labeled low-rank covariance representation and matrix-free
