@@ -5,7 +5,7 @@ import runpy
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
@@ -15,7 +15,7 @@ CONTRACT = ROOT / "release" / "stable_distribution_contract_v1.json"
 
 
 class _FakeSdist:
-    last_release_tree: tuple[str, tuple[str, ...]] | None = None
+    last_release_tree: ClassVar[tuple[str, tuple[str, ...]] | None] = None
 
     def make_release_tree(self, base_dir: str, files: list[str]) -> None:
         type(self).last_release_tree = (base_dir, tuple(files))
