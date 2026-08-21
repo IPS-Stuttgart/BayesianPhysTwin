@@ -1,7 +1,7 @@
 {
   "schema": "bayesian-phystwin.ecosystem-current-actions",
   "schema_version": 1,
-  "snapshot_date": "2026-08-18",
+  "snapshot_date": "2026-08-21",
   "claim_boundary": "This registry is an operational priority and information-boundary record. It does not establish estimator accuracy, covariance calibration, provider competence, unseen-object transfer, Causal4D benefit, deployment safety, or state of the art.",
   "actions": [
     {
@@ -49,25 +49,6 @@
       "forbidden_actions": [
         "relax-support-after-outcomes",
         "reuse-opened-motioncrafter-or-deform360-targets"
-      ]
-    },
-    {
-      "priority": 4,
-      "action_id": "material-backend-qualification",
-      "domain": "bayesian-phystwin",
-      "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
-      "owning_issue": 664,
-      "status": "source-qualification-active",
-      "next_gate": "qualify-one-candidate-through-source-physics-and-source-value",
-      "target_access": "closed",
-      "active_candidates": [
-        "genesis-mpm-v1",
-        "jax-fem-v1"
-      ],
-      "blocked_by": [],
-      "forbidden_actions": [
-        "admit-new-backend-family",
-        "open-fresh-target-before-source-value"
       ]
     }
   ]
