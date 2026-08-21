@@ -1,0 +1,98 @@
+{
+  "schema": "bayesian-phystwin.matphys-surface-uq-source-protocol-v1",
+  "schema_version": 1,
+  "protocol_name": "matphys-surface-uq-source-v1",
+  "claim_boundary": "Opened-source custom Deform360 calibration study only. This is not official Deform360 benchmark parity, a point-accuracy SOTA claim, or confirmation on any target cohort.",
+  "source_panel": {
+    "status": "previously-opened-development-source",
+    "case_ids": [
+      "026-sock-cloth-ep0007",
+      "031-cotton-cloth-ep0000",
+      "036-napkin-cloth-ep0009",
+      "058-roll-napkin-ep0001",
+      "152-slime-ep0008",
+      "153-cake-ep0005",
+      "167-glove-gray-cloth-ep0000",
+      "186-monster-ep0006",
+      "193-frog-ep0007",
+      "198-kneepad-cloth-ep0002"
+    ],
+    "replacement_allowed": false,
+    "equal_case_weighting": true
+  },
+  "camera_partition": {
+    "selection_evidence": "camera names only",
+    "provider_panel": "lexical complement of scoring_camera_ids",
+    "scoring_camera_ids": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "minimum_successful_scoring_cameras": 3,
+    "shared_reconstruction_artifact_allowed": false
+  },
+  "window": {
+    "frame_count": 81,
+    "prefix_frame_count": 58,
+    "prediction_frame_count": 76,
+    "evaluation_frame_range_half_open": [
+      58,
+      76
+    ],
+    "unscored_tail_frame_range_half_open": [
+      76,
+      81
+    ]
+  },
+  "mean": {
+    "backend": "DEFORM",
+    "array": "prediction_m",
+    "identity_requirement": "candidate and comparator use the exact registered float32 C-order bytes and SHA-256",
+    "matphys_mean_replacement_allowed": false
+  },
+  "covariance": {
+    "backend": "target-excluded MatPhys 11-fold field ensemble replayed in official PhysTwin Warp",
+    "array": "member_total_covariance_m2",
+    "observed_node_rule": "first observed_node_count registered graph nodes",
+    "observation_floor_m": 0.005,
+    "source_calibration": "leave-one-case-out scalar maximum-likelihood fit",
+    "comparison": "leave-one-case-out isotropic Gaussian plus radial split-conformal sphere"
+  },
+  "outcome": {
+    "kind": "custom disjoint-camera Splatfacto surface reconstruction",
+    "maximum_points_per_camera_frame": 4096,
+    "maximum_point_to_surface_distance_m": 0.05,
+    "event_estimand": "nearest disjoint-view surface displacement for each registered DEFORM mean node",
+    "official_deform360_point_annotation": false
+  },
+  "source_gate": {
+    "minimum_accepted_event_fraction_per_case": 0.5,
+    "minimum_jointly_scored_case_count": 8,
+    "minimum_case_wins_against_isotropic_nll": 6,
+    "minimum_equal_case_nll_improvement_nats": 0.05,
+    "candidate_coverage_90_interval": [
+      0.8,
+      0.98
+    ],
+    "minimum_ellipsoid_volume_reduction_vs_conformal": 0.05,
+    "failure_action": "retain exact DEFORM mean and do not select or process a fresh target cohort"
+  },
+  "information_boundary": {
+    "predictions_sealed_before_source_suffix_decode": true,
+    "provider_and_scoring_cameras_disjoint": true,
+    "future_observations_used_to_form_prediction": false,
+    "target_or_confirmation_data_read": false,
+    "held_v8_artifacts_accessed": false,
+    "dlo4_or_dlo5_accessed": false,
+    "frozen_deform_results_changed": false
+  }
+}

@@ -127,6 +127,11 @@ energy score, NEES, and a predeclared risk-sensitive decision metric. Preserve
 ordinary successes, exact-fallback technical failures, and unsealable cases as
 separate counts over the complete locked denominator.
 
+The concrete stage-B lock and advancement thresholds are specified in
+[`matphys_surface_uq_source_v1.md`](matphys_surface_uq_source_v1.md). The new
+path is opt-in and does not modify any frozen DEFORM, Causal4D, held-v8, DLO4,
+or DLO5 artifact.
+
 ## Paper contribution if successful
 
 The novelty is not “MatPhys predicts better springs.” It is a guarded,

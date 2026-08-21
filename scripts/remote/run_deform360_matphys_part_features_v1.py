@@ -49,6 +49,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--depth-tolerance-m", type=float, default=0.02)
     parser.add_argument("--part-count", type=int, default=5)
     parser.add_argument("--semantic-edge-weight", type=float, default=4.0)
+    parser.add_argument(
+        "--camera-id",
+        action="append",
+        default=None,
+        help="Use only this provider camera; repeat for a disjoint panel.",
+    )
     return parser.parse_args()
 
 
@@ -152,6 +158,20 @@ def main() -> None:
         points = np.asarray(archive["vertices"], dtype=np.float32)
         edges = np.asarray(archive["springs"], dtype=np.int64)
     intrinsics, extrinsics = _load_calibration(prefix_root)
+    selected_cameras: tuple[str, ...] | None = None
+    if args.camera_id is not None:
+        selected_cameras = tuple(sorted(str(value) for value in args.camera_id))
+        if (
+            len(selected_cameras) < 2
+            or len(selected_cameras) != len(set(selected_cameras))
+        ):
+            raise ValueError("provider camera panel must contain unique cameras")
+        if not set(selected_cameras) <= set(intrinsics) or not set(
+            selected_cameras
+        ) <= set(extrinsics):
+            raise ValueError("provider camera panel contains an unavailable camera")
+        intrinsics = {camera: intrinsics[camera] for camera in selected_cameras}
+        extrinsics = {camera: extrinsics[camera] for camera in selected_cameras}
     cameras, support, projected = frame_zero_camera_support(
         points,
         prefix_root,
@@ -159,8 +179,12 @@ def main() -> None:
         extrinsics,
         depth_tolerance_m=float(args.depth_tolerance_m),
     )
-    if len(cameras) != int(prefix_manifest.get("camera_count", -1)):
+    if selected_cameras is None and len(cameras) != int(
+        prefix_manifest.get("camera_count", -1)
+    ):
         raise ValueError("available calibrated cameras differ from the prefix manifest")
+    if selected_cameras is not None and cameras != selected_cameras:
+        raise ValueError("resolved provider camera panel changed")
 
     extractor = CausalDinoNodeExtractor(
         model_name=args.model_name,
@@ -298,6 +322,11 @@ def main() -> None:
         },
         "claim_boundary": DEFORM360_MATPHYS_PART_CLAIM_BOUNDARY,
     }
+    if selected_cameras is not None:
+        identity["camera_selection"] = {
+            "mode": "explicit-disjoint-provider-panel",
+            "camera_ids": list(selected_cameras),
+        }
     manifest = {**identity, "artifact_id": content_id(identity)}
     write_atomic_json(manifest, output / MANIFEST_FILENAME, overwrite=False)
     print(json.dumps(manifest, sort_keys=True))
