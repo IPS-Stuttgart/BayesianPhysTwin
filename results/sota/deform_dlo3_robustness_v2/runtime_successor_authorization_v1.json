@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-robustness-runtime-successor-authorization-v1",
+  "status": "frozen-before-successor-execution",
+  "amendment_class": "source-independent-runtime-completeness",
+  "scientific_method_changed": false,
+  "implementation_source_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+  "implementation_source_archive_sha256": "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862",
+  "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+  "alltrain_result_sha256": "0905dfddc2a859a2e0a311d3208f8b7e46cd3ba8520da1fcc05ba60f27d6c5f9",
+  "superseded_failure": {
+    "receipt_sha256": "7ddbe187bc41fba807da1a2c2443cbc6d6931a989158054d737396e4584cef53",
+    "failure_stage": "pyelastica-import-before-evaluation",
+    "target_enumerated": false,
+    "target_outcomes_opened": false,
+    "scientific_result": false,
+    "retry": false
+  },
+  "successor_runtime": {
+    "base_python": "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+    "overlay_path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v3-runtime-overlay",
+    "overlay_tree_sha256": "96da170467f683d5e4c648d77799d598e83cf77fd3fef082559167ba3840e874",
+    "python_version": "3.10.12",
+    "numpy_version": "1.24.3",
+    "numba_version": "0.57.1",
+    "llvmlite_version": "0.40.1",
+    "pyelastica_version": "1.0.0",
+    "pyelastica_source_revision": "b087f1399f9be2fdd2fcf3768689f7735a96f7ab",
+    "torch_version": "2.0.1+cu118",
+    "cuda_available": true,
+    "frozen_base_environment_mutated": false
+  },
+  "successor_execution": {
+    "mode": "dry-run",
+    "maximum_launch_count": 1,
+    "retry_authorized": false,
+    "output_root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v3/evaluator-dry-run-da487c26-runtime-v1",
+    "physical_gpu_selection": "first-genuinely-free-gpuserver4090-gpu",
+    "logical_device": "cuda:0",
+    "required_pythonpath_prefix": "/home/florianpfaff/source-only/deform-dlo3-robustness-v3-runtime-overlay",
+    "preflight_imports": [
+      "numpy",
+      "numba",
+      "llvmlite",
+      "elastica",
+      "torch"
+    ]
+  },
+  "decision": {
+    "successor_dry_run_authorized": true,
+    "readiness_authorized_before_dry_run": false,
+    "official_evaluation_authorized_before_readiness": false,
+    "environment_repair_after_launch_authorized": false
+  },
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "target_outcomes_opened": false,
+  "target_selection": false,
+  "target_calibration": false,
+  "prob4d_used": false,
+  "dlo4_dlo5_access": false,
+  "held_v8_access": false
+}

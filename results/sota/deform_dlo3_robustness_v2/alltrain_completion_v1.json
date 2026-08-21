@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-robustness-alltrain-completion-v1",
+  "status": "completed-and-verified",
+  "implementation_source_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+  "implementation_source_archive_sha256": "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862",
+  "protocol_sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c",
+  "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+  "postrun_execution_plan_sha256": "38fde618c7ab3f0394945f13a3e77b321f9773e19b080d3a82c940834affbe4a",
+  "execution": {
+    "host": "gpuserver4090",
+    "gpu_index": 0,
+    "train_trajectory_count": 56,
+    "requested_updates": 6400,
+    "completed_updates": 6400,
+    "compute_matched_end_update": 6402,
+    "elapsed_seconds": 63731.245927991346,
+    "launch_count": 1,
+    "retry_count": 0
+  },
+  "artifacts": {
+    "alltrain_result.json": {"sha256": "0905dfddc2a859a2e0a311d3208f8b7e46cd3ba8520da1fcc05ba60f27d6c5f9", "size_bytes": 754291},
+    "final_method.json": {"sha256": "921c8111c8cf51ab93f167198962d054f5d1a31bee6b2af9429f977a97dc17e9", "size_bytes": 8987},
+    "local_residual_model.npz": {"sha256": "71d2e002b5bb4af20fb2def2163ca3def30914b76edda7759fa76d51651b440c", "size_bytes": 1442581},
+    "full_covariance_model.npz": {"sha256": "4d0669cd1bb6b505709e075d1099587b4d78951cbdc8de4425c1710bd84a1692", "size_bytes": 5852499},
+    "covariance_calibration.json": {"sha256": "6787e8f5b62152d0b85c6817c4ea2863654db71756da59b7f134b45513173ed5", "size_bytes": 748},
+    "compute_match.json": {"sha256": "2b70760146b16bde72665578f44267e1f3a8af2e54944143996f2600f34058e6", "size_bytes": 424},
+    "method_spec.json": {"sha256": "fa806ba706280fb1e695d2a2e29685146993f283620d246d50b0cabbcfd885cd", "size_bytes": 19565},
+    "preflight.json": {"sha256": "9e5cec52b8a47106f2f610825484b151c1e8ee7cc43f5295995a7bbbf52e39d0", "size_bytes": 14437},
+    "progress.json": {"sha256": "dbca14692d9f0e55bf0a2189d367dd458ca38c0feedf0df2ed43c69ef256fd6e", "size_bytes": 132},
+    "window_schedule.npz": {"sha256": "692f35fa45dba87ebcb9196f388ea793d98086e7d053bd1212da8703c8c5bf78", "size_bytes": 660356},
+    "checkpoints/update_6400.pt": {"sha256": "a86e3a8e835821500763caebba0c1fbc240430e66ac4409b4aceff67b7102712", "size_bytes": 326207},
+    "checkpoints/update_6402.pt": {"sha256": "750126808c567a58189f7ad7dfc536833a3b7d58264a77a5a14280620546baf0", "size_bytes": 326207}
+  },
+  "verification": {
+    "source_diagnostics_verified": true,
+    "bayesian_audit_complete": true,
+    "bayesian_distribution_count": 7,
+    "compute_matched_control_verified": true,
+    "final_method_verified": true,
+    "artifact_hashes_verified": true
+  },
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "target_authorized": false,
+  "target_selection": false,
+  "target_calibration": false,
+  "retry_authorized": false,
+  "prob4d_used": false,
+  "dlo4_dlo5_access": false,
+  "held_v8_access": false
+}

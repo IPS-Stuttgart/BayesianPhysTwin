@@ -111,6 +111,44 @@ EVALUATOR_RUNNER = (
 READINESS_RUNNER = (
     ROOT / "scripts" / "remote" / "attest_deform_dlo3_robustness_readiness_v1.py"
 )
+POSTRUN_PLAN = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "postrun_execution_plan_v1.json"
+)
+ALLTRAIN_LAUNCH = (
+    ROOT / "results" / "sota" / "deform_dlo3_robustness_v2" / "alltrain_launch_v1.json"
+)
+ALLTRAIN_COMPLETION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "alltrain_completion_v1.json"
+)
+DRY_RUN_FAILURE = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "evaluator_dry_run_failure_v1.json"
+)
+RUNTIME_SUCCESSOR_AUTHORIZATION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "runtime_successor_authorization_v1.json"
+)
+RUNTIME_SUCCESSOR_COMPLETION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "runtime_successor_completion_v1.json"
+)
 
 
 def _payload() -> dict[str, object]:
@@ -1880,6 +1918,208 @@ def test_readiness_requires_dry_run_and_discloses_count_deviation() -> None:
     assert "verify_deform_dlo3_backend_artifacts_v1" in source
     assert 'expected_backend_status = "scored" if backend_authorized' in source
     assert '"target_authorized": True' in source
+
+
+def test_postrun_plan_freezes_one_way_target_custody() -> None:
+    plan = json.loads(POSTRUN_PLAN.read_text(encoding="utf-8"))
+    launch = json.loads(ALLTRAIN_LAUNCH.read_text(encoding="utf-8"))
+
+    assert plan["contract"] == "deform-dlo3-robustness-postrun-execution-plan-v1"
+    assert plan["status"] == "frozen-before-alltrain-completion"
+    assert plan["alltrain"]["launch_count"] == 1
+    assert plan["alltrain"]["retry_authorized"] is False
+    assert plan["dry_run"]["launch_count"] == 0
+    assert plan["dry_run"]["maximum_launch_count"] == 1
+    assert plan["dry_run"]["failure_blocks_readiness"] is True
+    assert plan["dry_run"]["retry_authorized"] is False
+    assert plan["readiness"]["attestation_count"] == 0
+    assert plan["readiness"]["maximum_attestation_count"] == 1
+    assert plan["official"]["launch_count"] == 0
+    assert plan["official"]["maximum_launch_count"] == 1
+    assert plan["official"]["authorized"] is False
+    assert plan["official"]["retry_authorized"] is False
+    assert plan["official"]["case_replacement"] is False
+
+    dry_command = plan["dry_run"]["command"]
+    official_command = plan["official"]["command"]
+    assert dry_command[dry_command.index("--mode") + 1] == "dry-run"
+    assert "--source-manifest" in dry_command
+    assert "--readiness-attestation" not in dry_command
+    assert official_command[official_command.index("--mode") + 1] == "official"
+    assert "--readiness-attestation" in official_command
+    assert "--source-manifest" not in official_command
+
+    script_hashes = plan["script_sha256s"]
+    assert script_hashes[ALLTRAIN_RUNNER.name] == sha256_file(ALLTRAIN_RUNNER)
+    assert script_hashes[EVALUATOR_RUNNER.name] == sha256_file(EVALUATOR_RUNNER)
+    assert script_hashes[READINESS_RUNNER.name] == sha256_file(READINESS_RUNNER)
+    assert plan["primary_eval_enumerated"] is False
+    assert plan["primary_eval_read"] is False
+    assert plan["dlo4_dlo5_access"] is False
+    assert plan["target_selection"] is False
+    assert plan["target_calibration"] is False
+    assert plan["prob4d_used"] is False
+    assert plan["held_v8_access"] is False
+    assert launch["postrun_execution_plan_sha256"] == sha256_file(POSTRUN_PLAN)
+
+
+def test_alltrain_completion_receipt_is_target_blind_and_exact() -> None:
+    receipt = json.loads(ALLTRAIN_COMPLETION.read_text(encoding="utf-8"))
+
+    assert receipt["contract"] == "deform-dlo3-robustness-alltrain-completion-v1"
+    assert receipt["status"] == "completed-and-verified"
+    assert receipt["implementation_source_revision"] == (
+        "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a"
+    )
+    assert receipt["execution"]["train_trajectory_count"] == 56
+    assert receipt["execution"]["completed_updates"] == 6400
+    assert receipt["execution"]["compute_matched_end_update"] == 6402
+    assert receipt["execution"]["launch_count"] == 1
+    assert receipt["execution"]["retry_count"] == 0
+    assert receipt["verification"] == {
+        "source_diagnostics_verified": True,
+        "bayesian_audit_complete": True,
+        "bayesian_distribution_count": 7,
+        "compute_matched_control_verified": True,
+        "final_method_verified": True,
+        "artifact_hashes_verified": True,
+    }
+    assert receipt["artifacts"]["checkpoints/update_6400.pt"]["sha256"] == (
+        "a86e3a8e835821500763caebba0c1fbc240430e66ac4409b4aceff67b7102712"
+    )
+    for boundary in (
+        "primary_eval_enumerated",
+        "primary_eval_read",
+        "target_authorized",
+        "target_selection",
+        "target_calibration",
+        "retry_authorized",
+        "prob4d_used",
+        "dlo4_dlo5_access",
+        "held_v8_access",
+    ):
+        assert receipt[boundary] is False
+
+
+def test_evaluator_dry_run_failure_closes_downstream_custody() -> None:
+    receipt = json.loads(DRY_RUN_FAILURE.read_text(encoding="utf-8"))
+
+    assert receipt["contract"] == (
+        "deform-dlo3-robustness-evaluator-dry-run-failure-v1"
+    )
+    assert receipt["status"] == "technical-failure-before-evaluation"
+    assert receipt["execution"]["launch_count"] == 1
+    assert receipt["execution"]["exit_code"] == 1
+    assert receipt["execution"]["output_file_count"] == 0
+    assert receipt["failure"] == {
+        "stage": "pyelastica-import-before-evaluation",
+        "exception_type": "ModuleNotFoundError",
+        "missing_module": "numba",
+        "message": "No module named 'numba'",
+        "source_independent_runtime_failure": True,
+        "scientific_result": False,
+    }
+    assert receipt["decision"] == {
+        "dry_run_passed": False,
+        "readiness_authorized": False,
+        "official_evaluation_authorized": False,
+        "retry_authorized": False,
+        "environment_repair_authorized": False,
+    }
+    for boundary in (
+        "primary_eval_enumerated",
+        "primary_eval_read",
+        "target_outcomes_opened",
+        "target_selection",
+        "target_calibration",
+        "prob4d_used",
+        "dlo4_dlo5_access",
+        "held_v8_access",
+    ):
+        assert receipt[boundary] is False
+
+
+def test_runtime_successor_is_versioned_and_target_blind() -> None:
+    authorization = json.loads(
+        RUNTIME_SUCCESSOR_AUTHORIZATION.read_text(encoding="utf-8")
+    )
+
+    assert authorization["contract"] == (
+        "deform-dlo3-robustness-runtime-successor-authorization-v1"
+    )
+    assert authorization["status"] == "frozen-before-successor-execution"
+    assert authorization["amendment_class"] == (
+        "source-independent-runtime-completeness"
+    )
+    assert authorization["scientific_method_changed"] is False
+    assert authorization["superseded_failure"] == {
+        "receipt_sha256": (
+            "7ddbe187bc41fba807da1a2c2443cbc6d6931a989158054d737396e4584cef53"
+        ),
+        "failure_stage": "pyelastica-import-before-evaluation",
+        "target_enumerated": False,
+        "target_outcomes_opened": False,
+        "scientific_result": False,
+        "retry": False,
+    }
+    runtime = authorization["successor_runtime"]
+    assert runtime["overlay_tree_sha256"] == (
+        "96da170467f683d5e4c648d77799d598e83cf77fd3fef082559167ba3840e874"
+    )
+    assert runtime["pyelastica_source_revision"] == (
+        "b087f1399f9be2fdd2fcf3768689f7735a96f7ab"
+    )
+    assert runtime["frozen_base_environment_mutated"] is False
+    successor = authorization["successor_execution"]
+    assert successor["maximum_launch_count"] == 1
+    assert successor["retry_authorized"] is False
+    assert "robustness-v3" in successor["output_root"]
+    assert authorization["decision"] == {
+        "successor_dry_run_authorized": True,
+        "readiness_authorized_before_dry_run": False,
+        "official_evaluation_authorized_before_readiness": False,
+        "environment_repair_after_launch_authorized": False,
+    }
+    for boundary in (
+        "primary_eval_enumerated",
+        "primary_eval_read",
+        "target_outcomes_opened",
+        "target_selection",
+        "target_calibration",
+        "prob4d_used",
+        "dlo4_dlo5_access",
+        "held_v8_access",
+    ):
+        assert authorization[boundary] is False
+
+
+def test_runtime_successor_completion_keeps_outcomes_private() -> None:
+    completion = json.loads(RUNTIME_SUCCESSOR_COMPLETION.read_text(encoding="utf-8"))
+
+    assert completion["contract"] == (
+        "deform-dlo3-robustness-runtime-successor-completion-v1"
+    )
+    assert completion["status"] == "completed-and-frozen"
+    assert completion["runtime_overlay_tree_sha256"] == (
+        "96da170467f683d5e4c648d77799d598e83cf77fd3fef082559167ba3840e874"
+    )
+    assert completion["dry_run"]["launch_count"] == 1
+    assert completion["dry_run"]["retry_count"] == 0
+    assert completion["dry_run"]["pipeline_passed"] is True
+    assert completion["dry_run"]["primary_eval_read"] is False
+    assert completion["readiness"]["attestation_count"] == 1
+    assert completion["readiness"]["official_eval_read_at_attestation"] is False
+    assert completion["official_execution"]["launch_count"] == 1
+    assert completion["official_execution"]["retry_count"] == 0
+    assert completion["official_execution"]["case_replacement"] is False
+    assert completion["artifact_order_verified"] is True
+    assert completion["target_outcomes_used_for_method_changes"] is False
+    assert completion["target_selection"] is False
+    assert completion["target_calibration"] is False
+    assert completion["prob4d_used"] is False
+    assert completion["dlo4_dlo5_access"] is False
+    assert completion["held_v8_access"] is False
+    assert completion["outcome_values_published_here"] is False
 
 
 def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:

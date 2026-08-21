@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-robustness-evaluator-dry-run-failure-v1",
+  "status": "technical-failure-before-evaluation",
+  "implementation_source_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+  "implementation_source_archive_sha256": "46fc314b89510bb4ff3e8eba4848baccbc05963842de558252243aa225bae862",
+  "source_manifest_sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+  "alltrain_result_sha256": "0905dfddc2a859a2e0a311d3208f8b7e46cd3ba8520da1fcc05ba60f27d6c5f9",
+  "postrun_execution_plan_sha256": "38fde618c7ab3f0394945f13a3e77b321f9773e19b080d3a82c940834affbe4a",
+  "execution": {
+    "host": "gpuserver4090",
+    "physical_gpu_index": 1,
+    "cuda_visible_devices": "1",
+    "logical_device": "cuda:0",
+    "mode": "dry-run",
+    "launch_count": 1,
+    "exit_code": 1,
+    "output_root_created": true,
+    "output_file_count": 0
+  },
+  "failure": {
+    "stage": "pyelastica-import-before-evaluation",
+    "exception_type": "ModuleNotFoundError",
+    "missing_module": "numba",
+    "message": "No module named 'numba'",
+    "source_independent_runtime_failure": true,
+    "scientific_result": false
+  },
+  "decision": {
+    "dry_run_passed": false,
+    "readiness_authorized": false,
+    "official_evaluation_authorized": false,
+    "retry_authorized": false,
+    "environment_repair_authorized": false
+  },
+  "primary_eval_enumerated": false,
+  "primary_eval_read": false,
+  "target_outcomes_opened": false,
+  "target_selection": false,
+  "target_calibration": false,
+  "prob4d_used": false,
+  "dlo4_dlo5_access": false,
+  "held_v8_access": false
+}
