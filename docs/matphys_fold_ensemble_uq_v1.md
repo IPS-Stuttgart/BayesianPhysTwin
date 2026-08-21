@@ -89,6 +89,24 @@ the covariance map and any scalar calibration using source cases only. Require:
 - no source case is silently replaced; and
 - failed providers use the exact unchanged baseline.
 
+The registered feature adapter is
+`all-calibrated-frame-zero-rgb-mask-depth-dinov2-graph-parts-v1`. It projects
+the immutable physical graph into every calibrated camera, admits a node-view
+only when its frame-zero projection lies in the object mask and agrees with
+rendered metric depth within 20 mm, samples the pinned DINOv2-L/14 patch field,
+and fills unseen nodes from the nearest directly observed graph node. The
+existing deterministic semantic-geodesic partition then produces five
+connected parts. Deform360's metadata-only `sheet` stratum maps to MatPhys's
+cloth class; `volumetric` remains uniformly uncertain over the three public
+volumetric training classes. Every RGB, mask, depth, calibration, graph, model,
+and output digest is recorded. No frame after frame zero contributes to this
+part artifact.
+
+On the opened `153-cake` source smoke, the fixed visibility rule directly
+supports 655 of 762 graph nodes across 32 cameras before any DINO inference.
+This is an interface-support diagnostic only; no future error, calibration, or
+target claim follows from it.
+
 ### C. Fresh custom Deform360 evaluation
 
 Only after stage B passes, select genuinely fresh physical objects using names
