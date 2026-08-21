@@ -18,9 +18,9 @@ from .matphys_fold_ensemble_v1 import trajectory_ensemble_moments
 MATPHYS_WARP_ENSEMBLE_SCHEMA: Final = (
     "bayesian-phystwin.matphys-warp-trajectory-ensemble"
 )
-MATPHYS_WARP_ENSEMBLE_VERSION: Final = 1
+MATPHYS_WARP_ENSEMBLE_VERSION: Final = 2
 MATPHYS_WARP_ENSEMBLE_PROTOCOL: Final = (
-    "target-excluded-matphys-fields-official-phystwin-warp-v1"
+    "target-excluded-matphys-fields-official-phystwin-warp-v2"
 )
 
 
@@ -287,6 +287,80 @@ def trajectory_ensemble_arrays(
     }
 
 
+def hierarchical_trajectory_ensemble_arrays(
+    incumbent_replicates_m: np.ndarray,
+    member_replicates_m: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Separate checkpoint disagreement from official-Warp replay variation.
+
+    The total covariance follows the law of total variance: covariance across
+    per-checkpoint replay means plus the mean covariance across repeated Warp
+    executions within each checkpoint. The incumbent is kept separate because
+    downstream Bayesian-PhysTwin uses an unchanged stronger baseline mean.
+    """
+
+    incumbent = np.asarray(incumbent_replicates_m)
+    members = np.asarray(member_replicates_m)
+    _require(
+        incumbent.ndim == 4 and incumbent.shape[0] >= 2 and incumbent.shape[-1] == 3,
+        "incumbent_replicates_m must have shape (R,T,N,3) with R>=2",
+    )
+    _require(
+        members.ndim == 5
+        and members.shape[0] >= 2
+        and members.shape[1] >= 2
+        and members.shape[2:] == incumbent.shape[1:],
+        "member_replicates_m must have shape (M,R,T,N,3) with M,R>=2",
+    )
+    _require(
+        np.issubdtype(incumbent.dtype, np.floating)
+        and np.issubdtype(members.dtype, np.floating)
+        and np.all(np.isfinite(incumbent))
+        and np.all(np.isfinite(members)),
+        "hierarchical replay trajectories must be finite floating arrays",
+    )
+    member_means = np.mean(members.astype(np.float64), axis=1)
+    ensemble_mean = np.mean(member_means, axis=0)
+    between_centered = member_means - ensemble_mean[None]
+    between = np.einsum(
+        "mtni,mtnj->tnij", between_centered, between_centered, optimize=True
+    ) / len(member_means)
+    within_centered = members.astype(np.float64) - member_means[:, None]
+    within_by_member = (
+        np.einsum("mrtni,mrtnj->mtnij", within_centered, within_centered, optimize=True)
+        / members.shape[1]
+    )
+    within = np.mean(within_by_member, axis=0)
+    total = between + within
+    incumbent_mean = np.mean(incumbent.astype(np.float64), axis=0)
+    incumbent_centered = incumbent.astype(np.float64) - incumbent_mean[None]
+    incumbent_replay = np.einsum(
+        "rtni,rtnj->tnij", incumbent_centered, incumbent_centered, optimize=True
+    ) / len(incumbent)
+    for name, covariance in {
+        "between-member": between,
+        "within-member": within,
+        "total": total,
+        "incumbent replay": incumbent_replay,
+    }.items():
+        covariance[...] = 0.5 * (covariance + np.swapaxes(covariance, -1, -2))
+        _require(
+            float(np.min(np.linalg.eigvalsh(covariance))) >= -1e-12,
+            f"{name} covariance is not PSD",
+        )
+    return {
+        "incumbent_replicates_m": incumbent,
+        "incumbent_replay_mean_m": incumbent_mean,
+        "incumbent_replay_covariance_m2": incumbent_replay,
+        "member_replicates_m": members,
+        "member_replay_means_m": member_means,
+        "member_mean_trajectory_m": ensemble_mean,
+        "between_member_covariance_m2": between,
+        "within_member_replay_covariance_m2": within,
+        "member_total_covariance_m2": total,
+    }
+
+
 __all__ = [
     "MATPHYS_WARP_ENSEMBLE_PROTOCOL",
     "MATPHYS_WARP_ENSEMBLE_SCHEMA",
@@ -294,6 +368,7 @@ __all__ = [
     "MatPhysSpringEnsemble",
     "MatPhysWarpReplayGraph",
     "file_sha256",
+    "hierarchical_trajectory_ensemble_arrays",
     "load_matphys_spring_ensemble",
     "load_registered_replay_graph",
     "trajectory_ensemble_arrays",

@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.matphys_warp_ensemble_v1 import (
+    hierarchical_trajectory_ensemble_arrays,
     load_matphys_spring_ensemble,
     load_registered_replay_graph,
     trajectory_ensemble_arrays,
@@ -110,3 +111,47 @@ def test_trajectory_arrays_keep_incumbent_mean_separate() -> None:
     np.testing.assert_allclose(arrays["member_mean_trajectory_m"], 0.02)
     np.testing.assert_allclose(arrays["member_covariance_m2"][..., 0, 0], 0.0001)
     np.testing.assert_array_equal(arrays["unique_member_indices"], [0, 1])
+
+
+def test_hierarchical_moments_separate_member_and_replay_variance() -> None:
+    shape = (2, 1, 3)
+    incumbent = np.stack(
+        (
+            np.full(shape, -0.001, dtype=np.float32),
+            np.full(shape, 0.001, dtype=np.float32),
+        )
+    )
+    members = np.stack(
+        (
+            np.stack(
+                (
+                    np.full(shape, 0.009, dtype=np.float32),
+                    np.full(shape, 0.011, dtype=np.float32),
+                )
+            ),
+            np.stack(
+                (
+                    np.full(shape, 0.029, dtype=np.float32),
+                    np.full(shape, 0.031, dtype=np.float32),
+                )
+            ),
+        )
+    )
+
+    arrays = hierarchical_trajectory_ensemble_arrays(incumbent, members)
+
+    np.testing.assert_allclose(arrays["incumbent_replay_mean_m"], 0.0)
+    np.testing.assert_allclose(arrays["member_mean_trajectory_m"], 0.02)
+    np.testing.assert_allclose(
+        arrays["between_member_covariance_m2"][..., 0, 0], 0.0001
+    )
+    np.testing.assert_allclose(
+        arrays["within_member_replay_covariance_m2"][..., 0, 0],
+        0.000001,
+        rtol=1e-6,
+    )
+    np.testing.assert_allclose(
+        arrays["member_total_covariance_m2"][..., 0, 0],
+        0.000101,
+        rtol=1e-6,
+    )

@@ -29,9 +29,18 @@ returns the same incumbent array object without arithmetic. The target object
 must be absent from every fold's training-object list, and every checkpoint and
 training audit is SHA-256 bound.
 
-The fold trajectory ensemble supplies population moments after exact duplicate
-members are collapsed. Duplicate files or trajectories cannot masquerade as
-additional independent evidence. The raw ensemble covariance is epistemic
+Official Warp is empirically nondeterministic, so one replay per fold is not a
+valid estimator of checkpoint disagreement. The registered v2 replay therefore
+uses at least four executions per spring field and applies the law of total
+variance:
+
+```text
+Sigma_total = Cov_j(E[X | fold j]) + E_j(Cov[X | fold j]).
+```
+
+The first term is between-checkpoint disagreement; the second is the measured
+within-checkpoint Warp replay floor. Duplicate source checkpoint files remain
+prohibited. The raw total covariance is epistemic and numerical-backend
 evidence, not a calibrated posterior.
 
 For the confirmatory UQ comparison, the preferred candidate keeps the selected
@@ -57,6 +66,12 @@ Run all 11 folds on one already-open Deform360 source interaction. Verify:
 The first smoke may use the explicitly labeled
 `geometry-voronoi-zero-part-feature-control-v1`. That control proves runtime and
 graph competence only. It cannot authorize a transfer or paper claim.
+
+The initial one-replay parity gate failed as intended: two incumbent executions
+differed by 0.243 mm coordinate RMSE (3.52 mm maximum), while member spread was
+1.38 mm RMS, a 5.7x signal-to-replay ratio. This falsifies byte-level Warp
+determinism but leaves enough source signal to test the repeated-replay model.
+The failed artifact remains immutable; v2 does not reinterpret it as a pass.
 
 ### B. Opened-source scientific gate
 

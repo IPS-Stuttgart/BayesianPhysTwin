@@ -22,9 +22,9 @@ from bayesian_phystwin.matphys_warp_ensemble_v1 import (
     MATPHYS_WARP_ENSEMBLE_SCHEMA,
     MATPHYS_WARP_ENSEMBLE_VERSION,
     file_sha256,
+    hierarchical_trajectory_ensemble_arrays,
     load_matphys_spring_ensemble,
     load_registered_replay_graph,
-    trajectory_ensemble_arrays,
 )
 
 
@@ -130,8 +130,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--init-spring-y", type=float, default=10000.0)
     parser.add_argument("--drag-damping", type=float, default=10.0)
     parser.add_argument("--dashpot-damping", type=float, default=100.0)
-    parser.add_argument("--reference-parity-rmse-m", type=float, default=1e-4)
-    parser.add_argument("--repeat-parity-rmse-m", type=float, default=1e-6)
+    parser.add_argument("--replays-per-field", type=int, default=4)
+    parser.add_argument("--max-reference-to-replay-ratio", type=float, default=3.0)
+    parser.add_argument("--min-member-to-replay-ratio", type=float, default=2.0)
     return parser.parse_args()
 
 
@@ -169,6 +170,15 @@ def main() -> int:
     _require(args.init_spring_y > 0.0, "initial spring stiffness must be positive")
     _require(args.drag_damping >= 0.0, "drag damping must be nonnegative")
     _require(args.dashpot_damping >= 0.0, "dashpot damping must be nonnegative")
+    _require(args.replays_per_field >= 2, "replays per field must be at least two")
+    _require(
+        args.max_reference_to_replay_ratio > 0.0,
+        "reference-to-replay ratio must be positive",
+    )
+    _require(
+        args.min_member_to_replay_ratio > 0.0,
+        "member-to-replay ratio must be positive",
+    )
 
     prediction = json.loads(args.prediction_manifest.read_text(encoding="utf-8"))
     _require(
@@ -354,26 +364,61 @@ def main() -> int:
         return result
 
     rollout_started = time.perf_counter()
-    incumbent = rollout(None)
-    incumbent_repeat = rollout(None)
-    members = np.stack([rollout(field) for field in fields.member_spring_y_pa])
+    incumbent_replicates = np.stack(
+        [rollout(None) for _ in range(args.replays_per_field)]
+    )
+    member_replicates = np.stack(
+        [
+            np.stack([rollout(field) for _ in range(args.replays_per_field)])
+            for field in fields.member_spring_y_pa
+        ]
+    )
     rollout_seconds = time.perf_counter() - rollout_started
+    arrays = hierarchical_trajectory_ensemble_arrays(
+        incumbent_replicates,
+        member_replicates,
+    )
+    incumbent_mean = arrays["incumbent_replay_mean_m"]
     with np.load(args.reference_trajectory, allow_pickle=False) as archive:
         reference = np.asarray(archive["vertices"], dtype=np.float32)
-    _require(reference.shape == incumbent.shape, "reference trajectory shape changed")
-    reference_difference = incumbent.astype(np.float64) - reference
-    repeat_difference = incumbent_repeat.astype(np.float64) - incumbent
+    _require(
+        reference.shape == incumbent_mean.shape,
+        "reference trajectory shape changed",
+    )
+    reference_difference = incumbent_mean - reference.astype(np.float64)
     reference_rmse = float(np.sqrt(np.mean(reference_difference**2)))
-    repeat_rmse = float(np.sqrt(np.mean(repeat_difference**2)))
     reference_max = float(np.max(np.abs(reference_difference)))
-    repeat_max = float(np.max(np.abs(repeat_difference)))
+    replay_coordinate_std = float(
+        np.sqrt(
+            np.mean(
+                np.trace(
+                    arrays["incumbent_replay_covariance_m2"],
+                    axis1=-2,
+                    axis2=-1,
+                )
+            )
+            / 3.0
+        )
+    )
+    member_coordinate_std = float(
+        np.sqrt(
+            np.mean(
+                np.trace(
+                    arrays["between_member_covariance_m2"],
+                    axis1=-2,
+                    axis2=-1,
+                )
+            )
+            / 3.0
+        )
+    )
+    reference_to_replay_ratio = reference_rmse / max(replay_coordinate_std, 1e-12)
+    member_to_replay_ratio = member_coordinate_std / max(replay_coordinate_std, 1e-12)
     replay_passed = bool(
-        reference_rmse <= args.reference_parity_rmse_m
-        and repeat_rmse <= args.repeat_parity_rmse_m
+        reference_to_replay_ratio <= args.max_reference_to_replay_ratio
+        and member_to_replay_ratio >= args.min_member_to_replay_ratio
     )
 
-    arrays = trajectory_ensemble_arrays(incumbent, members)
-    arrays["incumbent_repeat_trajectory_m"] = incumbent_repeat
     archive_path = args.output_dir / "matphys_warp_trajectory_ensemble.npz"
     np.savez_compressed(archive_path, **arrays)
     identity = {
@@ -385,7 +430,8 @@ def main() -> int:
         "source_prediction_id": prediction.get("prediction_id"),
         "source_ensemble_id": prediction.get("source_ensemble_id"),
         "member_count": member_count,
-        "unique_trajectory_member_count": int(len(arrays["unique_member_indices"])),
+        "replays_per_field": args.replays_per_field,
+        "replay_strategy": "law-of-total-variance-between-plus-within-v1",
         "registered_graph": {
             "path": str(args.registered_graph.resolve(strict=True)),
             "sha256": file_sha256(args.registered_graph),
@@ -406,17 +452,22 @@ def main() -> int:
         "parity": {
             "reference_trajectory_sha256": file_sha256(args.reference_trajectory),
             "reference_byte_identical": bool(
-                incumbent.tobytes() == reference.tobytes()
+                incumbent_replicates[0].tobytes() == reference.tobytes()
             ),
             "reference_rmse_m": reference_rmse,
             "reference_max_abs_m": reference_max,
-            "reference_rmse_gate_m": args.reference_parity_rmse_m,
-            "repeat_byte_identical": bool(
-                incumbent_repeat.tobytes() == incumbent.tobytes()
+            "incumbent_replay_coordinate_std_m": replay_coordinate_std,
+            "reference_to_replay_ratio": reference_to_replay_ratio,
+            "maximum_reference_to_replay_ratio": (args.max_reference_to_replay_ratio),
+            "member_between_coordinate_std_m": member_coordinate_std,
+            "member_to_replay_ratio": member_to_replay_ratio,
+            "minimum_member_to_replay_ratio": args.min_member_to_replay_ratio,
+            "all_incumbent_replays_byte_identical": bool(
+                all(
+                    item.tobytes() == incumbent_replicates[0].tobytes()
+                    for item in incumbent_replicates[1:]
+                )
             ),
-            "repeat_rmse_m": repeat_rmse,
-            "repeat_max_abs_m": repeat_max,
-            "repeat_rmse_gate_m": args.repeat_parity_rmse_m,
             "passed": replay_passed,
         },
         "output": {
@@ -433,8 +484,10 @@ def main() -> int:
         },
         "claim_boundary": (
             "Target-excluded MatPhys checkpoint disagreement has been propagated "
-            "through the official PhysTwin Warp backend. This source-only replay "
-            "does not establish calibrated uncertainty or improved accuracy."
+            "through repeated official PhysTwin Warp replays. Between-checkpoint "
+            "and within-checkpoint replay covariance are separated before being "
+            "combined. This source-only replay does not establish calibrated "
+            "uncertainty or improved accuracy."
         ),
         "passed": replay_passed,
     }
