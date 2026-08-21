@@ -23,9 +23,12 @@ The stable category includes:
 - `bayesian_phystwin.inference.component_beliefs_v1` for semantic validation of
   the five complete-belief arms;
 - [`bayesian_phystwin.physical_cause_selection_v1`](physical_cause_selection_v1.md)
-  for source-calibrated routing
-  among baseline, observation-bias, readout-discrepancy, physical-parameter, and
-  physical-state complete beliefs;
+  for the original source-calibrated routing among baseline, observation-bias,
+  readout-discrepancy, physical-parameter, and physical-state complete beliefs;
+- [`bayesian_phystwin.physical_cause_selection_v2`](physical_cause_selection_v2.md)
+  for target-facing routing that additionally binds every candidate to one exact
+  simultaneous source comparison over the same domain, query, Jacobian, group
+  roster, proper score, score table, and interval procedure;
 - `bayesian_phystwin.structured_point_covariance` and
   `bayesian_phystwin.structured_point_covariance_operator_v1` for exact
   block-local plus labeled low-rank covariance representation and matrix-free
@@ -80,12 +83,11 @@ requiring a second ad hoc root rewrite.
 
 ## Experimental modules
 
-Experimental modules in the root-owner registry are dataset-specific,
-benchmark-specific, or research-lifecycle surfaces that already own historical
-package-root symbols. The current registry classifies every Deform360 root owner
-and `synthetic_benchmark` as experimental. Exact revisions and frozen artifacts
-remain reproducible, but current-main forward compatibility is not promised
-outside separately versioned contracts that those modules may consume.
+Experimental modules are dataset-specific, benchmark-specific, or
+research-lifecycle surfaces. The current registry classifies every Deform360
+root owner and `synthetic_benchmark` as experimental. Exact revisions and frozen
+artifacts remain reproducible, but current-main forward compatibility is not
+promised outside separately versioned contracts that those modules may consume.
 
 Experimental status does not authorize target access, confirmation access,
 retuning, deployment, or a scientific claim. It is software lifecycle metadata
