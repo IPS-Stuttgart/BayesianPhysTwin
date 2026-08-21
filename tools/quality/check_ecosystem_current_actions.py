@@ -316,8 +316,7 @@ def _validate_source_record(raw: object) -> dict[str, Any]:
         if not terminal_records:
             _fail(f"{action_id} terminal_records must not be empty")
         if any(
-            RECORD_PATH_PATTERN.fullmatch(item) is None
-            for item in terminal_records
+            RECORD_PATH_PATTERN.fullmatch(item) is None for item in terminal_records
         ):
             _fail(f"{action_id} terminal_records contains a noncanonical path")
     return record
