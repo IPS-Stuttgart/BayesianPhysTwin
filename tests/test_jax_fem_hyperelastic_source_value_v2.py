@@ -27,6 +27,10 @@ from bayesian_phystwin.physical_rollout_v1 import write_deterministic_npz
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/jax_fem_zebra_source_value_v2.json"
 RUNNER = ROOT / "scripts/remote/run_jax_fem_hyperelastic_source_value_v2.py"
+FAILURE_RECEIPT = (
+    ROOT
+    / "results/sota/diagnostics/jax_fem_zebra_source_value_v2/failure.json"
+)
 V2_SOURCE_FILES = {
     "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
     "src/bayesian_phystwin/jax_fem_hyperelastic_v2.py",
@@ -53,6 +57,64 @@ def test_frozen_v2_value_protocol_reuses_the_v1_scientific_roster() -> None:
     assert protocol.weights == pytest.approx((1 / 3, 1 / 3, 1 / 3))
     assert protocol.gates["minimum_full_horizon_deformation_determinant"] == 0.5
     assert protocol.value["information_boundary"]["no_replacement"] is True
+
+
+def test_frozen_v2_source_physical_failure_closes_outcome_access() -> None:
+    receipt = json.loads(FAILURE_RECEIPT.read_text(encoding="utf-8"))
+
+    assert receipt["schema"] == (
+        "bayesian-phystwin.jax-fem-hyperelastic-source-value-failure-v2"
+    )
+    assert receipt["implementation"]["protocol_sha256"] == file_sha256(PROTOCOL)
+    assert receipt["qualification"] == {
+        "source_physics_result_sha256": (
+            "10c2bd94436b3b4414f30becd859667ddab88c0445aa17c950186fc6e1f434e3"
+        ),
+        "artifact_sha256": (
+            "e2f0797d0778b6143a076debb4b2596baffd430477e55b0499b45d1b68d51ef6"
+        ),
+        "artifact_id": (
+            "820df616afcd911af2999aa3b208f8d2da1e2acbe62521bc9d1980fc317aba50"
+        ),
+        "qualified": True,
+    }
+    assert receipt["execution"]["launch_count"] == 1
+    assert receipt["execution"]["completed_native_solve_count"] == 217
+    assert receipt["execution"]["expected_native_solve_count"] == 768
+    assert receipt["execution"]["prediction_grid_published"] is False
+    assert receipt["failure"] == {
+        "stage": "frozen-native-prediction-grid",
+        "exception_type": "ValueError",
+        "message": (
+            "JAX-FEM v2 continuation violated its hard orientation threshold"
+        ),
+        "source_independent_runtime_failure": False,
+        "source_physical_admission_failure": True,
+    }
+    assert len(receipt["partial_artifacts"]) == 4
+    assert all(
+        artifact["relative_path"].startswith("double_lift_zebra/")
+        for artifact in receipt["partial_artifacts"]
+    )
+    assert receipt["information_boundary"] == {
+        "source_inputs_read": True,
+        "incumbent_and_matphys_predictions_read": True,
+        "prefix_outcomes_read": False,
+        "future_outcomes_read": False,
+        "target_or_held_out_artifact_read": False,
+        "dlo4_dlo5_access": False,
+        "held_v8_access": False,
+    }
+    assert receipt["decision"] == {
+        "candidate_admitted": False,
+        "source_value_passed": False,
+        "prefix_scoring_authorized": False,
+        "future_scoring_authorized": False,
+        "independent_untouched_evaluation_authorized": False,
+        "exact_incumbent_fallback_retained": True,
+        "retry_authorized": False,
+        "method_change_authorized_from_this_run": False,
+    }
 
 
 def _source_archive(path: Path, *, frame_count: int) -> Path:

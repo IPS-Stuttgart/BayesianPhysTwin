@@ -1,6 +1,6 @@
 # JAX-FEM finite-deformation source-value gate v2
 
-**Status:** method and information order frozen; prediction grid pending.
+**Status:** frozen source-physical rejection; no outcome partition opened.
 
 ## Question
 
@@ -45,6 +45,23 @@ runtime qualified by artifact ID
 6. Retain the result, positive or negative, without retry or parameter change.
 
 Target, reserve, DLO4/DLO5, and held-v8 artifacts are outside every stage.
+
+## Frozen result
+
+The sole registered execution used clean revision
+`083890e77c50d33c8b9ec047d4ce1dd2f2591013` and exact source archive
+`2f2d0a716df49abb31acb43fa5cc6fcb65790dd5abe2ff51e615137b8b1de5e0`.
+It completed 217 of the registered 768 native solves. All three lift members
+and their ensemble mean sealed, then the first stretch member stopped because
+the finite-deformation continuation violated its predeclared hard orientation
+threshold. No prediction grid was published.
+
+This is a source-physical rejection, not a missing-dependency or scheduler
+failure. Prefix and future outcomes remained unopened, so neither source-value
+scoring nor an untouched evaluation is authorized. The exact incumbent
+fallback is retained without retry or parameter change. The compact receipt is
+[`results/sota/diagnostics/jax_fem_zebra_source_value_v2/failure.json`](../results/sota/diagnostics/jax_fem_zebra_source_value_v2/failure.json); it binds the
+remote log and partial archives by SHA-256 without publishing their payloads.
 
 ## Full-horizon physical gate
 
