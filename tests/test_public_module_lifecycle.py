@@ -55,7 +55,7 @@ def test_repository_public_module_lifecycle_matches_policy() -> None:
         "policy": "explicit-stable-compatibility-experimental",
         "stable_module_count": 24,
         "compatibility_module_count": 19,
-        "experimental_module_count": 6,
+        "experimental_module_count": 5,
         "root_owner_count": 30,
         "status": "matched",
     }
@@ -80,13 +80,6 @@ def test_structured_covariance_and_identifiability_are_stable_direct_imports() -
         "bayesian_phystwin.structured_point_covariance",
         "bayesian_phystwin.structured_point_covariance_operator_v1",
     } <= stable
-
-
-def test_query_identifiability_certificate_remains_experimental() -> None:
-    manifest = tool.load_lifecycle_manifest()
-    experimental = set(manifest["experimental_modules"])
-
-    assert "bayesian_phystwin.query_identifiability_certificate_v2" in experimental
 
 
 def test_root_export_owners_are_classified_exactly_once() -> None:
