@@ -1,0 +1,91 @@
+{
+  "schema": "bayesian-phystwin.jax-fem-hyperelastic-source-physics-protocol-v2",
+  "schema_version": 2,
+  "protocol_label": "jax-fem-zebra-source-physics-stable-neo-hookean-v2",
+  "claim_boundary": "Source-only numerical qualification of one exact finite-deformation JAX-FEM v2 runtime on the two source groups frozen by the v1 protocol. It is not source-value, fresh-object, calibration, target, DEFORM, Causal4D, or state-of-the-art evidence.",
+  "base_protocol": {
+    "relative_path": "jax_fem_zebra_source_physics_v1.json",
+    "sha256": "cc8b0fcdfb32de925bc2cafee53b2600385f150eba6e5f514f42e097d9623047"
+  },
+  "backend": {
+    "canonical_profile_id": "jax-fem-quasistatic-v1",
+    "producer_profile_id": "jax-fem-quasistatic-v1",
+    "transport": "lagrangian-export-v1",
+    "backend_variant": "jax-fem-stable-neo-hookean-v2",
+    "engine_repository": "https://github.com/deepmodeling/jax-fem",
+    "engine_revision": "82c6993c16704e38611f9cb91a5b70f1c690daee",
+    "engine_version": "0.0.12",
+    "native_smoke_artifact_sha256": "cb8d9e5ed83653fa6a01737f28833e12ffdd31eb053a905eeb4aebd9ced15528",
+    "native_smoke_id": "84c5f8e14302599c8f5f77866a1650af1d8ce8921910c1f7be1d6c14e8aa4ce5",
+    "runtime_id": "0c1a24a70c805eb6ade62d176fafd574b3fc1c07fef8ca80592db6bb9ad23d15",
+    "installed_source_sha256": {
+      "jax_fem/__init__.py": "99942dd0bc6f9639ba05dea5a582a345ed1211d1c791351f3a5ca444b4cf0c67",
+      "jax_fem/basis.py": "51641346c7d4d1c445d34fe8ea8572f4f44001fa7c428aea6331b08042173654",
+      "jax_fem/fe.py": "2d05679123b3fe10e483b37c218a2e9008c40e8118e9e1a1f97d1817003e2032",
+      "jax_fem/generate_mesh.py": "927c23cad0b19d6038de27051e31483e99a127d5d22c3e0133d7d4ff80a6317e",
+      "jax_fem/problem.py": "c242210fa126f1d9b973ece59d0a53323869d04b127e65f0c98357b60ce316a2",
+      "jax_fem/solver.py": "97bb0e0266a9f5040fce4dbbcbd606cc1f21213073800d15c567a9490a5a7074"
+    },
+    "runtime_versions": {
+      "python": "3.12.13",
+      "jax": "0.4.38",
+      "jaxlib": "0.4.38",
+      "jax_fem": "0.0.12",
+      "numpy": "2.2.6",
+      "scipy": "1.15.2",
+      "petsc4py": "3.23.7",
+      "gmsh": "4.13.1",
+      "meshio": "5.3.5"
+    }
+  },
+  "simulation": {
+    "backend": "cpu",
+    "precision": "64",
+    "seed": 0,
+    "qualification_frame_count": 10,
+    "sampled_frame_indices": [0, 3, 6, 9],
+    "base_interval_substeps": 1,
+    "refined_interval_substeps": 2,
+    "element_type": "TET4",
+    "constitutive_model": "Smith-2018-stable-Neo-Hookean-finite-deformation",
+    "young_modulus_pa": 100000.0,
+    "young_modulus_probe_low_pa": 25000.0,
+    "young_modulus_probe_high_pa": 500000.0,
+    "low_poisson_ratio": 0.2,
+    "base_poisson_ratio": 0.35,
+    "high_poisson_ratio": 0.45,
+    "solver": "JAX-FEM-Newton-SciPy-spsolve-line-search-warm-start",
+    "newton_absolute_tolerance": 0.00000001,
+    "newton_relative_tolerance": 0.0000000001,
+    "line_search": true,
+    "hard_minimum_deformation_determinant": 0.05,
+    "rotation_interpolation": "linear-blend-polar-projection-to-SO3-v2",
+    "continuation_policy": "one-source-frame-step-base-two-substep-refinement-v2"
+  },
+  "gates": {
+    "maximum_zero_action_drift_m": 0.000000001,
+    "maximum_rigid_equivariance_error_m": 0.00001,
+    "maximum_continuation_refinement_relative_error": 0.02,
+    "maximum_mesh_connectivity_sensitivity_relative_error": 0.15,
+    "maximum_source_query_parity_rmse_m": 0.000001,
+    "minimum_action_response_m": 0.0001,
+    "minimum_poisson_sensitivity_m": 0.000001,
+    "maximum_poisson_sensitivity_m": 0.01,
+    "maximum_young_modulus_invariance_error_m": 0.000001,
+    "maximum_contact_projection_error_m": 0.005,
+    "maximum_node_displacement_m": 0.075,
+    "minimum_deformation_determinant": 0.35,
+    "maximum_deformation_determinant": 3.0,
+    "maximum_normalized_rest_stress_error": 0.0000000001,
+    "maximum_normalized_rigid_rotation_stress_error": 0.0000000001
+  },
+  "information_boundary": {
+    "frame_zero_geometry_allowed": true,
+    "known_full_controller_trajectory_allowed": true,
+    "incumbent_prediction_allowed_for_query_parity_and_exact_fallback": true,
+    "source_object_outcomes_allowed": false,
+    "target_or_held_out_artifact_access_allowed": false,
+    "future_scoring_authorized": false,
+    "no_replacement": true
+  }
+}
