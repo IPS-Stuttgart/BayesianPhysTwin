@@ -2094,9 +2094,7 @@ def test_runtime_successor_is_versioned_and_target_blind() -> None:
 
 
 def test_runtime_successor_completion_keeps_outcomes_private() -> None:
-    completion = json.loads(
-        RUNTIME_SUCCESSOR_COMPLETION.read_text(encoding="utf-8")
-    )
+    completion = json.loads(RUNTIME_SUCCESSOR_COMPLETION.read_text(encoding="utf-8"))
 
     assert completion["contract"] == (
         "deform-dlo3-robustness-runtime-successor-completion-v1"
