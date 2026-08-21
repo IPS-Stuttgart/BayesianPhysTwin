@@ -1,0 +1,62 @@
+# JAX-FEM finite-deformation source-value gate v2
+
+**Status:** method and information order frozen; prediction grid pending.
+
+## Question
+
+Does the source-qualified stable-Neo-Hookean JAX-FEM v2 arm add predictive
+value on the two registered PhysTwin source actions without changing anything
+in response to their object observations?
+
+This is an already-open source-value gate, not fresh-object or target evidence.
+A pass may justify an independently registered untouched evaluation. A failure
+retains the incumbent byte-for-byte.
+
+## Exact inheritance
+
+The protocol at SHA-256
+`4614dc7e6b550321c77572dfa5b88b1e6cbb1583c7fc98d322f6887078d94785`
+copies the v1 source-value roster without retuning:
+
+- the same lift and stretch source inputs and observation hashes;
+- the same incumbent and MatPhys comparators;
+- Poisson ratios `[0.20, 0.35, 0.45]` with equal weights;
+- Young's modulus `100 kPa`;
+- the same equal-event point and marginal-energy scores;
+- the same 2/3 prefix and 1/3 future split;
+- the same physical and value thresholds; and
+- the same byte-exact fallback and no-replacement policy.
+
+The only model change relative to the rejected v1 arm is the finite-deformation
+runtime qualified by artifact ID
+`820df616afcd911af2999aa3b208f8d2da1e2acbe62521bc9d1980fc317aba50`.
+
+## Information order
+
+1. Generate all 768 native predictions from frame-zero geometry and the known
+   controller trajectory.
+2. Seal every member archive, ensemble mean, hash, and physical diagnostic with
+   `prefix_outcomes_read=false` and `future_outcomes_read=false`.
+3. Run the full-horizon contact, displacement, and determinant gate without
+   opening either outcome partition.
+4. Open the prefix observations exactly once only if that physical gate passes.
+5. Freeze the source decision. Open future observations exactly once only if
+   the prefix value gate authorizes them.
+6. Retain the result, positive or negative, without retry or parameter change.
+
+Target, reserve, DLO4/DLO5, and held-v8 artifacts are outside every stage.
+
+## Full-horizon physical gate
+
+Before any outcome is opened, every ensemble member must have deformation
+determinants in `[0.5, 2.0]`, maximum source-node displacement at most `0.35 m`,
+and contact-projection error at most `0.02 m`. The native solver also retains
+its stricter fail-closed hard orientation floor during continuation.
+
+## Value gate
+
+On the prefix partition, the equal-group point and energy ratios versus
+persistence must each be at most `0.95`; the worst-group point ratio must be at
+most `1.0`. Identity and Chamfer ratios versus the incumbent must each be at
+most `1.05`. Final ensemble spread must lie in `[1e-5, 0.1] m`. These are the
+unchanged v1 thresholds, not values selected after the v2 qualification.

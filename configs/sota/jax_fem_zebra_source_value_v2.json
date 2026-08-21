@@ -1,0 +1,81 @@
+{
+  "schema": "bayesian-phystwin.jax-fem-source-value-protocol",
+  "schema_version": 1,
+  "protocol_label": "jax-fem-zebra-source-value-v2",
+  "claim_boundary": "Two-action source-value gate for the exact source-physics-qualified finite-deformation JAX-FEM v2 runtime. It reuses the v1 roster, ensemble, comparators, thresholds, and outcome order without retuning. It is not fresh-object, calibration, DEFORM, Causal4D, target, or state-of-the-art evidence.",
+  "qualification": {
+    "runtime_id": "0c1a24a70c805eb6ade62d176fafd574b3fc1c07fef8ca80592db6bb9ad23d15",
+    "source_physics_protocol_sha256": "eafcb9ff2a9c2b6b94c438424b0480e6f3b3008f147c99a1a5120e34b5a94b0c",
+    "source_physics_result_sha256": "10c2bd94436b3b4414f30becd859667ddab88c0445aa17c950186fc6e1f434e3",
+    "qualification_artifact_sha256": "e2f0797d0778b6143a076debb4b2596baffd430477e55b0499b45d1b68d51ef6",
+    "qualification_artifact_id": "820df616afcd911af2999aa3b208f8d2da1e2acbe62521bc9d1980fc317aba50"
+  },
+  "source_groups": [
+    {
+      "group_id": "double_lift_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "prefix_outcomes_relative_path": "source-bundle/prefix-outcomes.npz",
+      "prefix_outcomes_sha256": "db0018d3581f8cc760746bdc84d96d77214a213fd3242490bb5adaa396772540",
+      "future_outcomes_relative_path": "source-bundle/future-outcomes.npz",
+      "future_outcomes_sha256": "f0483f987b40a0a3d3cbb408535fbac4a5fdecdd9894923bbec10f40dcdb324d",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "matphys_sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+      "frame_count": 58,
+      "material_particle_count": 4607,
+      "controller_point_count": 30,
+      "attached_particle_count": 107,
+      "base_cell_count": 25447,
+      "contact_patch_sizes": [40, 67]
+    },
+    {
+      "group_id": "double_stretch_zebra",
+      "source_inputs_relative_path": "source-bundle/source-inputs.npz",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "prefix_outcomes_relative_path": "source-bundle/prefix-outcomes.npz",
+      "prefix_outcomes_sha256": "003db2c831f58c65a855e95e2889327abf2893cd2e2e613fe638edf614977c73",
+      "future_outcomes_relative_path": "source-bundle/future-outcomes.npz",
+      "future_outcomes_sha256": "4853e7b7073620e8aad86b4a06137e9385df11edd8793e6ddded5e36bc014d46",
+      "incumbent_relative_path": "prefix-result/selected-physical-prediction.npz",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "matphys_sha256": "f633dd863da1a9da82433821328fe3cccbb94cc1ae08c29d51ff2f85f4ef51ae",
+      "frame_count": 198,
+      "material_particle_count": 4208,
+      "controller_point_count": 30,
+      "attached_particle_count": 16,
+      "base_cell_count": 23140,
+      "contact_patch_sizes": [7, 9]
+    }
+  ],
+  "candidate": {
+    "poisson_ratio": [0.2, 0.35, 0.45],
+    "young_modulus_pa": 100000.0,
+    "weights": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+    "point_estimate": "equal-weight-ensemble-mean",
+    "distribution_score": "equal-event-3d-marginal-energy-score",
+    "fit_fraction": 0.6666666666666666
+  },
+  "validation_gates": {
+    "maximum_equal_group_balanced_point_ratio_vs_persistence": 0.95,
+    "maximum_worst_group_balanced_point_ratio_vs_persistence": 1.0,
+    "maximum_equal_group_energy_ratio_vs_persistence": 0.95,
+    "maximum_equal_group_identity_ratio_vs_incumbent": 1.05,
+    "maximum_equal_group_chamfer_ratio_vs_incumbent": 1.05,
+    "minimum_final_ensemble_spread_m": 0.00001,
+    "maximum_final_ensemble_spread_m": 0.1,
+    "maximum_full_horizon_contact_projection_error_m": 0.02,
+    "maximum_full_horizon_node_displacement_m": 0.35,
+    "minimum_full_horizon_deformation_determinant": 0.5,
+    "maximum_full_horizon_deformation_determinant": 2.0,
+    "required_successful_candidate_count": 3
+  },
+  "information_boundary": {
+    "prediction_uses_frame_zero_geometry_and_known_action_only": true,
+    "prefix_outcomes_open_only_after_all_predictions_sealed": true,
+    "future_outcomes_open_only_after_validation_gate": true,
+    "target_or_held_out_artifact_access_allowed": false,
+    "failure_policy": "byte-exact-incumbent-per-source-group",
+    "no_replacement": true
+  }
+}
