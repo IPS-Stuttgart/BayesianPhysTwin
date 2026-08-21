@@ -135,6 +135,13 @@ DRY_RUN_FAILURE = (
     / "deform_dlo3_robustness_v2"
     / "evaluator_dry_run_failure_v1.json"
 )
+RUNTIME_SUCCESSOR_AUTHORIZATION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "runtime_successor_authorization_v1.json"
+)
 
 
 def _payload() -> dict[str, object]:
@@ -2023,6 +2030,60 @@ def test_evaluator_dry_run_failure_closes_downstream_custody() -> None:
         "held_v8_access",
     ):
         assert receipt[boundary] is False
+
+
+def test_runtime_successor_is_versioned_and_target_blind() -> None:
+    authorization = json.loads(
+        RUNTIME_SUCCESSOR_AUTHORIZATION.read_text(encoding="utf-8")
+    )
+
+    assert authorization["contract"] == (
+        "deform-dlo3-robustness-runtime-successor-authorization-v1"
+    )
+    assert authorization["status"] == "frozen-before-successor-execution"
+    assert authorization["amendment_class"] == (
+        "source-independent-runtime-completeness"
+    )
+    assert authorization["scientific_method_changed"] is False
+    assert authorization["superseded_failure"] == {
+        "receipt_sha256": (
+            "7ddbe187bc41fba807da1a2c2443cbc6d6931a989158054d737396e4584cef53"
+        ),
+        "failure_stage": "pyelastica-import-before-evaluation",
+        "target_enumerated": False,
+        "target_outcomes_opened": False,
+        "scientific_result": False,
+        "retry": False,
+    }
+    runtime = authorization["successor_runtime"]
+    assert runtime["overlay_tree_sha256"] == (
+        "96da170467f683d5e4c648d77799d598e83cf77fd3fef082559167ba3840e874"
+    )
+    assert runtime["pyelastica_source_revision"] == (
+        "b087f1399f9be2fdd2fcf3768689f7735a96f7ab"
+    )
+    assert runtime["frozen_base_environment_mutated"] is False
+    successor = authorization["successor_execution"]
+    assert successor["maximum_launch_count"] == 1
+    assert successor["retry_authorized"] is False
+    assert "robustness-v3" in successor["output_root"]
+    assert authorization["decision"] == {
+        "successor_dry_run_authorized": True,
+        "readiness_authorized_before_dry_run": False,
+        "official_evaluation_authorized_before_readiness": False,
+        "environment_repair_after_launch_authorized": False,
+    }
+    for boundary in (
+        "primary_eval_enumerated",
+        "primary_eval_read",
+        "target_outcomes_opened",
+        "target_selection",
+        "target_calibration",
+        "prob4d_used",
+        "dlo4_dlo5_access",
+        "held_v8_access",
+    ):
+        assert authorization[boundary] is False
 
 
 def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
