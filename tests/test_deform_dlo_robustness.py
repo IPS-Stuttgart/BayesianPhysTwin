@@ -121,6 +121,13 @@ POSTRUN_PLAN = (
 ALLTRAIN_LAUNCH = (
     ROOT / "results" / "sota" / "deform_dlo3_robustness_v2" / "alltrain_launch_v1.json"
 )
+ALLTRAIN_COMPLETION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "alltrain_completion_v1.json"
+)
 
 
 def _payload() -> dict[str, object]:
@@ -1933,6 +1940,44 @@ def test_postrun_plan_freezes_one_way_target_custody() -> None:
     assert plan["prob4d_used"] is False
     assert plan["held_v8_access"] is False
     assert launch["postrun_execution_plan_sha256"] == sha256_file(POSTRUN_PLAN)
+
+
+def test_alltrain_completion_receipt_is_target_blind_and_exact() -> None:
+    receipt = json.loads(ALLTRAIN_COMPLETION.read_text(encoding="utf-8"))
+
+    assert receipt["contract"] == "deform-dlo3-robustness-alltrain-completion-v1"
+    assert receipt["status"] == "completed-and-verified"
+    assert receipt["implementation_source_revision"] == (
+        "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a"
+    )
+    assert receipt["execution"]["train_trajectory_count"] == 56
+    assert receipt["execution"]["completed_updates"] == 6400
+    assert receipt["execution"]["compute_matched_end_update"] == 6402
+    assert receipt["execution"]["launch_count"] == 1
+    assert receipt["execution"]["retry_count"] == 0
+    assert receipt["verification"] == {
+        "source_diagnostics_verified": True,
+        "bayesian_audit_complete": True,
+        "bayesian_distribution_count": 7,
+        "compute_matched_control_verified": True,
+        "final_method_verified": True,
+        "artifact_hashes_verified": True,
+    }
+    assert receipt["artifacts"]["checkpoints/update_6400.pt"]["sha256"] == (
+        "a86e3a8e835821500763caebba0c1fbc240430e66ac4409b4aceff67b7102712"
+    )
+    for boundary in (
+        "primary_eval_enumerated",
+        "primary_eval_read",
+        "target_authorized",
+        "target_selection",
+        "target_calibration",
+        "retry_authorized",
+        "prob4d_used",
+        "dlo4_dlo5_access",
+        "held_v8_access",
+    ):
+        assert receipt[boundary] is False
 
 
 def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
