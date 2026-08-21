@@ -80,15 +80,12 @@ requiring a second ad hoc root rewrite.
 
 ## Experimental modules
 
-Experimental modules are dataset-specific, benchmark-specific, or
-research-lifecycle surfaces. The current registry classifies every Deform360
-root owner, `synthetic_benchmark`, and the direct-import
-[`query_identifiability_certificate_v2`](query_identifiability_certificate_v2.md)
-as experimental. The query certificate formalizes a local kernel-inclusion test,
-but its finite-tolerance diagnostics and coordinates remain study-frozen rather
-than a compatibility promise. Exact revisions and frozen artifacts remain
-reproducible, but current-main forward compatibility is not promised outside
-separately versioned contracts that those modules may consume.
+Experimental modules in the root-owner registry are dataset-specific,
+benchmark-specific, or research-lifecycle surfaces that already own historical
+package-root symbols. The current registry classifies every Deform360 root owner
+and `synthetic_benchmark` as experimental. Exact revisions and frozen artifacts
+remain reproducible, but current-main forward compatibility is not promised
+outside separately versioned contracts that those modules may consume.
 
 Experimental status does not authorize target access, confirmation access,
 retuning, deployment, or a scientific claim. It is software lifecycle metadata
@@ -101,6 +98,13 @@ has no compatibility promise. Underscore-prefixed modules are always internal
 and cannot be added to the public lifecycle registry. The generated private
 `_root_exports_v0_4` module exists only to preserve the frozen root symbol table
 and static re-export information; it is not a supported import surface.
+
+The direct-import
+[`query_identifiability_certificate_v2`](query_identifiability_certificate_v2.md)
+remains unregistered and experimental under this rule. It formalizes a local
+kernel-inclusion test, but its finite-tolerance diagnostics, whitening, nuisance
+span, and coordinates are study-frozen rather than a compatibility promise. It
+adds no package-root symbol and no stable `bayesian_phystwin.v1` export.
 
 New public modules should be registered only when their intended lifecycle is
 clear. Adding a stable module requires a documented consumer boundary and
