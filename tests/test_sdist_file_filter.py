@@ -32,10 +32,12 @@ def _load_setup(
     setuptools_module = ModuleType("setuptools")
     command_module = ModuleType("setuptools.command")
     sdist_module = ModuleType("setuptools.command.sdist")
-    setattr(setuptools_module, "setup", capture_setup)
-    setattr(setuptools_module, "command", command_module)
-    setattr(command_module, "sdist", sdist_module)
-    setattr(sdist_module, "sdist", _FakeSdist)
+    setuptools_module.__dict__.update(
+        setup=capture_setup,
+        command=command_module,
+    )
+    command_module.__dict__["sdist"] = sdist_module
+    sdist_module.__dict__["sdist"] = _FakeSdist
     monkeypatch.setitem(sys.modules, "setuptools", setuptools_module)
     monkeypatch.setitem(sys.modules, "setuptools.command", command_module)
     monkeypatch.setitem(sys.modules, "setuptools.command.sdist", sdist_module)
