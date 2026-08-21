@@ -142,6 +142,13 @@ RUNTIME_SUCCESSOR_AUTHORIZATION = (
     / "deform_dlo3_robustness_v2"
     / "runtime_successor_authorization_v1.json"
 )
+RUNTIME_SUCCESSOR_COMPLETION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo3_robustness_v2"
+    / "runtime_successor_completion_v1.json"
+)
 
 
 def _payload() -> dict[str, object]:
@@ -2084,6 +2091,37 @@ def test_runtime_successor_is_versioned_and_target_blind() -> None:
         "held_v8_access",
     ):
         assert authorization[boundary] is False
+
+
+def test_runtime_successor_completion_keeps_outcomes_private() -> None:
+    completion = json.loads(
+        RUNTIME_SUCCESSOR_COMPLETION.read_text(encoding="utf-8")
+    )
+
+    assert completion["contract"] == (
+        "deform-dlo3-robustness-runtime-successor-completion-v1"
+    )
+    assert completion["status"] == "completed-and-frozen"
+    assert completion["runtime_overlay_tree_sha256"] == (
+        "96da170467f683d5e4c648d77799d598e83cf77fd3fef082559167ba3840e874"
+    )
+    assert completion["dry_run"]["launch_count"] == 1
+    assert completion["dry_run"]["retry_count"] == 0
+    assert completion["dry_run"]["pipeline_passed"] is True
+    assert completion["dry_run"]["primary_eval_read"] is False
+    assert completion["readiness"]["attestation_count"] == 1
+    assert completion["readiness"]["official_eval_read_at_attestation"] is False
+    assert completion["official_execution"]["launch_count"] == 1
+    assert completion["official_execution"]["retry_count"] == 0
+    assert completion["official_execution"]["case_replacement"] is False
+    assert completion["artifact_order_verified"] is True
+    assert completion["target_outcomes_used_for_method_changes"] is False
+    assert completion["target_selection"] is False
+    assert completion["target_calibration"] is False
+    assert completion["prob4d_used"] is False
+    assert completion["dlo4_dlo5_access"] is False
+    assert completion["held_v8_access"] is False
+    assert completion["outcome_values_published_here"] is False
 
 
 def test_seed_runner_seals_models_and_predictions_before_scoring() -> None:
