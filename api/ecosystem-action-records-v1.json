@@ -1,0 +1,83 @@
+{
+  "schema": "bayesian-phystwin.ecosystem-action-records",
+  "schema_version": 1,
+  "snapshot_date": "2026-08-21",
+  "claim_boundary": "This registry is an operational priority and information-boundary record. It does not establish estimator accuracy, covariance calibration, provider competence, unseen-object transfer, Causal4D benefit, deployment safety, or state of the art.",
+  "records": [
+    {
+      "lifecycle": "current",
+      "issue_state": "open",
+      "priority": 1,
+      "action_id": "covariance-only-independent-confirmation",
+      "domain": "bayesian-phystwin",
+      "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "owning_issue": 461,
+      "status": "source-gate-pending",
+      "next_gate": "seal-source-predictions-and-evaluate-source-decision",
+      "target_access": "closed",
+      "blocked_by": [],
+      "forbidden_actions": [
+        "open-confirmation-before-source-pass",
+        "retune-on-opened-target"
+      ]
+    },
+    {
+      "lifecycle": "current",
+      "issue_state": "open",
+      "priority": 2,
+      "action_id": "causal4d-real-36-execution",
+      "domain": "causal4d",
+      "owning_repository": "IPS-Stuttgart/Causal4D",
+      "owning_issue": 25,
+      "status": "blocked",
+      "next_gate": "resolve-independent-verifier-governance",
+      "target_access": "forbidden",
+      "blocked_by": [
+        "IPS-Stuttgart/Causal4D#377"
+      ],
+      "forbidden_actions": [
+        "begin-confirmatory-acquisition-before-readiness",
+        "replace-primary-experiment-with-optional-branch"
+      ]
+    },
+    {
+      "lifecycle": "current",
+      "issue_state": "open",
+      "priority": 3,
+      "action_id": "real-prob4d-provider-competence",
+      "domain": "prob4d",
+      "owning_repository": "IPS-Stuttgart/Prob4D",
+      "owning_issue": 49,
+      "status": "separately-versioned-provider-required",
+      "next_gate": "freeze-complete-support-feasibility-before-source-residuals",
+      "target_access": "closed",
+      "blocked_by": [],
+      "forbidden_actions": [
+        "relax-support-after-outcomes",
+        "reuse-opened-motioncrafter-or-deform360-targets"
+      ]
+    },
+    {
+      "lifecycle": "terminal",
+      "issue_state": "closed",
+      "action_id": "material-backend-qualification",
+      "domain": "bayesian-phystwin",
+      "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "owning_issue": 664,
+      "status": "terminal-negative-source-value",
+      "next_gate": "new-mechanism-requires-separate-protocol",
+      "target_access": "closed",
+      "blocked_by": [],
+      "forbidden_actions": [
+        "admit-closed-candidates-as-source-value-qualified",
+        "retune-opened-source-actions",
+        "reuse-terminal-action-as-current-priority"
+      ],
+      "completed_date": "2026-08-20",
+      "terminal_records": [
+        "docs/genesis_mpm_zebra_source_value_v1_result.md",
+        "docs/jax_fem_zebra_source_value_v1_result.md"
+      ]
+    }
+  ]
+}
