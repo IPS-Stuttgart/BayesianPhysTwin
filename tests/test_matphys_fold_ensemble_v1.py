@@ -1,4 +1,7 @@
 import json
+import sys
+import types
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +14,7 @@ from bayesian_phystwin.matphys_fold_ensemble_v1 import (
     assert_target_excluded,
     build_matphys_fold_ensemble_source,
     causal_frame_indices,
+    install_matphys_warp_warning_compatibility,
     matphys_graph_features,
     trajectory_ensemble_moments,
     validate_matphys_fold_ensemble_source,
@@ -55,6 +59,23 @@ def test_causal_frames_match_training_sampling_and_never_cross_prefix() -> None:
     np.testing.assert_array_equal(causal_frame_indices(3), np.array([0, 1, 2]))
     with pytest.raises(ValueError, match="positive integer"):
         causal_frame_indices(0)
+
+
+def test_warp_warning_compatibility_restores_only_missing_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    warp = types.ModuleType("warp")
+    warp.__path__ = []
+    source = types.ModuleType("warp._src")
+    source.__path__ = []
+    utilities = types.ModuleType("warp._src.utils")
+    monkeypatch.setitem(sys.modules, "warp", warp)
+    monkeypatch.setitem(sys.modules, "warp._src", source)
+    monkeypatch.setitem(sys.modules, "warp._src.utils", utilities)
+
+    assert install_matphys_warp_warning_compatibility() is True
+    assert utilities.warn is warnings.warn
+    assert install_matphys_warp_warning_compatibility() is False
 
 
 def test_source_manifest_binds_target_excluded_fold_checkpoints(tmp_path: Path) -> None:
@@ -153,4 +174,3 @@ def test_ensemble_moments_are_psd_and_duplicate_safe() -> None:
     assert duplicated.unique_member_indices.tolist() == [0, 1]
     assert np.min(np.linalg.eigvalsh(base.covariance_m2)) >= -1e-12
     np.testing.assert_allclose(base.covariance_m2[..., 0, 0], 0.000025)
-

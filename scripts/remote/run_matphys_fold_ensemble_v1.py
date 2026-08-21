@@ -38,6 +38,7 @@ from bayesian_phystwin.matphys_fold_ensemble_v1 import (  # noqa: E402
     apply_bounded_spring_residual,
     assert_target_excluded,
     causal_frame_indices,
+    install_matphys_warp_warning_compatibility,
     matphys_graph_features,
     validate_matphys_fold_ensemble_source,
 )
@@ -263,6 +264,10 @@ def main() -> None:
     _configure_matphys_imports(matphys_root)
     _install_torchvision_nms_stub()
     import torch
+
+    warp_warning_compatibility_applied = (
+        install_matphys_warp_warning_compatibility()
+    )
     import train_model_video_material_simple as training
 
     install_part_aware_simple_model(
@@ -421,6 +426,11 @@ def main() -> None:
         "member_count": len(member_records),
         "members": member_records,
         "mean_edge_epistemic_log_ratio_std": mean_member_std,
+        "runtime_compatibility": {
+            "warp_private_warning_alias_restored": (
+                warp_warning_compatibility_applied
+            )
+        },
         "inputs": {
             "source_manifest": {"path": str(source_path), "sha256": _sha256(source_path)},
             "episode_graph": {"path": str(graph_path), "sha256": _sha256(graph_path)},

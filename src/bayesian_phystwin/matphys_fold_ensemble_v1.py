@@ -14,6 +14,7 @@ zero-strength proposal is exactly the incumbent array.
 from __future__ import annotations
 
 import hashlib
+import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from numbers import Real
@@ -200,6 +201,24 @@ def _array_sha256(value: np.ndarray) -> str:
     digest.update(np.asarray(array.shape, dtype=np.int64).tobytes())
     digest.update(array.tobytes())
     return digest.hexdigest()
+
+
+def install_matphys_warp_warning_compatibility() -> bool:
+    """Restore the warning hook expected by the pinned MatPhys checkout.
+
+    Warp removed its private ``warp._src.utils.warn`` alias after MatPhys was
+    released.  MatPhys only uses the symbol to suppress a warning while its
+    modules import, so the standard-library warning function is equivalent.
+    The return value records whether this process needed the compatibility
+    repair.
+    """
+
+    import warp._src.utils as warp_utils
+
+    if hasattr(warp_utils, "warn"):
+        return False
+    warp_utils.warn = warnings.warn
+    return True
 
 
 def causal_frame_indices(
