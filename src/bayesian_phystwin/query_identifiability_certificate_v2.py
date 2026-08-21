@@ -233,9 +233,7 @@ class QueryIdentifiabilityCertificateV2:
             physical_v_rank = physical_vh[:physical_rank, :].T
             inverse_singular_values = 1.0 / physical_s[:physical_rank]
             pseudoinverse = (
-                physical_v_rank
-                @ np.diag(inverse_singular_values)
-                @ physical_u_rank.T
+                physical_v_rank @ np.diag(inverse_singular_values) @ physical_u_rank.T
             )
         else:
             pseudoinverse = np.zeros((latent_count, row_count), dtype=np.float64)
@@ -254,9 +252,7 @@ class QueryIdentifiabilityCertificateV2:
         null_basis = physical_vh[physical_rank:, :].T
         null_query = query @ null_basis
         null_query_s = np.linalg.svd(null_query, compute_uv=False)
-        residual_frobenius = float(
-            np.linalg.norm(factorization_residual, ord="fro")
-        )
+        residual_frobenius = float(np.linalg.norm(factorization_residual, ord="fro"))
         residual_spectral = float(null_query_s[0]) if len(null_query_s) else 0.0
         residual_bound = absolute + identifiability * query_frobenius
         rank_increment = int(np.count_nonzero(null_query_s > residual_bound))
@@ -392,12 +388,8 @@ class QueryIdentifiabilityCertificateV2:
             "observation_mapping_id": self.observation_mapping_id,
             "nuisance_design_id": self.nuisance_design_id,
             "query_id": self.query_id,
-            "whitened_physical_design": _array_record(
-                self.whitened_physical_design
-            ),
-            "whitened_nuisance_design": _array_record(
-                self.whitened_nuisance_design
-            ),
+            "whitened_physical_design": _array_record(self.whitened_physical_design),
+            "whitened_nuisance_design": _array_record(self.whitened_nuisance_design),
             "query_map": _array_record(self.query_map),
             "nuisance_projector": _array_record(self.nuisance_projector),
             "residualized_physical_design": _array_record(
@@ -405,12 +397,8 @@ class QueryIdentifiabilityCertificateV2:
             ),
             "factor_operator": _array_record(self.factor_operator),
             "factorization_residual": _array_record(self.factorization_residual),
-            "nuisance_singular_values": _array_record(
-                self.nuisance_singular_values
-            ),
-            "physical_singular_values": _array_record(
-                self.physical_singular_values
-            ),
+            "nuisance_singular_values": _array_record(self.nuisance_singular_values),
+            "physical_singular_values": _array_record(self.physical_singular_values),
             "query_singular_values": _array_record(self.query_singular_values),
             "null_query_singular_values": _array_record(
                 self.null_query_singular_values
@@ -427,12 +415,8 @@ class QueryIdentifiabilityCertificateV2:
             "physical_nullity": self.physical_nullity,
             "rank_increment": self.rank_increment,
             "augmented_rank": self.augmented_rank,
-            "factorization_residual_frobenius": (
-                self.factorization_residual_frobenius
-            ),
-            "factorization_residual_spectral": (
-                self.factorization_residual_spectral
-            ),
+            "factorization_residual_frobenius": (self.factorization_residual_frobenius),
+            "factorization_residual_spectral": (self.factorization_residual_spectral),
             "normalized_factorization_residual": (
                 self.normalized_factorization_residual
             ),
