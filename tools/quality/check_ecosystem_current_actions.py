@@ -38,17 +38,29 @@ COMMON_ACTION_FIELDS: Final = frozenset(
 )
 OPTIONAL_ACTION_FIELDS: Final = frozenset({"active_candidates"})
 ALLOWED_DOMAINS: Final = frozenset({"bayesian-phystwin", "prob4d", "causal4d"})
-ALLOWED_TARGET_ACCESS: Final = frozenset({"closed", "forbidden", "not-applicable"})
+ALLOWED_TARGET_ACCESS: Final = frozenset(
+    {"closed", "forbidden", "not-applicable", "open"}
+)
+ALLOWED_LIFECYCLES: Final = frozenset({"active", "blocked", "completed"})
 REPOSITORY_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 BLOCKER_PATTERN: Final = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$")
 DATE_PATTERN: Final = re.compile(r"^20[0-9]{2}-[01][0-9]-[0-3][0-9]$")
-REQUIRED_ACTIONS: Final = {
+
+# Immutable ownership, information-boundary, and lifecycle rules.  Status values
+# are deliberately represented as an allowed state machine rather than one exact
+# mutable snapshot value.  This lets an action advance without weakening its
+# ownership, target-access, blocker, or fail-closed invariants.
+ACTION_POLICIES: Final = {
     "covariance-only-independent-confirmation": {
         "domain": "bayesian-phystwin",
         "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
         "owning_issue": 461,
-        "status": "source-gate-pending",
-        "target_access": "closed",
+        "status_rules": {
+            "source-gate-pending": ("active", "closed"),
+            "source-negative-complete": ("completed", "closed"),
+            "source-positive-confirmation-authorized": ("active", "closed"),
+            "confirmation-complete": ("completed", "not-applicable"),
+        },
         "required_forbidden": {
             "open-confirmation-before-source-pass",
             "retune-on-opened-target",
@@ -58,9 +70,15 @@ REQUIRED_ACTIONS: Final = {
         "domain": "causal4d",
         "owning_repository": "IPS-Stuttgart/Causal4D",
         "owning_issue": 25,
-        "status": "blocked",
-        "target_access": "forbidden",
-        "required_blockers": {"IPS-Stuttgart/Causal4D#377"},
+        "status_rules": {
+            "blocked": ("blocked", "forbidden"),
+            "preacquisition-readiness-active": ("active", "forbidden"),
+            "confirmatory-acquisition-authorized": ("active", "forbidden"),
+            "real-experiment-complete": ("completed", "not-applicable"),
+        },
+        "required_blockers_by_status": {
+            "blocked": {"IPS-Stuttgart/Causal4D#377"},
+        },
         "required_forbidden": {
             "begin-confirmatory-acquisition-before-readiness",
             "replace-primary-experiment-with-optional-branch",
@@ -70,8 +88,13 @@ REQUIRED_ACTIONS: Final = {
         "domain": "prob4d",
         "owning_repository": "IPS-Stuttgart/Prob4D",
         "owning_issue": 49,
-        "status": "separately-versioned-provider-required",
-        "target_access": "closed",
+        "status_rules": {
+            "cut3r-source-bundle-required": ("active", "closed"),
+            "cut3r-source-gates-active": ("active", "closed"),
+            "source-negative-complete": ("completed", "closed"),
+            "ready-for-one-target-evaluation": ("active", "closed"),
+            "target-evaluation-complete": ("completed", "not-applicable"),
+        },
         "required_forbidden": {
             "reuse-opened-motioncrafter-or-deform360-targets",
             "relax-support-after-outcomes",
@@ -81,13 +104,16 @@ REQUIRED_ACTIONS: Final = {
         "domain": "bayesian-phystwin",
         "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
         "owning_issue": 664,
-        "status": "source-qualification-active",
-        "target_access": "closed",
-        "required_candidates": ["genesis-mpm-v1", "jax-fem-v1"],
-        "required_forbidden": {
-            "admit-new-backend-family",
-            "open-fresh-target-before-source-value",
+        "status_rules": {
+            "completed-bounded-negative": ("completed", "closed"),
         },
+        "required_forbidden": {
+            "admit-new-backend-family-without-new-protocol",
+            "open-fresh-target-from-rejected-candidates",
+            "reinterpret-source-physics-as-source-value",
+            "rerun-terminal-candidate-under-same-identity",
+        },
+        "active_candidates_forbidden": True,
     },
 }
 
@@ -174,8 +200,6 @@ def _validate_action(raw: object) -> dict[str, Any]:
     )
     if not forbidden:
         _fail(f"{action_id} must fail closed with forbidden_actions")
-    if action["status"] == "blocked" and not blockers:
-        _fail(f"{action_id} is blocked but has no blocker")
 
     if "active_candidates" in action:
         candidates = _canonical_strings(
@@ -225,6 +249,58 @@ def load_registry(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _status_lifecycle(action: dict[str, Any], policy: dict[str, Any]) -> str:
+    action_id = cast(str, action["action_id"])
+    status = cast(str, action["status"])
+    status_rules = cast(dict[str, tuple[str, str]], policy["status_rules"])
+    if status not in status_rules:
+        _fail(f"{action_id} status is not an allowed lifecycle state")
+    lifecycle, required_target_access = status_rules[status]
+    if lifecycle not in ALLOWED_LIFECYCLES:
+        _fail(f"{action_id} lifecycle policy is not recognized")
+    if action["target_access"] != required_target_access:
+        _fail(f"{action_id} target_access is inconsistent with status")
+    return lifecycle
+
+
+def _validate_policy(action: dict[str, Any], policy: dict[str, Any]) -> str:
+    action_id = cast(str, action["action_id"])
+    for field in ("domain", "owning_repository", "owning_issue"):
+        if action[field] != policy[field]:
+            _fail(f"{action_id} {field} changed")
+
+    lifecycle = _status_lifecycle(action, policy)
+    blockers = set(cast(list[str], action["blocked_by"]))
+    required_by_status = cast(
+        dict[str, set[str]],
+        policy.get("required_blockers_by_status", {}),
+    )
+    required_blockers = required_by_status.get(cast(str, action["status"]), set())
+    if not required_blockers.issubset(blockers):
+        _fail(f"{action_id} lost a required blocker")
+    if lifecycle == "blocked" and not blockers:
+        _fail(f"{action_id} is blocked but has no blocker")
+    if lifecycle != "blocked" and blockers:
+        _fail(f"{action_id} has blockers outside a blocked state")
+
+    required_forbidden = set(cast(set[str], policy["required_forbidden"]))
+    forbidden = set(cast(list[str], action["forbidden_actions"]))
+    if not required_forbidden.issubset(forbidden):
+        _fail(f"{action_id} lost a fail-closed prohibition")
+
+    if cast(bool, policy.get("active_candidates_forbidden", False)):
+        if "active_candidates" in action:
+            _fail(f"{action_id} cannot retain active candidates after completion")
+    elif "active_candidates" in action:
+        _fail(f"{action_id} cannot carry active_candidates")
+
+    if lifecycle == "completed":
+        next_gate = cast(str, action["next_gate"])
+        if not next_gate.startswith(("retain-", "archive-", "report-")):
+            _fail(f"{action_id} completed action must have a retention next_gate")
+    return lifecycle
+
+
 def validate_registry(path: Path = DEFAULT_REGISTRY) -> dict[str, object]:
     """Validate ordering and all non-negotiable current-action boundaries."""
 
@@ -238,40 +314,23 @@ def validate_registry(path: Path = DEFAULT_REGISTRY) -> dict[str, object]:
     action_ids = [cast(str, action["action_id"]) for action in actions]
     if len(set(action_ids)) != len(action_ids):
         _fail("action_id values must be unique")
-    if set(action_ids) != set(REQUIRED_ACTIONS):
+    if set(action_ids) != set(ACTION_POLICIES):
         _fail("required ecosystem action roster changed")
 
-    by_id = {cast(str, action["action_id"]): action for action in actions}
-    for action_id, expected in REQUIRED_ACTIONS.items():
-        action = by_id[action_id]
-        for field in (
-            "domain",
-            "owning_repository",
-            "owning_issue",
-            "status",
-            "target_access",
-        ):
-            if action[field] != expected[field]:
-                _fail(f"{action_id} {field} changed")
-        required_blockers = set(expected.get("required_blockers", set()))
-        if not required_blockers.issubset(set(action["blocked_by"])):
-            _fail(f"{action_id} lost a required blocker")
-        required_forbidden = set(expected["required_forbidden"])
-        if not required_forbidden.issubset(set(action["forbidden_actions"])):
-            _fail(f"{action_id} lost a fail-closed prohibition")
-        if "required_candidates" in expected:
-            if action.get("active_candidates") != expected["required_candidates"]:
-                _fail(f"{action_id} active candidate roster changed")
-        elif "active_candidates" in action:
-            _fail(f"{action_id} cannot carry active_candidates")
-
+    lifecycles = [
+        _validate_policy(action, cast(dict[str, Any], ACTION_POLICIES[action_id]))
+        for action_id, action in zip(action_ids, actions, strict=True)
+    ]
     return {
         "status": "valid",
         "snapshot_date": payload["snapshot_date"],
         "action_count": len(actions),
         "highest_priority_action": action_ids[0],
+        "active_action_count": lifecycles.count("active"),
+        "blocked_action_count": lifecycles.count("blocked"),
+        "completed_action_count": lifecycles.count("completed"),
         "target_open_action_count": sum(
-            action["target_access"] not in {"closed", "forbidden"} for action in actions
+            action["target_access"] == "open" for action in actions
         ),
     }
 

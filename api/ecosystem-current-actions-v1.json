@@ -1,7 +1,7 @@
 {
   "schema": "bayesian-phystwin.ecosystem-current-actions",
   "schema_version": 1,
-  "snapshot_date": "2026-08-18",
+  "snapshot_date": "2026-08-21",
   "claim_boundary": "This registry is an operational priority and information-boundary record. It does not establish estimator accuracy, covariance calibration, provider competence, unseen-object transfer, Causal4D benefit, deployment safety, or state of the art.",
   "actions": [
     {
@@ -42,8 +42,8 @@
       "domain": "prob4d",
       "owning_repository": "IPS-Stuttgart/Prob4D",
       "owning_issue": 49,
-      "status": "separately-versioned-provider-required",
-      "next_gate": "freeze-complete-support-feasibility-before-source-residuals",
+      "status": "cut3r-source-bundle-required",
+      "next_gate": "freeze-retained-cut3r-source-run-and-cohort-bundle",
       "target_access": "closed",
       "blocked_by": [],
       "forbidden_actions": [
@@ -57,17 +57,15 @@
       "domain": "bayesian-phystwin",
       "owning_repository": "IPS-Stuttgart/BayesianPhysTwin",
       "owning_issue": 664,
-      "status": "source-qualification-active",
-      "next_gate": "qualify-one-candidate-through-source-physics-and-source-value",
+      "status": "completed-bounded-negative",
+      "next_gate": "retain-terminal-results-and-protected-incumbent",
       "target_access": "closed",
-      "active_candidates": [
-        "genesis-mpm-v1",
-        "jax-fem-v1"
-      ],
       "blocked_by": [],
       "forbidden_actions": [
-        "admit-new-backend-family",
-        "open-fresh-target-before-source-value"
+        "admit-new-backend-family-without-new-protocol",
+        "open-fresh-target-from-rejected-candidates",
+        "reinterpret-source-physics-as-source-value",
+        "rerun-terminal-candidate-under-same-identity"
       ]
     }
   ]

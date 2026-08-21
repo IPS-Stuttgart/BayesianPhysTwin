@@ -56,9 +56,12 @@ def test_checked_in_registry_is_valid_and_target_closed() -> None:
 
     assert report == {
         "status": "valid",
-        "snapshot_date": "2026-08-18",
+        "snapshot_date": "2026-08-21",
         "action_count": 4,
         "highest_priority_action": ("covariance-only-independent-confirmation"),
+        "active_action_count": 2,
+        "blocked_action_count": 1,
+        "completed_action_count": 1,
         "target_open_action_count": 0,
     }
 
@@ -84,7 +87,7 @@ def test_causal4d_blocker_is_required(tmp_path: Path) -> None:
 
     with pytest.raises(
         tool.EcosystemCurrentActionsError,
-        match="blocked but has no blocker",
+        match="blocked but has no blocker|lost a required blocker",
     ):
         tool.validate_registry(_write(tmp_path, payload))
 
@@ -95,23 +98,76 @@ def test_confirmation_cannot_be_opened_early(tmp_path: Path) -> None:
         payload,
         "covariance-only-independent-confirmation",
     )
-    action["target_access"] = "not-applicable"
+    action["target_access"] = "open"
 
     with pytest.raises(
         tool.EcosystemCurrentActionsError,
-        match="target_access changed",
+        match="target_access is inconsistent with status",
     ):
         tool.validate_registry(_write(tmp_path, payload))
 
 
-def test_backend_candidates_are_frozen(tmp_path: Path) -> None:
+def test_allowed_prob4d_lifecycle_transition_does_not_require_policy_rewrite(
+    tmp_path: Path,
+) -> None:
     payload = _payload()
-    action = _action(payload, "material-backend-qualification")
-    action["active_candidates"] = ["genesis-mpm-v1", "new-backend-v1"]
+    action = _action(payload, "real-prob4d-provider-competence")
+    action["status"] = "cut3r-source-gates-active"
+    action["next_gate"] = "execute-ordered-source-gates"
+
+    report = tool.validate_registry(_write(tmp_path, payload))
+
+    assert report["active_action_count"] == 2
+    assert report["target_open_action_count"] == 0
+
+
+def test_unknown_status_is_rejected(tmp_path: Path) -> None:
+    payload = _payload()
+    action = _action(payload, "real-prob4d-provider-competence")
+    action["status"] = "architecture-added"
 
     with pytest.raises(
         tool.EcosystemCurrentActionsError,
-        match="active candidate roster changed",
+        match="status is not an allowed lifecycle state",
+    ):
+        tool.validate_registry(_write(tmp_path, payload))
+
+
+def test_completed_backend_action_cannot_retain_active_candidates(
+    tmp_path: Path,
+) -> None:
+    payload = _payload()
+    action = _action(payload, "material-backend-qualification")
+    action["active_candidates"] = ["genesis-mpm-v1", "jax-fem-v1"]
+
+    with pytest.raises(
+        tool.EcosystemCurrentActionsError,
+        match="cannot retain active candidates after completion",
+    ):
+        tool.validate_registry(_write(tmp_path, payload))
+
+
+def test_completed_backend_action_cannot_be_relabelled_active(tmp_path: Path) -> None:
+    payload = _payload()
+    action = _action(payload, "material-backend-qualification")
+    action["status"] = "source-qualification-active"
+    action["next_gate"] = "qualify-one-candidate"
+
+    with pytest.raises(
+        tool.EcosystemCurrentActionsError,
+        match="status is not an allowed lifecycle state",
+    ):
+        tool.validate_registry(_write(tmp_path, payload))
+
+
+def test_completed_action_requires_retention_next_gate(tmp_path: Path) -> None:
+    payload = _payload()
+    action = _action(payload, "material-backend-qualification")
+    action["next_gate"] = "run-another-backend"
+
+    with pytest.raises(
+        tool.EcosystemCurrentActionsError,
+        match="must have a retention next_gate",
     ):
         tool.validate_registry(_write(tmp_path, payload))
 
@@ -122,6 +178,20 @@ def test_fail_closed_prohibition_cannot_be_removed(tmp_path: Path) -> None:
     forbidden = action["forbidden_actions"]
     assert isinstance(forbidden, list)
     forbidden.remove("relax-support-after-outcomes")
+
+    with pytest.raises(
+        tool.EcosystemCurrentActionsError,
+        match="lost a fail-closed prohibition",
+    ):
+        tool.validate_registry(_write(tmp_path, payload))
+
+
+def test_terminal_backend_prohibition_cannot_be_removed(tmp_path: Path) -> None:
+    payload = _payload()
+    action = _action(payload, "material-backend-qualification")
+    forbidden = action["forbidden_actions"]
+    assert isinstance(forbidden, list)
+    forbidden.remove("reinterpret-source-physics-as-source-value")
 
     with pytest.raises(
         tool.EcosystemCurrentActionsError,
