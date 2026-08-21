@@ -554,23 +554,23 @@ class PhysicalCauseDecisionV2:
 
     @property
     def selected_candidate_id(self) -> str | None:
-        return self.routed_decision.selected_candidate_id
+        return cast(str | None, self.routed_decision.selected_candidate_id)
 
     @property
     def selected_belief_id(self) -> str:
-        return self.routed_decision.selected_belief_id
+        return cast(str, self.routed_decision.selected_belief_id)
 
     @property
     def exact_baseline_fallback(self) -> bool:
-        return self.routed_decision.exact_baseline_fallback
+        return cast(bool, self.routed_decision.exact_baseline_fallback)
 
     @property
     def ambiguity_detected(self) -> bool:
-        return self.routed_decision.ambiguity_detected
+        return cast(bool, self.routed_decision.ambiguity_detected)
 
     @property
     def reason(self) -> str:
-        return self.routed_decision.reason
+        return cast(str, self.routed_decision.reason)
 
     def descriptor(self) -> dict[str, Any]:
         return {
