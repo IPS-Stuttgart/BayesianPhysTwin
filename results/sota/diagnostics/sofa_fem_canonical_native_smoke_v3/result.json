@@ -1,0 +1,104 @@
+{
+  "backend_profile": "sofa-fem-v1",
+  "backend_variant": "sofa-stable-neo-hookean-canonical-gauge-keyed-dirichlet-v3",
+  "base_scene_sha256": "3a129f3333d2266861a19a0b23b0264d2d5a51e361f6a36b32b660f16c5b223e",
+  "base_schedule_sha256": "d7f174ae4c5d1c10570db7ad4b1aff6b7c6a4c4b1468e517096e44fd91a12b14",
+  "canonical_rounding_m": 1e-11,
+  "checks": {
+    "allowed_deformation_determinant_interval": [
+      0.5,
+      2.0
+    ],
+    "allowed_native_attachment_error_m": 1e-12,
+    "allowed_rigid_equivariance_error_m": 1e-12,
+    "allowed_world_attachment_approximation_error_m": 2e-11,
+    "deterministic_replay": true,
+    "gauge_identity_under_rigid_pose": true,
+    "maximum_deformation_determinant": 1.0025660769164813,
+    "maximum_native_attachment_error_m": 5.421010862427522e-20,
+    "maximum_rigid_equivariance_error_m": 3.5321681408794624e-17,
+    "maximum_world_attachment_approximation_error_m": 5.936135615772196e-12,
+    "minimum_deformation_determinant": 0.9909963061451169,
+    "scene_identity_under_rigid_pose": true
+  },
+  "claim_boundary": "Synthetic native-execution, pose-canonicalization, keyed-Dirichlet, and provenance smoke only; no source-value, source-outcome, target, held-out, or state-of-the-art claim.",
+  "coordinate_policy": "principal-axis-right-handed-ten-picometer-canonicalization-v1",
+  "engine": {
+    "distribution_archive_sha256": "129211fd01781bdd5ba3f28f1c3617a2f3792a71b62dc609cf866eec4ac745e2",
+    "installed_records": {
+      "git-info.txt": {
+        "sha256": "fd798c058c651d201ba552f7bfbd77cf2ad63d095dd650c0f39d3b40e0e0ed3b"
+      },
+      "lib/libSofa.Component.AnimationLoop.so.26.06.00": {
+        "sha256": "5dc44e8039684d3f112066e056c7f9e993ad10adcc50244569beba27022d2ea9"
+      },
+      "lib/libSofa.Component.Constraint.Projective.so.26.06.00": {
+        "sha256": "1b5bc1b6e60dfd74f892a2acda34bba69fb7cd3370f631a040bd368c0ff6f828"
+      },
+      "lib/libSofa.Component.LinearSolver.Direct.so.26.06.00": {
+        "sha256": "7a94c419c39d18236c24281c707e8e4db6c3e032c43e942b63514293926663d4"
+      },
+      "lib/libSofa.Component.Mass.so.26.06.00": {
+        "sha256": "180e04093c8f8096e3e2c19ae986886bc2af2f23adeefbd11fd8aff47b0210d9"
+      },
+      "lib/libSofa.Component.ODESolver.Backward.so.26.06.00": {
+        "sha256": "8bd1d79204e3dab5d2e02b1f7fecf040c99b51c212ff98b54ccad247a2415c12"
+      },
+      "lib/libSofa.Component.SolidMechanics.FEM.HyperElastic.so.26.06.00": {
+        "sha256": "aed8df7c26bbf49f0bcf11e890ede9ddbff4afb6e8765ff7ea6a1a96a7bbaae9"
+      },
+      "lib/libSofa.Component.StateContainer.so.26.06.00": {
+        "sha256": "aa1e846c2a2978a2d0d6b1ddaafd90b3bff9b186bda3c60d9c6d2cce42e672c5"
+      },
+      "lib/libSofa.Component.Topology.Container.Dynamic.so.26.06.00": {
+        "sha256": "1348185d3a522e8f7139229a6d72ce7263baeae4599e5308650ae2cd522708bb"
+      },
+      "plugins/SofaPython3/lib/libSofaPython3.so.1.0": {
+        "sha256": "b8b2aaf5e43082a217cd839ccc56b7b19a929d19c80777c33fa2b099696742bf"
+      },
+      "plugins/SofaPython3/lib/python3/site-packages/Sofa/Core.cpython-310-x86_64-linux-gnu.so": {
+        "sha256": "3f41ddef8cbfa98806473cff828a2e650fc7916aca14f722cec3c0a2c45ced6f"
+      },
+      "plugins/SofaPython3/lib/python3/site-packages/Sofa/Simulation.cpython-310-x86_64-linux-gnu.so": {
+        "sha256": "54483e9f24c0b5adc7be4c522b4e8ed8311e6887b537542f12d503049854dac6"
+      }
+    },
+    "repository": "https://github.com/sofa-framework/sofa",
+    "revision": "7c18e95d5c5f2839079892c69e7d89a313c79603",
+    "version": "26.06.00"
+  },
+  "gauge_sha256": "6cfc43c0991b0f71e04d916d6513ad4ce417ade243cb4389ff504421fb0ce0df",
+  "implementation": {
+    "git_head": "122760f754ce3eb1037930d01da677dc711ce16f",
+    "git_worktree_clean": true,
+    "source_files": {
+      "scripts/remote/run_sofa_fem_canonical_native_smoke_v3.py": "17fed91648b569f6dc7c8fe978d807828c32c70812591746aea7efe3b9e99150",
+      "src/bayesian_phystwin/_portable_contracts.py": "7d4971a47224462a67b2c5ffa4c494d1f3f2ace679ec1305340019d63a0afbb3",
+      "src/bayesian_phystwin/jax_fem_source_qualification_v1.py": "e4b540162b5ca9cffb29d766e5db4b4895de2a5512f43f35ce50cb4d723f9edd",
+      "src/bayesian_phystwin/native_tet_fem_source_v1.py": "8e3e435611b67d0de8d6ccd728b77f8c6338e1602ff1f06f88300c0c78408d81",
+      "src/bayesian_phystwin/physical_rollout_v1.py": "7843a789d57a53ca9736ac679fc72bda988df1b94becde70b3d6967323a34983",
+      "src/bayesian_phystwin/sofa_fem_canonical_source_v3.py": "0be69eae4985ba36f020ca4276e4b9d4629335c206188167d36b269e9832edf4",
+      "src/bayesian_phystwin/sofa_fem_kinematic_source_v2.py": "a25f96f2f5d10959d45ee09b9add2650283cdec08f43bf8c7de2e506ced86b26",
+      "src/bayesian_phystwin/sofa_fem_source_qualification_v2.py": "ce35f23913c15d557e7b19d4950357545f1644f7e1a95703eb9ab8289b2ec546",
+      "src/bayesian_phystwin/sofa_fem_source_v1.py": "8d3630c8d7bec4a8fad103fd010fb1811ca4cc415500355c7e6a6b9c42281db6"
+    }
+  },
+  "information_boundary": {
+    "dataset_payload_read": false,
+    "future_outcomes_read": false,
+    "source_object_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "minimum_relative_eigengap": 1e-06,
+  "passed": true,
+  "runtime": {
+    "numpy_version": "2.2.6",
+    "python_executable": "/usr/bin/python3.10",
+    "python_implementation": "CPython",
+    "python_version": "3.10.12"
+  },
+  "schema": "bayesian-phystwin.sofa-fem-canonical-native-smoke-v3",
+  "schema_version": 3,
+  "smoke_id": "daf9282116be7c126c2b01191ed57a11602a4a446ee4d2edde8ecaf28dd57795",
+  "trajectory_archive_sha256": "5ed08ef4b2070fa473e1249881ff89bc7e32598a555c27689bc0429f6579c63a"
+}

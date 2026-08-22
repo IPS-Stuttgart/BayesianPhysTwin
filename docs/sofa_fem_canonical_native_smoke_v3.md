@@ -1,6 +1,7 @@
 # SOFA FEM canonical-gauge native smoke v3
 
-**Registered, not yet executed.** This synthetic smoke qualifies the new
+**Executed exactly once and passed.** This smoke qualifies the synthetic
+native-execution and canonicalization boundary of the new
 `sofa-stable-neo-hookean-canonical-gauge-keyed-dirichlet-v3` backend variant.
 It does not replace or rerun the frozen negative v2 source gate.
 
@@ -39,6 +40,27 @@ requires:
 The smoke reads no dataset, source outcome, target, held-out, DLO4/DLO5, or
 held-v8 artifact. A pass is necessary but not sufficient to register a new
 source-physics protocol.
+
+## Frozen result
+
+The sole execution used implementation revision
+`122760f754ce3eb1037930d01da677dc711ce16f` and produced smoke ID
+`daf9282116be7c126c2b01191ed57a11602a4a446ee4d2edde8ecaf28dd57795`.
+The committed receipt has SHA-256
+`1785b151adc66bd6b52850336d7ed1c633746a378cb7a466ec23b36a8d9ba442`;
+the external trajectory archive has SHA-256
+`5ed08ef4b2070fa473e1249881ff89bc7e32598a555c27689bc0429f6579c63a`.
+
+Repeated native trajectories were byte-identical. The rigid-pose
+equivariance error was `3.5321681408794624e-17 m`, native attachment error was
+`5.421010862427522e-20 m`, and the canonical world-boundary approximation was
+`5.936135615772196e-12 m`. Deformation determinants remained between
+`0.9909963061451169` and `1.0025660769164813`. Every dataset, source-outcome,
+future-outcome, target, and held-out access flag remained false.
+
+The compact receipt is stored at
+`results/sota/diagnostics/sofa_fem_canonical_native_smoke_v3/result.json`.
+The trajectory archive and execution log remain outside Git.
 
 ## Frozen invocation
 

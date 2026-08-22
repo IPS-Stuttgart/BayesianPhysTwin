@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -8,11 +9,21 @@ from types import ModuleType
 import numpy as np
 import pytest
 
+from bayesian_phystwin._portable_contracts import content_id
+
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[1]
     / "scripts"
     / "remote"
     / "run_sofa_fem_canonical_native_smoke_v3.py"
+)
+RESULT_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "results"
+    / "sota"
+    / "diagnostics"
+    / "sofa_fem_canonical_native_smoke_v3"
+    / "result.json"
 )
 
 
@@ -72,3 +83,30 @@ def test_preexisting_output_is_rejected_before_any_native_access(
             repo_root=tmp_path / "missing-repo",
             output_dir=output,
         )
+
+
+def test_frozen_public_smoke_receipt_is_self_consistent() -> None:
+    result = json.loads(RESULT_PATH.read_text(encoding="utf-8"))
+    identity = dict(result)
+    smoke_id = identity.pop("smoke_id")
+
+    assert content_id(identity) == smoke_id
+    assert smoke_id == (
+        "daf9282116be7c126c2b01191ed57a11602a4a446ee4d2edde8ecaf28dd57795"
+    )
+    assert result["implementation"]["git_head"] == (
+        "122760f754ce3eb1037930d01da677dc711ce16f"
+    )
+    assert result["passed"] is True
+    assert result["checks"]["deterministic_replay"] is True
+    assert result["checks"]["gauge_identity_under_rigid_pose"] is True
+    assert result["checks"]["scene_identity_under_rigid_pose"] is True
+    assert result["checks"]["maximum_rigid_equivariance_error_m"] <= 1.0e-12
+    assert result["checks"]["maximum_native_attachment_error_m"] <= 1.0e-12
+    assert result["checks"]["maximum_world_attachment_approximation_error_m"] <= 2.0e-11
+    assert result["information_boundary"] == {
+        "dataset_payload_read": False,
+        "future_outcomes_read": False,
+        "source_object_outcomes_read": False,
+        "target_or_held_out_artifact_read": False,
+    }
