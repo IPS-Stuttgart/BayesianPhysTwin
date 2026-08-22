@@ -1,3 +1,5 @@
+import hashlib
+import json
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +13,9 @@ from bayesian_phystwin.matphys_warp_ensemble_v1 import (
 )
 from scripts.remote.run_matphys_warp_ensemble_v1 import (
     EXPECTED_OFFICIAL_WARP_VERSION,
+    EXPECTED_REPLAY_RUNTIME,
+    _validate_independent_reference,
+    _validate_replay_runtime,
     _validate_warp_runtime,
 )
 
@@ -165,3 +170,85 @@ def test_official_warp_runtime_is_exactly_pinned() -> None:
     assert _validate_warp_runtime("1.16.0") == EXPECTED_OFFICIAL_WARP_VERSION
     with pytest.raises(ValueError, match="runtime version changed"):
         _validate_warp_runtime("1.15.0")
+
+
+def test_official_replay_runtime_is_exactly_pinned() -> None:
+    observed = dict(EXPECTED_REPLAY_RUNTIME)
+
+    assert _validate_replay_runtime(observed) == observed
+    for name, changed in (
+        ("python_version", "3.12.3"),
+        ("numpy_version", "2.2.0"),
+        ("torch_version", "2.5.0+cu121"),
+        ("torch_cuda_version", "12.4"),
+        ("warp_version", "1.15.0"),
+    ):
+        with pytest.raises(ValueError, match="replay runtime changed"):
+            _validate_replay_runtime({**observed, name: changed})
+
+
+def test_independent_reference_binds_producer_inputs_and_dynamics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = tmp_path / "official_runner.py"
+    runner.write_text("# frozen official producer\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.remote.run_matphys_warp_ensemble_v1.EXPECTED_REFERENCE_RUNNER_SHA256",
+        hashlib.sha256(runner.read_bytes()).hexdigest(),
+    )
+    data = tmp_path / "data.pkl"
+    data.write_bytes(b"data")
+    graph = tmp_path / "graph.npz"
+    graph.write_bytes(b"graph")
+    trajectory = tmp_path / "official_phystwin_trajectory.npz"
+    trajectory.write_bytes(b"trajectory")
+    result_path = tmp_path / "official_phystwin_smoke.json"
+    result = {
+        "passed": True,
+        "source_only_smoke": True,
+        "official_phystwin_revision": "official-revision",
+        "config_sha256": "config-sha",
+        "data_sha256": hashlib.sha256(data.read_bytes()).hexdigest(),
+        "trajectory_sha256": hashlib.sha256(trajectory.read_bytes()).hexdigest(),
+        "config_overrides": {
+            "controller_max_neighbours": 1,
+            "controller_radius": 0.03,
+            "dashpot_damping": 100.0,
+            "drag_damping": 10.0,
+            "init_spring_Y": 10000.0,
+        },
+        "canonical_reusable_graph": {
+            "file_sha256": hashlib.sha256(graph.read_bytes()).hexdigest(),
+            "controller_patch_size_per_anchor": 16,
+        },
+        "support_dynamics": {
+            "mode": "official-ground",
+            "reverse_factor": -1.0,
+            "uses_official_cuda_graph": True,
+        },
+        "realized_actuation": {"controller_displacement_scale": 1.0},
+    }
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+    kwargs = {
+        "result_path": result_path,
+        "trajectory_path": trajectory,
+        "runner_path": runner,
+        "data_path": data,
+        "config_sha256": "config-sha",
+        "official_revision": "official-revision",
+        "registered_graph_path": graph,
+        "controller_max_neighbours": 1,
+        "controller_radius_m": 0.03,
+        "controller_patch_size": 16,
+        "init_spring_y": 10000.0,
+        "drag_damping": 10.0,
+        "dashpot_damping": 100.0,
+    }
+
+    assert _validate_independent_reference(**kwargs) == result
+
+    result["config_overrides"]["init_spring_Y"] = 9000.0
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+    with pytest.raises(ValueError, match="reference dynamics changed"):
+        _validate_independent_reference(**kwargs)

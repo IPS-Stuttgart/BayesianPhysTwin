@@ -9,6 +9,7 @@ import importlib.metadata
 import json
 import os
 import pickle
+import platform
 import subprocess
 import sys
 import time
@@ -29,6 +30,16 @@ from bayesian_phystwin.matphys_warp_ensemble_v1 import (
 )
 
 EXPECTED_OFFICIAL_WARP_VERSION = "1.16.0"
+EXPECTED_REFERENCE_RUNNER_SHA256 = (
+    "e7bf6a6c06e074ac3cdefe259c1cf5eecf8cd905dae1b710a81107ab166ca535"
+)
+EXPECTED_REPLAY_RUNTIME = {
+    "python_version": "3.10.20",
+    "numpy_version": "1.26.4",
+    "torch_version": "2.4.0+cu121",
+    "torch_cuda_version": "12.1",
+    "warp_version": EXPECTED_OFFICIAL_WARP_VERSION,
+}
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -42,6 +53,84 @@ def _validate_warp_runtime(observed_version: str) -> str:
         "official Warp runtime version changed",
     )
     return observed_version
+
+
+def _validate_replay_runtime(observed: dict[str, str]) -> dict[str, str]:
+    _require(observed == EXPECTED_REPLAY_RUNTIME, "official replay runtime changed")
+    return observed
+
+
+def _validate_independent_reference(
+    *,
+    result_path: Path,
+    trajectory_path: Path,
+    runner_path: Path,
+    data_path: Path,
+    config_sha256: str,
+    official_revision: str,
+    registered_graph_path: Path,
+    controller_max_neighbours: int,
+    controller_radius_m: float,
+    controller_patch_size: int,
+    init_spring_y: float,
+    drag_damping: float,
+    dashpot_damping: float,
+) -> dict[str, Any]:
+    _require(
+        file_sha256(runner_path) == EXPECTED_REFERENCE_RUNNER_SHA256,
+        "official independent-reference runner changed",
+    )
+    _require(
+        result_path.resolve(strict=True).with_name("official_phystwin_trajectory.npz")
+        == trajectory_path.resolve(strict=True),
+        "independent-reference result and trajectory are not colocated",
+    )
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    _require(
+        result.get("passed") is True
+        and result.get("source_only_smoke") is True
+        and "external_target_scoring" not in result
+        and result.get("official_phystwin_revision") == official_revision
+        and result.get("config_sha256") == config_sha256
+        and result.get("data_sha256") == file_sha256(data_path)
+        and result.get("trajectory_sha256") == file_sha256(trajectory_path),
+        "independent official reference changed",
+    )
+    _require(
+        result.get("config_overrides")
+        == {
+            "controller_max_neighbours": controller_max_neighbours,
+            "controller_radius": controller_radius_m,
+            "dashpot_damping": dashpot_damping,
+            "drag_damping": drag_damping,
+            "init_spring_Y": init_spring_y,
+        },
+        "independent official reference dynamics changed",
+    )
+    reference_graph = result.get("canonical_reusable_graph")
+    reference_support = result.get("support_dynamics")
+    reference_actuation = result.get("realized_actuation")
+    _require(
+        isinstance(reference_graph, dict)
+        and reference_graph.get("file_sha256")
+        == file_sha256(registered_graph_path)
+        and reference_graph.get("controller_patch_size_per_anchor")
+        == controller_patch_size,
+        "independent official reference graph changed",
+    )
+    _require(
+        isinstance(reference_support, dict)
+        and reference_support.get("mode") == "official-ground"
+        and reference_support.get("reverse_factor") == -1.0
+        and reference_support.get("uses_official_cuda_graph") is True,
+        "independent official support dynamics changed",
+    )
+    _require(
+        isinstance(reference_actuation, dict)
+        and reference_actuation.get("controller_displacement_scale") == 1.0,
+        "independent official actuation changed",
+    )
+    return result
 
 
 def _unavailable_render_symbol(name: str):
@@ -133,6 +222,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--prediction-manifest", type=Path, required=True)
     parser.add_argument("--spring-ensemble", type=Path, required=True)
     parser.add_argument("--reference-trajectory", type=Path, required=True)
+    parser.add_argument("--reference-result", type=Path, required=True)
+    parser.add_argument("--reference-runner", type=Path, required=True)
+    parser.add_argument(
+        "--historical-reference-trajectory", type=Path, required=True
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--controller-radius-m", type=float, default=0.03)
@@ -172,6 +266,21 @@ def main() -> int:
     _require(
         file_sha256(args.config) == args.expected_config_sha256,
         "official PhysTwin config changed",
+    )
+    _validate_independent_reference(
+        result_path=args.reference_result,
+        trajectory_path=args.reference_trajectory,
+        runner_path=args.reference_runner,
+        data_path=args.data,
+        config_sha256=args.expected_config_sha256,
+        official_revision=args.expected_official_revision,
+        registered_graph_path=args.registered_graph,
+        controller_max_neighbours=args.controller_max_neighbours,
+        controller_radius_m=args.controller_radius_m,
+        controller_patch_size=args.controller_patch_size,
+        init_spring_y=args.init_spring_y,
+        drag_damping=args.drag_damping,
+        dashpot_damping=args.dashpot_damping,
     )
     _require(args.controller_radius_m > 0.0, "controller radius must be positive")
     _require(args.controller_patch_size > 0, "controller patch size must be positive")
@@ -264,6 +373,15 @@ def main() -> int:
     from qqtt.utils import cfg
 
     warp_version = _validate_warp_runtime(importlib.metadata.version("warp-lang"))
+    replay_runtime = _validate_replay_runtime(
+        {
+            "python_version": platform.python_version(),
+            "numpy_version": np.__version__,
+            "torch_version": importlib.metadata.version("torch"),
+            "torch_cuda_version": str(torch.version.cuda),
+            "warp_version": warp_version,
+        }
+    )
 
     cfg.load_from_yaml(str(args.config))
     cfg.controller_radius = args.controller_radius_m
@@ -394,13 +512,21 @@ def main() -> int:
     incumbent_mean = arrays["incumbent_replay_mean_m"]
     with np.load(args.reference_trajectory, allow_pickle=False) as archive:
         reference = np.asarray(archive["vertices"], dtype=np.float32)
+    with np.load(args.historical_reference_trajectory, allow_pickle=False) as archive:
+        historical_reference = np.asarray(archive["vertices"], dtype=np.float32)
     _require(
-        reference.shape == incumbent_mean.shape,
-        "reference trajectory shape changed",
+        reference.shape == incumbent_mean.shape
+        and historical_reference.shape == incumbent_mean.shape,
+        "reference trajectory shapes changed",
     )
     reference_difference = incumbent_mean - reference.astype(np.float64)
     reference_rmse = float(np.sqrt(np.mean(reference_difference**2)))
     reference_max = float(np.max(np.abs(reference_difference)))
+    historical_difference = reference.astype(np.float64) - historical_reference
+    historical_reference_rmse = float(
+        np.sqrt(np.mean(historical_difference**2))
+    )
+    historical_reference_max = float(np.max(np.abs(historical_difference)))
     replay_coordinate_std = float(
         np.sqrt(
             np.mean(
@@ -426,7 +552,12 @@ def main() -> int:
         )
     )
     reference_to_replay_ratio = reference_rmse / max(replay_coordinate_std, 1e-12)
-    member_to_replay_ratio = member_coordinate_std / max(replay_coordinate_std, 1e-12)
+    effective_replay_floor = max(
+        replay_coordinate_std,
+        historical_reference_rmse,
+        1e-12,
+    )
+    member_to_replay_ratio = member_coordinate_std / effective_replay_floor
     replay_passed = bool(
         reference_to_replay_ratio <= args.max_reference_to_replay_ratio
         and member_to_replay_ratio >= args.min_member_to_replay_ratio
@@ -458,18 +589,26 @@ def main() -> int:
             "runner_sha256": file_sha256(Path(__file__)),
             "official_phystwin_revision": _git_revision(official_repository),
             "official_config_sha256": file_sha256(args.config),
-            "warp_version": warp_version,
+            **replay_runtime,
             "device": args.device,
             "build_seconds": build_seconds,
             "rollout_seconds": rollout_seconds,
         },
         "parity": {
             "reference_trajectory_sha256": file_sha256(args.reference_trajectory),
+            "reference_result_sha256": file_sha256(args.reference_result),
+            "reference_runner_sha256": file_sha256(args.reference_runner),
+            "historical_reference_trajectory_sha256": file_sha256(
+                args.historical_reference_trajectory
+            ),
             "reference_byte_identical": bool(
                 incumbent_replicates[0].tobytes() == reference.tobytes()
             ),
             "reference_rmse_m": reference_rmse,
             "reference_max_abs_m": reference_max,
+            "historical_reference_rmse_m": historical_reference_rmse,
+            "historical_reference_max_abs_m": historical_reference_max,
+            "effective_replay_floor_m": effective_replay_floor,
             "incumbent_replay_coordinate_std_m": replay_coordinate_std,
             "reference_to_replay_ratio": reference_to_replay_ratio,
             "maximum_reference_to_replay_ratio": (args.max_reference_to_replay_ratio),

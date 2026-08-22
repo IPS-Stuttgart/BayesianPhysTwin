@@ -104,6 +104,24 @@ earlier 1.15.0 single-case smoke metric is exploratory and cannot enter the
 final source gate. The DEFORM mean bytes and every advancement threshold remain
 unchanged.
 
+The version correction did not remove the historical trajectory difference.
+An exact rerun of the original official producer, now in its pinned Python
+3.10, Torch 2.4.0, CUDA 12.1, and Warp 1.16 runtime, differed from the stored
+trajectory by 0.290 mm RMSE. The MatPhys wrapper, however, agreed with that
+fresh official rerun to below 0.001 mm. Two further independent official
+replays clustered within 0.007 mm of the first. This falsifies the narrower
+claim that the adapter was wrong and exposes a historical-to-current replay
+provenance drift instead.
+
+The seventh amendment therefore distinguishes two quantities. Adapter parity
+is fail-closed against a separately constructed current official replay made
+by the exact registered producer. The difference between that replay and the
+historical trajectory is reported separately as a provenance diagnostic. It
+is included conservatively when deciding whether checkpoint disagreement rises
+above the execution floor, but it is not relabeled as material uncertainty and
+is not added to the predictive covariance. The prediction mean and source gate
+remain unchanged.
+
 ## Estimand and comparators
 
 For each future frame, scoring-camera depth is backprojected into the world

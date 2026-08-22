@@ -8,6 +8,7 @@ import pytest
 
 from scripts.remote.run_deform360_matphys_source_endpoint_v1 import (
     EXPECTED_RUNTIME_IDENTITY,
+    EXPECTED_WARP_REPLAY_RUNTIME,
     _validate_prediction_seals,
     _validate_protocol,
     _validate_runtime_identity,
@@ -65,7 +66,7 @@ def _prediction_fixture(tmp_path: Path) -> dict[str, Path]:
         "case_id": "case-a",
         "target_object_id": "object-a",
         "passed": True,
-        "runtime": {"warp_version": "1.16.0"},
+        "runtime": dict(EXPECTED_WARP_REPLAY_RUNTIME),
         "information_boundary": {
             "target_future_observations_used": False,
             "target_future_outcomes_opened": False,
@@ -161,7 +162,14 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
     )
     assert loaded["source_amendments"][5]["source_gate_changed"] is False
     assert loaded["source_amendments"][5]["mixed_runtime_covariance_allowed"] is False
+    assert loaded["source_amendments"][6]["source_suffix_or_metric_inspected"] is False
+    assert loaded["source_amendments"][6]["source_gate_changed"] is False
+    assert (
+        loaded["source_amendments"][6]["historical_drift_used_as_model_covariance"]
+        is False
+    )
     assert loaded["covariance"]["official_warp_version"] == "1.16.0"
+    assert loaded["covariance"]["replay_runtime"] == EXPECTED_WARP_REPLAY_RUNTIME
     assert loaded["scoring_reconstruction_runtime"] == EXPECTED_RUNTIME_IDENTITY
     assert loaded["outcome"]["robot_state_required_for_scoring_reconstruction"] is False
     assert loaded["outcome"]["urdf_gripper_mask_used"] is False

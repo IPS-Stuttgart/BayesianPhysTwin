@@ -47,6 +47,13 @@ EXPECTED_RUNTIME_IDENTITY: dict[str, Any] = {
     "nerfstudio_splatfacto_available": True,
     "nerfstudio_gaussian_exporter_available": True,
 }
+EXPECTED_WARP_REPLAY_RUNTIME: dict[str, str] = {
+    "python_version": "3.10.20",
+    "numpy_version": "1.26.4",
+    "torch_version": "2.4.0+cu121",
+    "torch_cuda_version": "12.1",
+    "warp_version": "1.16.0",
+}
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -450,7 +457,10 @@ def _validate_prediction_seals(
         and warp.get("passed") is True
         and isinstance(warp_boundary, Mapping)
         and isinstance(warp_runtime, Mapping)
-        and warp_runtime.get("warp_version") == "1.16.0"
+        and all(
+            warp_runtime.get(name) == expected
+            for name, expected in EXPECTED_WARP_REPLAY_RUNTIME.items()
+        )
         and warp_boundary.get("target_future_observations_used") is False
         and warp_boundary.get("target_future_outcomes_opened") is False,
         "MatPhys Warp ensemble is not sealed before scoring",
@@ -526,6 +536,11 @@ def _validate_protocol(
         isinstance(covariance, Mapping)
         and covariance.get("official_warp_version") == "1.16.0",
         "source covariance runtime changed",
+    )
+    typed_covariance = cast(Mapping[str, Any], covariance)
+    _require(
+        typed_covariance.get("replay_runtime") == EXPECTED_WARP_REPLAY_RUNTIME,
+        "source covariance replay identity changed",
     )
     _require(
         isinstance(runtime, Mapping)

@@ -62,6 +62,18 @@
       "prediction_mean_changed": false,
       "source_gate_changed": false,
       "mixed_runtime_covariance_allowed": false
+    },
+    {
+      "amendment_id": "independent-official-replay-parity-v7",
+      "diagnostic_case_id": "198-kneepad-cloth-ep0002",
+      "independent_official_result_sha256": "8f5a776fa2217bb7cd2a6b3ca8cf9f17b39c3e1f6fdde9c756a5c92ba073edbe",
+      "independent_official_trajectory_sha256": "81526f8468dcddfa8472cd01f09bfe5a2c63b87fb25cdc7bd004be766521f9c8",
+      "official_reference_runner_sha256": "e7bf6a6c06e074ac3cdefe259c1cf5eecf8cd905dae1b710a81107ab166ca535",
+      "finding": "The exact official producer under the pinned Python 3.10 and Warp 1.16 runtime differs from its historical trajectory by 0.290 mm RMSE, while the MatPhys wrapper differs from a fresh official producer run by less than 0.001 mm. Historical-to-current drift is therefore reported as provenance drift, and adapter parity is tested only against a separately constructed current official replay.",
+      "source_suffix_or_metric_inspected": false,
+      "prediction_mean_changed": false,
+      "source_gate_changed": false,
+      "historical_drift_used_as_model_covariance": false
     }
   ],
   "source_panel": {
@@ -124,7 +136,16 @@
     "observation_floor_m": 0.005,
     "source_calibration": "leave-one-case-out scalar maximum-likelihood fit",
     "comparison": "leave-one-case-out isotropic Gaussian plus radial split-conformal sphere",
-    "official_warp_version": "1.16.0"
+    "official_warp_version": "1.16.0",
+    "replay_runtime": {
+      "python_version": "3.10.20",
+      "numpy_version": "1.26.4",
+      "torch_version": "2.4.0+cu121",
+      "torch_cuda_version": "12.1",
+      "warp_version": "1.16.0"
+    },
+    "adapter_parity_reference": "separately constructed exact official replay",
+    "historical_replay_drift_role": "reported provenance diagnostic only; excluded from model covariance"
   },
   "outcome": {
     "kind": "custom disjoint-camera Splatfacto surface reconstruction",
