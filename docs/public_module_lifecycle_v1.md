@@ -101,6 +101,13 @@ and cannot be added to the public lifecycle registry. The generated private
 `_root_exports_v0_4` module exists only to preserve the frozen root symbol table
 and static re-export information; it is not a supported import surface.
 
+The direct-import
+[`query_identifiability_certificate_v2`](query_identifiability_certificate_v2.md)
+remains unregistered and experimental under this rule. It formalizes a local
+kernel-inclusion test, but its finite-tolerance diagnostics, whitening, nuisance
+span, and coordinates are study-frozen rather than a compatibility promise. It
+adds no package-root symbol and no stable `bayesian_phystwin.v1` export.
+
 New public modules should be registered only when their intended lifecycle is
 clear. Adding a stable module requires a documented consumer boundary and
 appropriate installed-artifact tests. Adding a historical compatibility module
