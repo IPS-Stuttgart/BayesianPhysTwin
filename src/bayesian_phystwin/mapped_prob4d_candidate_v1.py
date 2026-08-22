@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Final, cast
+from typing import Any, Final
 
 import numpy as np
 
@@ -103,7 +103,9 @@ class MappedClaimBearingProb4DCandidateV1:
         query_id = sha256_digest(self.physical_query_id, name="physical_query_id")
         _require_mapping_preflight(
             mapping_audit=self.mapping_audit,
-            observation_artifact_id=self.candidate.update_v1.observation_artifact_id,
+            observation_artifact_id=(
+                self.candidate.update_v1.observation_artifact_id
+            ),
             physical_query_id=query_id,
         )
         object.__setattr__(self, "physical_query_id", query_id)
