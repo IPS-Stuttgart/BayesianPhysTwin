@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = (
     ROOT / ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
 )
+ROUTER_WORKFLOW = (
+    ROOT / ".github/workflows/deform360-v6-source-receipt-routing.yml"
+)
 CURRENT_ACTIONS = ROOT / "api/ecosystem-current-actions-v1.json"
 ARCHIVED_RUNNER = (
     ROOT / "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
@@ -21,6 +24,10 @@ SOURCE_ACTION_ID = "covariance-only-independent-confirmation"
 
 def _workflow_payload() -> dict[str, Any]:
     return dict(yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
+
+
+def _router_payload() -> dict[str, Any]:
+    return dict(yaml.safe_load(ROUTER_WORKFLOW.read_text(encoding="utf-8")))
 
 
 def _workflow_steps() -> list[dict[str, Any]]:
@@ -64,23 +71,50 @@ def test_dual_runtime_source_execution_exports_archived_inline_roots() -> None:
 
 
 def test_dual_runtime_source_receipt_routes_to_current_owning_issue() -> None:
-    workflow = _workflow_payload()
+    router = _router_payload()
     action = _current_source_action()
 
     assert action["owning_repository"] == "IPS-Stuttgart/BayesianPhysTwin"
     assert action["status"] == "source-gate-pending"
     assert action["target_access"] == "closed"
     issue_number = str(action["owning_issue"])
-    assert workflow["env"]["ISSUE_NUMBER"] == issue_number
+    assert router["env"]["ISSUE_NUMBER"] == issue_number
+    assert router["permissions"] == {
+        "actions": "read",
+        "contents": "read",
+        "issues": "write",
+    }
 
-    publish_steps = [
+    route_job = router["jobs"]["route"]
+    condition = route_job["if"]
+    assert "head_branch == 'main'" in condition
+    assert "workflow_run.event == 'push'" in condition
+    assert "workflow_run.event == 'workflow_dispatch'" in condition
+
+    steps = route_job["steps"]
+    downloads = [
         step
-        for step in _workflow_steps()
-        if step.get("name") == f"Publish bounded source receipt to issue {issue_number}"
+        for step in steps
+        if step.get("name") == "Download exact compact source artifact"
     ]
-    assert len(publish_steps) == 1
-    publish_script = publish_steps[0]["run"]
-    assert 'os.environ["ISSUE_NUMBER"]' in publish_script
-    assert "development suffix opened: `false`" in publish_script
-    assert "v6 target payloads opened: `false`" in publish_script
-    assert "v6 target outcomes used: `false`" in publish_script
+    assert len(downloads) == 1
+    download = downloads[0]["with"]
+    assert "github.event.workflow_run.id" in download["name"]
+    assert "github.event.workflow_run.run_attempt" in download["name"]
+    assert download["run-id"] == "${{ github.event.workflow_run.id }}"
+
+    route_steps = [
+        step
+        for step in steps
+        if step.get("name")
+        == f"Verify and route bounded receipt to issue {issue_number}"
+    ]
+    assert len(route_steps) == 1
+    route_script = route_steps[0]["run"]
+    assert "sha256sum --check SHA256SUMS" in route_script
+    assert "source receipt content identity does not verify" in route_script
+    assert 'os.environ["ISSUE_NUMBER"]' in route_script
+    assert "development_suffix_opened" in route_script
+    assert "v6_target_payloads_opened" in route_script
+    assert "v6_target_outcomes_used" in route_script
+    assert "deform360-v6-source-receipt:" in route_script
