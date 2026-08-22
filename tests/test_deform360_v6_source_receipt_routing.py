@@ -45,9 +45,7 @@ def _receipt(
         "artifacts": {},
         "physical_manifest_count": manifest_count,
         "source_prediction_seal_count": seal_count,
-        "information_boundary": {
-            name: False for name in CLOSED_INFORMATION_FIELDS
-        },
+        "information_boundary": {name: False for name in CLOSED_INFORMATION_FIELDS},
     }
     receipt.update({name: False for name in CLOSED_AUTHORIZATION_FIELDS})
     receipt["receipt_id"] = receipt_content_id(receipt)
