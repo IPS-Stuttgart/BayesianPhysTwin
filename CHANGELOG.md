@@ -7,6 +7,7 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Added a NumPy-only recursive corruption and recovery benchmark that compares residual persistence, unguarded recursion, and guarded exact-fallback routing under missing, stale, drifting, outlier, identity-substituted, and sparse observations.
 - Added a mapping-bound claim-bearing Prob4D candidate path that verifies the
   exact provider artifact, physical query, mapping protocol, and passing mapping
   audit before inference, then content-addresses the audit and candidate without

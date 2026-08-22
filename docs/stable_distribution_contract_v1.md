@@ -110,6 +110,15 @@ promotion: DEFORM remains scoped to its released DLO2 contract, while MatPhys
 and all three native continuum candidates retain their registered negative
 decisions and exact fallback.
 
+The recursive corruption benchmark adds two NumPy-only installed modules: one
+benchmark implementation and one grouped-CLI adapter. The wheel member-count
+ratchet is therefore raised narrowly from 605 to 606 while the compressed-size,
+isolated-import, public-API, console-script, and source-distribution limits
+remain unchanged. This allowance supports a controlled corruption-and-recovery
+mechanism study only; it does not establish real-provider competence, physical
+transfer, covariance calibration, intervention benefit, deployment safety, or
+state of the art.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
