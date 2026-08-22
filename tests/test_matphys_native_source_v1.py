@@ -10,6 +10,7 @@ from bayesian_phystwin.matphys_native_source_v1 import (
     calibrated_covariance,
     frame_zero_farthest_point_indices,
     gaussian_case_metrics,
+    native_case_evidence,
     select_candidate_calibration,
     select_isotropic_calibration,
 )
@@ -55,6 +56,31 @@ def test_baseline_relative_orientation_can_beat_isotropic_at_lower_volume() -> N
 
     assert candidate["nll_nats_per_event"] < isotropic["nll_nats_per_event"]
     assert candidate["mean_ellipsoid_volume_m3"] < isotropic["mean_ellipsoid_volume_m3"]
+
+
+@pytest.mark.parametrize(
+    "invalid_mask",
+    (
+        np.ones((2, 2), dtype=np.int64),
+        np.array([[1.0, 0.0], [np.nan, 1.0]], dtype=np.float64),
+    ),
+)
+def test_native_case_evidence_rejects_non_boolean_validity_masks(
+    invalid_mask: np.ndarray,
+) -> None:
+    observed = np.zeros((2, 2, 3), dtype=np.float64)
+    covariance = np.broadcast_to(np.eye(3), (2, 2, 3, 3)).copy()
+
+    with pytest.raises(ValueError, match="valid_mask must have boolean dtype"):
+        native_case_evidence(
+            case_id="mask-contract",
+            observed_m=observed,
+            baseline_mean_m=observed,
+            valid_mask=invalid_mask,
+            raw_covariance_m2=covariance,
+            future_start=1,
+            future_stop=2,
+        )
 
 
 def test_source_calibration_selects_anisotropic_donor_and_isotropic_scale() -> None:

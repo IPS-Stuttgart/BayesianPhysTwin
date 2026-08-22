@@ -67,7 +67,12 @@ def native_case_evidence(
 
     observed = np.asarray(observed_m, dtype=np.float64)
     baseline = np.asarray(baseline_mean_m, dtype=np.float64)
-    valid = np.asarray(valid_mask, dtype=bool)
+    raw_valid = np.asarray(valid_mask)
+    _require(
+        np.issubdtype(raw_valid.dtype, np.bool_),
+        "valid_mask must have boolean dtype",
+    )
+    valid = raw_valid.astype(np.bool_, copy=False)
     covariance = np.asarray(raw_covariance_m2, dtype=np.float64)
     _require(
         observed.ndim == 3 and observed.shape[-1] == 3,
