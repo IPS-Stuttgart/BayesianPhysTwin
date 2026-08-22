@@ -75,6 +75,19 @@ The reader rejects duplicate JSON keys, non-finite values, symlinks, changing
 files, and inputs above the byte budget. Outputs are published atomically and do
 not overwrite by default.
 
+## Fixed-mean Gaussian NLL decomposition
+
+For covariance-only comparisons, the source-only analyzer at
+`scripts/science/analyze_fixed_mean_gaussian_nll_v1.py` separates the Gaussian
+NLL difference into its predictive-volume and standardized-error terms while
+using one shared mean by construction. It also reports marginal coverage and
+interval width under equal group and horizon weighting.
+
+See [Fixed-mean Gaussian NLL diagnostic v1](fixed_mean_gaussian_nll_diagnostic_v1.md)
+for the formula, input contract, command, interpretation, and scientific
+boundary. The analyzer is retrospective and non-claim-bearing; it does not
+modify or authorize a frozen confirmation protocol.
+
 ## Negative Gaussian log scores
 
 A Gaussian density can exceed one in physical units, so a valid logarithmic
