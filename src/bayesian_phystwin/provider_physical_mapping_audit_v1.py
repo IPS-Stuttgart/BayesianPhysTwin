@@ -40,6 +40,7 @@ PROVIDER_PHYSICAL_MAPPING_AUDIT_INFORMATION_BOUNDARY: Final = (
 _ADMISSIBLE_REASON: Final = "provider-physical-mapping-admissible"
 _REASON_ORDER: Final[tuple[str, ...]] = (
     "invalid-provider-to-physical-transform",
+    "nonfinite-effective-physical-query-bounds",
     "nonfinite-declared-valid-provider-points",
     "nonfinite-transformed-provider-points",
     "required-provider-timestamps-missing",
@@ -49,11 +50,11 @@ _REASON_ORDER: Final[tuple[str, ...]] = (
     "insufficient-provider-valid-support",
     "insufficient-physical-query-overlap",
 )
-_TECHNICAL_REASONS: Final[frozenset[str]] = frozenset(_REASON_ORDER[:7])
+_TECHNICAL_REASONS: Final[frozenset[str]] = frozenset(_REASON_ORDER[:8])
 _PROVIDER_SUPPORT_REASON: Final = "insufficient-provider-valid-support"
 _QUERY_SUPPORT_REASON: Final = "insufficient-physical-query-overlap"
-_MINIMUM_POSITIVE_UNIT_SCALE_M: Final = float(np.finfo(float).tiny)
-_MAXIMUM_SAFE_UNIT_SCALE_M: Final = math.sqrt(np.finfo(float).max)
+_MINIMUM_SAFE_UNIT_SCALE_M: Final = math.sqrt(float(np.finfo(float).tiny))
+_MAXIMUM_SAFE_UNIT_SCALE_M: Final = math.sqrt(float(np.finfo(float).max))
 
 
 def _canonical_text(value: object, *, name: str) -> str:
@@ -309,7 +310,7 @@ class ProviderPhysicalMappingCaseV1:
             _finite_real(
                 self.provider_unit_scale_m,
                 name="provider_unit_scale_m",
-                minimum=_MINIMUM_POSITIVE_UNIT_SCALE_M,
+                minimum=_MINIMUM_SAFE_UNIT_SCALE_M,
                 maximum=_MAXIMUM_SAFE_UNIT_SCALE_M,
             ),
         )
@@ -805,14 +806,22 @@ def audit_provider_physical_mapping(
             ),
         }
 
-    lower = case.query_bounds_m[0] - policy.boundary_tolerance_m
-    upper = case.query_bounds_m[1] + policy.boundary_tolerance_m
-    spatially_inside = np.all((physical >= lower) & (physical <= upper), axis=1)
+    with np.errstate(over="ignore", invalid="ignore"):
+        lower = case.query_bounds_m[0] - policy.boundary_tolerance_m
+        upper = case.query_bounds_m[1] + policy.boundary_tolerance_m
+    effective_query_bounds_finite = bool(
+        np.all(np.isfinite(lower)) and np.all(np.isfinite(upper))
+    )
+    if effective_query_bounds_finite:
+        spatially_inside = np.all((physical >= lower) & (physical <= upper), axis=1)
+    else:
+        spatially_inside = np.zeros_like(declared_valid)
     mapped = query_candidate & spatially_inside
     mapped_count = int(np.sum(mapped))
     mapped_fraction = _safe_fraction(mapped_count, declared_valid_count)
     query_support_sufficient = (
-        mapped_count >= policy.minimum_mapped_point_count
+        effective_query_bounds_finite
+        and mapped_count >= policy.minimum_mapped_point_count
         and mapped_fraction >= policy.minimum_mapped_fraction
     )
 
@@ -821,6 +830,7 @@ def audit_provider_physical_mapping(
     transformed_point_technical_valid = nonfinite_transformed_declared_valid_count == 0
     technical_valid = (
         transform_valid
+        and effective_query_bounds_finite
         and point_technical_valid
         and transformed_point_technical_valid
         and timestamp_technical_valid
@@ -830,6 +840,8 @@ def audit_provider_physical_mapping(
     reasons: list[str] = []
     if not transform_valid:
         reasons.append("invalid-provider-to-physical-transform")
+    if not effective_query_bounds_finite:
+        reasons.append("nonfinite-effective-physical-query-bounds")
     if not point_technical_valid:
         reasons.append("nonfinite-declared-valid-provider-points")
     if not transformed_point_technical_valid:
@@ -882,6 +894,9 @@ def audit_provider_physical_mapping(
             "lower": [float(value) for value in case.query_bounds_m[0]],
             "upper": [float(value) for value in case.query_bounds_m[1]],
             "boundary_tolerance_m": policy.boundary_tolerance_m,
+            "effective_lower": [_finite_or_none(float(value)) for value in lower],
+            "effective_upper": [_finite_or_none(float(value)) for value in upper],
+            "effective_finite": effective_query_bounds_finite,
         },
         "transform": transform_diagnostics,
         "time": time_diagnostics,

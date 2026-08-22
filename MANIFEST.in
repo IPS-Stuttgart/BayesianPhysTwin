@@ -20,6 +20,7 @@ include docs/full22_covariance_only_hybrid_v1.md
 include release/claim_contract_v1.json
 include release/stable_distribution_contract_v1.json
 include docs/stable_distribution_contract_v1.md
+include docs/backend_support_matrix_v1.md
 include tools/release/check_stable_distribution.py
 include tests/test_stable_distribution_contract.py
 exclude tests/test_deform_dlo*.py
@@ -136,6 +137,7 @@ include docs/deform360_fresh_object_session_source_v6_1.md
 include scripts/science/execute_deform360_calibration_visual_production.py
 include docs/observation-contract-conformance.md
 recursive-include src/bayesian_phystwin/contract_data/observation_belief_v1 *.json
+recursive-include src/bayesian_phystwin/contract_data/backend_support_v1 *.json
 include docs/structured_tree_sparse_fallback.md
 include docs/observation_belief_io_v2.md
 include docs/tree_block_schur_solver.md

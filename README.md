@@ -166,6 +166,22 @@ until a selected backend passes source-physics and source-value qualification.
 Existing labels such as `preferred`, `supported`, and `experimental` are not
 evidence stages.
 
+The installed [five-backend support matrix](docs/backend_support_matrix_v1.md)
+tracks integration and predictive evidence independently:
+
+| Backend | Integration | Retained scientific decision |
+| --- | --- | --- |
+| DEFORM DLO v7 | fully supported | benchmark-qualified on released DLO2 only |
+| MatPhys/Warp | fully supported | source covariance value rejected |
+| JAX-FEM v2 | fully supported | source physics passed; source value physically rejected |
+| MuJoCo Flex | fully supported | native smoke passed; source physics rejected |
+| SOFA FEM v3 | fully supported | source physics passed; source value physically rejected |
+
+Only DEFORM is currently recommendation-authorized, and only within its exact
+DLO2 benchmark contract. `fully supported` means executable, tested,
+documented, evidence-retaining, and protected by exact fallback; it does not
+mean that a backend won its predictive gate.
+
 Specialized predictive backends are tracked separately from that generic
 material-solver registry. In particular, the public DEFORM DLO pipeline is a
 fully exercised integration rather than an unsupported paper reference. On the
@@ -191,6 +207,8 @@ general deformable-object or cross-benchmark state-of-the-art claim. See the
   provider manifest.
 - [Evidence-first backend admission](docs/backend_admission_policy_v1.md):
   implementation-versus-evidence maturity and the qualification freeze.
+- [Five-backend support matrix](docs/backend_support_matrix_v1.md): installed
+  support contract, retained decisions, and recommendation boundaries.
 - [DEFORM DLO2 official protocol](docs/deform_dlo2_local_residual_official_v7.md):
   specialized DLO integration, frozen evaluation, and benchmark-specific claim
   boundary.

@@ -15,6 +15,7 @@ from bayesian_phystwin.matphys_fold_ensemble_v1 import (
     build_matphys_fold_ensemble_source,
     causal_frame_indices,
     install_matphys_warp_warning_compatibility,
+    load_incumbent_spring_field,
     matphys_graph_features,
     trajectory_ensemble_moments,
     validate_matphys_fold_ensemble_source,
@@ -156,6 +157,56 @@ def test_bounded_residual_has_exact_zero_identity_and_twofold_cap() -> None:
         proposal_strength=1.0,
     )
     np.testing.assert_allclose(candidate / incumbent, np.array([0.5, 1.0, 2.0]))
+
+
+def test_registered_incumbent_field_preserves_exact_float32_bytes(
+    tmp_path: Path,
+) -> None:
+    source = np.array([11736.0, 24167.0, 50379.0], dtype=np.float32)
+    path = tmp_path / "incumbent.npy"
+    np.save(path, source, allow_pickle=False)
+
+    loaded = load_incumbent_spring_field(path, expected_edge_count=3)
+
+    assert loaded.dtype == np.float32
+    assert loaded.flags.c_contiguous
+    assert loaded.tobytes() == source.tobytes()
+    assert (
+        apply_bounded_spring_residual(
+            loaded,
+            np.ones(3, dtype=np.float32),
+            proposal_strength=0.0,
+        )
+        is loaded
+    )
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    (
+        (np.array([1.0, 2.0], dtype=np.float64), "exact float32"),
+        (np.array([1.0, 0.0], dtype=np.float32), "finite and positive"),
+        (np.array([1.0, np.nan], dtype=np.float32), "finite and positive"),
+    ),
+)
+def test_registered_incumbent_field_rejects_implicit_or_invalid_values(
+    tmp_path: Path,
+    value: np.ndarray,
+    message: str,
+) -> None:
+    path = tmp_path / "invalid.npy"
+    np.save(path, value, allow_pickle=False)
+
+    with pytest.raises(ValueError, match=message):
+        load_incumbent_spring_field(path, expected_edge_count=2)
+
+
+def test_registered_incumbent_field_rejects_graph_size_mismatch(tmp_path: Path) -> None:
+    path = tmp_path / "incumbent.npy"
+    np.save(path, np.ones(3, dtype=np.float32), allow_pickle=False)
+
+    with pytest.raises(ValueError, match="graph edge count"):
+        load_incumbent_spring_field(path, expected_edge_count=2)
 
 
 def test_ensemble_moments_are_psd_and_duplicate_safe() -> None:

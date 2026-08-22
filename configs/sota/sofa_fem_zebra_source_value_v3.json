@@ -1,0 +1,93 @@
+{
+  "schema": "bayesian-phystwin.sofa-fem-source-value-protocol-v3",
+  "schema_version": 3,
+  "protocol_label": "sofa-fem-zebra-canonical-gauge-source-value-v3",
+  "claim_boundary": "Two-action already-open source-value gate for the exact source-physics-qualified pose-canonical SOFA FEM v3 runtime. It is not fresh-object, calibration, target, DEFORM, Causal4D, or state-of-the-art evidence.",
+  "qualification": {
+    "runtime_id": "f46e53707317bc652499e2f3af5b860a330f9dbf06014364acd19ffaf8acca8e",
+    "source_physics_protocol_sha256": "4a9a72210787314e727b742795bb8c35af99ee6e75419d73435db2f1083eea73",
+    "source_physics_result_sha256": "a1a3bcab5877fe5481fe597a00c8d394cd793f0f9693251a08bbd90a26287f60",
+    "source_physics_result_id": "e0ad8f0118118039e33ef143ba2996b3426ca9081bb99acc209693cb063bd2ca",
+    "qualification_artifact_sha256": "6117ecc8c412635ff7a595793076972876212378e2b6ca843077f42b382a9c7d",
+    "qualification_artifact_id": "78f61268a753d95e59071592a0793ecb11d5aeb2fc10f39032095902bedb9fc9"
+  },
+  "source_groups": [
+    {
+      "group_id": "double_lift_zebra",
+      "source_inputs_relative_path": "source-inputs.npz",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "prepared_archive_relative_path": "native-preflight-quality003.npz",
+      "prepared_archive_sha256": "735af839eaae9ef86fd3fe3f67e483683d64d07d147cd0e4701a33bb80a26ad2",
+      "prefix_outcomes_relative_path": "source-bundle/prefix-outcomes.npz",
+      "prefix_outcomes_sha256": "db0018d3581f8cc760746bdc84d96d77214a213fd3242490bb5adaa396772540",
+      "future_outcomes_relative_path": "source-bundle/future-outcomes.npz",
+      "future_outcomes_sha256": "f0483f987b40a0a3d3cbb408535fbac4a5fdecdd9894923bbec10f40dcdb324d",
+      "incumbent_relative_path": "incumbent.npz",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "frame_count": 58,
+      "material_node_count": 4607,
+      "controller_point_count": 30,
+      "attached_node_count": 107,
+      "tetrahedron_count": 23659,
+      "contact_patch_sizes": [40, 67]
+    },
+    {
+      "group_id": "double_stretch_zebra",
+      "source_inputs_relative_path": "source-inputs.npz",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "prepared_archive_relative_path": "native-preflight-quality003.npz",
+      "prepared_archive_sha256": "122c09f752fe804a7c2f4753232d5ecf7686af6b584800236f9da7999d92870d",
+      "prefix_outcomes_relative_path": "source-bundle/prefix-outcomes.npz",
+      "prefix_outcomes_sha256": "003db2c831f58c65a855e95e2889327abf2893cd2e2e613fe638edf614977c73",
+      "future_outcomes_relative_path": "source-bundle/future-outcomes.npz",
+      "future_outcomes_sha256": "4853e7b7073620e8aad86b4a06137e9385df11edd8793e6ddded5e36bc014d46",
+      "incumbent_relative_path": "incumbent.npz",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "frame_count": 198,
+      "material_node_count": 4208,
+      "controller_point_count": 30,
+      "attached_node_count": 16,
+      "tetrahedron_count": 21307,
+      "contact_patch_sizes": [7, 9]
+    }
+  ],
+  "candidate": {
+    "young_modulus_pa": [25000.0, 100000.0, 500000.0],
+    "poisson_ratio": 0.3,
+    "weights": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+    "point_estimate": "equal-weight-ensemble-mean",
+    "distribution_score": "equal-event-3d-marginal-energy-score",
+    "fit_fraction": 0.6666666666666666,
+    "parameter_source": "qualified-low-base-high-young-modulus-probes",
+    "fps": 30.0,
+    "interval_substeps": 32,
+    "hard_minimum_deformation_determinant": 0.35
+  },
+  "validation_gates": {
+    "maximum_equal_group_balanced_point_ratio_vs_persistence": 0.95,
+    "maximum_worst_group_balanced_point_ratio_vs_persistence": 1.0,
+    "maximum_equal_group_energy_ratio_vs_persistence": 0.95,
+    "maximum_equal_group_identity_ratio_vs_incumbent": 1.05,
+    "maximum_equal_group_chamfer_ratio_vs_incumbent": 1.05,
+    "minimum_final_ensemble_spread_m": 0.00001,
+    "maximum_final_ensemble_spread_m": 0.1,
+    "maximum_full_horizon_contact_projection_error_m": 0.02,
+    "maximum_full_horizon_native_attachment_error_m": 0.000000000001,
+    "maximum_full_horizon_world_attachment_approximation_error_m": 0.00000000002,
+    "maximum_full_horizon_world_point_approximation_error_m": 0.00000000002,
+    "maximum_full_horizon_node_displacement_m": 0.35,
+    "minimum_full_horizon_deformation_determinant": 0.5,
+    "maximum_full_horizon_deformation_determinant": 2.0,
+    "required_successful_candidate_count": 3
+  },
+  "information_boundary": {
+    "prediction_uses_frame_zero_geometry_and_known_action_only": true,
+    "prepared_source_topology_and_contact_allowed": true,
+    "incumbent_bytes_allowed_before_outcomes_for_hash_and_fallback_only": true,
+    "prefix_outcomes_open_only_after_grid_and_pre_prefix_gate_sealed": true,
+    "future_outcomes_open_only_after_validation_gate": true,
+    "target_or_held_out_artifact_access_allowed": false,
+    "failure_policy": "byte-exact-incumbent-per-source-group",
+    "no_replacement": true
+  }
+}

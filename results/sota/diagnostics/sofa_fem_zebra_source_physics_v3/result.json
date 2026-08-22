@@ -1,0 +1,205 @@
+{
+  "claim_boundary": "Source-only numerical qualification of one exact pose-canonical SOFA FEM keyed-Dirichlet runtime on two already-open PhysTwin source actions. It is not source-value, fresh-object, calibration, target, DEFORM, Causal4D, or state-of-the-art evidence.",
+  "failure_reasons": [],
+  "implementation": {
+    "git_head": "5e2adc4d2464a3636422c9fc2fb03e70e66ba4ce",
+    "git_worktree_clean": true,
+    "source_files": {
+      "configs/sota/sofa_fem_zebra_source_physics_v3.json": "4a9a72210787314e727b742795bb8c35af99ee6e75419d73435db2f1083eea73",
+      "scripts/remote/run_sofa_fem_source_qualification_v3.py": "03c09ea6828fa2c4d1456eeefa7e2717e5841e088b3c23322253d6f339702985",
+      "src/bayesian_phystwin/_portable_contracts.py": "7d4971a47224462a67b2c5ffa4c494d1f3f2ace679ec1305340019d63a0afbb3",
+      "src/bayesian_phystwin/jax_fem_source_qualification_v1.py": "e4b540162b5ca9cffb29d766e5db4b4895de2a5512f43f35ce50cb4d723f9edd",
+      "src/bayesian_phystwin/material_backend_qualification_v1.py": "3f7777c94f7eb85441a925c0a38f1fde27e90738880a9ab2a4c066ce54dad6c7",
+      "src/bayesian_phystwin/material_backend_v1.py": "5abf32cbb5d5d894d7c9e5608709ab961c12f0a05bcfd8e19ada855cfa227c96",
+      "src/bayesian_phystwin/native_tet_fem_source_v1.py": "8e3e435611b67d0de8d6ccd728b77f8c6338e1602ff1f06f88300c0c78408d81",
+      "src/bayesian_phystwin/physical_rollout_v1.py": "7843a789d57a53ca9736ac679fc72bda988df1b94becde70b3d6967323a34983",
+      "src/bayesian_phystwin/sofa_fem_canonical_source_v3.py": "0be69eae4985ba36f020ca4276e4b9d4629335c206188167d36b269e9832edf4",
+      "src/bayesian_phystwin/sofa_fem_kinematic_source_v2.py": "a25f96f2f5d10959d45ee09b9add2650283cdec08f43bf8c7de2e506ced86b26",
+      "src/bayesian_phystwin/sofa_fem_source_qualification_v3.py": "a047ffa7a0121650b0ff9558213cdee63bcf635a4e402f0251dc2fa056bdc22f",
+      "src/bayesian_phystwin/sofa_fem_source_v1.py": "8d3630c8d7bec4a8fad103fd010fb1811ca4cc415500355c7e6a6b9c42281db6"
+    }
+  },
+  "information_boundary": {
+    "incumbent_bytes_read_for_exact_fallback": true,
+    "incumbent_prediction_arrays_read": false,
+    "prepared_source_archives_read": true,
+    "source_inputs_read": true,
+    "source_object_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "protocol_ancestry": {
+    "native_smoke": {
+      "relative_path": "results/sota/diagnostics/sofa_fem_canonical_native_smoke_v3/result.json",
+      "sha256": "1785b151adc66bd6b52850336d7ed1c633746a378cb7a466ec23b36a8d9ba442"
+    },
+    "predecessor_protocol": {
+      "relative_path": "configs/sota/sofa_fem_zebra_source_physics_v2.json",
+      "sha256": "76f2934082fec366b3a11c0c62d0f62802864dfde1e134f8c4143d9a285a8117"
+    },
+    "predecessor_result": {
+      "relative_path": "results/sota/diagnostics/sofa_fem_zebra_source_physics_v2/result.json",
+      "sha256": "1508bd4f6f043825a8ad720a346e9cae0904da883e12ace4a2ba7e48a806084b"
+    }
+  },
+  "protocol_sha256": "4a9a72210787314e727b742795bb8c35af99ee6e75419d73435db2f1083eea73",
+  "qualification_artifact_id": "78f61268a753d95e59071592a0793ecb11d5aeb2fc10f39032095902bedb9fc9",
+  "qualified": true,
+  "result_id": "e0ad8f0118118039e33ef143ba2996b3426ca9081bb99acc209693cb063bd2ca",
+  "runtime": {
+    "distribution_archive_sha256": "129211fd01781bdd5ba3f28f1c3617a2f3792a71b62dc609cf866eec4ac745e2",
+    "engine_revision": "7c18e95d5c5f2839079892c69e7d89a313c79603",
+    "engine_version": "26.06.00",
+    "installed_records": {
+      "git-info.txt": {
+        "sha256": "fd798c058c651d201ba552f7bfbd77cf2ad63d095dd650c0f39d3b40e0e0ed3b"
+      },
+      "lib/libSofa.Component.AnimationLoop.so.26.06.00": {
+        "sha256": "5dc44e8039684d3f112066e056c7f9e993ad10adcc50244569beba27022d2ea9"
+      },
+      "lib/libSofa.Component.Constraint.Projective.so.26.06.00": {
+        "sha256": "1b5bc1b6e60dfd74f892a2acda34bba69fb7cd3370f631a040bd368c0ff6f828"
+      },
+      "lib/libSofa.Component.LinearSolver.Direct.so.26.06.00": {
+        "sha256": "7a94c419c39d18236c24281c707e8e4db6c3e032c43e942b63514293926663d4"
+      },
+      "lib/libSofa.Component.Mass.so.26.06.00": {
+        "sha256": "180e04093c8f8096e3e2c19ae986886bc2af2f23adeefbd11fd8aff47b0210d9"
+      },
+      "lib/libSofa.Component.ODESolver.Backward.so.26.06.00": {
+        "sha256": "8bd1d79204e3dab5d2e02b1f7fecf040c99b51c212ff98b54ccad247a2415c12"
+      },
+      "lib/libSofa.Component.SolidMechanics.FEM.HyperElastic.so.26.06.00": {
+        "sha256": "aed8df7c26bbf49f0bcf11e890ede9ddbff4afb6e8765ff7ea6a1a96a7bbaae9"
+      },
+      "lib/libSofa.Component.StateContainer.so.26.06.00": {
+        "sha256": "aa1e846c2a2978a2d0d6b1ddaafd90b3bff9b186bda3c60d9c6d2cce42e672c5"
+      },
+      "lib/libSofa.Component.Topology.Container.Dynamic.so.26.06.00": {
+        "sha256": "1348185d3a522e8f7139229a6d72ce7263baeae4599e5308650ae2cd522708bb"
+      },
+      "plugins/SofaPython3/lib/libSofaPython3.so.1.0": {
+        "sha256": "b8b2aaf5e43082a217cd839ccc56b7b19a929d19c80777c33fa2b099696742bf"
+      },
+      "plugins/SofaPython3/lib/python3/site-packages/Sofa/Core.cpython-310-x86_64-linux-gnu.so": {
+        "sha256": "3f41ddef8cbfa98806473cff828a2e650fc7916aca14f722cec3c0a2c45ced6f"
+      },
+      "plugins/SofaPython3/lib/python3/site-packages/Sofa/Simulation.cpython-310-x86_64-linux-gnu.so": {
+        "sha256": "54483e9f24c0b5adc7be4c522b4e8ed8311e6887b537542f12d503049854dac6"
+      }
+    }
+  },
+  "runtime_id": "f46e53707317bc652499e2f3af5b860a330f9dbf06014364acd19ffaf8acca8e",
+  "schema": "bayesian-phystwin.sofa-fem-source-physics-result-v3",
+  "schema_version": 3,
+  "source_groups": [
+    {
+      "action_response_rmse_m": 0.0002342050360716826,
+      "base_scene_sha256": "b3a3eb73e1433ad362f8fcd3426402972cff6c75d4a6d2c7ad9d40a54f2afeb9",
+      "base_schedule_sha256": "a6a29f490b4fe484df862683fc0b37a4e7102a798301920a0cc5e6f5c3a77dd1",
+      "canonical_gauge_identity_under_rigid_pose": true,
+      "canonical_gauge_sha256": "fcef4fec3d44231bbf04ca11e2fee0b0b87952cb35a925d9b96735d614360941",
+      "canonical_scene_identity_under_rigid_pose": true,
+      "canonical_schedule_identity_under_rigid_pose": true,
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "group_id": "double_lift_zebra",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "material_sensitivity_rmse_m": 0.00037467417958661855,
+      "maximum_attachment_error_m": 1.734723475976807e-18,
+      "maximum_contact_reprojection_error_m": 1.1887244833206236e-11,
+      "maximum_deformation_determinant": 1.025275820181267,
+      "maximum_node_displacement_m": 0.0017600691716969838,
+      "maximum_point_quantization_error_m": 8.558988116918419e-12,
+      "maximum_rigid_equivariance_error_m": 3.483988156481097e-16,
+      "maximum_target_quantization_error_m": 7.668925800059822e-12,
+      "maximum_world_attachment_approximation_error_m": 7.982945003180763e-12,
+      "maximum_world_point_approximation_error_m": 8.55899007962827e-12,
+      "maximum_zero_action_drift_m": 2.7755575615628914e-17,
+      "minimum_deformation_determinant": 0.9325669548970095,
+      "native_source_query_parity_rmse_m": 0.0,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "attachment_projection": true,
+        "canonical_gauge_identity": true,
+        "canonical_scene_identity": true,
+        "canonical_schedule_identity": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "material_sensitivity_lower": true,
+        "material_sensitivity_upper": true,
+        "native_source_query_parity": true,
+        "node_displacement": true,
+        "time_step_refinement_absolute": true,
+        "world_attachment_approximation": true,
+        "world_point_approximation": true
+      },
+      "prepared_archive_sha256": "735af839eaae9ef86fd3fe3f67e483683d64d07d147cd0e4701a33bb80a26ad2",
+      "refined_scene_sha256": "fc8a89189394c3c2e4eb210b9650fe53cc31127690c7f3aceb31a5366f0b805d",
+      "refined_schedule_sha256": "4512526df24cce428561acd1417a48ab57ab2ae65574211e5685d879b9624d72",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "source_query_parity_rmse_m": 2.9018691172772196e-12,
+      "time_step_refinement_absolute_error_m": 2.666049880184157e-06,
+      "time_step_refinement_relative_error": 0.011269658771207176,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "d949f6529ecce2d459c68185aef24a874750e2b7ec17e839d89395fdd9b67689",
+      "units_coordinate_entity_order_valid": true
+    },
+    {
+      "action_response_rmse_m": 0.00040947274049855464,
+      "base_scene_sha256": "6e7bab72b19b77f22c51cdbd1785dfb15608a4e0a79ae845f7a38920955fcd5d",
+      "base_schedule_sha256": "1f84287a2d8e53e84bc51afa46d655baf0cc896a83b96083003ab366a3c01075",
+      "canonical_gauge_identity_under_rigid_pose": true,
+      "canonical_gauge_sha256": "2f5631be52341f69eaa0c9d341e8a9dc55430e9b2f82d44c4620df5dfa56bd58",
+      "canonical_scene_identity_under_rigid_pose": true,
+      "canonical_schedule_identity_under_rigid_pose": true,
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "group_id": "double_stretch_zebra",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "material_sensitivity_rmse_m": 0.00046757685308278105,
+      "maximum_attachment_error_m": 4.9065389333867974e-18,
+      "maximum_contact_reprojection_error_m": 9.968222819596129e-12,
+      "maximum_deformation_determinant": 1.1157505724333574,
+      "maximum_node_displacement_m": 0.003240305758206096,
+      "maximum_point_quantization_error_m": 8.384728902173988e-12,
+      "maximum_rigid_equivariance_error_m": 5.739182596318286e-16,
+      "maximum_target_quantization_error_m": 7.09184231637199e-12,
+      "maximum_world_attachment_approximation_error_m": 7.091920220189752e-12,
+      "maximum_world_point_approximation_error_m": 8.384735761826553e-12,
+      "maximum_zero_action_drift_m": 1.3877787807814457e-17,
+      "minimum_deformation_determinant": 0.936105121845559,
+      "native_source_query_parity_rmse_m": 0.0,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "attachment_projection": true,
+        "canonical_gauge_identity": true,
+        "canonical_scene_identity": true,
+        "canonical_schedule_identity": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "material_sensitivity_lower": true,
+        "material_sensitivity_upper": true,
+        "native_source_query_parity": true,
+        "node_displacement": true,
+        "time_step_refinement_absolute": true,
+        "world_attachment_approximation": true,
+        "world_point_approximation": true
+      },
+      "prepared_archive_sha256": "122c09f752fe804a7c2f4753232d5ecf7686af6b584800236f9da7999d92870d",
+      "refined_scene_sha256": "7d2b99731be5ccc6a94947de91612db484d446af1c061152baeff2eae5a868bc",
+      "refined_schedule_sha256": "c3d3abca533f5127265a3cbcc8bc84db6e32a5fd967d4e7d973043b528ad50a9",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "source_query_parity_rmse_m": 2.8915566192614207e-12,
+      "time_step_refinement_absolute_error_m": 5.4072783668901575e-06,
+      "time_step_refinement_relative_error": 0.013037621062001329,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "56d1a9c4d345f9da2f2d6c4b9fb77f4f5289db110ed8522416f86e68443a8cdf",
+      "units_coordinate_entity_order_valid": true
+    }
+  ],
+  "source_value_scoring_authorized": true
+}

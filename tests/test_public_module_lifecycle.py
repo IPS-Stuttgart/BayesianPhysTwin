@@ -53,7 +53,7 @@ def test_repository_public_module_lifecycle_matches_policy() -> None:
         "compatibility_line": "0.4",
         "target_compatibility_line": "0.5",
         "policy": "explicit-stable-compatibility-experimental",
-        "stable_module_count": 25,
+        "stable_module_count": 26,
         "compatibility_module_count": 19,
         "experimental_module_count": 5,
         "root_owner_count": 30,
