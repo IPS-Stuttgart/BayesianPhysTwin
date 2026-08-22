@@ -15,7 +15,7 @@ import sys
 import time
 import types
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -564,7 +564,7 @@ def main() -> int:
     )
 
     archive_path = args.output_dir / "matphys_warp_trajectory_ensemble.npz"
-    np.savez_compressed(archive_path, **arrays)
+    cast(Any, np.savez_compressed)(archive_path, **arrays)
     identity = {
         "schema": MATPHYS_WARP_ENSEMBLE_SCHEMA,
         "schema_version": MATPHYS_WARP_ENSEMBLE_VERSION,

@@ -9,8 +9,9 @@ import hashlib
 import json
 import os
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -152,6 +153,7 @@ def _part_inputs(
     part_artifact_path: Path | None,
     part_count: int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, str, dict[str, object]]:
+    identity: dict[str, object]
     if part_artifact_path is not None:
         with np.load(part_artifact_path, allow_pickle=False) as archive:
             required = {"point_part", "part_features", "material_distribution"}
@@ -253,7 +255,7 @@ def main() -> None:
         part_count=int(args.part_count),
     )
     features = matphys_graph_features(points_m, edges, point_part)
-    incumbent = np.full(
+    incumbent: np.ndarray = np.full(
         len(edges),
         float(args.incumbent_spring_y_pa),
         dtype=np.float32,
@@ -276,8 +278,13 @@ def main() -> None:
         part_feature_scale=1.0,
     )
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    members = cast(Sequence[Mapping[str, object]], source["members"])
+    first_member = members[0]
+    first_checkpoint_record = cast(
+        Mapping[str, object], first_member["checkpoint"]
+    )
     first_checkpoint = torch.load(
-        source["members"][0]["checkpoint"]["path"],
+        cast(str, first_checkpoint_record["path"]),
         map_location="cpu",
         weights_only=False,
     )
@@ -285,8 +292,8 @@ def main() -> None:
     video, frame_indices = _decode_video_prefix(
         video_path,
         evidence_end_frame_exclusive=int(args.evidence_end_frame_exclusive),
-        frame_count=int(first_model_args.get("num_video_frames", 16)),
-        image_size=int(first_model_args.get("videomae_image_size", 224)),
+        frame_count=int(cast(Any, first_model_args.get("num_video_frames", 16))),
+        image_size=int(cast(Any, first_model_args.get("videomae_image_size", 224))),
         device=device,
     )
     del first_checkpoint
@@ -301,11 +308,12 @@ def main() -> None:
     empty_rest = torch.empty((0, 1), dtype=torch.float32, device=device)
     empty_part = torch.empty(0, dtype=torch.long, device=device)
 
-    member_raw = []
-    member_springs = []
-    member_records = []
-    for member in source["members"]:
-        checkpoint_path = Path(member["checkpoint"]["path"])
+    member_raw: list[np.ndarray] = []
+    member_springs: list[np.ndarray] = []
+    member_records: list[dict[str, object]] = []
+    for member in members:
+        checkpoint_record = cast(Mapping[str, object], member["checkpoint"])
+        checkpoint_path = Path(cast(str, checkpoint_record["path"]))
         checkpoint = torch.load(
             checkpoint_path,
             map_location="cpu",
@@ -326,13 +334,17 @@ def main() -> None:
         if any(model_args.get(key) != first_model_args.get(key) for key in compared):
             raise ValueError("fold checkpoints disagree on model architecture")
         model = training.SimpleVideoMaterialPhysicsModel(
-            videomae_model=str(model_args["videomae_model"]),
-            d_motion=int(model_args["d_motion"]),
-            d_mat=int(model_args["mat_codebook_dim"]),
-            hidden_dim=int(model_args["hidden_dim"]),
-            num_materials=int(model_args["num_materials"]),
-            logk_residual_scale=float(model_args.get("logk_residual_scale", 1.0)),
-            logk_soft_clamp=float(model_args.get("logk_soft_clamp", 0.25)),
+            videomae_model=str(cast(Any, model_args["videomae_model"])),
+            d_motion=int(cast(Any, model_args["d_motion"])),
+            d_mat=int(cast(Any, model_args["mat_codebook_dim"])),
+            hidden_dim=int(cast(Any, model_args["hidden_dim"])),
+            num_materials=int(cast(Any, model_args["num_materials"])),
+            logk_residual_scale=float(
+                cast(Any, model_args.get("logk_residual_scale", 1.0))
+            ),
+            logk_soft_clamp=float(
+                cast(Any, model_args.get("logk_soft_clamp", 0.25))
+            ),
             part_feature_dim=1024,
             part_feature_scale=1.0,
         ).to(device)
@@ -364,9 +376,9 @@ def main() -> None:
         ratio = spring.astype(np.float64) / incumbent.astype(np.float64)
         member_records.append(
             {
-                "fold_index": int(member["fold_index"]),
+                "fold_index": int(cast(Any, member["fold_index"])),
                 "held_out_object_id": str(member["held_out_object_id"]),
-                "checkpoint_sha256": str(member["checkpoint"]["sha256"]),
+                "checkpoint_sha256": str(checkpoint_record["sha256"]),
                 "spring_ratio_mean": float(np.mean(ratio)),
                 "spring_ratio_std": float(np.std(ratio)),
                 "spring_ratio_minimum": float(np.min(ratio)),
