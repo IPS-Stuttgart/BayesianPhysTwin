@@ -473,7 +473,10 @@ def run_sofa_fem_source_replay_v1(
                 minimum_determinant = min(minimum_determinant, step_minimum)
                 _require(
                     step_minimum >= determinant_floor,
-                    "SOFA source replay violated its hard orientation threshold",
+                    "SOFA source replay violated its hard orientation threshold "
+                    f"at frame={frame}, substep={substep}, "
+                    f"minimum_determinant={step_minimum:.17g}, "
+                    f"required_minimum={determinant_floor:.17g}",
                 )
                 attachment_error = float(
                     np.max(
