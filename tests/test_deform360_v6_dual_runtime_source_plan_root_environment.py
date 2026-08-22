@@ -84,8 +84,7 @@ def test_dual_runtime_source_receipt_routes_to_current_owning_issue() -> None:
         "issues": "write",
     }
     assert ROUTER_WORKFLOW.read_text(encoding="utf-8").startswith(
-        "# workflow-lifecycle: permanent\n"
-        "# workflow-owner: IPS-Stuttgart maintainers\n"
+        "# workflow-lifecycle: permanent\n# workflow-owner: IPS-Stuttgart maintainers\n"
     )
 
     route_job = router["jobs"]["route"]
@@ -128,8 +127,7 @@ def test_dual_runtime_source_receipt_routes_to_current_owning_issue() -> None:
     assert len(route_steps) == 1
     route_step = route_steps[0]
     assert route_step["run"] == (
-        "set -euo pipefail\n"
-        "python tools/quality/route_deform360_v6_source_receipt.py\n"
+        "set -euo pipefail\npython tools/quality/route_deform360_v6_source_receipt.py\n"
     )
     assert route_step["env"]["SOURCE_HEAD_SHA"] == (
         "${{ github.event.workflow_run.head_sha }}"
