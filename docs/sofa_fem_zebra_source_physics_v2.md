@@ -1,8 +1,9 @@
 # SOFA FEM keyed-Dirichlet source qualification v2
 
-**Registered, not yet executed.** The frozen protocol is
-`configs/sota/sofa_fem_zebra_source_physics_v2.json`. Its result must remain
-unknown until the committed runner is executed once from a clean revision.
+**Frozen decision: failed source qualification.** The protocol was executed
+exactly once from clean revision
+`490a452f6b446dda1f3935f695e927f5ab0ceeaf`. Source-value scoring remains
+closed, and this v2 arm must not be retried or substituted.
 
 ## Question
 
@@ -95,3 +96,27 @@ export PYTHONPATH="$PWD/src:$ROOT/plugins/SofaPython3/lib/python3/site-packages"
 Any failed gate freezes a negative qualification and keeps source-value scoring
 closed. No automatic retry, parameter change, replacement, or outcome-guided
 revision is permitted.
+
+## Frozen result
+
+The exact one-shot run passed deterministic replay, zero-action equilibrium,
+32/64-substep convergence, material sensitivity, native attachment projection,
+topology, source-query parity, deformation bounds, and opaque byte-exact
+fallback for both groups. It failed only the registered rigid-coordinate gate:
+
+| Source group | Rigid error | Allowed | Decision |
+| --- | ---: | ---: | --- |
+| `double_lift_zebra` | `7.192075 um` | `1 um` | fail |
+| `double_stretch_zebra` | `5.613647e-10 um` | `1 um` | pass |
+
+The result ID is
+`1f6871d2841e638bd666fb1d8bdb19abd6f7a1813f09335441dbd19d63d9cc2e`.
+The material-backend qualification ID is
+`1c77ec53d9bd4c75a87694d182f2c7f426f4df8b893fe91475be64f70dc04054`.
+The compact result and qualification SHA-256 values are, respectively,
+`1508bd4f6f043825a8ad720a346e9cae0904da883e12ace4a2ba7e48a806084b`
+and `e6ac78224180120c1b865b4d02c7d62c9ec7df813ad60f64bb8034546b1a1ace`.
+
+No source object outcome, incumbent prediction array, target, held-out artifact,
+or held-v8 artifact was read. The negative result is therefore a numerical
+backend qualification decision, not a predictive comparison.

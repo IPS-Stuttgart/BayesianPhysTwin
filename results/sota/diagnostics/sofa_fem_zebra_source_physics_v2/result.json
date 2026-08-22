@@ -1,0 +1,154 @@
+{
+  "claim_boundary": "Source-only numerical qualification of one exact SOFA FEM keyed-Dirichlet runtime on two already-open PhysTwin source actions. It is not source-value, fresh-object, calibration, target, DEFORM, Causal4D, or state-of-the-art evidence.",
+  "failure_reasons": [
+    "rigid-transform-equivariance"
+  ],
+  "implementation": {
+    "git_head": "490a452f6b446dda1f3935f695e927f5ab0ceeaf",
+    "git_worktree_clean": true,
+    "source_files": {
+      "configs/sota/sofa_fem_zebra_source_physics_v2.json": "76f2934082fec366b3a11c0c62d0f62802864dfde1e134f8c4143d9a285a8117",
+      "scripts/remote/run_sofa_fem_source_qualification_v2.py": "c9031b0b49201af7dfe66404811666b37ae8e72d4fa37c628be381b29880b1da",
+      "src/bayesian_phystwin/sofa_fem_kinematic_source_v2.py": "a25f96f2f5d10959d45ee09b9add2650283cdec08f43bf8c7de2e506ced86b26",
+      "src/bayesian_phystwin/sofa_fem_source_qualification_v2.py": "ce35f23913c15d557e7b19d4950357545f1644f7e1a95703eb9ab8289b2ec546",
+      "src/bayesian_phystwin/sofa_fem_source_v1.py": "8d3630c8d7bec4a8fad103fd010fb1811ca4cc415500355c7e6a6b9c42281db6"
+    }
+  },
+  "information_boundary": {
+    "incumbent_bytes_read_for_exact_fallback": true,
+    "incumbent_prediction_arrays_read": false,
+    "prepared_source_archives_read": true,
+    "source_inputs_read": true,
+    "source_object_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "protocol_sha256": "76f2934082fec366b3a11c0c62d0f62802864dfde1e134f8c4143d9a285a8117",
+  "qualification_artifact_id": "1c77ec53d9bd4c75a87694d182f2c7f426f4df8b893fe91475be64f70dc04054",
+  "qualified": false,
+  "result_id": "1f6871d2841e638bd666fb1d8bdb19abd6f7a1813f09335441dbd19d63d9cc2e",
+  "runtime": {
+    "distribution_archive_sha256": "129211fd01781bdd5ba3f28f1c3617a2f3792a71b62dc609cf866eec4ac745e2",
+    "engine_revision": "7c18e95d5c5f2839079892c69e7d89a313c79603",
+    "engine_version": "26.06.00",
+    "installed_records": {
+      "git-info.txt": {
+        "sha256": "fd798c058c651d201ba552f7bfbd77cf2ad63d095dd650c0f39d3b40e0e0ed3b"
+      },
+      "lib/libSofa.Component.AnimationLoop.so.26.06.00": {
+        "sha256": "5dc44e8039684d3f112066e056c7f9e993ad10adcc50244569beba27022d2ea9"
+      },
+      "lib/libSofa.Component.Constraint.Projective.so.26.06.00": {
+        "sha256": "1b5bc1b6e60dfd74f892a2acda34bba69fb7cd3370f631a040bd368c0ff6f828"
+      },
+      "lib/libSofa.Component.LinearSolver.Direct.so.26.06.00": {
+        "sha256": "7a94c419c39d18236c24281c707e8e4db6c3e032c43e942b63514293926663d4"
+      },
+      "lib/libSofa.Component.Mass.so.26.06.00": {
+        "sha256": "180e04093c8f8096e3e2c19ae986886bc2af2f23adeefbd11fd8aff47b0210d9"
+      },
+      "lib/libSofa.Component.ODESolver.Backward.so.26.06.00": {
+        "sha256": "8bd1d79204e3dab5d2e02b1f7fecf040c99b51c212ff98b54ccad247a2415c12"
+      },
+      "lib/libSofa.Component.SolidMechanics.FEM.HyperElastic.so.26.06.00": {
+        "sha256": "aed8df7c26bbf49f0bcf11e890ede9ddbff4afb6e8765ff7ea6a1a96a7bbaae9"
+      },
+      "lib/libSofa.Component.StateContainer.so.26.06.00": {
+        "sha256": "aa1e846c2a2978a2d0d6b1ddaafd90b3bff9b186bda3c60d9c6d2cce42e672c5"
+      },
+      "lib/libSofa.Component.Topology.Container.Dynamic.so.26.06.00": {
+        "sha256": "1348185d3a522e8f7139229a6d72ce7263baeae4599e5308650ae2cd522708bb"
+      },
+      "plugins/SofaPython3/lib/libSofaPython3.so.1.0": {
+        "sha256": "b8b2aaf5e43082a217cd839ccc56b7b19a929d19c80777c33fa2b099696742bf"
+      },
+      "plugins/SofaPython3/lib/python3/site-packages/Sofa/Core.cpython-310-x86_64-linux-gnu.so": {
+        "sha256": "3f41ddef8cbfa98806473cff828a2e650fc7916aca14f722cec3c0a2c45ced6f"
+      },
+      "plugins/SofaPython3/lib/python3/site-packages/Sofa/Simulation.cpython-310-x86_64-linux-gnu.so": {
+        "sha256": "54483e9f24c0b5adc7be4c522b4e8ed8311e6887b537542f12d503049854dac6"
+      }
+    }
+  },
+  "runtime_id": "f46e53707317bc652499e2f3af5b860a330f9dbf06014364acd19ffaf8acca8e",
+  "schema": "bayesian-phystwin.sofa-fem-source-physics-result-v2",
+  "schema_version": 2,
+  "source_groups": [
+    {
+      "action_response_rmse_m": 0.00023351228830568264,
+      "base_scene_sha256": "91572153da3edc9e7ff65f340c611d8643524b61efce34374840457424cdc70d",
+      "base_schedule_sha256": "e11f566b48405c0985244987e1d18aa9128c5f68d5c1bbb6e4cd73a5afc07de4",
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "group_id": "double_lift_zebra",
+      "incumbent_sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+      "material_sensitivity_rmse_m": 0.0003726068239749311,
+      "maximum_attachment_error_m": 1.734723475976807e-18,
+      "maximum_deformation_determinant": 1.025312415516179,
+      "maximum_node_displacement_m": 0.001760069172242666,
+      "maximum_rigid_equivariance_error_m": 7.1920753880018535e-06,
+      "maximum_zero_action_drift_m": 1.599198204416119e-18,
+      "minimum_deformation_determinant": 0.9325813067786125,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "attachment_projection": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "material_sensitivity_lower": true,
+        "material_sensitivity_upper": true,
+        "node_displacement": true,
+        "time_step_refinement_absolute": true
+      },
+      "prepared_archive_sha256": "735af839eaae9ef86fd3fe3f67e483683d64d07d147cd0e4701a33bb80a26ad2",
+      "refined_scene_sha256": "d50c12372a03701e41e5a8f3aad75c0b261c2a9692a31330378d2f8c76139ba0",
+      "refined_schedule_sha256": "d93631d51d8cc36bbe404322bf45cb53f12f12dae0d38fc716f3571c39d5433b",
+      "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+      "source_query_parity_rmse_m": 0.0,
+      "time_step_refinement_absolute_error_m": 2.6238029298374743e-06,
+      "time_step_refinement_relative_error": 0.011125469317777264,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "6f52739b3876d5d20f5c63e3a813a0e61faddb08714056fc44f8eb77b78c20e2",
+      "units_coordinate_entity_order_valid": true
+    },
+    {
+      "action_response_rmse_m": 0.00040947274177903725,
+      "base_scene_sha256": "e212ca5945a645a12db32aa20ea08002ed55fa5b615d609cbd3cf498a1525898",
+      "base_schedule_sha256": "edb837cd274db00ddc62009ec2d46dfd4edd7c8f4e2dfc485b85e6313de2fe19",
+      "deterministic_replay_valid": true,
+      "exact_fallback_verified": true,
+      "fallback_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "group_id": "double_stretch_zebra",
+      "incumbent_sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd",
+      "material_sensitivity_rmse_m": 0.0004675768555492593,
+      "maximum_attachment_error_m": 3.469446951953614e-18,
+      "maximum_deformation_determinant": 1.1157505744543847,
+      "maximum_node_displacement_m": 0.003240305754383023,
+      "maximum_rigid_equivariance_error_m": 5.613646650354486e-16,
+      "maximum_zero_action_drift_m": 1.1926223897340549e-18,
+      "minimum_deformation_determinant": 0.9361051227053473,
+      "physical_sanity_checks": {
+        "action_response": true,
+        "attachment_projection": true,
+        "deformation_determinant_lower": true,
+        "deformation_determinant_upper": true,
+        "finite": true,
+        "material_sensitivity_lower": true,
+        "material_sensitivity_upper": true,
+        "node_displacement": true,
+        "time_step_refinement_absolute": true
+      },
+      "prepared_archive_sha256": "122c09f752fe804a7c2f4753232d5ecf7686af6b584800236f9da7999d92870d",
+      "refined_scene_sha256": "7108358c9f283c955df4c29a5a7c3418efd92559ea91e603c9c84bc136e251c3",
+      "refined_schedule_sha256": "c4c0ce828195b8348b6e2455746de7c909d8f29678a0bd7c10b2aa412ddf438d",
+      "source_inputs_sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a",
+      "source_query_parity_rmse_m": 0.0,
+      "time_step_refinement_absolute_error_m": 5.407278386783394e-06,
+      "time_step_refinement_relative_error": 0.0130376210690843,
+      "topology_identity_preserved": true,
+      "trajectory_archive_sha256": "471169b84e9cce9b623f205041e2c405f398531bb284aeed91d9e5adeede8a35",
+      "units_coordinate_entity_order_valid": true
+    }
+  ],
+  "source_value_scoring_authorized": false
+}
