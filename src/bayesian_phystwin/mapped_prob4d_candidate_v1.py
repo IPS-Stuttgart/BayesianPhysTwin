@@ -73,8 +73,7 @@ def _require_mapping_preflight(
     _validated_audit_id(mapping_audit)
     if mapping_audit.provider_artifact_id != expected_observation_id:
         raise ValueError(
-            "mapping audit provider_artifact_id does not match the observation "
-            "artifact"
+            "mapping audit provider_artifact_id does not match the observation artifact"
         )
     if mapping_audit.physical_query_id != expected_query_id:
         raise ValueError(
@@ -103,9 +102,7 @@ class MappedClaimBearingProb4DCandidateV1:
         query_id = sha256_digest(self.physical_query_id, name="physical_query_id")
         _require_mapping_preflight(
             mapping_audit=self.mapping_audit,
-            observation_artifact_id=(
-                self.candidate.update_v1.observation_artifact_id
-            ),
+            observation_artifact_id=(self.candidate.update_v1.observation_artifact_id),
             physical_query_id=query_id,
         )
         object.__setattr__(self, "physical_query_id", query_id)
