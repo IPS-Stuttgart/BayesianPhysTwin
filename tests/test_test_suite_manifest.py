@@ -54,6 +54,7 @@ def test_repository_manifest_expands_deterministically() -> None:
         "tests/test_jax_fem_source_qualification_v1.py",
         "tests/test_jax_fem_source_value_v1.py",
         "tests/test_matphys_fold_ensemble_v1.py",
+        "tests/test_matphys_native_phystwin_v1.py",
         "tests/test_matphys_surface_uq_source_scorer_v1.py",
         "tests/test_matphys_surface_uq_v1.py",
         "tests/test_matphys_warp_ensemble_v1.py",
