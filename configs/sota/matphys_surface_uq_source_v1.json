@@ -10,6 +10,13 @@
       "reason": "The raw robot carrier was CI-private; consume the already sealed 76-frame known-action carrier and omit five unscored tail frames.",
       "source_outcome_or_metric_inspected": false,
       "prediction_or_gate_changed": false
+    },
+    {
+      "amendment_id": "robot-independent-scoring-reconstruction-v2",
+      "failed_preflight_artifact_written": false,
+      "reason": "The sealed known-action carrier was also CI-private. The registered scoring reconstruction therefore consumes only scoring-panel RGB, calibration, and source-fitted SAM2 masks. Deform360 depth reconstruction supports an absent robot carrier; the URDF gripper-mask stage is omitted and gripper pixels are not explicitly excluded.",
+      "source_reconstruction_or_metric_inspected": false,
+      "prediction_or_gate_changed": false
     }
   ],
   "source_panel": {
@@ -75,6 +82,9 @@
   },
   "outcome": {
     "kind": "custom disjoint-camera Splatfacto surface reconstruction",
+    "robot_state_required_for_scoring_reconstruction": false,
+    "urdf_gripper_mask_used": false,
+    "gripper_pixels_excluded": false,
     "maximum_points_per_camera_frame": 4096,
     "maximum_point_to_surface_distance_m": 0.05,
     "event_estimand": "nearest disjoint-view surface displacement for each registered DEFORM mean node",
@@ -94,7 +104,7 @@
   },
   "information_boundary": {
     "predictions_sealed_before_source_suffix_decode": true,
-    "sealed_known_action_carrier_used": true,
+    "robot_state_read_for_scoring_reconstruction": false,
     "provider_and_scoring_cameras_disjoint": true,
     "future_observations_used_to_form_prediction": false,
     "target_or_confirmation_data_read": false,

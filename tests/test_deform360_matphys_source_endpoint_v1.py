@@ -121,6 +121,18 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
     assert loaded["source_panel"]["replacement_allowed"] is False
     assert loaded["source_amendments"][0]["source_outcome_or_metric_inspected"] is False
     assert loaded["source_amendments"][0]["prediction_or_gate_changed"] is False
+    assert (
+        loaded["source_amendments"][1]["source_reconstruction_or_metric_inspected"]
+        is False
+    )
+    assert loaded["source_amendments"][1]["prediction_or_gate_changed"] is False
+    assert loaded["outcome"]["robot_state_required_for_scoring_reconstruction"] is False
+    assert loaded["outcome"]["urdf_gripper_mask_used"] is False
+    assert loaded["outcome"]["gripper_pixels_excluded"] is False
+    assert (
+        loaded["information_boundary"]["robot_state_read_for_scoring_reconstruction"]
+        is False
+    )
     with pytest.raises(ValueError, match="denominator"):
         _validate_protocol(
             path,

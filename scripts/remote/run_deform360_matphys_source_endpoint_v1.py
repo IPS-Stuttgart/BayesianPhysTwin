@@ -248,7 +248,6 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--physical-source-episode", type=Path, required=True)
-    parser.add_argument("--known-action", type=Path, required=True)
     parser.add_argument("--prefix-manifest", type=Path, required=True)
     parser.add_argument("--deform-prediction-manifest", type=Path, required=True)
     parser.add_argument("--part-feature-manifest", type=Path, required=True)
@@ -412,6 +411,7 @@ def _validate_protocol(
     source_panel = protocol.get("source_panel")
     camera_partition = protocol.get("camera_partition")
     window = protocol.get("window")
+    outcome = protocol.get("outcome")
     boundary = protocol.get("information_boundary")
     _require(
         isinstance(source_panel, Mapping)
@@ -438,9 +438,16 @@ def _validate_protocol(
         "source evaluation window changed",
     )
     _require(
+        isinstance(outcome, Mapping)
+        and outcome.get("robot_state_required_for_scoring_reconstruction") is False
+        and outcome.get("urdf_gripper_mask_used") is False
+        and outcome.get("gripper_pixels_excluded") is False,
+        "source outcome reconstruction changed",
+    )
+    _require(
         isinstance(boundary, Mapping)
         and boundary.get("provider_and_scoring_cameras_disjoint") is True
-        and boundary.get("sealed_known_action_carrier_used") is True
+        and boundary.get("robot_state_read_for_scoring_reconstruction") is False
         and boundary.get("target_or_confirmation_data_read") is False
         and boundary.get("held_v8_artifacts_accessed") is False
         and boundary.get("frozen_deform_results_changed") is False,
@@ -455,9 +462,7 @@ def _copy_source_window(
     destination_episode: Path,
     cameras: tuple[str, ...],
     raw_start: int,
-    known_action: Path,
     ffmpeg: Path,
-    deform360_repository: Path,
 ) -> None:
     destination_episode.mkdir(parents=True)
     _subset_calibration(
@@ -497,25 +502,6 @@ def _copy_source_window(
     if alignment.is_file():
         shutil.copy2(alignment, destination_episode / "alignment.json")
 
-    sys.path.insert(0, str(deform360_repository))
-    from deform360.robot import RobotState, load_robot_state, save_robot_state
-
-    source_robot = load_robot_state(known_action)
-    _require(
-        len(source_robot.actions) == RAW_FRAME_COUNT,
-        "sealed known-action stream changed length",
-    )
-    save_robot_state(
-        destination_episode / "robot" / "robot.npz",
-        RobotState(
-            actions=source_robot.actions,
-            T_worlds=source_robot.T_worlds,
-            openings=source_robot.openings,
-            bimanual=source_robot.bimanual,
-        ),
-    )
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     repository = _ordinary_directory(args.repo, name="BayesianPhysTwin repository")
@@ -524,7 +510,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     source_episode = _ordinary_directory(
         args.physical_source_episode, name="physical source episode"
     )
-    known_action = _ordinary_file(args.known_action, name="sealed known action")
     prefix_path = _ordinary_file(args.prefix_manifest, name="prefix manifest")
     deform_path = _ordinary_file(
         args.deform_prediction_manifest, name="DEFORM prediction manifest"
@@ -542,14 +527,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         part_path=part_path,
         warp_path=warp_path,
         scoring_cameras=scoring,
-    )
-    deform_manifest = _json(deform_path, name="DEFORM prediction manifest")
-    input_files = cast(Mapping[str, Any], deform_manifest["input_files"])
-    known_action_record = input_files.get("known_action")
-    _require(
-        isinstance(known_action_record, Mapping)
-        and _sha256_file(known_action) == known_action_record.get("sha256"),
-        "sealed known-action carrier changed",
     )
     _validate_protocol(
         protocol_path,
@@ -593,10 +570,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             "path": str(protocol_path),
             "sha256": _sha256_file(protocol_path),
         },
-        "known_action": {
-            "path": str(known_action),
-            "sha256": _sha256_file(known_action),
-        },
         "dependencies": {
             "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
             "sam2_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
@@ -611,6 +584,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "information_boundary": {
             "prediction_seals_verified_before_future_decode": True,
             "provider_scoring_camera_overlap": False,
+            "robot_state_read_for_scoring_reconstruction": False,
+            "urdf_gripper_mask_used": False,
             "source_suffix_opened": not args.preflight_only,
             "target_or_confirmation_data_read": False,
             "held_v8_artifacts_accessed": False,
@@ -634,9 +609,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             destination_episode=episode,
             cameras=scoring,
             raw_start=int(identity["raw_start"]),
-            known_action=known_action,
             ffmpeg=Path("/usr/bin/ffmpeg").resolve(strict=True),
-            deform360_repository=deform360_repository,
         )
         sys.path.insert(0, str(causal4d_repository / "src"))
         sys.path.insert(0, str(sam2_repository))
@@ -706,7 +679,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         successful = tuple(sorted(support_by_camera))
 
         sys.path.insert(0, str(deform360_repository))
-        from deform360.processing import depth_stage, reconstruct_stage, urdf_render
+        from deform360.processing import depth_stage, reconstruct_stage
 
         original_visual_hull = reconstruct_stage.visual_hull_points
 
@@ -730,16 +703,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         finally:
             reconstruct_stage.visual_hull_points = original_visual_hull
         _require(set(splats) == set(range(RAW_FRAME_COUNT)), "splats are incomplete")
-        grippers = urdf_render.process_gripper_masks_episode(
-            scratch, 0, cameras=successful, overwrite=True
-        )
         depths = depth_stage.process_depth_episode(
             scratch, 0, cameras=successful, overwrite=True, preview=False
         )
-        _require(
-            set(grippers) == set(depths) == set(successful),
-            "endpoint depth panel changed",
-        )
+        _require(set(depths) == set(successful), "endpoint depth panel changed")
         endpoint_records: list[dict[str, Any]] = []
         raw_start = int(identity["raw_start"])
         raw_endpoint = (raw_start + PREFIX_FRAME_COUNT, raw_start + EVALUATION_STOP)
@@ -762,6 +729,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             **run_identity,
             "status": "success",
             "successful_scoring_camera_ids": list(successful),
+            "robot_state_read_for_scoring_reconstruction": False,
+            "urdf_gripper_mask_used": False,
+            "gripper_pixels_excluded": False,
             "frame_support_camera_count": frame_support.astype(int).tolist(),
             "camera_records": camera_records,
             "endpoint_archives": endpoint_records,
