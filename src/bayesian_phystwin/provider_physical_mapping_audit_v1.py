@@ -308,7 +308,7 @@ class ProviderPhysicalMappingCaseV1:
             _finite_real(
                 self.provider_unit_scale_m,
                 name="provider_unit_scale_m",
-                minimum=float(np.finfo(float).tiny),
+                minimum=np.finfo(float).tiny,
                 maximum=_MAXIMUM_SAFE_UNIT_SCALE_M,
             ),
         )
