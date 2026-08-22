@@ -1,8 +1,9 @@
-"""Outcome-gated source-value experiment for the qualified JAX-FEM runtime."""
+"""Outcome-gated source-value experiment for qualified canonical SOFA FEM v3."""
 
 from __future__ import annotations
 
 import shutil
+import subprocess
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -13,15 +14,7 @@ import numpy.typing as npt
 
 from ._portable_contracts import content_id, load_strict_json_object, write_atomic_json
 from .jax_fem_source_qualification_v1 import (
-    _git_provenance,
-    _load_native_modules,
-    _run_native_replay,
     attachment_targets_m,
-    build_tetrahedral_cells_v1,
-    contact_patch_local_indices_v1,
-    file_sha256,
-    load_jax_fem_source_inputs_v1,
-    load_jax_fem_source_physics_protocol_v1,
     rigid_contact_projection_v1,
 )
 from .material_backend_qualification_v1 import (
@@ -30,20 +23,48 @@ from .material_backend_qualification_v1 import (
 )
 from .newton_mpm_source_gate_v1 import _coordinate_rmse, _symmetric_chamfer
 from .physical_rollout_v1 import load_physical_rollout_archive, write_deterministic_npz
+from .sofa_fem_canonical_source_v3 import run_sofa_fem_canonical_source_replay_v3
+from .sofa_fem_source_qualification_v3 import (
+    SofaSourceGroupV3,
+    file_sha256,
+    load_prepared_sofa_source_v3,
+    load_sofa_source_inputs_v3,
+    load_sofa_source_physics_protocol_v3,
+)
+from .sofa_fem_source_v1 import load_native_sofa_fem_modules_v1
 
 FloatArray: TypeAlias = npt.NDArray[np.floating[Any]]
 BoolArray: TypeAlias = npt.NDArray[np.bool_]
 
-PROTOCOL_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-protocol"
-GRID_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-grid"
-PREFIX_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-prefix-result"
-FUTURE_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-future-result"
-PRE_PREFIX_SCHEMA: Final = "bayesian-phystwin.jax-fem-source-value-pre-prefix-result"
-GRID_FILENAME: Final = "jax-fem-source-value-grid.json"
-PREFIX_FILENAME: Final = "jax-fem-source-value-prefix-result.json"
-FUTURE_FILENAME: Final = "jax-fem-source-value-future-result.json"
-PRE_PREFIX_FILENAME: Final = "jax-fem-source-value-pre-prefix-result.json"
+PROTOCOL_SCHEMA: Final = "bayesian-phystwin.sofa-fem-source-value-protocol-v3"
+GRID_SCHEMA: Final = "bayesian-phystwin.sofa-fem-source-value-grid-v3"
+PREFIX_SCHEMA: Final = "bayesian-phystwin.sofa-fem-source-value-prefix-result-v3"
+FUTURE_SCHEMA: Final = "bayesian-phystwin.sofa-fem-source-value-future-result-v3"
+PRE_PREFIX_SCHEMA: Final = (
+    "bayesian-phystwin.sofa-fem-source-value-pre-prefix-result-v3"
+)
+GRID_FILENAME: Final = "sofa-fem-source-value-grid-v3.json"
+PREFIX_FILENAME: Final = "sofa-fem-source-value-prefix-result-v3.json"
+FUTURE_FILENAME: Final = "sofa-fem-source-value-future-result-v3.json"
+PRE_PREFIX_FILENAME: Final = "sofa-fem-source-value-pre-prefix-result-v3.json"
 SELECTED_FILENAME: Final = "selected-physical-prediction.npz"
+
+PROTOCOL_LABEL: Final = "sofa-fem-zebra-canonical-gauge-source-value-v3"
+SOURCE_FILES: Final = frozenset(
+    {
+        "configs/sota/sofa_fem_zebra_source_value_v3.json",
+        "src/bayesian_phystwin/_portable_contracts.py",
+        "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
+        "src/bayesian_phystwin/material_backend_qualification_v1.py",
+        "src/bayesian_phystwin/newton_mpm_source_gate_v1.py",
+        "src/bayesian_phystwin/physical_rollout_v1.py",
+        "src/bayesian_phystwin/sofa_fem_canonical_source_v3.py",
+        "src/bayesian_phystwin/sofa_fem_source_qualification_v3.py",
+        "src/bayesian_phystwin/sofa_fem_source_v1.py",
+        "src/bayesian_phystwin/sofa_fem_source_value_v3.py",
+        "scripts/remote/run_sofa_fem_source_value_v3.py",
+    }
+)
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -102,37 +123,39 @@ def _finite(value: object, *, name: str, positive: bool = False) -> float:
 
 
 @dataclass(frozen=True, slots=True)
-class JaxFemValueGroupV1:
+class SofaFemValueGroupV3:
     group_id: str
     source_inputs_relative_path: PurePosixPath
     source_inputs_sha256: str
+    prepared_archive_relative_path: PurePosixPath
+    prepared_archive_sha256: str
     prefix_outcomes_relative_path: PurePosixPath
     prefix_outcomes_sha256: str
     future_outcomes_relative_path: PurePosixPath
     future_outcomes_sha256: str
     incumbent_relative_path: PurePosixPath
     incumbent_sha256: str
-    matphys_sha256: str
     frame_count: int
-    material_particle_count: int
+    material_node_count: int
     controller_point_count: int
-    attached_particle_count: int
-    base_cell_count: int
+    attached_node_count: int
+    tetrahedron_count: int
     contact_patch_sizes: tuple[int, ...]
 
 
 @dataclass(frozen=True, slots=True)
-class JaxFemSourceValueProtocolV1:
+class SofaFemSourceValueProtocolV3:
     value: Mapping[str, Any]
     sha256: str
     runtime_id: str
     qualification_protocol_sha256: str
     qualification_result_sha256: str
+    qualification_result_id: str
     qualification_artifact_sha256: str
     qualification_artifact_id: str
-    groups: tuple[JaxFemValueGroupV1, ...]
-    poisson_ratios: tuple[float, ...]
-    young_modulus_pa: float
+    groups: tuple[SofaFemValueGroupV3, ...]
+    young_moduli_pa: tuple[float, ...]
+    poisson_ratio: float
     weights: tuple[float, ...]
 
     @property
@@ -144,11 +167,11 @@ class JaxFemSourceValueProtocolV1:
         return _mapping(self.value["validation_gates"], name="validation_gates")
 
 
-def load_jax_fem_source_value_protocol_v1(
+def load_sofa_fem_source_value_protocol_v3(
     path: str | Path,
-) -> JaxFemSourceValueProtocolV1:
+) -> SofaFemSourceValueProtocolV3:
     source = Path(path)
-    value = load_strict_json_object(source, label="JaxFem source-value protocol")
+    value = load_strict_json_object(source, label="SOFA FEM source-value protocol v3")
     _exact_fields(
         value,
         {
@@ -165,9 +188,11 @@ def load_jax_fem_source_value_protocol_v1(
         name="protocol",
     )
     _require(
-        value["schema"] == PROTOCOL_SCHEMA and value["schema_version"] == 1,
+        value["schema"] == PROTOCOL_SCHEMA and value["schema_version"] == 3,
         "protocol identity changed",
     )
+    _require(value["protocol_label"] == PROTOCOL_LABEL, "protocol label changed")
+    _string(value["claim_boundary"], name="claim boundary")
     qualification = _mapping(value["qualification"], name="qualification")
     _exact_fields(
         qualification,
@@ -175,6 +200,7 @@ def load_jax_fem_source_value_protocol_v1(
             "runtime_id",
             "source_physics_protocol_sha256",
             "source_physics_result_sha256",
+            "source_physics_result_id",
             "qualification_artifact_sha256",
             "qualification_artifact_id",
         },
@@ -187,6 +213,9 @@ def load_jax_fem_source_value_protocol_v1(
     )
     result_sha = _digest(
         qualification["source_physics_result_sha256"], name="source physics result"
+    )
+    result_id = _digest(
+        qualification["source_physics_result_id"], name="source physics result ID"
     )
     artifact_sha = _digest(
         qualification["qualification_artifact_sha256"], name="qualification artifact"
@@ -202,29 +231,30 @@ def load_jax_fem_source_value_protocol_v1(
         "group_id",
         "source_inputs_relative_path",
         "source_inputs_sha256",
+        "prepared_archive_relative_path",
+        "prepared_archive_sha256",
         "prefix_outcomes_relative_path",
         "prefix_outcomes_sha256",
         "future_outcomes_relative_path",
         "future_outcomes_sha256",
         "incumbent_relative_path",
         "incumbent_sha256",
-        "matphys_sha256",
         "frame_count",
-        "material_particle_count",
+        "material_node_count",
         "controller_point_count",
-        "attached_particle_count",
-        "base_cell_count",
+        "attached_node_count",
+        "tetrahedron_count",
         "contact_patch_sizes",
     }
-    groups: list[JaxFemValueGroupV1] = []
+    groups: list[SofaFemValueGroupV3] = []
     for raw in raw_groups:
         group = _mapping(raw, name="source group")
         _exact_fields(group, group_fields, name="source group")
         frame_count = group["frame_count"]
-        particle_count = group["material_particle_count"]
+        particle_count = group["material_node_count"]
         controller_count = group["controller_point_count"]
-        attached_count = group["attached_particle_count"]
-        base_cell_count = group["base_cell_count"]
+        attached_count = group["attached_node_count"]
+        tetrahedron_count = group["tetrahedron_count"]
         raw_patch_sizes = group["contact_patch_sizes"]
         _require(type(frame_count) is int and frame_count >= 2, "frame_count changed")
         _require(
@@ -240,8 +270,8 @@ def load_jax_fem_source_value_protocol_v1(
             "attached count changed",
         )
         _require(
-            type(base_cell_count) is int and base_cell_count >= 1,
-            "base cell count changed",
+            type(tetrahedron_count) is int and tetrahedron_count >= 1,
+            "tetrahedron count changed",
         )
         _require(
             isinstance(raw_patch_sizes, list)
@@ -251,13 +281,21 @@ def load_jax_fem_source_value_protocol_v1(
             "contact patch sizes changed",
         )
         groups.append(
-            JaxFemValueGroupV1(
+            SofaFemValueGroupV3(
                 group_id=_string(group["group_id"], name="group_id"),
                 source_inputs_relative_path=_relative(
                     group["source_inputs_relative_path"], name="source inputs path"
                 ),
                 source_inputs_sha256=_digest(
                     group["source_inputs_sha256"], name="source inputs SHA-256"
+                ),
+                prepared_archive_relative_path=_relative(
+                    group["prepared_archive_relative_path"],
+                    name="prepared archive path",
+                ),
+                prepared_archive_sha256=_digest(
+                    group["prepared_archive_sha256"],
+                    name="prepared archive SHA-256",
                 ),
                 prefix_outcomes_relative_path=_relative(
                     group["prefix_outcomes_relative_path"], name="prefix outcomes path"
@@ -277,12 +315,11 @@ def load_jax_fem_source_value_protocol_v1(
                 incumbent_sha256=_digest(
                     group["incumbent_sha256"], name="incumbent SHA-256"
                 ),
-                matphys_sha256=_digest(group["matphys_sha256"], name="MatPhys SHA-256"),
                 frame_count=frame_count,
-                material_particle_count=particle_count,
+                material_node_count=particle_count,
                 controller_point_count=controller_count,
-                attached_particle_count=attached_count,
-                base_cell_count=base_cell_count,
+                attached_node_count=attached_count,
+                tetrahedron_count=tetrahedron_count,
                 contact_patch_sizes=tuple(raw_patch_sizes),
             )
         )
@@ -292,36 +329,39 @@ def load_jax_fem_source_value_protocol_v1(
     _exact_fields(
         candidate,
         {
-            "poisson_ratio",
             "young_modulus_pa",
+            "poisson_ratio",
             "weights",
             "point_estimate",
             "distribution_score",
             "fit_fraction",
+            "parameter_source",
+            "fps",
+            "interval_substeps",
+            "hard_minimum_deformation_determinant",
         },
         name="candidate",
     )
-    raw_poisson = candidate["poisson_ratio"]
+    raw_young = candidate["young_modulus_pa"]
     raw_weights = candidate["weights"]
     if (
-        not isinstance(raw_poisson, list)
+        not isinstance(raw_young, list)
         or not isinstance(raw_weights, list)
-        or len(raw_poisson) != 3
+        or len(raw_young) != 3
         or len(raw_weights) != 3
     ):
         raise ValueError("candidate ensemble must contain exactly three members")
-    poisson_ratios = tuple(
-        _finite(value, name="Poisson ratio") for value in raw_poisson
+    young_moduli = tuple(
+        _finite(value, name="Young's modulus", positive=True) for value in raw_young
     )
-    young_modulus = _finite(
-        candidate["young_modulus_pa"], name="young modulus", positive=True
-    )
+    poisson_ratio = _finite(candidate["poisson_ratio"], name="Poisson ratio")
     weights = tuple(
         _finite(value, name="weight", positive=True) for value in raw_weights
     )
     _require(
-        len(set(poisson_ratios)) == 3
-        and -1.0 < poisson_ratios[0] < poisson_ratios[1] < poisson_ratios[2] < 0.5
+        len(set(young_moduli)) == 3
+        and young_moduli[0] < young_moduli[1] < young_moduli[2]
+        and 0.0 < poisson_ratio < 0.5
         and np.isclose(sum(weights), 1.0),
         "candidate ensemble changed",
     )
@@ -337,6 +377,21 @@ def load_jax_fem_source_value_protocol_v1(
         np.isclose(_finite(candidate["fit_fraction"], name="fit_fraction"), 2.0 / 3.0),
         "fit fraction changed",
     )
+    _require(
+        candidate["parameter_source"] == "qualified-low-base-high-young-modulus-probes",
+        "candidate parameter source changed",
+    )
+    _finite(candidate["fps"], name="candidate fps", positive=True)
+    _require(
+        type(candidate["interval_substeps"]) is int
+        and candidate["interval_substeps"] >= 1,
+        "candidate interval substeps changed",
+    )
+    hard_determinant = _finite(
+        candidate["hard_minimum_deformation_determinant"],
+        name="hard minimum deformation determinant",
+        positive=True,
+    )
 
     gates = _mapping(value["validation_gates"], name="validation gates")
     gate_fields = {
@@ -348,6 +403,9 @@ def load_jax_fem_source_value_protocol_v1(
         "minimum_final_ensemble_spread_m",
         "maximum_final_ensemble_spread_m",
         "maximum_full_horizon_contact_projection_error_m",
+        "maximum_full_horizon_native_attachment_error_m",
+        "maximum_full_horizon_world_attachment_approximation_error_m",
+        "maximum_full_horizon_world_point_approximation_error_m",
         "maximum_full_horizon_node_displacement_m",
         "minimum_full_horizon_deformation_determinant",
         "maximum_full_horizon_deformation_determinant",
@@ -360,12 +418,29 @@ def load_jax_fem_source_value_protocol_v1(
         gates["required_successful_candidate_count"] == 3,
         "candidate denominator changed",
     )
+    _require(
+        float(gates["minimum_final_ensemble_spread_m"])
+        < float(gates["maximum_final_ensemble_spread_m"]),
+        "ensemble-spread interval changed",
+    )
+    _require(
+        float(gates["minimum_full_horizon_deformation_determinant"])
+        < float(gates["maximum_full_horizon_deformation_determinant"]),
+        "deformation-determinant interval changed",
+    )
+    _require(
+        hard_determinant
+        <= float(gates["minimum_full_horizon_deformation_determinant"]),
+        "hard determinant floor exceeds the reporting gate",
+    )
     boundary = _mapping(value["information_boundary"], name="information boundary")
     _require(
         boundary
         == {
             "prediction_uses_frame_zero_geometry_and_known_action_only": True,
-            "prefix_outcomes_open_only_after_all_predictions_sealed": True,
+            "prepared_source_topology_and_contact_allowed": True,
+            "incumbent_bytes_allowed_before_outcomes_for_hash_and_fallback_only": True,
+            "prefix_outcomes_open_only_after_grid_and_pre_prefix_gate_sealed": True,
             "future_outcomes_open_only_after_validation_gate": True,
             "target_or_held_out_artifact_access_allowed": False,
             "failure_policy": "byte-exact-incumbent-per-source-group",
@@ -373,26 +448,20 @@ def load_jax_fem_source_value_protocol_v1(
         },
         "information boundary changed",
     )
-    return JaxFemSourceValueProtocolV1(
+    return SofaFemSourceValueProtocolV3(
         value=value,
         sha256=file_sha256(source),
         runtime_id=runtime_id,
         qualification_protocol_sha256=physics_protocol_sha,
         qualification_result_sha256=result_sha,
+        qualification_result_id=result_id,
         qualification_artifact_sha256=artifact_sha,
         qualification_artifact_id=artifact_id,
         groups=tuple(groups),
-        poisson_ratios=poisson_ratios,
-        young_modulus_pa=young_modulus,
+        young_moduli_pa=young_moduli,
+        poisson_ratio=poisson_ratio,
         weights=weights,
     )
-
-
-def _physics_simulation(physics_protocol_path: str | Path) -> Mapping[str, Any]:
-    value = load_strict_json_object(
-        physics_protocol_path, label="source-physics protocol"
-    )
-    return _mapping(value["simulation"], name="source-physics simulation")
 
 
 def _ordinary_file(path: str | Path, *, name: str) -> Path:
@@ -419,6 +488,7 @@ def _physical_arrays(
 ) -> dict[str, npt.NDArray[Any]]:
     prediction = np.ascontiguousarray(positions_m, dtype=np.float32)
     frame_zero = np.ascontiguousarray(frame_zero_m, dtype=np.float32)
+    prediction[0] = frame_zero
     persistence = np.broadcast_to(frame_zero[None], prediction.shape).copy()
     return {
         "action_support": np.ascontiguousarray(action_support, dtype=np.float32),
@@ -430,18 +500,74 @@ def _physical_arrays(
     }
 
 
-def generate_jax_fem_source_value_predictions_v1(
+def _git_provenance(repo_root: Path) -> dict[str, Any]:
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    _require(
+        len(head) == 40 and all(character in "0123456789abcdef" for character in head),
+        "source-value Git revision changed",
+    )
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    _require(status == "", "source-value prediction requires a clean Git worktree")
+    return {
+        "git_head": head,
+        "git_worktree_clean": True,
+        "source_files": {
+            relative: file_sha256(repo_root / relative)
+            for relative in sorted(SOURCE_FILES)
+        },
+    }
+
+
+def _physics_group_matches(
+    group: SofaFemValueGroupV3,
+    physics_group: SofaSourceGroupV3,
+) -> bool:
+    return bool(
+        physics_group.group_id == group.group_id
+        and physics_group.source_inputs_relative_path
+        == group.source_inputs_relative_path
+        and physics_group.source_inputs_sha256 == group.source_inputs_sha256
+        and physics_group.prepared_archive_relative_path
+        == group.prepared_archive_relative_path
+        and physics_group.prepared_archive_sha256 == group.prepared_archive_sha256
+        and physics_group.incumbent_relative_path == group.incumbent_relative_path
+        and physics_group.incumbent_sha256 == group.incumbent_sha256
+        and physics_group.frame_count == group.frame_count
+        and physics_group.material_node_count == group.material_node_count
+        and physics_group.controller_point_count == group.controller_point_count
+        and physics_group.attached_node_count == group.attached_node_count
+        and physics_group.tetrahedron_count == group.tetrahedron_count
+        and physics_group.expected_contact_patch_sizes == group.contact_patch_sizes
+    )
+
+
+def generate_sofa_fem_source_value_predictions_v3(
     *,
     protocol_path: str | Path,
     physics_protocol_path: str | Path,
     physics_result_path: str | Path,
     qualification_path: str | Path,
     group_roots: Mapping[str, str | Path],
-    matphys_paths: Mapping[str, str | Path],
     output_dir: str | Path,
     repo_root: str | Path,
+    distribution_archive: str | Path,
+    sofa_root: str | Path,
 ) -> dict[str, Any]:
-    protocol = load_jax_fem_source_value_protocol_v1(protocol_path)
+    """Seal every full-horizon member before any source outcome is opened."""
+
+    protocol = load_sofa_fem_source_value_protocol_v3(protocol_path)
     _require(
         file_sha256(physics_protocol_path) == protocol.qualification_protocol_sha256,
         "source-physics protocol changed",
@@ -449,6 +575,25 @@ def generate_jax_fem_source_value_predictions_v1(
     _require(
         file_sha256(physics_result_path) == protocol.qualification_result_sha256,
         "source-physics result changed",
+    )
+    physics_result = load_strict_json_object(
+        physics_result_path,
+        label="SOFA FEM source-physics result v3",
+    )
+    _require(
+        physics_result.get("result_id") == protocol.qualification_result_id
+        and physics_result.get("qualified") is True
+        and physics_result.get("source_value_scoring_authorized") is True,
+        "source-physics result does not authorize source-value work",
+    )
+    result_boundary = _mapping(
+        physics_result.get("information_boundary"),
+        name="source-physics result boundary",
+    )
+    _require(
+        result_boundary.get("source_object_outcomes_read") is False
+        and result_boundary.get("target_or_held_out_artifact_read") is False,
+        "source-physics result crossed its information boundary",
     )
     _require(
         file_sha256(qualification_path) == protocol.qualification_artifact_sha256,
@@ -460,30 +605,19 @@ def generate_jax_fem_source_value_predictions_v1(
         "qualification artifact ID changed",
     )
     require_qualified_material_backend_runtime(
-        profile_id="jax-fem-quasistatic-v1",
-        producer_profile_id="jax-fem-quasistatic-v1",
+        profile_id="sofa-fem-v1",
+        producer_profile_id="sofa-fem-v1",
         runtime_id=protocol.runtime_id,
         qualification=qualification,
     )
     expected = {group.group_id for group in protocol.groups}
-    _require(
-        set(group_roots) == expected and set(matphys_paths) == expected,
-        "complete source roots are required",
-    )
+    _require(set(group_roots) == expected, "complete source roots are required")
     output = Path(output_dir).absolute()
-    if output.exists():
+    if output.exists() or output.is_symlink():
         raise FileExistsError(output)
-    output.mkdir(parents=True)
-    provenance = _git_provenance(
-        Path(repo_root).absolute(),
-        source_paths=(
-            "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
-            "src/bayesian_phystwin/jax_fem_source_value_v1.py",
-            "scripts/remote/run_jax_fem_source_value_v1.py",
-        ),
-    )
+    provenance = _git_provenance(Path(repo_root).absolute())
 
-    physics_protocol = load_jax_fem_source_physics_protocol_v1(physics_protocol_path)
+    physics_protocol = load_sofa_source_physics_protocol_v3(physics_protocol_path)
     _require(
         physics_protocol.runtime_id == protocol.runtime_id,
         "source-value runtime differs from source physics",
@@ -492,57 +626,62 @@ def generate_jax_fem_source_value_predictions_v1(
     _require(set(physics_groups) == expected, "source-physics group roster changed")
     simulation = physics_protocol.simulation
     _require(
-        protocol.poisson_ratios
+        protocol.young_moduli_pa
         == (
-            float(simulation["low_poisson_ratio"]),
-            float(simulation["base_poisson_ratio"]),
-            float(simulation["high_poisson_ratio"]),
+            float(simulation["young_modulus_probe_low_pa"]),
+            float(simulation["young_modulus_pa"]),
+            float(simulation["young_modulus_probe_high_pa"]),
         )
-        and protocol.young_modulus_pa == float(simulation["young_modulus_pa"]),
+        and protocol.poisson_ratio == float(simulation["poisson_ratio"])
+        and float(protocol.candidate["fps"]) == float(simulation["fps"])
+        and int(protocol.candidate["interval_substeps"])
+        == int(simulation["base_interval_substeps"])
+        and float(protocol.candidate["hard_minimum_deformation_determinant"])
+        == float(simulation["hard_minimum_deformation_determinant"]),
         "source-value ensemble differs from the qualified physics parameters",
     )
-    native = _load_native_modules(physics_protocol)
+    native = load_native_sofa_fem_modules_v1(
+        distribution_archive=distribution_archive,
+        sofa_root=sofa_root,
+    )
+    output.mkdir(parents=True)
 
     records: list[dict[str, Any]] = []
     for group in protocol.groups:
         root = Path(group_roots[group.group_id]).absolute()
         source_path = root / group.source_inputs_relative_path.as_posix()
+        prepared_path = root / group.prepared_archive_relative_path.as_posix()
         incumbent_path = root / group.incumbent_relative_path.as_posix()
-        matphys_path = Path(matphys_paths[group.group_id]).absolute()
         _require(
-            file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed"
+            _ordinary_file(incumbent_path, name="incumbent fallback")
+            == incumbent_path.absolute(),
+            "incumbent path changed",
         )
-        _require(file_sha256(matphys_path) == group.matphys_sha256, "MatPhys changed")
+        _require(
+            file_sha256(incumbent_path) == group.incumbent_sha256,
+            "incumbent changed",
+        )
         physics_group = physics_groups[group.group_id]
         _require(
-            physics_group.source_inputs_relative_path
-            == group.source_inputs_relative_path
-            and physics_group.source_inputs_sha256 == group.source_inputs_sha256
-            and physics_group.incumbent_relative_path == group.incumbent_relative_path
-            and physics_group.incumbent_sha256 == group.incumbent_sha256
-            and physics_group.frame_count == group.frame_count
-            and physics_group.material_node_count == group.material_particle_count
-            and physics_group.controller_point_count == group.controller_point_count
-            and physics_group.attached_node_count == group.attached_particle_count
-            and physics_group.expected_base_cell_count == group.base_cell_count
-            and physics_group.expected_contact_patch_sizes == group.contact_patch_sizes,
+            _physics_group_matches(group, physics_group),
             "source-value group differs from the qualified source-physics group",
         )
-        arrays = load_jax_fem_source_inputs_v1(source_path, group=physics_group)
-        points = np.asarray(arrays["frame_zero_points_m"], dtype=np.float64)
+        arrays = load_sofa_source_inputs_v3(source_path, group=physics_group)
+        prepared = load_prepared_sofa_source_v3(
+            prepared_path,
+            group=physics_group,
+            source_inputs=arrays,
+            qualification_frame_count=int(simulation["qualification_frame_count"]),
+        )
+        points = prepared.points_m
         controller = np.asarray(arrays["controller_points_m"], dtype=np.float64)
-        indices = np.asarray(arrays["attachment_indices"], dtype=np.int64)
+        indices = prepared.attachment_indices
         raw_targets = attachment_targets_m(
             points, controller, indices, arrays["attachment_weights"]
         )
-        patches = contact_patch_local_indices_v1(
-            points,
-            indices,
-            radius_m=float(simulation["contact_cluster_radius_m"]),
-        )
+        patches = prepared.contact.patch_local_indices
         _require(
-            tuple(len(patch) for patch in patches)
-            == physics_group.expected_contact_patch_sizes,
+            tuple(len(patch) for patch in patches) == group.contact_patch_sizes,
             "contact patch topology changed",
         )
         contact = rigid_contact_projection_v1(
@@ -551,14 +690,16 @@ def generate_jax_fem_source_value_predictions_v1(
             raw_targets,
             patches,
         )
-        cells = build_tetrahedral_cells_v1(
-            points,
-            maximum_edge_m=float(simulation["base_mesh_max_edge_m"]),
-            minimum_shape_ratio=float(simulation["minimum_tetrahedron_shape_ratio"]),
-        )
         _require(
-            len(cells) == physics_group.expected_base_cell_count,
-            "source-value tetrahedral topology changed",
+            np.allclose(
+                contact.projected_targets_m[
+                    : int(simulation["qualification_frame_count"])
+                ],
+                prepared.contact.projected_targets_m,
+                rtol=0.0,
+                atol=1.0e-14,
+            ),
+            "full-horizon contact prefix differs from source qualification",
         )
         maximum_contact_error = float(
             np.max(np.linalg.norm(contact.projected_targets_m - raw_targets, axis=2))
@@ -567,17 +708,34 @@ def generate_jax_fem_source_value_predictions_v1(
         group_dir.mkdir()
         member_arrays: list[dict[str, npt.NDArray[Any]]] = []
         members: list[dict[str, Any]] = []
-        for index, poisson_ratio in enumerate(protocol.poisson_ratios):
-            replay = _run_native_replay(
+        for index, young_modulus_pa in enumerate(protocol.young_moduli_pa):
+            replay = run_sofa_fem_canonical_source_replay_v3(
                 native=native,
                 points_m=points,
-                cells=cells,
+                cells=prepared.cells,
                 attachment_indices=indices,
                 contact=contact,
-                frame_indices=tuple(range(group.frame_count)),
-                young_modulus_pa=protocol.young_modulus_pa,
-                poisson_ratio=poisson_ratio,
                 driven=True,
+                integrator_time_step_s=(
+                    1.0
+                    / (
+                        float(simulation["fps"])
+                        * int(simulation["base_interval_substeps"])
+                    )
+                ),
+                interval_substeps=int(simulation["base_interval_substeps"]),
+                young_modulus_pa=young_modulus_pa,
+                poisson_ratio=protocol.poisson_ratio,
+                density_kg_m3=float(simulation["density_kg_m3"]),
+                rayleigh_stiffness=float(simulation["rayleigh_stiffness"]),
+                rayleigh_mass=float(simulation["rayleigh_mass"]),
+                hard_minimum_deformation_determinant=float(
+                    simulation["hard_minimum_deformation_determinant"]
+                ),
+                canonical_rounding_m=float(simulation["canonical_rounding_m"]),
+                minimum_relative_eigengap=float(
+                    simulation["minimum_relative_eigengap"]
+                ),
             )
             physical = _physical_arrays(
                 replay.positions_m,
@@ -591,8 +749,8 @@ def generate_jax_fem_source_value_predictions_v1(
             members.append(
                 {
                     "candidate_index": index,
-                    "poisson_ratio": poisson_ratio,
-                    "young_modulus_pa": protocol.young_modulus_pa,
+                    "young_modulus_pa": young_modulus_pa,
+                    "poisson_ratio": protocol.poisson_ratio,
                     "weight": protocol.weights[index],
                     "physical_archive": f"{group.group_id}/{member_path.name}",
                     "physical_archive_sha256": file_sha256(member_path),
@@ -607,6 +765,22 @@ def generate_jax_fem_source_value_predictions_v1(
                             np.linalg.norm(replay.positions_m - points[None], axis=2)
                         )
                     ),
+                    "maximum_native_attachment_error_m": (
+                        replay.maximum_attachment_error_m
+                    ),
+                    "maximum_world_attachment_approximation_error_m": (
+                        replay.maximum_world_attachment_approximation_error_m
+                    ),
+                    "maximum_world_point_approximation_error_m": float(
+                        np.max(np.linalg.norm(replay.positions_m[0] - points, axis=1))
+                    ),
+                    "minimum_continuation_deformation_determinant": (
+                        replay.minimum_continuation_deformation_determinant
+                    ),
+                    "native_step_count": replay.native_step_count,
+                    "scene_sha256": replay.scene_sha256,
+                    "schedule_sha256": replay.schedule_sha256,
+                    "gauge_sha256": replay.gauge_sha256,
                     "status": "success",
                 }
             )
@@ -630,9 +804,9 @@ def generate_jax_fem_source_value_predictions_v1(
             {
                 "group_id": group.group_id,
                 "source_inputs_sha256": group.source_inputs_sha256,
+                "prepared_archive_sha256": group.prepared_archive_sha256,
                 "incumbent_sha256": group.incumbent_sha256,
-                "matphys_sha256": group.matphys_sha256,
-                "base_cell_count": len(cells),
+                "tetrahedron_count": len(prepared.cells),
                 "contact_patch_sizes": [len(patch) for patch in patches],
                 "maximum_contact_projection_error_m": maximum_contact_error,
                 "members": members,
@@ -643,15 +817,17 @@ def generate_jax_fem_source_value_predictions_v1(
         )
     identity: dict[str, Any] = {
         "schema": GRID_SCHEMA,
-        "schema_version": 1,
+        "schema_version": 3,
         "protocol_sha256": protocol.sha256,
         "qualification_artifact_id": protocol.qualification_artifact_id,
         "implementation": provenance,
         "groups": records,
-        "successful_candidate_count_per_group": len(protocol.poisson_ratios),
+        "successful_candidate_count_per_group": len(protocol.young_moduli_pa),
         "information_boundary": {
             "source_inputs_read": True,
-            "incumbent_and_matphys_predictions_read": True,
+            "prepared_source_archives_read": True,
+            "incumbent_bytes_read_for_hash_binding": True,
+            "incumbent_prediction_arrays_read": False,
             "prefix_outcomes_read": False,
             "future_outcomes_read": False,
             "target_or_held_out_artifact_read": False,
@@ -753,11 +929,11 @@ def _metric_block(
 def _load_grid(
     path: Path,
     *,
-    protocol: JaxFemSourceValueProtocolV1,
+    protocol: SofaFemSourceValueProtocolV3,
     enforce_physical_gate: bool = True,
 ) -> Mapping[str, Any]:
-    source = _ordinary_file(path, name="JaxFem source-value grid")
-    value = load_strict_json_object(source, label="JaxFem source-value grid")
+    source = _ordinary_file(path, name="SOFA FEM source-value grid v3")
+    value = load_strict_json_object(source, label="SOFA FEM source-value grid v3")
     _exact_fields(
         value,
         {
@@ -774,7 +950,7 @@ def _load_grid(
         name="grid",
     )
     _require(
-        value["schema"] == GRID_SCHEMA and value["schema_version"] == 1,
+        value["schema"] == GRID_SCHEMA and value["schema_version"] == 3,
         "grid identity changed",
     )
     _require(value["protocol_sha256"] == protocol.sha256, "grid protocol changed")
@@ -801,26 +977,12 @@ def _load_grid(
         implementation["git_worktree_clean"] is True, "grid worktree was not clean"
     )
     source_files = _mapping(implementation["source_files"], name="grid source files")
-    protocol_label = _string(protocol.value["protocol_label"], name="protocol label")
-    if protocol_label == "jax-fem-zebra-source-value-v1":
-        expected_source_files = {
-            "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
-            "src/bayesian_phystwin/jax_fem_source_value_v1.py",
-            "scripts/remote/run_jax_fem_source_value_v1.py",
-        }
-    elif protocol_label == "jax-fem-zebra-source-value-v2":
-        expected_source_files = {
-            "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
-            "src/bayesian_phystwin/jax_fem_hyperelastic_v2.py",
-            ("src/bayesian_phystwin/jax_fem_hyperelastic_source_qualification_v2.py"),
-            "src/bayesian_phystwin/jax_fem_source_value_v1.py",
-            "src/bayesian_phystwin/jax_fem_hyperelastic_source_value_v2.py",
-            "scripts/remote/run_jax_fem_hyperelastic_source_value_v2.py",
-        }
-    else:
-        raise ValueError("grid protocol label is not registered")
     _require(
-        set(source_files) == expected_source_files,
+        protocol.value["protocol_label"] == PROTOCOL_LABEL,
+        "grid protocol label is not registered",
+    )
+    _require(
+        set(source_files) == SOURCE_FILES,
         "grid source-file roster changed",
     )
     for relative, digest in source_files.items():
@@ -831,7 +993,9 @@ def _load_grid(
         boundary
         == {
             "source_inputs_read": True,
-            "incumbent_and_matphys_predictions_read": True,
+            "prepared_source_archives_read": True,
+            "incumbent_bytes_read_for_hash_binding": True,
+            "incumbent_prediction_arrays_read": False,
             "prefix_outcomes_read": False,
             "future_outcomes_read": False,
             "target_or_held_out_artifact_read": False,
@@ -852,9 +1016,9 @@ def _load_grid(
     group_fields = {
         "group_id",
         "source_inputs_sha256",
+        "prepared_archive_sha256",
         "incumbent_sha256",
-        "matphys_sha256",
-        "base_cell_count",
+        "tetrahedron_count",
         "contact_patch_sizes",
         "maximum_contact_projection_error_m",
         "members",
@@ -872,6 +1036,14 @@ def _load_grid(
         "minimum_deformation_determinant",
         "maximum_deformation_determinant",
         "maximum_node_displacement_m",
+        "maximum_native_attachment_error_m",
+        "maximum_world_attachment_approximation_error_m",
+        "maximum_world_point_approximation_error_m",
+        "minimum_continuation_deformation_determinant",
+        "native_step_count",
+        "scene_sha256",
+        "schedule_sha256",
+        "gauge_sha256",
         "status",
     }
     for expected_group, raw_record in zip(protocol.groups, groups, strict=True):
@@ -882,12 +1054,13 @@ def _load_grid(
         )
         _require(
             record["source_inputs_sha256"] == expected_group.source_inputs_sha256
-            and record["incumbent_sha256"] == expected_group.incumbent_sha256
-            and record["matphys_sha256"] == expected_group.matphys_sha256,
+            and record["prepared_archive_sha256"]
+            == expected_group.prepared_archive_sha256
+            and record["incumbent_sha256"] == expected_group.incumbent_sha256,
             "grid source binding changed",
         )
         _require(
-            record["base_cell_count"] == expected_group.base_cell_count
+            record["tetrahedron_count"] == expected_group.tetrahedron_count
             and record["contact_patch_sizes"]
             == list(expected_group.contact_patch_sizes),
             "grid topology binding changed",
@@ -906,7 +1079,7 @@ def _load_grid(
             )
         members = record["members"]
         _require(
-            isinstance(members, list) and len(members) == len(protocol.poisson_ratios),
+            isinstance(members, list) and len(members) == len(protocol.young_moduli_pa),
             "grid member denominator changed",
         )
         predictions: list[FloatArray] = []
@@ -917,8 +1090,8 @@ def _load_grid(
             _require(
                 member["candidate_index"] == index
                 and member["status"] == "success"
-                and member["poisson_ratio"] == protocol.poisson_ratios[index]
-                and member["young_modulus_pa"] == protocol.young_modulus_pa
+                and member["young_modulus_pa"] == protocol.young_moduli_pa[index]
+                and member["poisson_ratio"] == protocol.poisson_ratio
                 and member["weight"] == protocol.weights[index],
                 "grid member differs from frozen ensemble",
             )
@@ -934,6 +1107,37 @@ def _load_grid(
                 member["maximum_node_displacement_m"],
                 name="maximum node displacement",
             )
+            native_attachment = _finite(
+                member["maximum_native_attachment_error_m"],
+                name="maximum native attachment error",
+            )
+            world_attachment = _finite(
+                member["maximum_world_attachment_approximation_error_m"],
+                name="maximum world attachment approximation error",
+            )
+            world_point = _finite(
+                member["maximum_world_point_approximation_error_m"],
+                name="maximum world point approximation error",
+            )
+            continuation_determinant = _finite(
+                member["minimum_continuation_deformation_determinant"],
+                name="minimum continuation deformation determinant",
+            )
+            _require(
+                continuation_determinant
+                >= float(protocol.candidate["hard_minimum_deformation_determinant"])
+                and continuation_determinant <= minimum_determinant + 1.0e-12,
+                "continuation determinant does not cover stored frames",
+            )
+            _require(
+                type(member["native_step_count"]) is int
+                and member["native_step_count"]
+                == (expected_group.frame_count - 1)
+                * int(protocol.candidate["interval_substeps"]),
+                "native step count changed",
+            )
+            for field in ("scene_sha256", "schedule_sha256", "gauge_sha256"):
+                _digest(member[field], name=field)
             if enforce_physical_gate:
                 _require(
                     minimum_determinant
@@ -945,8 +1149,22 @@ def _load_grid(
                         protocol.gates["maximum_full_horizon_deformation_determinant"]
                     )
                     and maximum_displacement
+                    <= float(protocol.gates["maximum_full_horizon_node_displacement_m"])
+                    and native_attachment
                     <= float(
-                        protocol.gates["maximum_full_horizon_node_displacement_m"]
+                        protocol.gates["maximum_full_horizon_native_attachment_error_m"]
+                    )
+                    and world_attachment
+                    <= float(
+                        protocol.gates[
+                            "maximum_full_horizon_world_attachment_approximation_error_m"
+                        ]
+                    )
+                    and world_point
+                    <= float(
+                        protocol.gates[
+                            "maximum_full_horizon_world_point_approximation_error_m"
+                        ]
                     ),
                     "full-horizon physical sanity gate failed",
                 )
@@ -1023,13 +1241,16 @@ def _load_grid(
 
 
 def _grid_physical_checks(
-    grid: Mapping[str, Any], *, protocol: JaxFemSourceValueProtocolV1
+    grid: Mapping[str, Any], *, protocol: SofaFemSourceValueProtocolV3
 ) -> tuple[dict[str, bool], list[dict[str, Any]]]:
     gates = protocol.gates
     details: list[dict[str, Any]] = []
     contact_ok = True
     displacement_ok = True
     determinant_ok = True
+    native_attachment_ok = True
+    world_attachment_ok = True
+    world_point_ok = True
     for raw_group in cast(list[Mapping[str, Any]], grid["groups"]):
         contact_error = float(raw_group["maximum_contact_projection_error_m"])
         group_contact_ok = contact_error <= float(
@@ -1040,6 +1261,11 @@ def _grid_physical_checks(
             minimum_determinant = float(raw_member["minimum_deformation_determinant"])
             maximum_determinant = float(raw_member["maximum_deformation_determinant"])
             maximum_displacement = float(raw_member["maximum_node_displacement_m"])
+            native_attachment = float(raw_member["maximum_native_attachment_error_m"])
+            world_attachment = float(
+                raw_member["maximum_world_attachment_approximation_error_m"]
+            )
+            world_point = float(raw_member["maximum_world_point_approximation_error_m"])
             member_determinant_ok = minimum_determinant >= float(
                 gates["minimum_full_horizon_deformation_determinant"]
             ) and maximum_determinant <= float(
@@ -1048,17 +1274,38 @@ def _grid_physical_checks(
             member_displacement_ok = maximum_displacement <= float(
                 gates["maximum_full_horizon_node_displacement_m"]
             )
+            member_native_attachment_ok = native_attachment <= float(
+                gates["maximum_full_horizon_native_attachment_error_m"]
+            )
+            member_world_attachment_ok = world_attachment <= float(
+                gates["maximum_full_horizon_world_attachment_approximation_error_m"]
+            )
+            member_world_point_ok = world_point <= float(
+                gates["maximum_full_horizon_world_point_approximation_error_m"]
+            )
             determinant_ok = determinant_ok and member_determinant_ok
             displacement_ok = displacement_ok and member_displacement_ok
+            native_attachment_ok = native_attachment_ok and member_native_attachment_ok
+            world_attachment_ok = world_attachment_ok and member_world_attachment_ok
+            world_point_ok = world_point_ok and member_world_point_ok
             members.append(
                 {
                     "candidate_index": raw_member["candidate_index"],
+                    "young_modulus_pa": raw_member["young_modulus_pa"],
                     "poisson_ratio": raw_member["poisson_ratio"],
                     "minimum_deformation_determinant": minimum_determinant,
                     "maximum_deformation_determinant": maximum_determinant,
                     "maximum_node_displacement_m": maximum_displacement,
+                    "maximum_native_attachment_error_m": native_attachment,
+                    "maximum_world_attachment_approximation_error_m": (
+                        world_attachment
+                    ),
+                    "maximum_world_point_approximation_error_m": world_point,
                     "deformation_determinant_gate_passed": member_determinant_ok,
                     "node_displacement_gate_passed": member_displacement_ok,
+                    "native_attachment_gate_passed": (member_native_attachment_ok),
+                    "world_attachment_gate_passed": (member_world_attachment_ok),
+                    "world_point_gate_passed": member_world_point_ok,
                 }
             )
         contact_ok = contact_ok and group_contact_ok
@@ -1074,11 +1321,14 @@ def _grid_physical_checks(
         "full_horizon_contact_projection": contact_ok,
         "full_horizon_deformation_determinants": determinant_ok,
         "full_horizon_node_displacement": displacement_ok,
+        "full_horizon_native_attachment": native_attachment_ok,
+        "full_horizon_world_attachment_approximation": world_attachment_ok,
+        "full_horizon_world_point_approximation": world_point_ok,
     }
     return checks, details
 
 
-def finalize_jax_fem_source_value_pre_prefix_v1(
+def finalize_sofa_fem_source_value_pre_prefix_v3(
     *,
     protocol_path: str | Path,
     group_roots: Mapping[str, str | Path],
@@ -1087,7 +1337,7 @@ def finalize_jax_fem_source_value_pre_prefix_v1(
 ) -> dict[str, Any]:
     """Apply the outcome-blind physical gate before any prefix may be opened."""
 
-    protocol = load_jax_fem_source_value_protocol_v1(protocol_path)
+    protocol = load_sofa_fem_source_value_protocol_v3(protocol_path)
     expected = {group.group_id for group in protocol.groups}
     _require(set(group_roots) == expected, "complete source roots are required")
     grid_root = Path(grid_dir).absolute()
@@ -1100,7 +1350,7 @@ def finalize_jax_fem_source_value_pre_prefix_v1(
     checks, details = _grid_physical_checks(grid, protocol=protocol)
     passed = all(checks.values())
     output = Path(output_dir).absolute()
-    if output.exists():
+    if output.exists() or output.is_symlink():
         raise FileExistsError(output)
     output.mkdir(parents=True)
     fallback_records: list[dict[str, Any]] = []
@@ -1131,7 +1381,7 @@ def finalize_jax_fem_source_value_pre_prefix_v1(
             )
     identity: dict[str, Any] = {
         "schema": PRE_PREFIX_SCHEMA,
-        "schema_version": 1,
+        "schema_version": 3,
         "protocol_sha256": protocol.sha256,
         "grid_sha256": file_sha256(grid_path),
         "physical_checks": checks,
@@ -1155,9 +1405,75 @@ def finalize_jax_fem_source_value_pre_prefix_v1(
     return result
 
 
+def _validate_passing_pre_prefix_result(
+    path: Path,
+    *,
+    protocol: SofaFemSourceValueProtocolV3,
+    grid_path: Path,
+) -> Mapping[str, Any]:
+    source = _ordinary_file(path, name="SOFA FEM pre-prefix result v3")
+    value = load_strict_json_object(source, label="SOFA FEM pre-prefix result v3")
+    _exact_fields(
+        value,
+        {
+            "schema",
+            "schema_version",
+            "protocol_sha256",
+            "grid_sha256",
+            "physical_checks",
+            "physical_details",
+            "physical_gate_passed",
+            "prefix_scoring_authorized",
+            "selected_predictions",
+            "status",
+            "information_boundary",
+            "result_id",
+        },
+        name="pre-prefix result",
+    )
+    _require(
+        value["schema"] == PRE_PREFIX_SCHEMA and value["schema_version"] == 3,
+        "pre-prefix result identity changed",
+    )
+    _require(
+        value["protocol_sha256"] == protocol.sha256
+        and value["grid_sha256"] == file_sha256(grid_path),
+        "pre-prefix binding changed",
+    )
+    identity = dict(value)
+    result_id = identity.pop("result_id", None)
+    _require(result_id == content_id(identity), "pre-prefix content ID changed")
+    _require(
+        value["information_boundary"]
+        == {
+            "prefix_outcomes_read": False,
+            "future_outcomes_read": False,
+            "target_or_held_out_artifact_read": False,
+        },
+        "pre-prefix result crossed its information boundary",
+    )
+    grid = _load_grid(grid_path, protocol=protocol, enforce_physical_gate=False)
+    checks, details = _grid_physical_checks(grid, protocol=protocol)
+    passed = all(checks.values())
+    _require(
+        value["physical_checks"] == checks
+        and value["physical_details"] == details
+        and value["physical_gate_passed"] is passed
+        and value["prefix_scoring_authorized"] is passed,
+        "pre-prefix gate was not re-derived",
+    )
+    _require(
+        passed
+        and value["status"] == "prefix-scoring-authorized"
+        and value["selected_predictions"] == [],
+        "prefix scoring is not authorized",
+    )
+    return cast(Mapping[str, Any], value)
+
+
 def _validation_ratios(metrics: Mapping[str, Any]) -> dict[str, float]:
     validation = _mapping(metrics["validation"], name="validation metrics")
-    jax_fem = _mapping(validation["jax_fem"], name="JaxFem validation metrics")
+    sofa_fem = _mapping(validation["sofa_fem"], name="SofaFem validation metrics")
     persistence = _mapping(
         validation["persistence"],
         name="persistence validation metrics",
@@ -1170,28 +1486,28 @@ def _validation_ratios(metrics: Mapping[str, Any]) -> dict[str, float]:
         "balanced_point_ratio_vs_persistence": 0.5
         * (
             _ratio(
-                float(jax_fem["identity_coordinate_rmse_m"]),
+                float(sofa_fem["identity_coordinate_rmse_m"]),
                 float(persistence["identity_coordinate_rmse_m"]),
                 name="identity versus persistence",
             )
             + _ratio(
-                float(jax_fem["symmetric_chamfer_m"]),
+                float(sofa_fem["symmetric_chamfer_m"]),
                 float(persistence["symmetric_chamfer_m"]),
                 name="Chamfer versus persistence",
             )
         ),
         "energy_ratio_vs_persistence": _ratio(
-            float(jax_fem["marginal_energy_score_m"]),
+            float(sofa_fem["marginal_energy_score_m"]),
             float(persistence["marginal_energy_score_m"]),
             name="energy versus persistence",
         ),
         "identity_ratio_vs_incumbent": _ratio(
-            float(jax_fem["identity_coordinate_rmse_m"]),
+            float(sofa_fem["identity_coordinate_rmse_m"]),
             float(incumbent["identity_coordinate_rmse_m"]),
             name="identity versus incumbent",
         ),
         "chamfer_ratio_vs_incumbent": _ratio(
-            float(jax_fem["symmetric_chamfer_m"]),
+            float(sofa_fem["symmetric_chamfer_m"]),
             float(incumbent["symmetric_chamfer_m"]),
             name="Chamfer versus incumbent",
         ),
@@ -1200,7 +1516,7 @@ def _validation_ratios(metrics: Mapping[str, Any]) -> dict[str, float]:
 
 def _validation_checks(
     *,
-    protocol: JaxFemSourceValueProtocolV1,
+    protocol: SofaFemSourceValueProtocolV3,
     group_metrics: list[dict[str, Any]],
     successful_candidate_count: object,
 ) -> dict[str, bool]:
@@ -1260,7 +1576,7 @@ def _validated_metric_block(value: object, *, name: str) -> dict[str, float]:
 def _validated_group_metrics(
     value: object,
     *,
-    expected_group: JaxFemValueGroupV1,
+    expected_group: SofaFemValueGroupV3,
 ) -> dict[str, Any]:
     group = _mapping(value, name="prefix group metrics")
     _exact_fields(
@@ -1304,7 +1620,7 @@ def _validated_group_metrics(
         raw_split = _mapping(raw_metrics[split_name], name=f"prefix {split_name}")
         _exact_fields(
             raw_split,
-            {"jax_fem", "persistence", "incumbent", "matphys"},
+            {"sofa_fem", "persistence", "incumbent"},
             name=f"prefix {split_name}",
         )
         normalized_metrics[split_name] = {
@@ -1312,7 +1628,7 @@ def _validated_group_metrics(
                 raw_split[comparator],
                 name=f"prefix {split_name}.{comparator}",
             )
-            for comparator in ("jax_fem", "persistence", "incumbent", "matphys")
+            for comparator in ("sofa_fem", "persistence", "incumbent")
         }
     raw_ratios = _mapping(group["validation_ratios"], name="validation ratios")
     expected_ratios = _validation_ratios(normalized_metrics)
@@ -1337,29 +1653,36 @@ def _validated_group_metrics(
     }
 
 
-def score_jax_fem_source_value_prefix_v1(
+def score_sofa_fem_source_value_prefix_v3(
     *,
     protocol_path: str | Path,
     group_roots: Mapping[str, str | Path],
-    matphys_paths: Mapping[str, str | Path],
+    outcome_roots: Mapping[str, str | Path],
     grid_dir: str | Path,
+    pre_prefix_dir: str | Path,
     output_dir: str | Path,
 ) -> dict[str, Any]:
-    protocol = load_jax_fem_source_value_protocol_v1(protocol_path)
+    protocol = load_sofa_fem_source_value_protocol_v3(protocol_path)
     expected = {group.group_id for group in protocol.groups}
     _require(
-        set(group_roots) == expected and set(matphys_paths) == expected,
+        set(group_roots) == expected and set(outcome_roots) == expected,
         "complete source roots are required",
     )
     grid_root = Path(grid_dir).absolute()
     grid_path = grid_root / GRID_FILENAME
+    pre_prefix_path = Path(pre_prefix_dir).absolute() / PRE_PREFIX_FILENAME
+    _validate_passing_pre_prefix_result(
+        pre_prefix_path,
+        protocol=protocol,
+        grid_path=grid_path,
+    )
     grid = _load_grid(grid_path, protocol=protocol)
     grid_records = {
         record["group_id"]: record
         for record in cast(list[Mapping[str, Any]], grid["groups"])
     }
     output = Path(output_dir).absolute()
-    if output.exists():
+    if output.exists() or output.is_symlink():
         raise FileExistsError(output)
     output.mkdir(parents=True)
 
@@ -1367,8 +1690,9 @@ def score_jax_fem_source_value_prefix_v1(
     selected_sources: dict[str, Path] = {}
     for group in protocol.groups:
         root = Path(group_roots[group.group_id]).absolute()
+        outcome_root = Path(outcome_roots[group.group_id]).absolute()
         outcome_arrays = _load_outcomes(
-            root / group.prefix_outcomes_relative_path.as_posix(),
+            outcome_root / group.prefix_outcomes_relative_path.as_posix(),
             digest=group.prefix_outcomes_sha256,
             frame_count=group.frame_count,
         )
@@ -1376,9 +1700,7 @@ def score_jax_fem_source_value_prefix_v1(
         valid = np.asarray(outcome_arrays["valid_mask"])
         frame_indices = np.asarray(outcome_arrays["frame_indices"], dtype=np.int64)
         observed_count = outcome.shape[1]
-        _require(
-            observed_count <= group.material_particle_count, "observed count changed"
-        )
+        _require(observed_count <= group.material_node_count, "observed count changed")
         record = grid_records[group.group_id]
         members = cast(list[Mapping[str, Any]], record["members"])
         member_predictions: list[FloatArray] = []
@@ -1413,24 +1735,16 @@ def score_jax_fem_source_value_prefix_v1(
             np.asarray(mean_physical["prediction_m"])[frame_indices, :observed_count],
         )
         incumbent_path = root / group.incumbent_relative_path.as_posix()
-        matphys_path = Path(matphys_paths[group.group_id]).absolute()
         _require(
             file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed"
         )
-        _require(file_sha256(matphys_path) == group.matphys_sha256, "MatPhys changed")
         incumbent = load_physical_rollout_archive(
             incumbent_path, expected_frame_count=group.frame_count
-        )
-        matphys = load_physical_rollout_archive(
-            matphys_path, expected_frame_count=group.frame_count
         )
         persistence = np.asarray(incumbent["persistence_m"])[
             frame_indices, :observed_count
         ]
         incumbent_prediction = np.asarray(incumbent["prediction_m"])[
-            frame_indices, :observed_count
-        ]
-        matphys_prediction = np.asarray(matphys["prediction_m"])[
             frame_indices, :observed_count
         ]
         split = max(
@@ -1448,7 +1762,7 @@ def score_jax_fem_source_value_prefix_v1(
             current_outcome = cast(FloatArray, outcome[selected])
             current_valid = cast(BoolArray, valid[selected])
             blocks[split_name] = {
-                "jax_fem": _metric_block(
+                "sofa_fem": _metric_block(
                     mean_prediction[selected],
                     samples[:, selected],
                     current_outcome,
@@ -1463,12 +1777,6 @@ def score_jax_fem_source_value_prefix_v1(
                 "incumbent": _metric_block(
                     cast(FloatArray, incumbent_prediction[selected]),
                     cast(FloatArray, incumbent_prediction[selected][None]),
-                    current_outcome,
-                    current_valid,
-                ),
-                "matphys": _metric_block(
-                    cast(FloatArray, matphys_prediction[selected]),
-                    cast(FloatArray, matphys_prediction[selected][None]),
                     current_outcome,
                     current_valid,
                 ),
@@ -1511,7 +1819,7 @@ def score_jax_fem_source_value_prefix_v1(
         selected_records.append(
             {
                 "group_id": group.group_id,
-                "selection": "jax_fem_equal_ensemble_mean"
+                "selection": "sofa_fem_equal_ensemble_mean"
                 if passed
                 else "exact_incumbent_fallback",
                 "selected_sha256": file_sha256(target),
@@ -1521,15 +1829,17 @@ def score_jax_fem_source_value_prefix_v1(
         )
     identity: dict[str, Any] = {
         "schema": PREFIX_SCHEMA,
-        "schema_version": 1,
+        "schema_version": 3,
         "protocol_sha256": protocol.sha256,
         "grid_sha256": file_sha256(grid_path),
+        "pre_prefix_result_sha256": file_sha256(pre_prefix_path),
         "group_metrics": group_metrics,
         "validation_checks": checks,
         "validation_gate_passed": passed,
         "future_scoring_authorized": passed,
         "selected_predictions": selected_records,
         "information_boundary": {
+            "pre_prefix_gate_read": True,
             "prefix_outcomes_read": True,
             "future_outcomes_read": False,
             "target_or_held_out_artifact_read": False,
@@ -1543,9 +1853,10 @@ def score_jax_fem_source_value_prefix_v1(
 def _validate_prefix_result(
     prefix: Mapping[str, Any],
     *,
-    protocol: JaxFemSourceValueProtocolV1,
+    protocol: SofaFemSourceValueProtocolV3,
     prefix_root: Path,
     grid_root: Path,
+    pre_prefix_root: Path,
     group_roots: Mapping[str, str | Path],
 ) -> tuple[Mapping[str, Any], list[dict[str, Any]]]:
     _exact_fields(
@@ -1555,6 +1866,7 @@ def _validate_prefix_result(
             "schema_version",
             "protocol_sha256",
             "grid_sha256",
+            "pre_prefix_result_sha256",
             "group_metrics",
             "validation_checks",
             "validation_gate_passed",
@@ -1566,7 +1878,7 @@ def _validate_prefix_result(
         name="prefix result",
     )
     _require(
-        prefix["schema"] == PREFIX_SCHEMA and prefix["schema_version"] == 1,
+        prefix["schema"] == PREFIX_SCHEMA and prefix["schema_version"] == 3,
         "prefix result identity changed",
     )
     _require(prefix["protocol_sha256"] == protocol.sha256, "prefix protocol changed")
@@ -1577,6 +1889,7 @@ def _validate_prefix_result(
     _require(
         boundary
         == {
+            "pre_prefix_gate_read": True,
             "prefix_outcomes_read": True,
             "future_outcomes_read": False,
             "target_or_held_out_artifact_read": False,
@@ -1585,6 +1898,17 @@ def _validate_prefix_result(
     )
     grid_path = grid_root / GRID_FILENAME
     _require(file_sha256(grid_path) == prefix["grid_sha256"], "prefix grid changed")
+    pre_prefix_path = pre_prefix_root / PRE_PREFIX_FILENAME
+    _require(
+        file_sha256(_ordinary_file(pre_prefix_path, name="pre-prefix result"))
+        == prefix["pre_prefix_result_sha256"],
+        "prefix pre-prefix binding changed",
+    )
+    _validate_passing_pre_prefix_result(
+        pre_prefix_path,
+        protocol=protocol,
+        grid_path=grid_path,
+    )
     grid = _load_grid(grid_path, protocol=protocol)
 
     raw_group_metrics = prefix["group_metrics"]
@@ -1640,7 +1964,9 @@ def _validate_prefix_result(
         )
         _require(selected["group_id"] == group.group_id, "selected group order changed")
         expected_selection = (
-            "jax_fem_equal_ensemble_mean" if gate_passed else "exact_incumbent_fallback"
+            "sofa_fem_equal_ensemble_mean"
+            if gate_passed
+            else "exact_incumbent_fallback"
         )
         _require(
             selected["selection"] == expected_selection, "selected mechanism changed"
@@ -1676,38 +2002,41 @@ def _validate_prefix_result(
     return grid, normalized
 
 
-def score_jax_fem_source_value_future_v1(
+def score_sofa_fem_source_value_future_v3(
     *,
     protocol_path: str | Path,
     group_roots: Mapping[str, str | Path],
-    matphys_paths: Mapping[str, str | Path],
+    outcome_roots: Mapping[str, str | Path],
     prefix_dir: str | Path,
     grid_dir: str | Path,
+    pre_prefix_dir: str | Path,
     output_path: str | Path,
 ) -> dict[str, Any]:
-    protocol = load_jax_fem_source_value_protocol_v1(protocol_path)
+    protocol = load_sofa_fem_source_value_protocol_v3(protocol_path)
     expected = {group.group_id for group in protocol.groups}
     _require(
-        set(group_roots) == expected and set(matphys_paths) == expected,
+        set(group_roots) == expected and set(outcome_roots) == expected,
         "complete source roots are required",
     )
     prefix_root = Path(prefix_dir).absolute()
     grid_root = Path(grid_dir).absolute()
+    pre_prefix_root = Path(pre_prefix_dir).absolute()
     prefix_path = _ordinary_file(prefix_root / PREFIX_FILENAME, name="prefix result")
     prefix = load_strict_json_object(
-        prefix_path, label="JaxFem source-value prefix result"
+        prefix_path, label="SOFA FEM source-value prefix result v3"
     )
     grid, normalized_prefix = _validate_prefix_result(
         prefix,
         protocol=protocol,
         prefix_root=prefix_root,
         grid_root=grid_root,
+        pre_prefix_root=pre_prefix_root,
         group_roots=group_roots,
     )
     if prefix["future_scoring_authorized"] is not True:
         result_identity: dict[str, Any] = {
             "schema": FUTURE_SCHEMA,
-            "schema_version": 1,
+            "schema_version": 3,
             "protocol_sha256": protocol.sha256,
             "prefix_result_sha256": file_sha256(prefix_path),
             "status": "future-not-opened-validation-gate-failed",
@@ -1726,8 +2055,9 @@ def score_jax_fem_source_value_future_v1(
     future_groups: list[dict[str, Any]] = []
     for group in protocol.groups:
         root = Path(group_roots[group.group_id]).absolute()
+        outcome_root = Path(outcome_roots[group.group_id]).absolute()
         outcome_arrays = _load_outcomes(
-            root / group.future_outcomes_relative_path.as_posix(),
+            outcome_root / group.future_outcomes_relative_path.as_posix(),
             digest=group.future_outcomes_sha256,
             frame_count=group.frame_count,
         )
@@ -1740,9 +2070,7 @@ def score_jax_fem_source_value_future_v1(
             "future outcomes overlap the prefix",
         )
         observed_count = outcome.shape[1]
-        _require(
-            observed_count <= group.material_particle_count, "observed count changed"
-        )
+        _require(observed_count <= group.material_node_count, "observed count changed")
         record = grid_records[group.group_id]
         members = cast(list[Mapping[str, Any]], record["members"])
         member_predictions: list[FloatArray] = []
@@ -1776,14 +2104,9 @@ def score_jax_fem_source_value_future_v1(
             root / group.incumbent_relative_path.as_posix(),
             name="future incumbent",
         )
-        matphys_path = _ordinary_file(
-            matphys_paths[group.group_id],
-            name="future MatPhys comparator",
-        )
         _require(
             file_sha256(incumbent_path) == group.incumbent_sha256, "incumbent changed"
         )
-        _require(file_sha256(matphys_path) == group.matphys_sha256, "MatPhys changed")
         physical_arrays = {
             "selected": load_physical_rollout_archive(
                 selected_path,
@@ -1791,10 +2114,6 @@ def score_jax_fem_source_value_future_v1(
             ),
             "incumbent": load_physical_rollout_archive(
                 incumbent_path,
-                expected_frame_count=group.frame_count,
-            ),
-            "matphys": load_physical_rollout_archive(
-                matphys_path,
                 expected_frame_count=group.frame_count,
             ),
         }
@@ -1825,7 +2144,7 @@ def score_jax_fem_source_value_future_v1(
                 valid,
             ),
         }
-        for name in ("incumbent", "matphys"):
+        for name in ("incumbent",):
             prediction = cast(
                 FloatArray,
                 np.asarray(physical_arrays[name]["prediction_m"])[
@@ -1905,7 +2224,7 @@ def score_jax_fem_source_value_future_v1(
     }
     result_identity = {
         "schema": FUTURE_SCHEMA,
-        "schema_version": 1,
+        "schema_version": 3,
         "protocol_sha256": protocol.sha256,
         "prefix_result_sha256": file_sha256(prefix_path),
         "status": "source-future-scored-after-passing-gate",
@@ -1924,11 +2243,11 @@ __all__ = [
     "GRID_FILENAME",
     "PRE_PREFIX_FILENAME",
     "PREFIX_FILENAME",
-    "JaxFemSourceValueProtocolV1",
-    "finalize_jax_fem_source_value_pre_prefix_v1",
-    "generate_jax_fem_source_value_predictions_v1",
-    "load_jax_fem_source_value_protocol_v1",
+    "SofaFemSourceValueProtocolV3",
+    "finalize_sofa_fem_source_value_pre_prefix_v3",
+    "generate_sofa_fem_source_value_predictions_v3",
+    "load_sofa_fem_source_value_protocol_v3",
     "marginal_energy_score_v1",
-    "score_jax_fem_source_value_future_v1",
-    "score_jax_fem_source_value_prefix_v1",
+    "score_sofa_fem_source_value_future_v3",
+    "score_sofa_fem_source_value_prefix_v3",
 ]

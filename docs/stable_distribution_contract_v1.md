@@ -89,6 +89,16 @@ opened source cases passed the frozen endpoint qualification, so no fresh
 target evaluation was authorized and exact fallback remains the supported
 behavior.
 
+The native-continuum campaign adds 13 reviewed backend, qualification, and
+source-value modules for JAX-FEM v2, MuJoCo Flex, and SOFA FEM v3. A clean
+candidate build contains 595 wheel members and 2,425,511 compressed wheel
+bytes; its source distribution contains 764 regular members and 2,322,777
+compressed bytes. The wheel ratchets are therefore raised narrowly to 600
+members and 2,440,000 bytes. Source-distribution limits remain unchanged. This
+packaging adjustment does not promote any candidate: zero of three advanced to
+source value, no source outcome partition or target was opened, and every
+candidate retained the exact incumbent fallback.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
