@@ -208,9 +208,7 @@ def test_invalid_and_numerically_nonfinite_transforms_fail_closed() -> None:
         _policy(),
     )
     assert reflected.technical_valid is False
-    assert reflected.rejection_reasons[0] == (
-        "invalid-provider-to-physical-transform"
-    )
+    assert reflected.rejection_reasons[0] == ("invalid-provider-to-physical-transform")
     assert _diagnostics(reflected)["transform"]["rotation_determinant"] == -1.0
 
     huge = np.eye(4)
@@ -239,12 +237,11 @@ def test_declared_valid_nonfinite_points_and_transform_overflow_are_distinct() -
         _case(points_native=points),
         _policy(minimum_mapped_point_count=1, minimum_mapped_fraction=0.0),
     )
-    assert "nonfinite-declared-valid-provider-points" in (
-        nonfinite.rejection_reasons
+    assert "nonfinite-declared-valid-provider-points" in (nonfinite.rejection_reasons)
+    assert (
+        _diagnostics(nonfinite)["point_accounting"]["nonfinite_declared_valid_count"]
+        == 1
     )
-    assert _diagnostics(nonfinite)["point_accounting"][
-        "nonfinite_declared_valid_count"
-    ] == 1
 
     points[0] = [0.0, 0.0, 0.0]
     masked_nonfinite = audit_provider_physical_mapping(
@@ -268,9 +265,7 @@ def test_declared_valid_nonfinite_points_and_transform_overflow_are_distinct() -
         ),
         _policy(minimum_mapped_point_count=1, minimum_mapped_fraction=0.0),
     )
-    assert "nonfinite-transformed-provider-points" in (
-        overflowed.rejection_reasons
-    )
+    assert "nonfinite-transformed-provider-points" in (overflowed.rejection_reasons)
 
 
 def test_timestamp_requirements_finiteness_and_overlap_fail_closed() -> None:
@@ -293,9 +288,9 @@ def test_timestamp_requirements_finiteness_and_overlap_fail_closed() -> None:
     assert "nonfinite-declared-valid-provider-timestamps" in (
         nonfinite.rejection_reasons
     )
-    assert _diagnostics(nonfinite)["time"][
-        "nonfinite_declared_valid_timestamp_count"
-    ] == 1
+    assert (
+        _diagnostics(nonfinite)["time"]["nonfinite_declared_valid_timestamp_count"] == 1
+    )
 
     outside = audit_provider_physical_mapping(
         _case(query_time_window_s=np.array([1.0, 2.0])),
@@ -348,9 +343,7 @@ def test_required_or_invalid_covariance_is_a_technical_failure() -> None:
         _case(covariances_native=asymmetric_covariance),
         _policy(minimum_mapped_point_count=1, minimum_mapped_fraction=0.0),
     )
-    assert _diagnostics(asymmetric)["covariance"][
-        "symmetry_failure_count"
-    ] == 1
+    assert _diagnostics(asymmetric)["covariance"]["symmetry_failure_count"] == 1
 
     indefinite_covariance = np.repeat(np.eye(3)[None], 4, axis=0)
     indefinite_covariance[0, 0, 0] = -1.0
@@ -358,9 +351,7 @@ def test_required_or_invalid_covariance_is_a_technical_failure() -> None:
         _case(covariances_native=indefinite_covariance),
         _policy(minimum_mapped_point_count=1, minimum_mapped_fraction=0.0),
     )
-    assert _diagnostics(indefinite)["covariance"][
-        "eigenvalue_failure_count"
-    ] == 1
+    assert _diagnostics(indefinite)["covariance"]["eigenvalue_failure_count"] == 1
 
 
 def test_covariance_condition_and_transform_overflow_are_reported() -> None:
@@ -388,9 +379,7 @@ def test_covariance_condition_and_transform_overflow_are_reported() -> None:
             minimum_mapped_fraction=0.0,
         ),
     )
-    assert _diagnostics(singular_audit)["covariance"][
-        "condition_failure_count"
-    ] == 3
+    assert _diagnostics(singular_audit)["covariance"]["condition_failure_count"] == 3
 
     huge_rotation = np.eye(4)
     huge_rotation[:3, :3] *= 1e156
@@ -401,9 +390,7 @@ def test_covariance_condition_and_transform_overflow_are_reported() -> None:
             minimum_mapped_fraction=0.0,
         ),
     )
-    assert _diagnostics(overflowed)["covariance"][
-        "nonfinite_transformed_count"
-    ] == 3
+    assert _diagnostics(overflowed)["covariance"]["nonfinite_transformed_count"] == 3
 
 
 def test_covariance_eigendecomposition_failure_is_retained(

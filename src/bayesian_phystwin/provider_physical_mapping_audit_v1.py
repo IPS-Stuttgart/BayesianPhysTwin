@@ -240,9 +240,7 @@ class ProviderPhysicalMappingPolicyV1:
             "maximum_covariance_symmetry_error_m2": (
                 self.maximum_covariance_symmetry_error_m2
             ),
-            "minimum_covariance_eigenvalue_m2": (
-                self.minimum_covariance_eigenvalue_m2
-            ),
+            "minimum_covariance_eigenvalue_m2": (self.minimum_covariance_eigenvalue_m2),
             "maximum_covariance_condition_number": (
                 self.maximum_covariance_condition_number
             ),
@@ -346,9 +344,7 @@ class ProviderPhysicalMappingCaseV1:
         if timestamps is not None:
             timestamp_array = immutable_array(timestamps, dtype=np.dtype("<f8"))
             if timestamp_array.shape != (points.shape[0],):
-                raise ValueError(
-                    f"timestamps_s must have shape ({points.shape[0]},)"
-                )
+                raise ValueError(f"timestamps_s must have shape ({points.shape[0]},)")
             window_array = _float_array(
                 cast(np.ndarray, time_window),
                 name="query_time_window_s",
@@ -357,9 +353,7 @@ class ProviderPhysicalMappingCaseV1:
             if not np.all(np.isfinite(window_array)):
                 raise ValueError("query_time_window_s must contain finite values")
             if window_array[1] < window_array[0]:
-                raise ValueError(
-                    "query_time_window_s end must not be before its start"
-                )
+                raise ValueError("query_time_window_s end must not be before its start")
             object.__setattr__(self, "timestamps_s", timestamp_array)
             object.__setattr__(self, "query_time_window_s", window_array)
 
@@ -368,9 +362,7 @@ class ProviderPhysicalMappingCaseV1:
             covariance_array = immutable_array(covariance, dtype=np.dtype("<f8"))
             expected_shape = (points.shape[0], 3, 3)
             if covariance_array.shape != expected_shape:
-                raise ValueError(
-                    f"covariances_native must have shape {expected_shape}"
-                )
+                raise ValueError(f"covariances_native must have shape {expected_shape}")
             object.__setattr__(self, "covariances_native", covariance_array)
 
         object.__setattr__(
@@ -582,12 +574,7 @@ def _transform_diagnostics(
         )
         determinant_error = abs(determinant - 1.0)
         homogeneous_row_error = float(
-            np.max(
-                np.abs(
-                    transform[3]
-                    - np.array([0.0, 0.0, 0.0, 1.0], dtype=float)
-                )
-            )
+            np.max(np.abs(transform[3] - np.array([0.0, 0.0, 0.0, 1.0], dtype=float)))
         )
     finite = all(
         math.isfinite(value)
@@ -607,9 +594,7 @@ def _transform_diagnostics(
     return (
         {
             "rotation_determinant": _finite_or_none(determinant),
-            "rotation_orthogonality_error": _finite_or_none(
-                orthogonality_error
-            ),
+            "rotation_orthogonality_error": _finite_or_none(orthogonality_error),
             "rotation_determinant_error": _finite_or_none(determinant_error),
             "homogeneous_row_error": _finite_or_none(homogeneous_row_error),
             "finite": finite,
@@ -668,9 +653,7 @@ def _covariance_diagnostics(
             continue
 
         with np.errstate(over="ignore", invalid="ignore"):
-            symmetry_error = float(
-                np.linalg.norm(physical - physical.T, ord="fro")
-            )
+            symmetry_error = float(np.linalg.norm(physical - physical.T, ord="fro"))
         if not math.isfinite(symmetry_error):
             counts["nonfinite_transformed_count"] += 1
             invalid_indices.add(index)
@@ -763,9 +746,7 @@ def audit_provider_physical_mapping(
     finite_physical = np.all(np.isfinite(physical), axis=1)
     finite_declared_valid = declared_valid & finite_points
     finite_transformed_declared_valid = finite_declared_valid & finite_physical
-    nonfinite_declared_valid_count = int(
-        np.sum(declared_valid & ~finite_points)
-    )
+    nonfinite_declared_valid_count = int(np.sum(declared_valid & ~finite_points))
     nonfinite_transformed_declared_valid_count = int(
         np.sum(finite_declared_valid & ~finite_physical)
     )
@@ -790,14 +771,10 @@ def audit_provider_physical_mapping(
         timestamps = case.timestamps_s
         window = cast(np.ndarray, case.query_time_window_s)
         finite_timestamps = np.isfinite(timestamps)
-        nonfinite_timestamp_count = int(
-            np.sum(declared_valid & ~finite_timestamps)
-        )
+        nonfinite_timestamp_count = int(np.sum(declared_valid & ~finite_timestamps))
         timestamp_technical_valid = nonfinite_timestamp_count == 0
         within_window = (
-            finite_timestamps
-            & (timestamps >= window[0])
-            & (timestamps <= window[1])
+            finite_timestamps & (timestamps >= window[0]) & (timestamps <= window[1])
         )
         query_candidate &= within_window
         finite_valid_timestamps = declared_valid & finite_timestamps
@@ -819,9 +796,7 @@ def audit_provider_physical_mapping(
             "finite_declared_valid_timestamp_count": int(
                 np.sum(finite_valid_timestamps)
             ),
-            "nonfinite_declared_valid_timestamp_count": (
-                nonfinite_timestamp_count
-            ),
+            "nonfinite_declared_valid_timestamp_count": (nonfinite_timestamp_count),
             "within_window_declared_valid_count": within_count,
             "within_window_fraction_of_declared_valid": _safe_fraction(
                 within_count,
@@ -842,9 +817,7 @@ def audit_provider_physical_mapping(
 
     covariance_diagnostics, covariance_valid = _covariance_diagnostics(case, policy)
     point_technical_valid = nonfinite_declared_valid_count == 0
-    transformed_point_technical_valid = (
-        nonfinite_transformed_declared_valid_count == 0
-    )
+    transformed_point_technical_valid = nonfinite_transformed_declared_valid_count == 0
     technical_valid = (
         transform_valid
         and point_technical_valid
