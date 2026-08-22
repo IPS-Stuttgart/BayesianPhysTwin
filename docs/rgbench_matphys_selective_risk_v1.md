@@ -47,8 +47,9 @@ base lock and must not be executed directly.
 The content-addressed pre-access amendment reassigns all seven previously
 registered garments to development and reserves only the two non-manifold
 garments, `grey_sunwear` and `khaki_blazer`, as outcome-unopened targets. It
-also records that a full dataset cache may already exist from prior work; this
-study may read source files but must not read any target payload before a new
+also records the preexisting single-source cache and a names-only audit that
+found no local payload cache for either target garment; this study may read
+source files but must not download or read any target payload before a new
 authorization artifact. The active counts are 21 source cells and 6 target
 cells across only 2 independent target garments.
 

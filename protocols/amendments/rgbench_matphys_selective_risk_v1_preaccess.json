@@ -1,7 +1,7 @@
 {
   "schema": "bayesian-phystwin.rgbench-matphys-preaccess-cohort-amendment",
   "schema_version": 1,
-  "amendment_id": "a6eee622dd0d9890efa7bda84dfdd76f675373dbcae7c6ecb1f7c399a46cba1a",
+  "amendment_id": "c55ccd9a7f7d040c9f5e193b04a503da5704f7a21d6c979b1bb3e1eea15ad2bf",
   "supersedes_policy_id": "13abbe99729a82d58d2a50f3a282abc1ce64b0e068916f39e6f40b2451c45697",
   "protocol_label": "RGBench MatPhys selective-risk pre-access cohort amendment v1",
   "claim_boundary": "The untouched target is restricted to two physical garments absent from all 63 cases in the bound prior RGBench registry. This supports at most a small prospective out-of-domain garment study, not a population safety certificate, official RGBench SOTA, or fresh-session independence for the seven development garments.",
@@ -21,8 +21,9 @@
       "white_shirt"
     ],
     "target_garments_absent_from_registered_cases": true,
-    "preexisting_full_dataset_cache_declared": true,
-    "audit_scope": "Bound source-only registry and source protocol metadata; no prior target outcome or new target payload was opened by this study."
+    "preexisting_source_cache_declared": true,
+    "target_payload_cache_found": false,
+    "audit_scope": "Bound source-only registry and source protocol metadata plus names-only cache-directory presence checks; no prior target outcome or target payload was opened by this study."
   },
   "amended_roles": {
     "source_garments": [
@@ -46,7 +47,7 @@
   "information_boundary": {
     "public_metadata_read": true,
     "prior_source_artifacts_read": true,
-    "preexisting_target_cache_may_exist": true,
+    "preexisting_target_cache_found": false,
     "source_payload_read_allowed_after_amendment_lock": true,
     "source_outcomes_may_be_used_for_development": true,
     "target_payload_read_allowed": false,
