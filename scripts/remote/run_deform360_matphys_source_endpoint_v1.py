@@ -39,6 +39,7 @@ EXPECTED_RUNTIME_IDENTITY: dict[str, Any] = {
     "nerfstudio_version": "1.1.5",
     "opencv_python_headless_version": "4.10.0.84",
     "opencv_contrib_python_version": "4.10.0.84",
+    "decord_version": "0.6.0",
     "cuda_available": True,
     "cuda_device_capability": [8, 9],
     "gsplat_cuda_backend_available": True,
@@ -143,6 +144,7 @@ def _runtime_identity(device: str) -> dict[str, Any]:
         "opencv_contrib_python_version": importlib.metadata.version(
             "opencv-contrib-python"
         ),
+        "decord_version": importlib.metadata.version("decord"),
         "cuda_available": torch.cuda.is_available(),
         "cuda_device_capability": list(torch.cuda.get_device_capability(torch_device)),
         "cuda_device_name": torch.cuda.get_device_name(torch_device),

@@ -144,6 +144,14 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
     )
     assert loaded["source_amendments"][3]["prediction_or_gate_changed"] is False
     assert loaded["source_amendments"][3]["camera_or_support_gate_changed"] is False
+    assert (
+        loaded["source_amendments"][4][
+            "source_mask_or_reconstructed_endpoint_or_metric_inspected"
+        ]
+        is False
+    )
+    assert loaded["source_amendments"][4]["prediction_or_gate_changed"] is False
+    assert loaded["source_amendments"][4]["camera_or_support_gate_changed"] is False
     assert loaded["scoring_reconstruction_runtime"] == EXPECTED_RUNTIME_IDENTITY
     assert loaded["outcome"]["robot_state_required_for_scoring_reconstruction"] is False
     assert loaded["outcome"]["urdf_gripper_mask_used"] is False
@@ -169,6 +177,7 @@ def test_scoring_runtime_identity_is_exact_and_cuda_backed() -> None:
         ("python_version", "3.12.0"),
         ("torch_version", "2.5.0+cu121"),
         ("torch_cuda_version", "12.4"),
+        ("decord_version", "0.5.0"),
         ("gsplat_cuda_backend_available", False),
         ("gsplat_camera_model_available", False),
         ("nerfstudio_splatfacto_available", False),

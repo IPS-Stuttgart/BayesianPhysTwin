@@ -81,6 +81,14 @@ adds only the failure stage, per-camera diagnostics, and successful-mask count
 to retained failures. It does not change SAM2, the camera panel, the three-view
 support threshold, the runtime, any prediction, or any advancement gate.
 
+That diagnostic rerun showed the same source-independent error on all twelve
+cameras: the clean Python 3.10 environment lacked the `decord` video reader, so
+SAM2 never loaded a frame or inferred a mask. The retained manifest is SHA-256
+`64c6fd06f73c2857bfdaccde30830abbab5e8027302102fb8e3ba2e9ab1da355`.
+The fifth operational amendment adds and verifies only `decord==0.6.0`, matching
+the existing successful SAM2 environment. No mask, reconstructed endpoint, or
+source metric was available, and all scientific settings remain unchanged.
+
 ## Estimand and comparators
 
 For each future frame, scoring-camera depth is backprojected into the world

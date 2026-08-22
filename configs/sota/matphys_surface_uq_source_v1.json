@@ -40,6 +40,17 @@
       "prediction_or_gate_changed": false,
       "camera_or_support_gate_changed": false,
       "runtime_changed": false
+    },
+    {
+      "amendment_id": "pinned-decord-runtime-v5",
+      "failed_attempt_artifact_id": "3a7445b40816c00529309013f14ab30e4a56d377c9aea3f43dff25e224332b05",
+      "failed_attempt_manifest_sha256": "64c6fd06f73c2857bfdaccde30830abbab5e8027302102fb8e3ba2e9ab1da355",
+      "failure_stage": "SAM2 video loading before mask inference, Splatfacto, or source metric evaluation",
+      "reason": "All twelve registered scoring cameras retained the same ModuleNotFoundError for decord. Add the exact decord 0.6.0 video-decoder dependency used by the existing successful SAM2 environment and bind it into the fail-closed runtime identity.",
+      "source_suffix_decoded_by_ffmpeg": true,
+      "source_mask_or_reconstructed_endpoint_or_metric_inspected": false,
+      "prediction_or_gate_changed": false,
+      "camera_or_support_gate_changed": false
     }
   ],
   "source_panel": {
@@ -123,6 +134,7 @@
     "nerfstudio_version": "1.1.5",
     "opencv_python_headless_version": "4.10.0.84",
     "opencv_contrib_python_version": "4.10.0.84",
+    "decord_version": "0.6.0",
     "cuda_available": true,
     "cuda_device_capability": [
       8,
