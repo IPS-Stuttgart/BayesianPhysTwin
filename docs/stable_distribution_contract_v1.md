@@ -101,7 +101,7 @@ candidate retained the exact incumbent fallback.
 
 The maintained five-backend support contract adds one stable Python module and
 one installed, hash-bound JSON descriptor. A clean integrated build contains
-603 wheel members and 2,461,376 compressed wheel bytes. The wheel ratchets are
+604 wheel members and 2,468,567 compressed wheel bytes. The wheel ratchets are
 therefore raised narrowly to 605 members and 2,475,000 bytes. The descriptor
 records executable support and immutable evidence boundaries for DEFORM DLO,
 MatPhys/Warp, JAX-FEM, MuJoCo Flex, and SOFA FEM without importing their
