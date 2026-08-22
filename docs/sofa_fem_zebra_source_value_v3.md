@@ -1,7 +1,8 @@
 # SOFA FEM canonical-gauge source-value gate v3
 
 **Status:** registered and target-blind; native prediction has not been
-executed and no source outcome partition has been opened.
+executed and no source outcome partition has been opened. One managed recovery
+is registered after a pre-initialization launcher interruption.
 
 ## Question
 
@@ -73,9 +74,16 @@ after any source outcome is opened.
 
 ## Registered execution
 
-The first command is the sole authorized native prediction once this
-registration is committed from a clean revision. The output root must be
-absent before launch and must not be replaced or reused for a duplicate.
+The original detached wrapper was terminated by the command orchestrator before
+the generator created its output root. Both logs remained byte-empty, no source
+group input was loaded, and no native replay began. Its compact receipt is
+[`launch-interruption-v1.json`](../results/sota/diagnostics/sofa_fem_zebra_source_value_v3/launch-interruption-v1.json).
+The original lock and logs remain preserved and must not be deleted or reused.
+
+The command below is the sole managed recovery. The protocol, implementation,
+ensemble, gates, and source roster are byte-identical to the interrupted
+registration. The new output root must be absent before launch and there is no
+further retry authorization.
 
 ```bash
 set -o pipefail
@@ -97,8 +105,8 @@ export PYTHONPATH="$PWD/src:$ROOT/plugins/SofaPython3/lib/python3/site-packages"
   --sofa-root "$ROOT" \
   --group-root double_lift_zebra="$SOURCE/double_lift_zebra" \
   --group-root double_stretch_zebra="$SOURCE/double_stretch_zebra" \
-  --output-dir /tmp/bpt-sofa-source-value-v3-grid-v1 \
-  2>&1 | tee /tmp/bpt-sofa-source-value-v3-grid-v1.log
+  --output-dir /tmp/bpt-sofa-source-value-v3-grid-managed-v2 \
+  2>&1 | tee /tmp/bpt-sofa-source-value-v3-grid-managed-v2.log
 ```
 
 Only after successful prediction may the outcome-free pre-prefix gate run:
@@ -109,8 +117,8 @@ Only after successful prediction may the outcome-free pre-prefix gate run:
   --protocol configs/sota/sofa_fem_zebra_source_value_v3.json \
   --group-root double_lift_zebra="$SOURCE/double_lift_zebra" \
   --group-root double_stretch_zebra="$SOURCE/double_stretch_zebra" \
-  --grid-dir /tmp/bpt-sofa-source-value-v3-grid-v1 \
-  --output-dir /tmp/bpt-sofa-source-value-v3-pre-prefix-v1
+  --grid-dir /tmp/bpt-sofa-source-value-v3-grid-managed-v2 \
+  --output-dir /tmp/bpt-sofa-source-value-v3-pre-prefix-managed-v2
 ```
 
 Prefix and future commands remain unauthorized until each preceding sealed

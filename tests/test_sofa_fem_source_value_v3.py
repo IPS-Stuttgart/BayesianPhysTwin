@@ -30,6 +30,11 @@ from bayesian_phystwin.sofa_fem_source_value_v3 import (
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/sofa_fem_zebra_source_value_v3.json"
 RUNNER = ROOT / "scripts/remote/run_sofa_fem_source_value_v3.py"
+INTERRUPTION = (
+    ROOT
+    / "results/sota/diagnostics/sofa_fem_zebra_source_value_v3"
+    / "launch-interruption-v1.json"
+)
 
 
 def _trajectory(
@@ -272,6 +277,38 @@ def test_frozen_protocol_binds_qualified_sofa_material_ensemble() -> None:
     assert np.isclose(sum(protocol.weights), 1.0)
     assert "matphys" not in PROTOCOL.read_text(encoding="utf-8").lower()
     assert protocol.value["information_boundary"]["no_replacement"] is True
+
+
+def test_preinitialization_interruption_authorizes_one_managed_recovery() -> None:
+    receipt = json.loads(INTERRUPTION.read_text(encoding="utf-8"))
+
+    assert receipt["protocol_sha256"] == file_sha256(PROTOCOL)
+    assert receipt["interrupted_implementation_revision"] == (
+        "4f9528a8ccb91a88c6b38817a1e171ed70055a10"
+    )
+    assert receipt["classification"] == (
+        "pre-initialization-orchestration-interruption-no-scientific-execution"
+    )
+    assert receipt["observations"] == {
+        "launcher_process_present": False,
+        "predictor_process_present": False,
+        "output_root_created": False,
+        "native_prediction_archive_count": 0,
+        "source_group_input_read": False,
+        "native_source_replay_started": False,
+        "source_outcome_read": False,
+        "target_or_held_out_artifact_read": False,
+    }
+    recovery = receipt["recovery"]
+    assert recovery["protocol_changed"] is False
+    assert recovery["scientific_method_changed"] is False
+    assert recovery["threshold_changed"] is False
+    assert recovery["source_roster_changed"] is False
+    assert recovery["outcome_information_used"] is False
+    assert recovery["preserve_interrupted_artifacts"] is True
+    assert recovery["execution_mode"] == "managed-foreground-session"
+    assert recovery["exactly_one_managed_recovery_authorized"] is True
+    assert recovery["no_further_retry"] is True
 
 
 def test_prefix_requires_passing_pre_prefix_receipt_before_outcomes(

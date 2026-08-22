@@ -1,0 +1,53 @@
+{
+  "schema": "bayesian-phystwin.sofa-fem-source-value-launch-interruption-v1",
+  "schema_version": 1,
+  "protocol_sha256": "236e32b86c0fc45352f8abcc22408f5e84ce3f07cb6a6dae9b53a53104da607d",
+  "interrupted_implementation_revision": "4f9528a8ccb91a88c6b38817a1e171ed70055a10",
+  "interrupted_implementation_source_sha256": "568965cb16681375894d42e82ab3086f55a26d83a0273a0f7a93527210e7c322",
+  "interrupted_runner_source_sha256": "b96be85540f5a05c535582b67832df048c221371ecde32091bbe0be503b82f47",
+  "launched_at_utc": "2026-08-22T03:38:14.157983428Z",
+  "observed_at_utc": "2026-08-22T03:39:49Z",
+  "launcher_pid": 211231,
+  "shell_pid": 211233,
+  "registered_output_root": "/tmp/bpt-sofa-source-value-v3-grid-v1",
+  "registered_log": {
+    "path": "/tmp/bpt-sofa-source-value-v3-grid-v1.log",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "launcher_log": {
+    "path": "/tmp/bpt-sofa-source-value-v3-grid-v1.launcher.log",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "lock_file": {
+    "path": "/tmp/bpt-sofa-source-value-v3-grid-v1.lock",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "observations": {
+    "launcher_process_present": false,
+    "predictor_process_present": false,
+    "output_root_created": false,
+    "native_prediction_archive_count": 0,
+    "source_group_input_read": false,
+    "native_source_replay_started": false,
+    "source_outcome_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "inference_basis": "The bound generator creates the output root before entering the source-group loop, loading source-group inputs, or starting any native replay. The output root was absent and both logs were byte-empty after the detached descendants were terminated by the command orchestrator.",
+  "classification": "pre-initialization-orchestration-interruption-no-scientific-execution",
+  "recovery": {
+    "protocol_changed": false,
+    "scientific_method_changed": false,
+    "threshold_changed": false,
+    "source_roster_changed": false,
+    "outcome_information_used": false,
+    "preserve_interrupted_artifacts": true,
+    "execution_mode": "managed-foreground-session",
+    "output_root": "/tmp/bpt-sofa-source-value-v3-grid-managed-v2",
+    "log_path": "/tmp/bpt-sofa-source-value-v3-grid-managed-v2.log",
+    "exactly_one_managed_recovery_authorized": true,
+    "no_further_retry": true
+  }
+}
