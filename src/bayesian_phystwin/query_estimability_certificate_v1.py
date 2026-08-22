@@ -193,9 +193,7 @@ class QueryEstimabilityCertificateV1:
         )
         normalized_factor = np.linalg.solve(scale_cholesky, effective_factor)
         normalized_covariance = normalized_factor @ normalized_factor.T
-        normalized_covariance = 0.5 * (
-            normalized_covariance + normalized_covariance.T
-        )
+        normalized_covariance = 0.5 * (normalized_covariance + normalized_covariance.T)
         normalized_singular_values = np.linalg.svd(
             normalized_factor,
             compute_uv=False,
@@ -265,8 +263,7 @@ class QueryEstimabilityCertificateV1:
             )
             if supplied_id != expected_id:
                 raise ValueError(
-                    "query estimability certificate artifact_id does not match "
-                    "content"
+                    "query estimability certificate artifact_id does not match content"
                 )
         object.__setattr__(self, "artifact_id", expected_id)
 
@@ -303,9 +300,7 @@ class QueryEstimabilityCertificateV1:
                 self.normalized_query_noise_covariance
             ),
             "query_scale_eigenvalues": self.query_scale_eigenvalues,
-            "normalized_noise_singular_values": (
-                self.normalized_noise_singular_values
-            ),
+            "normalized_noise_singular_values": (self.normalized_noise_singular_values),
         }
 
     def descriptor(self) -> dict[str, object]:
@@ -326,9 +321,7 @@ class QueryEstimabilityCertificateV1:
             "query_id": source.query_id,
             "query_scale_id": self.query_scale_id,
             "query_scale": _array_record(self.query_scale),
-            "effective_factor_operator": _array_record(
-                self.effective_factor_operator
-            ),
+            "effective_factor_operator": _array_record(self.effective_factor_operator),
             "query_noise_covariance": _array_record(self.query_noise_covariance),
             "query_scale_cholesky": _array_record(self.query_scale_cholesky),
             "normalized_factor_operator": _array_record(
@@ -337,9 +330,7 @@ class QueryEstimabilityCertificateV1:
             "normalized_query_noise_covariance": _array_record(
                 self.normalized_query_noise_covariance
             ),
-            "query_scale_eigenvalues": _array_record(
-                self.query_scale_eigenvalues
-            ),
+            "query_scale_eigenvalues": _array_record(self.query_scale_eigenvalues),
             "normalized_noise_singular_values": _array_record(
                 self.normalized_noise_singular_values
             ),
@@ -350,9 +341,7 @@ class QueryEstimabilityCertificateV1:
             "query_scale_rank_tolerance": self.query_scale_rank_tolerance,
             "query_scale_condition_number": self.query_scale_condition_number,
             "nuisance_leakage_frobenius": self.nuisance_leakage_frobenius,
-            "maximum_normalized_noise_gain": (
-                self.maximum_normalized_noise_gain
-            ),
+            "maximum_normalized_noise_gain": (self.maximum_normalized_noise_gain),
             "rms_normalized_noise_gain": self.rms_normalized_noise_gain,
             "noise_gain_margin": self.noise_gain_margin,
             "admission_bound": self.admission_bound,
@@ -376,9 +365,7 @@ class QueryEstimabilityCertificateV1:
             "observation_dimension": self.observation_dimension,
             "query_dimension": self.query_dimension,
             "noise_gain_limit": self.noise_gain_limit,
-            "maximum_normalized_noise_gain": (
-                self.maximum_normalized_noise_gain
-            ),
+            "maximum_normalized_noise_gain": (self.maximum_normalized_noise_gain),
             "rms_normalized_noise_gain": self.rms_normalized_noise_gain,
             "noise_gain_margin": self.noise_gain_margin,
             "query_scale_condition_number": self.query_scale_condition_number,
