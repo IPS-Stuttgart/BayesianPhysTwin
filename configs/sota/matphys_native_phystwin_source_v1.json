@@ -35,6 +35,7 @@
     "proposal_strength": 1.0,
     "incumbent_replays": 4,
     "member_replays": 1,
+    "spring_force_accumulation": "official-atomic-v1",
     "covariance_estimator": "baseline-relative-member-second-moment-plus-shared-incumbent-floor-v1",
     "future_frames_used_by_predictor": false
   },
@@ -54,6 +55,7 @@
     "minimum_candidate_coverage_90": 0.8,
     "maximum_candidate_coverage_90": 0.98,
     "maximum_candidate_to_isotropic_mean_volume_ratio": 0.95,
+    "maximum_retained_native_parity_failures": 0,
     "all_case_accounting_required": true
   },
   "information_boundary": {

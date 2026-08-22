@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.matphys_warp_ensemble_v1 import (
     baseline_relative_trajectory_ensemble_arrays,
     file_sha256,
@@ -33,6 +34,8 @@ from bayesian_phystwin.phystwin_state_injection import (
 SCHEMA = "bayesian-phystwin.matphys-native-phystwin-trajectory-ensemble"
 VERSION = 1
 PROTOCOL = "baseline-relative-target-excluded-matphys-native-phystwin-v1"
+SPRING_FORCE_ACCUMULATION = "official-atomic-v1"
+DETERMINISTIC_SPRING_FORCES = False
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -57,10 +60,22 @@ def _canonical_id(value: object) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _validate_content_id(
+    record: dict[str, object], *, id_field: str, name: str
+) -> None:
+    identity = {key: value for key, value in record.items() if key != id_field}
+    _require(
+        record.get(id_field) == content_id(identity),
+        f"{name} content identity changed",
+    )
+
+
 def _load_bound_file(record: object, *, name: str) -> Path:
     _require(isinstance(record, dict), f"{name} record is missing")
     path = Path(record.get("path", ""))
-    _require(path.is_file() and not path.is_symlink(), f"{name} is not an ordinary file")
+    _require(
+        path.is_file() and not path.is_symlink(), f"{name} is not an ordinary file"
+    )
     path = path.resolve(strict=True)
     _require(file_sha256(path) == record.get("sha256"), f"{name} SHA-256 changed")
     _require(path.stat().st_size == record.get("byte_count"), f"{name} size changed")
@@ -120,11 +135,17 @@ def main() -> int:
         and case_input.get("schema_version") == 1,
         "native case manifest changed",
     )
+    _validate_content_id(
+        case_input, id_field="case_input_id", name="native case manifest"
+    )
     prediction = json.loads(args.prediction_manifest.read_text(encoding="utf-8"))
     _require(
         prediction.get("schema") == "bayesian-phystwin.matphys-fold-ensemble-prediction"
         and prediction.get("schema_version") == 1,
         "MatPhys prediction manifest changed",
+    )
+    _validate_content_id(
+        prediction, id_field="prediction_id", name="MatPhys prediction manifest"
     )
     boundary = prediction.get("information_boundary", {})
     _require(
@@ -235,7 +256,7 @@ def main() -> int:
         dt=float(args.dt),
         num_substeps=int(args.num_substeps),
         self_collision=_released_self_collision_for_case(str(case_input["case_id"])),
-        deterministic_spring_forces=True,
+        deterministic_spring_forces=DETERMINISTIC_SPRING_FORCES,
         device=str(args.device),
     )
 
@@ -296,11 +317,13 @@ def main() -> int:
             "device": str(args.device),
             "dt": float(args.dt),
             "num_substeps": int(args.num_substeps),
+            "spring_force_accumulation": SPRING_FORCE_ACCUMULATION,
             "rollout_seconds": rollout_seconds,
         },
         "output": {
             "path": str(archive_path.resolve(strict=True)),
             "sha256": file_sha256(archive_path),
+            "byte_count": archive_path.stat().st_size,
         },
         "information_boundary": {
             "source_only": True,

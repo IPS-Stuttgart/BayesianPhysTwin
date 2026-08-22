@@ -53,16 +53,20 @@ This is a baseline-relative second moment, not covariance centered around the
 unused MatPhys ensemble mean. Centering around the ensemble mean would erase a
 physical displacement shared by all folds while still claiming that the point
 mean is unchanged. `C_replay` is the empirical covariance of four incumbent
-replays and is used as a shared numerical floor. This 4+11 replay design is the
-registered source approximation; it does not claim that replay variance is
+replays through the official atomic spring-force accumulation path and is used
+as a shared numerical floor. A deterministic accumulation variant is not used:
+it would make the registered floor identically zero and can diverge from the
+released trajectory on long self-collision rollouts. This 4+11 replay design is
+the registered source approximation; it does not claim that replay variance is
 identical for every spring field.
 
 ## Scoring
 
 For each interaction, 128 material identities are selected by deterministic
-frame-zero farthest-point sampling before future validity is inspected. Future
-events are scored only where released visibility and motion-validity flags are
-true. Aggregation is equal event within interaction, then equal interaction.
+frame-zero farthest-point sampling seeded at node zero before future validity is
+inspected. Future events are scored only where released visibility and
+motion-validity flags are true. Aggregation is equal event within interaction,
+then equal interaction.
 
 For held-out interaction `s`, the other ten source interactions select
 
@@ -74,13 +78,14 @@ Sigma_isotropic = sigma_iso^2 I
 from the exact grids in
 [`matphys_native_phystwin_source_v1.json`](../configs/sota/matphys_native_phystwin_source_v1.json)
 by minimum equal-interaction Gaussian NLL. The held-out interaction then reports
-NLL, 90% chi-square ellipsoid coverage, ellipsoid volume, energy score, and
-NEES. The candidate and comparator always use the same released point mean.
+NLL, 90% chi-square ellipsoid coverage, ellipsoid volume, and NEES. The
+candidate and comparator always use the same released point mean.
 
 ## Advancement gate
 
 Fresh evaluation is allowed only when all 11 interactions are accounted for
-and the candidate simultaneously achieves:
+and scoreable with no retained native-parity failure, and the candidate
+simultaneously achieves:
 
 - at least 6/11 held-out case-level NLL wins;
 - at least 0.05 nats/event equal-case NLL improvement over isotropic;

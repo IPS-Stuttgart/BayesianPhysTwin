@@ -19,6 +19,20 @@ def _preparer():
     return module
 
 
+def _runner():
+    path = (
+        Path(__file__).parents[1]
+        / "scripts"
+        / "remote"
+        / "run_matphys_native_phystwin_ensemble_v1.py"
+    )
+    spec = importlib.util.spec_from_file_location("matphys_native_runner_test", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_native_case_arrays_preserve_released_structure_order() -> None:
     preparer = _preparer()
     observed = np.arange(36, dtype=np.float32).reshape(3, 4, 3)
@@ -78,3 +92,10 @@ def test_native_checkpoint_field_rejects_graph_mismatch() -> None:
             total_spring_count=3,
             object_spring_count=2,
         )
+
+
+def test_native_runner_uses_official_atomic_spring_accumulation() -> None:
+    runner = _runner()
+
+    assert runner.SPRING_FORCE_ACCUMULATION == "official-atomic-v1"
+    assert runner.DETERMINISTIC_SPRING_FORCES is False
