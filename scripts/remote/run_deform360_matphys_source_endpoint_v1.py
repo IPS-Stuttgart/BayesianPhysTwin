@@ -340,6 +340,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--allow-isotropic-fallback", action="store_true")
     return parser
 
 
@@ -350,6 +351,7 @@ def _validate_prediction_seals(
     part_path: Path,
     warp_path: Path,
     scoring_cameras: tuple[str, ...],
+    allow_isotropic_fallback: bool = False,
 ) -> dict[str, Any]:
     prefix = _json(prefix_path, name="prefix manifest")
     case_id = prefix.get("case")
@@ -451,26 +453,61 @@ def _validate_prediction_seals(
     warp = _json(warp_path, name="MatPhys Warp manifest")
     warp_boundary = warp.get("information_boundary")
     warp_runtime = warp.get("runtime")
+    warp_parity = warp.get("parity")
     _require(
         warp.get("case_id") == case_id
         and warp.get("target_object_id") == object_id
-        and warp.get("passed") is True
+        and warp.get("schema")
+        == "bayesian-phystwin.matphys-warp-trajectory-ensemble"
+        and warp.get("schema_version") == 2
+        and warp.get("protocol")
+        == "target-excluded-matphys-fields-official-phystwin-warp-v2"
+        and type(warp.get("passed")) is bool
         and isinstance(warp_boundary, Mapping)
         and isinstance(warp_runtime, Mapping)
+        and isinstance(warp_parity, Mapping)
         and all(
             warp_runtime.get(name) == expected
             for name, expected in EXPECTED_WARP_REPLAY_RUNTIME.items()
         )
+        and warp_parity.get("passed") is warp.get("passed")
+        and warp_parity.get("maximum_reference_to_replay_ratio") == 3.0
+        and warp_parity.get("minimum_member_to_replay_ratio") == 2.0
         and warp_boundary.get("target_future_observations_used") is False
         and warp_boundary.get("target_future_outcomes_opened") is False,
         "MatPhys Warp ensemble is not sealed before scoring",
     )
+    typed_warp_parity = cast(Mapping[str, Any], warp_parity)
+    reference_ratio = typed_warp_parity.get("reference_to_replay_ratio")
+    member_ratio = typed_warp_parity.get("member_to_replay_ratio")
+    _require(
+        type(reference_ratio) in {int, float}
+        and type(member_ratio) in {int, float}
+        and np.isfinite(reference_ratio)
+        and np.isfinite(member_ratio),
+        "MatPhys Warp parity ratios are invalid",
+    )
+    replay_quality_passed = bool(
+        float(cast(float, reference_ratio)) <= 3.0
+        and float(cast(float, member_ratio)) >= 2.0
+    )
+    _require(
+        warp.get("passed") is replay_quality_passed,
+        "MatPhys Warp replay-quality decision changed",
+    )
+    warp_passed = warp.get("passed") is True
+    _require(
+        warp_passed or allow_isotropic_fallback,
+        "MatPhys Warp ensemble failed its replay-quality gate",
+    )
+    uncertainty_policy = "matphys" if warp_passed else "isotropic-fallback"
     return {
         "case_id": case_id,
         "object_id": object_id,
         "raw_start": selected_range[0],
         "provider_camera_ids": list(expected_provider),
         "scoring_camera_ids": list(expected_scoring),
+        "uncertainty_policy": uncertainty_policy,
         "prediction_seals": {
             "prefix_manifest_sha256": _sha256_file(prefix_path),
             "deform_prediction_manifest_sha256": _sha256_file(deform_path),
@@ -485,14 +522,44 @@ def _validate_protocol(
     *,
     case_id: str,
     scoring_cameras: tuple[str, ...],
+    uncertainty_policy: str = "matphys",
 ) -> dict[str, Any]:
     protocol = _json(path, name="MatPhys source protocol")
-    _require(
+    protocol_name = protocol.get("protocol_name")
+    is_v1 = (
         protocol.get("schema")
         == "bayesian-phystwin.matphys-surface-uq-source-protocol-v1"
         and protocol.get("schema_version") == 1
-        and protocol.get("protocol_name") == "matphys-surface-uq-source-v1",
-        "MatPhys source protocol identity changed",
+        and protocol_name == "matphys-surface-uq-source-v1"
+    )
+    is_v2 = (
+        protocol.get("schema")
+        == "bayesian-phystwin.matphys-surface-uq-source-protocol-v2"
+        and protocol.get("schema_version") == 2
+        and protocol_name == "matphys-surface-uq-source-v2"
+    )
+    _require(is_v1 or is_v2, "MatPhys source protocol identity changed")
+    if is_v2:
+        _require(
+            protocol.get("predecessor")
+            == {
+                "protocol_sha256": (
+                    "32d91f91b0897f6a0d02c79d389bdfe67dc955968e081f33d7c326406055422a"
+                ),
+                "replay_quality_result_sha256": (
+                    "0cadb32674193e70521c8ff4b3fef174abe123a2003d4a769ee64566b086b7d0"
+                ),
+                "status": "terminal-source-replay-quality-failure",
+            },
+            "guarded source predecessor changed",
+        )
+    _require(
+        (is_v1 and uncertainty_policy == "matphys")
+        or (
+            is_v2
+            and uncertainty_policy in {"matphys", "isotropic-fallback"}
+        ),
+        "source uncertainty policy is not authorized",
     )
     source_panel = protocol.get("source_panel")
     camera_partition = protocol.get("camera_partition")
@@ -542,6 +609,24 @@ def _validate_protocol(
         typed_covariance.get("replay_runtime") == EXPECTED_WARP_REPLAY_RUNTIME,
         "source covariance replay identity changed",
     )
+    if is_v2:
+        _require(
+            typed_covariance.get("selection_policy")
+            == {
+                "matphys_covariance": (
+                    "use only when the sealed replay artifact has passed=true "
+                    "and parity.passed=true"
+                ),
+                "fallback": (
+                    "the exact leave-one-case-out isotropic comparator covariance"
+                ),
+                "fallback_mean": "byte-identical frozen DEFORM prediction",
+                "minimum_member_to_effective_replay_floor_ratio": 2.0,
+                "maximum_reference_to_replay_ratio": 3.0,
+                "selection_reads_source_outcome": False,
+            },
+            "guarded source covariance policy changed",
+        )
     _require(
         isinstance(runtime, Mapping)
         and dict(runtime) == EXPECTED_RUNTIME_IDENTITY,
@@ -631,11 +716,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         part_path=part_path,
         warp_path=warp_path,
         scoring_cameras=scoring,
+        allow_isotropic_fallback=args.allow_isotropic_fallback,
     )
     _validate_protocol(
         protocol_path,
         case_id=str(identity["case_id"]),
         scoring_cameras=scoring,
+        uncertainty_policy=str(identity["uncertainty_policy"]),
     )
     deform360_repository = _ordinary_directory(
         args.deform360_repository, name="Deform360 repository"

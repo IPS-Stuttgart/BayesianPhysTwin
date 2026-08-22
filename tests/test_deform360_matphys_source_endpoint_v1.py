@@ -63,10 +63,20 @@ def _prediction_fixture(tmp_path: Path) -> dict[str, Path]:
         },
     }
     warp = {
+        "schema": "bayesian-phystwin.matphys-warp-trajectory-ensemble",
+        "schema_version": 2,
+        "protocol": "target-excluded-matphys-fields-official-phystwin-warp-v2",
         "case_id": "case-a",
         "target_object_id": "object-a",
         "passed": True,
         "runtime": dict(EXPECTED_WARP_REPLAY_RUNTIME),
+        "parity": {
+            "passed": True,
+            "maximum_reference_to_replay_ratio": 3.0,
+            "minimum_member_to_replay_ratio": 2.0,
+            "reference_to_replay_ratio": 1.0,
+            "member_to_replay_ratio": 3.0,
+        },
         "information_boundary": {
             "target_future_observations_used": False,
             "target_future_outcomes_opened": False,
@@ -109,6 +119,36 @@ def test_prediction_seals_reject_shared_provider_camera(tmp_path: Path) -> None:
             warp_path=fixture["warp"],
             scoring_cameras=("cam1", "cam3"),
         )
+
+
+def test_prediction_seals_require_opt_in_for_isotropic_fallback(
+    tmp_path: Path,
+) -> None:
+    fixture = _prediction_fixture(tmp_path)
+    warp = json.loads(fixture["warp"].read_text(encoding="utf-8"))
+    warp["passed"] = False
+    warp["parity"]["passed"] = False
+    warp["parity"]["member_to_replay_ratio"] = 1.5
+    _write(fixture["warp"], warp)
+
+    with pytest.raises(ValueError, match="failed its replay-quality gate"):
+        _validate_prediction_seals(
+            prefix_path=fixture["prefix"],
+            deform_path=fixture["deform"],
+            part_path=fixture["part"],
+            warp_path=fixture["warp"],
+            scoring_cameras=("cam1", "cam3"),
+        )
+
+    result = _validate_prediction_seals(
+        prefix_path=fixture["prefix"],
+        deform_path=fixture["deform"],
+        part_path=fixture["part"],
+        warp_path=fixture["warp"],
+        scoring_cameras=("cam1", "cam3"),
+        allow_isotropic_fallback=True,
+    )
+    assert result["uncertainty_policy"] == "isotropic-fallback"
 
 
 def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
@@ -184,6 +224,27 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
             case_id="unregistered-case",
             scoring_cameras=scoring,
         )
+
+
+def test_guarded_protocol_authorizes_only_registered_fallback() -> None:
+    root = Path(__file__).resolve().parents[1]
+    path = root / "configs" / "sota" / "matphys_surface_uq_source_v2.json"
+    value = json.loads(path.read_text(encoding="utf-8"))
+    scoring = tuple(value["camera_partition"]["scoring_camera_ids"])
+
+    loaded = _validate_protocol(
+        path,
+        case_id="186-monster-ep0006",
+        scoring_cameras=scoring,
+        uncertainty_policy="isotropic-fallback",
+    )
+
+    assert loaded["protocol_name"] == "matphys-surface-uq-source-v2"
+    assert loaded["source_amendments"][7]["selection_uses_source_outcome"] is False
+    assert loaded["source_amendments"][7]["source_gate_thresholds_changed"] is False
+    assert loaded["covariance"]["selection_policy"]["fallback_mean"].startswith(
+        "byte-identical"
+    )
 
 
 def test_scoring_runtime_identity_is_exact_and_cuda_backed() -> None:

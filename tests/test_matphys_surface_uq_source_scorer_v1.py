@@ -17,6 +17,7 @@ from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/remote/score_matphys_surface_uq_source_v1.py"
 PROTOCOL = ROOT / "configs/sota/matphys_surface_uq_source_v1.json"
+PROTOCOL_V2 = ROOT / "configs/sota/matphys_surface_uq_source_v2.json"
 
 
 def _module() -> ModuleType:
@@ -27,7 +28,14 @@ def _module() -> ModuleType:
     return module
 
 
-def _case_manifest(root: Path, case_id: str, *, seed: int) -> Path:
+def _case_manifest(
+    root: Path,
+    case_id: str,
+    *,
+    seed: int,
+    uncertainty_policy: str = "matphys",
+    protocol_path: Path = PROTOCOL,
+) -> Path:
     generator = np.random.default_rng(seed)
     covariance = np.broadcast_to(np.diag([9e-6, 1e-6, 4e-6]), (400, 3, 3)).copy()
     residual = generator.multivariate_normal(
@@ -37,7 +45,9 @@ def _case_manifest(root: Path, case_id: str, *, seed: int) -> Path:
     )
     arrays = {
         "residual_m": residual,
-        "covariance_m2": covariance,
+        "covariance_m2": (
+            covariance if uncertainty_policy == "matphys" else np.zeros_like(covariance)
+        ),
         "frame_index": np.repeat(np.arange(58, 76), 23)[:400],
         "node_index": np.arange(400),
         "nearest_distance_m": np.linalg.norm(residual, axis=1),
@@ -50,7 +60,9 @@ def _case_manifest(root: Path, case_id: str, *, seed: int) -> Path:
         "schema": "bayesian-phystwin.matphys-surface-uq-source-case-v1",
         "schema_version": 1,
         "case_id": case_id,
+        "protocol_sha256": file_sha256(protocol_path),
         "status": "scorable",
+        "uncertainty_policy": uncertainty_policy,
         "events": {
             "path": event_path.name,
             "sha256": file_sha256(event_path),
@@ -102,3 +114,55 @@ def test_aggregate_rejects_missing_source_case(tmp_path: Path) -> None:
             case_manifest_paths=manifests,
             output_dir=tmp_path / "aggregate",
         )
+
+
+def test_guarded_aggregate_scores_fallback_as_an_exact_isotropic_tie(
+    tmp_path: Path,
+) -> None:
+    module = _module()
+    protocol = json.loads(PROTOCOL_V2.read_text(encoding="utf-8"))
+    retained = {"058-roll-napkin-ep0001", "167-glove-gray-cloth-ep0000"}
+    fallback = "186-monster-ep0006"
+    manifests: list[Path] = []
+    evidence = tmp_path / "physical_prediction_manifest.json"
+    evidence.write_text("{}", encoding="utf-8")
+    for index, case_id in enumerate(protocol["source_panel"]["case_ids"]):
+        if case_id in retained:
+            result = module.retain_case(
+                protocol_path=PROTOCOL_V2,
+                case_id=case_id,
+                status="unavailable-physical-carrier",
+                evidence_manifest_paths=[evidence],
+                output_dir=tmp_path / case_id,
+            )
+            assert result["information_boundary"]["source_scoring_outcome_read"] is False
+            manifests.append(tmp_path / case_id / "matphys_surface_uq_case.json")
+            continue
+        manifests.append(
+            _case_manifest(
+                tmp_path,
+                case_id,
+                seed=261000 + index,
+                uncertainty_policy=(
+                    "isotropic-fallback" if case_id == fallback else "matphys"
+                ),
+                protocol_path=PROTOCOL_V2,
+            )
+        )
+
+    result = module.aggregate_source(
+        protocol_path=PROTOCOL_V2,
+        case_manifest_paths=manifests,
+        output_dir=tmp_path / "aggregate",
+    )
+    evaluation = result["leave_one_case_out"]
+
+    assert result["source_denominator_count"] == 10
+    assert result["ordinary_scorable_count"] == 8
+    assert evaluation["matphys_case_count"] == 7
+    assert evaluation["isotropic_fallback_case_count"] == 1
+    fallback_row = next(
+        row for row in evaluation["case_rows"] if row["case_id"] == fallback
+    )
+    assert fallback_row["candidate"] == fallback_row["isotropic"]
+    assert fallback_row["candidate_nll_win"] is False

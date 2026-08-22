@@ -9,6 +9,7 @@ from bayesian_phystwin.matphys_surface_uq_v1 import (
     deterministic_subsample_indices,
     equal_group_radial_quantile,
     evaluate_gaussian_events,
+    evaluate_guarded_leave_one_group_out,
     evaluate_leave_one_group_out,
     fit_grouped_isotropic_variance,
     fit_grouped_matphys_scale,
@@ -206,3 +207,36 @@ def test_leave_one_group_out_rewards_transferable_anisotropy() -> None:
     assert metrics["candidate_nll_improvement_nats"] > 0.1
     assert metrics["candidate_nll_win_count"] == 4
     assert 0.85 < metrics["candidate_coverage_90"] < 0.95
+
+
+def test_guarded_leave_one_out_uses_exact_isotropic_fallback() -> None:
+    generator = np.random.default_rng(260824)
+    base = np.diag([16e-6, 1e-6, 4e-6])
+    residual_groups = [
+        generator.multivariate_normal(
+            np.zeros(3), 3.0 * base + np.eye(3) * 1e-6, 600
+        )
+        for _ in range(4)
+    ]
+    covariance_groups = [
+        np.broadcast_to(base, (len(residual), 3, 3)).copy()
+        for residual in residual_groups
+    ]
+    covariance_groups[2] = None
+
+    result = evaluate_guarded_leave_one_group_out(
+        [f"case-{index}" for index in range(4)],
+        residual_groups,
+        covariance_groups,
+        observation_floor_m=0.001,
+    )
+    rows = result["case_rows"]
+
+    assert isinstance(rows, list)
+    fallback = rows[2]
+    assert fallback["uncertainty_policy"] == "isotropic-fallback"
+    assert fallback["matphys_scale"] is None
+    assert fallback["candidate"] == fallback["isotropic"]
+    assert fallback["candidate_nll_win"] is False
+    assert result["matphys_case_count"] == 3
+    assert result["isotropic_fallback_case_count"] == 1

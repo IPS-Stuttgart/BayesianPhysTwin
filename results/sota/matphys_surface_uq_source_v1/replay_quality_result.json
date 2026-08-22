@@ -1,0 +1,108 @@
+{
+  "claim_boundary": "Opened development-source replay-quality gate only. No scoring-camera suffix, target, held-v8, DLO4, or DLO5 outcome was opened for this result.",
+  "decision": "stop-v1-before-source-reconstruction",
+  "eligible_replay_count": 8,
+  "information_boundary": {
+    "dlo4_or_dlo5_accessed": false,
+    "frozen_deform_mean_changed": false,
+    "held_v8_artifacts_accessed": false,
+    "scoring_camera_suffix_opened_by_this_gate": false,
+    "target_or_confirmation_data_read": false
+  },
+  "minimum_jointly_scored_case_count": 8,
+  "ordinary_replay_quality_pass_count": 7,
+  "protocol_sha256": "32d91f91b0897f6a0d02c79d389bdfe67dc955968e081f33d7c326406055422a",
+  "replay_records": [
+    {
+      "case_id": "026-sock-cloth-ep0007",
+      "effective_replay_floor_m": 0.00021668245431117752,
+      "manifest_sha256": "56fd497fddbf1ac856fccdefe2ae971a6d9d55ae05ab6235eb8103dba9413856",
+      "member_between_coordinate_std_m": 0.0011694594874412045,
+      "member_to_replay_ratio": 5.39711206040589,
+      "passed": true,
+      "reference_to_replay_ratio": 1.7033159157090383
+    },
+    {
+      "case_id": "031-cotton-cloth-ep0000",
+      "effective_replay_floor_m": 0.00016562259750456923,
+      "manifest_sha256": "b9886eec93c95468dbda975d98423f6d5f149d90bfdf7baa77b2c4ae2cf5f20a",
+      "member_between_coordinate_std_m": 0.0021589234041539966,
+      "member_to_replay_ratio": 13.035198316428021,
+      "passed": true,
+      "reference_to_replay_ratio": 0.7024098916963599
+    },
+    {
+      "case_id": "036-napkin-cloth-ep0009",
+      "effective_replay_floor_m": 0.000053675929682941,
+      "manifest_sha256": "0c9e3bff7ff37b16889615d8828c43828fe81ea9cd499ef92a4c1ef87012ad03",
+      "member_between_coordinate_std_m": 0.0019752530588377017,
+      "member_to_replay_ratio": 36.799605903527855,
+      "passed": true,
+      "reference_to_replay_ratio": 1.6186389664733782
+    },
+    {
+      "case_id": "152-slime-ep0008",
+      "effective_replay_floor_m": 0.00004833130862286598,
+      "manifest_sha256": "e2b8902b08d0d0116280b37b796edfe69aa57d7e1395299924f9d39298d8683d",
+      "member_between_coordinate_std_m": 0.002986351693630609,
+      "member_to_replay_ratio": 61.789175148006215,
+      "passed": true,
+      "reference_to_replay_ratio": 1.6199651254302407
+    },
+    {
+      "case_id": "153-cake-ep0005",
+      "effective_replay_floor_m": 0.0003847486730066209,
+      "manifest_sha256": "c90c921a4e3fa39f2e3b9aa05ed20b211c63e5b80382b0547e76f961ae989d83",
+      "member_between_coordinate_std_m": 0.0013900005401585416,
+      "member_to_replay_ratio": 3.6127494067656523,
+      "passed": true,
+      "reference_to_replay_ratio": 2.3375390690023403
+    },
+    {
+      "case_id": "186-monster-ep0006",
+      "effective_replay_floor_m": 0.0016324862165296237,
+      "manifest_sha256": "218c89e485f71c53e6d9ebd0d0822aa6603f89de43653a77684ef761ec8db1dc",
+      "member_between_coordinate_std_m": 0.002096844986375982,
+      "member_to_replay_ratio": 1.2844488150310407,
+      "passed": false,
+      "reference_to_replay_ratio": 2.9715337987830033
+    },
+    {
+      "case_id": "193-frog-ep0007",
+      "effective_replay_floor_m": 0.00010245295864286336,
+      "manifest_sha256": "9209f5a4bc4a8dcd1c9245b82e49e411906f1799c7571093c2cdf7c7414fe138",
+      "member_between_coordinate_std_m": 0.0027688934307054844,
+      "member_to_replay_ratio": 27.02599775920048,
+      "passed": true,
+      "reference_to_replay_ratio": 2.1169669795786636
+    },
+    {
+      "case_id": "198-kneepad-cloth-ep0002",
+      "effective_replay_floor_m": 0.0008197560629463754,
+      "manifest_sha256": "600b8b7213603347d2f25f32a1ca365ec7f68a227cd35aabe87a0f8b33717d09",
+      "member_between_coordinate_std_m": 0.0016560113733392898,
+      "member_to_replay_ratio": 2.0201270209423488,
+      "passed": true,
+      "reference_to_replay_ratio": 0.5734383689986203
+    }
+  ],
+  "retained_unavailable_cases": [
+    {
+      "case_id": "058-roll-napkin-ep0001",
+      "reason": "registered physical work lacks simulator data, graph, and official reference replay"
+    },
+    {
+      "case_id": "167-glove-gray-cloth-ep0000",
+      "reason": "registered physical work lacks simulator data, graph, and official reference replay"
+    }
+  ],
+  "schema": "bayesian-phystwin.matphys-surface-uq-source-replay-quality-result-v1",
+  "schema_version": 1,
+  "source_denominator_count": 10,
+  "source_gate": {
+    "maximum_possible_jointly_scored_case_count": 7,
+    "minimum_jointly_scored_case_count_passed": false,
+    "passed": false
+  },
+  "status": "terminal-source-replay-quality-failure"
+}

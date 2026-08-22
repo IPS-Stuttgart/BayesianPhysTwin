@@ -1,11 +1,12 @@
-# MatPhys surface-UQ source protocol v1
+# Guarded MatPhys surface-UQ source protocol v2
 
 ## Question
 
 This source-only study asks whether target-excluded disagreement among official
-MatPhys material proposals contains useful uncertainty information when the
-point prediction itself remains the frozen DEFORM result. It does not ask
-whether MatPhys replaces DEFORM as the best mean predictor.
+MatPhys material proposals contains useful uncertainty information when it is
+admitted by a target-free replay-quality guard and the point prediction itself
+remains the frozen DEFORM result. It does not ask whether MatPhys replaces
+DEFORM as the best mean predictor.
 
 The candidate and every comparator therefore use the exact same `prediction_m`
 bytes. Only the predictive covariance changes. This protects the existing
@@ -16,7 +17,7 @@ attributable to uncertainty rather than to a hidden mean change.
 
 The complete denominator is the ten previously opened Deform360 development
 cases in
-[`matphys_surface_uq_source_v1.json`](../configs/sota/matphys_surface_uq_source_v1.json).
+[`matphys_surface_uq_source_v2.json`](../configs/sota/matphys_surface_uq_source_v2.json).
 No case may be replaced. Ordinary predictions, exact-mean fallbacks, retained
 technical failures, and unscorable outcomes are reported separately.
 
@@ -122,6 +123,21 @@ above the execution floor, but it is not relabeled as material uncertainty and
 is not added to the predictive covariance. The prediction mean and source gate
 remain unchanged.
 
+## Target-free uncertainty guard
+
+The original v1 arm stopped before additional source reconstruction because
+one of eight replayable cases failed the frozen signal-over-floor test. The v2
+arm does not weaken that test. It treats the failed replay artifact as a
+target-free abstention: quality-passing cases use the MatPhys covariance, while
+an abstaining case uses exactly the leave-one-case-out isotropic comparator
+covariance. In either branch, the mean is the same byte-identical DEFORM array.
+
+The guard is fixed before opening the abstaining case's scoring-camera suffix.
+It reads only the sealed current-reference parity result, within-replay spread,
+historical provenance drift, and between-checkpoint spread. It does not read a
+surface residual, NLL, coverage, or future point metric. An isotropic fallback
+is a tie, not a MatPhys win, in the case-level win count.
+
 ## Estimand and comparators
 
 For each future frame, scoring-camera depth is backprojected into the world
@@ -129,10 +145,10 @@ frame. Each registered DEFORM mean node is associated with its nearest surface
 point, subject to the frozen 50 mm metric limit. The event residual is a 3-D
 point-to-surface displacement in metres.
 
-The MatPhys covariance is the target-excluded between-model plus within-replay
-covariance for the same graph node. A scalar multiplier is fit on the other
-nine source cases, with a fixed 5 mm observation/reconstruction floor. The two
-comparators are:
+When admitted, the MatPhys covariance is the target-excluded between-model plus
+within-replay covariance for the same graph node. A scalar multiplier is fit
+on the other admitted source cases, with a fixed 5 mm
+observation/reconstruction floor. The two comparators are:
 
 1. a leave-one-case-out isotropic Gaussian around the identical DEFORM mean;
 2. a leave-one-case-out radial split-conformal sphere around that same mean.
@@ -143,32 +159,21 @@ experimental replicates.
 
 ## Advancement rule
 
-The MatPhys covariance advances only if at least eight cases are scorable, each
-scored case retains at least half of its attempted events, and all registered
-gates pass: at least six case-level NLL wins against the isotropic comparator,
-at least 0.05 nats/event equal-case NLL improvement, 90% coverage between 80%
-and 98%, and at least 5% lower mean 90% ellipsoid volume than the conformal
-sphere. A source failure leaves DEFORM unchanged and forbids a fresh target run.
+The guarded covariance advances only if at least eight cases are scorable,
+each scored case retains at least half of its attempted events, and all
+registered gates pass: at least six strict case-level NLL wins against the
+isotropic comparator, at least 0.05 nats/event equal-case NLL improvement, 90%
+coverage between 80% and 98%, and at least 5% lower mean 90% ellipsoid volume
+than the conformal sphere. An isotropic fallback contributes a tie to the win
+count. A source failure leaves DEFORM unchanged and forbids a fresh target run.
 
 Passing this source gate authorizes only a separately locked, genuinely fresh
 public-object calibration evaluation. It does not authorize held-v8, DLO4,
 DLO5, any revoked covariance cohort, or a SOTA claim.
 
-## Result
+## Status
 
-The replay-quality gate is terminally negative. Seven of the eight physically
-replayable cases pass the frozen adapter and signal-over-floor checks. The
-remaining replayable case has a between-checkpoint spread of 2.097 mm against
-an effective 1.632 mm replay/provenance floor, for a ratio of 1.284 below the
-locked minimum of 2.0. Two further denominator cases lack the registered graph,
-simulator input, and official reference needed to construct any covariance.
-The maximum possible jointly scorable count is therefore seven rather than the
-required eight.
-
-The v1 arm stops before any additional scoring-camera reconstruction. Its
-compact result is
+The v2 guard is locked before any additional scoring-camera reconstruction.
+The predecessor v1 result remains immutable at
 [`replay_quality_result.json`](../results/sota/matphys_surface_uq_source_v1/replay_quality_result.json).
-It does not authorize a fresh target and does not change the frozen DEFORM
-mean. A separately versioned guarded uncertainty arm may use this target-free
-quality signal to select an exact uncertainty fallback, but it must retain this
-v1 result and all original advancement thresholds unchanged.
+No source calibration result or fresh-target evaluation is claimed yet.

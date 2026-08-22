@@ -18,6 +18,7 @@ from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
 from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import array_sha256
 from bayesian_phystwin.matphys_surface_uq_v1 import (
     backproject_masked_depth,
+    evaluate_guarded_leave_one_group_out,
     evaluate_leave_one_group_out,
     nearest_surface_events,
 )
@@ -68,12 +69,51 @@ def _validated_content_id(value: Mapping[str, Any], *, name: str) -> str:
 
 def _protocol(path: Path) -> dict[str, Any]:
     value = _json(path, name="MatPhys source protocol")
+    identity = (
+        value.get("schema"),
+        value.get("schema_version"),
+        value.get("protocol_name"),
+    )
     _require(
-        value.get("schema") == "bayesian-phystwin.matphys-surface-uq-source-protocol-v1"
-        and value.get("schema_version") == 1
-        and value.get("protocol_name") == "matphys-surface-uq-source-v1",
+        identity
+        in {
+            (
+                "bayesian-phystwin.matphys-surface-uq-source-protocol-v1",
+                1,
+                "matphys-surface-uq-source-v1",
+            ),
+            (
+                "bayesian-phystwin.matphys-surface-uq-source-protocol-v2",
+                2,
+                "matphys-surface-uq-source-v2",
+            ),
+        },
         "MatPhys source protocol identity changed",
     )
+    if identity[2] == "matphys-surface-uq-source-v2":
+        covariance = value.get("covariance")
+        _require(
+            value.get("predecessor")
+            == {
+                "protocol_sha256": (
+                    "32d91f91b0897f6a0d02c79d389bdfe67dc955968e081f33d7c326406055422a"
+                ),
+                "replay_quality_result_sha256": (
+                    "0cadb32674193e70521c8ff4b3fef174abe123a2003d4a769ee64566b086b7d0"
+                ),
+                "status": "terminal-source-replay-quality-failure",
+            }
+            and isinstance(covariance, Mapping)
+            and cast(Mapping[str, Any], covariance).get("selection_policy", {}).get(
+                "minimum_member_to_effective_replay_floor_ratio"
+            )
+            == 2.0
+            and cast(Mapping[str, Any], covariance).get("selection_policy", {}).get(
+                "maximum_reference_to_replay_ratio"
+            )
+            == 3.0,
+            "guarded MatPhys source protocol changed",
+        )
     return value
 
 
@@ -238,6 +278,18 @@ def extract_case(
     )
     deform = _json(deform_manifest_path, name="DEFORM prediction manifest")
     warp = _json(warp_manifest_path, name="MatPhys Warp manifest")
+    uncertainty_policy = endpoint.get("uncertainty_policy", "matphys")
+    _require(
+        uncertainty_policy in {"matphys", "isotropic-fallback"},
+        "source uncertainty policy changed",
+    )
+    if uncertainty_policy == "isotropic-fallback":
+        _require(
+            protocol.get("protocol_name") == "matphys-surface-uq-source-v2",
+            "isotropic fallback is absent from the source protocol",
+        )
+    warp_boundary = warp.get("information_boundary")
+    warp_parity = warp.get("parity")
     _require(
         deform.get("case") == case_id
         and deform.get("passed") is True
@@ -245,13 +297,36 @@ def extract_case(
         is False,
         "DEFORM prediction boundary changed",
     )
+    _require(isinstance(warp_parity, Mapping), "MatPhys Warp parity is missing")
+    typed_warp_parity = cast(Mapping[str, Any], warp_parity)
+    reference_ratio = typed_warp_parity.get("reference_to_replay_ratio")
+    member_ratio = typed_warp_parity.get("member_to_replay_ratio")
+    _require(
+        typed_warp_parity.get("maximum_reference_to_replay_ratio") == 3.0
+        and typed_warp_parity.get("minimum_member_to_replay_ratio") == 2.0
+        and type(reference_ratio) in {int, float}
+        and type(member_ratio) in {int, float}
+        and np.isfinite(reference_ratio)
+        and np.isfinite(member_ratio),
+        "MatPhys Warp replay-quality contract changed",
+    )
+    replay_quality_passed = bool(
+        float(cast(float, reference_ratio)) <= 3.0
+        and float(cast(float, member_ratio)) >= 2.0
+    )
     _require(
         warp.get("case_id") == case_id
-        and warp.get("passed") is True
-        and cast(Mapping[str, Any], warp["information_boundary"]).get(
-            "target_future_outcomes_opened"
-        )
-        is False,
+        and isinstance(warp_boundary, Mapping)
+        and warp_boundary.get("target_future_outcomes_opened") is False
+        and typed_warp_parity.get("passed") is warp.get("passed")
+        and warp.get("passed") is replay_quality_passed
+        and (
+            (uncertainty_policy == "matphys" and warp.get("passed") is True)
+            or (
+                uncertainty_policy == "isotropic-fallback"
+                and warp.get("passed") is False
+            )
+        ),
         "MatPhys Warp prediction boundary changed",
     )
     deform_archive_record = cast(
@@ -277,23 +352,28 @@ def extract_case(
         "registered DEFORM mean changed",
     )
 
-    warp_output = cast(Mapping[str, Any], warp["output"])
-    warp_archive_path = _ordinary_file(
-        cast(str, warp_output["path"]), name="MatPhys Warp archive"
-    )
-    _require(
-        _file_sha256(warp_archive_path) == warp_output["sha256"],
-        "MatPhys Warp archive changed",
-    )
-    with np.load(warp_archive_path) as archive:
-        covariance = np.asarray(archive["member_total_covariance_m2"])
-    _require(
-        covariance.shape[0] == 76
-        and covariance.shape[1] >= mean.shape[1]
-        and covariance.shape[2:] == (3, 3)
-        and np.all(np.isfinite(covariance)),
-        "MatPhys covariance shape changed",
-    )
+    warp_archive_path: Path | None = None
+    warp_output: Mapping[str, Any] | None = None
+    if uncertainty_policy == "matphys":
+        warp_output = cast(Mapping[str, Any], warp["output"])
+        warp_archive_path = _ordinary_file(
+            cast(str, warp_output["path"]), name="MatPhys Warp archive"
+        )
+        _require(
+            _file_sha256(warp_archive_path) == warp_output["sha256"],
+            "MatPhys Warp archive changed",
+        )
+        with np.load(warp_archive_path) as archive:
+            covariance = np.asarray(archive["member_total_covariance_m2"])
+        _require(
+            covariance.shape[0] == 76
+            and covariance.shape[1] >= mean.shape[1]
+            and covariance.shape[2:] == (3, 3)
+            and np.all(np.isfinite(covariance)),
+            "MatPhys covariance shape changed",
+        )
+    else:
+        covariance = np.zeros((*mean.shape[:2], 3, 3), dtype=np.float64)
 
     outcome = cast(Mapping[str, Any], protocol["outcome"])
     clouds, endpoint_records = _endpoint_clouds(
@@ -335,12 +415,21 @@ def extract_case(
             "shape": list(mean.shape),
             "candidate_and_comparator_bytes_identical": True,
         },
-        "matphys_covariance": {
-            "path": str(warp_archive_path),
-            "file_sha256": warp_output["sha256"],
-            "array": "member_total_covariance_m2",
-            "observed_node_count": int(mean.shape[1]),
-        },
+        "uncertainty_policy": uncertainty_policy,
+        "matphys_covariance": (
+            {
+                "path": str(warp_archive_path),
+                "file_sha256": cast(Mapping[str, Any], warp_output)["sha256"],
+                "array": "member_total_covariance_m2",
+                "observed_node_count": int(mean.shape[1]),
+            }
+            if uncertainty_policy == "matphys"
+            else {
+                "status": "target-free-replay-quality-rejected",
+                "used_for_scoring": False,
+                "association_placeholder_covariance": "all-zero; never evaluated",
+            }
+        ),
         "endpoint_archives": endpoint_records,
         "attempted_event_count": events.attempted_event_count,
         "accepted_event_count": events.accepted_event_count,
@@ -358,6 +447,55 @@ def extract_case(
     return result
 
 
+def retain_case(
+    *,
+    protocol_path: Path,
+    case_id: str,
+    status: str,
+    evidence_manifest_paths: Sequence[Path],
+    output_dir: Path,
+) -> dict[str, Any]:
+    """Retain a registered non-scorable source case without opening an outcome."""
+
+    protocol = _protocol(protocol_path)
+    source_panel = cast(Mapping[str, Any], protocol["source_panel"])
+    _require(case_id in source_panel["case_ids"], "case is absent from source panel")
+    _require(
+        status in {"unavailable-physical-carrier", "retained-source-technical-failure"},
+        "retained source status is invalid",
+    )
+    _require(bool(evidence_manifest_paths), "retained source evidence is empty")
+    evidence = [
+        {
+            "path": str(path),
+            "sha256": _file_sha256(path),
+        }
+        for path in evidence_manifest_paths
+    ]
+    result = {
+        "schema": CASE_SCHEMA,
+        "schema_version": 1,
+        "case_id": case_id,
+        "protocol_sha256": _file_sha256(protocol_path),
+        "status": status,
+        "evidence_manifests": evidence,
+        "information_boundary": {
+            "opened_development_source_only": True,
+            "source_scoring_outcome_read": False,
+            "target_or_confirmation_data_read": False,
+            "held_v8_artifacts_accessed": False,
+            "dlo4_or_dlo5_accessed": False,
+            "deform_mean_changed": False,
+            "replacement_allowed": False,
+        },
+    }
+    result["artifact_id"] = content_id(result)
+    _require(not output_dir.exists(), "source case output already exists")
+    output_dir.mkdir(parents=True)
+    write_atomic_json(result, output_dir / CASE_FILENAME, overwrite=False)
+    return result
+
+
 def aggregate_source(
     *,
     protocol_path: Path,
@@ -367,6 +505,7 @@ def aggregate_source(
     protocol = _protocol(protocol_path)
     source_panel = cast(Mapping[str, Any], protocol["source_panel"])
     expected = tuple(str(value) for value in source_panel["case_ids"])
+    protocol_sha256 = _file_sha256(protocol_path)
     _require(
         len(case_manifest_paths) == len(expected), "source denominator is incomplete"
     )
@@ -375,7 +514,9 @@ def aggregate_source(
     for path in case_manifest_paths:
         record = _json(path, name="source case manifest")
         _require(
-            record.get("schema") == CASE_SCHEMA and record.get("schema_version") == 1,
+            record.get("schema") == CASE_SCHEMA
+            and record.get("schema_version") == 1
+            and record.get("protocol_sha256") == protocol_sha256,
             "source case schema changed",
         )
         _validated_content_id(record, name="source case")
@@ -397,7 +538,7 @@ def aggregate_source(
         ]
     )
     residual_groups: list[np.ndarray] = []
-    covariance_groups: list[np.ndarray] = []
+    covariance_groups: list[np.ndarray | None] = []
     for case_id in scorable:
         manifest_path = next(
             path
@@ -420,7 +561,17 @@ def aggregate_source(
             "source event arrays changed",
         )
         residual_groups.append(residual)
-        covariance_groups.append(covariance)
+        policy = records[case_id].get("uncertainty_policy", "matphys")
+        _require(
+            policy in {"matphys", "isotropic-fallback"},
+            "source case uncertainty policy changed",
+        )
+        if policy == "isotropic-fallback":
+            _require(
+                np.count_nonzero(covariance) == 0,
+                "fallback association covariance is not the frozen placeholder",
+            )
+        covariance_groups.append(covariance if policy == "matphys" else None)
 
     evaluation: dict[str, object] | None = None
     gates: dict[str, bool]
@@ -428,12 +579,24 @@ def aggregate_source(
         observation_floor = float(
             cast(Mapping[str, Any], protocol["covariance"])["observation_floor_m"]
         )
-        evaluation = evaluate_leave_one_group_out(
-            scorable,
-            residual_groups,
-            covariance_groups,
-            observation_floor_m=observation_floor,
-        )
+        if protocol.get("protocol_name") == "matphys-surface-uq-source-v2":
+            evaluation = evaluate_guarded_leave_one_group_out(
+                scorable,
+                residual_groups,
+                covariance_groups,
+                observation_floor_m=observation_floor,
+            )
+        else:
+            _require(
+                all(value is not None for value in covariance_groups),
+                "v1 source case unexpectedly selected a fallback",
+            )
+            evaluation = evaluate_leave_one_group_out(
+                scorable,
+                residual_groups,
+                [value for value in covariance_groups if value is not None],
+                observation_floor_m=observation_floor,
+            )
         metrics = cast(Mapping[str, Any], evaluation["equal_case_metrics"])
         gate = cast(Mapping[str, Any], protocol["source_gate"])
         coverage_interval = cast(list[float], gate["candidate_coverage_90_interval"])
@@ -465,6 +628,14 @@ def aggregate_source(
         "protocol_sha256": _file_sha256(protocol_path),
         "source_denominator_count": len(expected),
         "ordinary_scorable_count": len(scorable),
+        "matphys_scorable_count": sum(
+            records[case_id].get("uncertainty_policy", "matphys") == "matphys"
+            for case_id in scorable
+        ),
+        "isotropic_fallback_scorable_count": sum(
+            records[case_id].get("uncertainty_policy") == "isotropic-fallback"
+            for case_id in scorable
+        ),
         "retained_case_status": {
             case_id: records[case_id]["status"] for case_id in expected
         },
@@ -497,6 +668,16 @@ def _parser() -> argparse.ArgumentParser:
     extract.add_argument("--deform-prediction-manifest", type=Path, required=True)
     extract.add_argument("--matphys-warp-manifest", type=Path, required=True)
     extract.add_argument("--output-dir", type=Path, required=True)
+    retain = subparsers.add_parser("retain")
+    retain.add_argument("--protocol", type=Path, required=True)
+    retain.add_argument("--case-id", required=True)
+    retain.add_argument(
+        "--status",
+        choices=("unavailable-physical-carrier", "retained-source-technical-failure"),
+        required=True,
+    )
+    retain.add_argument("--evidence-manifest", type=Path, action="append", required=True)
+    retain.add_argument("--output-dir", type=Path, required=True)
     aggregate = subparsers.add_parser("aggregate")
     aggregate.add_argument("--protocol", type=Path, required=True)
     aggregate.add_argument("--case-manifest", type=Path, action="append", required=True)
@@ -518,6 +699,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             warp_manifest_path=_ordinary_file(
                 args.matphys_warp_manifest, name="MatPhys Warp manifest"
             ),
+            output_dir=Path(args.output_dir).absolute(),
+        )
+    elif args.command == "retain":
+        result = retain_case(
+            protocol_path=_ordinary_file(args.protocol, name="MatPhys source protocol"),
+            case_id=str(args.case_id),
+            status=str(args.status),
+            evidence_manifest_paths=[
+                _ordinary_file(path, name="retained source evidence")
+                for path in args.evidence_manifest
+            ],
             output_dir=Path(args.output_dir).absolute(),
         )
     else:
