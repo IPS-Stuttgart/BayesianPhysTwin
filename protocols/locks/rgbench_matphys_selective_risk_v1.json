@@ -1,0 +1,269 @@
+{
+  "schema": "bayesian-phystwin.rgbench-matphys-cohort-boundary",
+  "schema_version": 1,
+  "policy_id": "13abbe99729a82d58d2a50f3a282abc1ce64b0e068916f39e6f40b2451c45697",
+  "protocol_label": "RGBench MatPhys causal-prefix selective-risk cohort v1",
+  "claim_boundary": "Custom RGBench fixed-point source-development and untouched-garment target study of a causal-prefix native MatPhys/PhysTwin Warp ensemble as a probabilistic forecast and abstention signal; not the published visual MatPhys predictor, not official RGBench SOTA, not deployment safety, and not evidence on Deform360 or the PhysTwin-22 benchmark.",
+  "upstreams": {
+    "rgbench_repository": "hwk0809/RGBench",
+    "rgbench_revision": "5cc3d07209362b3bfdbfbc067168dea9a791690a",
+    "rgbench_hf_dataset": "RGBench/RGBench-Cloth-Sim2Real-v1",
+    "rgbench_hf_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+    "matphys_repository": "Wenqi-Zhao-UESTC/MatPhys",
+    "matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f"
+  },
+  "selection": {
+    "garment_selection_salt": "rgbench-matphys-risk-v1",
+    "cell_selection_salt": "rgbench-matphys-cell-v1",
+    "cell_roster_sha256": "bc23670b6a3356a8f183a80d1084e972f3890ea9aeb405a11073bb737fd41fa2",
+    "assignment_method": "metadata-only-stratified-manifold-status-v1",
+    "cell_selection_method": "minimum-salted-sha256-per-garment-action-v1",
+    "actions": [
+      "fling",
+      "fold",
+      "grasp"
+    ],
+    "source_manifold_garments": [
+      "beige_hoodie",
+      "blue_dress",
+      "green_tshirt",
+      "white_shirt"
+    ],
+    "source_nonmanifold_garments": [
+      "grey_sunwear"
+    ],
+    "target_manifold_garments": [
+      "brown_coat",
+      "grey_pleat_skirt",
+      "white_cakeskirt"
+    ],
+    "target_nonmanifold_garments": [
+      "khaki_blazer"
+    ],
+    "source_cells": [
+      {
+        "garment_id": "beige_hoodie",
+        "action": "fling",
+        "sample_id": "01",
+        "data_subfolder": "beige_hoodie/beige_hoodie_fling_2025-07-18-17-55-01",
+        "selection_key_sha256": "2de7f3d668c3c336ecb04faa77457f9c88e21bf14900bc2ccb3d0d5cf8f831c2"
+      },
+      {
+        "garment_id": "beige_hoodie",
+        "action": "fold",
+        "sample_id": "04",
+        "data_subfolder": "beige_hoodie/beige_hoodie_fold_2025-07-28-18-13-17",
+        "selection_key_sha256": "31470e2ef7b65d6903921bd25986966a8fd44e9a3b8c93a52806e76aef32452a"
+      },
+      {
+        "garment_id": "beige_hoodie",
+        "action": "grasp",
+        "sample_id": "03",
+        "data_subfolder": "beige_hoodie/beige_hoodie_grasp_2025-07-18-17-42-27",
+        "selection_key_sha256": "bc0572619d5b7ceb437110f4b0c7a943fc1e0c2d85b32595ad2a02fde7e89643"
+      },
+      {
+        "garment_id": "blue_dress",
+        "action": "fling",
+        "sample_id": "02",
+        "data_subfolder": "blue_dress/blue_dress_fling_2025-07-27-21-35-44",
+        "selection_key_sha256": "001e4de8a4e5821db56f483f511ddb28f60ced67eda5c850825658603049f4ed"
+      },
+      {
+        "garment_id": "blue_dress",
+        "action": "fold",
+        "sample_id": "08",
+        "data_subfolder": "blue_dress/blue_dress_fold_2025-07-19-18-50-00",
+        "selection_key_sha256": "97d92dc5794d37d516d71281c9782c321ac1abc6aa918a600b9c5034d0a7aee3"
+      },
+      {
+        "garment_id": "blue_dress",
+        "action": "grasp",
+        "sample_id": "02",
+        "data_subfolder": "blue_dress/blue_dress_grasp_2025-07-19-18-44-51",
+        "selection_key_sha256": "1e18b8e9965b4a2d669bee9747d6a778e9c60e540c029416a2dcb6b9791f2100"
+      },
+      {
+        "garment_id": "green_tshirt",
+        "action": "fling",
+        "sample_id": "03",
+        "data_subfolder": "green_tshirt/green_tshirt_fling_2025-07-19-19-21-22",
+        "selection_key_sha256": "0268caa936ae2fddbef99c019b16ec771fbef04b2ae8b41796c4d5c3d32eee4e"
+      },
+      {
+        "garment_id": "green_tshirt",
+        "action": "fold",
+        "sample_id": "02",
+        "data_subfolder": "green_tshirt/green_tshirt_fold_2025-07-28-18-22-41",
+        "selection_key_sha256": "08d80de4b47c90dfd59abb045462a3f2473520f6a3062e381d0d65e45f42ad52"
+      },
+      {
+        "garment_id": "green_tshirt",
+        "action": "grasp",
+        "sample_id": "03",
+        "data_subfolder": "green_tshirt/green_tshirt_grasp_2025-07-19-19-16-11",
+        "selection_key_sha256": "7e5dff00da2873f9f3d539b596ebf38e6b9c5d44bfc8edec50b732047c142b22"
+      },
+      {
+        "garment_id": "grey_sunwear",
+        "action": "fling",
+        "sample_id": "01",
+        "data_subfolder": "grey_sunwear/sunwear_fling_2025-07-19-18-04-35",
+        "selection_key_sha256": "448f6db4740324ef7bca0fa86ba2d56013c4828b2acfb3b6f52c953bf9f85a50"
+      },
+      {
+        "garment_id": "grey_sunwear",
+        "action": "fold",
+        "sample_id": "02",
+        "data_subfolder": "grey_sunwear/sunwear_fold_2025-07-19-18-02-01",
+        "selection_key_sha256": "0d27a3d13c81692f8c52518f77233c8cae0ca68229bb1f233e4ba269a5df9e2f"
+      },
+      {
+        "garment_id": "grey_sunwear",
+        "action": "grasp",
+        "sample_id": "01",
+        "data_subfolder": "grey_sunwear/sunwear_grasp_2025-07-19-17-47-32",
+        "selection_key_sha256": "5ad90f6ec52ca0de141ea1058aa6edc69cb8a3de59d535fe3a06c41688437e53"
+      },
+      {
+        "garment_id": "white_shirt",
+        "action": "fling",
+        "sample_id": "02",
+        "data_subfolder": "white_shirt/white_shirt_fling_2025-07-18-20-53-53",
+        "selection_key_sha256": "8647273bdd14281019072ae48a0aa78ef119a75b8f74ca959c2ff545f04117b2"
+      },
+      {
+        "garment_id": "white_shirt",
+        "action": "fold",
+        "sample_id": "02",
+        "data_subfolder": "white_shirt/white_shirt_fold_2025-07-28-18-36-00",
+        "selection_key_sha256": "9c84f33340183582b4b48eaf90b079d56dd7c4e7e70a93dbaed5761ad3afa264"
+      },
+      {
+        "garment_id": "white_shirt",
+        "action": "grasp",
+        "sample_id": "03",
+        "data_subfolder": "white_shirt/white_shirt_grasp_2025-07-18-20-46-46",
+        "selection_key_sha256": "3bbdbb8c582bb242c2c834fb962be0c6649d2e54659f37e98b62bd1d11094f77"
+      }
+    ],
+    "target_cells": [
+      {
+        "garment_id": "brown_coat",
+        "action": "fling",
+        "sample_id": "01",
+        "data_subfolder": "brown_coat/brown_coat_fling_2025-07-21-16-00-45",
+        "selection_key_sha256": "3a34903a9c6be4e4430311e515540015cf8e1c797e325faa9d9b15cefdb36824"
+      },
+      {
+        "garment_id": "brown_coat",
+        "action": "fold",
+        "sample_id": "01",
+        "data_subfolder": "brown_coat/brown_coat_fold_2025-07-28-17-56-25",
+        "selection_key_sha256": "45581de2d7531d90ca32158dfb7dba5017afa4107ea8b1bb11b81831d5020e87"
+      },
+      {
+        "garment_id": "brown_coat",
+        "action": "grasp",
+        "sample_id": "01",
+        "data_subfolder": "brown_coat/brown_coat_grasp_2025-07-21-15-53-00",
+        "selection_key_sha256": "24a173c451a565432734062b8cfe515f13fc6e833b29053731412ec6bf48aafd"
+      },
+      {
+        "garment_id": "grey_pleat_skirt",
+        "action": "fling",
+        "sample_id": "04",
+        "data_subfolder": "grey_pleat_skirt/grey_pleat_skirt_fling_2025-07-27-20-24-24",
+        "selection_key_sha256": "1f2deb9a9bd9a9dae6d8d2d4db2b0fc705f96af9e71f47318b553d464f9b7c28"
+      },
+      {
+        "garment_id": "grey_pleat_skirt",
+        "action": "fold",
+        "sample_id": "03",
+        "data_subfolder": "grey_pleat_skirt/grey_pleat_skirt_fold_2025-07-28-18-10-26",
+        "selection_key_sha256": "7cc99cc2fa3dfc9c2e2728fbbb1d5653c4f9a225cb0eeff934cbf0184481fcc8"
+      },
+      {
+        "garment_id": "grey_pleat_skirt",
+        "action": "grasp",
+        "sample_id": "03",
+        "data_subfolder": "grey_pleat_skirt/grey_pleat_skirt_grasp_2025-07-27-20-20-21",
+        "selection_key_sha256": "10ff9f437f558e8a810531ddd5cc69d076bfbafc1ab517ad79642dbbb9d07ace"
+      },
+      {
+        "garment_id": "khaki_blazer",
+        "action": "fling",
+        "sample_id": "02",
+        "data_subfolder": "khaki_blazer/blazer_fling_2025-07-19-18-31-53",
+        "selection_key_sha256": "9cd0ddf6cfd34ca290ab87ee6aac148342f767f01d3be3adc05da7e43e733c79"
+      },
+      {
+        "garment_id": "khaki_blazer",
+        "action": "fold",
+        "sample_id": "02",
+        "data_subfolder": "khaki_blazer/blazer_fold_2025-07-19-18-29-58",
+        "selection_key_sha256": "5991245a57a1045afa195f94109904cfe90e35af72b4c1ebf5c3597ffb9ab86e"
+      },
+      {
+        "garment_id": "khaki_blazer",
+        "action": "grasp",
+        "sample_id": "05",
+        "data_subfolder": "khaki_blazer/blazer_grasp_2025-07-19-18-28-21",
+        "selection_key_sha256": "0a140d72e5376a03c4ff42e9a2b2dc1dfecd451ec694523081352c3de3f68a8a"
+      },
+      {
+        "garment_id": "white_cakeskirt",
+        "action": "fling",
+        "sample_id": "02",
+        "data_subfolder": "white_cakeskirt/white_cakeskirt_fling_2025-07-27-17-28-25",
+        "selection_key_sha256": "021ac62e69247a021ddbc368cb4eaebc7ec135945195df4cf07603d938480f21"
+      },
+      {
+        "garment_id": "white_cakeskirt",
+        "action": "fold",
+        "sample_id": "04",
+        "data_subfolder": "white_cakeskirt/white_cakeskirt_fold_2025-07-28-17-36-17",
+        "selection_key_sha256": "178a4c4c9032e99492d579d252361f54006bc8c75e8f0cc3e529c6f9e99646de"
+      },
+      {
+        "garment_id": "white_cakeskirt",
+        "action": "grasp",
+        "sample_id": "04",
+        "data_subfolder": "white_cakeskirt/white_dress_grasp_2025-07-19-19-00-47",
+        "selection_key_sha256": "0855082ee623487510539433aa95501ae37408a86ac89317a34a5b72a6f5b553"
+      }
+    ]
+  },
+  "study": {
+    "observation_mode": "rgbench-fixed-point-recorded-end-effector-v1",
+    "candidate_family": "native-matphys-warp-spring-mass-ensemble-v1",
+    "candidate_scope": "source-development-unfrozen",
+    "source_fit_boundary": "causal-prefix-only",
+    "comparison_family": "official-rgbench-pybullet-fixed-point-v1",
+    "risk_signal_family": "causal-prefix-ensemble-disagreement-v1",
+    "fallback_policy": "exact-registered-reference-or-abstain-v1",
+    "target_method_freeze_required": true
+  },
+  "source_gate": {
+    "minimum_source_garments": 5,
+    "minimum_source_cells": 15,
+    "leave_one_garment_out_required": true,
+    "future_mean_nonregression_required": true,
+    "risk_coverage_dominance_required": true,
+    "nondegenerate_spread_required": true,
+    "exact_fallback_required": true,
+    "separate_target_authorization_artifact_required": true,
+    "deployment_safety_claim_authorized": false
+  },
+  "information_boundary": {
+    "public_metadata_read": true,
+    "source_payload_download_allowed_after_lock": true,
+    "source_payload_decode_allowed_after_lock": true,
+    "source_outcomes_may_be_used_for_development": true,
+    "target_payload_download_allowed": false,
+    "target_payload_decode_allowed": false,
+    "target_outcomes_opened": false,
+    "target_execution_authorized": false,
+    "replacement_allowed": false
+  }
+}
