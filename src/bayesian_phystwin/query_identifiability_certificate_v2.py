@@ -259,7 +259,7 @@ class QueryIdentifiabilityCertificateV2:
         augmented_rank = physical_rank + rank_increment
         normalized_residual = residual_frobenius / max(
             query_frobenius,
-            np.finfo(np.float64).tiny,
+            float(np.finfo(np.float64).tiny),
         )
         if query_frobenius == 0.0:
             status = QueryIdentifiabilityStatus.TRIVIAL_QUERY
