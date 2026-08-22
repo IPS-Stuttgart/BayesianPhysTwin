@@ -19,6 +19,13 @@ from ._portable_contracts import (
 
 PROTOCOL_SCHEMA: Final = "bayesian-phystwin.rgbench-matphys-cohort-boundary"
 PROTOCOL_VERSION: Final = 1
+AMENDMENT_SCHEMA: Final = (
+    "bayesian-phystwin.rgbench-matphys-preaccess-cohort-amendment"
+)
+AMENDMENT_VERSION: Final = 1
+BASE_POLICY_ID: Final = (
+    "13abbe99729a82d58d2a50f3a282abc1ce64b0e068916f39e6f40b2451c45697"
+)
 
 RGBENCH_REPOSITORY: Final = "hwk0809/RGBench"
 RGBENCH_REVISION: Final = "5cc3d07209362b3bfdbfbc067168dea9a791690a"
@@ -135,6 +142,55 @@ _BOUNDARY_FIELDS: Final = frozenset(
         "replacement_allowed",
     }
 )
+_AMENDMENT_FIELDS: Final = frozenset(
+    {
+        "schema",
+        "schema_version",
+        "amendment_id",
+        "supersedes_policy_id",
+        "protocol_label",
+        "claim_boundary",
+        "prior_exposure_audit",
+        "amended_roles",
+        "information_boundary",
+    }
+)
+_PRIOR_AUDIT_FIELDS: Final = frozenset(
+    {
+        "source_repository_commit",
+        "dataset_lock_artifact_sha256",
+        "dataset_lock_file_sha256",
+        "source_v13_protocol_file_sha256",
+        "registered_case_count",
+        "registered_garments",
+        "target_garments_absent_from_registered_cases",
+        "preexisting_full_dataset_cache_declared",
+        "audit_scope",
+    }
+)
+_AMENDED_ROLE_FIELDS: Final = frozenset(
+    {
+        "source_garments",
+        "target_garments",
+        "source_cell_count",
+        "target_cell_count",
+        "target_physical_group_count",
+        "assignment_method",
+    }
+)
+_AMENDED_BOUNDARY_FIELDS: Final = frozenset(
+    {
+        "public_metadata_read",
+        "prior_source_artifacts_read",
+        "preexisting_target_cache_may_exist",
+        "source_payload_read_allowed_after_amendment_lock",
+        "source_outcomes_may_be_used_for_development",
+        "target_payload_read_allowed",
+        "target_outcomes_opened",
+        "target_execution_authorized",
+        "replacement_allowed",
+    }
+)
 
 _EXPECTED_STUDY: Final = {
     "observation_mode": "rgbench-fixed-point-recorded-end-effector-v1",
@@ -237,6 +293,20 @@ class RGBenchMatPhysProtocolV1:
     @property
     def target_execution_authorized(self) -> bool:
         boundary = _mapping(self.value["information_boundary"], name="boundary")
+        return bool(boundary["target_execution_authorized"])
+
+
+@dataclass(frozen=True, slots=True)
+class AmendedRGBenchMatPhysProtocolV1:
+    base: RGBenchMatPhysProtocolV1
+    amendment: Mapping[str, Any]
+    amendment_id: str
+    source_cells: tuple[RGBenchCellV1, ...]
+    target_cells: tuple[RGBenchCellV1, ...]
+
+    @property
+    def target_execution_authorized(self) -> bool:
+        boundary = _mapping(self.amendment["information_boundary"], name="boundary")
         return bool(boundary["target_execution_authorized"])
 
 
@@ -436,8 +506,155 @@ def load_rgbench_matphys_protocol_v1(
     )
 
 
+def load_rgbench_matphys_preaccess_amendment_v1(
+    base_path: str | Path,
+    amendment_path: str | Path,
+) -> AmendedRGBenchMatPhysProtocolV1:
+    base = load_rgbench_matphys_protocol_v1(base_path)
+    _require(base.policy_id == BASE_POLICY_ID, "base policy changed")
+    value = load_strict_json_object(
+        amendment_path, label="RGBench MatPhys pre-access amendment"
+    )
+    require_exact_fields(value, expected=_AMENDMENT_FIELDS, name="amendment")
+    _require(value["schema"] == AMENDMENT_SCHEMA, "amendment schema changed")
+    _require(
+        value["schema_version"] == AMENDMENT_VERSION,
+        "amendment version changed",
+    )
+    amendment_id = sha256_digest(value["amendment_id"], name="amendment_id")
+    identity = dict(value)
+    del identity["amendment_id"]
+    _require(amendment_id == content_id(identity), "amendment_id does not match")
+    _require(
+        value["supersedes_policy_id"] == BASE_POLICY_ID,
+        "superseded policy changed",
+    )
+    nonempty_string(value["protocol_label"], name="protocol_label")
+    nonempty_string(value["claim_boundary"], name="claim_boundary")
+
+    audit = _mapping(value["prior_exposure_audit"], name="prior_exposure_audit")
+    require_exact_fields(audit, expected=_PRIOR_AUDIT_FIELDS, name="prior audit")
+    _require(
+        exact_revision(
+            audit["source_repository_commit"], name="source_repository_commit"
+        )
+        == "0680d2edb1a14647ffd92f2ddcb811fdc54a37d8",
+        "prior source repository changed",
+    )
+    _require(
+        sha256_digest(
+            audit["dataset_lock_artifact_sha256"],
+            name="dataset_lock_artifact_sha256",
+        )
+        == "3789947cbb9c7c58ccc39b8186b4e30e2a258e615bc2e02c05842bcdafe160e8",
+        "prior dataset artifact changed",
+    )
+    _require(
+        sha256_digest(
+            audit["dataset_lock_file_sha256"], name="dataset_lock_file_sha256"
+        )
+        == "7b1db95731c02291031ffb416e456e86cee9d95f164f9198db250ede2612a416",
+        "prior dataset lock changed",
+    )
+    _require(
+        sha256_digest(
+            audit["source_v13_protocol_file_sha256"],
+            name="source_v13_protocol_file_sha256",
+        )
+        == "6025644cdabd9abd5c106d2c51a012f86f809304b9e7912873d81ca5e56d3e3b",
+        "prior source protocol changed",
+    )
+    prior_garments = _exact_string_list(
+        audit["registered_garments"], name="registered_garments"
+    )
+    expected_prior = tuple(
+        sorted(SOURCE_MANIFOLD_GARMENTS + TARGET_MANIFOLD_GARMENTS)
+    )
+    _require(prior_garments == expected_prior, "prior garment roster changed")
+    _require(audit["registered_case_count"] == 63, "prior case count changed")
+    _require(
+        audit["target_garments_absent_from_registered_cases"] is True,
+        "target absence audit changed",
+    )
+    _require(
+        audit["preexisting_full_dataset_cache_declared"] is True,
+        "preexisting cache declaration changed",
+    )
+    nonempty_string(audit["audit_scope"], name="audit_scope")
+
+    roles = _mapping(value["amended_roles"], name="amended_roles")
+    require_exact_fields(roles, expected=_AMENDED_ROLE_FIELDS, name="amended roles")
+    source_garments = _exact_string_list(
+        roles["source_garments"], name="source_garments"
+    )
+    target_garments = _exact_string_list(
+        roles["target_garments"], name="target_garments"
+    )
+    expected_source = tuple(sorted(expected_prior))
+    expected_target = tuple(
+        sorted(SOURCE_NONMANIFOLD_GARMENTS + TARGET_NONMANIFOLD_GARMENTS)
+    )
+    _require(source_garments == expected_source, "amended source garments changed")
+    _require(target_garments == expected_target, "amended target garments changed")
+    _require(set(source_garments).isdisjoint(target_garments), "amended roles overlap")
+    _require(roles["source_cell_count"] == 21, "source cell count changed")
+    _require(roles["target_cell_count"] == 6, "target cell count changed")
+    _require(
+        roles["target_physical_group_count"] == 2,
+        "target physical group count changed",
+    )
+    _require(
+        roles["assignment_method"]
+        == "prior-exposure-audited-garment-outcome-status-v1",
+        "amended assignment method changed",
+    )
+
+    cells = base.source_cells + base.target_cells
+    source_set = frozenset(source_garments)
+    target_set = frozenset(target_garments)
+    source_cells = tuple(cell for cell in cells if cell.garment_id in source_set)
+    target_cells = tuple(cell for cell in cells if cell.garment_id in target_set)
+    _require(len(source_cells) == 21, "derived source cells changed")
+    _require(len(target_cells) == 6, "derived target cells changed")
+    _require(
+        len(source_cells) + len(target_cells) == len(cells),
+        "amended roles do not cover the base roster",
+    )
+
+    boundary = _mapping(value["information_boundary"], name="information_boundary")
+    require_exact_fields(
+        boundary,
+        expected=_AMENDED_BOUNDARY_FIELDS,
+        name="amended information boundary",
+    )
+    _require(
+        boundary
+        == {
+            "public_metadata_read": True,
+            "prior_source_artifacts_read": True,
+            "preexisting_target_cache_may_exist": True,
+            "source_payload_read_allowed_after_amendment_lock": True,
+            "source_outcomes_may_be_used_for_development": True,
+            "target_payload_read_allowed": False,
+            "target_outcomes_opened": False,
+            "target_execution_authorized": False,
+            "replacement_allowed": False,
+        },
+        "amended information boundary changed",
+    )
+    return AmendedRGBenchMatPhysProtocolV1(
+        base=base,
+        amendment=value,
+        amendment_id=amendment_id,
+        source_cells=source_cells,
+        target_cells=target_cells,
+    )
+
+
 __all__ = [
     "ACTIONS",
+    "AMENDMENT_SCHEMA",
+    "AmendedRGBenchMatPhysProtocolV1",
     "CELL_SELECTION_SALT",
     "FROZEN_CELL_ROSTER_SHA256",
     "GARMENT_SELECTION_SALT",
@@ -447,4 +664,5 @@ __all__ = [
     "RGBenchCellV1",
     "RGBenchMatPhysProtocolV1",
     "load_rgbench_matphys_protocol_v1",
+    "load_rgbench_matphys_preaccess_amendment_v1",
 ]

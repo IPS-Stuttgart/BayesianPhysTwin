@@ -37,6 +37,25 @@ Only source payloads may now be downloaded and decoded. Target download,
 decode, execution, and outcome access remain forbidden. Source results may be
 used to build the adapter and freeze the eventual target method.
 
+### Pre-access exposure amendment
+
+Before any payload access in this study, a server-side source registry revealed
+that seven manifold garments had already appeared in 63 cases from an earlier
+RGBench program. The initial 5/4 split is therefore retained only as an audited
+base lock and must not be executed directly.
+
+The content-addressed pre-access amendment reassigns all seven previously
+registered garments to development and reserves only the two non-manifold
+garments, `grey_sunwear` and `khaki_blazer`, as outcome-unopened targets. It
+also records that a full dataset cache may already exist from prior work; this
+study may read source files but must not read any target payload before a new
+authorization artifact. The active counts are 21 source cells and 6 target
+cells across only 2 independent target garments.
+
+That correction materially narrows the eventual claim. It is a prospective
+out-of-domain garment check, not broad population evidence, and its two target
+groups cannot certify a low deployment-harm rate.
+
 ## Required advancement evidence
 
 Before target access, a separate source-gate artifact must demonstrate:
