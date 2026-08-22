@@ -65,6 +65,7 @@ def _prediction_fixture(tmp_path: Path) -> dict[str, Path]:
         "case_id": "case-a",
         "target_object_id": "object-a",
         "passed": True,
+        "runtime": {"warp_version": "1.16.0"},
         "information_boundary": {
             "target_future_observations_used": False,
             "target_future_outcomes_opened": False,
@@ -152,6 +153,15 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
     )
     assert loaded["source_amendments"][4]["prediction_or_gate_changed"] is False
     assert loaded["source_amendments"][4]["camera_or_support_gate_changed"] is False
+    assert (
+        loaded["source_amendments"][5][
+            "source_suffix_or_metric_inspected_for_failed_case"
+        ]
+        is False
+    )
+    assert loaded["source_amendments"][5]["source_gate_changed"] is False
+    assert loaded["source_amendments"][5]["mixed_runtime_covariance_allowed"] is False
+    assert loaded["covariance"]["official_warp_version"] == "1.16.0"
     assert loaded["scoring_reconstruction_runtime"] == EXPECTED_RUNTIME_IDENTITY
     assert loaded["outcome"]["robot_state_required_for_scoring_reconstruction"] is False
     assert loaded["outcome"]["urdf_gripper_mask_used"] is False

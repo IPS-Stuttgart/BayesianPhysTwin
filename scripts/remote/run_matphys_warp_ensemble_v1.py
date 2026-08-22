@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import os
 import pickle
@@ -27,10 +28,20 @@ from bayesian_phystwin.matphys_warp_ensemble_v1 import (
     load_registered_replay_graph,
 )
 
+EXPECTED_OFFICIAL_WARP_VERSION = "1.16.0"
+
 
 def _require(condition: bool | np.bool_, message: str) -> None:
     if not bool(condition):
         raise ValueError(message)
+
+
+def _validate_warp_runtime(observed_version: str) -> str:
+    _require(
+        observed_version == EXPECTED_OFFICIAL_WARP_VERSION,
+        "official Warp runtime version changed",
+    )
+    return observed_version
 
 
 def _unavailable_render_symbol(name: str):
@@ -43,7 +54,7 @@ def _unavailable_render_symbol(name: str):
 
 def _stub_module(name: str, symbols: tuple[str, ...]) -> None:
     module = types.ModuleType(name)
-    module.__all__ = list(symbols)
+    module.__dict__["__all__"] = list(symbols)
     for symbol in symbols:
         setattr(module, symbol, _unavailable_render_symbol(f"{name}.{symbol}"))
     sys.modules[name] = module
@@ -51,11 +62,11 @@ def _stub_module(name: str, symbols: tuple[str, ...]) -> None:
 
 def _install_headless_render_stubs() -> None:
     gaussian = types.ModuleType("gaussian_splatting")
-    gaussian.__path__ = []  # type: ignore[attr-defined]
+    gaussian.__dict__["__path__"] = []
     scene = types.ModuleType("gaussian_splatting.scene")
-    scene.__path__ = []  # type: ignore[attr-defined]
+    scene.__dict__["__path__"] = []
     utils = types.ModuleType("gaussian_splatting.utils")
-    utils.__path__ = []  # type: ignore[attr-defined]
+    utils.__dict__["__path__"] = []
     sys.modules[gaussian.__name__] = gaussian
     sys.modules[scene.__name__] = scene
     sys.modules[utils.__name__] = utils
@@ -252,6 +263,8 @@ def main() -> int:
     from qqtt.engine.trainer_warp import InvPhyTrainerWarp
     from qqtt.utils import cfg
 
+    warp_version = _validate_warp_runtime(importlib.metadata.version("warp-lang"))
+
     cfg.load_from_yaml(str(args.config))
     cfg.controller_radius = args.controller_radius_m
     cfg.controller_max_neighbours = args.controller_max_neighbours
@@ -445,6 +458,7 @@ def main() -> int:
             "runner_sha256": file_sha256(Path(__file__)),
             "official_phystwin_revision": _git_revision(official_repository),
             "official_config_sha256": file_sha256(args.config),
+            "warp_version": warp_version,
             "device": args.device,
             "build_seconds": build_seconds,
             "rollout_seconds": rollout_seconds,

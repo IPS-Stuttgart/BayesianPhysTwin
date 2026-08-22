@@ -443,11 +443,14 @@ def _validate_prediction_seals(
 
     warp = _json(warp_path, name="MatPhys Warp manifest")
     warp_boundary = warp.get("information_boundary")
+    warp_runtime = warp.get("runtime")
     _require(
         warp.get("case_id") == case_id
         and warp.get("target_object_id") == object_id
         and warp.get("passed") is True
         and isinstance(warp_boundary, Mapping)
+        and isinstance(warp_runtime, Mapping)
+        and warp_runtime.get("warp_version") == "1.16.0"
         and warp_boundary.get("target_future_observations_used") is False
         and warp_boundary.get("target_future_outcomes_opened") is False,
         "MatPhys Warp ensemble is not sealed before scoring",
@@ -485,6 +488,7 @@ def _validate_protocol(
     camera_partition = protocol.get("camera_partition")
     window = protocol.get("window")
     outcome = protocol.get("outcome")
+    covariance = protocol.get("covariance")
     runtime = protocol.get("scoring_reconstruction_runtime")
     boundary = protocol.get("information_boundary")
     _require(
@@ -517,6 +521,11 @@ def _validate_protocol(
         and outcome.get("urdf_gripper_mask_used") is False
         and outcome.get("gripper_pixels_excluded") is False,
         "source outcome reconstruction changed",
+    )
+    _require(
+        isinstance(covariance, Mapping)
+        and covariance.get("official_warp_version") == "1.16.0",
+        "source covariance runtime changed",
     )
     _require(
         isinstance(runtime, Mapping)

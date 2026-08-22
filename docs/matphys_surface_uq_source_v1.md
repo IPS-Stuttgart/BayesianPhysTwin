@@ -89,6 +89,21 @@ The fifth operational amendment adds and verifies only `decord==0.6.0`, matching
 the existing successful SAM2 environment. No mask, reconstructed endpoint, or
 source metric was available, and all scientific settings remain unchanged.
 
+The complete eligible-panel Warp replay then exposed a separate runtime parity
+defect before any scoring-camera suffix was decoded for the affected case. The
+registered official trajectories were generated with Warp 1.16.0, but the
+auxiliary ensemble process inherited Warp 1.15.0. On a nearly deterministic
+case, a 0.293 mm reference difference divided by a 0.003 mm replay floor and
+failed the frozen relative parity check. The retained manifest is SHA-256
+`a199425fb5754b65940d1ca500944e1536913003803a9e7bcfd9bcf35e079002`.
+
+The sixth operational amendment fixes the mismatch rather than relaxing the
+parity threshold: Warp 1.16.0 is now a fail-closed runtime identity, and all
+eight eligible source covariances must be regenerated under that version. The
+earlier 1.15.0 single-case smoke metric is exploratory and cannot enter the
+final source gate. The DEFORM mean bytes and every advancement threshold remain
+unchanged.
+
 ## Estimand and comparators
 
 For each future frame, scoring-camera depth is backprojected into the world

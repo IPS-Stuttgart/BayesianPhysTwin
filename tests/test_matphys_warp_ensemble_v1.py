@@ -9,6 +9,10 @@ from bayesian_phystwin.matphys_warp_ensemble_v1 import (
     load_registered_replay_graph,
     trajectory_ensemble_arrays,
 )
+from scripts.remote.run_matphys_warp_ensemble_v1 import (
+    EXPECTED_OFFICIAL_WARP_VERSION,
+    _validate_warp_runtime,
+)
 
 
 def _graph(path: Path) -> tuple[np.ndarray, np.ndarray]:
@@ -101,7 +105,7 @@ def test_spring_ensemble_binds_member_count_and_graph(tmp_path: Path) -> None:
 
 
 def test_trajectory_arrays_keep_incumbent_mean_separate() -> None:
-    incumbent = np.zeros((2, 3, 3), dtype=np.float32)
+    incumbent: np.ndarray = np.zeros((2, 3, 3), dtype=np.float32)
     first = np.full_like(incumbent, 0.01)
     second = np.full_like(incumbent, 0.03)
 
@@ -155,3 +159,9 @@ def test_hierarchical_moments_separate_member_and_replay_variance() -> None:
         0.000101,
         rtol=1e-6,
     )
+
+
+def test_official_warp_runtime_is_exactly_pinned() -> None:
+    assert _validate_warp_runtime("1.16.0") == EXPECTED_OFFICIAL_WARP_VERSION
+    with pytest.raises(ValueError, match="runtime version changed"):
+        _validate_warp_runtime("1.15.0")
