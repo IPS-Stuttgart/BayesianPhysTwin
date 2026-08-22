@@ -279,10 +279,10 @@ def receipt_comment_body(
 - source workflow conclusion: `{source_workflow_conclusion}`
 - exact protected-main revision: `{source_head_sha}`
 - receipt ID: `{receipt_id}`
-- terminal stage: `{receipt.get('terminal_stage')}`
-- exit code: `{receipt.get('exit_code')}`
-- physical manifests: `{receipt['physical_manifest_count']}/10`
-- sealed source predictions: `{receipt['source_prediction_seal_count']}/100`
+- terminal stage: `{receipt.get("terminal_stage")}`
+- exit code: `{receipt.get("exit_code")}`
+- physical manifests: `{receipt["physical_manifest_count"]}/10`
+- sealed source predictions: `{receipt["source_prediction_seal_count"]}/100`
 - development suffix opened: `false`
 - v5 confirmation payloads opened: `false`
 - v6 fresh target selected: `false`
@@ -305,8 +305,7 @@ class GitHubIssueComments:
         if not token:
             _reject("receipt router has no GitHub token")
         self._comments_url = (
-            f"https://api.github.com/repos/{repository}/issues/"
-            f"{issue_number}/comments"
+            f"https://api.github.com/repos/{repository}/issues/{issue_number}/comments"
         )
         self._headers = {
             "Accept": "application/vnd.github+json",
@@ -351,9 +350,7 @@ def main() -> int:
     source_run_id = _required_environment("SOURCE_RUN_ID")
     source_run_attempt = _required_environment("SOURCE_RUN_ATTEMPT")
     source_head_sha = _required_environment("SOURCE_HEAD_SHA")
-    source_workflow_conclusion = _required_environment(
-        "SOURCE_WORKFLOW_CONCLUSION"
-    )
+    source_workflow_conclusion = _required_environment("SOURCE_WORKFLOW_CONCLUSION")
     receipt_root = Path(_required_environment("RECEIPT_ROOT"))
     token = _required_environment("GITHUB_TOKEN")
 
