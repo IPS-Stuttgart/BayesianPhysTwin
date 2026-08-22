@@ -86,8 +86,7 @@ def test_setup_binds_explicit_src_package_discovery(
     assert setup_arguments["package_dir"] == {"": "src"}
     assert setup_arguments["packages"] == namespace["DISCOVERED_PACKAGES"]
     assert all(
-        package == "bayesian_phystwin"
-        or package.startswith("bayesian_phystwin.")
+        package == "bayesian_phystwin" or package.startswith("bayesian_phystwin.")
         for package in setup_arguments["packages"]
     )
 
