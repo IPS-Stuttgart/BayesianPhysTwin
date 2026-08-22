@@ -9,6 +9,7 @@ STABLE_ROUTES: Final[dict[str, tuple[str, ...]]] = {
     "validate-observation-belief": ("observation", "validate"),
     "replay-residuals": ("residual", "replay"),
     "synthetic-benchmark": ("benchmark", "synthetic"),
+    "recursive-corruption-benchmark": ("benchmark", "recursive-corruption"),
     "decisive-evidence": ("evidence", "summarize"),
     "claim-bundle": ("evidence", "bundle"),
     "run-manifest": ("run", "manifest"),
@@ -79,6 +80,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     ),
     "replay-residuals": "replay exported residuals through the robust likelihood",
     "synthetic-benchmark": "run the controlled synthetic benchmark",
+    "recursive-corruption-benchmark": (
+        "run the controlled recursive corruption benchmark"
+    ),
     "decisive-evidence": "summarize matched guarded prospective evidence",
     "claim-bundle": "build or validate a content-addressed claim bundle",
     "assess-practical-equivalence": (
@@ -133,6 +137,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "validate-observation-belief": "observation-belief-v1",
     "replay-residuals": "residual-replay-v1",
     "synthetic-benchmark": "synthetic-benchmark-v3",
+    "recursive-corruption-benchmark": ("recursive-corruption-benchmark-v1"),
     "decisive-evidence": "bayesian-phystwin-decisive-evidence-v1",
     "claim-bundle": "claim-bundle-v1",
     "assess-practical-equivalence": "practical-equivalence-v1",

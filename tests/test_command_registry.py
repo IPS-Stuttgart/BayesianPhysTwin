@@ -20,7 +20,7 @@ from bayesian_phystwin.cli.command_registry import (
 
 def test_registry_is_complete_and_unambiguous() -> None:
     validate_registry()
-    assert len(COMMANDS) == 93
+    assert len(COMMANDS) == 94
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
     assert len(COMMANDS_BY_LEGACY_ALIAS) == 91
@@ -35,12 +35,22 @@ def test_registry_is_complete_and_unambiguous() -> None:
 def test_registry_covers_all_lifecycle_states() -> None:
     counts = {status: len(iter_commands(status=status)) for status in CommandStatus}
     assert counts == {
-        CommandStatus.STABLE: 7,
+        CommandStatus.STABLE: 8,
         CommandStatus.EXPERIMENT: 39,
         CommandStatus.DIAGNOSTIC: 22,
         CommandStatus.ARCHIVED: 25,
     }
     assert len(iter_commands()) == len(COMMANDS)
+
+
+def test_recursive_corruption_benchmark_is_registered_stable() -> None:
+    command = find_command_metadata("recursive-corruption-benchmark")
+    assert command is not None
+    assert command.status is CommandStatus.STABLE
+    assert command.canonical_command == "bpt benchmark recursive-corruption"
+    assert command.owner == "recursive-corruption-benchmark-v1"
+    assert command.optional_dependencies == ()
+    assert command.documentation == "docs/recursive_corruption_benchmark.md"
 
 
 def test_provider_failure_decomposition_is_a_registered_diagnostic() -> None:

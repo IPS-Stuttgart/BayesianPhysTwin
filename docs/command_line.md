@@ -18,6 +18,7 @@ bpt provider manifest
 bpt observation validate
 bpt residual replay
 bpt benchmark synthetic
+bpt benchmark recursive-corruption
 bpt evidence summarize
 bpt evidence bundle
 bpt run manifest
