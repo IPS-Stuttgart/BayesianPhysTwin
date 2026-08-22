@@ -78,6 +78,17 @@ does not promote JAX-FEM: its frozen linear small-strain quasistatic
 source-value arm was rejected before outcome access, and exact fallback
 preserved the incumbent.
 
+The guarded MatPhys uncertainty experiment adds four reviewed implementation
+modules while leaving the frozen DEFORM mean unchanged. Under the pinned
+release toolchain, current `main` builds a 582-member, 2,335,468-byte wheel and
+the candidate builds a 586-member, 2,355,401-byte wheel. The compressed-size
+ratchet is therefore raised narrowly to 2,360,000 bytes; the 590-member limit,
+isolated-import rules, API manifests, and source-distribution limits remain
+unchanged. This packaging allowance does not promote MatPhys: only 3 of 10
+opened source cases passed the frozen endpoint qualification, so no fresh
+target evaluation was authorized and exact fallback remains the supported
+behavior.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
