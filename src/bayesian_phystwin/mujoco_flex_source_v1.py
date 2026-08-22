@@ -1,9 +1,10 @@
 """Exact-runtime MuJoCo volumetric Flex replay for registered source meshes.
 
 The adapter uses a low-level tetrahedral ``flex`` roster. Every free material
-vertex receives one translational body, while every rigid contact patch is
-owned directly by one mocap body. The latter supplies exact moving Dirichlet
-data without a spring, equality weld, or post-step position overwrite.
+vertex receives one translational body, while every attached vertex is owned
+directly by one mocap body. Their targets come from the registered rigid patch
+projection, supplying exact moving Dirichlet data without a spring, equality
+weld, or post-step position overwrite.
 """
 
 from __future__ import annotations
@@ -54,7 +55,7 @@ MUJOCO_INSTALLED_FILE_SHA256 = {
 RUNTIME_SCHEMA = "bayesian-phystwin.mujoco-flex-source-runtime-v1"
 BACKEND_VARIANT = "mujoco-volumetric-flex-v1"
 CONSTITUTIVE_MODEL = "MuJoCo-native-Saint-Venant-Kirchhoff-flex-elasticity"
-ATTACHMENT_MODEL = "direct-rigid-patch-mocap-body-Dirichlet-v1"
+ATTACHMENT_MODEL = "direct-rigid-projected-vertex-mocap-Dirichlet-v2"
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -161,7 +162,7 @@ class MujocoFlexSceneV1:
     xml: str
     xml_sha256: str
     vertex_body_names: tuple[str, ...]
-    patch_body_names: tuple[str, ...]
+    attachment_body_names: tuple[str, ...]
     free_body_names: tuple[str, ...]
     total_reference_mass_kg: float
 
@@ -169,6 +170,7 @@ class MujocoFlexSceneV1:
 def build_mujoco_flex_scene_v1(
     geometry: NativeTetSourceGeometryV1,
     *,
+    integrator: str,
     integrator_time_step_s: float,
     young_modulus_pa: float,
     poisson_ratio: float,
@@ -181,6 +183,10 @@ def build_mujoco_flex_scene_v1(
 ) -> MujocoFlexSceneV1:
     """Build fixed-identity MJCF for an arbitrary registered tetrahedral mesh."""
 
+    _require(
+        integrator in {"implicit", "implicitfast"},
+        "integrator must be implicit or implicitfast",
+    )
     time_step = _finite(
         integrator_time_step_s,
         name="integrator_time_step_s",
@@ -205,20 +211,18 @@ def build_mujoco_flex_scene_v1(
         geometry,
         density_kg_m3=density_kg_m3,
     )
-    node_patch: npt.NDArray[np.int64] = np.full(
+    node_attachment: npt.NDArray[np.int64] = np.full(
         len(geometry.points_m),
         -1,
         dtype=np.int64,
     )
-    patch_names = tuple(
-        f"contact_patch_{index}" for index in range(len(geometry.patch_node_indices))
+    attachment_names = tuple(
+        f"contact_vertex_{int(node)}" for node in geometry.attachment_indices
     )
-    for patch_index, nodes in enumerate(geometry.patch_node_indices):
-        _require(
-            np.all(node_patch[nodes] == -1),
-            "contact patches overlap material nodes",
-        )
-        node_patch[nodes] = patch_index
+    node_attachment[geometry.attachment_indices] = np.arange(
+        len(geometry.attachment_indices),
+        dtype=np.int64,
+    )
 
     root = ElementTree.Element("mujoco", {"model": "bpt_source_volumetric_flex_v1"})
     ElementTree.SubElement(
@@ -227,17 +231,25 @@ def build_mujoco_flex_scene_v1(
         {
             "timestep": f"{time_step:.17g}",
             "gravity": "0 0 0",
-            "integrator": "implicitfast",
+            "integrator": integrator,
             "iterations": str(solver_iterations),
             "tolerance": f"{tolerance:.17g}",
         },
     )
     world = ElementTree.SubElement(root, "worldbody")
-    for name, center in zip(patch_names, geometry.patch_centers_m, strict=True):
+    for name, node in zip(
+        attachment_names,
+        geometry.attachment_indices,
+        strict=True,
+    ):
         ElementTree.SubElement(
             world,
             "body",
-            {"name": name, "mocap": "true", "pos": _numbers(center)},
+            {
+                "name": name,
+                "mocap": "true",
+                "pos": _numbers(geometry.points_m[node]),
+            },
         )
 
     free_names: list[str] = []
@@ -245,10 +257,10 @@ def build_mujoco_flex_scene_v1(
     local_vertices = np.empty_like(geometry.points_m)
     characteristic_length = max(float(np.linalg.norm(np.ptp(geometry.points_m, axis=0))), 1e-9)
     for node_index, point in enumerate(geometry.points_m):
-        patch_index = int(node_patch[node_index])
-        if patch_index >= 0:
-            body_names.append(patch_names[patch_index])
-            local_vertices[node_index] = point - geometry.patch_centers_m[patch_index]
+        attachment_index = int(node_attachment[node_index])
+        if attachment_index >= 0:
+            body_names.append(attachment_names[attachment_index])
+            local_vertices[node_index] = 0.0
             continue
         name = f"free_vertex_{node_index}"
         free_names.append(name)
@@ -315,7 +327,7 @@ def build_mujoco_flex_scene_v1(
         xml=xml,
         xml_sha256=hashlib.sha256(xml.encode()).hexdigest(),
         vertex_body_names=tuple(body_names),
-        patch_body_names=patch_names,
+        attachment_body_names=attachment_names,
         free_body_names=tuple(free_names),
         total_reference_mass_kg=total_mass,
     )
@@ -350,6 +362,7 @@ def run_mujoco_flex_source_replay_v1(
     attachment_indices: npt.ArrayLike,
     contact: RigidContactProjectionV1,
     driven: bool,
+    integrator: str,
     integrator_time_step_s: float,
     interval_substeps: int,
     young_modulus_pa: float,
@@ -381,6 +394,7 @@ def run_mujoco_flex_source_replay_v1(
     )
     scene = build_mujoco_flex_scene_v1(
         geometry,
+        integrator=integrator,
         integrator_time_step_s=integrator_time_step_s,
         young_modulus_pa=young_modulus_pa,
         poisson_ratio=poisson_ratio,
@@ -420,13 +434,13 @@ def run_mujoco_flex_source_replay_v1(
             model.body_mocapid[
                 mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
             ]
-            for name in scene.patch_body_names
+            for name in scene.attachment_body_names
         ],
         dtype=np.int64,
     )
     _require(
         np.array_equal(mocap_ids, np.arange(len(mocap_ids), dtype=np.int64)),
-        "MuJoCo mocap patch roster changed",
+        "MuJoCo mocap attachment roster changed",
     )
     mujoco.mj_forward(model, data)
     initial = np.asarray(data.flexvert_xpos, dtype=np.float64).copy()
@@ -459,14 +473,9 @@ def run_mujoco_flex_source_replay_v1(
                 rotations=rotations,
                 translations_m=translations,
             )
-            for patch_index, mocap_id in enumerate(mocap_ids):
-                data.mocap_pos[mocap_id] = (
-                    rotations[patch_index] @ geometry.patch_centers_m[patch_index]
-                    + translations[patch_index]
-                )
-                quaternion: FloatArray = np.empty(4, dtype=np.float64)
-                mujoco.mju_mat2Quat(quaternion, rotations[patch_index].reshape(-1))
-                data.mocap_quat[mocap_id] = quaternion
+            for attachment_index, mocap_id in enumerate(mocap_ids):
+                data.mocap_pos[mocap_id] = targets[attachment_index]
+                data.mocap_quat[mocap_id] = [1.0, 0.0, 0.0, 0.0]
             previous_time = float(data.time)
             previous_warning_count = _warning_count(data)
             mujoco.mj_step(model, data)
@@ -474,11 +483,17 @@ def run_mujoco_flex_source_replay_v1(
             current = np.asarray(data.flexvert_xpos, dtype=np.float64).copy()
             _require(
                 float(data.time) > previous_time,
-                "MuJoCo reset or failed to advance time",
+                "MuJoCo reset or failed to advance time "
+                f"at frame={frame}, substep={substep}, "
+                f"previous_time_s={previous_time:.17g}, "
+                f"observed_time_s={float(data.time):.17g}",
             )
+            warning_count = _warning_count(data)
             _require(
-                _warning_count(data) == previous_warning_count,
-                "MuJoCo emitted a native numerical warning",
+                warning_count == previous_warning_count,
+                "MuJoCo emitted a native numerical warning "
+                f"at frame={frame}, substep={substep}, "
+                f"warning_delta={warning_count - previous_warning_count}",
             )
             _require(
                 np.all(np.isfinite(current))
@@ -494,7 +509,10 @@ def run_mujoco_flex_source_replay_v1(
             minimum_determinant = min(minimum_determinant, step_minimum)
             _require(
                 step_minimum >= determinant_floor,
-                "MuJoCo source replay violated its hard orientation threshold",
+                "MuJoCo source replay violated its hard orientation threshold "
+                f"at frame={frame}, substep={substep}, "
+                f"minimum_determinant={step_minimum:.17g}, "
+                f"required_minimum={determinant_floor:.17g}",
             )
             attachment_error = float(
                 np.max(
@@ -524,7 +542,7 @@ def run_mujoco_flex_source_replay_v1(
         material_vertex_count=len(geometry.points_m),
         tetrahedron_count=len(geometry.cells),
         free_vertex_count=len(scene.free_body_names),
-        contact_patch_count=len(scene.patch_body_names),
+        contact_patch_count=len(geometry.patch_node_indices),
         total_reference_mass_kg=scene.total_reference_mass_kg,
     )
 

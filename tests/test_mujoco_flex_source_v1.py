@@ -55,13 +55,16 @@ def test_module_import_freezes_runtime_and_native_models() -> None:
     assert MUJOCO_WHEEL_SHA256 == (
         "c148824d73487fe5ee29c371eff981645f372ccada1f20ea331288323e37c65e"
     )
-    assert ATTACHMENT_MODEL == "direct-rigid-patch-mocap-body-Dirichlet-v1"
+    assert ATTACHMENT_MODEL == (
+        "direct-rigid-projected-vertex-mocap-Dirichlet-v2"
+    )
     assert "Saint-Venant-Kirchhoff" in CONSTITUTIVE_MODEL
 
 
 def test_scene_assigns_patch_vertices_directly_and_free_vertices_to_slides() -> None:
     scene = build_mujoco_flex_scene_v1(
         _geometry(),
+        integrator="implicitfast",
         integrator_time_step_s=1e-4,
         young_modulus_pa=1000.0,
         poisson_ratio=0.3,
@@ -73,20 +76,27 @@ def test_scene_assigns_patch_vertices_directly_and_free_vertices_to_slides() -> 
         solver_tolerance=1e-12,
     )
     root = ElementTree.fromstring(scene.xml)
+    option = root.find("./option")
+    assert option is not None and option.attrib["integrator"] == "implicitfast"
     flex = root.find("./deformable/flex")
     assert flex is not None
     assert flex.attrib["dim"] == "3"
     assert flex.attrib["body"].split() == [
-        "contact_patch_0",
-        "contact_patch_0",
-        "contact_patch_0",
-        "contact_patch_0",
+        "contact_vertex_0",
+        "contact_vertex_1",
+        "contact_vertex_2",
+        "contact_vertex_3",
         "free_vertex_4",
     ]
-    assert scene.patch_body_names == ("contact_patch_0",)
+    assert scene.attachment_body_names == (
+        "contact_vertex_0",
+        "contact_vertex_1",
+        "contact_vertex_2",
+        "contact_vertex_3",
+    )
     assert scene.free_body_names == ("free_vertex_4",)
-    patch = root.find("./worldbody/body[@name='contact_patch_0']")
-    assert patch is not None and patch.attrib["mocap"] == "true"
+    contact = root.find("./worldbody/body[@name='contact_vertex_0']")
+    assert contact is not None and contact.attrib["mocap"] == "true"
     free = root.find("./worldbody/body[@name='free_vertex_4']")
     assert free is not None
     assert len(free.findall("joint")) == 3
@@ -96,6 +106,7 @@ def test_scene_assigns_patch_vertices_directly_and_free_vertices_to_slides() -> 
 
 def test_scene_xml_and_mass_are_deterministic() -> None:
     kwargs = {
+        "integrator": "implicitfast",
         "integrator_time_step_s": 1e-4,
         "young_modulus_pa": 1000.0,
         "poisson_ratio": 0.3,
