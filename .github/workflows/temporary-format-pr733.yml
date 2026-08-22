@@ -1,0 +1,50 @@
+name: Temporary format PR 733
+
+on:
+  push:
+    branches:
+      - agent/provider-physical-mapping-audit-v1
+    paths:
+      - .github/workflows/temporary-format-pr733.yml
+      - src/bayesian_phystwin/provider_physical_mapping_audit_v1.py
+      - tests/test_portable_contracts_provider_physical_mapping_audit_v1.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/provider-physical-mapping-audit-v1
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install repository formatter
+        run: python -m pip install ruff==0.16.4
+      - name: Format PR files
+        run: |
+          python -m ruff format \
+            src/bayesian_phystwin/provider_physical_mapping_audit_v1.py \
+            tests/test_portable_contracts_provider_physical_mapping_audit_v1.py
+      - name: Commit formatting
+        shell: bash
+        run: |
+          if git diff --quiet -- \
+            src/bayesian_phystwin/provider_physical_mapping_audit_v1.py \
+            tests/test_portable_contracts_provider_physical_mapping_audit_v1.py; then
+            echo 'Files already formatted.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/bayesian_phystwin/provider_physical_mapping_audit_v1.py \
+            tests/test_portable_contracts_provider_physical_mapping_audit_v1.py
+          git commit -m 'Format provider mapping audit files'
+          git push origin HEAD:agent/provider-physical-mapping-audit-v1
