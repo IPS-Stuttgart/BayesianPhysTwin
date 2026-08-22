@@ -12,6 +12,7 @@ WORKFLOW = (
     ROOT / ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
 )
 ROUTER_WORKFLOW = ROOT / ".github/workflows/deform360-v6-source-receipt-routing.yml"
+ROUTER_TOOL = ROOT / "tools/quality/route_deform360_v6_source_receipt.py"
 CURRENT_ACTIONS = ROOT / "api/ecosystem-current-actions-v1.json"
 ARCHIVED_RUNNER = (
     ROOT / "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
@@ -82,6 +83,10 @@ def test_dual_runtime_source_receipt_routes_to_current_owning_issue() -> None:
         "contents": "read",
         "issues": "write",
     }
+    assert ROUTER_WORKFLOW.read_text(encoding="utf-8").startswith(
+        "# workflow-lifecycle: permanent\n"
+        "# workflow-owner: IPS-Stuttgart maintainers\n"
+    )
 
     route_job = router["jobs"]["route"]
     condition = route_job["if"]
@@ -90,6 +95,19 @@ def test_dual_runtime_source_receipt_routes_to_current_owning_issue() -> None:
     assert "workflow_run.event == 'workflow_dispatch'" in condition
 
     steps = route_job["steps"]
+    checkouts = [
+        step
+        for step in steps
+        if step.get("name") == "Check out trusted router revision"
+    ]
+    assert len(checkouts) == 1
+    checkout = checkouts[0]
+    assert checkout["uses"] == (
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
+    )
+    assert checkout["with"]["ref"] == "${{ github.sha }}"
+    assert checkout["with"]["persist-credentials"] is False
+
     downloads = [
         step
         for step in steps
@@ -108,11 +126,12 @@ def test_dual_runtime_source_receipt_routes_to_current_owning_issue() -> None:
         == f"Verify and route bounded receipt to issue {issue_number}"
     ]
     assert len(route_steps) == 1
-    route_script = route_steps[0]["run"]
-    assert "sha256sum --check SHA256SUMS" in route_script
-    assert "source receipt content identity does not verify" in route_script
-    assert 'os.environ["ISSUE_NUMBER"]' in route_script
-    assert "development_suffix_opened" in route_script
-    assert "v6_target_payloads_opened" in route_script
-    assert "v6_target_outcomes_used" in route_script
-    assert "deform360-v6-source-receipt:" in route_script
+    route_step = route_steps[0]
+    assert route_step["run"] == (
+        "set -euo pipefail\n"
+        "python tools/quality/route_deform360_v6_source_receipt.py\n"
+    )
+    assert route_step["env"]["SOURCE_HEAD_SHA"] == (
+        "${{ github.event.workflow_run.head_sha }}"
+    )
+    assert ROUTER_TOOL.is_file()
