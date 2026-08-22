@@ -28,15 +28,19 @@ calibration, transfer, or downstream-value claim.
 The machine-readable policy is implemented in
 `bayesian_phystwin.backend_portfolio_v1`. It records an evidence stage separate
 from implementation maturity, freezes the admitted family roster, and permits at
-most two active source-qualification candidates. The current active candidates
-are JAX-FEM and Genesis MPM. Both have passed source physics and failed their
-first frozen source-value arms. Genesis failed its prefix value gate; JAX-FEM's
-small-strain quasistatic arm failed the outcome-blind full-horizon physical gate
-before prefix access. Both remain below the recommendation threshold with exact
-incumbent fallback. The retained results are documented in
+most two active source-qualification candidates. There are currently no active
+candidates. Genesis MPM and JAX-FEM v1 passed source physics and failed their
+first frozen source-value arms. JAX-FEM v2 and SOFA FEM v3 subsequently passed
+their source-physics gates but were physically rejected during frozen
+full-horizon source-value generation before outcome access. MuJoCo Flex passed
+its native smoke and failed its source-physics gate. All remain below the
+recommendation threshold with exact incumbent fallback. The retained earlier
+results are documented in
 [`genesis_mpm_zebra_source_value_v1_result.md`](genesis_mpm_zebra_source_value_v1_result.md)
 and
 [`jax_fem_zebra_source_value_v1_result.md`](jax_fem_zebra_source_value_v1_result.md).
+The complete five-backend implementation/evidence split is recorded in
+[`backend_support_matrix_v1.md`](backend_support_matrix_v1.md).
 
 Run the focused validation with:
 
@@ -83,11 +87,12 @@ The freeze is lifted only by a retained qualification and source-value bundle,
 not by optional-dependency import success, registry coverage, or an analytic
 contract fallback.
 
-## Current qualification focus
+## Current qualification status
 
-Issue #664 identifies Genesis MPM and JAX-FEM as the current candidates. They
-occupy the two allowed active slots, but source outcomes should still be produced
-through one frozen funnel at a time:
+The Genesis, JAX-FEM, MuJoCo Flex, and SOFA source funnels are closed at their
+retained decisions; none occupies an active slot. A future amendment may reopen
+one existing family only for genuinely new source-independent mechanism evidence.
+Any such arm must still proceed through one frozen funnel at a time:
 
 1. native execution and provenance;
 2. source-physics qualification;
@@ -104,7 +109,8 @@ rejects the candidate.
 ## Relationship to releases
 
 A release may ship registered adapters below `source-value-qualified` for
-reproducibility and interface testing. Release notes and `bpt backend list`
-output must identify their evidence stage and state that adapter compatibility
-is not native physical evidence. Only qualified stages may be used to justify
-backend recommendations or scientific claims.
+reproducibility and interface testing. The installed
+`bayesian_phystwin.backend_support_v1` descriptor identifies support and
+evidence separately and states that compatibility is not native physical
+evidence. Only qualified stages may justify backend recommendations or
+scientific claims.

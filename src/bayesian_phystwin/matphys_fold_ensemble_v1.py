@@ -197,6 +197,42 @@ def _array_sha256(value: np.ndarray) -> str:
     return digest.hexdigest()
 
 
+def load_incumbent_spring_field(
+    path: str | Path,
+    *,
+    expected_edge_count: int,
+) -> npt.NDArray[np.float32]:
+    """Load an exact, graph-ordered incumbent spring field from ``.npy``.
+
+    A heterogeneous released PhysTwin checkpoint cannot be represented by the
+    scalar compatibility input used by the first MatPhys smoke. Requiring a
+    plain float32 ``.npy`` array keeps edge order, dtype, and bytes explicit;
+    archives with implicit key selection or dtype conversion are rejected.
+    """
+
+    source = _ordinary_file(path, name="incumbent spring field")
+    count = _positive_integer(expected_edge_count, name="expected_edge_count")
+    loaded = np.load(source, allow_pickle=False)
+    _require(
+        isinstance(loaded, np.ndarray),
+        "incumbent spring field must be one plain NumPy array",
+    )
+    field = cast(np.ndarray, loaded)
+    _require(
+        field.dtype == np.dtype(np.float32),
+        "incumbent spring field must use exact float32 dtype",
+    )
+    _require(
+        field.shape == (count,),
+        "incumbent spring field must match the registered graph edge count",
+    )
+    _require(
+        bool(np.all(np.isfinite(field))) and bool(np.all(field > 0.0)),
+        "incumbent spring field must be finite and positive",
+    )
+    return np.ascontiguousarray(field)
+
+
 def install_matphys_warp_warning_compatibility() -> bool:
     """Restore the warning hook expected by the pinned MatPhys checkout.
 

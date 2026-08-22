@@ -361,12 +361,86 @@ def hierarchical_trajectory_ensemble_arrays(
     }
 
 
+def baseline_relative_trajectory_ensemble_arrays(
+    incumbent_replicates_m: np.ndarray,
+    member_trajectories_m: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Estimate covariance around an intentionally unchanged baseline mean.
+
+    A covariance-only Bayesian-PhysTwin arm does not replace its stronger point
+    mean with the MatPhys ensemble mean. Centering fold trajectories around
+    that unused ensemble mean would therefore erase a displacement shared by
+    every physical member. This estimator instead takes the second moment of
+    each member's displacement from the incumbent replay mean and adds a
+    separately measured, shared incumbent replay floor.
+
+    Repeating every member is unnecessary under this registered shared-floor
+    approximation: numerical replay variation is measured using at least two
+    incumbent executions, while each independently trained member is replayed
+    once. The output remains raw model-family evidence and still requires
+    source-only scalar calibration before a predictive claim.
+    """
+
+    incumbent = np.asarray(incumbent_replicates_m)
+    members = np.asarray(member_trajectories_m)
+    _require(
+        incumbent.ndim == 4 and incumbent.shape[0] >= 2 and incumbent.shape[-1] == 3,
+        "incumbent_replicates_m must have shape (R,T,N,3) with R>=2",
+    )
+    _require(
+        members.ndim == 4
+        and members.shape[0] >= 2
+        and members.shape[1:] == incumbent.shape[1:],
+        "member_trajectories_m must have shape (M,T,N,3) with M>=2",
+    )
+    _require(
+        np.issubdtype(incumbent.dtype, np.floating)
+        and np.issubdtype(members.dtype, np.floating)
+        and np.all(np.isfinite(incumbent))
+        and np.all(np.isfinite(members)),
+        "baseline-relative replay trajectories must be finite floating arrays",
+    )
+    incumbent64 = incumbent.astype(np.float64)
+    members64 = members.astype(np.float64)
+    incumbent_mean = np.mean(incumbent64, axis=0)
+    replay_centered = incumbent64 - incumbent_mean[None]
+    replay_floor = np.einsum(
+        "rtni,rtnj->tnij", replay_centered, replay_centered, optimize=True
+    ) / len(incumbent64)
+    member_delta = members64 - incumbent_mean[None]
+    model_second_moment = np.einsum(
+        "mtni,mtnj->tnij", member_delta, member_delta, optimize=True
+    ) / len(members64)
+    total = model_second_moment + replay_floor
+    for name, covariance in {
+        "incumbent replay": replay_floor,
+        "baseline-relative model": model_second_moment,
+        "baseline-relative total": total,
+    }.items():
+        covariance[...] = 0.5 * (covariance + np.swapaxes(covariance, -1, -2))
+        _require(
+            float(np.min(np.linalg.eigvalsh(covariance))) >= -1e-12,
+            f"{name} covariance is not PSD",
+        )
+    return {
+        "incumbent_replicates_m": incumbent,
+        "incumbent_replay_mean_m": incumbent_mean,
+        "incumbent_replay_covariance_m2": replay_floor,
+        "member_trajectories_m": members,
+        "member_mean_trajectory_m": np.mean(members64, axis=0),
+        "member_delta_from_incumbent_m": member_delta,
+        "baseline_relative_model_second_moment_m2": model_second_moment,
+        "baseline_relative_total_covariance_m2": total,
+    }
+
+
 __all__ = [
     "MATPHYS_WARP_ENSEMBLE_PROTOCOL",
     "MATPHYS_WARP_ENSEMBLE_SCHEMA",
     "MATPHYS_WARP_ENSEMBLE_VERSION",
     "MatPhysSpringEnsemble",
     "MatPhysWarpReplayGraph",
+    "baseline_relative_trajectory_ensemble_arrays",
     "file_sha256",
     "hierarchical_trajectory_ensemble_arrays",
     "load_matphys_spring_ensemble",

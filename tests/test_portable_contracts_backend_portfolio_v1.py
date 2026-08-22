@@ -16,10 +16,7 @@ def test_current_portfolio_is_frozen_and_within_budget() -> None:
     assert report["admission_frozen"] is True
     assert report["new_family_admission_allowed"] is False
     assert report["maximum_active_qualification_candidates"] == 2
-    assert report["active_qualification_candidates"] == [
-        "jax-fem-quasistatic-v1",
-        "genesis-mpm-v1",
-    ]
+    assert report["active_qualification_candidates"] == []
     assert report["source_value_qualified_profiles"] == []
 
 
@@ -34,7 +31,7 @@ def test_portfolio_separates_implementation_and_evidence_maturity() -> None:
         "profile_id": "jax-fem-quasistatic-v1",
         "implementation_maturity": "preferred",
         "evidence_stage": "source-physics-qualified",
-        "active_qualification_candidate": True,
+        "active_qualification_candidate": False,
         "recommendation_authorized": False,
     }
     assert profiles["warp-fem-v1"]["implementation_maturity"] == "supported"
@@ -42,6 +39,8 @@ def test_portfolio_separates_implementation_and_evidence_maturity() -> None:
     assert profiles["warp-fem-v1"]["recommendation_authorized"] is False
     assert profiles["genesis-mpm-v1"]["evidence_stage"] == ("source-physics-qualified")
     assert profiles["genesis-mpm-v1"]["recommendation_authorized"] is False
+    assert profiles["sofa-fem-v1"]["evidence_stage"] == "source-physics-qualified"
+    assert profiles["mujoco-flex-v1"]["evidence_stage"] == "native-smoke-passed"
 
 
 def test_stage_roster_must_match_the_canonical_registry(
@@ -131,6 +130,11 @@ def test_source_value_backend_must_leave_active_funnel(
     stages = dict(portfolio._EVIDENCE_STAGE_BY_PROFILE)
     stages["jax-fem-quasistatic-v1"] = "source-value-qualified"
     monkeypatch.setattr(portfolio, "_EVIDENCE_STAGE_BY_PROFILE", stages)
+    monkeypatch.setattr(
+        portfolio,
+        "ACTIVE_QUALIFICATION_CANDIDATES",
+        ("jax-fem-quasistatic-v1",),
+    )
 
     with pytest.raises(RuntimeError, match="must leave the active source funnel"):
         portfolio.validate_backend_portfolio()

@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.matphys_warp_ensemble_v1 import (
+    baseline_relative_trajectory_ensemble_arrays,
     hierarchical_trajectory_ensemble_arrays,
     load_matphys_spring_ensemble,
     load_registered_replay_graph,
@@ -164,6 +165,50 @@ def test_hierarchical_moments_separate_member_and_replay_variance() -> None:
         0.000101,
         rtol=1e-6,
     )
+
+
+def test_baseline_relative_moments_keep_shared_member_displacement() -> None:
+    shape = (2, 1, 3)
+    incumbent = np.stack(
+        (
+            np.full(shape, -0.001, dtype=np.float32),
+            np.full(shape, 0.001, dtype=np.float32),
+        )
+    )
+    members = np.stack(
+        (
+            np.full(shape, 0.01, dtype=np.float32),
+            np.full(shape, 0.01, dtype=np.float32),
+        )
+    )
+
+    arrays = baseline_relative_trajectory_ensemble_arrays(incumbent, members)
+
+    np.testing.assert_allclose(arrays["incumbent_replay_mean_m"], 0.0)
+    np.testing.assert_allclose(arrays["member_mean_trajectory_m"], 0.01)
+    np.testing.assert_allclose(
+        arrays["baseline_relative_model_second_moment_m2"][..., 0, 0],
+        0.0001,
+        rtol=1e-6,
+    )
+    np.testing.assert_allclose(
+        arrays["incumbent_replay_covariance_m2"][..., 0, 0],
+        0.000001,
+        rtol=1e-6,
+    )
+    np.testing.assert_allclose(
+        arrays["baseline_relative_total_covariance_m2"][..., 0, 0],
+        0.000101,
+        rtol=1e-6,
+    )
+
+
+def test_baseline_relative_moments_reject_single_member() -> None:
+    incumbent = np.zeros((2, 2, 1, 3), dtype=np.float32)
+    member = np.zeros((1, 2, 1, 3), dtype=np.float32)
+
+    with pytest.raises(ValueError, match="M>=2"):
+        baseline_relative_trajectory_ensemble_arrays(incumbent, member)
 
 
 def test_official_warp_runtime_is_exactly_pinned() -> None:

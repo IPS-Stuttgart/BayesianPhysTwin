@@ -1,0 +1,87 @@
+{
+  "schema": "bayesian-phystwin.jax-fem-hyperelastic-source-value-failure-v2",
+  "schema_version": 2,
+  "status": "source-physical-rejection-before-outcome-access",
+  "claim_boundary": "This target-blind record rejects one exact JAX-FEM v2 source-value candidate after its frozen native prediction grid violated the registered hard orientation floor. It is not source-outcome, target, held-out, calibration, deployment, or state-of-the-art evidence.",
+  "implementation": {
+    "git_revision": "083890e77c50d33c8b9ec047d4ce1dd2f2591013",
+    "source_archive_sha256": "2f2d0a716df49abb31acb43fa5cc6fcb65790dd5abe2ff51e615137b8b1de5e0",
+    "source_bundle_sha256": "b62834b75ee85e82a2b618fb86ceeb6295843b2aa48b9aed3eace6a8898805b4",
+    "protocol_sha256": "4614dc7e6b550321c77572dfa5b88b1e6cbb1583c7fc98d322f6887078d94785",
+    "runtime_id": "0c1a24a70c805eb6ade62d176fafd574b3fc1c07fef8ca80592db6bb9ad23d15"
+  },
+  "qualification": {
+    "source_physics_result_sha256": "10c2bd94436b3b4414f30becd859667ddab88c0445aa17c950186fc6e1f434e3",
+    "artifact_sha256": "e2f0797d0778b6143a076debb4b2596baffd430477e55b0499b45d1b68d51ef6",
+    "artifact_id": "820df616afcd911af2999aa3b208f8d2da1e2acbe62521bc9d1980fc317aba50",
+    "qualified": true
+  },
+  "source_comparators": {
+    "double_lift_zebra_matphys_sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+    "double_stretch_zebra_matphys_sha256": "f633dd863da1a9da82433821328fe3cccbb94cc1ae08c29d51ff2f85f4ef51ae"
+  },
+  "execution": {
+    "host": "gpuserver4090",
+    "launch_count": 1,
+    "flock_pid": 2306092,
+    "python_pid": 2306094,
+    "expected_native_solve_count": 768,
+    "completed_native_solve_count": 217,
+    "complete_groups": [
+      "double_lift_zebra"
+    ],
+    "incomplete_group": "double_stretch_zebra",
+    "prediction_grid_published": false,
+    "log_sha256": "031772a973fcf094447bb9ed29c9734c1aa8d9b648d62ff4940f59517732857b",
+    "log_size_bytes": 1938293,
+    "lock_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "failure": {
+    "stage": "frozen-native-prediction-grid",
+    "exception_type": "ValueError",
+    "message": "JAX-FEM v2 continuation violated its hard orientation threshold",
+    "source_independent_runtime_failure": false,
+    "source_physical_admission_failure": true
+  },
+  "partial_artifacts": [
+    {
+      "relative_path": "double_lift_zebra/ensemble-mean.npz",
+      "sha256": "4869ac36156be4b87b6b5e447697479518aa444664cb780fc951b2a51aa8449a",
+      "size_bytes": 12901084
+    },
+    {
+      "relative_path": "double_lift_zebra/member-00.npz",
+      "sha256": "b1603b0b4f66f888493b15aa40218b5599230187581e74bb80621d680a50dbda",
+      "size_bytes": 12901084
+    },
+    {
+      "relative_path": "double_lift_zebra/member-01.npz",
+      "sha256": "7d38104cb51d739bc39c10f6aa678170ab32fae731fd1aa60263a2fb078b4b0a",
+      "size_bytes": 12901084
+    },
+    {
+      "relative_path": "double_lift_zebra/member-02.npz",
+      "sha256": "9452704c0fd9a34ef1a6d30bfdb28e0674efd79f09060562ed73c658a6d2da54",
+      "size_bytes": 12901084
+    }
+  ],
+  "information_boundary": {
+    "source_inputs_read": true,
+    "incumbent_and_matphys_predictions_read": true,
+    "prefix_outcomes_read": false,
+    "future_outcomes_read": false,
+    "target_or_held_out_artifact_read": false,
+    "dlo4_dlo5_access": false,
+    "held_v8_access": false
+  },
+  "decision": {
+    "candidate_admitted": false,
+    "source_value_passed": false,
+    "prefix_scoring_authorized": false,
+    "future_scoring_authorized": false,
+    "independent_untouched_evaluation_authorized": false,
+    "exact_incumbent_fallback_retained": true,
+    "retry_authorized": false,
+    "method_change_authorized_from_this_run": false
+  }
+}
