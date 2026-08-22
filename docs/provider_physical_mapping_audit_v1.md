@@ -70,6 +70,10 @@ A real provider adapter should construct the case from its already-frozen
 artifact and protocol rather than changing thresholds after inspecting physical
 or target outcomes.
 
+Within a preregistered source stage, this audit may validate a frozen provider
+artifact before source scoring. It is not the source gate: it neither attaches
+held-out outcomes nor authorizes confirmation or target access.
+
 ## Failure attribution integration
 
 `ProviderPhysicalMappingAuditV1.provider_failure_signal_patch()` exposes only
