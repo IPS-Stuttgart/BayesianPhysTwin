@@ -1,0 +1,77 @@
+{
+  "schema": "bayesian-phystwin.mujoco-flex-source-gate-failure-v1",
+  "schema_version": 1,
+  "claim_boundary": "Source-only numerical rejection of three exact MuJoCo 3.9 volumetric Flex attachment architectures on already-open PhysTwin geometry and action. This is not source-value, target, fresh-object, DEFORM, Causal4D, or state-of-the-art evidence.",
+  "backend": {
+    "engine_repository": "https://github.com/google-deepmind/mujoco",
+    "engine_revision": "237c17e48539b6c90bf90d3161547cbdcbfaa1e0",
+    "engine_version": "3.9.0",
+    "wheel_filename": "mujoco-3.9.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+    "wheel_sha256": "c148824d73487fe5ee29c371eff981645f372ccada1f20ea331288323e37c65e"
+  },
+  "implementation": {
+    "base_revision": "8e3ab399669e4452c117c6921f951dfb566b3b09",
+    "constrained_adapter_relative_path": "src/bayesian_phystwin/mujoco_flex_constrained_source_v1.py",
+    "constrained_adapter_sha256": "0643b1a7095cd7c4b552509c6c93bcc0d69d5cfa9ce799140501ccd2a4842aa6",
+    "reduced_adapter_relative_path": "src/bayesian_phystwin/mujoco_flex_reduced_source_v1.py",
+    "reduced_adapter_sha256": "ad4c90cb144ff5c32d1cebdc662b1d7afe5e104327a014285c04334a2d718f77"
+  },
+  "source": {
+    "group_id": "double_lift_zebra",
+    "source_inputs_sha256": "decab3f08e8385c9c0c1ae7f4a084ce4fed1cacf4dc5f31e9f617f4d38df88a7",
+    "derived_mesh_archive_sha256": "735af839eaae9ef86fd3fe3f67e483683d64d07d147cd0e4701a33bb80a26ad2",
+    "material_vertex_count": 4607,
+    "tetrahedron_count": 23659,
+    "attached_vertex_count": 107,
+    "source_object_outcomes_read": false,
+    "target_or_held_out_artifact_read": false
+  },
+  "synthetic_preflight": {
+    "passed": true,
+    "native_step_count": 20,
+    "minimum_deformation_determinant": 0.9987218905007674,
+    "maximum_attachment_error_m": 0.00010509413842760413,
+    "maximum_constraint_residual_m": 0.00010509411713937076,
+    "model_xml_sha256": "cc16174ccf8428779c84dc91a45ee0bf2f4b662a54584e067cb6b7aad8647c9b"
+  },
+  "frozen_source_replay": {
+    "backend_variant": "mujoco-volumetric-flex-point-constraint-v1",
+    "attachment_model": "dynamic-vertex-native-connect-to-rigid-target-v1",
+    "constraint_policy": "critical-native-connect-minimum-safe-timeconstant-v1",
+    "mass_policy": "minimal-conservative-uniform-blend-condition-cap-v1",
+    "mass_condition_number_cap": 100.0,
+    "integrator": "implicitfast",
+    "interval_duration_s": 0.03333333333333333,
+    "interval_substeps": 334,
+    "young_modulus_pa": 100000.0,
+    "poisson_ratio": 0.3,
+    "density_kg_m3": 1000.0,
+    "edge_damping": 1.0,
+    "elasticity_damping": 1.0,
+    "joint_damping": 0.1,
+    "solver_iterations": 100,
+    "solver_tolerance": 1e-12,
+    "hard_minimum_deformation_determinant": 0.35
+  },
+  "failure": {
+    "stage": "source-physical-orientation-gate",
+    "frame": 1,
+    "substep": 3,
+    "observed_minimum_deformation_determinant": -0.5294351619231272,
+    "required_minimum_deformation_determinant": 0.35,
+    "terminal": true,
+    "retry_performed": false,
+    "parameter_search_performed": false
+  },
+  "other_architectures": {
+    "direct_material_vertex_mocap": "rejected-before-value-gate-for-source-instability",
+    "reduced_trilinear_grid": "not-admitted-because-frozen-refinement-gate-did-not-pass"
+  },
+  "decision": {
+    "backend_admitted": false,
+    "source_value_authorized": false,
+    "target_evaluation_authorized": false,
+    "fallback": "retain-byte-exact-incumbent",
+    "no_retry": true
+  }
+}
