@@ -1,5 +1,11 @@
 # Native PhysTwin MatPhys source qualification v1
 
+## Status
+
+The source gate has completed and failed. See the
+[frozen result](matphys_native_phystwin_source_v1_result.md). No fresh target
+evaluation is authorized.
+
 ## Question
 
 The prior Deform360 endpoint could not test MatPhys covariance cleanly: graph
