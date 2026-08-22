@@ -173,7 +173,18 @@ DLO5, any revoked covariance cohort, or a SOTA claim.
 
 ## Status
 
-The v2 guard is locked before any additional scoring-camera reconstruction.
+The v2 source gate is terminally negative. Only three of the ten registered
+cases were scorable, below the frozen minimum of eight. Four cases failed the
+50% disjoint-surface support gate, two lacked an admissible physical carrier,
+and one was retained as a technical failure because its MatPhys covariance had
+fewer graph nodes than the byte-identical DEFORM mean. The remaining three
+cases comprised two MatPhys-covariance cases and one exact isotropic fallback.
+
+Consequently, no leave-one-case-out NLL, coverage, or volume comparison was
+computed, and no fresh target is authorized. The DEFORM mean and all frozen
+DEFORM results remain unchanged. The exact aggregate is stored in
+[`source_result.json`](../results/sota/matphys_surface_uq_source_v2/source_result.json),
+with interpretation and complete case accounting in
+[`matphys_surface_uq_source_v2_result.md`](matphys_surface_uq_source_v2_result.md).
 The predecessor v1 result remains immutable at
 [`replay_quality_result.json`](../results/sota/matphys_surface_uq_source_v1/replay_quality_result.json).
-No source calibration result or fresh-target evaluation is claimed yet.
