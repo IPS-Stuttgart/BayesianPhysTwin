@@ -51,6 +51,11 @@ def test_repository_manifest_expands_deterministically() -> None:
     assert {
         "tests/test_jax_fem_source_qualification_v1.py",
         "tests/test_jax_fem_source_value_v1.py",
+        "tests/test_jax_fem_hyperelastic_v2.py",
+        "tests/test_jax_fem_hyperelastic_source_qualification_v2.py",
+        "tests/test_jax_fem_hyperelastic_source_value_v2.py",
+        "tests/test_mujoco_flex_constrained_source_v1.py",
+        "tests/test_mujoco_flex_reduced_source_v1.py",
         "tests/test_sofa_fem_source_qualification_v3.py",
         "tests/test_sofa_fem_source_value_v3.py",
     } <= set(suites["stable-core-coverage"])

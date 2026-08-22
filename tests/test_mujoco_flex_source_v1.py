@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+from types import SimpleNamespace
 from xml.etree import ElementTree
 
 import numpy as np
+import pytest
 
+import bayesian_phystwin.mujoco_flex_source_v1 as module
 from bayesian_phystwin.jax_fem_source_qualification_v1 import (
     RigidContactProjectionV1,
 )
@@ -12,8 +17,10 @@ from bayesian_phystwin.mujoco_flex_source_v1 import (
     CONSTITUTIVE_MODEL,
     MUJOCO_REVISION,
     MUJOCO_VERSION,
+    MUJOCO_WHEEL_FILENAME,
     MUJOCO_WHEEL_SHA256,
     build_mujoco_flex_scene_v1,
+    load_native_mujoco_flex_modules_v1,
 )
 from bayesian_phystwin.native_tet_fem_source_v1 import (
     NativeTetSourceGeometryV1,
@@ -120,3 +127,67 @@ def test_scene_xml_and_mass_are_deterministic() -> None:
     assert left.xml == right.xml
     assert left.xml_sha256 == right.xml_sha256
     assert left.total_reference_mass_kg > 0.0
+
+
+def test_native_loader_verifies_wheel_abi_and_installed_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wheel = tmp_path / MUJOCO_WHEEL_FILENAME
+    wheel.write_bytes(b"pinned wheel")
+    package_root = tmp_path / "site"
+    for relative in module.MUJOCO_INSTALLED_FILE_SHA256:
+        path = package_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(relative.encode())
+    module_path = package_root / "mujoco" / "__init__.py"
+    mujoco = SimpleNamespace(__file__=str(module_path), __version__=MUJOCO_VERSION)
+    distribution = SimpleNamespace(locate_file=lambda relative: package_root / relative)
+
+    monkeypatch.setattr(module.platform, "python_implementation", lambda: "CPython")
+    monkeypatch.setattr(
+        module.platform, "python_version_tuple", lambda: ("3", "10", "0")
+    )
+    monkeypatch.setattr(module.importlib.metadata, "version", lambda _: MUJOCO_VERSION)
+    monkeypatch.setattr(
+        module.importlib.metadata, "distribution", lambda _: distribution
+    )
+    monkeypatch.setattr(module.importlib, "import_module", lambda _: mujoco)
+
+    def pinned_digest(path: Path) -> str:
+        if path == wheel:
+            return MUJOCO_WHEEL_SHA256
+        return module.MUJOCO_INSTALLED_FILE_SHA256[
+            path.relative_to(package_root).as_posix()
+        ]
+
+    monkeypatch.setattr(module, "_sha256_file", pinned_digest)
+    native = load_native_mujoco_flex_modules_v1(wheel)
+
+    assert native.mujoco is mujoco
+    assert native.package_root == package_root
+    assert native.installed_records == {
+        relative: {"sha256": digest}
+        for relative, digest in module.MUJOCO_INSTALLED_FILE_SHA256.items()
+    }
+
+
+def test_runtime_helpers_cover_hash_format_validation_and_warnings(
+    tmp_path: Path,
+) -> None:
+    payload = tmp_path / "payload.bin"
+    payload.write_bytes(b"payload")
+    assert module._sha256_file(payload) == hashlib.sha256(b"payload").hexdigest()
+    assert module._numbers(np.asarray([1, 2], dtype=np.int64)) == "1 2"
+    assert module._numbers(np.asarray([0.5], dtype=np.float64)) == "0.5"
+    warnings = SimpleNamespace(
+        warning=[SimpleNamespace(number=2), SimpleNamespace(number=3)]
+    )
+    assert module._warning_count(warnings) == 5
+
+    with pytest.raises(ValueError, match="value must be finite"):
+        module._finite(True, name="value")
+    with pytest.raises(ValueError, match="positive and finite"):
+        module._finite(0.0, name="value", positive=True)
+    with pytest.raises(ValueError, match="explicit failure"):
+        module._require(False, "explicit failure")

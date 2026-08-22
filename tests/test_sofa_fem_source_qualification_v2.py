@@ -215,6 +215,56 @@ def test_protocol_rejects_boundary_or_backend_mutation(tmp_path: Path) -> None:
         load_sofa_source_physics_protocol_v2(path)
 
 
+@pytest.mark.parametrize(
+    ("operation", "message"),
+    [
+        (lambda: qualification_module._mapping([], name="value"), "mapping"),
+        (
+            lambda: qualification_module._exact_fields(
+                {"extra": 1}, frozenset({"required"}), "value"
+            ),
+            "fields changed",
+        ),
+        (
+            lambda: qualification_module._canonical_string(" padded ", name="value"),
+            "canonical",
+        ),
+        (lambda: qualification_module._sha256("0" * 63, name="value"), "SHA-256"),
+        (
+            lambda: qualification_module._git_revision("g" * 40, name="value"),
+            "Git revision",
+        ),
+        (lambda: qualification_module._positive_int(0, name="value"), "positive"),
+        (
+            lambda: qualification_module._nonnegative_int(-1, name="value"),
+            "nonnegative",
+        ),
+        (lambda: qualification_module._finite(True, name="value"), "finite"),
+        (
+            lambda: qualification_module._finite(float("nan"), name="value"),
+            "finite",
+        ),
+        (lambda: qualification_module._vector3([1.0], name="value"), "three-element"),
+        (
+            lambda: qualification_module._positive_int_tuple([], name="value"),
+            "nonempty",
+        ),
+        (
+            lambda: qualification_module._canonical_relative_path(
+                "../value", name="value"
+            ),
+            "canonical",
+        ),
+    ],
+)
+def test_protocol_helpers_reject_noncanonical_values(
+    operation: Any,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        operation()
+
+
 def test_source_and_prepared_loaders_replay_locked_contact(tmp_path: Path) -> None:
     protocol_path, roots = _synthetic_protocol_and_roots(tmp_path)
     protocol = load_sofa_source_physics_protocol_v2(protocol_path)

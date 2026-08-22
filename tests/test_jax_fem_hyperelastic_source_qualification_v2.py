@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -101,6 +102,49 @@ def test_rotation_interpolation_stays_in_so3_and_preserves_endpoints() -> None:
     middle = interpolate_rotation_v2(left, right, 0.5)
     np.testing.assert_allclose(middle.T @ middle, np.eye(3), atol=1e-12, rtol=0.0)
     assert np.linalg.det(middle) == pytest.approx(1.0, abs=1e-12)
+
+
+@pytest.mark.parametrize(
+    ("operation", "message"),
+    [
+        (lambda: module._mapping([], name="value"), "must be a mapping"),
+        (
+            lambda: module._exact_fields(
+                {"extra": 1}, frozenset({"required"}), "value"
+            ),
+            "fields changed",
+        ),
+        (lambda: module._canonical_string(" padded ", name="value"), "canonical"),
+        (lambda: module._sha256("0" * 63, name="value"), "SHA-256"),
+        (lambda: module._git_revision("g" * 40, name="value"), "Git revision"),
+        (lambda: module._positive_int(0, name="value"), "positive integer"),
+        (lambda: module._nonnegative_int(-1, name="value"), "nonnegative integer"),
+        (lambda: module._finite(True, name="value"), "must be finite"),
+        (
+            lambda: module._finite(float("nan"), name="value"),
+            "must be finite",
+        ),
+        (
+            lambda: module._canonical_relative_path("../value", name="value"),
+            "not canonical",
+        ),
+        (
+            lambda: module._canonical_relative_path("dir\\value", name="value"),
+            "POSIX separators",
+        ),
+        (lambda: module._integer_tuple([], name="value"), "nonempty integer list"),
+        (
+            lambda: module._integer_tuple([1, 1], name="value"),
+            "sorted and unique",
+        ),
+    ],
+)
+def test_v2_protocol_helpers_reject_noncanonical_values(
+    operation: Callable[[], object],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        operation()
 
 
 def _points() -> npt.NDArray[np.float32]:
@@ -275,6 +319,30 @@ def test_v2_qualification_copies_exact_fallback_without_outcome_access(
         incumbent = roots[group["group_id"]] / group["incumbent_relative_path"]
         fallback = output / group["group_id"] / "exact-incumbent-fallback.npz"
         assert fallback.read_bytes() == incumbent.read_bytes()
+
+
+def test_v2_qualification_rejects_incomplete_roster_or_existing_output(
+    tmp_path: Path,
+) -> None:
+    protocol, roots = _synthetic_protocol_and_roots(tmp_path)
+
+    with pytest.raises(ValueError, match="complete frozen source roster"):
+        run_jax_fem_hyperelastic_source_qualification_v2(
+            protocol_path=protocol,
+            group_roots={},
+            output_dir=tmp_path / "unused",
+            repo_root=ROOT,
+        )
+
+    output = tmp_path / "existing"
+    output.mkdir()
+    with pytest.raises(FileExistsError):
+        run_jax_fem_hyperelastic_source_qualification_v2(
+            protocol_path=protocol,
+            group_roots=roots,
+            output_dir=output,
+            repo_root=ROOT,
+        )
 
 
 def test_v2_runner_help_does_not_import_native_jax_fem() -> None:

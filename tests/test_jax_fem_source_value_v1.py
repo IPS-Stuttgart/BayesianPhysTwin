@@ -322,6 +322,24 @@ def _synthetic_gate(
     }
 
 
+def test_grid_loader_rejects_unregistered_protocol_label(tmp_path: Path) -> None:
+    paths = _synthetic_gate(tmp_path, truth_slope_m=0.001)
+    grid_path = paths["grid_root"] / GRID_FILENAME
+    grid = json.loads(grid_path.read_text(encoding="utf-8"))
+    protocol = SimpleNamespace(
+        sha256=grid["protocol_sha256"],
+        qualification_artifact_id=grid["qualification_artifact_id"],
+        value={"protocol_label": "unregistered"},
+    )
+
+    with pytest.raises(ValueError, match="protocol label is not registered"):
+        value_module._load_grid(
+            grid_path,
+            protocol=cast(Any, protocol),
+            enforce_physical_gate=False,
+        )
+
+
 def test_source_value_protocol_freezes_qualification_and_two_groups() -> None:
     protocol = load_jax_fem_source_value_protocol_v1(PROTOCOL)
 

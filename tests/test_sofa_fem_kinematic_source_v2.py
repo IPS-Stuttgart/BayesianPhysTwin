@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
+import bayesian_phystwin.sofa_fem_kinematic_source_v2 as module
 from bayesian_phystwin.jax_fem_source_qualification_v1 import (
     RigidContactProjectionV1,
 )
@@ -91,3 +93,47 @@ def test_schedule_is_deterministic_and_zero_action_stays_at_rest() -> None:
     right = build_sofa_kinematic_schedule_v2(geometry, contact, **kwargs)
     assert left.schedule_sha256 == right.schedule_sha256
     np.testing.assert_array_equal(left.relative_movements_m, 0.0)
+
+
+def test_schedule_rejects_invalid_time_step_or_substeps() -> None:
+    geometry, contact = _geometry_and_contact()
+    for time_step in (True, 0.0, float("nan")):
+        with pytest.raises(ValueError, match="integrator_time_step_s"):
+            build_sofa_kinematic_schedule_v2(
+                geometry,
+                contact,
+                driven=True,
+                integrator_time_step_s=time_step,
+                interval_substeps=1,
+            )
+    with pytest.raises(ValueError, match="interval_substeps"):
+        build_sofa_kinematic_schedule_v2(
+            geometry,
+            contact,
+            driven=True,
+            integrator_time_step_s=0.005,
+            interval_substeps=0,
+        )
+
+
+def test_scene_identity_binds_schedule_geometry_and_parameters() -> None:
+    geometry, contact = _geometry_and_contact()
+    schedule = build_sofa_kinematic_schedule_v2(
+        geometry,
+        contact,
+        driven=True,
+        integrator_time_step_s=0.005,
+        interval_substeps=2,
+    )
+    identity = module._scene_identity(
+        geometry=geometry,
+        schedule=schedule,
+        parameters={"young_modulus_pa": 1_000.0},
+    )
+    changed = module._scene_identity(
+        geometry=geometry,
+        schedule=schedule,
+        parameters={"young_modulus_pa": 2_000.0},
+    )
+    assert len(identity) == 64
+    assert identity != changed
