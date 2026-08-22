@@ -16,9 +16,7 @@ from typing import Final, cast
 
 import numpy as np
 
-INPUT_CONTRACT: Final = (
-    "bayesian-phystwin.fixed-mean-gaussian-nll-diagnostic-input-v1"
-)
+INPUT_CONTRACT: Final = "bayesian-phystwin.fixed-mean-gaussian-nll-diagnostic-input-v1"
 REPORT_CONTRACT: Final = (
     "bayesian-phystwin.fixed-mean-gaussian-nll-diagnostic-report-v1"
 )
@@ -116,13 +114,9 @@ def _finite(
     result = float(value)
     if not np.isfinite(result):
         raise ValueError(f"{name} must be a finite real number")
-    if minimum is not None and (
-        result <= minimum if exclusive else result < minimum
-    ):
+    if minimum is not None and (result <= minimum if exclusive else result < minimum):
         raise ValueError(f"{name} is below its registered minimum")
-    if maximum is not None and (
-        result >= maximum if exclusive else result > maximum
-    ):
+    if maximum is not None and (result >= maximum if exclusive else result > maximum):
         raise ValueError(f"{name} exceeds its registered maximum")
     return result
 
@@ -239,8 +233,10 @@ def _mean_metrics(rows: Sequence[Mapping[str, float]]) -> dict[str, float]:
             result["standardized_error_difference_per_dimension"],
         )
     )
-    tolerance = 128.0 * np.finfo(np.float64).eps * max(
-        1.0, *(abs(value) for value in result.values())
+    tolerance = (
+        128.0
+        * np.finfo(np.float64).eps
+        * max(1.0, *(abs(value) for value in result.values()))
     )
     if not all(np.isfinite(value) for value in result.values()):
         raise FloatingPointError("aggregated diagnostic became nonfinite")
@@ -310,8 +306,7 @@ def _record_metrics(
                 "candidate_marginal_coverage": candidate_coverage,
                 "candidate_mean_full_interval_width": candidate_width,
                 "nll_difference_per_dimension": float(
-                    candidate["total_per_dimension"]
-                    - reference["total_per_dimension"]
+                    candidate["total_per_dimension"] - reference["total_per_dimension"]
                 ),
                 "reference_marginal_coverage": reference_coverage,
                 "reference_mean_full_interval_width": reference_width,
@@ -375,9 +370,7 @@ def analyze_fixed_mean_gaussian_nll(payload: object) -> dict[str, object]:
     )
     horizons = tuple(
         _text(value, f"horizon_order[{index}]")
-        for index, value in enumerate(
-            _sequence(root["horizon_order"], "horizon_order")
-        )
+        for index, value in enumerate(_sequence(root["horizon_order"], "horizon_order"))
     )
     if not horizons or len(set(horizons)) != len(horizons):
         raise ValueError("horizon_order must contain unique labels")
@@ -426,19 +419,13 @@ def analyze_fixed_mean_gaussian_nll(payload: object) -> dict[str, object]:
     }
     group_rows = [
         {
-            "by_horizon": {
-                horizon: cells[(group, horizon)] for horizon in horizons
-            },
+            "by_horizon": {horizon: cells[(group, horizon)] for horizon in horizons},
             "group_id": group,
-            "overall": _mean_metrics(
-                [cells[(group, horizon)] for horizon in horizons]
-            ),
+            "overall": _mean_metrics([cells[(group, horizon)] for horizon in horizons]),
         }
         for group in groups
     ]
-    group_metrics = [
-        cast(Mapping[str, float], row["overall"]) for row in group_rows
-    ]
+    group_metrics = [cast(Mapping[str, float], row["overall"]) for row in group_rows]
     differences = [row["nll_difference_per_dimension"] for row in group_metrics]
     tie_tolerance = float(
         128.0
@@ -477,9 +464,7 @@ def analyze_fixed_mean_gaussian_nll(payload: object) -> dict[str, object]:
                 len(groups) - better - worse,
             ],
             "by_horizon": {
-                horizon: _mean_metrics(
-                    [cells[(group, horizon)] for group in groups]
-                )
+                horizon: _mean_metrics([cells[(group, horizon)] for group in groups])
                 for horizon in horizons
             },
             "numerical_tie_tolerance": tie_tolerance,

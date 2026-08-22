@@ -86,9 +86,7 @@ def test_terms_match_registered_gaussian_score() -> None:
     )
     expected = 0.5 * math.log(2.0 * math.pi) + 0.25 * math.log(4.0) + 0.25
     assert terms["total_per_dimension"] == pytest.approx(expected)
-    assert terms["sharpness_per_dimension"] == pytest.approx(
-        0.25 * math.log(4.0)
-    )
+    assert terms["sharpness_per_dimension"] == pytest.approx(0.25 * math.log(4.0))
     assert terms["standardized_error_per_dimension"] == pytest.approx(0.25)
 
     from bayesian_phystwin.probabilistic_scoring import (
@@ -163,9 +161,7 @@ def test_terms_are_orthogonally_invariant() -> None:
         rotation @ covariance @ rotation.T,
         rotation @ observation,
     )
-    assert transformed["log_determinant"] == pytest.approx(
-        original["log_determinant"]
-    )
+    assert transformed["log_determinant"] == pytest.approx(original["log_determinant"])
     assert transformed["mahalanobis_squared"] == pytest.approx(
         original["mahalanobis_squared"]
     )
