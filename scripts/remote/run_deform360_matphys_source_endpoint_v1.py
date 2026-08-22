@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -27,6 +29,23 @@ PREFIX_FRAME_COUNT = 58
 EVALUATION_STOP = 76
 MINIMUM_SUPPORT_CAMERAS = 3
 MANIFEST_FILENAME = "matphys_source_endpoint.json"
+EXPECTED_RUNTIME_IDENTITY: dict[str, Any] = {
+    "python_version": "3.10.20",
+    "numpy_version": "1.26.4",
+    "torch_version": "2.4.0+cu121",
+    "torchvision_version": "0.19.0+cu121",
+    "torch_cuda_version": "12.1",
+    "gsplat_version": "1.4.0+pt24cu121",
+    "nerfstudio_version": "1.1.5",
+    "opencv_python_headless_version": "4.10.0.84",
+    "opencv_contrib_python_version": "4.10.0.84",
+    "cuda_available": True,
+    "cuda_device_capability": [8, 9],
+    "gsplat_cuda_backend_available": True,
+    "gsplat_camera_model_available": True,
+    "nerfstudio_splatfacto_available": True,
+    "nerfstudio_gaussian_exporter_available": True,
+}
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -86,6 +105,58 @@ def _clean_revision(repository: Path, *, include_untracked: bool = True) -> str:
     ).stdout
     _require(not status.strip(), f"repository is dirty: {repository}")
     return revision
+
+
+def _validate_runtime_identity(observed: Mapping[str, Any]) -> dict[str, Any]:
+    _require(
+        set(observed) == {*EXPECTED_RUNTIME_IDENTITY, "cuda_device_name"},
+        "scoring reconstruction runtime fields changed",
+    )
+    for key, expected in EXPECTED_RUNTIME_IDENTITY.items():
+        _require(observed.get(key) == expected, f"scoring runtime {key} changed")
+    device_name = observed.get("cuda_device_name")
+    _require(
+        isinstance(device_name, str) and bool(device_name),
+        "CUDA device name is missing",
+    )
+    return dict(observed)
+
+
+def _runtime_identity(device: str) -> dict[str, Any]:
+    import torch
+    from gsplat.cuda._backend import _C
+    from nerfstudio.configs import method_configs
+    from nerfstudio.scripts import exporter
+
+    torch_device = torch.device(device)
+    observed = {
+        "python_version": platform.python_version(),
+        "numpy_version": importlib.metadata.version("numpy"),
+        "torch_version": importlib.metadata.version("torch"),
+        "torchvision_version": importlib.metadata.version("torchvision"),
+        "torch_cuda_version": torch.version.cuda,
+        "gsplat_version": importlib.metadata.version("gsplat"),
+        "nerfstudio_version": importlib.metadata.version("nerfstudio"),
+        "opencv_python_headless_version": importlib.metadata.version(
+            "opencv-python-headless"
+        ),
+        "opencv_contrib_python_version": importlib.metadata.version(
+            "opencv-contrib-python"
+        ),
+        "cuda_available": torch.cuda.is_available(),
+        "cuda_device_capability": list(torch.cuda.get_device_capability(torch_device)),
+        "cuda_device_name": torch.cuda.get_device_name(torch_device),
+        "gsplat_cuda_backend_available": _C is not None,
+        "gsplat_camera_model_available": _C is not None
+        and hasattr(_C, "CameraModelType"),
+        "nerfstudio_splatfacto_available": (
+            "splatfacto" in method_configs.method_configs
+        ),
+        "nerfstudio_gaussian_exporter_available": hasattr(
+            exporter, "ExportGaussianSplat"
+        ),
+    }
+    return _validate_runtime_identity(observed)
 
 
 def _trim_video(
@@ -412,6 +483,7 @@ def _validate_protocol(
     camera_partition = protocol.get("camera_partition")
     window = protocol.get("window")
     outcome = protocol.get("outcome")
+    runtime = protocol.get("scoring_reconstruction_runtime")
     boundary = protocol.get("information_boundary")
     _require(
         isinstance(source_panel, Mapping)
@@ -443,6 +515,11 @@ def _validate_protocol(
         and outcome.get("urdf_gripper_mask_used") is False
         and outcome.get("gripper_pixels_excluded") is False,
         "source outcome reconstruction changed",
+    )
+    _require(
+        isinstance(runtime, Mapping)
+        and dict(runtime) == EXPECTED_RUNTIME_IDENTITY,
+        "source scoring runtime changed",
     )
     _require(
         isinstance(boundary, Mapping)
@@ -501,6 +578,7 @@ def _copy_source_window(
     alignment = source_episode / "alignment.json"
     if alignment.is_file():
         shutil.copy2(alignment, destination_episode / "alignment.json")
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
@@ -561,6 +639,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         == "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
         "SAM2 checkpoint changed",
     )
+    runtime_identity = _runtime_identity(str(args.device))
     run_identity = {
         "schema": SCHEMA,
         "schema_version": 1,
@@ -576,6 +655,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "causal4d_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
             "sam2_checkpoint_sha256": _sha256_file(checkpoint),
         },
+        "scoring_reconstruction_runtime": runtime_identity,
         "window": {
             "frame_count": RAW_FRAME_COUNT,
             "prefix_frame_count": PREFIX_FRAME_COUNT,

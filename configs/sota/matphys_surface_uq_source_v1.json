@@ -17,6 +17,17 @@
       "reason": "The sealed known-action carrier was also CI-private. The registered scoring reconstruction therefore consumes only scoring-panel RGB, calibration, and source-fitted SAM2 masks. Deform360 depth reconstruction supports an absent robot carrier; the URDF gripper-mask stage is omitted and gripper pixels are not explicitly excluded.",
       "source_reconstruction_or_metric_inspected": false,
       "prediction_or_gate_changed": false
+    },
+    {
+      "amendment_id": "pinned-scoring-runtime-v3",
+      "failed_attempt_artifact_id": "688ecd6536580e53e0a943cde4a08c7b1918a4eadf5fbcfb804223c0434c9ec",
+      "failed_attempt_manifest_sha256": "57a4df4a7824b632ee40c7706a4e049aa7a5d2965e530c8c2222f6f232b65918",
+      "failure_stage": "Splatfacto initialization after source suffix decode and SAM2 mask generation, before a reconstructed endpoint or source metric existed",
+      "reason": "The inherited Python 3.12 environment provided a source-only gsplat package without its CUDA backend. Recreate and fail-closed verify the already validated Deform360 Python 3.10, Torch 2.4 CUDA 12.1, precompiled gsplat, and Nerfstudio runtime before any source suffix decode.",
+      "source_suffix_decoded": true,
+      "source_sam2_masks_generated": true,
+      "source_reconstructed_endpoint_or_metric_inspected": false,
+      "prediction_or_gate_changed": false
     }
   ],
   "source_panel": {
@@ -89,6 +100,26 @@
     "maximum_point_to_surface_distance_m": 0.05,
     "event_estimand": "nearest disjoint-view surface displacement for each registered DEFORM mean node",
     "official_deform360_point_annotation": false
+  },
+  "scoring_reconstruction_runtime": {
+    "python_version": "3.10.20",
+    "numpy_version": "1.26.4",
+    "torch_version": "2.4.0+cu121",
+    "torchvision_version": "0.19.0+cu121",
+    "torch_cuda_version": "12.1",
+    "gsplat_version": "1.4.0+pt24cu121",
+    "nerfstudio_version": "1.1.5",
+    "opencv_python_headless_version": "4.10.0.84",
+    "opencv_contrib_python_version": "4.10.0.84",
+    "cuda_available": true,
+    "cuda_device_capability": [
+      8,
+      9
+    ],
+    "gsplat_cuda_backend_available": true,
+    "gsplat_camera_model_available": true,
+    "nerfstudio_splatfacto_available": true,
+    "nerfstudio_gaussian_exporter_available": true
   },
   "source_gate": {
     "minimum_accepted_event_fraction_per_case": 0.5,

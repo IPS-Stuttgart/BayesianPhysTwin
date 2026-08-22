@@ -55,9 +55,21 @@ annotation or official benchmark score.
 
 The retained failed-attempt manifest is SHA-256
 `103ff5eb0768a454c7ef242ee860e94f70bb67be9381f89e331ababc3f3afe1c`.
-No source metric or reconstructed endpoint was available when either
-operational amendment was frozen, and no prediction or advancement threshold
-changed.
+The first robot-independent source execution then decoded the scoring-camera
+suffix and produced SAM2 masks, but stopped during Splatfacto initialization:
+the inherited Python 3.12 environment contained a source-only `gsplat` package
+without its CUDA backend. Its retained manifest is SHA-256
+`57a4df4a7824b632ee40c7706a4e049aa7a5d2965e530c8c2222f6f232b65918`.
+No reconstructed endpoint or source metric existed when the runtime amendment
+was frozen, and no prediction or advancement threshold changed.
+
+The endpoint runner now validates the scoring runtime before any source suffix
+decode. The frozen identity is Python 3.10.20, NumPy 1.26.4, Torch
+2.4.0+cu121 with CUDA 12.1 on compute capability 8.9, torchvision
+0.19.0+cu121, precompiled `gsplat` 1.4.0+pt24cu121 with
+`CameraModelType`, Nerfstudio 1.1.5 with Splatfacto and Gaussian export, and
+OpenCV 4.10.0.84. A mismatch is a retained technical failure, not permission
+to substitute another runtime or source case.
 
 ## Estimand and comparators
 

@@ -6,8 +6,10 @@ from pathlib import Path
 import pytest
 
 from scripts.remote.run_deform360_matphys_source_endpoint_v1 import (
+    EXPECTED_RUNTIME_IDENTITY,
     _validate_prediction_seals,
     _validate_protocol,
+    _validate_runtime_identity,
 )
 
 
@@ -126,6 +128,14 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
         is False
     )
     assert loaded["source_amendments"][1]["prediction_or_gate_changed"] is False
+    assert (
+        loaded["source_amendments"][2][
+            "source_reconstructed_endpoint_or_metric_inspected"
+        ]
+        is False
+    )
+    assert loaded["source_amendments"][2]["prediction_or_gate_changed"] is False
+    assert loaded["scoring_reconstruction_runtime"] == EXPECTED_RUNTIME_IDENTITY
     assert loaded["outcome"]["robot_state_required_for_scoring_reconstruction"] is False
     assert loaded["outcome"]["urdf_gripper_mask_used"] is False
     assert loaded["outcome"]["gripper_pixels_excluded"] is False
@@ -139,3 +149,36 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
             case_id="unregistered-case",
             scoring_cameras=scoring,
         )
+
+
+def test_scoring_runtime_identity_is_exact_and_cuda_backed() -> None:
+    observed = {**EXPECTED_RUNTIME_IDENTITY, "cuda_device_name": "Test GPU"}
+
+    assert _validate_runtime_identity(observed) == observed
+
+    for key, changed in (
+        ("python_version", "3.12.0"),
+        ("torch_version", "2.5.0+cu121"),
+        ("torch_cuda_version", "12.4"),
+        ("gsplat_cuda_backend_available", False),
+        ("gsplat_camera_model_available", False),
+        ("nerfstudio_splatfacto_available", False),
+    ):
+        mutated = {**observed, key: changed}
+        with pytest.raises(ValueError, match=f"runtime {key} changed"):
+            _validate_runtime_identity(mutated)
+
+
+def test_scoring_runtime_identity_rejects_missing_or_extra_fields() -> None:
+    observed = {**EXPECTED_RUNTIME_IDENTITY, "cuda_device_name": "Test GPU"}
+    observed.pop("numpy_version")
+    with pytest.raises(ValueError, match="runtime fields changed"):
+        _validate_runtime_identity(observed)
+
+    observed = {
+        **EXPECTED_RUNTIME_IDENTITY,
+        "cuda_device_name": "Test GPU",
+        "unregistered": "value",
+    }
+    with pytest.raises(ValueError, match="runtime fields changed"):
+        _validate_runtime_identity(observed)
