@@ -1,0 +1,71 @@
+{
+  "schema": "bayesian-phystwin.matphys-native-phystwin-source-protocol",
+  "schema_version": 1,
+  "protocol_id": "matphys-native-phystwin-source-v1",
+  "source_status": "already-open-development-only",
+  "cases": [
+    "cloth_blue_fold",
+    "cloth_blue_lift",
+    "cloth_pant_fold",
+    "cloth_pant_lift",
+    "cloth_red_fold",
+    "cloth_red_lift",
+    "cloth_shirt_fold",
+    "cloth_shirt_lift",
+    "cloth_skirt_1_fold",
+    "cloth_skirt_1_lift",
+    "cloth_skirt_2_fold"
+  ],
+  "source_inputs": {
+    "additional_archive_sha256": "0c8e6bf8d8142eee24e73386ead42a1be68442f7362eb53f3250b0f9ffa99c6a",
+    "independent11_input_manifest_sha256": "b5a38bf0c8324e494bc0c2cf4f49f27b01934e0c152ef086e76f11e0f8f7ae6e",
+    "matphys_fold_source_manifest_sha256": "75fb9c30207dc9f81c1b3a4c20d712fd1fc48c1fb5db4c8a9136255c32ef195e",
+    "matphys_fold_ensemble_id": "a49d21611a2b5e5b137b5f08199b5a5aab96a03789fec20777f78ae0bd72f34c",
+    "matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390"
+  },
+  "prediction": {
+    "point_mean": "released_inference_pkl_unchanged",
+    "incumbent_spring_field": "released_checkpoint_per_edge_float32",
+    "part_policy": "causal-dino-graph-voronoi-cloth-v1",
+    "part_count": 5,
+    "semantic_edge_weight": 4.0,
+    "dino_keyframes": 4,
+    "matphys_member_count": 11,
+    "proposal_strength": 1.0,
+    "incumbent_replays": 4,
+    "member_replays": 1,
+    "spring_force_accumulation": "official-atomic-v1",
+    "covariance_estimator": "baseline-relative-member-second-moment-plus-shared-incumbent-floor-v1",
+    "future_frames_used_by_predictor": false
+  },
+  "scoring": {
+    "identity_selection": "frame-zero-farthest-point-128-v1",
+    "future_validity": "released_visibility_and_motion_validity",
+    "aggregation": "equal-event-within-case-then-equal-case",
+    "nominal_coverage": 0.9,
+    "chi_square_df3_threshold": 6.251388631170325,
+    "scale_grid": [0.0, 0.25, 0.5, 1.0, 2.0, 4.0],
+    "isotropic_std_m_grid": [0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1],
+    "calibration": "leave-one-case-out-source-only-grid-nll-v1"
+  },
+  "advancement_gate": {
+    "minimum_case_nll_wins": 6,
+    "minimum_equal_case_nll_improvement_nats_per_event": 0.05,
+    "minimum_candidate_coverage_90": 0.8,
+    "maximum_candidate_coverage_90": 0.98,
+    "maximum_candidate_to_isotropic_mean_volume_ratio": 0.95,
+    "maximum_retained_native_parity_failures": 0,
+    "all_case_accounting_required": true
+  },
+  "information_boundary": {
+    "source_cases_are_fresh": false,
+    "source_cases_may_select_calibration": true,
+    "fresh_target_selected": false,
+    "fresh_target_outcomes_opened": false,
+    "held_v8_accessed": false,
+    "dlo4_accessed": false,
+    "dlo5_accessed": false
+  },
+  "claim_boundary": "This opened-source panel can qualify or reject a native MatPhys covariance donor. It cannot establish a fresh, real, confirmatory, or state-of-the-art result."
+}

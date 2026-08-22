@@ -40,6 +40,7 @@ from bayesian_phystwin.matphys_fold_ensemble_v1 import (  # noqa: E402
     assert_target_excluded,
     causal_frame_indices,
     install_matphys_warp_warning_compatibility,
+    load_incumbent_spring_field,
     matphys_graph_features,
     validate_matphys_fold_ensemble_source,
 )
@@ -71,6 +72,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--part-artifact")
     parser.add_argument("--part-count", type=int, default=5)
     parser.add_argument("--incumbent-spring-y-pa", type=float, default=10000.0)
+    parser.add_argument("--incumbent-spring-field")
     parser.add_argument("--proposal-strength", type=float, default=1.0)
     parser.add_argument("--device", default="cuda:0")
     return parser.parse_args()
@@ -226,6 +228,11 @@ def main() -> None:
         if args.part_artifact
         else None
     )
+    incumbent_path = (
+        _ordinary_file(args.incumbent_spring_field, name="incumbent spring field")
+        if args.incumbent_spring_field
+        else None
+    )
     output_dir = Path(args.output_dir).resolve()
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"output directory is not empty: {output_dir}")
@@ -253,13 +260,31 @@ def main() -> None:
         part_count=int(args.part_count),
     )
     features = matphys_graph_features(points_m, edges, point_part)
-    incumbent: np.ndarray = np.full(
-        len(edges),
-        float(args.incumbent_spring_y_pa),
-        dtype=np.float32,
-    )
-    if not np.isfinite(incumbent[0]) or incumbent[0] <= 0.0:
-        raise ValueError("incumbent spring stiffness must be finite and positive")
+    if incumbent_path is None:
+        incumbent: np.ndarray = np.full(
+            len(edges),
+            float(args.incumbent_spring_y_pa),
+            dtype=np.float32,
+        )
+        if not np.isfinite(incumbent[0]) or incumbent[0] <= 0.0:
+            raise ValueError("incumbent spring stiffness must be finite and positive")
+        incumbent_identity: dict[str, object] = {
+            "policy": "scalar-compatibility-v1",
+            "spring_y_pa": float(args.incumbent_spring_y_pa),
+            "path": None,
+            "sha256": None,
+        }
+    else:
+        incumbent = load_incumbent_spring_field(
+            incumbent_path,
+            expected_edge_count=len(edges),
+        )
+        incumbent_identity = {
+            "policy": "registered-per-edge-float32-npy-v1",
+            "spring_y_pa": None,
+            "path": str(incumbent_path),
+            "sha256": _sha256(incumbent_path),
+        }
 
     _configure_matphys_imports(matphys_root)
     _install_torchvision_nms_stub()
@@ -443,6 +468,7 @@ def main() -> None:
             "episode_graph": {"path": str(graph_path), "sha256": _sha256(graph_path)},
             "prefix_video": {"path": str(video_path), "sha256": _sha256(video_path)},
             "part_artifact": part_identity,
+            "incumbent_spring_field": incumbent_identity,
         },
         "graph_sha256": features.graph_sha256,
         "output": {"path": str(array_path), "sha256": _sha256(array_path)},
