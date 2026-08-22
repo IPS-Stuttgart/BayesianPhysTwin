@@ -894,12 +894,8 @@ def audit_provider_physical_mapping(
             "lower": [float(value) for value in case.query_bounds_m[0]],
             "upper": [float(value) for value in case.query_bounds_m[1]],
             "boundary_tolerance_m": policy.boundary_tolerance_m,
-            "effective_lower": [
-                _finite_or_none(float(value)) for value in lower
-            ],
-            "effective_upper": [
-                _finite_or_none(float(value)) for value in upper
-            ],
+            "effective_lower": [_finite_or_none(float(value)) for value in lower],
+            "effective_upper": [_finite_or_none(float(value)) for value in upper],
             "effective_finite": effective_query_bounds_finite,
         },
         "transform": transform_diagnostics,
