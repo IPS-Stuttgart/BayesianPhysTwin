@@ -17,7 +17,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
-from typing import Any, Final, Never, cast
+from typing import Any, Final, NoReturn, cast
 
 EXPECTED_REPOSITORY: Final = "IPS-Stuttgart/BayesianPhysTwin"
 EXPECTED_SCHEMA: Final = (
@@ -60,7 +60,7 @@ class ReceiptRoutingError(ValueError):
     """Raised when a compact source artifact fails closed verification."""
 
 
-def _reject(message: str) -> Never:
+def _reject(message: str) -> NoReturn:
     raise ReceiptRoutingError(message)
 
 
