@@ -25,10 +25,7 @@ BackendEvidenceStageV1 = Literal[
 BACKEND_PORTFOLIO_SCHEMA: Final = "bayesian-phystwin.backend-portfolio"
 BACKEND_PORTFOLIO_VERSION: Final = 1
 MAX_ACTIVE_QUALIFICATION_CANDIDATES: Final = 2
-ACTIVE_QUALIFICATION_CANDIDATES: Final = (
-    "jax-fem-quasistatic-v1",
-    "genesis-mpm-v1",
-)
+ACTIVE_QUALIFICATION_CANDIDATES: Final[tuple[str, ...]] = ()
 
 # This is the admitted family roster when the evidence-first freeze started.
 # A new family cannot enter the canonical registry while the freeze is active.
@@ -50,11 +47,11 @@ _EVIDENCE_STAGE_BY_PROFILE: Final[Mapping[str, BackendEvidenceStageV1]] = (
         {
             "jax-fem-quasistatic-v1": "source-physics-qualified",
             "warp-fem-v1": "registered-adapter",
-            "sofa-fem-v1": "registered-adapter",
+            "sofa-fem-v1": "source-physics-qualified",
             "genesis-mpm-v1": "source-physics-qualified",
             "position-based-dynamics-v1": "registered-adapter",
             "physx-fem-v1": "registered-adapter",
-            "mujoco-flex-v1": "registered-adapter",
+            "mujoco-flex-v1": "native-smoke-passed",
             "drake-fem-v1": "registered-adapter",
         }
     )

@@ -67,6 +67,9 @@ graph = [
 mpm = [
     "newton==1.5.0",
 ]
+mujoco-flex = [
+    "mujoco==3.9.0",
+]
 vision = [
     "h5py>=3.10",
     "opencv-python-headless>=4.8",
@@ -87,6 +90,7 @@ exclude = [
 [tool.setuptools.package-data]
 bayesian_phystwin = [
     "py.typed",
+    "contract_data/backend_support_v1/*.json",
     "contract_data/ecosystem_compatibility_v1/*.json",
     "contract_data/evidence_decision_v1/*.json",
     "contract_data/evidence_decision_v2/*.json",
@@ -119,6 +123,7 @@ warn_unused_ignores = true
 # invokes `mypy --strict` on the same files, covering global-only strict flags.
 [[tool.mypy.overrides]]
 module = [
+    "bayesian_phystwin.backend_support_v1",
     "bayesian_phystwin.run_manifest",
     "bayesian_phystwin.repository_provenance",
     "bayesian_phystwin.run_manifest_v2",

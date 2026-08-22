@@ -1,0 +1,95 @@
+{
+  "schema": "bayesian-phystwin.sofa-fem-canonical-source-value-failure-v3",
+  "schema_version": 3,
+  "status": "source-physical-rejection-before-outcome-access",
+  "claim_boundary": "This target-blind record rejects one exact SOFA FEM v3 source-value candidate after its frozen native full-horizon prediction violated the registered hard orientation floor. It is not source-outcome, target, held-out, calibration, deployment, or state-of-the-art evidence.",
+  "implementation": {
+    "git_revision": "9edfbaaff0735bf7f9f83cc7f949b65604f336b5",
+    "protocol_sha256": "236e32b86c0fc45352f8abcc22408f5e84ce3f07cb6a6dae9b53a53104da607d",
+    "implementation_source_sha256": "568965cb16681375894d42e82ab3086f55a26d83a0273a0f7a93527210e7c322",
+    "runner_source_sha256": "b96be85540f5a05c535582b67832df048c221371ecde32091bbe0be503b82f47",
+    "distribution_archive_sha256": "129211fd01781bdd5ba3f28f1c3617a2f3792a71b62dc609cf866eec4ac745e2",
+    "runtime_id": "f46e53707317bc652499e2f3af5b860a330f9dbf06014364acd19ffaf8acca8e"
+  },
+  "qualification": {
+    "source_physics_protocol_sha256": "4a9a72210787314e727b742795bb8c35af99ee6e75419d73435db2f1083eea73",
+    "source_physics_result_sha256": "a1a3bcab5877fe5481fe597a00c8d394cd793f0f9693251a08bbd90a26287f60",
+    "artifact_sha256": "6117ecc8c412635ff7a595793076972876212378e2b6ca843077f42b382a9c7d",
+    "artifact_id": "78f61268a753d95e59071592a0793ecb11d5aeb2fc10f39032095902bedb9fc9",
+    "qualified": true
+  },
+  "execution": {
+    "execution_mode": "managed-foreground-session",
+    "managed_recovery_count": 1,
+    "launch_recovery_receipt_sha256": "bb4c02940de895205583ee75dd3109dfa0513c561df2914793bf12b1eb1d85c7",
+    "launched_at_utc": "2026-08-22T03:42:04.147484697Z",
+    "failed_at_utc": "2026-08-22T04:18:08.010582359Z",
+    "expected_full_horizon_member_count": 6,
+    "completed_full_horizon_member_count": 3,
+    "complete_groups": [
+      "double_lift_zebra"
+    ],
+    "incomplete_group": "double_stretch_zebra",
+    "prediction_grid_published": false,
+    "pre_prefix_gate_run": false,
+    "log_sha256": "0263d130dc02ce6a41609e5aa7e9e59e8b45f8090e3a56ab4e9be3fdce8842eb",
+    "log_size_bytes": 3319
+  },
+  "failure": {
+    "stage": "frozen-native-full-horizon-prediction",
+    "exception_type": "ValueError",
+    "message": "SOFA v2 source replay violated its hard orientation threshold",
+    "group_id": "double_stretch_zebra",
+    "candidate_index": 0,
+    "young_modulus_pa": 25000.0,
+    "native_step": 1094,
+    "observed_minimum_deformation_determinant": 0.34743295104684863,
+    "required_minimum_deformation_determinant": 0.35,
+    "source_independent_runtime_failure": false,
+    "source_physical_admission_failure": true
+  },
+  "partial_artifacts": [
+    {
+      "relative_path": "double_lift_zebra/ensemble-mean.npz",
+      "sha256": "6f73a1c321ab2a066597919ea7da899b47fc80eeb421444dde9f1b41b90f79aa",
+      "size_bytes": 12901084
+    },
+    {
+      "relative_path": "double_lift_zebra/member-00.npz",
+      "sha256": "63ccc1583047358ef262f63e9c77d4788926c165925ca6cb50271959b523cbf4",
+      "size_bytes": 12901084
+    },
+    {
+      "relative_path": "double_lift_zebra/member-01.npz",
+      "sha256": "943e9d0a3150fd49c973bc51af9d42b2fdac994ac3c2f372e547f0dd35045f03",
+      "size_bytes": 12901084
+    },
+    {
+      "relative_path": "double_lift_zebra/member-02.npz",
+      "sha256": "ec0a68e5dedd4feb780f0e22263f2e05eeab58ef5c6f01aa7ff2dff0b61ed1ce",
+      "size_bytes": 12901084
+    }
+  ],
+  "information_boundary": {
+    "source_inputs_read": true,
+    "prepared_source_archives_read": true,
+    "incumbent_bytes_read_for_hash_binding": true,
+    "incumbent_prediction_arrays_read": false,
+    "matphys_artifact_read": false,
+    "prefix_outcomes_read": false,
+    "future_outcomes_read": false,
+    "target_or_held_out_artifact_read": false,
+    "dlo4_dlo5_access": false,
+    "held_v8_access": false
+  },
+  "decision": {
+    "candidate_admitted": false,
+    "source_value_passed": false,
+    "prefix_scoring_authorized": false,
+    "future_scoring_authorized": false,
+    "independent_untouched_evaluation_authorized": false,
+    "exact_incumbent_fallback_retained": true,
+    "retry_authorized": false,
+    "method_change_authorized_from_this_run": false
+  }
+}

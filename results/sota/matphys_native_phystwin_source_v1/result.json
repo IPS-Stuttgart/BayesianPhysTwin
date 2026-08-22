@@ -1,0 +1,527 @@
+{
+  "candidate_to_isotropic_mean_volume_ratio": 1.046331226148523,
+  "case_count": 11,
+  "case_nll_wins": 0,
+  "case_results": {
+    "cloth_blue_fold": {
+      "provenance": {
+        "case_input_id": "b3d3167b5d896a2b92fa4f2b9c67b2239809d33ebe328550dcb5f4aaa85f9a04",
+        "case_input_manifest_sha256": "cccea22d0e4342f7532e2fe7c9614ff3e5470774fce83eab3608a44edb4cfa12",
+        "future": [
+          116,
+          167
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0024144864814007847,
+          "maximum_absolute_error_m": 0.06323331594467163,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": false,
+          "released_baseline_sha256": "c4fe53dd757109e11412b2cdce483fe0ecefb5ee64efc878a0ebbddb31f8724a"
+        },
+        "prediction_id": "8ce691932aca4c690057779b63275e498438128077183014b1eae58440603398",
+        "prediction_manifest_sha256": "085fcd24f94612616bfb37868634592e38bb4deed186634f5ea2796cd3e8c4b7",
+        "prefix": [
+          0,
+          116
+        ],
+        "replay_archive_sha256": "14dd01a9c9160748de0ae73b14928c7c9f6bcf9f5e6e3ebdb21814c7238df9f9",
+        "replay_manifest_sha256": "6dd3ae72f7a59b89b3fabba4565576671daa71e6068fa6006b27d8af71839029",
+        "replay_result_id": "14fd81a00ec16b88b787efec31e81e7bfe7c25dec5b89d9a141548246e649049",
+        "status": "retained_native_parity_failure"
+      },
+      "status": "retained_native_parity_failure"
+    },
+    "cloth_blue_lift": {
+      "candidate": {
+        "coordinate_rmse_m": 0.0061329226398114,
+        "coverage_90": 0.9975990396158463,
+        "event_count": 1666.0,
+        "mean_ellipsoid_volume_m3": 0.0005390896438904356,
+        "nees": 0.27708151069141074,
+        "nll_nats_per_event": -8.812191071265607
+      },
+      "candidate_nll_improvement_nats_per_event": -0.026014570007644622,
+      "candidate_to_isotropic_volume_ratio": 1.02924234296566,
+      "event_count": 1666,
+      "isotropic": {
+        "coordinate_rmse_m": 0.0061329226398114,
+        "coverage_90": 0.9975990396158463,
+        "event_count": 1666.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299456,
+        "nees": 0.2820955507943342,
+        "nll_nats_per_event": -8.838205641273252
+      },
+      "provenance": {
+        "case_input_id": "8601b01496621f8c9e5c9cafe4be6895802a8237c92bd6f675022cb26560cee1",
+        "case_input_manifest_sha256": "8393544ed89ee272e7468236a5d56b5bdd79944ec393376b668643f739280877",
+        "future": [
+          57,
+          82
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0003133333054858603,
+          "maximum_absolute_error_m": 0.004625019384548068,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "b7a136d459ae81b5f44914d684181a34fd71dfa23c93d070eff1e5fd895ff528"
+        },
+        "prediction_id": "0003272a7a7d2d9e0218526796ffdb14bc114fa8648f967d5e98555d4d2c862f",
+        "prediction_manifest_sha256": "1cec69795cf0df6d25f3215fe8330f7b5c1daede6a8d3ea3d813f7fafd93b1c8",
+        "prefix": [
+          0,
+          57
+        ],
+        "replay_archive_sha256": "f64fcbc41d4ac12ea433c276d2fc3666b69492372b99063dabcac351b5986f91",
+        "replay_manifest_sha256": "5740f88caafc7401ddaa684ff9eb700848cdf5ea9528687fe40a13c67804a4d5",
+        "replay_result_id": "33b5ab1703ee2964fb397829619082c1800fbbc5a2a461044287054d5ba7450e",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 2.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_pant_fold": {
+      "candidate": {
+        "coordinate_rmse_m": 0.01664612341882174,
+        "coverage_90": 0.9345372460496614,
+        "event_count": 443.0,
+        "mean_ellipsoid_volume_m3": 0.000635449856464145,
+        "nees": 1.9578324763037478,
+        "nll_nats_per_event": -7.904548600792308
+      },
+      "candidate_nll_improvement_nats_per_event": -0.03560447259819011,
+      "candidate_to_isotropic_volume_ratio": 1.213215476343438,
+      "event_count": 443,
+      "isotropic": {
+        "coordinate_rmse_m": 0.01664612341882174,
+        "coverage_90": 0.9322799097065463,
+        "event_count": 443.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299455,
+        "nees": 2.0782006865598426,
+        "nll_nats_per_event": -7.940153073390498
+      },
+      "provenance": {
+        "case_input_id": "ebe0096fa915da5c313ffb6684aad8804bb0474dcbb895b3ac2237010bac8737",
+        "case_input_manifest_sha256": "16dcd7bfd21c087859739bd153e0ab6edc364049a2d8bcc9e3511463a7421a79",
+        "future": [
+          98,
+          140
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.00043987836968370747,
+          "maximum_absolute_error_m": 0.005454610101878643,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "17d810b3f61f928142a142b912bfbe3c8f9b84a8df8f9bccafe71bd555666924"
+        },
+        "prediction_id": "c98afc673909ae519988f03857554bd7d8259e24c99eafc283d05451171572e8",
+        "prediction_manifest_sha256": "7a163d800414ec8557ff76a7b79d768a43d2e58061f18f73fde93945ca530614",
+        "prefix": [
+          0,
+          98
+        ],
+        "replay_archive_sha256": "ec34806810f3baae5fe3afa7122d8693cffd4df6a554ca2d4c0d2b6e67f96e62",
+        "replay_manifest_sha256": "956394a36b5ce160b3530da02c50ea501ee3ad42197ff0d2dfa5b06c28dadee4",
+        "replay_result_id": "e37af77bf599304ab18b7e56e849032085b6c48b11fffdabaa5b34ec52e65ced",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 2.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_pant_lift": {
+      "provenance": {
+        "case_input_id": "e076f9f688871da639faa3b07821b0e163d4ea6927d3b888d92159be46fe3e15",
+        "case_input_manifest_sha256": "abaf81f7f80844f1f0f10a9bc288de323f53119df5a83d6a4e8f1a8fd2e70199",
+        "future": [
+          35,
+          50
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.006283698613410179,
+          "maximum_absolute_error_m": 0.6938522756099701,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": false,
+          "released_baseline_sha256": "8f70aeffd506cdaba5cd8d699ea19378aaa478e93318445e42f9fcf677fdb25f"
+        },
+        "prediction_id": "ed4c3844b858ef0248992445dfc3d0a6d0886fda8e22214ee832518ee009873b",
+        "prediction_manifest_sha256": "eac25f8a5ea04cfe69ab5b901b05053ba6fbd21eb84ffc7013a8664821f321b7",
+        "prefix": [
+          0,
+          35
+        ],
+        "replay_archive_sha256": "ea581da5db3b2476c067ae62e2f599b2a1e8502f2021723d800bdebaeaea8556",
+        "replay_manifest_sha256": "91877c4823634741696be744202b5e296aef04df9a14651cc323560641712211",
+        "replay_result_id": "726e98844c7de55c40f1f95892b87c2f8073cbb350cf4b6a267593d63235e0ba",
+        "status": "retained_native_parity_failure"
+      },
+      "status": "retained_native_parity_failure"
+    },
+    "cloth_red_fold": {
+      "candidate": {
+        "coordinate_rmse_m": 0.025916349857219686,
+        "coverage_90": 0.8408071748878924,
+        "event_count": 446.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299456,
+        "nees": 5.037428924413581,
+        "nll_nats_per_event": -6.460538954463628
+      },
+      "candidate_nll_improvement_nats_per_event": 0.0,
+      "candidate_to_isotropic_volume_ratio": 1.0,
+      "event_count": 446,
+      "isotropic": {
+        "coordinate_rmse_m": 0.025916349857219686,
+        "coverage_90": 0.8408071748878924,
+        "event_count": 446.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299456,
+        "nees": 5.037428924413581,
+        "nll_nats_per_event": -6.460538954463628
+      },
+      "provenance": {
+        "case_input_id": "dd37af418bd9abfcbc24342a2bb9e079ffc81cdb94ac4143010e66c10e9c3651",
+        "case_input_manifest_sha256": "610e22a0b9e1f3d88b43232d230310c11801dfd6d8cd3af38ab3523d7bdda1e2",
+        "future": [
+          82,
+          118
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0007270883568330984,
+          "maximum_absolute_error_m": 0.005697761196643114,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "bbe26b0c08ad00b296bc3c8574d6c4958f35a5ad5d3dff7d75a477c9b74879a3"
+        },
+        "prediction_id": "b30e72c5f22b13fe4b757f8a2a86400b9e489262f2d40fa9236917920a8ce250",
+        "prediction_manifest_sha256": "53af31c69d05c2387cc3213ea1dc39ff34aed58532c3fdbf81307a5dc0494957",
+        "prefix": [
+          0,
+          82
+        ],
+        "replay_archive_sha256": "9055752c7366a3143c1e0bc98c866660179a442a5bffd726ba1d8405d9ed86a5",
+        "replay_manifest_sha256": "764d9c59d48fc3e5dac4991892a64fbe774bf202a4ecb957f5ec6866dfbab6ae",
+        "replay_result_id": "6c97b3aa929726fd6093c6361b6dd7e5c6dfc01544b9f7dec46b4c8c77d606b7",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 0.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_red_lift": {
+      "candidate": {
+        "coordinate_rmse_m": 0.014771630152080882,
+        "coverage_90": 0.9752863170584689,
+        "event_count": 1659.0,
+        "mean_ellipsoid_volume_m3": 0.0005884977621705244,
+        "nees": 1.61555115354354,
+        "nll_nats_per_event": -8.087066248828913
+      },
+      "candidate_nll_improvement_nats_per_event": -0.07393320277951076,
+      "candidate_to_isotropic_volume_ratio": 1.1235734583867134,
+      "event_count": 1659,
+      "isotropic": {
+        "coordinate_rmse_m": 0.014771630152080882,
+        "coverage_90": 0.9752863170584689,
+        "event_count": 1659.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299455,
+        "nees": 1.6365079301239875,
+        "nll_nats_per_event": -8.160999451608424
+      },
+      "provenance": {
+        "case_input_id": "1583e774a262263d95aedde4065c9b1de0e16225774deb2fcb6ec395f40c6de0",
+        "case_input_manifest_sha256": "56295a91447ca517cc1c43686637ceb6e8545bab8b354929a1e63829be91d207",
+        "future": [
+          61,
+          88
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0004935727063959079,
+          "maximum_absolute_error_m": 0.003083266317844391,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "cdc770a8cf5c343e94207b6905548a294cda25b77709c8af6f83e8a9ccbf8e14"
+        },
+        "prediction_id": "104b5c47176200ba949d7a7eadeeb07a41b730a8ec97489eda57b2523f7e2426",
+        "prediction_manifest_sha256": "9fb0a83d50eb7be0dccbe95789475f97f3ec9ce4c36a64104cb8290c828a5892",
+        "prefix": [
+          0,
+          61
+        ],
+        "replay_archive_sha256": "48b5fd7f7cb3f819eb29532be3d0046821b64adf81844d367bc187b9d48dbcf3",
+        "replay_manifest_sha256": "7c43ac62c70546ec0223ef3409c873f10db2c0ee051e7db4aa2ce59741fc2561",
+        "replay_result_id": "a13de5a05576b0ada79fb5416c9af6a5d2b53a4685bf372737fb8527a17ae6df",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 2.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_shirt_fold": {
+      "provenance": {
+        "case_input_id": "303daedbfbeaae22486d8a58b15882d52caf1f8cb29387634611d33da8e7d78a",
+        "case_input_manifest_sha256": "696114529271c3d13450adb52ff6126ca1abe780695cabcd08750e5e6ef7c8e6",
+        "future": [
+          96,
+          138
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0036728868487589487,
+          "maximum_absolute_error_m": 0.03609444107860327,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": false,
+          "released_baseline_sha256": "33298b216e0686fb08bfc7dfed1e1e510efb607434ec679530a05cc3ba81b0bc"
+        },
+        "prediction_id": "bcf1173095d4b3f657673756f74efcd14027f14d6ae7ad00603528ed53c589b2",
+        "prediction_manifest_sha256": "bcac30ff4c7617df4cd7d721a9f6f3ecf9f434872d6851e88799a84449f107dc",
+        "prefix": [
+          0,
+          96
+        ],
+        "replay_archive_sha256": "68a6970aa14d9ba07418d9c8d879888dc07c340dd608e5fce2836376f016f6f3",
+        "replay_manifest_sha256": "b907b9bb2056b0c07bbbe9b15cf5d0fb92e8642caee172891d5ed824f3ceaa1a",
+        "replay_result_id": "4089bd7babda2628c888bc88249f05b2dfbb5f1490cfb4fef15f5f6da512fd7f",
+        "status": "retained_native_parity_failure"
+      },
+      "status": "retained_native_parity_failure"
+    },
+    "cloth_shirt_lift": {
+      "candidate": {
+        "coordinate_rmse_m": 0.00428909097525021,
+        "coverage_90": 1.0,
+        "event_count": 744.0,
+        "mean_ellipsoid_volume_m3": 0.0005247553378938134,
+        "nees": 0.13629244735149768,
+        "nll_nats_per_event": -8.909246314124308
+      },
+      "candidate_nll_improvement_nats_per_event": -0.0010209723187131203,
+      "candidate_to_isotropic_volume_ratio": 1.0018749563798617,
+      "event_count": 744,
+      "isotropic": {
+        "coordinate_rmse_m": 0.00428909097525021,
+        "coverage_90": 1.0,
+        "event_count": 744.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299455,
+        "nees": 0.13797226045479596,
+        "nll_nats_per_event": -8.910267286443021
+      },
+      "provenance": {
+        "case_input_id": "dad5a399050e4601d8e7711a8c5241148ab0b3fa1035de73c5bc2a84cb1bbf43",
+        "case_input_manifest_sha256": "0068d7ac55b949eef420176b349ef855e36281f351bea4df7304855afe827fdb",
+        "future": [
+          26,
+          38
+        ],
+        "parity": {
+          "coordinate_rmse_m": 8.882332771886329e-05,
+          "maximum_absolute_error_m": 0.0010650428012013435,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "61a99d3c6f276bb94a975a27c2fb67dd1503573e2c2d709472ccc2183fba317a"
+        },
+        "prediction_id": "68e43ff2cf2a4c45c5d3f8ce02a65f01183d774b45666d185e14513ce8aa4929",
+        "prediction_manifest_sha256": "e4d926f81e6ebac3b8c87f5ea7bf15e381a2ec3170749b23613328ed7f45bdb6",
+        "prefix": [
+          0,
+          26
+        ],
+        "replay_archive_sha256": "efd70035680f1ed0e5c90ad969640a81385976e618031fb8bf3f656f8c6eacd7",
+        "replay_manifest_sha256": "b7c28c380f72f405b0c4deb73e4c6d3ad8ce5ec1602b23334a367828d46ebc03",
+        "replay_result_id": "4081c7b505e28d1a330bc401497e51c9883244e2289f7e01db54f56acf410a5d",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 2.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_skirt_1_fold": {
+      "candidate": {
+        "coordinate_rmse_m": 0.02525662049492088,
+        "coverage_90": 0.7018104366347178,
+        "event_count": 939.0,
+        "mean_ellipsoid_volume_m3": 0.00011279960229211309,
+        "nees": 15.322617513590865,
+        "nll_nats_per_event": -2.887718021242843
+      },
+      "candidate_nll_improvement_nats_per_event": -3.699422099835862,
+      "candidate_to_isotropic_volume_ratio": 0.21535959420568068,
+      "event_count": 939,
+      "isotropic": {
+        "coordinate_rmse_m": 0.02525662049492088,
+        "coverage_90": 0.8040468583599574,
+        "event_count": 939.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299456,
+        "nees": 4.78422659118343,
+        "nll_nats_per_event": -6.587140121078705
+      },
+      "provenance": {
+        "case_input_id": "734f8ce5b0f75269a1b4d2f82194ced51a176cddb140a60b7a99a6cdfc686848",
+        "case_input_manifest_sha256": "fa419f3583c9cf1fae367888b70499e2b186aa2fed5cff3ae6474c055acc0678",
+        "future": [
+          77,
+          110
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0006488339279861281,
+          "maximum_absolute_error_m": 0.006734265713021159,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "20b68ae6fdbde8fbc45b4a6aeeb9adf15d0795b0ec2457bd5df5245f6461dee9"
+        },
+        "prediction_id": "87fd3889cccb605c8ea66255dbdc07c65113e1d813d2f82c5831372fe2eebd41",
+        "prediction_manifest_sha256": "86e746f0d6cab35b2e54707ce8b263e7a339c6a257eef96d42ca798353d0b4d8",
+        "prefix": [
+          0,
+          77
+        ],
+        "replay_archive_sha256": "34ed38340a7933f9fbfe881ea981767cc5fce2be12b48f510188aad3bdc0a4b7",
+        "replay_manifest_sha256": "25090473352dc0b3b5e65abd380e1c56a6684f4c8ab5d19596c303ca664543fd",
+        "replay_result_id": "ab346b24b1662513adc443e449511e73daec8ed3297b58baf952186cc32d664a",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.01,
+      "selected_candidate_scale": 4.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_skirt_1_lift": {
+      "candidate": {
+        "coordinate_rmse_m": 0.016003398385094583,
+        "coverage_90": 0.9724832214765101,
+        "event_count": 1490.0,
+        "mean_ellipsoid_volume_m3": 0.0009125700974387756,
+        "nees": 1.5723299437514635,
+        "nll_nats_per_event": -7.665401143512436
+      },
+      "candidate_nll_improvement_nats_per_event": -0.3534444236378027,
+      "candidate_to_isotropic_volume_ratio": 1.7422998120126756,
+      "event_count": 1490,
+      "isotropic": {
+        "coordinate_rmse_m": 0.016003398385094583,
+        "coverage_90": 0.9718120805369127,
+        "event_count": 1490.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299456,
+        "nees": 1.9208156990403589,
+        "nll_nats_per_event": -8.018845567150239
+      },
+      "provenance": {
+        "case_input_id": "d4614f2e09a298c182d4a877e02907d7fa422579fefca98625abe5857e4bf440",
+        "case_input_manifest_sha256": "d93948ea1f1e7d642a4210be203407cb67e743d1277fe4949ac2a88d0c1af1e9",
+        "future": [
+          53,
+          77
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.000901671551531104,
+          "maximum_absolute_error_m": 0.00687529519200325,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "e3ea8e5687cfff2ba03916bd828a4dbed3800d0bf2d8dca3a63b68e02f704a47"
+        },
+        "prediction_id": "f9071f6c8c939a7ecd45ffe1999b5c0dc4c106818f69a64ba07e3b8151e37733",
+        "prediction_manifest_sha256": "c7c2ce207b9e9e93be68ec7698432f49365d20138dc13457296c821306b80ab8",
+        "prefix": [
+          0,
+          53
+        ],
+        "replay_archive_sha256": "2ac3ddb698feb1469d73225a4f3a02a6e7533d74d2a6713c3cef2c7979f9df8c",
+        "replay_manifest_sha256": "4b7a93434bfdd94fbe8f04d37553394ff5869489d1f22e28952b70c49123ff9b",
+        "replay_result_id": "ac236b330cf4942cf1f9424e8ef0e1781cb86e5b40895692ae79af1c12f0af48",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 4.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    },
+    "cloth_skirt_2_fold": {
+      "candidate": {
+        "coordinate_rmse_m": 0.01717644548978577,
+        "coverage_90": 0.9253333333333333,
+        "event_count": 375.0,
+        "mean_ellipsoid_volume_m3": 0.0005473871691105492,
+        "nees": 2.1526069388846527,
+        "nll_nats_per_event": -7.860234926136536
+      },
+      "candidate_nll_improvement_nats_per_event": -0.012654941795450902,
+      "candidate_to_isotropic_volume_ratio": 1.045084168894155,
+      "event_count": 375,
+      "isotropic": {
+        "coordinate_rmse_m": 0.01717644548978577,
+        "coverage_90": 0.9253333333333333,
+        "event_count": 375.0,
+        "mean_ellipsoid_volume_m3": 0.0005237732858299455,
+        "nees": 2.212727097476865,
+        "nll_nats_per_event": -7.8728898679319865
+      },
+      "provenance": {
+        "case_input_id": "b36657c243849bafb742dff10506071c9b6ec65ced2a101d2b45a689c9347aba",
+        "case_input_manifest_sha256": "71ae6eddb0ef070e900db89bb643c98f78dec8e34e3717acf0f92d2bb812601c",
+        "future": [
+          60,
+          86
+        ],
+        "parity": {
+          "coordinate_rmse_m": 0.0007688516597307256,
+          "maximum_absolute_error_m": 0.013560083694756031,
+          "maximum_allowed_rmse_m": 0.002,
+          "passed": true,
+          "released_baseline_sha256": "c39ef6a70c36bc6c5e850d8d69503a886675d484a67e05c4b672fa00bcffcaa3"
+        },
+        "prediction_id": "13bab457f4dabd1b5e9ac61816ace669a7dc24b87901fd2c26ad1ade85a15d53",
+        "prediction_manifest_sha256": "962f3d79a7fc674e2d25e70108fd2dba8acb6d94976a0483fc6f2d28fdce6d74",
+        "prefix": [
+          0,
+          60
+        ],
+        "replay_archive_sha256": "3e9d17e054ca8ee51c807464365ff774f39703339bd899f77c2c34a97ade5b35",
+        "replay_manifest_sha256": "db847095c0c4ad5370c8c21c3938fb028913e76411cb6f597c3582d64a8770b9",
+        "replay_result_id": "a7fb2cfaca03cfb2f94e1660b211675531bfd8308d11dbbd82cf18e17660062f",
+        "status": "ordinary_success"
+      },
+      "selected_candidate_isotropic_std_m": 0.02,
+      "selected_candidate_scale": 2.0,
+      "selected_comparator_isotropic_std_m": 0.02,
+      "status": "ordinary_success"
+    }
+  },
+  "claim_boundary": "This opened-source panel can qualify or reject a native MatPhys covariance donor. It cannot establish a fresh, real, confirmatory, or state-of-the-art result.",
+  "completed_at_utc": "2026-08-22T05:16:57.030363+00:00",
+  "equal_case_candidate_coverage_90": 0.9184820961320538,
+  "equal_case_candidate_mean_ellipsoid_volume_m3": 0.0005480403443862878,
+  "equal_case_candidate_nll_nats_per_event": -7.323368160045822,
+  "equal_case_isotropic_mean_ellipsoid_volume_m3": 0.0005237732858299456,
+  "equal_case_isotropic_nll_nats_per_event": -7.848629995417469,
+  "equal_case_nll_improvement_nats_per_event": -0.525261835371647,
+  "execution_revision": "43df7905edbc1d23c5156a2c9a794b05440292d2",
+  "gate_checks": {
+    "case_nll_wins": false,
+    "complete_case_accounting": true,
+    "coverage_lower": true,
+    "coverage_upper": true,
+    "equal_case_nll_improvement": false,
+    "no_retained_native_parity_failures": false,
+    "volume": false
+  },
+  "information_boundary": {
+    "dlo4_accessed": false,
+    "dlo5_accessed": false,
+    "fresh_target_outcomes_opened": false,
+    "fresh_target_selected": false,
+    "held_v8_accessed": false,
+    "source_only": true
+  },
+  "ordinary_scored_case_count": 8,
+  "passed": false,
+  "protocol_id": "matphys-native-phystwin-source-v1",
+  "protocol_sha256": "b8845b4816ecd6336b0c33e5990c70f31e4b6145df87aa3595e20cc82ef60337",
+  "result_id": "0ca947f6329ff2cdc60302e33afc21af340d2bd3c3c2c9a08b7d8e2db709a06a",
+  "retained_native_parity_failure_count": 3,
+  "schema": "bayesian-phystwin.matphys-native-phystwin-source-result",
+  "schema_version": 1,
+  "scorer_sha256": "e7de0fac61ab63d61d57b0748251fa4ca10f18416e5da0ec1a42ec88c806b268",
+  "source_module_sha256": "c9f355ca87e697317e02cd0f6182394498f31cfe67357fa3beb9d98bcc4a8422"
+}

@@ -87,6 +87,13 @@ consumers.
 | 7 | `mujoco-flex-v1` | MuJoCo Flex | experimental | `mujoco-flex-v1` |
 | 8 | `drake-fem-v1` | Drake deformable FEM | experimental | `drake-fem-v1` |
 
+The implementation-status column is not an empirical ranking. The maintained
+[five-backend support matrix](backend_support_matrix_v1.md) records the
+independent evidence decisions: JAX-FEM v2 and SOFA FEM v3 passed source physics
+but were physically rejected during source-value generation, while MuJoCo Flex
+passed native smoke and failed source physics. All three retain exact fallback
+and remain fully supported integrations without predictive recommendation.
+
 Every variant now carries independent `default` and `legacy` flags. Each family
 must have exactly one default variant, and a legacy variant cannot be the
 default. This permits a family to add another current transport or producer

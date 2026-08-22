@@ -801,13 +801,26 @@ def _load_grid(
         implementation["git_worktree_clean"] is True, "grid worktree was not clean"
     )
     source_files = _mapping(implementation["source_files"], name="grid source files")
-    _require(
-        set(source_files)
-        == {
+    protocol_label = _string(protocol.value["protocol_label"], name="protocol label")
+    if protocol_label == "jax-fem-zebra-source-value-v1":
+        expected_source_files = {
             "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
             "src/bayesian_phystwin/jax_fem_source_value_v1.py",
             "scripts/remote/run_jax_fem_source_value_v1.py",
-        },
+        }
+    elif protocol_label == "jax-fem-zebra-source-value-v2":
+        expected_source_files = {
+            "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
+            "src/bayesian_phystwin/jax_fem_hyperelastic_v2.py",
+            ("src/bayesian_phystwin/jax_fem_hyperelastic_source_qualification_v2.py"),
+            "src/bayesian_phystwin/jax_fem_source_value_v1.py",
+            "src/bayesian_phystwin/jax_fem_hyperelastic_source_value_v2.py",
+            "scripts/remote/run_jax_fem_hyperelastic_source_value_v2.py",
+        }
+    else:
+        raise ValueError("grid protocol label is not registered")
+    _require(
+        set(source_files) == expected_source_files,
         "grid source-file roster changed",
     )
     for relative, digest in source_files.items():

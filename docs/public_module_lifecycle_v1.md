@@ -16,6 +16,9 @@ versioned namespace, provider API, or compatibility line.
 
 The stable category includes:
 
+- [`bayesian_phystwin.backend_support_v1`](backend_support_matrix_v1.md) for the
+  installed five-backend integration/evidence boundary and source-tree
+  verification contract;
 - `bayesian_phystwin.v1` and its artifact owners;
 - `bayesian_phystwin.inference.v1` and its guarded-inference owners;
 - `bayesian_phystwin.inference.components_v1` for separate point-mean and

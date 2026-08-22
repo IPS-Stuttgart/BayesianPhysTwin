@@ -167,10 +167,12 @@ the canonical paper-side manuscript for exact numbers and provenance.
 
 | Area | Primary document | Status and purpose |
 | --- | --- | --- |
+| Maintained backend portfolio | [Five-backend support matrix](backend_support_matrix_v1.md) | Separates full integration support from predictive promotion for DEFORM, MatPhys, JAX-FEM, MuJoCo Flex, and SOFA. |
 | Released artifact and cue integration | [PhysTwin integration](phystwin_integration.md) | Pinned upstream contracts, residual export, cue sidecars, and likelihood boundary. |
 | Hierarchical, graph, spatial, and discrepancy studies | [Advanced PhysTwin inference](phystwin_advanced_inference.md) | Experimental workflows, causal splits, controls, and interpretation limits. |
 | Official Warp parameter refits | [PhysTwin refit](phystwin_refit.md) | Checkpoint restoration, matched baselines, provenance, and simulator requirements. |
 | Causal MatPhys graph-part residual | [MatPhys graph-part residual](matphys_graph_parts_v1.md) | Corrected causal audit; source gate failed, so the family is frozen without a wider run. |
+| Native MatPhys covariance donor | [Native MatPhys result](matphys_native_phystwin_source_v1_result.md) | Exact heterogeneous spring fields were replayed through native PhysTwin; parity failed in 3/11 cases and the valid subset had 0/8 NLL wins, so no fresh run is authorized. |
 | Legacy MatPhys backbone experiments | [Causal MatPhys backbone](matphys_causal_backbone_v1.md) | Engineering history only; the original causal audit was invalidated by a frame-ordering defect. |
 | Bias-aware guarded updates | [Bias-aware guarded belief](bias_aware_guarded_belief_v1.md) | Generic guarded-update method and source-only acceptance logic. |
 
