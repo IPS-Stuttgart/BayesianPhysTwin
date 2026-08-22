@@ -12,10 +12,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: >-
-    deform360-v6-source-receipt-routing-${{
-      github.event.workflow_run.id
-    }}-${{ github.event.workflow_run.run_attempt }}
+  group: deform360-v6-source-receipt-routing-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
   cancel-in-progress: false
 
 env:
@@ -36,10 +33,7 @@ jobs:
       - name: Download exact compact source artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: >-
-            deform360-v6-source-prediction-dual-runtime-${{
-              github.event.workflow_run.id
-            }}-${{ github.event.workflow_run.run_attempt }}
+          name: deform360-v6-source-prediction-dual-runtime-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
           path: ${{ runner.temp }}/deform360-v6-source-prediction-evidence
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
