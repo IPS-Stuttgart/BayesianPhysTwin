@@ -164,7 +164,8 @@ _PRIOR_AUDIT_FIELDS: Final = frozenset(
         "registered_case_count",
         "registered_garments",
         "target_garments_absent_from_registered_cases",
-        "preexisting_full_dataset_cache_declared",
+        "preexisting_source_cache_declared",
+        "target_payload_cache_found",
         "audit_scope",
     }
 )
@@ -182,7 +183,7 @@ _AMENDED_BOUNDARY_FIELDS: Final = frozenset(
     {
         "public_metadata_read",
         "prior_source_artifacts_read",
-        "preexisting_target_cache_may_exist",
+        "preexisting_target_cache_found",
         "source_payload_read_allowed_after_amendment_lock",
         "source_outcomes_may_be_used_for_development",
         "target_payload_read_allowed",
@@ -577,8 +578,12 @@ def load_rgbench_matphys_preaccess_amendment_v1(
         "target absence audit changed",
     )
     _require(
-        audit["preexisting_full_dataset_cache_declared"] is True,
-        "preexisting cache declaration changed",
+        audit["preexisting_source_cache_declared"] is True,
+        "preexisting source cache declaration changed",
+    )
+    _require(
+        audit["target_payload_cache_found"] is False,
+        "target cache audit changed",
     )
     nonempty_string(audit["audit_scope"], name="audit_scope")
 
@@ -632,7 +637,7 @@ def load_rgbench_matphys_preaccess_amendment_v1(
         == {
             "public_metadata_read": True,
             "prior_source_artifacts_read": True,
-            "preexisting_target_cache_may_exist": True,
+            "preexisting_target_cache_found": False,
             "source_payload_read_allowed_after_amendment_lock": True,
             "source_outcomes_may_be_used_for_development": True,
             "target_payload_read_allowed": False,

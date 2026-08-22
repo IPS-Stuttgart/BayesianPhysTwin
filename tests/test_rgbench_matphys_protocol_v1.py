@@ -160,6 +160,7 @@ def test_preaccess_amendment_moves_every_previously_registered_garment_to_source
     }
     assert amended.target_execution_authorized is False
     assert amended.amendment["information_boundary"]["target_payload_read_allowed"] is False
+    assert amended.amendment["prior_exposure_audit"]["target_payload_cache_found"] is False
 
 
 def test_preaccess_amendment_is_content_addressed_and_fails_closed(
