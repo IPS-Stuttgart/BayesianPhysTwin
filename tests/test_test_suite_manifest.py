@@ -49,6 +49,7 @@ def test_repository_manifest_expands_deterministically() -> None:
     assert set(suites["core-contracts"]) <= set(suites["stable-core-coverage"])
     assert set(suites["provider-contract"]) <= set(suites["stable-core-coverage"])
     assert {
+        "tests/test_backend_support_v1.py",
         "tests/test_deform360_matphys_part_features_v1.py",
         "tests/test_deform360_matphys_source_endpoint_v1.py",
         "tests/test_jax_fem_source_qualification_v1.py",

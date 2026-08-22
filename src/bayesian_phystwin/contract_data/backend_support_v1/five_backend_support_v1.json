@@ -1,0 +1,301 @@
+{
+  "schema": "bayesian-phystwin.five-backend-support",
+  "schema_version": 1,
+  "support_definition": {
+    "status": "fully-supported",
+    "meaning": "The repository provides a discoverable execution interface, a typed artifact or protocol, deterministic validation, retained evidence, exact fallback, registered tests, and an explicit claim boundary. Full integration support does not imply predictive promotion.",
+    "required_capabilities": [
+      "discoverable",
+      "documented_claim_boundary",
+      "exact_fallback",
+      "executable_interface",
+      "registered_tests",
+      "release_compatible",
+      "retained_evidence",
+      "typed_artifact_or_protocol"
+    ]
+  },
+  "backends": [
+    {
+      "backend_id": "deform-dlo-v7",
+      "display_name": "DEFORM DLO",
+      "category": "specialized-predictive-backend",
+      "distribution_scope": "repository-source",
+      "canonical_material_profile": null,
+      "portable_transport": "specialized-deform-dlo-protocol-v7",
+      "support_status": "fully-supported",
+      "support_capabilities": {
+        "discoverable": true,
+        "documented_claim_boundary": true,
+        "exact_fallback": true,
+        "executable_interface": true,
+        "registered_tests": true,
+        "release_compatible": true,
+        "retained_evidence": true,
+        "typed_artifact_or_protocol": true
+      },
+      "implementation_paths": [
+        "src/bayesian_phystwin_experiments/deform_dlo_local_residual.py",
+        "src/bayesian_phystwin_experiments/deform_dlo_official.py"
+      ],
+      "test_paths": [
+        "tests/test_deform_dlo2_local_residual_official_v7_result.py",
+        "tests/test_deform_dlo_local_residual.py"
+      ],
+      "documentation_paths": [
+        "docs/deform_dlo2_local_residual_official_v7.md",
+        "docs/deform_dlo2_local_residual_official_v7_result.md"
+      ],
+      "fallback_semantics": "selected-deform-physical-checkpoint-byte-exact",
+      "evidence": {
+        "stage": "benchmark-value-qualified",
+        "latest_gate": "official-dlo2-benchmark-value",
+        "latest_gate_decision": "qualified",
+        "recommendation_authorized": true,
+        "source_outcomes_opened": true,
+        "public_benchmark_outcomes_opened": true,
+        "protected_target_outcomes_opened": false,
+        "held_v8_accessed": false,
+        "dlo4_or_dlo5_accessed": false,
+        "claim_scope": "Released DEFORM DLO2 only: 7.8606 mm coordinate L1 over 14 unique trajectories, with 14/14 paired wins against the identically trained physical checkpoint. This is not a general deformable-object claim.",
+        "artifacts": [
+          {
+            "role": "benchmark-result",
+            "path": "results/sota/deform_dlo2_local_residual_official_v7/summary.json",
+            "sha256": "4ad06dc81e7ec144b62fe0d8a3f8b85a8ac4658233ef95d0048e217aa6083310"
+          }
+        ]
+      }
+    },
+    {
+      "backend_id": "matphys-warp-v1",
+      "display_name": "MatPhys with official PhysTwin Warp",
+      "category": "learned-parameter-backend",
+      "distribution_scope": "stable-package-and-repository-runner",
+      "canonical_material_profile": null,
+      "portable_transport": "matphys-native-phystwin-ensemble-v1",
+      "support_status": "fully-supported",
+      "support_capabilities": {
+        "discoverable": true,
+        "documented_claim_boundary": true,
+        "exact_fallback": true,
+        "executable_interface": true,
+        "registered_tests": true,
+        "release_compatible": true,
+        "retained_evidence": true,
+        "typed_artifact_or_protocol": true
+      },
+      "implementation_paths": [
+        "src/bayesian_phystwin/matphys_backend_v1.py",
+        "src/bayesian_phystwin/matphys_native_source_v1.py",
+        "src/bayesian_phystwin/matphys_warp_ensemble_v1.py"
+      ],
+      "test_paths": [
+        "tests/test_matphys_backend_v1.py",
+        "tests/test_matphys_native_phystwin_v1.py",
+        "tests/test_matphys_native_source_v1.py"
+      ],
+      "documentation_paths": [
+        "docs/matphys_backend_v1.md",
+        "docs/matphys_native_phystwin_source_v1.md",
+        "docs/matphys_native_phystwin_source_v1_result.md"
+      ],
+      "fallback_semantics": "incumbent-phystwin-prediction-byte-exact",
+      "evidence": {
+        "stage": "source-covariance-value-rejected",
+        "latest_gate": "native-matphys-source-covariance-value",
+        "latest_gate_decision": "rejected",
+        "recommendation_authorized": false,
+        "source_outcomes_opened": true,
+        "public_benchmark_outcomes_opened": false,
+        "protected_target_outcomes_opened": false,
+        "held_v8_accessed": false,
+        "dlo4_or_dlo5_accessed": false,
+        "claim_scope": "Implementation support only. The frozen source panel scored 8 of 11 cases, retained 3 parity failures, and rejected the covariance donor with 0/8 NLL wins; no fresh target was opened.",
+        "artifacts": [
+          {
+            "role": "source-result",
+            "path": "results/sota/matphys_native_phystwin_source_v1/result.json",
+            "sha256": "505a191a51abf52bb8ec57c4fbd6331745c56e769bb29c17c7fe83bf44faea99"
+          }
+        ]
+      }
+    },
+    {
+      "backend_id": "jax-fem-hyperelastic-v2",
+      "display_name": "JAX-FEM finite deformation v2",
+      "category": "native-continuum-backend",
+      "distribution_scope": "stable-package-and-repository-runner",
+      "canonical_material_profile": "jax-fem-quasistatic-v1",
+      "portable_transport": "lagrangian-export-v1",
+      "support_status": "fully-supported",
+      "support_capabilities": {
+        "discoverable": true,
+        "documented_claim_boundary": true,
+        "exact_fallback": true,
+        "executable_interface": true,
+        "registered_tests": true,
+        "release_compatible": true,
+        "retained_evidence": true,
+        "typed_artifact_or_protocol": true
+      },
+      "implementation_paths": [
+        "src/bayesian_phystwin/jax_fem_hyperelastic_source_qualification_v2.py",
+        "src/bayesian_phystwin/jax_fem_hyperelastic_source_value_v2.py",
+        "src/bayesian_phystwin/jax_fem_hyperelastic_v2.py"
+      ],
+      "test_paths": [
+        "tests/test_jax_fem_hyperelastic_source_qualification_v2.py",
+        "tests/test_jax_fem_hyperelastic_source_value_v2.py",
+        "tests/test_jax_fem_hyperelastic_v2.py"
+      ],
+      "documentation_paths": [
+        "docs/jax_fem_hyperelastic_native_smoke_v2.md",
+        "docs/jax_fem_zebra_source_physics_v2.md",
+        "docs/jax_fem_zebra_source_value_v2.md"
+      ],
+      "fallback_semantics": "incumbent-prediction-byte-exact",
+      "evidence": {
+        "stage": "source-value-physical-rejected",
+        "latest_gate": "finite-deformation-source-value-physical",
+        "latest_gate_decision": "rejected",
+        "recommendation_authorized": false,
+        "source_outcomes_opened": false,
+        "public_benchmark_outcomes_opened": false,
+        "protected_target_outcomes_opened": false,
+        "held_v8_accessed": false,
+        "dlo4_or_dlo5_accessed": false,
+        "claim_scope": "Native smoke and two-group source-physics qualification passed. The frozen source-value rollout was physically rejected before source outcomes, so predictive promotion is not authorized.",
+        "artifacts": [
+          {
+            "role": "source-physics-record",
+            "path": "docs/jax_fem_zebra_source_physics_v2.md",
+            "sha256": "770d14c82554e6074f9cb272507a05475721b11cc89741cf36082b95589e2fd7"
+          },
+          {
+            "role": "source-value-failure",
+            "path": "results/sota/diagnostics/jax_fem_zebra_source_value_v2/failure.json",
+            "sha256": "73838e359bdab8c7269cdd518be1d3e84e51b6e74ceec3fe66439d0be5d3d55b"
+          }
+        ]
+      }
+    },
+    {
+      "backend_id": "mujoco-flex-v1",
+      "display_name": "MuJoCo Flex",
+      "category": "native-continuum-backend",
+      "distribution_scope": "stable-package-and-repository-runner",
+      "canonical_material_profile": "mujoco-flex-v1",
+      "portable_transport": "material-trajectory-v1",
+      "support_status": "fully-supported",
+      "support_capabilities": {
+        "discoverable": true,
+        "documented_claim_boundary": true,
+        "exact_fallback": true,
+        "executable_interface": true,
+        "registered_tests": true,
+        "release_compatible": true,
+        "retained_evidence": true,
+        "typed_artifact_or_protocol": true
+      },
+      "implementation_paths": [
+        "src/bayesian_phystwin/mujoco_flex_constrained_source_v1.py",
+        "src/bayesian_phystwin/mujoco_flex_reduced_source_v1.py",
+        "src/bayesian_phystwin/mujoco_flex_source_v1.py"
+      ],
+      "test_paths": [
+        "tests/test_mujoco_flex_constrained_source_v1.py",
+        "tests/test_mujoco_flex_reduced_source_v1.py",
+        "tests/test_mujoco_flex_source_v1.py"
+      ],
+      "documentation_paths": [
+        "docs/mujoco_flex_native_smoke_v1.md",
+        "docs/mujoco_flex_source_gate_v1.md"
+      ],
+      "fallback_semantics": "incumbent-prediction-byte-exact",
+      "evidence": {
+        "stage": "source-physics-rejected",
+        "latest_gate": "volumetric-flex-source-physics",
+        "latest_gate_decision": "rejected",
+        "recommendation_authorized": false,
+        "source_outcomes_opened": false,
+        "public_benchmark_outcomes_opened": false,
+        "protected_target_outcomes_opened": false,
+        "held_v8_accessed": false,
+        "dlo4_or_dlo5_accessed": false,
+        "claim_scope": "The native volumetric smoke passed. The frozen source-physics replay inverted at substep 3 of 334, so source value was never authorized and predictive promotion is not authorized.",
+        "artifacts": [
+          {
+            "role": "native-smoke-record",
+            "path": "docs/mujoco_flex_native_smoke_v1.md",
+            "sha256": "9ae9760ed1fe0b8b0645c551c131fba348a6fd60b49dd43501e76dea467ed7e5"
+          },
+          {
+            "role": "source-physics-failure",
+            "path": "results/sota/diagnostics/mujoco_flex_source_gate_v1/failure.json",
+            "sha256": "afd35892cdf3c1e5e0e74b19b9902d5365ccbbc210b7891fa314383dfbc0cd44"
+          }
+        ]
+      }
+    },
+    {
+      "backend_id": "sofa-fem-v3",
+      "display_name": "SOFA FEM v3",
+      "category": "native-continuum-backend",
+      "distribution_scope": "stable-package-and-repository-runner",
+      "canonical_material_profile": "sofa-fem-v1",
+      "portable_transport": "material-trajectory-v1",
+      "support_status": "fully-supported",
+      "support_capabilities": {
+        "discoverable": true,
+        "documented_claim_boundary": true,
+        "exact_fallback": true,
+        "executable_interface": true,
+        "registered_tests": true,
+        "release_compatible": true,
+        "retained_evidence": true,
+        "typed_artifact_or_protocol": true
+      },
+      "implementation_paths": [
+        "src/bayesian_phystwin/sofa_fem_canonical_source_v3.py",
+        "src/bayesian_phystwin/sofa_fem_source_qualification_v3.py",
+        "src/bayesian_phystwin/sofa_fem_source_value_v3.py"
+      ],
+      "test_paths": [
+        "tests/test_sofa_fem_canonical_source_v3.py",
+        "tests/test_sofa_fem_source_qualification_v3.py",
+        "tests/test_sofa_fem_source_value_v3.py"
+      ],
+      "documentation_paths": [
+        "docs/sofa_fem_canonical_native_smoke_v3.md",
+        "docs/sofa_fem_zebra_source_physics_v3.md",
+        "docs/sofa_fem_zebra_source_value_v3.md"
+      ],
+      "fallback_semantics": "incumbent-prediction-byte-exact",
+      "evidence": {
+        "stage": "source-value-physical-rejected",
+        "latest_gate": "canonical-fem-source-value-physical",
+        "latest_gate_decision": "rejected",
+        "recommendation_authorized": false,
+        "source_outcomes_opened": false,
+        "public_benchmark_outcomes_opened": false,
+        "protected_target_outcomes_opened": false,
+        "held_v8_accessed": false,
+        "dlo4_or_dlo5_accessed": false,
+        "claim_scope": "Canonical native smoke and two-group source-physics qualification passed. The frozen source-value rollout was physically rejected before source outcomes, so predictive promotion is not authorized.",
+        "artifacts": [
+          {
+            "role": "source-physics-result",
+            "path": "results/sota/diagnostics/sofa_fem_zebra_source_physics_v3/result.json",
+            "sha256": "a1a3bcab5877fe5481fe597a00c8d394cd793f0f9693251a08bbd90a26287f60"
+          },
+          {
+            "role": "source-value-failure",
+            "path": "results/sota/diagnostics/sofa_fem_zebra_source_value_v3/failure.json",
+            "sha256": "b8f841c2b76e244b8d08217363e8dd3e1a63a642580fae4a3b946be0c26f7ff6"
+          }
+        ]
+      }
+    }
+  ]
+}

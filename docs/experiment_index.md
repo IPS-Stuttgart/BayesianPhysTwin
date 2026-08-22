@@ -167,6 +167,7 @@ the canonical paper-side manuscript for exact numbers and provenance.
 
 | Area | Primary document | Status and purpose |
 | --- | --- | --- |
+| Maintained backend portfolio | [Five-backend support matrix](backend_support_matrix_v1.md) | Separates full integration support from predictive promotion for DEFORM, MatPhys, JAX-FEM, MuJoCo Flex, and SOFA. |
 | Released artifact and cue integration | [PhysTwin integration](phystwin_integration.md) | Pinned upstream contracts, residual export, cue sidecars, and likelihood boundary. |
 | Hierarchical, graph, spatial, and discrepancy studies | [Advanced PhysTwin inference](phystwin_advanced_inference.md) | Experimental workflows, causal splits, controls, and interpretation limits. |
 | Official Warp parameter refits | [PhysTwin refit](phystwin_refit.md) | Checkpoint restoration, matched baselines, provenance, and simulator requirements. |

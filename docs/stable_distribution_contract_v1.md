@@ -99,6 +99,17 @@ packaging adjustment does not promote any candidate: zero of three advanced to
 source value, no source outcome partition or target was opened, and every
 candidate retained the exact incumbent fallback.
 
+The maintained five-backend support contract adds one stable Python module and
+one installed, hash-bound JSON descriptor. A clean integrated build contains
+603 wheel members and 2,461,368 compressed wheel bytes. The wheel ratchets are
+therefore raised narrowly to 605 members and 2,475,000 bytes. The descriptor
+records executable support and immutable evidence boundaries for DEFORM DLO,
+MatPhys/Warp, JAX-FEM, MuJoCo Flex, and SOFA FEM without importing their
+optional runtimes. This packaging adjustment does not change scientific
+promotion: DEFORM remains scoped to its released DLO2 contract, while MatPhys
+and all three native continuum candidates retain their registered negative
+decisions and exact fallback.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
