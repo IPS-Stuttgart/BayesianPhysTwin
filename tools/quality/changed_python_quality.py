@@ -48,6 +48,7 @@ _STRICT_INTEGRATION_TYPE_TARGETS = (
 # These targets have a clean mypy baseline and therefore remain unconditional.
 _ALWAYS_TYPE_TARGETS = (
     *_STRICT_ARTIFACT_TYPE_TARGETS,
+    "src/bayesian_phystwin/physical_cause_selection_v1.py",
     "src/bayesian_phystwin/cli/main.py",
     "src/bayesian_phystwin/cli/run_manifest.py",
     "src/bayesian_phystwin/gauge_aware_belief.py",
