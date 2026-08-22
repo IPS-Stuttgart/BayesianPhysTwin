@@ -83,6 +83,37 @@ def test_native_case_evidence_rejects_non_boolean_validity_masks(
         )
 
 
+def test_native_case_evidence_extracts_registered_future_events() -> None:
+    observed = np.array(
+        [
+            [[0.0, 0.0, 0.0], [0.01, 0.0, 0.0]],
+            [[0.002, 0.0, 0.0], [0.014, 0.0, 0.0]],
+        ],
+        dtype=np.float64,
+    )
+    baseline = np.zeros_like(observed)
+    valid = np.array([[True, True], [True, False]], dtype=np.bool_)
+    covariance = np.broadcast_to(np.eye(3) * 1e-6, (2, 2, 3, 3)).copy()
+
+    evidence = native_case_evidence(
+        case_id="registered-future",
+        observed_m=observed,
+        baseline_mean_m=baseline,
+        valid_mask=valid,
+        raw_covariance_m2=covariance,
+        future_start=1,
+        future_stop=2,
+        identity_count=2,
+    )
+
+    assert evidence.case_id == "registered-future"
+    np.testing.assert_array_equal(evidence.residual_m, [[0.002, 0.0, 0.0]])
+    np.testing.assert_array_equal(
+        evidence.raw_covariance_m2,
+        np.broadcast_to(np.eye(3) * 1e-6, (1, 3, 3)),
+    )
+
+
 def test_source_calibration_selects_anisotropic_donor_and_isotropic_scale() -> None:
     residual = np.tile(np.array([[0.01, 0.0, 0.0]]), (12, 1))
     raw = np.broadcast_to(
