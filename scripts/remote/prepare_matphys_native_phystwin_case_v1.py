@@ -141,17 +141,13 @@ def main() -> None:
     args = _parse_args()
     case_dir = args.case_dir.resolve(strict=True)
     final_data_path = _ordinary_file(case_dir / "final_data.pkl", name="final data")
-    split_path = _ordinary_file(
-        args.split or case_dir / "split.json", name="split"
-    )
+    split_path = _ordinary_file(args.split or case_dir / "split.json", name="split")
     video_path = _ordinary_file(
         args.prefix_video or case_dir / "color" / "0.mp4", name="prefix video"
     )
     checkpoint_path = _ordinary_file(args.checkpoint, name="checkpoint")
     optimal_path = _ordinary_file(args.optimal_params, name="optimal parameters")
-    baseline_path = _ordinary_file(
-        args.baseline_trajectory, name="baseline trajectory"
-    )
+    baseline_path = _ordinary_file(args.baseline_trajectory, name="baseline trajectory")
     output = args.output_dir.resolve()
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"output directory is not empty: {output}")
@@ -187,9 +183,7 @@ def main() -> None:
         total_spring_count=len(graph.springs),
         object_spring_count=graph.num_object_springs,
     )
-    object_edges = np.asarray(
-        graph.springs[: graph.num_object_springs], dtype=np.int64
-    )
+    object_edges = np.asarray(graph.springs[: graph.num_object_springs], dtype=np.int64)
     graph_path = output / "episode_graph.npz"
     np.savez_compressed(
         graph_path,
@@ -221,9 +215,7 @@ def main() -> None:
         part_count=int(args.part_count),
         semantic_edge_weight=float(args.semantic_edge_weight),
     )
-    material = np.zeros(
-        (int(args.part_count), MATERIAL_CLASS_COUNT), dtype=np.float32
-    )
+    material = np.zeros((int(args.part_count), MATERIAL_CLASS_COUNT), dtype=np.float32)
     material[:, MATPHYS_CLOTH_CLASS_INDEX] = 1.0
     part_path = output / "part_artifact.npz"
     np.savez_compressed(

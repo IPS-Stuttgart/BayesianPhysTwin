@@ -281,7 +281,9 @@ def _validate_backend(value: object, *, expected_id: str) -> dict[str, object]:
         evidence["recommendation_authorized"],
         name=f"{backend_id}.evidence.recommendation_authorized",
     )
-    if recommendation != (stage == "benchmark-value-qualified" and decision == "qualified"):
+    if recommendation != (
+        stage == "benchmark-value-qualified" and decision == "qualified"
+    ):
         raise ValueError("recommendation must follow the retained evidence decision")
     boolean_names = (
         "source_outcomes_opened",
@@ -433,7 +435,9 @@ def _ordinary_repository_file(root: Path, relative: str) -> Path:
         raise RuntimeError(f"declared backend support file is unavailable: {relative}")
     resolved = candidate.resolve(strict=True)
     if resolved != root and root not in resolved.parents:
-        raise RuntimeError(f"declared backend support file escaped the repository: {relative}")
+        raise RuntimeError(
+            f"declared backend support file escaped the repository: {relative}"
+        )
     return resolved
 
 

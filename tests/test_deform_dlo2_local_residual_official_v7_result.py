@@ -6,10 +6,7 @@ import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 RESULT_ROOT = (
-    REPOSITORY_ROOT
-    / "results"
-    / "sota"
-    / "deform_dlo2_local_residual_official_v7"
+    REPOSITORY_ROOT / "results" / "sota" / "deform_dlo2_local_residual_official_v7"
 )
 SUMMARY = RESULT_ROOT / "summary.json"
 
@@ -39,26 +36,18 @@ def test_frozen_dlo2_local_residual_official_v7_result() -> None:
     assert evaluation["target_calibration_performed"] is False
     assert evaluation["target_retry_performed"] is False
     assert evaluation["case_replacement_performed"] is False
-    assert evaluation["candidate_mean_l1_m"] == pytest.approx(
-        0.007860559253359958
-    )
+    assert evaluation["candidate_mean_l1_m"] == pytest.approx(0.007860559253359958)
     assert evaluation["comparison_baseline_mean_l1_m"] == pytest.approx(
         0.008746962326219684
     )
-    assert evaluation["relative_improvement"] == pytest.approx(
-        0.10133838923744597
-    )
+    assert evaluation["relative_improvement"] == pytest.approx(0.10133838923744597)
     assert evaluation["case_wins"] == 14
-    assert evaluation["maximum_case_ratio"] == pytest.approx(
-        0.9419249083983519
-    )
+    assert evaluation["maximum_case_ratio"] == pytest.approx(0.9419249083983519)
 
     reference = result["published_reference"]
     assert reference["mean_l1_m"] == pytest.approx(0.0097)
     assert reference["candidate_all_unique_mean_l1_m"] < reference["mean_l1_m"]
-    assert reference["candidate_canonical_draw_mean_l1_m"] < reference[
-        "mean_l1_m"
-    ]
+    assert reference["candidate_canonical_draw_mean_l1_m"] < reference["mean_l1_m"]
     assert result["claim_gate"]["passed"] is True
     assert result["method"]["prob4d_used"] is False
     assert result["uncertainty"]["variance_scale"] == 1.0

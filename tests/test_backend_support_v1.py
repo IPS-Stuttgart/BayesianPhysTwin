@@ -44,8 +44,12 @@ def test_five_backend_support_resource_is_hash_bound_and_exact() -> None:
     assert tuple(item["backend_id"] for item in support["backends"]) == (
         FIVE_BACKEND_IDS
     )
-    assert all(item["support_status"] == "fully-supported" for item in support["backends"])
-    assert all(all(item["support_capabilities"].values()) for item in support["backends"])
+    assert all(
+        item["support_status"] == "fully-supported" for item in support["backends"]
+    )
+    assert all(
+        all(item["support_capabilities"].values()) for item in support["backends"]
+    )
 
 
 def test_full_support_is_not_predictive_promotion() -> None:
