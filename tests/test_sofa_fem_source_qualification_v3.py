@@ -11,9 +11,13 @@ import numpy.typing as npt
 import pytest
 
 import bayesian_phystwin.sofa_fem_source_qualification_v3 as qualification_module
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.jax_fem_source_qualification_v1 import (
     attachment_targets_m,
     rigid_contact_projection_v1,
+)
+from bayesian_phystwin.material_backend_qualification_v1 import (
+    load_material_backend_qualification_v1,
 )
 from bayesian_phystwin.physical_rollout_v1 import write_deterministic_npz
 from bayesian_phystwin.sofa_fem_canonical_source_v3 import (
@@ -30,6 +34,7 @@ from bayesian_phystwin.sofa_fem_source_qualification_v3 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/sofa_fem_zebra_source_physics_v3.json"
+RESULT_ROOT = ROOT / "results/sota/diagnostics/sofa_fem_zebra_source_physics_v3"
 
 
 def test_frozen_protocol_binds_canonical_sofa_runtime_and_source_groups() -> None:
@@ -84,6 +89,38 @@ def test_frozen_protocol_ancestry_is_hash_verified() -> None:
     assert records["predecessor_result"]["sha256"] == (
         "1508bd4f6f043825a8ad720a346e9cae0904da883e12ace4a2ba7e48a806084b"
     )
+
+
+def test_frozen_public_source_qualification_is_self_consistent() -> None:
+    result_path = RESULT_ROOT / "result.json"
+    qualification_path = RESULT_ROOT / "material-backend-qualification.json"
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    identity = dict(result)
+    result_id = identity.pop("result_id")
+    qualification = load_material_backend_qualification_v1(qualification_path)
+
+    assert file_sha256(result_path) == (
+        "a1a3bcab5877fe5481fe597a00c8d394cd793f0f9693251a08bbd90a26287f60"
+    )
+    assert file_sha256(qualification_path) == (
+        "6117ecc8c412635ff7a595793076972876212378e2b6ca843077f42b382a9c7d"
+    )
+    assert content_id(identity) == result_id
+    assert result_id == (
+        "e0ad8f0118118039e33ef143ba2996b3426ca9081bb99acc209693cb063bd2ca"
+    )
+    assert qualification.artifact_id == result["qualification_artifact_id"]
+    assert qualification.qualified is True
+    assert result["qualified"] is True
+    assert result["failure_reasons"] == []
+    assert result["source_value_scoring_authorized"] is True
+    assert result["information_boundary"]["source_object_outcomes_read"] is False
+    assert result["information_boundary"]["target_or_held_out_artifact_read"] is False
+    for record in result["source_groups"]:
+        assert record["canonical_gauge_identity_under_rigid_pose"] is True
+        assert record["canonical_scene_identity_under_rigid_pose"] is True
+        assert record["canonical_schedule_identity_under_rigid_pose"] is True
+        assert all(record["physical_sanity_checks"].values())
 
 
 def _source_points() -> npt.NDArray[np.float32]:

@@ -1,8 +1,9 @@
 # SOFA FEM canonical-gauge source qualification v3
 
-**Registered, not yet executed.** This is one transparently versioned,
-source-independent correction to the frozen negative v2 numerical gate. V2
-remains negative and must not be rerun, relaxed, or replaced in place.
+**Frozen decision: passed source qualification.** This transparently versioned,
+source-independent correction was executed exactly once from clean revision
+`5e2adc4d2464a3636422c9fc2fb03e70e66ba4ce`. V2 remains negative and must
+not be rerun, relaxed, or replaced in place.
 
 ## Question
 
@@ -67,10 +68,10 @@ requires:
 Source object outcomes, incumbent prediction arrays, targets, held-out data,
 future scoring, DLO4/DLO5, and held-v8 remain closed.
 
-## One-shot command
+## Frozen one-shot command
 
-The registered output root and log are absent. The first execution is the only
-permitted execution of this v3 protocol.
+The command below produced the sole v3 execution. Its output root and log now
+exist and must not be deleted, replaced, or used to launch a duplicate.
 
 ```bash
 set -o pipefail
@@ -94,3 +95,28 @@ export PYTHONPATH="$PWD/src:$ROOT/plugins/SofaPython3/lib/python3/site-packages"
 Any failed gate freezes a negative v3 result and leaves source-value scoring
 closed. No automatic retry, threshold change, source replacement, or
 outcome-guided revision is permitted.
+
+## Frozen result
+
+Both groups passed every registered gate:
+
+| Source group | Rigid error | World point bound | World attachment bound | Decision |
+| --- | ---: | ---: | ---: | --- |
+| `double_lift_zebra` | `3.483988e-16 m` | `8.558990e-12 m` | `7.982945e-12 m` | pass |
+| `double_stretch_zebra` | `5.739183e-16 m` | `8.384736e-12 m` | `7.091920e-12 m` | pass |
+
+Exact repeats, gauge/scene/schedule identities, zero-action equilibrium,
+32/64-substep convergence, material sensitivity, native attachment projection,
+topology, native/world parity, determinant bounds, and byte-exact fallback all
+passed. The result ID is
+`e0ad8f0118118039e33ef143ba2996b3426ca9081bb99acc209693cb063bd2ca`;
+the material qualification ID is
+`78f61268a753d95e59071592a0793ecb11d5aeb2fc10f39032095902bedb9fc9`.
+The compact result and qualification SHA-256 values are, respectively,
+`a1a3bcab5877fe5481fe597a00c8d394cd793f0f9693251a08bbd90a26287f60`
+and `6117ecc8c412635ff7a595793076972876212378e2b6ca843077f42b382a9c7d`.
+
+This pass authorizes a separately frozen source-value experiment; it does not
+itself establish predictive improvement. No source object outcome, incumbent
+prediction array, target, held-out artifact, DLO4/DLO5, or held-v8 artifact was
+read.
