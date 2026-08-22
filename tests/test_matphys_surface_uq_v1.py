@@ -7,7 +7,11 @@ from bayesian_phystwin.matphys_surface_uq_v1 import (
     backproject_masked_depth,
     deterministic_camera_partition,
     deterministic_subsample_indices,
+    equal_group_radial_quantile,
     evaluate_gaussian_events,
+    evaluate_leave_one_group_out,
+    fit_grouped_isotropic_variance,
+    fit_grouped_matphys_scale,
     fit_isotropic_variance,
     fit_matphys_scale,
     isotropic_total_covariance,
@@ -53,9 +57,7 @@ def test_subsample_is_key_bound_and_reproducible() -> None:
 def test_backprojection_uses_metric_depth_and_camera_to_world() -> None:
     depth = np.array([[1.0, 2.0], [0.0, 1.0]], dtype=np.float32)
     mask = np.array([[True, True], [True, False]])
-    intrinsics = np.array(
-        [[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 1.0]]
-    )
+    intrinsics = np.array([[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 1.0]])
     transform = np.eye(4)
     transform[:3, 3] = [1.0, 2.0, 3.0]
 
@@ -145,3 +147,62 @@ def test_covariance_floor_keeps_zero_spread_positive_definite() -> None:
 
     assert metrics["coverage_90"] == 1.0
     assert np.all(np.linalg.eigvalsh(total) > 0.0)
+
+
+def test_grouped_calibration_weights_cases_equally() -> None:
+    small = np.full((2, 3), 0.001, dtype=np.float64)
+    large = np.full((20, 3), 0.01, dtype=np.float64)
+    covariance_groups = [
+        np.broadcast_to(np.eye(3) * 1e-6, (len(small), 3, 3)).copy(),
+        np.broadcast_to(np.eye(3) * 1e-6, (len(large), 3, 3)).copy(),
+    ]
+
+    isotropic = fit_grouped_isotropic_variance(
+        [small, large], observation_floor_m=0.0001
+    )
+    matphys_scale = fit_grouped_matphys_scale(
+        [small, large],
+        covariance_groups,
+        observation_floor_m=0.0001,
+    )
+
+    assert isotropic == pytest.approx((1e-6 + 1e-4) / 2.0)
+    assert matphys_scale == pytest.approx(isotropic / 1e-6 - 0.01, rel=1e-4)
+
+
+def test_equal_group_radial_quantile_does_not_pool_large_case() -> None:
+    small = np.tile([[0.001, 0.0, 0.0]], (2, 1))
+    large = np.tile([[0.01, 0.0, 0.0]], (200, 1))
+
+    radius = equal_group_radial_quantile(
+        [small, large],
+        probability=0.49,
+    )
+
+    assert radius == pytest.approx(0.001)
+
+
+def test_leave_one_group_out_rewards_transferable_anisotropy() -> None:
+    generator = np.random.default_rng(260823)
+    base = np.diag([16e-6, 1e-6, 4e-6])
+    residual_groups = [
+        generator.multivariate_normal(np.zeros(3), 3.0 * base + np.eye(3) * 1e-6, 800)
+        for _ in range(4)
+    ]
+    covariance_groups = [
+        np.broadcast_to(base, (len(residual), 3, 3)).copy()
+        for residual in residual_groups
+    ]
+
+    result = evaluate_leave_one_group_out(
+        [f"case-{index}" for index in range(4)],
+        residual_groups,
+        covariance_groups,
+        observation_floor_m=0.001,
+    )
+    metrics = result["equal_case_metrics"]
+
+    assert isinstance(metrics, dict)
+    assert metrics["candidate_nll_improvement_nats"] > 0.1
+    assert metrics["candidate_nll_win_count"] == 4
+    assert 0.85 < metrics["candidate_coverage_90"] < 0.95

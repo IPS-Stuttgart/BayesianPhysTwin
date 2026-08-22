@@ -84,9 +84,9 @@ def backproject_masked_depth(
 ) -> npt.NDArray[np.float64]:
     """Backproject one masked metric-depth frame into world coordinates."""
 
-    depth: npt.NDArray[np.float64] = _finite_array(
-        depth_m, name="depth"
-    ).astype(np.float64, copy=False)
+    depth: npt.NDArray[np.float64] = _finite_array(depth_m, name="depth").astype(
+        np.float64, copy=False
+    )
     mask = np.asarray(object_mask)
     calibration: npt.NDArray[np.float64] = _finite_array(
         intrinsics, name="intrinsics"
@@ -159,9 +159,7 @@ def nearest_surface_events(
         covariance_m2, name="covariance"
     ).astype(np.float64, copy=False)
     _require(mean.ndim == 3 and mean.shape[-1] == 3, "mean shape changed")
-    _require(
-        covariance.shape == (*mean.shape[:2], 3, 3), "covariance shape changed"
-    )
+    _require(covariance.shape == (*mean.shape[:2], 3, 3), "covariance shape changed")
     _require(len(surface_clouds_m) == len(mean), "surface frame count changed")
     _require(
         np.isfinite(maximum_distance_m) and maximum_distance_m > 0.0,
@@ -233,7 +231,9 @@ def _regularized_covariance(
     symmetric = 0.5 * (covariance + np.swapaxes(covariance, -1, -2))
     result = scale * symmetric + np.eye(3)[None, :, :] * observation_floor_m**2
     eigenvalues = np.linalg.eigvalsh(result)
-    _require(np.all(eigenvalues > 0.0), "regularized covariance is not positive definite")
+    _require(
+        np.all(eigenvalues > 0.0), "regularized covariance is not positive definite"
+    )
     return result
 
 
@@ -299,6 +299,74 @@ def fit_matphys_scale(
     return float(np.exp(result.x))
 
 
+def fit_grouped_matphys_scale(
+    residual_groups_m: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
+    covariance_groups_m2: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
+    *,
+    observation_floor_m: float,
+    minimum_scale: float = 1e-3,
+    maximum_scale: float = 1e6,
+) -> float:
+    """Fit one MatPhys scale with equal weight for every source case."""
+
+    _require(bool(residual_groups_m), "scale fit has no case groups")
+    _require(
+        len(residual_groups_m) == len(covariance_groups_m2),
+        "residual and covariance group counts differ",
+    )
+    residual_groups: list[npt.NDArray[np.float64]] = []
+    covariance_groups: list[npt.NDArray[np.float64]] = []
+    for index, (residual_value, covariance_value) in enumerate(
+        zip(residual_groups_m, covariance_groups_m2, strict=True)
+    ):
+        residual: npt.NDArray[np.float64] = _finite_array(
+            residual_value, name=f"residual group {index}"
+        ).astype(np.float64, copy=False)
+        covariance: npt.NDArray[np.float64] = _finite_array(
+            covariance_value, name=f"covariance group {index}"
+        ).astype(np.float64, copy=False)
+        _require(
+            residual.ndim == 2 and residual.shape[1] == 3 and len(residual) > 0,
+            "residual group shape changed",
+        )
+        _require(
+            covariance.shape == (len(residual), 3, 3),
+            "covariance group shape changed",
+        )
+        residual_groups.append(residual)
+        covariance_groups.append(covariance)
+    _require(
+        0.0 < minimum_scale < maximum_scale and np.isfinite(maximum_scale),
+        "scale bounds are invalid",
+    )
+
+    def objective(log_scale: float) -> float:
+        scale = float(np.exp(log_scale))
+        case_nll = []
+        for residual, covariance in zip(
+            residual_groups, covariance_groups, strict=True
+        ):
+            total = _regularized_covariance(
+                covariance,
+                scale=scale,
+                observation_floor_m=observation_floor_m,
+            )
+            case_nll.append(float(np.mean(gaussian_nll(residual, total))))
+        return float(np.mean(case_nll))
+
+    result = minimize_scalar(
+        objective,
+        bounds=(float(np.log(minimum_scale)), float(np.log(maximum_scale))),
+        method="bounded",
+        options={"xatol": 1e-8},
+    )
+    _require(
+        result.success and np.isfinite(result.fun),
+        "grouped MatPhys scale fit failed",
+    )
+    return float(np.exp(result.x))
+
+
 def fit_isotropic_variance(
     residual_m: npt.ArrayLike,
     *,
@@ -313,6 +381,64 @@ def fit_isotropic_variance(
     _require(len(residual) > 0, "isotropic fit has no events")
     raw = float(np.mean(np.square(residual, dtype=np.float64)))
     return max(raw, observation_floor_m**2)
+
+
+def fit_grouped_isotropic_variance(
+    residual_groups_m: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
+    *,
+    observation_floor_m: float,
+) -> float:
+    """Fit isotropic variance while giving every source case equal weight."""
+
+    _require(bool(residual_groups_m), "isotropic fit has no case groups")
+    case_variances: list[float] = []
+    for index, value in enumerate(residual_groups_m):
+        residual: npt.NDArray[np.float64] = _finite_array(
+            value, name=f"residual group {index}"
+        ).astype(np.float64, copy=False)
+        _require(
+            residual.ndim == 2 and residual.shape[1] == 3 and len(residual) > 0,
+            "residual group shape changed",
+        )
+        case_variances.append(float(np.mean(np.square(residual, dtype=np.float64))))
+    return max(float(np.mean(case_variances)), observation_floor_m**2)
+
+
+def equal_group_radial_quantile(
+    residual_groups_m: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
+    *,
+    probability: float,
+) -> float:
+    """Return a weighted radial quantile with equal mass assigned to each case."""
+
+    _require(bool(residual_groups_m), "radial calibration has no case groups")
+    _require(
+        np.isfinite(probability) and 0.0 < probability < 1.0,
+        "quantile probability is invalid",
+    )
+    radii: list[npt.NDArray[np.float64]] = []
+    weights: list[npt.NDArray[np.float64]] = []
+    group_weight = 1.0 / len(residual_groups_m)
+    for index, value in enumerate(residual_groups_m):
+        residual: npt.NDArray[np.float64] = _finite_array(
+            value, name=f"residual group {index}"
+        ).astype(np.float64, copy=False)
+        _require(
+            residual.ndim == 2 and residual.shape[1] == 3 and len(residual) > 0,
+            "residual group shape changed",
+        )
+        radii.append(np.linalg.norm(residual, axis=1))
+        weights.append(
+            np.full(len(residual), group_weight / len(residual), dtype=np.float64)
+        )
+    values = np.concatenate(radii)
+    mass = np.concatenate(weights)
+    order = np.argsort(values, kind="stable")
+    cumulative = np.cumsum(mass[order])
+    selected = min(
+        int(np.searchsorted(cumulative, probability, side="left")), len(order) - 1
+    )
+    return float(values[order[selected]])
 
 
 def evaluate_gaussian_events(
@@ -332,12 +458,7 @@ def evaluate_gaussian_events(
     mahalanobis = np.einsum("ni,ni->n", residual, solved)
     determinants = np.linalg.det(covariance)
     _require(np.all(determinants > 0.0), "covariance determinant is not positive")
-    volumes = (
-        (4.0 / 3.0)
-        * np.pi
-        * CHI2_90_DF3 ** 1.5
-        * np.sqrt(determinants)
-    )
+    volumes = (4.0 / 3.0) * np.pi * CHI2_90_DF3**1.5 * np.sqrt(determinants)
     return {
         "event_count": len(residual),
         "mean_nll": float(np.mean(gaussian_nll(residual, covariance))),
@@ -369,12 +490,175 @@ def isotropic_total_covariance(
 ) -> npt.NDArray[np.float64]:
     """Construct an event-wise isotropic Gaussian comparator."""
 
-    _require(type(event_count) is int and event_count > 0, "event count must be positive")
-    _require(np.isfinite(variance_m2) and variance_m2 > 0.0, "variance must be positive")
+    _require(
+        type(event_count) is int and event_count > 0, "event count must be positive"
+    )
+    _require(
+        np.isfinite(variance_m2) and variance_m2 > 0.0, "variance must be positive"
+    )
     return np.broadcast_to(
         np.eye(3, dtype=np.float64) * variance_m2,
         (event_count, 3, 3),
     ).copy()
+
+
+def evaluate_leave_one_group_out(
+    case_ids: list[str] | tuple[str, ...],
+    residual_groups_m: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
+    covariance_groups_m2: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
+    *,
+    observation_floor_m: float,
+) -> dict[str, object]:
+    """Evaluate equal-case leave-one-out MatPhys and isotropic uncertainty."""
+
+    _require(len(case_ids) >= 2, "leave-one-out evaluation needs two cases")
+    _require(len(case_ids) == len(set(case_ids)), "leave-one-out case IDs repeat")
+    _require(
+        len(case_ids) == len(residual_groups_m) == len(covariance_groups_m2),
+        "leave-one-out group counts differ",
+    )
+    residual_groups: list[npt.NDArray[np.float64]] = []
+    covariance_groups: list[npt.NDArray[np.float64]] = []
+    for index, (residual_value, covariance_value) in enumerate(
+        zip(residual_groups_m, covariance_groups_m2, strict=True)
+    ):
+        residual: npt.NDArray[np.float64] = _finite_array(
+            residual_value, name=f"residual group {index}"
+        ).astype(np.float64, copy=False)
+        covariance: npt.NDArray[np.float64] = _finite_array(
+            covariance_value, name=f"covariance group {index}"
+        ).astype(np.float64, copy=False)
+        _require(
+            residual.ndim == 2 and residual.shape[1] == 3 and len(residual) > 0,
+            "residual group shape changed",
+        )
+        _require(
+            covariance.shape == (len(residual), 3, 3),
+            "covariance group shape changed",
+        )
+        residual_groups.append(residual)
+        covariance_groups.append(covariance)
+
+    rows: list[dict[str, object]] = []
+    for held_index, case_id in enumerate(case_ids):
+        train_residual = [
+            value for index, value in enumerate(residual_groups) if index != held_index
+        ]
+        train_covariance = [
+            value
+            for index, value in enumerate(covariance_groups)
+            if index != held_index
+        ]
+        scale = fit_grouped_matphys_scale(
+            train_residual,
+            train_covariance,
+            observation_floor_m=observation_floor_m,
+        )
+        isotropic_variance = fit_grouped_isotropic_variance(
+            train_residual,
+            observation_floor_m=observation_floor_m,
+        )
+        conformal_radius = equal_group_radial_quantile(
+            train_residual,
+            probability=0.9,
+        )
+        held_residual = residual_groups[held_index]
+        candidate_covariance = matphys_total_covariance(
+            covariance_groups[held_index],
+            scale=scale,
+            observation_floor_m=observation_floor_m,
+        )
+        isotropic_covariance = isotropic_total_covariance(
+            len(held_residual),
+            variance_m2=isotropic_variance,
+        )
+        candidate = evaluate_gaussian_events(held_residual, candidate_covariance)
+        isotropic = evaluate_gaussian_events(held_residual, isotropic_covariance)
+        radius = np.linalg.norm(held_residual, axis=1)
+        rows.append(
+            {
+                "case_id": case_id,
+                "event_count": len(held_residual),
+                "matphys_scale": scale,
+                "isotropic_variance_m2": isotropic_variance,
+                "conformal_radius_m": conformal_radius,
+                "candidate": candidate,
+                "isotropic": isotropic,
+                "conformal": {
+                    "coverage_90": float(np.mean(radius <= conformal_radius)),
+                    "sphere_volume_m3": float(
+                        (4.0 / 3.0) * np.pi * conformal_radius**3
+                    ),
+                },
+                "candidate_nll_win": bool(
+                    float(candidate["mean_nll"]) < float(isotropic["mean_nll"])
+                ),
+            }
+        )
+
+    candidate_nll = float(
+        np.mean([float(row["candidate"]["mean_nll"]) for row in rows])  # type: ignore[index]
+    )
+    isotropic_nll = float(
+        np.mean([float(row["isotropic"]["mean_nll"]) for row in rows])  # type: ignore[index]
+    )
+    candidate_volume = float(
+        np.mean(
+            [
+                float(row["candidate"]["mean_ellipsoid_volume_m3"])  # type: ignore[index]
+                for row in rows
+            ]
+        )
+    )
+    conformal_volume = float(
+        np.mean(
+            [
+                float(row["conformal"]["sphere_volume_m3"])  # type: ignore[index]
+                for row in rows
+            ]
+        )
+    )
+    return {
+        "case_count": len(rows),
+        "case_rows": rows,
+        "equal_case_metrics": {
+            "candidate_mean_nll": candidate_nll,
+            "isotropic_mean_nll": isotropic_nll,
+            "candidate_nll_improvement_nats": isotropic_nll - candidate_nll,
+            "candidate_coverage_90": float(
+                np.mean(
+                    [
+                        float(row["candidate"]["coverage_90"])  # type: ignore[index]
+                        for row in rows
+                    ]
+                )
+            ),
+            "isotropic_coverage_90": float(
+                np.mean(
+                    [
+                        float(row["isotropic"]["coverage_90"])  # type: ignore[index]
+                        for row in rows
+                    ]
+                )
+            ),
+            "conformal_coverage_90": float(
+                np.mean(
+                    [
+                        float(row["conformal"]["coverage_90"])  # type: ignore[index]
+                        for row in rows
+                    ]
+                )
+            ),
+            "candidate_mean_ellipsoid_volume_m3": candidate_volume,
+            "conformal_mean_sphere_volume_m3": conformal_volume,
+            "candidate_volume_reduction_vs_conformal": (
+                1.0 - candidate_volume / conformal_volume
+            ),
+            "candidate_nll_win_count": sum(
+                bool(row["candidate_nll_win"]) for row in rows
+            ),
+        },
+    }
 
 
 __all__ = [
@@ -385,6 +669,10 @@ __all__ = [
     "deterministic_camera_partition",
     "deterministic_subsample_indices",
     "evaluate_gaussian_events",
+    "evaluate_leave_one_group_out",
+    "equal_group_radial_quantile",
+    "fit_grouped_isotropic_variance",
+    "fit_grouped_matphys_scale",
     "fit_isotropic_variance",
     "fit_matphys_scale",
     "gaussian_nll",

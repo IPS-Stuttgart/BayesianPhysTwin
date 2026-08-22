@@ -21,7 +21,8 @@ from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
 from bayesian_phystwin.matphys_surface_uq_v1 import deterministic_camera_partition
 
 SCHEMA = "bayesian-phystwin.deform360-matphys-source-endpoint-v1"
-RAW_FRAME_COUNT = 81
+SOURCE_SELECTED_FRAME_COUNT = 81
+RAW_FRAME_COUNT = 76
 PREFIX_FRAME_COUNT = 58
 EVALUATION_STOP = 76
 MINIMUM_SUPPORT_CAMERAS = 3
@@ -247,6 +248,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--physical-source-episode", type=Path, required=True)
+    parser.add_argument("--known-action", type=Path, required=True)
     parser.add_argument("--prefix-manifest", type=Path, required=True)
     parser.add_argument("--deform-prediction-manifest", type=Path, required=True)
     parser.add_argument("--part-feature-manifest", type=Path, required=True)
@@ -298,20 +300,18 @@ def _validate_prediction_seals(
         isinstance(selected, list)
         and len(selected) == 2
         and all(type(value) is int for value in selected)
-        and selected[1] - selected[0] == RAW_FRAME_COUNT
+        and selected[1] - selected[0] == SOURCE_SELECTED_FRAME_COUNT
     ):
         raise ValueError("selected source window changed")
     selected_range = cast(list[int], selected)
     _require(
         isinstance(prediction, list)
-        and prediction
-        == [selected_range[0], selected_range[0] + EVALUATION_STOP],
+        and prediction == [selected_range[0], selected_range[0] + EVALUATION_STOP],
         "prediction source window changed",
     )
     _require(
         isinstance(prefix_range, list)
-        and prefix_range
-        == [selected_range[0], selected_range[0] + PREFIX_FRAME_COUNT],
+        and prefix_range == [selected_range[0], selected_range[0] + PREFIX_FRAME_COUNT],
         "prefix source window changed",
     )
 
@@ -430,6 +430,7 @@ def _validate_protocol(
     _require(
         isinstance(window, Mapping)
         and window.get("frame_count") == RAW_FRAME_COUNT
+        and window.get("source_selected_frame_count") == SOURCE_SELECTED_FRAME_COUNT
         and window.get("prefix_frame_count") == PREFIX_FRAME_COUNT
         and window.get("prediction_frame_count") == EVALUATION_STOP
         and window.get("evaluation_frame_range_half_open")
@@ -439,6 +440,7 @@ def _validate_protocol(
     _require(
         isinstance(boundary, Mapping)
         and boundary.get("provider_and_scoring_cameras_disjoint") is True
+        and boundary.get("sealed_known_action_carrier_used") is True
         and boundary.get("target_or_confirmation_data_read") is False
         and boundary.get("held_v8_artifacts_accessed") is False
         and boundary.get("frozen_deform_results_changed") is False,
@@ -453,6 +455,7 @@ def _copy_source_window(
     destination_episode: Path,
     cameras: tuple[str, ...],
     raw_start: int,
+    known_action: Path,
     ffmpeg: Path,
     deform360_repository: Path,
 ) -> None:
@@ -497,18 +500,17 @@ def _copy_source_window(
     sys.path.insert(0, str(deform360_repository))
     from deform360.robot import RobotState, load_robot_state, save_robot_state
 
-    source_robot = load_robot_state(source_episode / "robot" / "robot.npz")
+    source_robot = load_robot_state(known_action)
     _require(
-        len(source_robot.actions) >= raw_start + RAW_FRAME_COUNT,
-        "source robot stream is too short",
+        len(source_robot.actions) == RAW_FRAME_COUNT,
+        "sealed known-action stream changed length",
     )
-    stop = raw_start + RAW_FRAME_COUNT
     save_robot_state(
         destination_episode / "robot" / "robot.npz",
         RobotState(
-            actions=source_robot.actions[raw_start:stop],
-            T_worlds=source_robot.T_worlds[raw_start:stop],
-            openings=source_robot.openings[raw_start:stop],
+            actions=source_robot.actions,
+            T_worlds=source_robot.T_worlds,
+            openings=source_robot.openings,
             bimanual=source_robot.bimanual,
         ),
     )
@@ -522,6 +524,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     source_episode = _ordinary_directory(
         args.physical_source_episode, name="physical source episode"
     )
+    known_action = _ordinary_file(args.known_action, name="sealed known action")
     prefix_path = _ordinary_file(args.prefix_manifest, name="prefix manifest")
     deform_path = _ordinary_file(
         args.deform_prediction_manifest, name="DEFORM prediction manifest"
@@ -539,6 +542,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         part_path=part_path,
         warp_path=warp_path,
         scoring_cameras=scoring,
+    )
+    deform_manifest = _json(deform_path, name="DEFORM prediction manifest")
+    input_files = cast(Mapping[str, Any], deform_manifest["input_files"])
+    known_action_record = input_files.get("known_action")
+    _require(
+        isinstance(known_action_record, Mapping)
+        and _sha256_file(known_action) == known_action_record.get("sha256"),
+        "sealed known-action carrier changed",
     )
     _validate_protocol(
         protocol_path,
@@ -582,6 +593,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             "path": str(protocol_path),
             "sha256": _sha256_file(protocol_path),
         },
+        "known_action": {
+            "path": str(known_action),
+            "sha256": _sha256_file(known_action),
+        },
         "dependencies": {
             "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
             "sam2_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
@@ -619,6 +634,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             destination_episode=episode,
             cameras=scoring,
             raw_start=int(identity["raw_start"]),
+            known_action=known_action,
             ffmpeg=Path("/usr/bin/ffmpeg").resolve(strict=True),
             deform360_repository=deform360_repository,
         )

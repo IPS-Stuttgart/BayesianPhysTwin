@@ -34,9 +34,19 @@ cameras. Future source surfaces are reconstructed only from the scoring panel.
 No RGB, mask, depth, Splatfacto, or tracking artifact is shared between the two
 panels.
 
-The source endpoint contains frames 58 through 75 of the registered 81-frame
-action window. It is a custom disjoint-camera Deform360 reconstruction, not an
-official processed annotation or an official Deform360 benchmark score.
+The source endpoint contains frames 58 through 75 of the 76-frame action window
+already bound by the sealed DEFORM known-action carrier. An initial source-only
+attempt requested five additional unscored tail frames and stopped before
+reconstruction because the raw robot stream was not readable outside its CI
+account. Those tail frames contribute neither conditioning nor an endpoint, so
+the amended runner consumes the hash-bound action carrier directly and does not
+decode them. This remains a custom disjoint-camera Deform360 reconstruction,
+not an official processed annotation or official benchmark score.
+
+The retained failed-attempt manifest is SHA-256
+`103ff5eb0768a454c7ef242ee860e94f70bb67be9381f89e331ababc3f3afe1c`.
+No source metric or reconstructed endpoint was available when the operational
+amendment was frozen, and no prediction or advancement threshold changed.
 
 ## Estimand and comparators
 

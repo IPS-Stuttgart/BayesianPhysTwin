@@ -3,6 +3,15 @@
   "schema_version": 1,
   "protocol_name": "matphys-surface-uq-source-v1",
   "claim_boundary": "Opened-source custom Deform360 calibration study only. This is not official Deform360 benchmark parity, a point-accuracy SOTA claim, or confirmation on any target cohort.",
+  "source_amendments": [
+    {
+      "amendment_id": "sealed-known-action-carrier-v1",
+      "failed_attempt_manifest_sha256": "103ff5eb0768a454c7ef242ee860e94f70bb67be9381f89e331ababc3f3afe1c",
+      "reason": "The raw robot carrier was CI-private; consume the already sealed 76-frame known-action carrier and omit five unscored tail frames.",
+      "source_outcome_or_metric_inspected": false,
+      "prediction_or_gate_changed": false
+    }
+  ],
   "source_panel": {
     "status": "previously-opened-development-source",
     "case_ids": [
@@ -41,16 +50,13 @@
     "shared_reconstruction_artifact_allowed": false
   },
   "window": {
-    "frame_count": 81,
+    "source_selected_frame_count": 81,
+    "frame_count": 76,
     "prefix_frame_count": 58,
     "prediction_frame_count": 76,
     "evaluation_frame_range_half_open": [
       58,
       76
-    ],
-    "unscored_tail_frame_range_half_open": [
-      76,
-      81
     ]
   },
   "mean": {
@@ -88,6 +94,7 @@
   },
   "information_boundary": {
     "predictions_sealed_before_source_suffix_decode": true,
+    "sealed_known_action_carrier_used": true,
     "provider_and_scoring_cameras_disjoint": true,
     "future_observations_used_to_form_prediction": false,
     "target_or_confirmation_data_read": false,

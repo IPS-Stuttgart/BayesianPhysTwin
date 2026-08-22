@@ -119,6 +119,8 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
     )
 
     assert loaded["source_panel"]["replacement_allowed"] is False
+    assert loaded["source_amendments"][0]["source_outcome_or_metric_inspected"] is False
+    assert loaded["source_amendments"][0]["prediction_or_gate_changed"] is False
     with pytest.raises(ValueError, match="denominator"):
         _validate_protocol(
             path,
