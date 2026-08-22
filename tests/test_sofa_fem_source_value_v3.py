@@ -35,6 +35,9 @@ INTERRUPTION = (
     / "results/sota/diagnostics/sofa_fem_zebra_source_value_v3"
     / "launch-interruption-v1.json"
 )
+FAILURE = (
+    ROOT / "results/sota/diagnostics/sofa_fem_zebra_source_value_v3" / "failure.json"
+)
 
 
 def _trajectory(
@@ -309,6 +312,53 @@ def test_preinitialization_interruption_authorizes_one_managed_recovery() -> Non
     assert recovery["execution_mode"] == "managed-foreground-session"
     assert recovery["exactly_one_managed_recovery_authorized"] is True
     assert recovery["no_further_retry"] is True
+
+
+def test_frozen_failure_rejects_candidate_before_outcomes() -> None:
+    receipt = json.loads(FAILURE.read_text(encoding="utf-8"))
+
+    assert receipt["implementation"]["protocol_sha256"] == file_sha256(PROTOCOL)
+    assert receipt["implementation"]["git_revision"] == (
+        "9edfbaaff0735bf7f9f83cc7f949b65604f336b5"
+    )
+    assert receipt["execution"]["expected_full_horizon_member_count"] == 6
+    assert receipt["execution"]["completed_full_horizon_member_count"] == 3
+    assert receipt["execution"]["prediction_grid_published"] is False
+    assert receipt["execution"]["pre_prefix_gate_run"] is False
+    assert receipt["failure"] == {
+        "stage": "frozen-native-full-horizon-prediction",
+        "exception_type": "ValueError",
+        "message": "SOFA v2 source replay violated its hard orientation threshold",
+        "group_id": "double_stretch_zebra",
+        "candidate_index": 0,
+        "young_modulus_pa": 25000.0,
+        "native_step": 1094,
+        "observed_minimum_deformation_determinant": 0.34743295104684863,
+        "required_minimum_deformation_determinant": 0.35,
+        "source_independent_runtime_failure": False,
+        "source_physical_admission_failure": True,
+    }
+    assert len(receipt["partial_artifacts"]) == 4
+    assert {artifact["relative_path"] for artifact in receipt["partial_artifacts"]} == {
+        "double_lift_zebra/member-00.npz",
+        "double_lift_zebra/member-01.npz",
+        "double_lift_zebra/member-02.npz",
+        "double_lift_zebra/ensemble-mean.npz",
+    }
+    assert receipt["information_boundary"]["incumbent_prediction_arrays_read"] is False
+    assert receipt["information_boundary"]["matphys_artifact_read"] is False
+    assert receipt["information_boundary"]["prefix_outcomes_read"] is False
+    assert receipt["information_boundary"]["future_outcomes_read"] is False
+    assert receipt["decision"] == {
+        "candidate_admitted": False,
+        "source_value_passed": False,
+        "prefix_scoring_authorized": False,
+        "future_scoring_authorized": False,
+        "independent_untouched_evaluation_authorized": False,
+        "exact_incumbent_fallback_retained": True,
+        "retry_authorized": False,
+        "method_change_authorized_from_this_run": False,
+    }
 
 
 def test_prefix_requires_passing_pre_prefix_receipt_before_outcomes(

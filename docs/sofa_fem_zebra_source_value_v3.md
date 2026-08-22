@@ -1,8 +1,7 @@
 # SOFA FEM canonical-gauge source-value gate v3
 
-**Status:** registered and target-blind; native prediction has not been
-executed and no source outcome partition has been opened. One managed recovery
-is registered after a pre-initialization launcher interruption.
+**Status:** frozen source-physical rejection; no source outcome partition was
+opened and no retry is authorized.
 
 ## Question
 
@@ -80,10 +79,10 @@ group input was loaded, and no native replay began. Its compact receipt is
 [`launch-interruption-v1.json`](../results/sota/diagnostics/sofa_fem_zebra_source_value_v3/launch-interruption-v1.json).
 The original lock and logs remain preserved and must not be deleted or reused.
 
-The command below is the sole managed recovery. The protocol, implementation,
-ensemble, gates, and source roster are byte-identical to the interrupted
-registration. The new output root must be absent before launch and there is no
-further retry authorization.
+The command below was the sole managed recovery. The protocol, implementation,
+ensemble, gates, and source roster remained byte-identical to the interrupted
+registration. Its output root and log now exist and must not be replaced,
+deleted, or used for another launch.
 
 ```bash
 set -o pipefail
@@ -121,5 +120,21 @@ Only after successful prediction may the outcome-free pre-prefix gate run:
   --output-dir /tmp/bpt-sofa-source-value-v3-pre-prefix-managed-v2
 ```
 
-Prefix and future commands remain unauthorized until each preceding sealed
-gate explicitly permits the next information boundary.
+## Frozen result
+
+All three `double_lift_zebra` members and their equal-weight ensemble mean
+sealed. The first `double_stretch_zebra` member, fixed at `25 kPa`, then failed
+closed at native step 1094 when its minimum continuation determinant reached
+`0.34743295104684863`, below the predeclared hard floor `0.35`. No stretch
+archive or prediction grid was published.
+
+This is a source-physical rejection, not a missing dependency or scheduler
+failure. The pre-prefix gate was therefore not run. Prefix and future outcomes
+remained unopened, so source-value scoring and an untouched evaluation are not
+authorized. The exact incumbent fallback remains retained without retry,
+threshold change, or parameter change.
+
+The compact receipt is
+[`failure.json`](../results/sota/diagnostics/sofa_fem_zebra_source_value_v3/failure.json).
+It binds the exact implementation, qualification, distribution archive, native
+log, and four partial archive hashes without publishing their payloads.
