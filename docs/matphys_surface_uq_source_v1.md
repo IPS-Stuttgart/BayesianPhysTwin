@@ -71,6 +71,16 @@ decode. The frozen identity is Python 3.10.20, NumPy 1.26.4, Torch
 OpenCV 4.10.0.84. A mismatch is a retained technical failure, not permission
 to substitute another runtime or source case.
 
+The first pinned-runtime execution passed that preflight but retained a failure
+before Splatfacto because fewer than three scoring cameras produced masks. Its
+manifest is SHA-256
+`ffc8d5e23a730fe49c6e3b51da8f085ed0d1db36e7cbd95883710c10a015dd0b`.
+The runner had caught each per-camera exception but omitted those records from
+the top-level failure artifact. A fourth prospective operational amendment
+adds only the failure stage, per-camera diagnostics, and successful-mask count
+to retained failures. It does not change SAM2, the camera panel, the three-view
+support threshold, the runtime, any prediction, or any advancement gate.
+
 ## Estimand and comparators
 
 For each future frame, scoring-camera depth is backprojected into the world

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 from pathlib import Path
 
@@ -135,6 +136,14 @@ def test_committed_protocol_binds_source_denominator_and_camera_panel() -> None:
         is False
     )
     assert loaded["source_amendments"][2]["prediction_or_gate_changed"] is False
+    assert (
+        loaded["source_amendments"][3][
+            "source_reconstructed_endpoint_or_metric_inspected"
+        ]
+        is False
+    )
+    assert loaded["source_amendments"][3]["prediction_or_gate_changed"] is False
+    assert loaded["source_amendments"][3]["camera_or_support_gate_changed"] is False
     assert loaded["scoring_reconstruction_runtime"] == EXPECTED_RUNTIME_IDENTITY
     assert loaded["outcome"]["robot_state_required_for_scoring_reconstruction"] is False
     assert loaded["outcome"]["urdf_gripper_mask_used"] is False
@@ -182,3 +191,13 @@ def test_scoring_runtime_identity_rejects_missing_or_extra_fields() -> None:
     }
     with pytest.raises(ValueError, match="runtime fields changed"):
         _validate_runtime_identity(observed)
+
+
+def test_retained_failure_preserves_stage_and_camera_diagnostics() -> None:
+    from scripts.remote import run_deform360_matphys_source_endpoint_v1 as runner
+
+    source = inspect.getsource(runner.main)
+
+    assert '"failure_stage": failure_stage' in source
+    assert '"camera_records": camera_records' in source
+    assert '"successful_mask_camera_count": len(support_by_camera)' in source

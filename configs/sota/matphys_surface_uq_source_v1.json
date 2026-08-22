@@ -28,6 +28,18 @@
       "source_sam2_masks_generated": true,
       "source_reconstructed_endpoint_or_metric_inspected": false,
       "prediction_or_gate_changed": false
+    },
+    {
+      "amendment_id": "retained-mask-diagnostics-v4",
+      "failed_attempt_artifact_id": "ab6b3d6fadf2516c44689573a1e44ef119b2d675e0928d1f2f5b0252b114e034",
+      "failed_attempt_manifest_sha256": "ffc8d5e23a730fe49c6e3b51da8f085ed0d1db36e7cbd95883710c10a015dd0b",
+      "failure_stage": "SAM2 mask generation before Splatfacto or source metric evaluation",
+      "reason": "The pinned runtime passed before suffix decode but fewer than three camera masks succeeded. Per-camera exceptions were caught during generation yet omitted from the retained top-level failure artifact. Preserve the frozen mask threshold and add only failure-stage, camera-record, and successful-mask-count diagnostics.",
+      "source_suffix_decoded": true,
+      "source_reconstructed_endpoint_or_metric_inspected": false,
+      "prediction_or_gate_changed": false,
+      "camera_or_support_gate_changed": false,
+      "runtime_changed": false
     }
   ],
   "source_panel": {

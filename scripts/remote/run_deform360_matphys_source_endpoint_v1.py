@@ -682,6 +682,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     scratch = output.parent / f".{output.name}.incomplete"
     _require(not scratch.exists(), "source endpoint scratch already exists")
     scratch.mkdir(parents=True)
+    failure_stage = "copy-source-window"
+    camera_records: list[dict[str, Any]] = []
+    support_by_camera: dict[str, np.ndarray] = {}
     try:
         episode = scratch / "episode_0000"
         _copy_source_window(
@@ -700,8 +703,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         predictor = DeformableObjectSam2VideoPredictor(
             sam2_repository, checkpoint, device=args.device
         )
-        camera_records: list[dict[str, Any]] = []
-        support_by_camera: dict[str, np.ndarray] = {}
+        failure_stage = "sam2-mask-generation"
         try:
             for camera in scoring:
                 video = episode / camera / "undistorted.mp4"
@@ -758,6 +760,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         successful = tuple(sorted(support_by_camera))
 
+        failure_stage = "splatfacto-reconstruction"
         sys.path.insert(0, str(deform360_repository))
         from deform360.processing import depth_stage, reconstruct_stage
 
@@ -783,10 +786,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         finally:
             reconstruct_stage.visual_hull_points = original_visual_hull
         _require(set(splats) == set(range(RAW_FRAME_COUNT)), "splats are incomplete")
+        failure_stage = "depth-reconstruction"
         depths = depth_stage.process_depth_episode(
             scratch, 0, cameras=successful, overwrite=True, preview=False
         )
         _require(set(depths) == set(successful), "endpoint depth panel changed")
+        failure_stage = "endpoint-archive"
         endpoint_records: list[dict[str, Any]] = []
         raw_start = int(identity["raw_start"])
         raw_endpoint = (raw_start + PREFIX_FRAME_COUNT, raw_start + EVALUATION_STOP)
@@ -827,7 +832,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         failure = {
             **run_identity,
             "status": "retained-source-technical-failure",
+            "failure_stage": failure_stage,
             "error": {"type": type(error).__name__, "message": str(error)},
+            "camera_records": camera_records,
+            "successful_mask_camera_count": len(support_by_camera),
         }
         failure["artifact_id"] = content_id(failure)
         write_atomic_json(failure, output / MANIFEST_FILENAME, overwrite=False)
