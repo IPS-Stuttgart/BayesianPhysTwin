@@ -60,7 +60,7 @@ equal-case over the eight parity-valid cases.
 | Metric | MatPhys-shaped covariance | LOO isotropic comparator |
 | --- | ---: | ---: |
 | Gaussian NLL (nats/event) | -7.3234 | **-7.8486** |
-| NLL wins | 0/8 | 8/8 or tie |
+| NLL wins | 0/8 | 7/8, with one tie |
 | 90% coverage | 91.85% | not an advancement endpoint |
 | Mean-volume ratio | 1.0463 | 1.0000 |
 
