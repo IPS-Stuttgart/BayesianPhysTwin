@@ -81,9 +81,7 @@ def test_identifiable_weak_direction_is_rejected_as_unstable() -> None:
     certificate = _estimability(source, np.eye(2), limit=100.0)
 
     assert source.nontrivially_identifiable
-    assert certificate.status is (
-        QueryEstimabilityStatus.IDENTIFIABLE_BUT_UNSTABLE
-    )
+    assert certificate.status is (QueryEstimabilityStatus.IDENTIFIABLE_BUT_UNSTABLE)
     assert certificate.identifiable
     assert not certificate.stably_estimable
     assert not certificate.passes_stability_gate
@@ -222,9 +220,7 @@ def test_summary_binds_source_and_states_local_claim_boundary() -> None:
     assert summary["schema"] == QUERY_ESTIMABILITY_CERTIFICATE_SCHEMA
     assert summary["identifiability_certificate_id"] == source.artifact_id
     assert summary["status"] == "stably_estimable"
-    assert summary["claim_boundary"] == (
-        QUERY_ESTIMABILITY_CERTIFICATE_CLAIM_BOUNDARY
-    )
+    assert summary["claim_boundary"] == (QUERY_ESTIMABILITY_CERTIFICATE_CLAIM_BOUNDARY)
     assert "uncertainty calibration" in str(summary["claim_boundary"])
 
 
