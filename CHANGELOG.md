@@ -7,6 +7,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Added a mapping-bound claim-bearing Prob4D candidate path that verifies the
+  exact provider artifact, physical query, mapping protocol, and passing mapping
+  audit before inference, then content-addresses the audit and candidate without
+  changing historical solver or exact-fallback semantics.
 - Synchronized the machine-readable ecosystem action registry with the terminal
   Genesis MPM and JAX-FEM source-value decisions, selected CUT3R recurrent-online
   as the sole current real-provider candidate, and added a live fail-closed audit

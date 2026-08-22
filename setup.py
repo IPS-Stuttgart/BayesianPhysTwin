@@ -6,11 +6,18 @@ import json
 from pathlib import Path, PurePosixPath
 from typing import Final
 
-from setuptools import setup
+from setuptools import find_namespace_packages, setup
 from setuptools.command.sdist import sdist as _sdist
 
 ROOT: Final = Path(__file__).resolve().parent
 CONTRACT_PATH: Final = ROOT / "release" / "stable_distribution_contract_v1.json"
+PACKAGE_INCLUDE: Final = ("bayesian_phystwin", "bayesian_phystwin.*")
+PACKAGE_EXCLUDE: Final = (
+    "bayesian_phystwin.experiments",
+    "bayesian_phystwin.experiments.*",
+    "bayesian_phystwin_experiments",
+    "bayesian_phystwin_experiments.*",
+)
 
 
 def _supported_sdist_self_tests() -> frozenset[str]:
@@ -34,6 +41,15 @@ def _supported_sdist_self_tests() -> frozenset[str]:
 
 
 SUPPORTED_SDIST_SELF_TESTS: Final = _supported_sdist_self_tests()
+DISCOVERED_PACKAGES: Final = tuple(
+    find_namespace_packages(
+        where="src",
+        include=PACKAGE_INCLUDE,
+        exclude=PACKAGE_EXCLUDE,
+    )
+)
+if "bayesian_phystwin" not in DISCOVERED_PACKAGES:
+    raise RuntimeError("stable package discovery did not find bayesian_phystwin")
 
 
 def _retain_sdist_file(raw_path: str) -> bool:
@@ -55,4 +71,8 @@ class StableSdist(_sdist):
         )
 
 
-setup(cmdclass={"sdist": StableSdist})
+setup(
+    cmdclass={"sdist": StableSdist},
+    package_dir={"": "src"},
+    packages=DISCOVERED_PACKAGES,
+)
