@@ -135,7 +135,9 @@ def test_guarded_aggregate_scores_fallback_as_an_exact_isotropic_tie(
                 evidence_manifest_paths=[evidence],
                 output_dir=tmp_path / case_id,
             )
-            assert result["information_boundary"]["source_scoring_outcome_read"] is False
+            assert (
+                result["information_boundary"]["source_scoring_outcome_read"] is False
+            )
             manifests.append(tmp_path / case_id / "matphys_surface_uq_case.json")
             continue
         manifests.append(

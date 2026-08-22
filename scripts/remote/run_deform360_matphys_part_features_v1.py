@@ -66,7 +66,9 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _load_prefix_manifest(path: Path, *, case_id: str, object_id: str) -> dict[str, Any]:
+def _load_prefix_manifest(
+    path: Path, *, case_id: str, object_id: str
+) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError("prefix manifest must contain a JSON object")
@@ -74,9 +76,10 @@ def _load_prefix_manifest(path: Path, *, case_id: str, object_id: str) -> dict[s
         raise ValueError("prefix manifest identity differs from the invocation")
     if value.get("staged_frame_zero_frame_count") != 1:
         raise ValueError("prefix manifest must bind exactly one frame-zero image")
-    if not isinstance(value.get("staged_prefix_frame_count"), int) or int(
-        value["staged_prefix_frame_count"]
-    ) < 1:
+    if (
+        not isinstance(value.get("staged_prefix_frame_count"), int)
+        or int(value["staged_prefix_frame_count"]) < 1
+    ):
         raise ValueError("prefix manifest omits a nonempty causal prefix")
     boundary = value.get("information_boundary")
     if not isinstance(boundary, dict):
@@ -111,7 +114,9 @@ def _decode_first_rgb(path: Path):
     return Image.fromarray(rgb)
 
 
-def _sample_tokens(extractor: CausalDinoNodeExtractor, image, pixels: np.ndarray) -> np.ndarray:
+def _sample_tokens(
+    extractor: CausalDinoNodeExtractor, image, pixels: np.ndarray
+) -> np.ndarray:
     import torch.nn.functional as functional
 
     tokens = extractor._patch_tokens(image)  # noqa: SLF001 - shared pinned extractor
@@ -119,10 +124,14 @@ def _sample_tokens(extractor: CausalDinoNodeExtractor, image, pixels: np.ndarray
     normalized = np.asarray(pixels, dtype=np.float32).copy()
     normalized[:, 0] = normalized[:, 0] / max(width - 1, 1) * 2.0 - 1.0
     normalized[:, 1] = normalized[:, 1] / max(height - 1, 1) * 2.0 - 1.0
-    grid = extractor.torch.from_numpy(normalized).to(
-        extractor.device,
-        dtype=tokens.dtype,
-    ).view(1, -1, 1, 2)
+    grid = (
+        extractor.torch.from_numpy(normalized)
+        .to(
+            extractor.device,
+            dtype=tokens.dtype,
+        )
+        .view(1, -1, 1, 2)
+    )
     return (
         functional.grid_sample(tokens, grid, mode="bilinear", align_corners=False)
         .squeeze(0)
@@ -161,9 +170,8 @@ def main() -> None:
     selected_cameras: tuple[str, ...] | None = None
     if args.camera_id is not None:
         selected_cameras = tuple(sorted(str(value) for value in args.camera_id))
-        if (
-            len(selected_cameras) < 2
-            or len(selected_cameras) != len(set(selected_cameras))
+        if len(selected_cameras) < 2 or len(selected_cameras) != len(
+            set(selected_cameras)
         ):
             raise ValueError("provider camera panel must contain unique cameras")
         if not set(selected_cameras) <= set(intrinsics) or not set(
@@ -198,8 +206,12 @@ def main() -> None:
     source_records: list[dict[str, object]] = []
     for camera_index, camera in enumerate(cameras):
         camera_root = prefix_root / camera
-        video_path = ordinary_file(camera_root / "undistorted.mp4", name=f"{camera} RGB")
-        mask_path = ordinary_file(camera_root / "mask_refined.h5", name=f"{camera} mask")
+        video_path = ordinary_file(
+            camera_root / "undistorted.mp4", name=f"{camera} RGB"
+        )
+        mask_path = ordinary_file(
+            camera_root / "mask_refined.h5", name=f"{camera} mask"
+        )
         depth_path = ordinary_file(
             camera_root / "rendered_depth.h5",
             name=f"{camera} depth",

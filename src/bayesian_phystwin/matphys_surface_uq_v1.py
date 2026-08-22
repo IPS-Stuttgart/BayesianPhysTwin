@@ -664,8 +664,7 @@ def evaluate_leave_one_group_out(
 def evaluate_guarded_leave_one_group_out(
     case_ids: list[str] | tuple[str, ...],
     residual_groups_m: list[npt.ArrayLike] | tuple[npt.ArrayLike, ...],
-    covariance_groups_m2: list[npt.ArrayLike | None]
-    | tuple[npt.ArrayLike | None, ...],
+    covariance_groups_m2: list[npt.ArrayLike | None] | tuple[npt.ArrayLike | None, ...],
     *,
     observation_floor_m: float,
 ) -> dict[str, object]:

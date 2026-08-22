@@ -104,13 +104,13 @@ def _protocol(path: Path) -> dict[str, Any]:
                 "status": "terminal-source-replay-quality-failure",
             }
             and isinstance(covariance, Mapping)
-            and cast(Mapping[str, Any], covariance).get("selection_policy", {}).get(
-                "minimum_member_to_effective_replay_floor_ratio"
-            )
+            and cast(Mapping[str, Any], covariance)
+            .get("selection_policy", {})
+            .get("minimum_member_to_effective_replay_floor_ratio")
             == 2.0
-            and cast(Mapping[str, Any], covariance).get("selection_policy", {}).get(
-                "maximum_reference_to_replay_ratio"
-            )
+            and cast(Mapping[str, Any], covariance)
+            .get("selection_policy", {})
+            .get("maximum_reference_to_replay_ratio")
             == 3.0,
             "guarded MatPhys source protocol changed",
         )
@@ -676,7 +676,9 @@ def _parser() -> argparse.ArgumentParser:
         choices=("unavailable-physical-carrier", "retained-source-technical-failure"),
         required=True,
     )
-    retain.add_argument("--evidence-manifest", type=Path, action="append", required=True)
+    retain.add_argument(
+        "--evidence-manifest", type=Path, action="append", required=True
+    )
     retain.add_argument("--output-dir", type=Path, required=True)
     aggregate = subparsers.add_parser("aggregate")
     aggregate.add_argument("--protocol", type=Path, required=True)

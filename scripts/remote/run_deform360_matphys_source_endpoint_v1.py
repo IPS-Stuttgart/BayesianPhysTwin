@@ -457,8 +457,7 @@ def _validate_prediction_seals(
     _require(
         warp.get("case_id") == case_id
         and warp.get("target_object_id") == object_id
-        and warp.get("schema")
-        == "bayesian-phystwin.matphys-warp-trajectory-ensemble"
+        and warp.get("schema") == "bayesian-phystwin.matphys-warp-trajectory-ensemble"
         and warp.get("schema_version") == 2
         and warp.get("protocol")
         == "target-excluded-matphys-fields-official-phystwin-warp-v2"
@@ -555,10 +554,7 @@ def _validate_protocol(
         )
     _require(
         (is_v1 and uncertainty_policy == "matphys")
-        or (
-            is_v2
-            and uncertainty_policy in {"matphys", "isotropic-fallback"}
-        ),
+        or (is_v2 and uncertainty_policy in {"matphys", "isotropic-fallback"}),
         "source uncertainty policy is not authorized",
     )
     source_panel = protocol.get("source_panel")
@@ -628,8 +624,7 @@ def _validate_protocol(
             "guarded source covariance policy changed",
         )
     _require(
-        isinstance(runtime, Mapping)
-        and dict(runtime) == EXPECTED_RUNTIME_IDENTITY,
+        isinstance(runtime, Mapping) and dict(runtime) == EXPECTED_RUNTIME_IDENTITY,
         "source scoring runtime changed",
     )
     _require(

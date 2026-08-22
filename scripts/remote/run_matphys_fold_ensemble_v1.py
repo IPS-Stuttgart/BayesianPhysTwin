@@ -161,9 +161,7 @@ def _part_inputs(
                 raise ValueError("part artifact omits registered arrays")
             point_part = np.asarray(archive["point_part"], dtype=np.int64)
             part_features = np.asarray(archive["part_features"], dtype=np.float32)
-            material = np.asarray(
-                archive["material_distribution"], dtype=np.float32
-            )
+            material = np.asarray(archive["material_distribution"], dtype=np.float32)
         policy = REGISTERED_PART_FEATURES
         identity = {
             "path": str(part_artifact_path),
@@ -267,9 +265,7 @@ def main() -> None:
     _install_torchvision_nms_stub()
     import torch
 
-    warp_warning_compatibility_applied = (
-        install_matphys_warp_warning_compatibility()
-    )
+    warp_warning_compatibility_applied = install_matphys_warp_warning_compatibility()
     import train_model_video_material_simple as training
 
     install_part_aware_simple_model(
@@ -280,9 +276,7 @@ def main() -> None:
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     members = cast(Sequence[Mapping[str, object]], source["members"])
     first_member = members[0]
-    first_checkpoint_record = cast(
-        Mapping[str, object], first_member["checkpoint"]
-    )
+    first_checkpoint_record = cast(Mapping[str, object], first_member["checkpoint"])
     first_checkpoint = torch.load(
         cast(str, first_checkpoint_record["path"]),
         map_location="cpu",
@@ -342,9 +336,7 @@ def main() -> None:
             logk_residual_scale=float(
                 cast(Any, model_args.get("logk_residual_scale", 1.0))
             ),
-            logk_soft_clamp=float(
-                cast(Any, model_args.get("logk_soft_clamp", 0.25))
-            ),
+            logk_soft_clamp=float(cast(Any, model_args.get("logk_soft_clamp", 0.25))),
             part_feature_dim=1024,
             part_feature_scale=1.0,
         ).to(device)
@@ -361,11 +353,13 @@ def main() -> None:
                 ctrl_rest_length=empty_rest,
                 ctrl_part_idx=empty_part,
             )
-        raw = np.asarray(
-            output["log_k_raw"].detach().cpu(), dtype=np.float32
-        ).reshape(-1)
+        raw = np.asarray(output["log_k_raw"].detach().cpu(), dtype=np.float32).reshape(
+            -1
+        )
         if raw.shape != incumbent.shape:
-            raise ValueError("fold output does not match the canonical graph edge order")
+            raise ValueError(
+                "fold output does not match the canonical graph edge order"
+            )
         spring = apply_bounded_spring_residual(
             incumbent,
             raw,
@@ -439,12 +433,13 @@ def main() -> None:
         "members": member_records,
         "mean_edge_epistemic_log_ratio_std": mean_member_std,
         "runtime_compatibility": {
-            "warp_private_warning_alias_restored": (
-                warp_warning_compatibility_applied
-            )
+            "warp_private_warning_alias_restored": (warp_warning_compatibility_applied)
         },
         "inputs": {
-            "source_manifest": {"path": str(source_path), "sha256": _sha256(source_path)},
+            "source_manifest": {
+                "path": str(source_path),
+                "sha256": _sha256(source_path),
+            },
             "episode_graph": {"path": str(graph_path), "sha256": _sha256(graph_path)},
             "prefix_video": {"path": str(video_path), "sha256": _sha256(video_path)},
             "part_artifact": part_identity,

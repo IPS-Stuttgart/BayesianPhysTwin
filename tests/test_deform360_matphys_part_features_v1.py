@@ -41,6 +41,26 @@ def test_multiview_aggregation_uses_only_supported_rows() -> None:
     np.testing.assert_allclose(features[2], [2**-0.5, 2**-0.5])
 
 
+@pytest.mark.parametrize(
+    "invalid_support",
+    [
+        np.array([1.0, 0.0]),
+        np.array([1.0, np.nan]),
+        np.array([1, 0], dtype=np.int64),
+    ],
+)
+def test_multiview_aggregation_rejects_nonboolean_support(
+    invalid_support: np.ndarray,
+) -> None:
+    sampled = {"camera-a": np.array([[1.0, 0.0], [0.0, 1.0]])}
+
+    with pytest.raises(ValueError, match="boolean dtype"):
+        aggregate_direct_node_features(
+            sampled,
+            {"camera-a": invalid_support},
+        )
+
+
 def test_graph_parts_fill_unseen_nodes_without_future_evidence() -> None:
     points = np.column_stack(
         (

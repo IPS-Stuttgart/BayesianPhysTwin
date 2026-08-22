@@ -96,7 +96,10 @@ def aggregate_direct_node_features(
     contributor_count: np.ndarray | None = None
     for camera in camera_names:
         sampled = np.asarray(sampled_features_by_camera[camera], dtype=np.float64)
-        support = np.asarray(support_by_camera[camera], dtype=bool).reshape(-1)
+        raw_support = np.asarray(support_by_camera[camera])
+        if raw_support.dtype != np.dtype(np.bool_):
+            raise ValueError(f"support mask for {camera} must have boolean dtype")
+        support = raw_support.astype(np.bool_, copy=False).reshape(-1)
         if sampled.ndim != 2 or sampled.shape[0] != len(support):
             raise ValueError(f"invalid sampled feature shape for {camera}")
         if not np.all(np.isfinite(sampled)):

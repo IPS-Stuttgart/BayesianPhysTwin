@@ -36,24 +36,18 @@ from ._portable_contracts import (
     source_artifact_mapping,
 )
 
-MATPHYS_FOLD_ENSEMBLE_SCHEMA: Final = (
-    "bayesian-phystwin.matphys-fold-ensemble-source"
-)
+MATPHYS_FOLD_ENSEMBLE_SCHEMA: Final = "bayesian-phystwin.matphys-fold-ensemble-source"
 MATPHYS_FOLD_ENSEMBLE_VERSION: Final = 1
 MATPHYS_FOLD_ENSEMBLE_PROTOCOL: Final = (
     "target-excluded-source-supervised-matphys-fold-ensemble-v1"
 )
 MATPHYS_FOLD_TRAINING_CONTRACT: Final = "source-supervised-meta"
-MATPHYS_FOLD_PARAMETERIZATION: Final = (
-    "released-phystwin-bounded-logk-residual-v1"
-)
+MATPHYS_FOLD_PARAMETERIZATION: Final = "released-phystwin-bounded-logk-residual-v1"
 MATPHYS_FOLD_SOURCE_REPOSITORY: Final = "Yrainy0615/MatPhys"
 MATPHYS_PART_MODEL_CONTRACT: Final = "simple-videomae-dino-part-conditioning-v1"
 MATPHYS_GRAPH_FEATURE_CONTRACT: Final = "matphys-part-aware-geometry-11d-v1"
 MATPHYS_CAUSAL_VIDEO_CONTRACT: Final = "numeric-prefix-linspace-floor-v1"
-MATPHYS_ENSEMBLE_MOMENT_CONTRACT: Final = (
-    "equal-unique-member-population-moments-v1"
-)
+MATPHYS_ENSEMBLE_MOMENT_CONTRACT: Final = "equal-unique-member-population-moments-v1"
 
 MATPHYS_FOLD_ENSEMBLE_CLAIM_BOUNDARY: Final = (
     "The object-held-out MatPhys folds propose bounded spring residuals around "
@@ -238,10 +232,12 @@ def causal_frame_indices(
     )
     count = _positive_integer(frame_count, name="frame_count")
     count = min(count, evidence_end)
-    indices: npt.NDArray[np.int64] = np.linspace(
-        0, evidence_end - 1, count
-    ).astype(np.int64)
-    _require(len(np.unique(indices)) == count, "causal frame selection duplicated a frame")
+    indices: npt.NDArray[np.int64] = np.linspace(0, evidence_end - 1, count).astype(
+        np.int64
+    )
+    _require(
+        len(np.unique(indices)) == count, "causal frame selection duplicated a frame"
+    )
     _require(
         int(indices[-1]) < evidence_end,
         "causal frame selection crossed the evidence boundary",
@@ -257,17 +253,28 @@ def _validated_graph(
     points = np.asarray(points_m, dtype=np.float64)
     links = np.asarray(edges, dtype=np.int64)
     parts = np.asarray(point_part, dtype=np.int64).reshape(-1)
-    _require(points.ndim == 2 and points.shape[1] == 3, "points_m must have shape (N,3)")
+    _require(
+        points.ndim == 2 and points.shape[1] == 3, "points_m must have shape (N,3)"
+    )
     _require(len(points) > 1 and np.all(np.isfinite(points)), "points_m must be finite")
-    _require(links.ndim == 2 and links.shape[1] == 2 and len(links) > 0, "edges must have shape (E,2)")
-    _require(np.all(links >= 0) and np.all(links < len(points)), "edge endpoint exceeds points")
+    _require(
+        links.ndim == 2 and links.shape[1] == 2 and len(links) > 0,
+        "edges must have shape (E,2)",
+    )
+    _require(
+        np.all(links >= 0) and np.all(links < len(points)),
+        "edge endpoint exceeds points",
+    )
     _require(np.all(links[:, 0] != links[:, 1]), "self edges are not supported")
     canonical = np.sort(links, axis=1)
     _require(
         len(np.unique(canonical, axis=0)) == len(links),
         "duplicate undirected edges are not supported",
     )
-    _require(len(parts) == len(points) and np.all(parts >= 0), "point_part must cover every point")
+    _require(
+        len(parts) == len(points) and np.all(parts >= 0),
+        "point_part must cover every point",
+    )
     unique_parts = np.unique(parts)
     _require(
         np.array_equal(unique_parts, np.arange(len(unique_parts))),
@@ -315,9 +322,7 @@ def matphys_graph_features(
     same_part = parts[edge_i] == parts[edge_j]
     np.add.at(degree, edge_i[same_part], 1.0)
     np.add.at(degree, edge_j[same_part], 1.0)
-    degree_normalized: npt.NDArray[np.float64] = np.zeros(
-        len(points), dtype=np.float64
-    )
+    degree_normalized: npt.NDArray[np.float64] = np.zeros(len(points), dtype=np.float64)
     for part in range(part_count):
         selected = parts == part
         degree_normalized[selected] = degree[selected] / (
@@ -325,9 +330,7 @@ def matphys_graph_features(
         )
     degree_i, degree_j = degree_normalized[edge_i], degree_normalized[edge_j]
 
-    local_density: npt.NDArray[np.float64] = np.zeros(
-        len(points), dtype=np.float64
-    )
+    local_density: npt.NDArray[np.float64] = np.zeros(len(points), dtype=np.float64)
     for part in range(part_count):
         selected_indices = np.flatnonzero(parts == part)
         part_points = points[selected_indices]
@@ -349,15 +352,9 @@ def matphys_graph_features(
         local_density[selected_indices] = density / (np.median(density) + 1e-8)
 
     density_i, density_j = local_density[edge_i], local_density[edge_j]
-    pca_ratio_1: npt.NDArray[np.float64] = np.zeros(
-        part_count, dtype=np.float64
-    )
-    pca_ratio_2: npt.NDArray[np.float64] = np.zeros(
-        part_count, dtype=np.float64
-    )
-    pca_spread: npt.NDArray[np.float64] = np.zeros(
-        part_count, dtype=np.float64
-    )
+    pca_ratio_1: npt.NDArray[np.float64] = np.zeros(part_count, dtype=np.float64)
+    pca_ratio_2: npt.NDArray[np.float64] = np.zeros(part_count, dtype=np.float64)
+    pca_spread: npt.NDArray[np.float64] = np.zeros(part_count, dtype=np.float64)
     for part in range(part_count):
         part_points = points[parts == part]
         if len(part_points) < 3:
@@ -400,7 +397,9 @@ def matphys_graph_features(
         ),
         dtype=np.float32,
     )
-    _require(edge_features.shape == (len(links), 11), "MatPhys edge feature width changed")
+    _require(
+        edge_features.shape == (len(links), 11), "MatPhys edge feature width changed"
+    )
     graph_digest = hashlib.sha256()
     graph_digest.update(_array_sha256(points.astype(np.float32)).encode("ascii"))
     graph_digest.update(_array_sha256(links).encode("ascii"))
@@ -440,7 +439,9 @@ def apply_bounded_spring_residual(
         and len(incumbent) > 0,
         "incumbent_spring_y_pa must be a floating vector",
     )
-    _require(raw.shape == incumbent.shape, "raw_log_residual must match the spring field")
+    _require(
+        raw.shape == incumbent.shape, "raw_log_residual must match the spring field"
+    )
     _require(
         np.all(np.isfinite(incumbent)) and np.all(incumbent > 0.0),
         "incumbent spring values must be finite and positive",
@@ -546,18 +547,45 @@ def validate_matphys_fold_ensemble_source(
     """Validate and canonicalize one target-excluded fold source manifest."""
 
     source = _mapping(value, name="MatPhys fold ensemble source")
-    require_exact_fields(source, expected=_SOURCE_FIELDS, name="MatPhys fold ensemble source")
-    _require(source.get("schema") == MATPHYS_FOLD_ENSEMBLE_SCHEMA, "source schema changed")
-    _require(source.get("schema_version") == MATPHYS_FOLD_ENSEMBLE_VERSION, "source schema version changed")
-    _require(source.get("protocol") == MATPHYS_FOLD_ENSEMBLE_PROTOCOL, "source protocol changed")
-    repository = repository_name(source.get("source_repository"), name="source_repository")
+    require_exact_fields(
+        source, expected=_SOURCE_FIELDS, name="MatPhys fold ensemble source"
+    )
+    _require(
+        source.get("schema") == MATPHYS_FOLD_ENSEMBLE_SCHEMA, "source schema changed"
+    )
+    _require(
+        source.get("schema_version") == MATPHYS_FOLD_ENSEMBLE_VERSION,
+        "source schema version changed",
+    )
+    _require(
+        source.get("protocol") == MATPHYS_FOLD_ENSEMBLE_PROTOCOL,
+        "source protocol changed",
+    )
+    repository = repository_name(
+        source.get("source_repository"), name="source_repository"
+    )
     _require(repository == MATPHYS_FOLD_SOURCE_REPOSITORY, "source repository changed")
     revision = exact_revision(source.get("source_revision"), name="source_revision")
-    _require(source.get("training_contract") == MATPHYS_FOLD_TRAINING_CONTRACT, "training contract changed")
-    _require(source.get("parameterization") == MATPHYS_FOLD_PARAMETERIZATION, "parameterization changed")
-    _require(source.get("part_model_contract") == MATPHYS_PART_MODEL_CONTRACT, "part model contract changed")
-    _require(source.get("graph_feature_contract") == MATPHYS_GRAPH_FEATURE_CONTRACT, "graph feature contract changed")
-    _require(source.get("causal_video_contract") == MATPHYS_CAUSAL_VIDEO_CONTRACT, "causal video contract changed")
+    _require(
+        source.get("training_contract") == MATPHYS_FOLD_TRAINING_CONTRACT,
+        "training contract changed",
+    )
+    _require(
+        source.get("parameterization") == MATPHYS_FOLD_PARAMETERIZATION,
+        "parameterization changed",
+    )
+    _require(
+        source.get("part_model_contract") == MATPHYS_PART_MODEL_CONTRACT,
+        "part model contract changed",
+    )
+    _require(
+        source.get("graph_feature_contract") == MATPHYS_GRAPH_FEATURE_CONTRACT,
+        "graph feature contract changed",
+    )
+    _require(
+        source.get("causal_video_contract") == MATPHYS_CAUSAL_VIDEO_CONTRACT,
+        "causal video contract changed",
+    )
     universe = canonical_sorted_strings(
         _sequence(
             source.get("training_universe_object_ids"),
@@ -661,11 +689,15 @@ def build_matphys_fold_ensemble_source(
                 "held_out_object_id": held_out,
                 "training_object_ids": list(training),
                 "checkpoint": _file_record(
-                    nonempty_string(member.get("checkpoint_path"), name="checkpoint_path"),
+                    nonempty_string(
+                        member.get("checkpoint_path"), name="checkpoint_path"
+                    ),
                     name=f"fold {fold_index} checkpoint",
                 ),
                 "training_audit": _file_record(
-                    nonempty_string(member.get("training_audit_path"), name="training_audit_path"),
+                    nonempty_string(
+                        member.get("training_audit_path"), name="training_audit_path"
+                    ),
                     name=f"fold {fold_index} training audit",
                 ),
             }

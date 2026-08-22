@@ -213,9 +213,7 @@ def test_guarded_leave_one_out_uses_exact_isotropic_fallback() -> None:
     generator = np.random.default_rng(260824)
     base = np.diag([16e-6, 1e-6, 4e-6])
     residual_groups = [
-        generator.multivariate_normal(
-            np.zeros(3), 3.0 * base + np.eye(3) * 1e-6, 600
-        )
+        generator.multivariate_normal(np.zeros(3), 3.0 * base + np.eye(3) * 1e-6, 600)
         for _ in range(4)
     ]
     covariance_groups = [

@@ -112,8 +112,7 @@ def _validate_independent_reference(
     reference_actuation = result.get("realized_actuation")
     _require(
         isinstance(reference_graph, dict)
-        and reference_graph.get("file_sha256")
-        == file_sha256(registered_graph_path)
+        and reference_graph.get("file_sha256") == file_sha256(registered_graph_path)
         and reference_graph.get("controller_patch_size_per_anchor")
         == controller_patch_size,
         "independent official reference graph changed",
@@ -224,9 +223,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--reference-trajectory", type=Path, required=True)
     parser.add_argument("--reference-result", type=Path, required=True)
     parser.add_argument("--reference-runner", type=Path, required=True)
-    parser.add_argument(
-        "--historical-reference-trajectory", type=Path, required=True
-    )
+    parser.add_argument("--historical-reference-trajectory", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--controller-radius-m", type=float, default=0.03)
@@ -523,9 +520,7 @@ def main() -> int:
     reference_rmse = float(np.sqrt(np.mean(reference_difference**2)))
     reference_max = float(np.max(np.abs(reference_difference)))
     historical_difference = reference.astype(np.float64) - historical_reference
-    historical_reference_rmse = float(
-        np.sqrt(np.mean(historical_difference**2))
-    )
+    historical_reference_rmse = float(np.sqrt(np.mean(historical_difference**2)))
     historical_reference_max = float(np.max(np.abs(historical_difference)))
     replay_coordinate_std = float(
         np.sqrt(
