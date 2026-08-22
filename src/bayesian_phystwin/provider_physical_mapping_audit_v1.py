@@ -52,6 +52,7 @@ _REASON_ORDER: Final[tuple[str, ...]] = (
 _TECHNICAL_REASONS: Final[frozenset[str]] = frozenset(_REASON_ORDER[:7])
 _PROVIDER_SUPPORT_REASON: Final = "insufficient-provider-valid-support"
 _QUERY_SUPPORT_REASON: Final = "insufficient-physical-query-overlap"
+_MINIMUM_POSITIVE_UNIT_SCALE_M: Final = float(np.finfo(float).tiny)
 _MAXIMUM_SAFE_UNIT_SCALE_M: Final = math.sqrt(np.finfo(float).max)
 
 
@@ -308,7 +309,7 @@ class ProviderPhysicalMappingCaseV1:
             _finite_real(
                 self.provider_unit_scale_m,
                 name="provider_unit_scale_m",
-                minimum=float(np.finfo(float).tiny),
+                minimum=_MINIMUM_POSITIVE_UNIT_SCALE_M,
                 maximum=_MAXIMUM_SAFE_UNIT_SCALE_M,
             ),
         )
