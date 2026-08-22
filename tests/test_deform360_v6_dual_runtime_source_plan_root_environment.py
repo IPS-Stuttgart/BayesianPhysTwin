@@ -11,9 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = (
     ROOT / ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
 )
-ROUTER_WORKFLOW = (
-    ROOT / ".github/workflows/deform360-v6-source-receipt-routing.yml"
-)
+ROUTER_WORKFLOW = ROOT / ".github/workflows/deform360-v6-source-receipt-routing.yml"
 CURRENT_ACTIONS = ROOT / "api/ecosystem-current-actions-v1.json"
 ARCHIVED_RUNNER = (
     ROOT / "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
