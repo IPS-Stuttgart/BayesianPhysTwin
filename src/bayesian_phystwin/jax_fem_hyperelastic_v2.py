@@ -409,7 +409,7 @@ def run_hyperelastic_replay_v2(
         len(contact.patch_local_indices),
         axis=0,
     )
-    zero_translations = np.zeros(
+    zero_translations: FloatArray = np.zeros(
         (len(contact.patch_local_indices), 3),
         dtype=np.float64,
     )

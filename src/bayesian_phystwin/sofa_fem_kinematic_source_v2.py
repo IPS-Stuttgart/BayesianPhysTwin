@@ -115,9 +115,7 @@ def build_sofa_kinematic_schedule_v2(
                 translations_m=translations,
             )
     key_times = np.arange(total_steps + 1, dtype=np.float64) * time_step
-    frame_steps: IntArray = (
-        np.arange(frame_count, dtype=np.int64) * interval_substeps
-    )
+    frame_steps: IntArray = np.arange(frame_count, dtype=np.int64) * interval_substeps
     target_relative = targets - geometry.points_m[geometry.attachment_indices][None]
     relative = np.concatenate((target_relative[1:], target_relative[-1:]), axis=0)
     digest = hashlib.sha256()

@@ -43,8 +43,7 @@ def _fixture() -> tuple[np.ndarray, np.ndarray, np.ndarray, RigidContactProjecti
     projected = np.empty((2, len(attachments), 3), dtype=np.float64)
     for frame in range(2):
         projected[frame] = (
-            points[attachments] @ rotations[frame, 0].T
-            + translations[frame, 0]
+            points[attachments] @ rotations[frame, 0].T + translations[frame, 0]
         )
     contact = RigidContactProjectionV1(
         projected_targets_m=projected,

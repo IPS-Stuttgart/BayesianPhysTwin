@@ -55,9 +55,7 @@ def test_module_import_freezes_runtime_and_native_models() -> None:
     assert MUJOCO_WHEEL_SHA256 == (
         "c148824d73487fe5ee29c371eff981645f372ccada1f20ea331288323e37c65e"
     )
-    assert ATTACHMENT_MODEL == (
-        "direct-rigid-projected-vertex-mocap-Dirichlet-v2"
-    )
+    assert ATTACHMENT_MODEL == ("direct-rigid-projected-vertex-mocap-Dirichlet-v2")
     assert "Saint-Venant-Kirchhoff" in CONSTITUTIVE_MODEL
 
 

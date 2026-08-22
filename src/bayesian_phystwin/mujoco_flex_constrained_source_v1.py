@@ -355,9 +355,7 @@ def run_mujoco_constrained_flex_source_replay_v1(
     )
     target_mocap_ids: IntArray = np.asarray(
         [
-            model.body_mocapid[
-                mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
-            ]
+            model.body_mocapid[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)]
             for name in scene.target_body_names
         ],
         dtype=np.int64,

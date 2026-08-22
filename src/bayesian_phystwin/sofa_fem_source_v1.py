@@ -448,7 +448,9 @@ def run_sofa_fem_source_replay_v1(
                     translations_m=translations,
                 )
                 target.position.value = targets.tolist()
-                target.velocity.value = ((targets - previous_targets) / time_step).tolist()
+                target.velocity.value = (
+                    (targets - previous_targets) / time_step
+                ).tolist()
                 previous_targets = targets
                 previous_time = float(root.time.value)
                 sofa.Simulation.animate(root, time_step)
@@ -461,7 +463,9 @@ def run_sofa_fem_source_replay_v1(
                 _require(
                     np.all(np.isfinite(current))
                     and np.all(
-                        np.isfinite(np.asarray(mechanical.velocity.value, dtype=np.float64))
+                        np.isfinite(
+                            np.asarray(mechanical.velocity.value, dtype=np.float64)
+                        )
                     ),
                     "SOFA source replay produced non-finite state",
                 )

@@ -100,9 +100,9 @@ def _cell_zero_tetrahedron_count_v1(
     extent = upper - lower
     _require(np.all(extent > 0.0), "source bounds must span all three axes")
     tetrahedron_minima = np.min(points_grid_m[cells], axis=1)
-    minimum_cells = np.floor(
-        (tetrahedron_minima - lower) / extent * counts
-    ).astype(np.int64)
+    minimum_cells = np.floor((tetrahedron_minima - lower) / extent * counts).astype(
+        np.int64
+    )
     minimum_cells = np.clip(minimum_cells, 0, counts - 1)
     return int(np.sum(np.all(minimum_cells == 0, axis=1)))
 
@@ -117,12 +117,8 @@ def _occupied_trilinear_cells_v1(
     extent = upper - lower
     _require(np.all(extent > 0.0), "source bounds must span all three axes")
     tetrahedra = points_grid_m[cells]
-    low = ((np.min(tetrahedra, axis=1) - lower) / extent * counts).astype(
-        np.int64
-    )
-    high = ((np.max(tetrahedra, axis=1) - lower) / extent * counts).astype(
-        np.int64
-    )
+    low = ((np.min(tetrahedra, axis=1) - lower) / extent * counts).astype(np.int64)
+    high = ((np.max(tetrahedra, axis=1) - lower) / extent * counts).astype(np.int64)
     low = np.clip(low, 0, counts - 1)
     high = np.clip(high, 0, counts - 1)
     occupied: set[int] = set()
@@ -130,9 +126,7 @@ def _occupied_trilinear_cells_v1(
         for i in range(int(cell_low[0]), int(cell_high[0]) + 1):
             for j in range(int(cell_low[1]), int(cell_high[1]) + 1):
                 for k in range(int(cell_low[2]), int(cell_high[2]) + 1):
-                    occupied.add(
-                        (i * int(counts[1]) + j) * int(counts[2]) + k
-                    )
+                    occupied.add((i * int(counts[1]) + j) * int(counts[2]) + k)
     _require(bool(occupied), "trilinear grid has no occupied cells")
     return np.asarray(sorted(occupied), dtype=np.int64)
 
@@ -184,20 +178,13 @@ def build_mujoco_trilinear_grid_v1(
     base = np.minimum(base, counts - 1)
     fraction = scaled - base
     offsets: IntArray = np.asarray(
-        [
-            (x, y, z)
-            for x in (0, 1)
-            for y in (0, 1)
-            for z in (0, 1)
-        ],
+        [(x, y, z) for x in (0, 1) for y in (0, 1) for z in (0, 1)],
         dtype=np.int64,
     )
     support = base[:, None, :] + offsets[None, :, :]
-    node_indices = (
-        (support[:, :, 0] * (counts[1] + 1) + support[:, :, 1])
-        * (counts[2] + 1)
-        + support[:, :, 2]
-    )
+    node_indices = (support[:, :, 0] * (counts[1] + 1) + support[:, :, 1]) * (
+        counts[2] + 1
+    ) + support[:, :, 2]
     factors = np.where(
         offsets[None, :, :] == 1,
         fraction[:, None, :],
@@ -239,8 +226,7 @@ def build_mujoco_trilinear_grid_v1(
         k = remainder % int(counts[2])
         cell_nodes: IntArray = np.asarray(
             [
-                ((i + di) * (int(counts[1]) + 1) + (j + dj))
-                * (int(counts[2]) + 1)
+                ((i + di) * (int(counts[1]) + 1) + (j + dj)) * (int(counts[2]) + 1)
                 + (k + dk)
                 for di in (0, 1)
                 for dj in (0, 1)
@@ -498,9 +484,7 @@ def build_mujoco_trilinear_scene_v1(
             "dof": "trilinear",
             "cellcount": _numbers(np.asarray(cellcount, dtype=np.int64)),
             "body": " ".join(["world"] * len(geometry.points_m)),
-            "vertex": _numbers(
-                geometry.points_m @ grid.grid_from_world_rotation.T
-            ),
+            "vertex": _numbers(geometry.points_m @ grid.grid_from_world_rotation.T),
             "element": _numbers(geometry.cells),
             "node": " ".join(node_body_names),
             "radius": "0",
@@ -665,8 +649,10 @@ def run_mujoco_trilinear_source_replay_v1(
     sentinel_applied = not cell_zero_occupied
     if sentinel_applied:
         _require(
-            np.all(stiffness[stiffness_address : stiffness_address + cell_stiffness_size]
-            == 0.0),
+            np.all(
+                stiffness[stiffness_address : stiffness_address + cell_stiffness_size]
+                == 0.0
+            ),
             "MuJoCo empty cell-zero stiffness block changed",
         )
         model.flex_stiffness[stiffness_address] = EMPTY_CELL_STIFFNESS_SENTINEL

@@ -28,8 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/sota/jax_fem_zebra_source_value_v2.json"
 RUNNER = ROOT / "scripts/remote/run_jax_fem_hyperelastic_source_value_v2.py"
 FAILURE_RECEIPT = (
-    ROOT
-    / "results/sota/diagnostics/jax_fem_zebra_source_value_v2/failure.json"
+    ROOT / "results/sota/diagnostics/jax_fem_zebra_source_value_v2/failure.json"
 )
 V2_SOURCE_FILES = {
     "src/bayesian_phystwin/jax_fem_source_qualification_v1.py",
@@ -85,9 +84,7 @@ def test_frozen_v2_source_physical_failure_closes_outcome_access() -> None:
     assert receipt["failure"] == {
         "stage": "frozen-native-prediction-grid",
         "exception_type": "ValueError",
-        "message": (
-            "JAX-FEM v2 continuation violated its hard orientation threshold"
-        ),
+        "message": ("JAX-FEM v2 continuation violated its hard orientation threshold"),
         "source_independent_runtime_failure": False,
         "source_physical_admission_failure": True,
     }

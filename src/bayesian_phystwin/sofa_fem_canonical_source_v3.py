@@ -108,7 +108,7 @@ def _oriented_principal_axes(
         moment = float(np.sum(projection**3))
         moment_scale = float(np.sum(np.abs(projection) ** 3))
         if abs(moment) <= _SIGN_MOMENT_RELATIVE_FLOOR * max(
-            moment_scale, np.finfo(np.float64).tiny
+            moment_scale, float(np.finfo(np.float64).tiny)
         ):
             pivot = int(np.argmax(np.abs(projection)))
             sign_value = float(projection[pivot])

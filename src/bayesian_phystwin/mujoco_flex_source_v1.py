@@ -255,7 +255,9 @@ def build_mujoco_flex_scene_v1(
     free_names: list[str] = []
     body_names: list[str] = []
     local_vertices = np.empty_like(geometry.points_m)
-    characteristic_length = max(float(np.linalg.norm(np.ptp(geometry.points_m, axis=0))), 1e-9)
+    characteristic_length = max(
+        float(np.linalg.norm(np.ptp(geometry.points_m, axis=0))), 1e-9
+    )
     for node_index, point in enumerate(geometry.points_m):
         attachment_index = int(node_attachment[node_index])
         if attachment_index >= 0:
@@ -431,9 +433,7 @@ def run_mujoco_flex_source_replay_v1(
     )
     mocap_ids = np.asarray(
         [
-            model.body_mocapid[
-                mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
-            ]
+            model.body_mocapid[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)]
             for name in scene.attachment_body_names
         ],
         dtype=np.int64,

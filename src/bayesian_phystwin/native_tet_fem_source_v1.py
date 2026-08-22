@@ -107,7 +107,8 @@ def prepare_native_tet_source_geometry_v1(
     )
     _require(
         contact.rotations.shape[0] >= 2
-        and contact.projected_targets_m.shape == (len(contact.rotations), len(indices), 3)
+        and contact.projected_targets_m.shape
+        == (len(contact.rotations), len(indices), 3)
         and len(contact.patch_ranks) == contact.rotations.shape[1]
         and all(rank == 3 for rank in contact.patch_ranks),
         "contact trajectory or patch rank changed",
@@ -258,9 +259,7 @@ def contact_transform_at_fraction_v1(
             )
         ]
     )
-    translations = (
-        (1.0 - fraction) * left_translations + fraction * right_translations
-    )
+    translations = (1.0 - fraction) * left_translations + fraction * right_translations
     return (
         np.ascontiguousarray(rotations),
         np.ascontiguousarray(translations),

@@ -85,10 +85,7 @@ def test_grid_is_exact_mass_conserving_and_reduced() -> None:
     assert BACKEND_VARIANT == "mujoco-volumetric-trilinear-flex-v1"
     assert ATTACHMENT_MODEL == "disjoint-rigid-patch-trilinear-node-Dirichlet-v1"
     assert INTERPOLATION_MODEL == "axis-aligned-multicell-trilinear-v1"
-    assert (
-        GRID_FRAME_POLICY
-        == "identity-world-frame-with-empty-cell-sentinel-v1"
-    )
+    assert GRID_FRAME_POLICY == "identity-world-frame-with-empty-cell-sentinel-v1"
     assert MASS_MODEL == "reference-mass-conserving-occupied-cell-lumping-v1"
     assert EMPTY_CELL_STIFFNESS_SENTINEL == np.nextafter(0.0, 1.0)
     assert len(grid.node_positions_backend_m) == 125

@@ -20,9 +20,7 @@ def test_module_import_freezes_runtime_and_native_models() -> None:
         "129211fd01781bdd5ba3f28f1c3617a2f3792a71b62dc609cf866eec4ac745e2"
     )
     assert "Sofa.Component.Constraint.Projective" in SOFA_REQUIRED_PLUGINS
-    assert "Sofa.Component.SolidMechanics.FEM.HyperElastic" in (
-        SOFA_REQUIRED_PLUGINS
-    )
+    assert "Sofa.Component.SolidMechanics.FEM.HyperElastic" in (SOFA_REQUIRED_PLUGINS)
     assert ATTACHMENT_MODEL == "AttachProjectiveConstraint-moving-Dirichlet-v1"
     assert "stable-Neo-Hookean" in CONSTITUTIVE_MODEL
 
