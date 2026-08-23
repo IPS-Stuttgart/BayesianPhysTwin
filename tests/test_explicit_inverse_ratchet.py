@@ -62,16 +62,14 @@ class _NumpyInverseVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:  # noqa: N802
         function = node.func
         direct_inverse = (
-            isinstance(function, ast.Name)
-            and function.id in self.inverse_aliases
+            isinstance(function, ast.Name) and function.id in self.inverse_aliases
         )
         linalg_inverse = False
         numpy_inverse = False
         if isinstance(function, ast.Attribute) and function.attr == "inv":
             owner = function.value
             linalg_inverse = (
-                isinstance(owner, ast.Name)
-                and owner.id in self.linalg_aliases
+                isinstance(owner, ast.Name) and owner.id in self.linalg_aliases
             )
             numpy_inverse = (
                 isinstance(owner, ast.Attribute)
@@ -90,7 +88,9 @@ def _inverse_lines(source: str) -> tuple[int, ...]:
     return tuple(sorted(visitor.lines))
 
 
-def _production_inverse_inventory() -> tuple[dict[str, int], dict[str, tuple[int, ...]]]:
+def _production_inverse_inventory() -> tuple[
+    dict[str, int], dict[str, tuple[int, ...]]
+]:
     counts: dict[str, int] = {}
     locations: dict[str, tuple[int, ...]] = {}
     for path in sorted(SOURCE_ROOT.rglob("*.py")):
