@@ -246,8 +246,7 @@ def analyze_recursive_corruption_selectivity(
         if len(guarded_records) != sequence_count:
             raise ValueError("guarded record count does not match the aggregate")
         exact_fallback_violations = sum(
-            int(record["exact_fallback_violation_count"])
-            for record in guarded_records
+            int(record["exact_fallback_violation_count"]) for record in guarded_records
         )
 
         curve.append(
