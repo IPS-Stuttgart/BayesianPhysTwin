@@ -14,8 +14,9 @@ on:
       - "src/bayesian_phystwin/endpoint_model_average.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
-      - "tests/test_dynamic_endpoint_model_average.py"
       - "tests/test_endpoint_model_average.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py"
       - "tests/test_horizon_conditioned_discrepancy_provider_v3.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
@@ -38,8 +39,9 @@ on:
       - "src/bayesian_phystwin/endpoint_model_average.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
-      - "tests/test_dynamic_endpoint_model_average.py"
       - "tests/test_endpoint_model_average.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py"
       - "tests/test_horizon_conditioned_discrepancy_provider_v3.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
@@ -141,8 +143,9 @@ jobs:
               src/bayesian_phystwin/dynamic_endpoint_model_average.py \
               src/bayesian_phystwin/endpoint_model_average.py \
               tests/test_causal4d_provider_v2.py \
-              tests/test_dynamic_endpoint_model_average.py \
               tests/test_endpoint_model_average.py \
+              tests/test_horizon_conditioned_discrepancy_dynamic_filter.py \
+              tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py \
               tests/test_horizon_conditioned_discrepancy_provider_v3.py
             # v1 is a frozen compatibility facade; retain its historical import
             # grouping while enforcing every non-import-order Ruff diagnostic.
@@ -189,8 +192,9 @@ jobs:
           tests=(
             bayesian-phystwin/tests/test_causal4d_provider_v1.py
             bayesian-phystwin/tests/test_causal4d_provider_v2.py
-            bayesian-phystwin/tests/test_dynamic_endpoint_model_average.py
             bayesian-phystwin/tests/test_endpoint_model_average.py
+            bayesian-phystwin/tests/test_horizon_conditioned_discrepancy_dynamic_filter.py
+            bayesian-phystwin/tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py
             bayesian-phystwin/tests/test_horizon_conditioned_discrepancy_provider_v3.py
             causal4d/tests/test_causal4d_provider_contract.py
             causal4d/tests/test_causal4d_bpt_belief.py
