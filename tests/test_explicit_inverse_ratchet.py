@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import ast
+import textwrap
 from pathlib import Path
-from textwrap import dedent
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "bayesian_phystwin"
@@ -130,7 +130,7 @@ def test_inverse_detector_covers_supported_numpy_import_forms() -> None:
 
 
 def test_inverse_detector_ignores_unrelated_inv_attributes() -> None:
-    source = dedent(
+    source = textwrap.dedent(
         """
         class Operator:
             def inv(self, value):
