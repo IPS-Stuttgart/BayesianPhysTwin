@@ -221,7 +221,7 @@ def _physical_rollout(
     time = np.arange(config.step_count, dtype=np.float64) * config.time_step
     action = 0.75 * np.sin(2.0 * np.pi * 0.45 * time)
     action += 0.30 * np.sign(np.sin(2.0 * np.pi * 0.11 * time + 0.2))
-    position = np.zeros(config.step_count, dtype=np.float64)
+    position: np.ndarray = np.zeros(config.step_count, dtype=np.float64)
     velocity = 0.0
     for step in range(config.step_count - 1):
         acceleration = -2.2 * position[step] - 0.55 * velocity + action[step]
@@ -245,7 +245,7 @@ def generate_corrupted_sequence(
     rng = np.random.default_rng(canonical_seed)
     physical, action = _physical_rollout(cfg)
 
-    discrepancy = np.zeros(cfg.step_count, dtype=np.float64)
+    discrepancy: np.ndarray = np.zeros(cfg.step_count, dtype=np.float64)
     discrepancy[0] = rng.normal(scale=cfg.initial_residual_std_m)
     for step in range(cfg.step_count - 1):
         action_coupling = 0.0004 * np.tanh(action[step])
@@ -260,10 +260,10 @@ def generate_corrupted_sequence(
         scale=cfg.observation_std_m,
         size=cfg.step_count,
     )
-    available = np.ones(cfg.step_count, dtype=bool)
-    reliability = np.full(cfg.step_count, 0.95, dtype=np.float64)
-    source_step = np.arange(cfg.step_count, dtype=np.int64)
-    corruption = np.zeros(cfg.step_count, dtype=bool)
+    available: np.ndarray = np.ones(cfg.step_count, dtype=bool)
+    reliability: np.ndarray = np.full(cfg.step_count, 0.95, dtype=np.float64)
+    source_step: np.ndarray = np.arange(cfg.step_count, dtype=np.int64)
+    corruption: np.ndarray = np.zeros(cfg.step_count, dtype=bool)
     start = cfg.corruption_start
     stop = start + cfg.corruption_length
     corruption[start:stop] = True
@@ -317,7 +317,7 @@ def generate_corrupted_sequence(
         reliability[start:stop] = 0.65
     elif condition == "density_drop":
         retained = rng.random(cfg.corruption_length) < cfg.density_keep_probability
-        selected = np.arange(start, stop, dtype=np.int64)
+        selected: np.ndarray = np.arange(start, stop, dtype=np.int64)
         missing = selected[~retained]
         available[missing] = False
         observation[missing] = np.nan
