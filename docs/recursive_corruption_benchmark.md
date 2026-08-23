@@ -65,6 +65,41 @@ A materially harmful accepted update must worsen absolute one-step error by more
 than the registered margin. This avoids counting immaterial sign changes caused
 by observation noise.
 
+## Diagnostic innovation-threshold curve
+
+A repository-only diagnostic sweeps a predeclared set of maximum normalized
+innovation-squared thresholds while leaving every non-guard method unchanged:
+
+```bash
+python scripts/science/analyze_recursive_corruption_selectivity_v1.py \
+  --seeds 0:50 \
+  --conditions \
+    missing_burst,outlier_burst,coherent_drift,identity_switch,delayed_observation,density_drop \
+  --maximum-nis-grid 1,2,4,9,16,36,1000000 \
+  --output outputs/recursive-corruption/selectivity.json
+```
+
+Each curve point reports:
+
+- acceptance and fallback fractions;
+- deployed RMSE relative to `last_residual` and unguarded recursion;
+- materially harmful accepted updates per accepted update;
+- Gaussian NLL and cumulative per-sequence NLL regret relative to unguarded
+  recursion;
+- nominal-90% coverage and interval width;
+- fallback reasons; and
+- exact-fallback invariant violations.
+
+The reference-method metrics are required to remain exactly identical across the
+threshold grid. This catches accidental coupling between a guard parameter and a
+nominal comparator. The report is content-addressed, finite JSON and refuses to
+overwrite an existing result unless `--force` is supplied.
+
+This sweep deliberately uses generated truth and does **not** select a threshold.
+It is a retrospective mechanism diagnostic for understanding the
+acceptance-versus-risk trade-off. A real or sealed study must freeze one guard
+from permitted source/calibration evidence before target outcomes are opened.
+
 ## Exact fallback
 
 For every rejected guarded update, the posterior mean and variance are assigned
