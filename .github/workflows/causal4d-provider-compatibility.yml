@@ -291,10 +291,22 @@ jobs:
           }
           for filename, api_version in expected.items():
               payload = json.loads(Path(filename).read_text(encoding="utf-8"))
-              observed = payload.get("api_version")
-              if observed != api_version:
+              observed_schema = payload.get("schema_version")
+              metadata = payload.get("metadata")
+              observed_metadata = (
+                  metadata.get("provider_api_version")
+                  if isinstance(metadata, dict)
+                  else None
+              )
+              if observed_schema != api_version:
                   raise SystemExit(
-                      f"{filename}: expected api_version {api_version}, got {observed}"
+                      f"{filename}: expected schema_version {api_version}, "
+                      f"got {observed_schema}"
+                  )
+              if observed_metadata != api_version:
+                  raise SystemExit(
+                      f"{filename}: expected metadata.provider_api_version "
+                      f"{api_version}, got {observed_metadata}"
                   )
           PY
 
