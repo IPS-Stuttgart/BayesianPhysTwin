@@ -291,7 +291,7 @@ def test_nonlinear_closure_v2_arrays_and_metadata_are_immutable() -> None:
     (
         ("linearization", cast(Any, object()), "PhysicalLinearizationV1"),
         ("perturbation_set_id", "invalid", "lowercase hexadecimal"),
-        ("query_set_id", cast(str, 7), "lowercase hexadecimal"),
+        ("query_set_id", cast(str, 7), "literal string"),
     ),
 )
 def test_nonlinear_closure_v2_rejects_invalid_bound_identities(
