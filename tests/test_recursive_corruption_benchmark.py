@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import numpy as np
 import pytest
@@ -14,6 +17,26 @@ from bayesian_phystwin.recursive_corruption_benchmark import (
     write_recursive_corruption_csv,
     write_recursive_corruption_json,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
+SELECTIVITY_SCRIPT = (
+    ROOT / "scripts" / "science" / "analyze_recursive_corruption_selectivity_v1.py"
+)
+
+
+def _load_selectivity_script() -> ModuleType:
+    specification = importlib.util.spec_from_file_location(
+        "bpt_recursive_corruption_selectivity_test_module",
+        SELECTIVITY_SCRIPT,
+    )
+    assert specification is not None and specification.loader is not None
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[specification.name] = module
+    specification.loader.exec_module(module)
+    return module
+
+
+selectivity = _load_selectivity_script()
 
 
 def _small_config() -> RecursiveCorruptionBenchmarkConfig:
@@ -136,3 +159,63 @@ def test_all_declared_conditions_execute() -> None:
     )
     assert result["conditions"] == list(CONDITIONS)
     assert len(result["records"]) == len(CONDITIONS) * 5
+
+
+def test_selectivity_curve_is_deterministic_and_never_selects_a_threshold() -> None:
+    arguments = {
+        "seeds": [0, 1],
+        "conditions": ["outlier_burst", "missing_burst"],
+        "maximum_nis_grid": [9.0, 1.0, 4.0],
+        "config": _small_config(),
+    }
+    first = selectivity.analyze_recursive_corruption_selectivity(**arguments)
+    second = selectivity.analyze_recursive_corruption_selectivity(**arguments)
+
+    assert first == second
+    assert first["maximum_nis_grid"] == [1.0, 4.0, 9.0]
+    assert first["selection_authorized"] is False
+    assert len(first["report_id"]) == 64
+    assert json.loads(json.dumps(first, allow_nan=False)) == first
+
+    curve = first["curve"]
+    assert isinstance(curve, list)
+    assert len(curve) == 3
+    for point in curve:
+        assert point["exact_fallback_violation_count"] == 0
+        total_fraction = point["acceptance_fraction"] + point["fallback_fraction"]
+        assert total_fraction == pytest.approx(1.0)
+
+
+def test_selectivity_curve_rejects_target_like_or_ambiguous_sweeps() -> None:
+    with pytest.raises(ValueError, match="corrupted conditions only"):
+        selectivity.analyze_recursive_corruption_selectivity(
+            seeds=[0],
+            conditions=["clean"],
+            maximum_nis_grid=[1.0],
+            config=_small_config(),
+        )
+    with pytest.raises(ValueError, match="unique"):
+        selectivity.analyze_recursive_corruption_selectivity(
+            seeds=[0],
+            conditions=["outlier_burst"],
+            maximum_nis_grid=[1.0, 1.0],
+            config=_small_config(),
+        )
+
+
+def test_selectivity_report_writer_is_atomic_and_non_overwriting(
+    tmp_path: Path,
+) -> None:
+    report = selectivity.analyze_recursive_corruption_selectivity(
+        seeds=[0],
+        conditions=["identity_switch"],
+        maximum_nis_grid=[1.0, 9.0],
+        config=_small_config(),
+    )
+    destination = tmp_path / "selectivity.json"
+    selectivity.write_selectivity_report(report, destination)
+    assert json.loads(destination.read_text(encoding="utf-8")) == report
+    with pytest.raises(FileExistsError, match="refusing to overwrite"):
+        selectivity.write_selectivity_report(report, destination)
+    selectivity.write_selectivity_report(report, destination, force=True)
+    assert json.loads(destination.read_text(encoding="utf-8")) == report
