@@ -6,7 +6,6 @@ import ast
 import textwrap
 from pathlib import Path
 
-
 SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "bayesian_phystwin"
 
 # These calls predate the solve-based numerical policy. Some belong to frozen
