@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_stable_commands_own_existing_documentation() -> None:
     commands = stable_commands()
-    assert len(commands) == 7
+    assert len(commands) == 8
     assert len({command.documentation for command in commands}) == len(commands)
     for command in commands:
         assert command.documentation is not None
