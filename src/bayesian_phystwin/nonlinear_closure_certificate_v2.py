@@ -32,9 +32,7 @@ from .physical_linearization import (
     PhysicalLinearizationV1,
 )
 
-NONLINEAR_CLOSURE_CERTIFICATE_SCHEMA: Final = (
-    "bayesian_phystwin.nonlinear_closure"
-)
+NONLINEAR_CLOSURE_CERTIFICATE_SCHEMA: Final = "bayesian_phystwin.nonlinear_closure"
 NONLINEAR_CLOSURE_CERTIFICATE_VERSION: Final = 2
 NONLINEAR_CLOSURE_CERTIFICATE_SEMANTICS: Final = (
     "worst-case-per-query-per-horizon-nonlinear-closure-v2"
@@ -425,9 +423,7 @@ class NonlinearClosureCertificateV2:
             "nonlinear_remainder_norm_m": self.nonlinear_remainder_norm_m,
             "allowed_remainder_norm_m": self.allowed_remainder_norm_m,
             "closure_ratio": self.closure_ratio,
-            "per_query_maximum_closure_ratio": (
-                self.per_query_maximum_closure_ratio
-            ),
+            "per_query_maximum_closure_ratio": (self.per_query_maximum_closure_ratio),
             "unique_horizon_indices": self.unique_horizon_indices,
             "per_horizon_maximum_closure_ratio": (
                 self.per_horizon_maximum_closure_ratio
