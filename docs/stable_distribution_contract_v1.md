@@ -111,14 +111,17 @@ and all three native continuum candidates retain their registered negative
 decisions and exact fallback.
 
 The recursive corruption benchmark adds two NumPy-only installed modules: one
-benchmark implementation and one grouped-CLI adapter. A clean release-candidate
-build contains 608 wheel members. The wheel member-count ratchet is therefore
-raised narrowly from 605 to 608 while the compressed-size, isolated-import,
-public-API, console-script, and source-distribution limits remain unchanged.
-This allowance supports a controlled corruption-and-recovery mechanism study
-only; it does not establish real-provider competence, physical transfer,
-covariance calibration, intervention benefit, deployment safety, or state of
-the art.
+benchmark implementation and one grouped-CLI adapter. The immediately preceding
+exact wheel artifact contains 606 members and 2,475,101 compressed bytes,
+exposing a small pre-existing drift beyond the 605-member and 2,475,000-byte
+ratchets. The exact integrated recursive candidate contains 609 wheel members
+and 2,488,397 compressed bytes; it also contains the nonlinear-closure direct-
+import module already integrated on current `main`. The wheel ratchets are
+therefore set to 609 members and 2,550,000 bytes. Isolated-import, public-API,
+console-script, and source-distribution limits remain unchanged. This allowance
+supports controlled mechanism and local-closure infrastructure only; it does not
+establish real-provider competence, physical transfer, covariance calibration,
+intervention benefit, deployment safety, or state of the art.
 
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
