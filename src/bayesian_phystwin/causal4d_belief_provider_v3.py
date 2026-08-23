@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .causal4d_belief_provider_v2 import (
     CAUSAL4D_BELIEF_PROVIDER_V2_ARTIFACT_SCHEMA_VERSIONS,
@@ -79,8 +80,8 @@ CAUSAL4D_BELIEF_PROVIDER_V3_ARTIFACT_SCHEMA_VERSIONS = {
 
 
 def infer_dynamic_bayesian_anchor_endpoint(
-    residual_m: np.ndarray,
-    valid: np.ndarray,
+    residual_m: NDArray[np.float64],
+    valid: NDArray[np.bool_],
     *,
     end_frame: int,
     config: DynamicEndpointModelAverageConfigV2 | None = None,

@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Causal4D provider compatibility
 
 on:
@@ -9,13 +11,19 @@ on:
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v3.py"
+      - "src/bayesian_phystwin/dynamic_endpoint_model_average.py"
       - "src/bayesian_phystwin/endpoint_model_average.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
       - "tests/test_endpoint_model_average.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py"
+      - "tests/test_horizon_conditioned_discrepancy_provider_v3.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
       - "docs/causal4d_belief_provider_v1.md"
+      - "docs/dynamic_endpoint_model_average_v2.md"
       - "docs/prospective_belief_updates_v1.md"
       - "pyproject.toml"
       - ".github/workflows/causal4d-provider-compatibility.yml"
@@ -28,13 +36,19 @@ on:
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v3.py"
+      - "src/bayesian_phystwin/dynamic_endpoint_model_average.py"
       - "src/bayesian_phystwin/endpoint_model_average.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
       - "tests/test_endpoint_model_average.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py"
+      - "tests/test_horizon_conditioned_discrepancy_provider_v3.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
       - "docs/causal4d_belief_provider_v1.md"
+      - "docs/dynamic_endpoint_model_average_v2.md"
       - "docs/prospective_belief_updates_v1.md"
       - "pyproject.toml"
       - ".github/workflows/causal4d-provider-compatibility.yml"
@@ -61,31 +75,70 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out Bayesian-PhysTwin
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: bayesian-phystwin
+          persist-credentials: false
 
       - name: Check out Causal4D
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Causal4D
           ref: ${{ inputs.causal4d_ref || 'main' }}
           path: causal4d
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: |
-            bayesian-phystwin/pyproject.toml
-            causal4d/pyproject.toml
 
-      - name: Install both repositories
+      - name: Build both compatibility wheels
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e "./bayesian-phystwin[dev,graph]" opencv-python-headless
-          python -m pip install -e "./causal4d[dev]"
+          set -euo pipefail
+          python -m pip install --upgrade pip build
+          mkdir -p dist/bayesian-phystwin dist/causal4d
+          python -m build --wheel --outdir dist/bayesian-phystwin ./bayesian-phystwin
+          python -m build --wheel --outdir dist/causal4d ./causal4d
+
+      - name: Install the built wheels in the compatibility environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          bpt_wheel=$(realpath "$(find dist/bayesian-phystwin -maxdepth 1 -type f -name '*.whl' -print -quit)")
+          causal4d_wheel=$(realpath "$(find dist/causal4d -maxdepth 1 -type f -name '*.whl' -print -quit)")
+          test -n "${bpt_wheel}"
+          test -n "${causal4d_wheel}"
+          python -m pip install \
+            "bayesian-phystwin[dev,graph] @ file://${bpt_wheel}" \
+            "causal4d[dev] @ file://${causal4d_wheel}" \
+            opencv-python-headless
+          python -m pip check
+          python - <<'PY'
+          from pathlib import Path
+
+          import bayesian_phystwin
+          import causal4d
+
+          installed = (
+              ("Bayesian-PhysTwin", bayesian_phystwin, Path("bayesian-phystwin/src")),
+              ("Causal4D", causal4d, Path("causal4d/src")),
+          )
+          for name, package, source in installed:
+              package_path = Path(package.__file__).resolve()
+              source_root = source.resolve()
+              if package_path.is_relative_to(source_root):
+                  raise SystemExit(f"compatibility job imported {name} from its source tree")
+              print(f"{name}: {package_path}")
+          PY
+
+      - name: Smoke-test installed command surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          bpt --help >/dev/null
+          causal4d --help >/dev/null
 
       - name: Lint owned provider modules
         id: ruff
@@ -101,9 +154,14 @@ jobs:
               src/bayesian_phystwin/causal4d_provider_v2.py \
               src/bayesian_phystwin/causal4d_belief_provider_v1.py \
               src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+              src/bayesian_phystwin/causal4d_belief_provider_v3.py \
+              src/bayesian_phystwin/dynamic_endpoint_model_average.py \
               src/bayesian_phystwin/endpoint_model_average.py \
               tests/test_causal4d_provider_v2.py \
-              tests/test_endpoint_model_average.py
+              tests/test_endpoint_model_average.py \
+              tests/test_horizon_conditioned_discrepancy_dynamic_filter.py \
+              tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py \
+              tests/test_horizon_conditioned_discrepancy_provider_v3.py
             # v1 is a frozen compatibility facade; retain its historical import
             # grouping while enforcing every non-import-order Ruff diagnostic.
             python -m ruff check --ignore I001 \
@@ -124,12 +182,14 @@ jobs:
             src/bayesian_phystwin/causal4d_provider_v2.py \
             src/bayesian_phystwin/causal4d_belief_provider_v1.py \
             src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v3.py \
+            src/bayesian_phystwin/dynamic_endpoint_model_average.py \
             src/bayesian_phystwin/endpoint_model_average.py \
             2>&1 | tee mypy-output.txt
 
       - name: Upload provider quality diagnostics
         if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: provider-quality-diagnostics
           path: |
@@ -141,12 +201,16 @@ jobs:
       - name: Run provider and downstream compatibility tests
         env:
           CAUSAL4D_REQUIRE_BPT_PROVIDER: "1"
+          CAUSAL4D_REQUIRE_BPT_BELIEF_PROVIDER_V3: "1"
         shell: bash
         run: |
           tests=(
             bayesian-phystwin/tests/test_causal4d_provider_v1.py
             bayesian-phystwin/tests/test_causal4d_provider_v2.py
             bayesian-phystwin/tests/test_endpoint_model_average.py
+            bayesian-phystwin/tests/test_horizon_conditioned_discrepancy_dynamic_filter.py
+            bayesian-phystwin/tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py
+            bayesian-phystwin/tests/test_horizon_conditioned_discrepancy_provider_v3.py
             causal4d/tests/test_causal4d_provider_contract.py
             causal4d/tests/test_causal4d_bpt_belief.py
             causal4d/tests/test_causal4d_phystwin_backend.py
@@ -173,6 +237,9 @@ jobs:
           from bayesian_phystwin.causal4d_belief_provider_v2 import (
               causal4d_belief_provider_v2_manifest,
           )
+          from bayesian_phystwin.causal4d_belief_provider_v3 import (
+              causal4d_belief_provider_v3_manifest,
+          )
           from bayesian_phystwin.causal4d_provider_v2 import (
               causal4d_provider_manifest,
           )
@@ -190,6 +257,11 @@ jobs:
                       provider_revision=revision
                   )
               ),
+              "belief-provider-v3-manifest.json": (
+                  causal4d_belief_provider_v3_manifest(
+                      provider_revision=revision
+                  )
+              ),
           }
           for filename, payload in manifests.items():
               Path(filename).write_text(
@@ -198,14 +270,51 @@ jobs:
               )
           PY
 
+      - name: Verify installed provider manifests
+        working-directory: bayesian-phystwin
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected = {
+              "provider-v2-manifest.json": 2,
+              "belief-provider-v1-manifest.json": 1,
+              "belief-provider-v2-manifest.json": 2,
+              "belief-provider-v3-manifest.json": 3,
+          }
+          for filename, api_version in expected.items():
+              payload = json.loads(Path(filename).read_text(encoding="utf-8"))
+              observed_schema = payload.get("schema_version")
+              metadata = payload.get("metadata")
+              observed_metadata = (
+                  metadata.get("provider_api_version")
+                  if isinstance(metadata, dict)
+                  else None
+              )
+              if observed_schema != api_version:
+                  raise SystemExit(
+                      f"{filename}: expected schema_version {api_version}, "
+                      f"got {observed_schema}"
+                  )
+              if observed_metadata != api_version:
+                  raise SystemExit(
+                      f"{filename}: expected metadata.provider_api_version "
+                      f"{api_version}, got {observed_metadata}"
+                  )
+          PY
+
       - name: Upload versioned provider manifests
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: versioned-provider-manifests
           path: |
             bayesian-phystwin/provider-v2-manifest.json
             bayesian-phystwin/belief-provider-v1-manifest.json
             bayesian-phystwin/belief-provider-v2-manifest.json
+            bayesian-phystwin/belief-provider-v3-manifest.json
           if-no-files-found: error
           retention-days: 14
 
