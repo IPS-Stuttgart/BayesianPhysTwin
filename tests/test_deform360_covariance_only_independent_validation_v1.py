@@ -18,6 +18,9 @@ SUMMARY = ROOT / "results/science/full22_covariance_only_hybrid_v1/summary.json"
 COMPOSITION = ROOT / "src/bayesian_phystwin/covariance_only_hybrid.py"
 ANALYSIS = ROOT / "src/bayesian_phystwin/covariance_only_hybrid_analysis.py"
 DOCUMENT = ROOT / "docs/deform360_covariance_only_independent_validation_v1.md"
+INVENTORY_DOCUMENT = (
+    ROOT / "docs/deform360_covariance_source_input_inventory_v1.md"
+)
 WORKFLOW = (
     ROOT / ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
 )
@@ -234,26 +237,73 @@ def test_secondary_analyses_cannot_select_or_rescue() -> None:
     assert decision["state_of_the_art_claimed"] is False
 
 
-def test_contract_workflow_is_hosted_read_only_and_data_closed() -> None:
+def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> None:
     workflow_text = WORKFLOW.read_text(encoding="utf-8")
     workflow = yaml.load(workflow_text, Loader=yaml.BaseLoader)
     document = DOCUMENT.read_text(encoding="utf-8")
+    inventory_document = INVENTORY_DOCUMENT.read_text(encoding="utf-8")
 
     assert isinstance(workflow, dict)
-    assert set(workflow["on"]) == {"pull_request", "push"}
+    assert set(workflow["on"]) == {
+        "pull_request",
+        "push",
+        "issue_comment",
+    }
+    assert workflow["on"]["issue_comment"] == {"types": ["created"]}
     assert workflow["permissions"] == {"contents": "read"}
-    assert set(workflow["jobs"]) == {"contracts"}
-    assert workflow["jobs"]["contracts"]["runs-on"] == "ubuntu-latest"
+    assert set(workflow["jobs"]) == {
+        "contracts",
+        "source-input-inventory",
+    }
+
+    contracts = workflow["jobs"]["contracts"]
+    assert contracts["if"] == "github.event_name != 'issue_comment'"
+    assert contracts["runs-on"] == "ubuntu-latest"
+
+    inventory = workflow["jobs"]["source-input-inventory"]
+    assert inventory["runs-on"] == [
+        "self-hosted",
+        "Linux",
+        "X64",
+        "host-workstation2",
+    ]
+    assert inventory["permissions"] == {
+        "contents": "read",
+        "issues": "write",
+    }
+    condition = str(inventory["if"])
+    for required in (
+        "github.event_name == 'issue_comment'",
+        "github.event.issue.number == 461",
+        "github.event.issue.pull_request == null",
+        "github.actor == 'FlorianPfaff'",
+        "github.event.comment.user.login == 'FlorianPfaff'",
+        "github.event.comment.body == "
+        "'/bpt-inventory-covariance-source-v1'",
+    ):
+        assert required in condition
+
+    for required in (
+        "SOURCE_INVENTORY_COMMAND: /bpt-inventory-covariance-source-v1",
+        "AUTHORIZED_RUNNER_NAME: workstation2",
+        "FORBIDDEN_CONFIRMATION_ROOT:",
+        "test \"$RUNNER_NAME\" = \"$AUTHORIZED_RUNNER_NAME\"",
+        "\"array_values_read\": False",
+        "\"confirmation_root_entered\": False",
+        "\"target_outcomes_opened\": False",
+        "actions/upload-artifact@"
+        "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repos/${GITHUB_REPOSITORY}/issues/461/comments",
+    ):
+        assert required in workflow_text
     for forbidden in (
         "workflow_dispatch:",
-        "self-hosted",
         "contents: write",
-        "issues: write",
         "git push",
-        "/mnt/",
-        "actions/upload-artifact",
     ):
         assert forbidden not in workflow_text
 
     assert "twelve separately selected confirmation object-sessions" in document
     assert "A negative or inconclusive result is complete" in document
+    assert "/bpt-inventory-covariance-source-v1" in inventory_document
+    assert "never enters the confirmation root" in inventory_document

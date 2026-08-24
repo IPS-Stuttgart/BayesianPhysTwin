@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
       - "docs/deform360_covariance_only_independent_validation_v1.md"
+      - "docs/deform360_covariance_source_input_inventory_v1.md"
       - "docs/deform360_covariance_only_crossrepo_decision_amendment_v1.md"
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
@@ -18,6 +19,7 @@ on:
     paths:
       - ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
       - "docs/deform360_covariance_only_independent_validation_v1.md"
+      - "docs/deform360_covariance_source_input_inventory_v1.md"
       - "docs/deform360_covariance_only_crossrepo_decision_amendment_v1.md"
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
@@ -25,6 +27,8 @@ on:
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -32,9 +36,11 @@ permissions:
 concurrency:
   group: >-
     deform360-covariance-only-independent-validation-v1-${{
-      github.event.pull_request.head.sha || github.sha
+      github.event.comment.id ||
+      github.event.pull_request.head.sha ||
+      github.sha
     }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -48,10 +54,19 @@ env:
   DECISION_AMENDMENT: >-
     protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json
   DECISION_AMENDMENT_ID: efacabe4ceb6e1d3c4cd523e0959bdf16f8ff4253f9800e8de11574734623802
+  SOURCE_INVENTORY_COMMAND: /bpt-inventory-covariance-source-v1
+  AUTHORIZED_RUNNER_NAME: workstation2
+  SOURCE_ROOT: >-
+    /mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13/calibration-source
+  PROCESSED_ROOT: >-
+    /mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13/calibration-processed
+  FORBIDDEN_CONFIRMATION_ROOT: >-
+    /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
 
 jobs:
   contracts:
     name: Target-closed independent-validation contracts
+    if: github.event_name != 'issue_comment'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -122,3 +137,349 @@ jobs:
           git diff --check
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
+
+  source-input-inventory:
+    name: Source-only covariance input inventory
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.number == 461 &&
+      github.event.issue.pull_request == null &&
+      github.actor == 'FlorianPfaff' &&
+      github.event.comment.user.login == 'FlorianPfaff' &&
+      github.event.comment.body == '/bpt-inventory-covariance-source-v1'
+    runs-on: [self-hosted, Linux, X64, host-workstation2]
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Admit the retained source-data runner and path boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"
+          test "$RUNNER_OS" = "Linux"
+          test "$RUNNER_ARCH" = "X64"
+          test "${{ github.event.comment.body }}" = "$SOURCE_INVENTORY_COMMAND"
+          source_root="$(readlink -f -- "$SOURCE_ROOT")"
+          processed_root="$(readlink -f -- "$PROCESSED_ROOT")"
+          forbidden_root="$(readlink -f -- "$FORBIDDEN_CONFIRMATION_ROOT")"
+          test -d "$source_root"
+          test -d "$processed_root"
+          test -d "$forbidden_root"
+          test "$source_root" != "$forbidden_root"
+          test "$processed_root" != "$forbidden_root"
+          case "$source_root/" in "$forbidden_root/"*) exit 1 ;; esac
+          case "$processed_root/" in "$forbidden_root/"*) exit 1 ;; esac
+          {
+            echo "RESOLVED_SOURCE_ROOT=$source_root"
+            echo "RESOLVED_PROCESSED_ROOT=$processed_root"
+            echo "RESOLVED_FORBIDDEN_ROOT=$forbidden_root"
+            echo "INVENTORY_JSON=$RUNNER_TEMP/covariance-source-input-inventory.json"
+            echo "INVENTORY_MD=$RUNNER_TEMP/covariance-source-input-inventory.md"
+          } >> "$GITHUB_ENV"
+
+      - name: Inventory names, sizes, JSON keys, and array headers only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import struct
+          import zipfile
+          from pathlib import Path
+          from typing import Any, BinaryIO
+
+          roots = {
+              "calibration_source": Path(os.environ["RESOLVED_SOURCE_ROOT"]),
+              "calibration_processed": Path(os.environ["RESOLVED_PROCESSED_ROOT"]),
+          }
+          forbidden = Path(os.environ["RESOLVED_FORBIDDEN_ROOT"])
+          source_units = (
+              "167-glove-gray-cloth",
+              "29-hammer-white-cloth",
+              "2-box-white-paper",
+              "69-hammer-red-plastic",
+              "76-toy-yellow-rubber",
+              "136-drill-red-toy",
+              "146-rabbit-pink-toy",
+              "160-cookies-black-bag",
+              "161-dog-blue-toy",
+              "162-dog-gray-toy",
+          )
+          interesting_tokens = (
+              "belief",
+              "cov",
+              "endpoint",
+              "history",
+              "manifest",
+              "physical",
+              "prefix",
+              "prediction",
+              "residual",
+              "split",
+              "track",
+          )
+          interesting_suffixes = {
+              ".csv",
+              ".json",
+              ".npy",
+              ".npz",
+              ".pickle",
+              ".pkl",
+              ".pt",
+              ".pth",
+          }
+
+          def npy_header(stream: BinaryIO) -> dict[str, object]:
+              if stream.read(6) != b"\x93NUMPY":
+                  raise ValueError("not-npy")
+              major, minor = struct.unpack("BB", stream.read(2))
+              if major == 1:
+                  header_length = struct.unpack("<H", stream.read(2))[0]
+              elif major in {2, 3}:
+                  header_length = struct.unpack("<I", stream.read(4))[0]
+              else:
+                  raise ValueError(f"unsupported-npy-version-{major}.{minor}")
+              header = stream.read(header_length).decode(
+                  "latin1" if major < 3 else "utf-8"
+              )
+              import ast
+
+              parsed = ast.literal_eval(header)
+              shape = parsed.get("shape")
+              descriptor = parsed.get("descr")
+              order = parsed.get("fortran_order")
+              return {
+                  "shape": list(shape) if isinstance(shape, tuple) else shape,
+                  "dtype": descriptor,
+                  "fortran_order": order,
+              }
+
+          rows: list[dict[str, Any]] = []
+          root_summaries: dict[str, dict[str, Any]] = {}
+          unit_path_counts = {unit: 0 for unit in source_units}
+
+          for root_name, root in roots.items():
+              resolved_root = root.resolve(strict=True)
+              if resolved_root == forbidden or forbidden in resolved_root.parents:
+                  raise SystemExit("forbidden confirmation root was selected")
+              file_count = 0
+              byte_count = 0
+              suffix_counts: dict[str, int] = {}
+              for current_root, directory_names, file_names in os.walk(
+                  resolved_root,
+                  followlinks=False,
+              ):
+                  current = Path(current_root)
+                  directory_names[:] = sorted(
+                      name
+                      for name in directory_names
+                      if not (current / name).is_symlink()
+                  )
+                  for file_name in sorted(file_names):
+                      path = current / file_name
+                      if path.is_symlink() or not path.is_file():
+                          continue
+                      resolved = path.resolve(strict=True)
+                      if forbidden == resolved or forbidden in resolved.parents:
+                          raise SystemExit(
+                              "inventory attempted to enter confirmation data"
+                          )
+                      relative = path.relative_to(resolved_root).as_posix()
+                      stat = path.stat()
+                      file_count += 1
+                      byte_count += stat.st_size
+                      suffix = path.suffix.lower()
+                      suffix_counts[suffix or "<none>"] = (
+                          suffix_counts.get(suffix or "<none>", 0) + 1
+                      )
+                      lower = relative.lower()
+                      for unit in source_units:
+                          if unit in lower:
+                              unit_path_counts[unit] += 1
+                      if (
+                          suffix not in interesting_suffixes
+                          and not any(token in lower for token in interesting_tokens)
+                      ):
+                          continue
+                      row: dict[str, Any] = {
+                          "root": root_name,
+                          "relative_path": relative,
+                          "suffix": suffix,
+                          "size_bytes": stat.st_size,
+                      }
+                      if suffix == ".json" and stat.st_size <= 2_000_000:
+                          try:
+                              payload = json.loads(
+                                  path.read_text(encoding="utf-8")
+                              )
+                          except Exception as error:
+                              row["json_error"] = type(error).__name__
+                          else:
+                              row["json_type"] = type(payload).__name__
+                              if isinstance(payload, dict):
+                                  row["json_top_level_keys"] = sorted(
+                                      str(key) for key in payload
+                                  )[:80]
+                                  for key in (
+                                      "artifact_kind",
+                                      "case_id",
+                                      "object_id",
+                                      "schema",
+                                      "schema_version",
+                                      "source_unit_id",
+                                      "status",
+                                  ):
+                                      value = payload.get(key)
+                                      if (
+                                          isinstance(value, (str, int, float, bool))
+                                          or value is None
+                                      ):
+                                          row[f"json_{key}"] = value
+                      elif suffix == ".npy":
+                          try:
+                              with path.open("rb") as stream:
+                                  row["npy_header"] = npy_header(stream)
+                          except Exception as error:
+                              row["array_header_error"] = type(error).__name__
+                      elif suffix == ".npz":
+                          try:
+                              members: list[dict[str, object]] = []
+                              with zipfile.ZipFile(path) as archive:
+                                  for member_name in sorted(archive.namelist())[:80]:
+                                      member: dict[str, object] = {
+                                          "name": member_name
+                                      }
+                                      if member_name.endswith(".npy"):
+                                          with archive.open(member_name) as stream:
+                                              member.update(npy_header(stream))
+                                      members.append(member)
+                              row["npz_members"] = members
+                              row["npz_member_count"] = len(members)
+                          except Exception as error:
+                              row["array_header_error"] = type(error).__name__
+                      rows.append(row)
+              root_summaries[root_name] = {
+                  "byte_count": byte_count,
+                  "file_count": file_count,
+                  "suffix_counts": dict(sorted(suffix_counts.items())),
+              }
+
+          candidate_rows = [
+              row
+              for row in rows
+              if any(
+                  token in row["relative_path"].lower()
+                  for token in interesting_tokens
+              )
+          ]
+          missing_source_units = sorted(
+              unit for unit, count in unit_path_counts.items() if count == 0
+          )
+          payload = {
+              "schema": (
+                  "bayesian-phystwin/"
+                  "covariance-source-input-inventory-v1"
+              ),
+              "schema_version": 1,
+              "event_revision": os.environ["GITHUB_SHA"],
+              "information_boundary": {
+                  "array_values_read": False,
+                  "confirmation_root_entered": False,
+                  "file_payloads_scored": False,
+                  "source_roots_only": True,
+                  "target_outcomes_opened": False,
+              },
+              "roots": root_summaries,
+              "source_unit_path_counts": unit_path_counts,
+              "missing_source_units": missing_source_units,
+              "interesting_file_count": len(rows),
+              "candidate_file_count": len(candidate_rows),
+              "files": rows,
+          }
+          output_json = Path(os.environ["INVENTORY_JSON"])
+          output_json.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
+          lines = [
+              "## Source-only covariance input inventory",
+              "",
+              f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
+              f"- exact default-branch revision: `{os.environ['GITHUB_SHA']}`",
+              (
+                  "- source files traversed: "
+                  f"`{root_summaries['calibration_source']['file_count']}`"
+              ),
+              (
+                  "- processed files traversed: "
+                  f"`{root_summaries['calibration_processed']['file_count']}`"
+              ),
+              f"- interesting files retained: `{len(rows)}`",
+              (
+                  "- covariance/history/prediction candidates: "
+                  f"`{len(candidate_rows)}`"
+              ),
+              f"- source units absent from all paths: `{len(missing_source_units)}`",
+              "- confirmation payload entered: **no**",
+              "- target outcome opened: **no**",
+              "",
+              "### Candidate paths",
+              "",
+          ]
+          for row in candidate_rows[:100]:
+              lines.append(
+                  f"- `{row['root']}/{row['relative_path']}` "
+                  f"({row['size_bytes']} bytes)"
+              )
+          if len(candidate_rows) > 100:
+              lines.append(
+                  f"- ... and {len(candidate_rows) - 100} additional "
+                  "candidates in the artifact"
+              )
+          lines.extend(
+              [
+                  "",
+                  (
+                      "This is a names/header-only source diagnostic. It is not "
+                      "a source-positive, source-negative, or technical-negative "
+                      "covariance decision and authorizes no confirmation access."
+                  ),
+              ]
+          )
+          Path(os.environ["INVENTORY_MD"]).write_text(
+              "\n".join(lines) + "\n",
+              encoding="utf-8",
+          )
+          print("\n".join(lines))
+          PY
+
+      - name: Upload the complete bounded inventory
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: covariance-source-input-inventory-v1
+          path: |
+            ${{ env.INVENTORY_JSON }}
+            ${{ env.INVENTORY_MD }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish the bounded summary to issue 461
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(cat "$INVENTORY_MD")"
+          body="${body}
+
+          Artifact: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/461/comments" \
+            -f body="$body" >/dev/null
