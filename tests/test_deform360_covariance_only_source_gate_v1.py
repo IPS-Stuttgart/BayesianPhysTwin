@@ -41,9 +41,7 @@ def _batch() -> dict[str, object]:
     selected: dict[str, str] = {}
     for unit_index, (object_id, episode, stratum) in enumerate(SOURCE_ROSTER):
         for fold_index in range(10):
-            prediction_id = _sha(
-                f"prediction:{object_id}:{episode}:{fold_index}"
-            )
+            prediction_id = _sha(f"prediction:{object_id}:{episode}:{fold_index}")
             mean_id = _sha(f"mean:{object_id}:{episode}:{fold_index}")
             records.append(
                 {
@@ -71,9 +69,7 @@ def _batch() -> dict[str, object]:
             "candidate": {
                 "reference_predictor_id": REFERENCE_PREDICTOR_ID,
                 "covariance_donor_id": COVARIANCE_DONOR_ID,
-                "early_middle_late_covariance_scales": list(
-                    COVARIANCE_SCALES
-                ),
+                "early_middle_late_covariance_scales": list(COVARIANCE_SCALES),
                 "observation_std_m": OBSERVATION_STD_M,
                 "point_prediction_change_allowed": False,
             },
@@ -239,9 +235,7 @@ def test_batch_rejects_mean_change_and_non_diagonal_scoring_record() -> None:
         and item["episode"] == first_episode
         and item["outer_fold_index"] == 1
     )
-    selected[f"{first_object}#{first_episode}"] = non_diagonal[
-        "prediction_id"
-    ]
+    selected[f"{first_object}#{first_episode}"] = non_diagonal["prediction_id"]
     with pytest.raises(ValueError, match="frozen diagonal"):
         seal_prediction_batch(changed)
 
