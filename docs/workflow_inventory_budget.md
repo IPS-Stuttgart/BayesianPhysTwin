@@ -39,13 +39,17 @@ that binds:
 - the historical contract-test blobs that continue to exercise the archived
   workflow bytes.
 
-The active inventory is therefore exactly:
+The one-shot retirement reduced the inventory to 83 workflows without requiring
+a replacement launcher. A later permanent Deform360 source-receipt router raised
+the reviewed ceiling to 84. The stale `agent-source-snapshot.yml` workflow was
+then retired because it triggered only on one historical agent branch and had no
+remaining repository consumer. The claim-bearing receipt router remains active,
+and the exact inventory is again:
 
 - 83 checked-in workflows; and
 - zero temporary-looking workflow files.
 
-Both values are the current ratchet and the completed retirement target. No
-replacement workflow was required.
+Both values are now the current ratchet and completed retirement target.
 
 Validate the active inventory with:
 
