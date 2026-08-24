@@ -13,10 +13,9 @@ import hashlib
 import json
 import os
 import tempfile
-from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Final
+from typing import Final
 
 import numpy as np
 
