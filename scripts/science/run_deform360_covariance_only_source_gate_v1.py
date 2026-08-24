@@ -6,10 +6,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
-from bayesian_phystwin.deform360_covariance_only_source_gate_v1 import (
+from bayesian_phystwin.strict_json_report_io import load_strict_json_mapping
+from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (
     evaluate_source_gate,
     seal_prediction_batch,
     seal_source_scores,
@@ -17,43 +19,56 @@ from bayesian_phystwin.deform360_covariance_only_source_gate_v1 import (
 )
 
 
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError(f"duplicate JSON key: {key}")
-        result[key] = value
-    return result
-
-
 def _load(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as stream:
-        value = json.load(stream, object_pairs_hook=_reject_duplicate_keys)
-    if not isinstance(value, dict):
-        raise TypeError(f"{path} must contain a JSON object")
-    return value
+    value, _ = load_strict_json_mapping(
+        path,
+        artifact_label="Deform360 covariance source-gate JSON",
+    )
+    return dict(value)
+
+
+def _sync_parent_directory(path: Path) -> None:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError:
+        return
+    try:
+        try:
+            os.fsync(descriptor)
+        except OSError:
+            pass
+    finally:
+        os.close(descriptor)
 
 
 def _atomic_create(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() or path.is_symlink():
-        raise FileExistsError(f"refusing to overwrite {path}")
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    if temporary.exists() or temporary.is_symlink():
-        raise FileExistsError(f"temporary output already exists: {temporary}")
+    requested_path = path.absolute()
+    requested_path.parent.mkdir(parents=True, exist_ok=True)
+    if requested_path.is_symlink():
+        raise FileExistsError(f"refusing to publish through symlink {requested_path}")
+    output_path = requested_path.parent.resolve(strict=True) / requested_path.name
     encoded = (
         json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
     ).encode("utf-8")
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0)
-    descriptor = os.open(temporary, flags, 0o600)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        suffix=".tmp",
+    )
+    temporary = Path(temporary_name)
     try:
-        with os.fdopen(descriptor, "wb", closefd=False) as stream:
+        with os.fdopen(descriptor, "wb") as stream:
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
+        try:
+            os.link(temporary, output_path)
+        except FileExistsError as error:
+            raise FileExistsError(f"refusing to overwrite {output_path}") from error
+        _sync_parent_directory(output_path.parent)
     finally:
-        os.close(descriptor)
-    os.replace(temporary, path)
+        temporary.unlink(missing_ok=True)
 
 
 def _seal_batch(args: argparse.Namespace) -> int:
