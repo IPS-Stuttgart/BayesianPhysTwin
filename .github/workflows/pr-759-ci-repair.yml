@@ -3,9 +3,8 @@
 name: PR 759 CI repair
 
 on:
-  push:
-    branches:
-      - route-workstation2-runner
+  pull_request:
+    branches: [main]
     paths:
       - ".github/workflows/pr-759-ci-repair.yml"
 
@@ -18,13 +17,14 @@ concurrency:
 
 jobs:
   repair:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Check out the PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -83,4 +83,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Harden workstation2 workflow routing CI"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
