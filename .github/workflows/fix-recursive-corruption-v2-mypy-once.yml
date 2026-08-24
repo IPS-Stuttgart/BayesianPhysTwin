@@ -1,0 +1,79 @@
+name: Fix recursive-corruption v2 typing once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-recursive-corruption-v2-mypy-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.head_ref == 'science/recursive-corruption-v2-matched-guards'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: science/recursive-corruption-v2-matched-guards
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Apply exact typing-only patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/bayesian_phystwin/recursive_corruption_benchmark_v2.py')
+          text = path.read_text(encoding='utf-8')
+          replacements = (
+              ('    physical = np.zeros(config.step_count, dtype=np.float64)\n',
+               '    physical: np.ndarray = np.zeros(config.step_count, dtype=np.float64)\n'),
+              ('    discrepancy = np.zeros(config.step_count, dtype=np.float64)\n',
+               '    discrepancy: np.ndarray = np.zeros(config.step_count, dtype=np.float64)\n'),
+              ('    available = np.ones(config.step_count, dtype=bool)\n',
+               '    available: np.ndarray = np.ones(config.step_count, dtype=bool)\n'),
+              ('    actual_source = np.arange(config.step_count, dtype=np.int64)\n',
+               '    actual_source: np.ndarray = np.arange(config.step_count, dtype=np.int64)\n'),
+              ('    corruption = np.zeros(config.step_count, dtype=bool)\n',
+               '    corruption: np.ndarray = np.zeros(config.step_count, dtype=bool)\n'),
+              ('    selected = np.arange(start, stop, dtype=np.int64)\n',
+               '    selected: np.ndarray = np.arange(start, stop, dtype=np.int64)\n'),
+              ('        np.finfo(np.float64).eps,\n',
+               '        float(np.finfo(np.float64).eps),\n'),
+          )
+          for old, new in replacements[:-1]:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one typing target, found {count}: {old!r}')
+              text = text.replace(old, new, 1)
+          old, new = replacements[-1]
+          count = text.count(old)
+          if count != 2:
+              raise SystemExit(f'expected two epsilon targets, found {count}')
+          text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8')
+          PY
+          python -m pip install -e '.[dev]'
+          python -m ruff format --check src/bayesian_phystwin/recursive_corruption_benchmark_v2.py
+          python -m ruff check src/bayesian_phystwin/recursive_corruption_benchmark_v2.py
+          python -m mypy src/bayesian_phystwin/recursive_corruption_benchmark_v2.py
+          python -m pytest -q tests/test_recursive_corruption_benchmark_v2.py
+          git diff --check
+      - name: Commit repair and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/fix-recursive-corruption-v2-mypy-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix recursive-corruption v2 typing'
+          git push origin HEAD:science/recursive-corruption-v2-matched-guards
