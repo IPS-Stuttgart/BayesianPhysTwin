@@ -44,7 +44,15 @@ def _score(
 ) -> TrajectoryProperScoreV1:
     target_array = np.asarray(target)
     if config is None:
-        config = _config(np.ones(target_array.size))
+        coordinate_count = target_array.size
+        if coordinate_count >= 2:
+            config = _config(np.ones(coordinate_count))
+        else:
+            config = _config(
+                np.ones(coordinate_count),
+                variogram_weight=0.0,
+                pairs=(),
+            )
     return TrajectoryProperScoreV1(
         config=config,
         prediction_artifact_id=SHA,
