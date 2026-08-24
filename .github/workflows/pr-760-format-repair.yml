@@ -1,0 +1,51 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: PR 760 format repair
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/pr-760-format-repair.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr-760-format-repair
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Apply exact Ruff formatting and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'ruff==0.16.4'
+          python -m ruff format \
+            src/bayesian_phystwin_experiments/cross_action_placebo_v1.py \
+            src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py \
+            tests/test_synthetic_benchmark_sbc_v1.py
+          rm .github/workflows/pr-760-format-repair.yml
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add \
+            src/bayesian_phystwin_experiments/cross_action_placebo_v1.py \
+            src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py \
+            tests/test_synthetic_benchmark_sbc_v1.py \
+            .github/workflows/pr-760-format-repair.yml
+          git diff --cached --check
+          git commit -m "Format placebo and synthetic SBC evidence"
+          git rev-parse HEAD
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
