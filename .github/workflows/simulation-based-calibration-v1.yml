@@ -1,0 +1,101 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Simulation-based calibration v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/simulation-based-calibration-v1.yml"
+      - "protocols/locks/simulation_based_calibration_v1.json"
+      - "src/bayesian_phystwin/synthetic_benchmark.py"
+      - "src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py"
+      - "scripts/science/run_simulation_based_calibration_v1.py"
+      - "tests/test_simulation_based_calibration_v1.py"
+      - "docs/simulation_based_calibration_v1.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simulation-based-calibration-v1-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  registered-study:
+    name: Registered 512-replicate study
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install NumPy-only package
+        run: |
+          python -m pip install -e .
+          python -m pip check
+
+      - name: Execute frozen study twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p outputs/simulation-based-calibration-v1
+          python scripts/science/run_simulation_based_calibration_v1.py \
+            --protocol protocols/locks/simulation_based_calibration_v1.json \
+            --output outputs/simulation-based-calibration-v1/result-a.json \
+            --summary-output outputs/simulation-based-calibration-v1/summary-a.json \
+            --require-registered-decision
+          python scripts/science/run_simulation_based_calibration_v1.py \
+            --protocol protocols/locks/simulation_based_calibration_v1.json \
+            --output outputs/simulation-based-calibration-v1/result-b.json \
+            --summary-output outputs/simulation-based-calibration-v1/summary-b.json \
+            --require-registered-decision
+          cmp outputs/simulation-based-calibration-v1/result-a.json \
+            outputs/simulation-based-calibration-v1/result-b.json
+          cmp outputs/simulation-based-calibration-v1/summary-a.json \
+            outputs/simulation-based-calibration-v1/summary-b.json
+
+      - name: Record exact execution environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=$(git rev-parse HEAD)"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            python -m pip --version
+            python -m pip freeze --all
+          } > outputs/simulation-based-calibration-v1/environment.txt
+
+      - name: Upload complete controlled evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: simulation-based-calibration-v1-${{ github.run_id }}
+          path: outputs/simulation-based-calibration-v1/
+          if-no-files-found: error
+          retention-days: 30
