@@ -43,7 +43,11 @@ def test_trusted_contracts_use_isolated_self_hosted_execution() -> None:
     empirical_block = text[empirical:]
 
     assert contracts < empirical
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in contract_block
+    assert (
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, "
+        "data-deform360-calibration-v1]"
+        in contract_block
+    )
     assert (
         "github.event.pull_request.head.repo.full_name == github.repository"
         in contract_block

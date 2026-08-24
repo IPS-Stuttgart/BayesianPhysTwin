@@ -194,3 +194,20 @@ def test_protocol_rejects_changed_information_boundary(tmp_path: Path) -> None:
         raise AssertionError("changed information boundary was accepted")
 
     assert repository.is_dir()
+
+def test_workflow_routes_deform360_cache_access_to_workstation2() -> None:
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "deform360-metadata-preflight.yml"
+    ).read_text(encoding="utf-8")
+
+    assert (
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-v1]"
+        in workflow
+    )
+    assert (
+        "DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360"
+        in workflow
+    )

@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Deform360 official-Hub calibration source
 
 on:
@@ -47,7 +49,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-calibration-v1]
     timeout-minutes: 45
     steps:
       - name: Check out exact reviewed source
@@ -160,7 +162,7 @@ jobs:
     name: Open and prepare the ten locked calibration sources
     if: github.event_name != 'pull_request'
     needs: contracts
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-calibration-v1]
     timeout-minutes: 360
     env:
       DATA_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_DATA_ROOT || '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-source' }}
