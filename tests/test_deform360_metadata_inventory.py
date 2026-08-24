@@ -109,6 +109,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
         path.touch()
     return repository, data_root, protocol_path
 
+
 def test_inventory_uses_exact_known_object_vocabulary(tmp_path: Path) -> None:
     repository, data_root, protocol_path = _fixture(tmp_path)
 

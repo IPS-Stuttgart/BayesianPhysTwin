@@ -16,6 +16,7 @@ AUTHORITATIVE_RECORD_ID = (
 )
 SUPERSEDED_RUN_ID = "31236230283"
 
+
 def test_inventory_workflow_uses_the_authoritative_source_execution() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
