@@ -45,6 +45,7 @@ SCALAR_QUERY: Final = "final-frame-last-node-displacement-v1"
 REPLICATE_RNG: Final = (
     "numpy-default-rng-seed-truth-index-observation-seed-four-pit-uniforms-v1"
 )
+RESULT_FLOAT_DECIMAL_PLACES: Final = 12
 
 
 def _plain_json(value: Any) -> Any:
@@ -119,6 +120,30 @@ def _sha256(value: object, *, name: str) -> str:
     return result
 
 
+def _canonicalize_result_numbers(value: Any, decimal_places: int) -> Any:
+    """Round report floats and erase negative zero before content addressing."""
+
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("result contains a nonfinite float")
+        rounded = round(value, decimal_places)
+        return 0.0 if rounded == 0.0 else rounded
+    if isinstance(value, list):
+        return [
+            _canonicalize_result_numbers(item, decimal_places) for item in value
+        ]
+    if isinstance(value, tuple):
+        return [
+            _canonicalize_result_numbers(item, decimal_places) for item in value
+        ]
+    if isinstance(value, Mapping):
+        return {
+            str(key): _canonicalize_result_numbers(item, decimal_places)
+            for key, item in value.items()
+        }
+    return value
+
+
 def seal_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Content-address and validate a simulation-calibration protocol."""
 
@@ -178,6 +203,14 @@ def validate_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
         != 10
     ):
         raise ValueError("histogram bin count changed")
+    if (
+        _integer(
+            document.get("result_float_decimal_places"),
+            name="result_float_decimal_places",
+        )
+        != RESULT_FLOAT_DECIMAL_PLACES
+    ):
+        raise ValueError("result float canonicalization changed")
     familywise_alpha = _finite(
         document.get("familywise_alpha"),
         name="familywise_alpha",
@@ -595,10 +628,15 @@ def run_simulation_based_calibration(
         "correlated_failed_test_fraction": correlated_failed_fraction,
         "familywise_test_count": len(clean_tests),
         "bonferroni_per_test_alpha": per_test_alpha,
+        "result_float_decimal_places": protocol["result_float_decimal_places"],
         "aggregate": aggregate,
         "replicate_rows": rows,
         "claim_boundary": protocol["claim_boundary"],
     }
+    result = _canonicalize_result_numbers(
+        result,
+        int(protocol["result_float_decimal_places"]),
+    )
     result["result_id"] = _content_id(result, "result_id")
     return result
 
@@ -639,6 +677,7 @@ def compact_summary(result_payload: Mapping[str, Any]) -> dict[str, Any]:
         "correlated_failed_test_fraction": result["correlated_failed_test_fraction"],
         "familywise_test_count": result["familywise_test_count"],
         "bonferroni_per_test_alpha": result["bonferroni_per_test_alpha"],
+        "result_float_decimal_places": result["result_float_decimal_places"],
         "replicate_row_count": len(rows),
         "replicate_rows_sha256": rows_digest,
         "aggregate": result["aggregate"],
@@ -657,6 +696,7 @@ __all__ = [
     "QUANTITIES",
     "RANDOMIZED_PIT",
     "REPLICATE_RNG",
+    "RESULT_FLOAT_DECIMAL_PLACES",
     "RESULT_SCHEMA",
     "SCALAR_QUERY",
     "SCHEMA_VERSION",
