@@ -156,18 +156,19 @@ def _canonical_id(value: Mapping[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _run_command(command: Sequence[str], *, cwd: Path, output_dir: Path) -> int:
-    output_dir.mkdir(parents=True, exist_ok=False)
+def _run_command(command: Sequence[str], *, cwd: Path, log_dir: Path) -> int:
+    log_dir.mkdir(parents=True, exist_ok=False)
     _write_json_no_clobber(
-        output_dir / "command.json",
+        log_dir / "command.json",
         {
             "argv": list(command),
             "cwd": str(cwd.resolve()),
             "display": shlex.join(command),
         },
     )
-    log_path = output_dir / "run.log"
-    with log_path.open("x", encoding="utf-8", newline="") as log:
+    with (log_dir / "run.log").open(
+        "x", encoding="utf-8", newline=""
+    ) as log:
         process = subprocess.Popen(  # noqa: S603
             list(command),
             cwd=cwd,
@@ -188,7 +189,7 @@ def _run_command(command: Sequence[str], *, cwd: Path, output_dir: Path) -> int:
         log.flush()
         os.fsync(log.fileno())
     _write_json_no_clobber(
-        output_dir / "command-status.json",
+        log_dir / "command-status.json",
         {"exit_code": return_code},
     )
     return return_code
@@ -208,27 +209,6 @@ def _simulation_command(output_dir: Path) -> list[str]:
     ]
 
 
-def _validate_simulation(output_dir: Path, *, exit_code: int) -> dict[str, object]:
-    result = _load_json(output_dir / "result.json")
-    summary = _load_json(output_dir / "summary.json")
-    decision = summary.get("decision")
-    passed = exit_code == 0 and decision == EXPECTED_SIMULATION_DECISION
-    return {
-        "passed": passed,
-        "exit_code": exit_code,
-        "decision": decision,
-        "expected_decision": EXPECTED_SIMULATION_DECISION,
-        "protocol_id": summary.get("protocol_id"),
-        "result_id": summary.get("result_id"),
-        "summary_id": summary.get("summary_id"),
-        "replicate_row_count": summary.get("replicate_row_count"),
-        "correlated_failed_test_fraction": summary.get(
-            "correlated_failed_test_fraction"
-        ),
-        "full_result_id": result.get("result_id"),
-    }
-
-
 def _synthetic_sbc_command(output_dir: Path) -> list[str]:
     return [
         sys.executable,
@@ -244,36 +224,6 @@ def _synthetic_sbc_command(output_dir: Path) -> list[str]:
         "--output",
         str(output_dir / "result.json"),
     ]
-
-
-def _validate_synthetic_sbc(
-    output_dir: Path,
-    *,
-    exit_code: int,
-) -> dict[str, object]:
-    result = _load_json(output_dir / "result.json")
-    separation = result.get("normative_control_separation")
-    if not isinstance(separation, Mapping):
-        raise ValueError("synthetic SBC normative_control_separation is missing")
-    smallest_ks = separation.get("matched_has_smallest_mean_ks") is True
-    smallest_coverage_error = (
-        separation.get("matched_has_smallest_90_coverage_error") is True
-    )
-    passed = exit_code == 0 and smallest_ks and smallest_coverage_error
-    return {
-        "passed": passed,
-        "exit_code": exit_code,
-        "decision": (
-            "matched-posterior-separated-from-dispersion-controls"
-            if passed
-            else "normative-control-separation-not-established"
-        ),
-        "result_id": result.get("result_id"),
-        "replicate_count": result.get("replicate_count"),
-        "parameter_grid_size": result.get("parameter_grid_size"),
-        "matched_has_smallest_mean_ks": smallest_ks,
-        "matched_has_smallest_90_coverage_error": smallest_coverage_error,
-    }
 
 
 def _recursive_commands(output_dir: Path) -> tuple[list[str], list[str]]:
@@ -306,20 +256,55 @@ def _recursive_commands(output_dir: Path) -> tuple[list[str], list[str]]:
     return benchmark, selectivity
 
 
-def _run_recursive_commands(*, cwd: Path, output_dir: Path) -> tuple[int, int]:
-    output_dir.mkdir(parents=True, exist_ok=False)
-    benchmark, selectivity = _recursive_commands(output_dir)
-    benchmark_status = _run_command(
-        benchmark,
-        cwd=cwd,
-        output_dir=output_dir / "benchmark-command",
+def _validate_simulation(output_dir: Path, *, exit_code: int) -> dict[str, object]:
+    result = _load_json(output_dir / "result.json")
+    summary = _load_json(output_dir / "summary.json")
+    decision = summary.get("decision")
+    passed = exit_code == 0 and decision == EXPECTED_SIMULATION_DECISION
+    return {
+        "passed": passed,
+        "exit_code": exit_code,
+        "decision": decision,
+        "expected_decision": EXPECTED_SIMULATION_DECISION,
+        "protocol_id": summary.get("protocol_id"),
+        "result_id": summary.get("result_id"),
+        "summary_id": summary.get("summary_id"),
+        "replicate_row_count": summary.get("replicate_row_count"),
+        "correlated_failed_test_fraction": summary.get(
+            "correlated_failed_test_fraction"
+        ),
+        "full_result_id": result.get("result_id"),
+    }
+
+
+def _validate_synthetic_sbc(
+    output_dir: Path,
+    *,
+    exit_code: int,
+) -> dict[str, object]:
+    result = _load_json(output_dir / "result.json")
+    separation = result.get("normative_control_separation")
+    if not isinstance(separation, Mapping):
+        raise ValueError("synthetic SBC normative_control_separation is missing")
+    smallest_ks = separation.get("matched_has_smallest_mean_ks") is True
+    smallest_coverage_error = (
+        separation.get("matched_has_smallest_90_coverage_error") is True
     )
-    selectivity_status = _run_command(
-        selectivity,
-        cwd=cwd,
-        output_dir=output_dir / "selectivity-command",
-    )
-    return benchmark_status, selectivity_status
+    passed = exit_code == 0 and smallest_ks and smallest_coverage_error
+    return {
+        "passed": passed,
+        "exit_code": exit_code,
+        "decision": (
+            "matched-posterior-separated-from-dispersion-controls"
+            if passed
+            else "normative-control-separation-not-established"
+        ),
+        "result_id": result.get("result_id"),
+        "replicate_count": result.get("replicate_count"),
+        "parameter_grid_size": result.get("parameter_grid_size"),
+        "matched_has_smallest_mean_ks": smallest_ks,
+        "matched_has_smallest_90_coverage_error": smallest_coverage_error,
+    }
 
 
 def _validate_recursive(
@@ -331,6 +316,11 @@ def _validate_recursive(
     result = _load_json(output_dir / "result.json")
     selectivity = _load_json(output_dir / "selectivity.json")
     expected_seeds = list(range(50))
+    expected_record_count = (
+        50 * len(EXPECTED_RECURSIVE_CONDITIONS) * len(EXPECTED_RECURSIVE_METHODS)
+    )
+    expected_corrupted_sequences = 50 * (len(EXPECTED_RECURSIVE_CONDITIONS) - 1)
+
     if result.get("seeds") != expected_seeds:
         raise ValueError("recursive benchmark seed roster drifted")
     if result.get("conditions") != list(EXPECTED_RECURSIVE_CONDITIONS):
@@ -338,15 +328,11 @@ def _validate_recursive(
     if result.get("methods") != list(EXPECTED_RECURSIVE_METHODS):
         raise ValueError("recursive benchmark method roster drifted")
     records = result.get("records")
-    expected_record_count = (
-        50 * len(EXPECTED_RECURSIVE_CONDITIONS) * len(EXPECTED_RECURSIVE_METHODS)
-    )
     if not isinstance(records, list) or len(records) != expected_record_count:
         raise ValueError("recursive benchmark record count drifted")
     summary = result.get("summary")
     if not isinstance(summary, Mapping):
         raise ValueError("recursive benchmark summary is missing")
-    expected_corrupted_sequences = 50 * (len(EXPECTED_RECURSIVE_CONDITIONS) - 1)
     if (
         summary.get("corrupted_sequence_count_per_method")
         != expected_corrupted_sequences
@@ -356,8 +342,9 @@ def _validate_recursive(
     if fallback_violations != 0:
         raise ValueError("recursive benchmark reported exact-fallback violations")
 
-    csv_path = output_dir / "records.csv"
-    with csv_path.open("r", encoding="utf-8", newline="") as stream:
+    with (output_dir / "records.csv").open(
+        "r", encoding="utf-8", newline=""
+    ) as stream:
         csv_rows = sum(1 for _ in csv.DictReader(stream))
     if csv_rows != expected_record_count:
         raise ValueError("recursive benchmark CSV row count drifted")
@@ -399,43 +386,19 @@ def _validate_recursive(
     }
 
 
-def _compare_files(
-    primary_dir: Path,
-    replay_dir: Path,
-    filenames: Sequence[str],
-) -> dict[str, object]:
-    comparisons: list[dict[str, object]] = []
-    identical = True
-    for filename in filenames:
-        primary = primary_dir / filename
-        replay = replay_dir / filename
-        primary_hash = _sha256(primary)
-        replay_hash = _sha256(replay)
-        same = primary.read_bytes() == replay.read_bytes()
-        comparisons.append(
-            {
-                "path": filename,
-                "primary_sha256": primary_hash,
-                "replay_sha256": replay_hash,
-                "byte_identical": same,
-            }
-        )
-        identical = identical and same
-    return {"byte_identical": identical, "files": comparisons}
-
-
-def _execute_study_once(
+def _run_once(
     study: str,
     *,
     repository_root: Path,
     output_dir: Path,
-    command_label: str,
+    label: str,
 ) -> tuple[dict[str, object], tuple[str, ...]]:
+    output_dir.mkdir(parents=True, exist_ok=False)
     if study == "simulation-based-calibration":
         status = _run_command(
             _simulation_command(output_dir),
             cwd=repository_root,
-            output_dir=output_dir.parent / f"{command_label}-command",
+            log_dir=output_dir.parent / f"{label}-command",
         )
         return (
             _validate_simulation(output_dir, exit_code=status),
@@ -445,22 +408,29 @@ def _execute_study_once(
         status = _run_command(
             _synthetic_sbc_command(output_dir),
             cwd=repository_root,
-            output_dir=output_dir.parent / f"{command_label}-command",
+            log_dir=output_dir.parent / f"{label}-command",
         )
         return (
             _validate_synthetic_sbc(output_dir, exit_code=status),
             ("result.json",),
         )
     if study == "recursive-corruption":
-        statuses = _run_recursive_commands(
+        benchmark, selectivity = _recursive_commands(output_dir)
+        benchmark_status = _run_command(
+            benchmark,
             cwd=repository_root,
-            output_dir=output_dir,
+            log_dir=output_dir / "benchmark-command",
+        )
+        selectivity_status = _run_command(
+            selectivity,
+            cwd=repository_root,
+            log_dir=output_dir / "selectivity-command",
         )
         return (
             _validate_recursive(
                 output_dir,
-                benchmark_exit_code=statuses[0],
-                selectivity_exit_code=statuses[1],
+                benchmark_exit_code=benchmark_status,
+                selectivity_exit_code=selectivity_status,
             ),
             ("result.json", "records.csv", "selectivity.json"),
         )
@@ -472,67 +442,22 @@ def _compare_files(
     replay_dir: Path,
     filenames: Sequence[str],
 ) -> dict[str, object]:
-    comparisons: list[dict[str, object]] = []
-    identical = True
+    files: list[dict[str, object]] = []
+    byte_identical = True
     for filename in filenames:
         primary = primary_dir / filename
         replay = replay_dir / filename
-        primary_hash = _sha256(primary)
-        replay_hash = _sha256(replay)
         same = primary.read_bytes() == replay.read_bytes()
-        comparisons.append(
+        files.append(
             {
                 "path": filename,
-                "primary_sha256": primary_hash,
-                "replay_sha256": replay_hash,
+                "primary_sha256": _sha256(primary),
+                "replay_sha256": _sha256(replay),
                 "byte_identical": same,
             }
         )
-        identical = identical and same
-    return {"byte_identical": identical, "files": comparisons}
-
-
-def _execute_study_once(
-    study: str,
-    *,
-    repository_root: Path,
-    output_dir: Path,
-    command_label: str,
-) -> tuple[dict[str, object], tuple[str, ...]]:
-    if study == "simulation-based-calibration":
-        status = _run_command(
-            _simulation_command(output_dir),
-            cwd=repository_root,
-            output_dir=output_dir.parent / f"{command_label}-command",
-        )
-        return (
-            _validate_simulation(output_dir, exit_code=status),
-            ("result.json", "summary.json"),
-        )
-    if study == "synthetic-benchmark-sbc":
-        status = _run_command(
-            _synthetic_sbc_command(output_dir),
-            cwd=repository_root,
-            output_dir=output_dir.parent / f"{command_label}-command",
-        )
-        return (
-            _validate_synthetic_sbc(output_dir, exit_code=status),
-            ("result.json",),
-        )
-    if study == "recursive-corruption":
-        statuses = _run_recursive_commands(
-            cwd=repository_root,
-            output_dir=output_dir,
-        )
-        return (
-            _validate_recursive(
-                output_dir,
-                benchmark_exit_code=statuses[0],
-                selectivity_exit_code=statuses[1],
-            ),
-            ("result.json", "records.csv", "selectivity.json"),
-        )
-    raise ValueError(f"unknown controlled study {study!r}")
+        byte_identical = byte_identical and same
+    return {"byte_identical": byte_identical, "files": files}
 
 
 def _run_study(
@@ -545,21 +470,21 @@ def _run_study(
     study_root = output_root / study
     study_root.mkdir(parents=True, exist_ok=False)
     primary_dir = study_root / "primary"
-    primary, filenames = _execute_study_once(
+    primary, filenames = _run_once(
         study,
         repository_root=repository_root,
         output_dir=primary_dir,
-        command_label="primary",
+        label="primary",
     )
 
     replay: dict[str, object] | None = None
     if verify_replay:
         replay_dir = study_root / "replay"
-        replay_validation, replay_filenames = _execute_study_once(
+        replay_validation, replay_filenames = _run_once(
             study,
             repository_root=repository_root,
             output_dir=replay_dir,
-            command_label="replay",
+            label="replay",
         )
         if replay_filenames != filenames:
             raise ValueError("primary and replay file rosters differ")
@@ -589,7 +514,7 @@ def _run_study(
 
 def _failure_outcome(
     study: str,
-    error: BaseException,
+    error: Exception,
     *,
     verify_replay: bool,
 ) -> dict[str, object]:
@@ -663,12 +588,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise ValueError("repository must use owner/name form")
     if args.workflow_run_id < 1 or args.workflow_run_attempt < 1:
         raise ValueError("workflow run identity values must be positive")
+
     repository_root = Path.cwd().resolve()
     output_root = args.output_root.resolve()
     output_root.mkdir(parents=True, exist_ok=True)
     for reserved in ("bundle-summary.json", "manifest.json"):
         if (output_root / reserved).exists():
             raise FileExistsError(f"refusing to replace {output_root / reserved}")
+
     selected = STUDIES if args.study == "all-controlled" else (args.study,)
     outcomes: dict[str, object] = {}
     for study in selected:
@@ -679,13 +606,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 output_root=output_root,
                 verify_replay=args.verify_replay,
             )
-        except (
-            OSError,
-            ValueError,
-            KeyError,
-            TypeError,
-            subprocess.SubprocessError,
-        ) as error:
+        except Exception as error:
             outcome = _failure_outcome(
                 study,
                 error,
