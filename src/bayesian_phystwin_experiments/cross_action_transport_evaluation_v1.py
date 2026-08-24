@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from statistics import NormalDist
 from typing import Any, cast
 
 import numpy as np
@@ -13,17 +14,17 @@ from bayesian_phystwin._canonical_contracts import (
     plain_json,
 )
 from bayesian_phystwin._portable_contracts import content_id
-from .cross_action_transport_contracts_v1 import (
+from bayesian_phystwin_experiments.cross_action_transport_contracts_v1 import (
     CROSS_ACTION_TRANSPORT_CLAIM_BOUNDARY,
     CROSS_ACTION_TRANSPORT_SCHEMA,
     CROSS_ACTION_TRANSPORT_VERSION,
     CrossActionProtocolV1,
-    _digest,
-    _optional_labels,
     PredictionDisposition,
     TransportArm,
     TransportDecision,
     TransportScoreRowV1,
+    _digest,
+    _optional_labels,
 )
 
 
@@ -68,6 +69,32 @@ def _interval(
     alpha = 0.5 * (1.0 - confidence)
     lower, upper = np.quantile(means, [alpha, 1.0 - alpha], method="linear")
     return float(lower), float(upper)
+
+
+def _wilson_interval(
+    events: int,
+    total: int,
+    *,
+    confidence: float,
+) -> tuple[float, float]:
+    """Return a two-sided Wilson score interval for a Bernoulli fraction."""
+
+    if total <= 0 or events < 0 or events > total:
+        raise ValueError("Wilson interval requires 0 <= events <= total")
+    z = NormalDist().inv_cdf(0.5 + 0.5 * confidence)
+    fraction = events / total
+    z_squared = z * z
+    denominator = 1.0 + z_squared / total
+    center = (fraction + z_squared / (2.0 * total)) / denominator
+    radius = (
+        z
+        / denominator
+        * np.sqrt(
+            fraction * (1.0 - fraction) / total
+            + z_squared / (4.0 * total * total)
+        )
+    )
+    return max(0.0, float(center - radius)), min(1.0, float(center + radius))
 
 
 def _seed(base: int, stream: int) -> int:
@@ -237,10 +264,9 @@ class CrossActionTransportResultV1:
                     win_sessions=int(np.count_nonzero(values > 0.0)),
                     harmful_sessions=int(np.count_nonzero(harmful)),
                     harmful_fraction=float(np.mean(harmful)),
-                    harmful_fraction_interval=_interval(
-                        harmful.astype(np.float64),
-                        replicates=self.protocol.bootstrap_replicates,
-                        seed=_seed(self.protocol.bootstrap_seed, 1000 + stream),
+                    harmful_fraction_interval=_wilson_interval(
+                        int(np.count_nonzero(harmful)),
+                        values.size,
                         confidence=self.protocol.confidence_level,
                     ),
                     selected_pairs=selected[arm],
