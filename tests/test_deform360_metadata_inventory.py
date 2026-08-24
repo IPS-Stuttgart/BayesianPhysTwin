@@ -109,7 +109,6 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
         path.touch()
     return repository, data_root, protocol_path
 
-
 def test_inventory_uses_exact_known_object_vocabulary(tmp_path: Path) -> None:
     repository, data_root, protocol_path = _fixture(tmp_path)
 
@@ -195,6 +194,7 @@ def test_protocol_rejects_changed_information_boundary(tmp_path: Path) -> None:
 
     assert repository.is_dir()
 
+
 def test_workflow_routes_deform360_cache_access_to_workstation2() -> None:
     workflow = (
         Path(__file__).resolve().parents[1]
@@ -204,10 +204,6 @@ def test_workflow_routes_deform360_cache_access_to_workstation2() -> None:
     ).read_text(encoding="utf-8")
 
     assert (
-        "runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-v1]"
-        in workflow
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-v1]" in workflow
     )
-    assert (
-        "DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360"
-        in workflow
-    )
+    assert "DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360" in workflow

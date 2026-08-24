@@ -16,7 +16,6 @@ AUTHORITATIVE_RECORD_ID = (
 )
 SUPERSEDED_RUN_ID = "31236230283"
 
-
 def test_inventory_workflow_uses_the_authoritative_source_execution() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
@@ -47,6 +46,7 @@ def test_authoritative_binding_contract_is_permanently_collected() -> None:
     assert f'- "{relative}"' in text
     assert relative in text
 
+
 def test_inventory_routes_retained_data_access_to_workstation2() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     inventory = text[text.index("  inventory:") :]
@@ -57,6 +57,5 @@ def test_inventory_routes_retained_data_access_to_workstation2() -> None:
     )
     assert (
         "/mnt/lexar4tb/datasets/"
-        "deform360_official_hub_visuotactile_v1/calibration-processed"
-        in inventory
+        "deform360_official_hub_visuotactile_v1/calibration-processed" in inventory
     )
