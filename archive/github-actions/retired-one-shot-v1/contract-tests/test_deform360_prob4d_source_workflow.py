@@ -30,7 +30,7 @@ def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None
     assert "github.event_name == 'push'" in text
     assert "github.ref == 'refs/heads/main'" in text
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
-    assert "runs-on: [self-hosted, host-workstation2]" in text
+    assert "runs-on: self-hosted" in text
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
     assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
     assert "launch-deform360-prob4d-source-gate-once.yml@refs/heads/main" in text

@@ -14,6 +14,11 @@ ARCHIVE = ROOT / "archive/github-actions/retired-one-shot-v1"
 _ARCHIVED = load_retired_contract_test(
     archived_test=ARCHIVE / "contract-tests" / Path(__file__).name,
     original_test=Path(__file__).resolve(),
+    source_replacements={
+        'assert "runs-on: self-hosted" in text': (
+            'assert "runs-on: [self-hosted, host-workstation2]" in text'
+        )
+    },
     replacements={
         "LAUNCHER": ARCHIVE / "launch-deform360-robot-metric-prefix-smoke-once.yml"
     },
