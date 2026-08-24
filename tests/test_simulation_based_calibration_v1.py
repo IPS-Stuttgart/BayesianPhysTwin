@@ -127,12 +127,11 @@ def test_registered_study_separates_exact_model_from_misspecification() -> None:
     dynamic_control = rows[("dynamic", "clean", "control_scale")]
     quasi_control = rows[("quasi_static", "clean", "control_scale")]
     assert dynamic_control["mean_absolute_error"] < 1.0e-4
-    assert quasi_control["mean_posterior_std"] > 50.0 * dynamic_control[
-        "mean_posterior_std"
-    ]
+    assert (
+        quasi_control["mean_posterior_std"]
+        > 50.0 * dynamic_control["mean_posterior_std"]
+    )
 
-    dynamic_query = rows[
-        ("dynamic", "correlated", "terminal_last_node_displacement")
-    ]
+    dynamic_query = rows[("dynamic", "correlated", "terminal_last_node_displacement")]
     assert dynamic_query["coverage"]["0.9"]["rate"] < 0.05
     assert dynamic_query["pit_ks_distance"] > 0.8
