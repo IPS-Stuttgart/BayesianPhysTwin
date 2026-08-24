@@ -1,0 +1,100 @@
+{
+  "claim_boundary": "The exact retained-failure diagnosis stopped before producing an artifact because the frozen production result did not expose the expected production_result_id field. Its coupled reporter therefore never downloaded or published a diagnosis. Later corrected visual production and the registered source-support result remain authoritative. Retiring these one-shot workflows changes activation only; it does not rerun or reinterpret any experiment, open confirmation or target data, or authorize replacement.",
+  "diagnosis": {
+    "adaptive_confirmation_payloads_opened": false,
+    "archived_path": "archive/github-actions/retired-one-shot-v1/deform360-visual-production-failure-diagnosis.yml",
+    "artifact_id": null,
+    "artifact_produced": false,
+    "confirmation_payloads_opened": false,
+    "contract_run_conclusion": "success",
+    "contract_run_id": 31277968816,
+    "expected_job_count": 324,
+    "expected_production_result_id": "9f2f9c3d4bf9d4ec3b6fa1e917c4c3e906dbc69a0f9c57b9b546e73e41f6b4c2",
+    "expected_source_workflow_attempt": "31277475724-1",
+    "failure_message": "production result production_result_id changed: None",
+    "failure_stage": "verify-all-receipts-and-retain-one-common-stderr-representative",
+    "failure_type": "ValueError",
+    "merge_revision": "9ea5776a30d31f91fc5a0df42888a8893a70f8fb",
+    "official_raw_payload_opened": false,
+    "original_path": ".github/workflows/deform360-visual-production-failure-diagnosis.yml",
+    "pull_request": 299,
+    "target_outcomes_used": false,
+    "workflow_blob_sha1": "b0f303c408dc66a5175e81cee38470fdbd02bd9b",
+    "workflow_byte_count": 17987,
+    "workflow_conclusion": "failure",
+    "workflow_registry_id": 330167762,
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31278099099
+  },
+  "record_id": "d6d7476284dd79e17aa13716e162a56d649a113ca7c1ba18354d213be3208d4e",
+  "reporter": {
+    "archived_path": "archive/github-actions/retired-one-shot-v1/deform360-failure-diagnosis-reporter.yml",
+    "diagnosis_artifact_downloaded": false,
+    "failure_condition": "source diagnosis workflow conclusion was not success",
+    "failure_stage": "resolve-the-exact-trusted-main-diagnosis",
+    "final_workflow_conclusion": "failure",
+    "final_workflow_run_attempt": 1,
+    "final_workflow_run_id": 31278996852,
+    "issue_comment_published": false,
+    "merge_revision": "6ada3af5c3c8da8f4a01c4f84b5e04e9870283fd",
+    "original_path": ".github/workflows/deform360-failure-diagnosis-reporter.yml",
+    "pull_request": 302,
+    "source_diagnosis_revision": "9ea5776a30d31f91fc5a0df42888a8893a70f8fb",
+    "source_production_result_id": "9f2f9c3d4bf9d4ec3b6fa1e917c4c3e906dbc69a0f9c57b9b546e73e41f6b4c2",
+    "target_issue": 148,
+    "workflow_blob_sha1": "7d9b9d44eefe85fd825592bbe7490655935a44f6",
+    "workflow_byte_count": 9033,
+    "workflow_registry_id": 330173482,
+    "workflow_runs": [
+      {
+        "conclusion": "failure",
+        "event": "push",
+        "head_revision": "4739799e8f3bca34f2e001640be9a413ec109c3a",
+        "run_id": 31278360084
+      },
+      {
+        "conclusion": "failure",
+        "event": "pull_request",
+        "head_revision": "41a69ca9c2da15cfafeb68eb6ec45ba08fe7e367",
+        "run_id": 31278541397
+      },
+      {
+        "conclusion": "failure",
+        "event": "push",
+        "head_revision": "9690b164ee49d92d425297f24397fb9fb1ea4e08",
+        "run_id": 31278773734
+      },
+      {
+        "conclusion": "failure",
+        "event": "push",
+        "head_revision": "6ada3af5c3c8da8f4a01c4f84b5e04e9870283fd",
+        "run_id": 31278996852
+      }
+    ]
+  },
+  "retirement": {
+    "confirmation_authorized": false,
+    "diagnosis_workflow_deleted": true,
+    "replacement_allowed": false,
+    "reporter_workflow_deleted": true,
+    "rerun_authorized": false,
+    "scientific_result_changed": false,
+    "target_access_authorized": false
+  },
+  "schema": "bayesian-phystwin.deform360-visual-production-failure-diagnosis-retirement",
+  "schema_version": 1,
+  "supersession": {
+    "admitted_stream_count": 324,
+    "confirmation_access_authorized": false,
+    "corrected_visual_production_revision": "c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c",
+    "corrected_visual_production_run_id": 31279398563,
+    "registered_source_support_artifact_id": 9033414269,
+    "registered_source_support_artifact_sha256": "7247a2a260509c4c226e7ca437aff09d090abf6d2ca08f471a2143ea7d4bf7de",
+    "registered_source_support_revision": "ded8910becbbffe958dfd18c84ad91069e7087a4",
+    "registered_source_support_run_id": 31297018948,
+    "retained_support_negative_count": 11,
+    "supported_stream_count": 313,
+    "terminal_status": "support-negatives-retained",
+    "tracking_issue": 148
+  }
+}

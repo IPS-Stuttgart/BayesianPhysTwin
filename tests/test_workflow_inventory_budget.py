@@ -28,15 +28,15 @@ def test_checked_in_budget_is_frozen_and_repository_matches() -> None:
         _ARCHIVED.ROOT / _ARCHIVED.CONTRACT_PATH  # type: ignore[attr-defined]
     )
 
-    assert contract["maximum_checked_in_workflows"] == 83
+    assert contract["maximum_checked_in_workflows"] == 81
     assert contract["temporary_looking_workflow_allowlist"] == []
-    assert contract["retirement_target_maximum_checked_in_workflows"] == 83
+    assert contract["retirement_target_maximum_checked_in_workflows"] == 81
     assert contract["retirement_target_maximum_temporary_looking_workflows"] == 0
 
     report = _ARCHIVED.tool.validate_repository(  # type: ignore[attr-defined]
         _ARCHIVED.ROOT  # type: ignore[attr-defined]
     )
-    assert report["checked_in_workflow_count"] == 83
+    assert report["checked_in_workflow_count"] == 81
     assert report["temporary_looking_workflow_count"] == 0
     assert report["workflow_retirement_gap"] == 0
     assert report["temporary_looking_retirement_gap"] == 0
