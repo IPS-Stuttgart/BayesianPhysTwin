@@ -1,0 +1,235 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Cross-action fallback score repair
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cross-action-fallback-score-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'fix/cross-action-placebo-fallback-scores-v1' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply fail-closed score-contract repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement, found {count}")
+              target.write_text(text.replace(old, new), encoding="utf-8")
+
+          module = "src/bayesian_phystwin_experiments/cross_action_placebo_v1.py"
+          tests = "tests/test_cross_action_placebo_v1.py"
+          docs = "docs/cross_action_placebo_v1.md"
+
+          replace_once(
+              module,
+              'CROSS_ACTION_PLACEBO_VERSION: Final = 1\nCROSS_ACTION_PLACEBO_CLAIM_BOUNDARY: Final = (',
+              'CROSS_ACTION_PLACEBO_VERSION: Final = 1\nCROSS_ACTION_PLACEBO_SCORE_ORIENTATION: Final = "lower_is_better"\nCROSS_ACTION_PLACEBO_CLAIM_BOUNDARY: Final = (',
+          )
+          replace_once(
+              module,
+              '    minimum_placebo_contrast: float\n    method_frozen_before_target: bool = True',
+              '    minimum_placebo_contrast: float\n    score_orientation: str = CROSS_ACTION_PLACEBO_SCORE_ORIENTATION\n    method_frozen_before_target: bool = True',
+          )
+          replace_once(
+              module,
+              '''        object.__setattr__(
+            self,
+            "minimum_placebo_contrast",
+            _finite(
+                self.minimum_placebo_contrast,
+                name="minimum_placebo_contrast",
+                minimum=0.0,
+            ),
+        )
+        for name in (
+''',
+              '''        object.__setattr__(
+            self,
+            "minimum_placebo_contrast",
+            _finite(
+                self.minimum_placebo_contrast,
+                name="minimum_placebo_contrast",
+                minimum=0.0,
+            ),
+        )
+        orientation = _label(self.score_orientation, name="score_orientation")
+        if orientation != CROSS_ACTION_PLACEBO_SCORE_ORIENTATION:
+            raise ValueError("score_orientation must be 'lower_is_better'")
+        object.__setattr__(self, "score_orientation", orientation)
+        for name in (
+''',
+          )
+          replace_once(
+              module,
+              '            "minimum_placebo_contrast": self.minimum_placebo_contrast,\n            "method_frozen_before_target": self.method_frozen_before_target,',
+              '            "minimum_placebo_contrast": self.minimum_placebo_contrast,\n            "score_orientation": self.score_orientation,\n            "method_frozen_before_target": self.method_frozen_before_target,',
+          )
+          replace_once(
+              module,
+              '''                if (
+                    fallback
+                    and len(
+                        {
+                            prediction.prediction_artifact_id
+                            for prediction in predictions
+                        }
+                    )
+                    != 1
+                ):
+                    raise ValueError(
+                        "exact fallback must select one identical prediction artifact"
+                    )
+''',
+              '''                if fallback:
+                    if (
+                        len(
+                            {
+                                prediction.prediction_artifact_id
+                                for prediction in predictions
+                            }
+                        )
+                        != 1
+                    ):
+                        raise ValueError(
+                            "exact fallback must select one identical prediction artifact"
+                        )
+                    if len({row.proper_score for row in pair_rows}) != 1:
+                        raise ValueError(
+                            "exact fallback must produce one identical proper score"
+                        )
+''',
+          )
+          replace_once(
+              module,
+              '    "CROSS_ACTION_PLACEBO_CLAIM_BOUNDARY",\n    "CROSS_ACTION_PLACEBO_SCHEMA",',
+              '    "CROSS_ACTION_PLACEBO_CLAIM_BOUNDARY",\n    "CROSS_ACTION_PLACEBO_SCHEMA",\n    "CROSS_ACTION_PLACEBO_SCORE_ORIENTATION",',
+          )
+
+          replace_once(
+              tests,
+              '''                        proper_score=(
+                            physical_score
+                            if arm == protocol.physical_arm_label
+                            else scores[arm]
+                        ),
+''',
+              '''                        proper_score=(
+                            physical_score
+                            if not physical_selected
+                            or arm == protocol.physical_arm_label
+                            else scores[arm]
+                        ),
+''',
+          )
+          replace_once(
+              tests,
+              '''        CrossActionPlaceboResultV1(
+            protocol,
+            [rows[0], replace(rows[1], prediction=changed), *rows[2:]],
+        )
+
+
+def test_result_identity_is_invariant_to_score_row_order() -> None:
+''',
+              '''        CrossActionPlaceboResultV1(
+            protocol,
+            [rows[0], replace(rows[1], prediction=changed), *rows[2:]],
+        )
+
+    changed_score = replace(rows[1], proper_score=rows[1].proper_score + 1.0)
+    with pytest.raises(ValueError, match="identical proper score"):
+        CrossActionPlaceboResultV1(
+            protocol,
+            [rows[0], changed_score, *rows[2:]],
+        )
+
+
+def test_result_identity_is_invariant_to_score_row_order() -> None:
+''',
+          )
+          replace_once(
+              tests,
+              '''    with pytest.raises(ValueError, match="duplicates"):
+        replace(protocol, action_ids=("same", "same"))
+    with pytest.raises(ValueError, match="exactly every registered arm"):
+''',
+              '''    with pytest.raises(ValueError, match="duplicates"):
+        replace(protocol, action_ids=("same", "same"))
+    with pytest.raises(ValueError, match="score_orientation"):
+        replace(protocol, score_orientation="higher_is_better")
+    with pytest.raises(ValueError, match="exactly every registered arm"):
+''',
+          )
+
+          replace_once(
+              docs,
+              '''one frozen scorer, and the proper score. Target-side method or threshold
+selection is rejected.
+''',
+              '''one frozen scorer, and the proper score. The protocol content-binds the
+`lower_is_better` orientation used by the contrast; other orientations are
+rejected rather than silently reversing the decision. Target-side method or
+threshold selection is rejected.
+''',
+          )
+          replace_once(
+              docs,
+              '''- an exact-fallback pair selects one byte-identical prediction artifact for all
+  controls; and
+''',
+              '''- an exact-fallback pair selects one byte-identical prediction artifact and one
+  identical proper score for all controls; and
+''',
+          )
+
+          Path(".github/workflows/pr-cross-action-fallback-score-repair.yml").unlink()
+          PY
+
+          python -m pip install --disable-pip-version-check -e '.[dev]'
+          python -m ruff format \
+            src/bayesian_phystwin_experiments/cross_action_placebo_v1.py \
+            tests/test_cross_action_placebo_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin_experiments/cross_action_placebo_v1.py \
+            tests/test_cross_action_placebo_v1.py
+          python -m pytest -q tests/test_cross_action_placebo_v1.py
+          git diff --check
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Harden cross-action fallback score contract"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
