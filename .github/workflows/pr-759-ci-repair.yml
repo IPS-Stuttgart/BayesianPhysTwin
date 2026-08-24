@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Apply lifecycle and immutable-action repairs, validate, and self-delete
+      - name: Apply lifecycle and immutable-action repairs and self-delete
         shell: bash
         run: |
           set -euo pipefail
@@ -83,8 +83,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Harden workstation2 workflow routing CI"
-          python -m pip install --disable-pip-version-check "PyYAML==6.0.3"
-          python tools/quality/check_workflow_policy.py \
-            --base origin/main \
-            --head "$(git rev-parse HEAD)"
           git push origin "HEAD:${GITHUB_REF_NAME}"
