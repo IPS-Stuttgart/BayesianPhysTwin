@@ -230,9 +230,7 @@ def test_records_are_immutable_content_addressed_and_bounded() -> None:
         assert not array.flags.writeable
         with pytest.raises(ValueError):
             array.flat[0] = 0.0
-    assert decision.summary()["claim_boundary"] == (
-        TRAJECTORY_VALUE_CLAIM_BOUNDARY
-    )
+    assert decision.summary()["claim_boundary"] == (TRAJECTORY_VALUE_CLAIM_BOUNDARY)
 
 
 @pytest.mark.parametrize(

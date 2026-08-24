@@ -24,9 +24,7 @@ from bayesian_phystwin._canonical_contracts import (
 )
 from bayesian_phystwin._portable_contracts import content_id
 
-TRAJECTORY_PROPER_SCORE_SCHEMA: Final = (
-    "bayesian_phystwin.trajectory_proper_score"
-)
+TRAJECTORY_PROPER_SCORE_SCHEMA: Final = "bayesian_phystwin.trajectory_proper_score"
 TRAJECTORY_PROPER_SCORE_VERSION: Final = 1
 TRAJECTORY_PROPER_SCORE_SEMANTICS: Final = (
     "scaled-energy-and-registered-variogram-score-v1"
@@ -351,17 +349,20 @@ class TrajectoryProperScoreV1:
 
         variogram = 0.0
         for pair in self.config.variogram_pairs:
-            target_increment = abs(
-                scaled_target[pair.first_index]
-                - scaled_target[pair.second_index]
-            ) ** self.config.variogram_power
-            sample_increment = np.abs(
-                scaled_samples[:, pair.first_index]
-                - scaled_samples[:, pair.second_index]
-            ) ** self.config.variogram_power
-            variogram += pair.weight * (
-                target_increment - float(sample_increment.mean())
-            ) ** 2
+            target_increment = (
+                abs(scaled_target[pair.first_index] - scaled_target[pair.second_index])
+                ** self.config.variogram_power
+            )
+            sample_increment = (
+                np.abs(
+                    scaled_samples[:, pair.first_index]
+                    - scaled_samples[:, pair.second_index]
+                )
+                ** self.config.variogram_power
+            )
+            variogram += (
+                pair.weight * (target_increment - float(sample_increment.mean())) ** 2
+            )
         total = (
             self.config.energy_weight * energy
             + self.config.variogram_weight * variogram
@@ -516,10 +517,14 @@ class FrozenActionDecisionValueV1:
         selected_loss = float(realized[selected_index])
         oracle_loss = float(realized[oracle_index])
         regret = selected_loss - oracle_loss
-        tolerance = 64.0 * np.finfo(np.float64).eps * max(
-            1.0,
-            abs(selected_loss),
-            abs(oracle_loss),
+        tolerance = (
+            64.0
+            * np.finfo(np.float64).eps
+            * max(
+                1.0,
+                abs(selected_loss),
+                abs(oracle_loss),
+            )
         )
         if regret < -tolerance:
             raise AssertionError("realized regret cannot be negative")
@@ -601,13 +606,9 @@ class FrozenActionDecisionValueV1:
             "object_session_id": self.object_session_id,
             "method_id": self.method_id,
             "action_ids": list(self.action_ids),
-            "predictive_loss_samples": _array_record(
-                self.predictive_loss_samples
-            ),
+            "predictive_loss_samples": _array_record(self.predictive_loss_samples),
             "realized_losses": _array_record(self.realized_losses),
-            "predictive_mean_losses": _array_record(
-                self.predictive_mean_losses
-            ),
+            "predictive_mean_losses": _array_record(self.predictive_mean_losses),
             "selected_action_id": self.selected_action_id,
             "oracle_action_id": self.oracle_action_id,
             "selected_realized_loss": self.selected_realized_loss,
@@ -615,9 +616,7 @@ class FrozenActionDecisionValueV1:
             "realized_regret": self.realized_regret,
             "predictive_selection_margin": self.predictive_selection_margin,
             "oracle_match": self.oracle_match,
-            "predictions_sealed_before_target": (
-                self.predictions_sealed_before_target
-            ),
+            "predictions_sealed_before_target": (self.predictions_sealed_before_target),
             "target_outcomes_used_for_prediction": (
                 self.target_outcomes_used_for_prediction
             ),

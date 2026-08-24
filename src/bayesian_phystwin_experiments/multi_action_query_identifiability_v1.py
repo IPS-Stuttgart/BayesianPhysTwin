@@ -151,9 +151,7 @@ class ActionIdentifiabilityBlockV1:
             "physical_response_id": self.physical_response_id,
             "observation_mapping_id": self.observation_mapping_id,
             "query_transport_id": self.query_transport_id,
-            "whitened_physical_design": _array_record(
-                self.whitened_physical_design
-            ),
+            "whitened_physical_design": _array_record(self.whitened_physical_design),
             "transported_query_map": _array_record(self.transported_query_map),
             "metadata": plain_json(self.metadata),
             "claim_boundary": MULTI_ACTION_QUERY_IDENTIFIABILITY_CLAIM_BOUNDARY,
@@ -209,8 +207,8 @@ class MultiActionQueryIdentifiabilityCertificateV1:
         init=False,
         repr=False,
     )
-    single_action_statuses: tuple[tuple[str, QueryIdentifiabilityStatus], ...] = (
-        field(init=False)
+    single_action_statuses: tuple[tuple[str, QueryIdentifiabilityStatus], ...] = field(
+        init=False
     )
     action_contributions: tuple[ActionContributionV1, ...] = field(init=False)
     requires_multiple_actions: bool = field(init=False)
@@ -247,9 +245,7 @@ class MultiActionQueryIdentifiabilityCertificateV1:
         latent_dimension = blocks[0].latent_dimension
         if any(block.latent_dimension != latent_dimension for block in blocks):
             raise ValueError("all action blocks must share the latent dimension")
-        physical = np.vstack(
-            [block.whitened_physical_design for block in blocks]
-        )
+        physical = np.vstack([block.whitened_physical_design for block in blocks])
         query = np.vstack([block.transported_query_map for block in blocks])
         nuisance = _matrix(
             self.joint_whitened_nuisance_design,
@@ -426,9 +422,7 @@ class MultiActionQueryIdentifiabilityCertificateV1:
         return {
             "stacked_physical_design": self.stacked_physical_design,
             "stacked_query_map": self.stacked_query_map,
-            "joint_whitened_nuisance_design": (
-                self.joint_whitened_nuisance_design
-            ),
+            "joint_whitened_nuisance_design": (self.joint_whitened_nuisance_design),
         }
 
     def descriptor(self) -> dict[str, object]:
@@ -445,9 +439,7 @@ class MultiActionQueryIdentifiabilityCertificateV1:
             "joint_whitened_nuisance_design": _array_record(
                 self.joint_whitened_nuisance_design
             ),
-            "stacked_physical_design": _array_record(
-                self.stacked_physical_design
-            ),
+            "stacked_physical_design": _array_record(self.stacked_physical_design),
             "stacked_query_map": _array_record(self.stacked_query_map),
             "relative_rank_tolerance": self.relative_rank_tolerance,
             "absolute_rank_tolerance": self.absolute_rank_tolerance,
@@ -460,8 +452,7 @@ class MultiActionQueryIdentifiabilityCertificateV1:
                 for action_id, status in self.single_action_statuses
             ],
             "action_contributions": [
-                contribution.to_record()
-                for contribution in self.action_contributions
+                contribution.to_record() for contribution in self.action_contributions
             ],
             "metadata": plain_json(self.metadata),
             "claim_boundary": MULTI_ACTION_QUERY_IDENTIFIABILITY_CLAIM_BOUNDARY,
@@ -487,8 +478,7 @@ class MultiActionQueryIdentifiabilityCertificateV1:
                 self.joint_certificate.identifiable_query_energy_fraction
             ),
             "action_contributions": [
-                contribution.to_record()
-                for contribution in self.action_contributions
+                contribution.to_record() for contribution in self.action_contributions
             ],
             "claim_boundary": MULTI_ACTION_QUERY_IDENTIFIABILITY_CLAIM_BOUNDARY,
         }

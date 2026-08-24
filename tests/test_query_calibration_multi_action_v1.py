@@ -88,8 +88,7 @@ def test_redundant_action_has_zero_leave_one_out_loss() -> None:
     assert certificate.status is QueryIdentifiabilityStatus.IDENTIFIABLE
     assert not certificate.requires_multiple_actions
     assert all(
-        contribution.without_action_status
-        is QueryIdentifiabilityStatus.IDENTIFIABLE
+        contribution.without_action_status is QueryIdentifiabilityStatus.IDENTIFIABLE
         for contribution in certificate.action_contributions
     )
     assert all(
@@ -122,9 +121,7 @@ def test_action_that_breaks_shared_nuisance_enables_identifiability() -> None:
     )
 
     assert certificate.status is QueryIdentifiabilityStatus.IDENTIFIABLE
-    contributions = {
-        item.action_id: item for item in certificate.action_contributions
-    }
+    contributions = {item.action_id: item for item in certificate.action_contributions}
     assert (
         contributions["action-b"].without_action_status
         is QueryIdentifiabilityStatus.NONIDENTIFIABLE
