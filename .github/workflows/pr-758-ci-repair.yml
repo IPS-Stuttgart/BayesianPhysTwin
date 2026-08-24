@@ -37,20 +37,22 @@ jobs:
 
           source = Path("src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py")
           text = source.read_text(encoding="utf-8")
-          old = '''    if isinstance(value, list):
-              return [
-                  _canonicalize_result_numbers(item, decimal_places) for item in value
-              ]
-              if isinstance(value, tuple):
-                  return [
-                      _canonicalize_result_numbers(item, decimal_places) for item in value
-                  ]
-          '''
-          new = '''    if isinstance(value, list):
-              return [_canonicalize_result_numbers(item, decimal_places) for item in value]
-              if isinstance(value, tuple):
-                  return [_canonicalize_result_numbers(item, decimal_places) for item in value]
-          '''
+          old = (
+              "    if isinstance(value, list):\n"
+              "        return [\n"
+              "            _canonicalize_result_numbers(item, decimal_places) for item in value\n"
+              "        ]\n"
+              "    if isinstance(value, tuple):\n"
+              "        return [\n"
+              "            _canonicalize_result_numbers(item, decimal_places) for item in value\n"
+              "        ]\n"
+          )
+          new = (
+              "    if isinstance(value, list):\n"
+              "        return [_canonicalize_result_numbers(item, decimal_places) for item in value]\n"
+              "    if isinstance(value, tuple):\n"
+              "        return [_canonicalize_result_numbers(item, decimal_places) for item in value]\n"
+          )
           if text.count(old) != 1:
               raise SystemExit("expected Ruff-format target not found exactly once")
           source.write_text(text.replace(old, new, 1), encoding="utf-8")
@@ -60,8 +62,7 @@ jobs:
               raise SystemExit("registered temporary workflow is already absent")
           temporary.unlink()
 
-          helper = Path(".github/workflows/pr-758-ci-repair.yml")
-          helper.unlink()
+          Path(".github/workflows/pr-758-ci-repair.yml").unlink()
           PY
           git diff --check
           git status --short
