@@ -140,9 +140,11 @@ A harmful object/session has
 G[s,physical_transport_arm] < -harmful_session_margin.
 ```
 
-Deterministic percentile-bootstrap intervals are generated from complete
-object/session units with the frozen seed, replicate count, and confidence
-level.
+Deterministic percentile-bootstrap intervals for gains and contrasts are
+generated from complete object/session units with the frozen seed, replicate
+count, and confidence level. Harmful-session frequency uses a two-sided Wilson
+score interval, so zero observed harmful sessions never imply a zero upper risk
+bound.
 
 ## Decision rule
 
