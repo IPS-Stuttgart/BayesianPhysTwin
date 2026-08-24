@@ -166,9 +166,7 @@ def _run_command(command: Sequence[str], *, cwd: Path, log_dir: Path) -> int:
             "display": shlex.join(command),
         },
     )
-    with (log_dir / "run.log").open(
-        "x", encoding="utf-8", newline=""
-    ) as log:
+    with (log_dir / "run.log").open("x", encoding="utf-8", newline="") as log:
         process = subprocess.Popen(  # noqa: S603
             list(command),
             cwd=cwd,
@@ -342,9 +340,7 @@ def _validate_recursive(
     if fallback_violations != 0:
         raise ValueError("recursive benchmark reported exact-fallback violations")
 
-    with (output_dir / "records.csv").open(
-        "r", encoding="utf-8", newline=""
-    ) as stream:
+    with (output_dir / "records.csv").open("r", encoding="utf-8", newline="") as stream:
         csv_rows = sum(1 for _ in csv.DictReader(stream))
     if csv_rows != expected_record_count:
         raise ValueError("recursive benchmark CSV row count drifted")
