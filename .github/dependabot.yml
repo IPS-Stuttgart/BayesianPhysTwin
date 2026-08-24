@@ -8,6 +8,13 @@ updates:
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Exact-pinned scientific runtimes are part of reviewed backend and
+    # experiment identities. Upgrade them only through an explicit
+    # requalification change rather than a routine dependency-bump PR.
+    ignore:
+      - dependency-name: mujoco
+      - dependency-name: newton
+      - dependency-name: pyrecest
     groups:
       development-tools:
         dependency-type: development
