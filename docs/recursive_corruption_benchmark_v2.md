@@ -180,11 +180,12 @@ Frames, time steps, and conditions are not treated as independent replicates.
 The reviewed v2 implementation, runner, analyzer, and focused regression tests
 were reconstructed from a SHA-256-bound source archive and validated on Python
 3.12 before publication to the branch. The validation comprised canonical Ruff
-formatting, Ruff lint, five focused tests, Python byte-code compilation, and a
-clean Git diff. This validates the implementation and regeneration contracts;
-it does not itself promote the diagnostic dry-run numbers. Claim-bearing
-numbers must be rerun from the exact merged source revision and retained in the
-paper repository with their source and artifact identities.
+formatting, Ruff lint, changed-module Mypy, five focused tests, Python byte-code
+compilation, and a clean Git diff. This validates the implementation and
+regeneration contracts; it does not itself promote the diagnostic dry-run
+numbers. Claim-bearing numbers must be rerun from the exact merged source
+revision and retained in the paper repository with their source and artifact
+identities.
 
 ## Scientific boundary
 
