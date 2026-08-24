@@ -12,6 +12,22 @@ Select every applicable category:
 - [ ] Frozen reproduction or historical compatibility
 - [ ] Infrastructure, CI, packaging, or documentation
 
+## Evidence-first admission
+
+Select at least one admission basis. New methods, backends, schemas, and
+workflows should not be added merely because they can be implemented and tested.
+
+- [ ] This change executes or directly unblocks a named registered evidence gate.
+- [ ] This change fixes a reproduced defect or interoperability failure.
+- [ ] This change reduces duplicated code, workflows, or public surface without
+      adding a parallel mechanism.
+- [ ] This is required security, release, or compatibility maintenance and does
+      not expand the scientific method family.
+
+Owning issue, protocol, or reproduced defect:
+
+Why existing interfaces or implementations are insufficient:
+
 ## Scientific and information boundary
 
 - Statistical unit and split, when applicable:
