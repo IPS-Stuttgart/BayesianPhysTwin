@@ -14,10 +14,15 @@ def load_retired_contract_test(
     archived_test: Path,
     original_test: Path,
     replacements: Mapping[str, object],
+    source_replacements: Mapping[str, str] | None = None,
 ) -> ModuleType:
     """Execute an archived test source with its original repository location."""
 
     source = archived_test.read_text(encoding="utf-8")
+    for old, new in (source_replacements or {}).items():
+        if old not in source:
+            raise RuntimeError("archived contract test has no requested source text")
+        source = source.replace(old, new)
     identity = hashlib.sha256(archived_test.as_posix().encode()).hexdigest()[:16]
     module_name = f"_retired_workflow_contract_{identity}"
     module = ModuleType(module_name)

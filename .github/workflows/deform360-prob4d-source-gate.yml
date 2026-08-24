@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Deform360 Prob4D public source gate
 
 on:
@@ -172,7 +174,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
-    runs-on: self-hosted
+    runs-on: [self-hosted, host-workstation2]
     timeout-minutes: 720
     steps:
       - name: Bind the reviewed one-shot caller and sole source runner
@@ -301,7 +303,7 @@ jobs:
           test "$(jq -r '.expired' <<<"${metadata}")" = "false"
 
       - name: Download only compact calibration-production evidence
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
         with:
           name: ${{ env.PRODUCTION_ARTIFACT_NAME }}
           path: ${{ runner.temp }}/deform360-prob4d-source-gate-${{ github.run_id }}-${{ github.run_attempt }}/production-evidence
@@ -958,7 +960,7 @@ jobs:
 
       - name: Upload compact public source-only decision
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
           name: deform360-prob4d-source-gate-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/deform360-prob4d-source-gate-${{ github.run_id }}-${{ github.run_attempt }}/compact

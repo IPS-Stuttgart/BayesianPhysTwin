@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Cloth Sim2Real Prob4D covariance evidence v1
 
 on:
@@ -89,7 +91,7 @@ jobs:
       (github.event_name == 'pull_request' &&
        github.event.pull_request.head.repo.full_name == github.repository &&
        github.repository == 'IPS-Stuttgart/BayesianPhysTwin')
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, host-workstation2]
     timeout-minutes: 240
     steps:
       - name: Admit evidence runner and scientific boundary
