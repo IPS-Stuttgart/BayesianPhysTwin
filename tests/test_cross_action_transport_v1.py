@@ -195,8 +195,13 @@ def test_exact_fallback_and_target_blindness_are_enforced() -> None:
 
 def test_target_accounting_and_independent_session_gate() -> None:
     protocol = _protocol(sessions=4, minimum=4)
+    incomplete = tuple(
+        row
+        for row in _rows(protocol, physical=(4.0, 3.5, 3.0, 2.5))
+        if row.prediction.object_session_id != "s3"
+    )
     with pytest.raises(ValueError, match="cover the frozen roster"):
-        _result(protocol, _rows(_protocol()))
+        _result(protocol, incomplete)
     short = _protocol(minimum=4)
     assert (
         _result(short, _rows(short)).decision
