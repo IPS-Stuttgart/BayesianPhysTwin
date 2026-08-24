@@ -3,13 +3,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from bayesian_phystwin.query_identifiability_certificate_v2 import (
+    QueryIdentifiabilityStatus,
+)
 from bayesian_phystwin_experiments.multi_action_query_identifiability_v1 import (
     MULTI_ACTION_QUERY_IDENTIFIABILITY_CLAIM_BOUNDARY,
     ActionIdentifiabilityBlockV1,
     MultiActionQueryIdentifiabilityCertificateV1,
-)
-from bayesian_phystwin.query_identifiability_certificate_v2 import (
-    QueryIdentifiabilityStatus,
 )
 
 SHA = "a" * 64
