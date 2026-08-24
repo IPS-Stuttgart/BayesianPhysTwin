@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Deform360 metadata-only preflight
 
 on:
@@ -28,7 +30,7 @@ env:
 jobs:
   inventory:
     name: Target-blind names-only cache inventory
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-v1]
     timeout-minutes: 60
     steps:
       - name: Check out BayesianPhysTwin

@@ -46,3 +46,17 @@ def test_authoritative_binding_contract_is_permanently_collected() -> None:
 
     assert f'- "{relative}"' in text
     assert relative in text
+
+
+def test_inventory_routes_retained_data_access_to_required_capability() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    inventory = text[text.index("  inventory:") :]
+
+    assert (
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-calibration-v1]"
+        in inventory
+    )
+    assert (
+        "/mnt/lexar4tb/datasets/"
+        "deform360_official_hub_visuotactile_v1/calibration-processed" in inventory
+    )

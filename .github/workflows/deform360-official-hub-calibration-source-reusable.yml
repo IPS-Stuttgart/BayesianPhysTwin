@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Reusable frozen Deform360 calibration source
 
 on:
@@ -35,7 +37,7 @@ env:
 jobs:
   prepare-calibration-source:
     name: Direct reviewed ten-object calibration source / workstation2
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-calibration-v1]
     timeout-minutes: 400
     steps:
       - name: Publish non-sensitive run beacon before checkout

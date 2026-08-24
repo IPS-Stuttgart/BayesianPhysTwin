@@ -31,7 +31,10 @@ def test_reusable_workflow_beacons_before_checkout_and_initializes_evidence() ->
     assert 'echo "PYTHON_SITE=${site_root}"' in text
     assert "ref: ${{ inputs.source_sha }}" in text
     assert text.count("persist-credentials: false") == 2
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in text
+    assert (
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, "
+        "data-deform360-calibration-v1]" in text
+    )
     assert "group: deform360-official-calibration-source-direct" in text
     assert "cancel-in-progress: true" in text
 
