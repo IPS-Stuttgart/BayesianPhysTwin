@@ -31,9 +31,7 @@ from bayesian_phystwin.synthetic_benchmark import (
     simulate_parameter_particles,
 )
 
-SYNTHETIC_BENCHMARK_SBC_SCHEMA: Final = (
-    "bayesian_phystwin.synthetic_benchmark_sbc"
-)
+SYNTHETIC_BENCHMARK_SBC_SCHEMA: Final = "bayesian_phystwin.synthetic_benchmark_sbc"
 SYNTHETIC_BENCHMARK_SBC_VERSION: Final = 1
 SYNTHETIC_BENCHMARK_SBC_CLAIM_BOUNDARY: Final = (
     "This is controlled self-consistency evidence for the finite synthetic "
@@ -358,15 +356,16 @@ def write_synthetic_benchmark_sbc_v1(
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() and not overwrite:
-        raise FileExistsError(
-            f"refusing to replace existing result: {target}"
+        raise FileExistsError(f"refusing to replace existing result: {target}")
+    payload = (
+        json.dumps(
+            _strict_json(result),
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
         )
-    payload = json.dumps(
-        _strict_json(result),
-        indent=2,
-        sort_keys=True,
-        allow_nan=False,
-    ) + "\n"
+        + "\n"
+    )
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{target.name}.",
         suffix=".tmp",

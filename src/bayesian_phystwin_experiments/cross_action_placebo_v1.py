@@ -223,9 +223,11 @@ def _wilson_interval(
     z2 = z * z
     denominator = 1.0 + z2 / total
     center = (proportion + z2 / (2.0 * total)) / denominator
-    radius = z * np.sqrt(
-        proportion * (1.0 - proportion) / total + z2 / (4.0 * total * total)
-    ) / denominator
+    radius = (
+        z
+        * np.sqrt(proportion * (1.0 - proportion) / total + z2 / (4.0 * total * total))
+        / denominator
+    )
     return max(0.0, float(center - radius)), min(1.0, float(center + radius))
 
 
@@ -331,11 +333,14 @@ class CrossActionPlaceboProtocolV1:
             "target_outcomes_used_for_selection",
         ):
             object.__setattr__(self, name, _boolean(getattr(self, name), name=name))
-        if not (
-            self.method_frozen_before_target
-            and self.roster_frozen_before_target
-            and self.predictions_sealed_before_target
-        ) or self.target_outcomes_used_for_selection:
+        if (
+            not (
+                self.method_frozen_before_target
+                and self.roster_frozen_before_target
+                and self.predictions_sealed_before_target
+            )
+            or self.target_outcomes_used_for_selection
+        ):
             raise ValueError(
                 "placebo protocol must be frozen, sealed, and target-selection free"
             )
@@ -494,9 +499,7 @@ class CrossActionPlaceboScoreRowV1:
 
     def __post_init__(self) -> None:
         if not isinstance(self.prediction, SealedCrossActionPlaceboPredictionV1):
-            raise TypeError(
-                "prediction must be a SealedCrossActionPlaceboPredictionV1"
-            )
+            raise TypeError("prediction must be a SealedCrossActionPlaceboPredictionV1")
         for name in (
             "target_outcome_id",
             "target_access_attestation_id",
@@ -644,9 +647,16 @@ class CrossActionPlaceboResultV1:
                 selected, fallback = next(iter(dispositions))
                 if selected:
                     selected_count += 1
-                if fallback and len(
-                    {prediction.prediction_artifact_id for prediction in predictions}
-                ) != 1:
+                if (
+                    fallback
+                    and len(
+                        {
+                            prediction.prediction_artifact_id
+                            for prediction in predictions
+                        }
+                    )
+                    != 1
+                ):
                     raise ValueError(
                         "exact fallback must select one identical prediction artifact"
                     )

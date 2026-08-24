@@ -41,9 +41,10 @@ def test_matched_posterior_beats_deliberate_dispersion_controls() -> None:
     matched = result["diagnostics"]["matched_likelihood"]
     under = result["diagnostics"]["underdispersed_0.5x"]
     assert matched["mean_ks_distance"] < under["mean_ks_distance"]
-    assert matched["mean_absolute_90_coverage_error"] < under[
-        "mean_absolute_90_coverage_error"
-    ]
+    assert (
+        matched["mean_absolute_90_coverage_error"]
+        < under["mean_absolute_90_coverage_error"]
+    )
 
 
 def test_result_is_deterministic_and_content_addressed() -> None:
