@@ -129,13 +129,9 @@ def _canonicalize_result_numbers(value: Any, decimal_places: int) -> Any:
         rounded = round(value, decimal_places)
         return 0.0 if rounded == 0.0 else rounded
     if isinstance(value, list):
-        return [
-            _canonicalize_result_numbers(item, decimal_places) for item in value
-        ]
+        return [_canonicalize_result_numbers(item, decimal_places) for item in value]
     if isinstance(value, tuple):
-        return [
-            _canonicalize_result_numbers(item, decimal_places) for item in value
-        ]
+        return [_canonicalize_result_numbers(item, decimal_places) for item in value]
     if isinstance(value, Mapping):
         return {
             str(key): _canonicalize_result_numbers(item, decimal_places)
