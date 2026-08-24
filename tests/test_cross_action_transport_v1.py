@@ -56,7 +56,7 @@ def _protocol(*, sessions: int = 3, minimum: int = 3) -> CrossActionProtocolV1:
         minimum_off_diagonal_gain=1.0,
         minimum_discrepancy_contrast=0.5,
         minimum_comparator_contrast=0.2,
-        maximum_harmful_session_fraction=0.0,
+        maximum_harmful_session_fraction=0.5,
     )
 
 
@@ -150,6 +150,13 @@ def test_positive_transport_and_order_invariance() -> None:
     reverse = _result(protocol, tuple(reversed(rows)))
     assert forward.decision is TransportDecision.SUPPORTED
     assert forward.supports_physical_transport
+    physical = next(
+        summary
+        for summary in forward.arm_summaries
+        if summary.arm is TransportArm.GUARDED_PHYSICAL
+    )
+    assert physical.harmful_fraction == 0.0
+    assert 0.0 < physical.harmful_fraction_interval[1] < 0.5
     assert forward.result_id == reverse.result_id
 
 
