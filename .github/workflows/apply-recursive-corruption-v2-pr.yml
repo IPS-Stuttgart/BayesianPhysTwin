@@ -5,8 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/apply-recursive-corruption-v2-pr.yml'
-      - '.github/workflows/apply-recursive-corruption-v2-once.yml'
-      - 'docs/recursive_corruption_benchmark_v2.md'
+      - '.github/recursive-corruption-v2-payload/**'
 
 permissions:
   contents: write
@@ -34,23 +33,17 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Extract the reviewed hash-bound payload
+      - name: Reassemble the reviewed hash-bound payload
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import base64
-          from pathlib import Path
-
-          source = Path('.github/workflows/apply-recursive-corruption-v2-once.yml')
-          text = source.read_text(encoding='utf-8')
-          marker = "<<'PAYLOAD'\n"
-          encoded = text.split(marker, 1)[1].split('\nPAYLOAD\n', 1)[0]
-          archive = Path('/tmp/recursive-corruption-v2.tar.gz')
-          archive.write_bytes(base64.b64decode(encoded))
-          PY
-          echo 'e4c04130dc816c49f23d359241756df8aec7f366dcb5952f74560c7d64b61154  /tmp/recursive-corruption-v2.tar.gz' | sha256sum -c -
-          tar -xzf /tmp/recursive-corruption-v2.tar.gz
+          cat .github/recursive-corruption-v2-payload/part-* \
+            > "$RUNNER_TEMP/recursive-corruption-v2.b64"
+          base64 -d "$RUNNER_TEMP/recursive-corruption-v2.b64" \
+            > "$RUNNER_TEMP/recursive-corruption-v2.tar.gz"
+          echo 'e4c04130dc816c49f23d359241756df8aec7f366dcb5952f74560c7d64b61154  '"$RUNNER_TEMP/recursive-corruption-v2.tar.gz" \
+            | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/recursive-corruption-v2.tar.gz"
 
       - name: Validate the complete focused revision
         shell: bash
@@ -84,10 +77,11 @@ jobs:
             scripts/science/run_recursive_corruption_v2.py
           git diff --check
 
-      - name: Publish the reviewed source and remove bootstrap workflows
+      - name: Publish reviewed source and remove transport helpers
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf .github/recursive-corruption-v2-payload
           rm .github/workflows/apply-recursive-corruption-v2-once.yml
           rm .github/workflows/apply-recursive-corruption-v2-pr.yml
           git config user.name 'github-actions[bot]'
