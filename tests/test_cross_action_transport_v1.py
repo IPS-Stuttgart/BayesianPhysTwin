@@ -78,9 +78,7 @@ def _prediction(
         candidate = _stable("candidate", session, source, target, arm.value)
         resolved = disposition or PredictionDisposition.CANDIDATE_SELECTED
         selected = (
-            baseline
-            if resolved is PredictionDisposition.EXACT_FALLBACK
-            else candidate
+            baseline if resolved is PredictionDisposition.EXACT_FALLBACK else candidate
         )
     return SealedTransportPredictionV1(
         protocol_id=protocol.protocol_id,
@@ -211,8 +209,7 @@ def test_target_accounting_and_independent_session_gate() -> None:
         _result(protocol, incomplete)
     short = _protocol(minimum=4)
     assert (
-        _result(short, _rows(short)).decision
-        is TransportDecision.INSUFFICIENT_SESSIONS
+        _result(short, _rows(short)).decision is TransportDecision.INSUFFICIENT_SESSIONS
     )
 
 
