@@ -196,7 +196,7 @@ def test_protocol_rejects_changed_information_boundary(tmp_path: Path) -> None:
     assert repository.is_dir()
 
 
-def test_workflow_routes_deform360_cache_access_to_workstation2() -> None:
+def test_workflow_routes_deform360_cache_access_to_required_capability() -> None:
     workflow = (
         Path(__file__).resolve().parents[1]
         / ".github"

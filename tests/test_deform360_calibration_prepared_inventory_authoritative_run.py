@@ -48,7 +48,7 @@ def test_authoritative_binding_contract_is_permanently_collected() -> None:
     assert relative in text
 
 
-def test_inventory_routes_retained_data_access_to_workstation2() -> None:
+def test_inventory_routes_retained_data_access_to_required_capability() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     inventory = text[text.index("  inventory:") :]
 
