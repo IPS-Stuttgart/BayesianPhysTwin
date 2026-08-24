@@ -87,7 +87,10 @@ def test_scientific_and_security_boundaries_remain_unchanged() -> None:
     dispatcher = DISPATCHER.read_text(encoding="utf-8")
     direct = DIRECT_SCRIPT.read_text(encoding="utf-8")
 
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in reusable
+    assert (
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, "
+        "data-deform360-calibration-v1]" in reusable
+    )
     assert "persist-credentials: false" in reusable
     assert "confirmation_payloads_opened=false" in direct
     assert "head.repo.full_name == github.repository" in dispatcher
