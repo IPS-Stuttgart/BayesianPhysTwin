@@ -18,7 +18,7 @@ def test_provider_failure_census_is_manual_and_contract_only_on_pull_requests() 
     assert isinstance(document, dict)
     assert "pull_request:" in text
     assert "workflow_dispatch:" in text
-    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, host-workstation2]" in text
     assert "inputs.execute_authorized == true" in text
     assert "github.event_name == 'workflow_dispatch'" in text
     assert "github.ref == 'refs/heads/main'" in text
@@ -32,7 +32,7 @@ def test_provider_failure_census_binds_exact_storage_and_input_identity() -> Non
     text = _text()
 
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
-    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, host-workstation2]" in text
     assert "/mnt/lexar4tb/datasets/deform360/data-7fea8e2" in text
     assert (
         "adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370"

@@ -14,7 +14,7 @@ def test_v4_workflow_is_contract_only_on_pull_requests() -> None:
     assert isinstance(document, dict)
     assert "pull_request:" in text
     assert "workflow_dispatch:" in text
-    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, host-workstation2]" in text
     assert "inputs.execute_authorized == true" in text
     assert "github.event_name == 'workflow_dispatch'" in text
     assert "github.ref == 'refs/heads/main'" in text
