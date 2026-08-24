@@ -51,6 +51,24 @@ New generic provider, covariance, attribution, semantic, backend, or evidence
 container work should remain out of scope unless one of those gates retains a
 result that localizes a capability missing from the current implementation.
 
+## Scientific runtime updates
+
+Exact-pinned optional runtimes such as MuJoCo, Newton, and PyRecEst are part of
+reviewed backend or experiment identities. Dependabot must ignore those pins.
+An upgrade requires an explicit change that records the new runtime identity,
+re-executes the relevant compatibility and backend qualification tests, and
+states which frozen artifacts remain reproducible. A routine version-bump PR is
+not sufficient.
+
+Development and security tools may continue to receive grouped automated
+updates. Range-based numerical dependencies such as NumPy and SciPy should be
+validated at their declared floor and ordinary resolved environment rather than
+being treated as frozen experiment identities.
+
+The repository test `test_scientific_dependency_update_policy.py` keeps every
+exact project pin synchronized with the Dependabot ignore set, so a newly frozen
+runtime cannot silently enter routine upgrade automation.
+
 ## Pull-request requirements
 
 A pull request must identify its admission basis and the owning issue, protocol,
