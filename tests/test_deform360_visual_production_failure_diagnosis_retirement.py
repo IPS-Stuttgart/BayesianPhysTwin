@@ -51,7 +51,7 @@ def test_retirement_record_is_content_addressed_and_fail_closed() -> None:
     declared = record.pop("record_id")
     assert declared == content_id(record)
     assert declared == (
-        "d6d7476284dd79e17aa13716e162a56d649a113ca7c1ba18354d213be3208d4e"
+        "d295ffa72fdbbbcccc22d6a4543c295607a00b92eee51c10a6d33f6399c8a868"
     )
 
     diagnosis = record["diagnosis"]
