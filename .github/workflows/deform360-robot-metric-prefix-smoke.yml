@@ -114,7 +114,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
-    runs-on: self-hosted
+    runs-on: [self-hosted, host-workstation2]
     timeout-minutes: 45
     steps:
       - name: Bind the reviewed one-shot caller and sole source runner

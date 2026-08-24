@@ -104,7 +104,7 @@ jobs:
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     needs: contracts
-    runs-on: self-hosted
+    runs-on: [self-hosted, host-workstation2]
     timeout-minutes: 60
     env:
       INPUT_EVIDENCE_RELATIVE_PATH: ${{ inputs.evidence_relative_path }}

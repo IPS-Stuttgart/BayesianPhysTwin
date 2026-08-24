@@ -139,7 +139,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-    runs-on: self-hosted
+    runs-on: [self-hosted, host-workstation2]
     timeout-minutes: 1320
     steps:
       - name: Publish frozen calibration-only beacon

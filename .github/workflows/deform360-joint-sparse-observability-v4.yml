@@ -121,7 +121,7 @@ jobs:
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     needs: contracts
-    runs-on: self-hosted
+    runs-on: [self-hosted, host-workstation2]
     timeout-minutes: 180
     steps:
       - name: Publish target-closed execution beacon
