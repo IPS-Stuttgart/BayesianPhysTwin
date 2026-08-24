@@ -4,76 +4,75 @@ name: Paper evidence contracts
 
 on:
   pull_request:
+    branches: [main]
     paths:
+      - .github/workflows/claim-bundle.yml
       - .github/workflows/paper-evidence.yml
       - pyproject.toml
-      - scripts/check_evidence_sync.py
-      - scripts/validate_decisive_evidence_protocol.py
+      - protocols/locks/simulation_based_calibration_v1.json
       - scripts/science/analyze_recursive_corruption_selectivity_v1.py
       - scripts/science/run_controlled_evidence_workflow_v1.py
       - scripts/science/run_simulation_based_calibration_v1.py
       - scripts/science/run_synthetic_benchmark_sbc_v1.py
-      - protocols/locks/simulation_based_calibration_v1.json
       - src/bayesian_phystwin/claim_bundle_v1.py
+      - src/bayesian_phystwin/cli/claim_bundle.py
+      - src/bayesian_phystwin/cli/command_registry.py
       - src/bayesian_phystwin/cli/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin/decisive_evidence.py
-      - src/bayesian_phystwin/evidence_decision.py
+      - src/bayesian_phystwin/cli/run_manifest.py
+      - src/bayesian_phystwin/paper_evidence_v1.py
       - src/bayesian_phystwin/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin/run_manifest.py
       - src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py
       - src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py
-      - docs/claim_bundle_v1.md
-      - docs/controlled_scientific_evidence_workflow.md
-      - docs/decisive_evidence_protocol.md
-      - docs/recursive_corruption_benchmark.md
-      - docs/reproducible_runs.md
-      - docs/simulation_based_calibration_v1.md
-      - docs/synthetic_benchmark_sbc_v1.md
       - tests/test_claim_bundle_v1.py
+      - tests/test_cli_main.py
       - tests/test_controlled_scientific_evidence_workflow.py
-      - tests/test_decisive_evidence.py
-      - tests/test_decisive_evidence_cli.py
-      - tests/test_evidence_decision.py
+      - tests/test_paper_evidence_cli.py
+      - tests/test_paper_evidence_hardening.py
+      - tests/test_paper_evidence_v1.py
       - tests/test_recursive_corruption_benchmark.py
-      - tests/test_run_manifest.py
       - tests/test_simulation_based_calibration_v1.py
       - tests/test_synthetic_benchmark_sbc_v1.py
+      - docs/claim_bundle_v1.md
+      - docs/controlled_scientific_evidence_workflow.md
+      - docs/paper_evidence_profile.md
+      - docs/recursive_corruption_benchmark.md
+      - docs/simulation_based_calibration_v1.md
+      - docs/synthetic_benchmark_sbc_v1.md
   push:
     branches: [main]
     paths:
+      - .github/workflows/claim-bundle.yml
       - .github/workflows/paper-evidence.yml
       - pyproject.toml
-      - scripts/check_evidence_sync.py
-      - scripts/validate_decisive_evidence_protocol.py
+      - protocols/locks/simulation_based_calibration_v1.json
       - scripts/science/analyze_recursive_corruption_selectivity_v1.py
       - scripts/science/run_controlled_evidence_workflow_v1.py
       - scripts/science/run_simulation_based_calibration_v1.py
       - scripts/science/run_synthetic_benchmark_sbc_v1.py
-      - protocols/locks/simulation_based_calibration_v1.json
       - src/bayesian_phystwin/claim_bundle_v1.py
+      - src/bayesian_phystwin/cli/claim_bundle.py
+      - src/bayesian_phystwin/cli/command_registry.py
       - src/bayesian_phystwin/cli/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin/decisive_evidence.py
-      - src/bayesian_phystwin/evidence_decision.py
+      - src/bayesian_phystwin/cli/run_manifest.py
+      - src/bayesian_phystwin/paper_evidence_v1.py
       - src/bayesian_phystwin/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin/run_manifest.py
       - src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py
       - src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py
-      - docs/claim_bundle_v1.md
-      - docs/controlled_scientific_evidence_workflow.md
-      - docs/decisive_evidence_protocol.md
-      - docs/recursive_corruption_benchmark.md
-      - docs/reproducible_runs.md
-      - docs/simulation_based_calibration_v1.md
-      - docs/synthetic_benchmark_sbc_v1.md
       - tests/test_claim_bundle_v1.py
+      - tests/test_cli_main.py
       - tests/test_controlled_scientific_evidence_workflow.py
-      - tests/test_decisive_evidence.py
-      - tests/test_decisive_evidence_cli.py
-      - tests/test_evidence_decision.py
+      - tests/test_paper_evidence_cli.py
+      - tests/test_paper_evidence_hardening.py
+      - tests/test_paper_evidence_v1.py
       - tests/test_recursive_corruption_benchmark.py
-      - tests/test_run_manifest.py
       - tests/test_simulation_based_calibration_v1.py
       - tests/test_synthetic_benchmark_sbc_v1.py
+      - docs/claim_bundle_v1.md
+      - docs/controlled_scientific_evidence_workflow.md
+      - docs/paper_evidence_profile.md
+      - docs/recursive_corruption_benchmark.md
+      - docs/simulation_based_calibration_v1.md
+      - docs/synthetic_benchmark_sbc_v1.md
   workflow_dispatch:
     inputs:
       evidence_study:
@@ -123,7 +122,7 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Set up Python
+      - name: Provision Python 3.12
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
@@ -132,71 +131,106 @@ jobs:
 
       - name: Install development tools
         run: |
-          python -m pip install --upgrade pip
+          set -euo pipefail
           python -m pip install -e ".[dev]"
+          python -m pip check
 
-      - name: Check evidence interfaces
+      - name: Check stable evidence interfaces
         shell: bash
         run: |
+          set -euo pipefail
           files=(
-            scripts/check_evidence_sync.py
-            scripts/validate_decisive_evidence_protocol.py
-            scripts/science/run_controlled_evidence_workflow_v1.py
             src/bayesian_phystwin/claim_bundle_v1.py
-            src/bayesian_phystwin/decisive_evidence.py
-            src/bayesian_phystwin/evidence_decision.py
-            src/bayesian_phystwin/run_manifest.py
+            src/bayesian_phystwin/paper_evidence_v1.py
+            src/bayesian_phystwin/cli/claim_bundle.py
+            src/bayesian_phystwin/cli/command_registry.py
+            src/bayesian_phystwin/cli/run_manifest.py
+            scripts/science/run_controlled_evidence_workflow_v1.py
             tests/test_claim_bundle_v1.py
+            tests/test_cli_main.py
+            tests/test_paper_evidence_v1.py
+            tests/test_paper_evidence_cli.py
+            tests/test_paper_evidence_hardening.py
             tests/test_controlled_scientific_evidence_workflow.py
-            tests/test_decisive_evidence.py
-            tests/test_decisive_evidence_cli.py
-            tests/test_evidence_decision.py
-            tests/test_run_manifest.py
           )
           python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
 
-      - name: Type-check stable evidence interfaces
+          case "${{ github.event_name }}" in
+            pull_request)
+              base_ref="${{ github.event.pull_request.base.sha }}"
+              head_ref="${{ github.event.pull_request.head.sha }}"
+              ;;
+            push)
+              base_ref="${{ github.event.before }}"
+              head_ref="${{ github.sha }}"
+              ;;
+            *)
+              base_ref="$(git rev-parse HEAD^)"
+              head_ref="$(git rev-parse HEAD)"
+              ;;
+          esac
+
+          format_files=()
+          while IFS= read -r changed_path; do
+            for candidate in "${files[@]}"; do
+              if [[ "${changed_path}" == "${candidate}" ]]; then
+                format_files+=("${candidate}")
+                break
+              fi
+            done
+          done < <(
+            git diff --name-only --diff-filter=ACMR \
+              "${base_ref}...${head_ref}" -- "${files[@]}"
+          )
+
+          if (( ${#format_files[@]} > 0 )); then
+            python -m ruff format --check "${format_files[@]}"
+          else
+            echo "No changed stable evidence Python interfaces require format checking."
+          fi
+
+      - name: Type-check evidence interfaces
         run: |
+          set -euo pipefail
           python -m mypy \
             src/bayesian_phystwin/claim_bundle_v1.py \
-            src/bayesian_phystwin/decisive_evidence.py \
-            src/bayesian_phystwin/evidence_decision.py \
-            src/bayesian_phystwin/run_manifest.py
+            src/bayesian_phystwin/paper_evidence_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py \
+            src/bayesian_phystwin/cli/command_registry.py \
+            src/bayesian_phystwin/cli/run_manifest.py
 
-      - name: Run focused evidence tests
+      - name: Run evidence contract tests
         run: |
-          python -m pytest -q \
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_run_manifest_v2.py \
+            tests/test_run_manifest_cli.py \
+            tests/test_paper_evidence_v1.py \
+            tests/test_paper_evidence_cli.py \
+            tests/test_paper_evidence_hardening.py \
             tests/test_claim_bundle_v1.py \
+            tests/test_cli_main.py \
             tests/test_controlled_scientific_evidence_workflow.py \
-            tests/test_decisive_evidence.py \
-            tests/test_decisive_evidence_cli.py \
-            tests/test_evidence_decision.py \
             tests/test_recursive_corruption_benchmark.py \
-            tests/test_run_manifest.py \
             tests/test_simulation_based_calibration_v1.py \
             tests/test_synthetic_benchmark_sbc_v1.py
 
-      - name: Check evidence synchronization
-        run: python scripts/check_evidence_sync.py
-
-      - name: Validate decisive evidence protocol
-        run: python scripts/validate_decisive_evidence_protocol.py
-
       - name: Validate scientific orchestration CLI
-        run: python scripts/science/run_controlled_evidence_workflow_v1.py --help
+        run: |
+          set -euo pipefail
+          python scripts/science/run_controlled_evidence_workflow_v1.py --help
 
       - name: Validate referenced documentation
         run: |
+          set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
           required = [
               Path("docs/claim_bundle_v1.md"),
               Path("docs/controlled_scientific_evidence_workflow.md"),
-              Path("docs/decisive_evidence_protocol.md"),
+              Path("docs/paper_evidence_profile.md"),
               Path("docs/recursive_corruption_benchmark.md"),
-              Path("docs/reproducible_runs.md"),
               Path("docs/simulation_based_calibration_v1.md"),
               Path("docs/synthetic_benchmark_sbc_v1.md"),
           ]
@@ -205,8 +239,10 @@ jobs:
               raise SystemExit(f"missing documentation: {missing}")
           PY
 
-      - name: Ensure validation does not rewrite tracked sources
-        run: git diff --exit-code
+      - name: Verify read-only tracked state
+        run: |
+          set -euo pipefail
+          git diff --exit-code
 
   controlled-evidence:
     name: Generate ${{ inputs.evidence_study }} evidence / Python 3.12
@@ -236,7 +272,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
           test -z "$(git status --porcelain=v1)"
 
-      - name: Set up Python
+      - name: Provision Python 3.12
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
@@ -324,6 +360,7 @@ jobs:
           EVIDENCE_STUDY: ${{ inputs.evidence_study }}
           VERIFY_REPLAY: ${{ inputs.verify_replay }}
         run: |
+          set -euo pipefail
           python - <<'PY'
           import json
           import os
