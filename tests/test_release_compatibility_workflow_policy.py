@@ -95,7 +95,7 @@ def test_numerical_profile_binds_the_checked_in_resolver_input() -> None:
     assert requirements
     assert all("==" in requirement for requirement in requirements)
     assert "numpy==2.2.6" in requirements
-    assert "pip==26.1.2" in requirements
+    assert "pip==26.2.1" in requirements
     assert "--requirement requirements/release-build-py312.txt" in text
     assert "numerical_environment_v1 capture" in text
     assert "numerical_environment_v1 validate" in text
