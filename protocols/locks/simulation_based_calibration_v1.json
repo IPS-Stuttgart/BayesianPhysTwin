@@ -1,0 +1,73 @@
+{
+  "action_modes": [
+    "dynamic",
+    "quasi_static"
+  ],
+  "benchmark_config": {
+    "bias_activation_offset": 0.05,
+    "bias_activation_scale": 0.45,
+    "bias_cue_persistence": 0.85,
+    "bias_cue_threshold": 0.2,
+    "bias_initial_variance": 1e-07,
+    "bias_minimum_run_length": 5,
+    "bias_process_variance": 1e-05,
+    "control_scale_count": 9,
+    "control_scale_max": 1.2,
+    "control_scale_min": 0.8,
+    "damping_count": 11,
+    "damping_max": 0.7,
+    "damping_min": 0.2,
+    "huber_delta": 1.5,
+    "node_count": 5,
+    "observation_std": 0.006,
+    "outlier_variance_multiplier": 100.0,
+    "state_variance_floor": 1e-08,
+    "step_count": 90,
+    "stiffness_count": 17,
+    "stiffness_max": 8.0,
+    "stiffness_min": 4.0,
+    "time_step": 0.025,
+    "train_step_count": 60,
+    "true_control_scale": 1.0,
+    "true_damping": 0.45,
+    "true_stiffness": 6.0
+  },
+  "claim_boundary": "Controlled simulation-based calibration distinguishes inference behavior under the exact declared model from a fixed correlated-misspecification stress. It does not establish real-data calibration, physical-state identification, provider competence, Causal4D intervention benefit, deployment safety, or state of the art.",
+  "conditions": [
+    "clean",
+    "correlated"
+  ],
+  "credible_levels": [
+    0.5,
+    0.8,
+    0.9,
+    0.95
+  ],
+  "familywise_alpha": 0.05,
+  "histogram_bin_count": 10,
+  "inference_model": "uniform-prior-clean-gaussian-grid-posterior-v1",
+  "information_boundary": {
+    "confirmation_outcomes_used": false,
+    "external_data_used": false,
+    "model_selection_used": false,
+    "source_outcomes_used": false,
+    "target_outcomes_used": false
+  },
+  "misspecification_required_failed_fraction": 1.0,
+  "protocol_id": "f70a426bd4ac822998695dff781820a894ffe6acf828aa57e02b30e36137b6d5",
+  "quantities": [
+    "stiffness",
+    "damping",
+    "control_scale",
+    "terminal_last_node_displacement"
+  ],
+  "randomized_pit": "strict-less-mass-plus-uniform-tie-mass-v1",
+  "replicate_count": 512,
+  "replicate_rng": "numpy-default-rng-seed-truth-index-observation-seed-four-pit-uniforms-v1",
+  "result_float_decimal_places": 12,
+  "scalar_query": "final-frame-last-node-displacement-v1",
+  "schema": "bayesian-phystwin.simulation-based-calibration-protocol",
+  "schema_version": 1,
+  "seed_start": 31000,
+  "truth_prior": "uniform-over-complete-discrete-parameter-grid-v1"
+}
