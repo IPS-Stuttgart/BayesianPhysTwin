@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
+import json
+from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.deform360_covariance_only_source_gate_v1 import (
+from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (
     BATCH_SCHEMA,
     COVARIANCE_DONOR_ID,
     COVARIANCE_SCALES,
@@ -19,8 +22,10 @@ from bayesian_phystwin.deform360_covariance_only_source_gate_v1 import (
     evaluate_source_gate,
     seal_prediction_batch,
     seal_source_scores,
-    validate_prediction_batch,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
+CLI_PATH = ROOT / "scripts/science/run_deform360_covariance_only_source_gate_v1.py"
 
 
 def _sha(value: str) -> str:
@@ -130,6 +135,23 @@ def _scores(
     )
 
 
+def _reseal_scores(scores: dict[str, object]) -> dict[str, object]:
+    changed = copy.deepcopy(scores)
+    changed.pop("score_set_id", None)
+    return seal_source_scores(changed)
+
+
+def _load_cli_module():
+    spec = importlib.util.spec_from_file_location(
+        "deform360_covariance_source_gate_cli",
+        CLI_PATH,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_positive_source_gate_authorizes_predictions_not_outcomes() -> None:
     batch = _batch()
     decision = evaluate_source_gate(batch, _scores(batch))
@@ -155,7 +177,6 @@ def test_nonnegative_mean_is_complete_source_negative() -> None:
 def test_technical_failure_is_retained_and_keeps_target_closed() -> None:
     batch = _batch()
     scores = _scores(batch)
-    scores.pop("score_set_id")
     row = scores["rows"][0]
     assert isinstance(row, dict)
     row.update(
@@ -167,8 +188,7 @@ def test_technical_failure_is_retained_and_keeps_target_closed() -> None:
             "technical_failure_reason": "retained-source-processing-failure",
         }
     )
-    scores = seal_source_scores(scores)
-    decision = evaluate_source_gate(batch, scores)
+    decision = evaluate_source_gate(batch, _reseal_scores(scores))
     assert decision["status"] == "source-technical-negative"
     assert decision["technical_failure_count"] == 1
     assert decision["confirmation_prediction_authorized"] is False
@@ -224,3 +244,57 @@ def test_batch_rejects_mean_change_and_non_diagonal_scoring_record() -> None:
     ]
     with pytest.raises(ValueError, match="frozen diagonal"):
         seal_prediction_batch(changed)
+
+
+def test_score_disposition_must_match_sealed_prediction() -> None:
+    batch = _batch()
+    changed = copy.deepcopy(batch)
+    changed.pop("batch_id")
+    selected = changed["scoring_prediction_by_source_unit"]
+    records = changed["records"]
+    assert isinstance(selected, dict)
+    assert isinstance(records, list)
+    object_id, episode, _ = SOURCE_ROSTER[0]
+    selected_id = selected[f"{object_id}#{episode}"]
+    record = next(item for item in records if item["prediction_id"] == selected_id)
+    record["disposition"] = "exact_fallback"
+    record["exact_fallback"] = True
+    batch = seal_prediction_batch(changed)
+    with pytest.raises(ValueError, match="does not match the selected prediction"):
+        evaluate_source_gate(batch, _scores(batch))
+
+
+def test_nontechnical_unsupported_row_is_rejected() -> None:
+    batch = _batch()
+    scores = _scores(batch)
+    row = scores["rows"][0]
+    assert isinstance(row, dict)
+    row["supported_or_exact_fallback"] = False
+    with pytest.raises(ValueError, match="supported or exact fallback"):
+        evaluate_source_gate(batch, _reseal_scores(scores))
+
+
+def test_technical_failure_cannot_claim_support_or_fallback() -> None:
+    batch = _batch()
+    scores = _scores(batch)
+    row = scores["rows"][0]
+    assert isinstance(row, dict)
+    row.update(
+        {
+            "disposition": "technical_failure",
+            "candidate_nll": None,
+            "reference_nll": None,
+            "technical_failure_reason": "retained-source-processing-failure",
+        }
+    )
+    with pytest.raises(ValueError, match="cannot claim support"):
+        evaluate_source_gate(batch, _reseal_scores(scores))
+
+
+def test_cli_atomic_publication_is_no_clobber(tmp_path: Path) -> None:
+    module = _load_cli_module()
+    output = tmp_path / "decision.json"
+    module._atomic_create(output, {"value": 1})
+    with pytest.raises(FileExistsError, match="refusing to overwrite"):
+        module._atomic_create(output, {"value": 2})
+    assert json.loads(output.read_text(encoding="utf-8")) == {"value": 1}
