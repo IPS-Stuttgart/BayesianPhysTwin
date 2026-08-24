@@ -17,5 +17,11 @@ _ARCHIVED = load_retired_contract_test(
     replacements={
         "LAUNCHER": (ARCHIVE / "launch-deform360-calibration-retained-source-once.yml")
     },
+    source_replacements={
+        '"runs-on: [self-hosted, Linux, X64, nvidia-smi]"': (
+            '"runs-on: [self-hosted, Linux, X64, nvidia-smi, '
+            'data-deform360-calibration-v1]"'
+        ),
+    },
 )
 expose_tests(globals(), _ARCHIVED)
