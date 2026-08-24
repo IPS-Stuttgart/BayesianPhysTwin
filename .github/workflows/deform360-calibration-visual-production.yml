@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Deform360 calibration visual production
 
 on:
@@ -76,13 +78,13 @@ jobs:
         python-version: ["3.10", "3.12"]
     steps:
       - name: Check out exact proposed source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.BPT_HEAD_SHA }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -139,7 +141,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-    runs-on: self-hosted
+    runs-on: [self-hosted, host-workstation2]
     timeout-minutes: 1320
     steps:
       - name: Publish frozen calibration-only beacon
@@ -170,14 +172,14 @@ jobs:
           echo "confirmation_payloads_opened=false"
           echo "target_outcomes_used=false"
       - name: Check out exact reviewed BayesianPhysTwin main
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
       - name: Check out exact Prob4D provider
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Prob4D
           ref: ${{ env.PROB4D_REVISION }}
@@ -186,7 +188,7 @@ jobs:
           persist-credentials: false
           clean: true
       - name: Check out exact MotionCrafter provider
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: TencentARC/MotionCrafter
           ref: ${{ env.MOTIONCRAFTER_REVISION }}
@@ -195,7 +197,7 @@ jobs:
           persist-credentials: false
           clean: true
       - name: Provision complete Python 3.12 runtime
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           check-latest: false
@@ -393,7 +395,7 @@ jobs:
               )
           PY
       - name: Download frozen authoritative retained-source admission
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
         with:
           name: ${{ env.AUTHORITATIVE_ADMISSION_ARTIFACT_NAME }}
           path: ${{ env.ADMISSION_ROOT }}
@@ -765,7 +767,7 @@ jobs:
           )
       - name: Upload compact calibration-only production evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
           name: deform360-calibration-visual-${{ inputs.execution_scope == 'technical-smoke' && 'technical-smoke' || 'production' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.COMPACT_ROOT }}

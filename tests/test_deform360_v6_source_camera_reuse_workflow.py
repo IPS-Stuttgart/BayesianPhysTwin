@@ -16,7 +16,7 @@ def test_workflow_runs_empirical_reuse_only_by_authorized_protected_dispatch() -
     assert "pull_request:" not in text
     assert "workflow_dispatch:" in text
     assert "permissions:\n  contents: read" in text
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in text
+    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi, host-workstation2]" in text
     assert text.index("name: Set up Python", text.index("execute:")) < text.index(
         "name: Materialize and seal the target-closed recovery panel"
     )
