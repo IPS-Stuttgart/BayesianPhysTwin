@@ -23,6 +23,30 @@ place merely to simplify current development. Add a versioned successor and a
 protocol amendment unless the owning evidence record explicitly authorizes an
 in-place repair.
 
+## Evidence-first admission
+
+Before implementing a new method, backend, public module, schema, provider
+version, workflow, or claim-facing diagnostic, identify at least one admission
+basis:
+
+- it executes or directly unblocks a named registered evidence gate;
+- it fixes a reproduced defect or interoperability failure and adds a regression
+  test;
+- it reduces duplicated code, workflows, schemas, or public surface without
+  adding a parallel mechanism; or
+- it is required security, release, dependency, or compatibility maintenance
+  that does not expand the scientific method family.
+
+A new abstraction is not justified solely because it can be implemented,
+content-addressed, or covered by synthetic tests. Prefer executing the current
+independent-object/session, real-provider, and Causal4D physical gates. Add a new
+scientific component only after a retained result localizes a missing capability
+that the current implementation cannot test.
+
+Every pull request must name its admission basis and owning issue, protocol, or
+reproduced defect. The complete policy and current empirical priorities are in
+[`docs/evidence_first_development.md`](docs/evidence_first_development.md).
+
 ## Information-order rules
 
 For prospective and confirmatory work:
@@ -116,6 +140,8 @@ must state:
 - what changed and why;
 - whether the change is stable, prospective, diagnostic, frozen, or
   infrastructure-only;
+- the evidence-first admission basis and owning issue, protocol, or reproduced
+  defect;
 - the exact fallback and compatibility behavior;
 - the tests and exact-head evidence run;
 - any artifact, schema, command, or protocol identity that changes; and
