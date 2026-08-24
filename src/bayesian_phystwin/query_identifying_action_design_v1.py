@@ -16,7 +16,6 @@ import numpy as np
 
 from ._canonical_contracts import (
     frozen_finite_json_mapping,
-    immutable_array,
     literal_lower_hex,
     plain_json,
 )
