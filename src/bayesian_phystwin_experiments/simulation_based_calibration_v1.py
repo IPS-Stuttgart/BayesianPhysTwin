@@ -164,14 +164,19 @@ def validate_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
         name="replicate_count",
     )
     if seed_start < 0 or replicate_count < 32:
-        raise ValueError("seed_start must be nonnegative and replicate_count at least 32")
+        raise ValueError(
+            "seed_start must be nonnegative and replicate_count at least 32"
+        )
     if seed_start + replicate_count > 2**63 - 1:
         raise ValueError("registered seed range overflows")
 
-    if _integer(
-        document.get("histogram_bin_count"),
-        name="histogram_bin_count",
-    ) != 10:
+    if (
+        _integer(
+            document.get("histogram_bin_count"),
+            name="histogram_bin_count",
+        )
+        != 10
+    ):
         raise ValueError("histogram bin count changed")
     familywise_alpha = _finite(
         document.get("familywise_alpha"),
@@ -216,9 +221,7 @@ def validate_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
             raise ValueError(f"forbidden information use: {field}")
 
     config_payload = dict(
-        _plain_json(
-            _mapping(document.get("benchmark_config"), name="benchmark_config")
-        )
+        _plain_json(_mapping(document.get("benchmark_config"), name="benchmark_config"))
     )
     expected_config_fields = set(asdict(SyntheticBenchmarkConfig()))
     if set(config_payload) != expected_config_fields:
@@ -330,8 +333,7 @@ def _wilson_interval(successes: int, count: int) -> list[float]:
     half_width = (
         z
         * math.sqrt(
-            proportion * (1.0 - proportion) / count
-            + z * z / (4.0 * count * count)
+            proportion * (1.0 - proportion) / count + z * z / (4.0 * count * count)
         )
         / denominator
     )
@@ -387,9 +389,7 @@ def _replicate_row(
         values = np.asarray(quantity_values[quantity], dtype=float)
         truth = float(values[truth_index])
         posterior_mean = float(np.dot(weights, values))
-        posterior_variance = float(
-            np.dot(weights, np.square(values - posterior_mean))
-        )
+        posterior_variance = float(np.dot(weights, np.square(values - posterior_mean)))
         covered: dict[str, bool] = {}
         for level in credible_levels:
             tail = (1.0 - level) / 2.0
@@ -429,17 +429,14 @@ def _aggregate_rows(
     replicate_count = int(protocol["replicate_count"])
     test_count = len(ACTION_MODES) * len(QUANTITIES)
     per_test_alpha = float(protocol["familywise_alpha"]) / test_count
-    dkw_threshold = math.sqrt(
-        math.log(2.0 / per_test_alpha) / (2.0 * replicate_count)
-    )
+    dkw_threshold = math.sqrt(math.log(2.0 / per_test_alpha) / (2.0 * replicate_count))
     aggregate: list[dict[str, Any]] = []
     for action_mode in ACTION_MODES:
         for condition in CONDITIONS:
             group = [
                 row
                 for row in rows
-                if row["action_mode"] == action_mode
-                and row["condition"] == condition
+                if row["action_mode"] == action_mode and row["condition"] == condition
             ]
             if len(group) != replicate_count:
                 raise ValueError("replicate table is incomplete")
@@ -485,9 +482,7 @@ def _aggregate_rows(
                             int(protocol["histogram_bin_count"]),
                         ),
                         "bonferroni_dkw_95_threshold": dkw_threshold,
-                        "uniformity_not_rejected": bool(
-                            ks_distance <= dkw_threshold
-                        ),
+                        "uniformity_not_rejected": bool(ks_distance <= dkw_threshold),
                         "mean_signed_error": float(
                             np.mean(
                                 [
@@ -572,9 +567,7 @@ def run_simulation_based_calibration(
 
     aggregate, per_test_alpha = _aggregate_rows(rows, protocol)
     clean_tests = [row for row in aggregate if row["condition"] == "clean"]
-    correlated_tests = [
-        row for row in aggregate if row["condition"] == "correlated"
-    ]
+    correlated_tests = [row for row in aggregate if row["condition"] == "correlated"]
     exact_model_not_rejected = all(
         bool(row["uniformity_not_rejected"]) for row in clean_tests
     )
@@ -643,9 +636,7 @@ def compact_summary(result_payload: Mapping[str, Any]) -> dict[str, Any]:
         "correlated_misspecification_detected": result[
             "correlated_misspecification_detected"
         ],
-        "correlated_failed_test_fraction": result[
-            "correlated_failed_test_fraction"
-        ],
+        "correlated_failed_test_fraction": result["correlated_failed_test_fraction"],
         "familywise_test_count": result["familywise_test_count"],
         "bonferroni_per_test_alpha": result["bonferroni_per_test_alpha"],
         "replicate_row_count": len(rows),
