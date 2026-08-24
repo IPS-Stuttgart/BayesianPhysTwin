@@ -331,7 +331,7 @@ def _base_sequence(
         2.0 * np.pi * domain.action_frequency_3 * time + domain.action_phase_3
     )
 
-    physical = np.zeros(config.step_count, dtype=np.float64)
+    physical: np.ndarray = np.zeros(config.step_count, dtype=np.float64)
     velocity = float(rng.normal(scale=0.02))
     physical[0] = float(rng.normal(scale=0.01))
     for step in range(config.step_count - 1):
@@ -345,7 +345,7 @@ def _base_sequence(
         velocity += domain.time_step * acceleration
         physical[step + 1] = position + domain.time_step * velocity
 
-    discrepancy = np.zeros(config.step_count, dtype=np.float64)
+    discrepancy: np.ndarray = np.zeros(config.step_count, dtype=np.float64)
     discrepancy[0] = float(rng.normal(scale=domain.initial_residual_std_m))
     for step in range(config.step_count - 1):
         discrepancy[step + 1] = (
@@ -379,13 +379,13 @@ def generate_corrupted_sequence_v2(
     physical, truth, observation, reliability = _base_sequence(domain, config)
     observation = observation.copy()
     reliability = reliability.copy()
-    available = np.ones(config.step_count, dtype=bool)
-    actual_source = np.arange(config.step_count, dtype=np.int64)
+    available: np.ndarray = np.ones(config.step_count, dtype=bool)
+    actual_source: np.ndarray = np.arange(config.step_count, dtype=np.int64)
     reported_source = actual_source.copy()
-    corruption = np.zeros(config.step_count, dtype=bool)
+    corruption: np.ndarray = np.zeros(config.step_count, dtype=bool)
     start = domain.corruption_start
     stop = domain.corruption_stop
-    selected = np.arange(start, stop, dtype=np.int64)
+    selected: np.ndarray = np.arange(start, stop, dtype=np.int64)
     corruption[start:stop] = True
     rng = _rng(domain.seed, 100 + CONDITIONS.index(condition))
 
@@ -555,7 +555,7 @@ def _guard_decision(
 
     effective_observation_variance = observation_variance_m2 / max(
         reliability,
-        np.finfo(np.float64).eps,
+        float(np.finfo(np.float64).eps),
     )
     innovation_variance = prior_variance_m2 + effective_observation_variance
     gain = prior_variance_m2 / innovation_variance
@@ -741,7 +741,7 @@ def run_methods_v2(
             )
             effective_variance = observation_variance / max(
                 float(reliability[step]),
-                np.finfo(np.float64).eps,
+                float(np.finfo(np.float64).eps),
             )
             gain = guarded_prior_variance / (
                 guarded_prior_variance + effective_variance
