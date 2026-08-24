@@ -1,0 +1,53 @@
+name: Materialize recommendation implementation
+
+on:
+  push:
+    branches:
+      - feature/multi-action-trajectory-value-v1
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: ${{ hashFiles('.materialize/recommendations.part1') != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feature/multi-action-trajectory-value-v1
+          fetch-depth: 1
+
+      - name: Materialize reviewed files and remove temporary payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .materialize/recommendations.part* | base64 --decode | tar -xz
+          cat > /tmp/recommendation-sha256 <<'EOF'
+          7bd442dc2957bd426d62eff278f92415af19243915a78edcf84196a3fb3f32c1  src/bayesian_phystwin_experiments/multi_action_query_identifiability_v1.py
+          b0990fb72d069f9ec2438aec647a43c4fd33e6874a32c3bef689033cc15590e0  src/bayesian_phystwin_experiments/trajectory_decision_scoring_v1.py
+          c9ad686ec45cc360ab0dbc6481cc838e2e925c12777925cae876c5e68f464f13  tests/test_query_calibration_multi_action_v1.py
+          13947e31b77c7fe0165b5e50ec60b8be490a15a3af66d758f4e4395610345b85  tests/test_query_calibration_trajectory_decision_v1.py
+          40d2495e806a0e3cfc0ee203b48e448c52f94899ed2fbdf3084d9d4cbf91456f  docs/multi_action_query_identifiability_v1.md
+          2f7bdf3758271debbda3138ecf422ceecf63ddbc5a2414ce12a6fe2083112b87  docs/trajectory_decision_scoring_v1.md
+          EOF
+          sha256sum --check /tmp/recommendation-sha256
+          python3 -m py_compile \
+            src/bayesian_phystwin_experiments/multi_action_query_identifiability_v1.py \
+            src/bayesian_phystwin_experiments/trajectory_decision_scoring_v1.py \
+            tests/test_query_calibration_multi_action_v1.py \
+            tests/test_query_calibration_trajectory_decision_v1.py
+          rm -rf .materialize
+          rm .github/workflows/materialize-recommendations.yml
+          git add -A
+          git diff --cached --check
+
+      - name: Publish the reviewable scientific diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Add multi-action identifiability and trajectory decision value'
+          git push origin HEAD:feature/multi-action-trajectory-value-v1
