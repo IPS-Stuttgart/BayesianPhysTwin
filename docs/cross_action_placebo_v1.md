@@ -43,8 +43,10 @@ prediction binds:
 
 `CrossActionPlaceboScoreRowV1` is produced only after authorized target access. It
 binds one sealed prediction, one target outcome, one target-access attestation,
-one frozen scorer, and the proper score. Target-side method or threshold
-selection is rejected.
+one frozen scorer, and the proper score. The protocol content-binds the
+`lower_is_better` orientation used by the contrast; other orientations are
+rejected rather than silently reversing the decision. Target-side method or
+threshold selection is rejected.
 
 ## Statistical unit and decision
 
@@ -82,8 +84,8 @@ The implementation rejects a report unless:
   outcome, and parent selection/fallback disposition;
 - all predictions belong to one sealed batch;
 - every score uses one target-access attestation and one scorer;
-- an exact-fallback pair selects one byte-identical prediction artifact for all
-  controls; and
+- an exact-fallback pair selects one byte-identical prediction artifact and one
+  identical proper score for all controls; and
 - no prediction or score indicates target-informed selection.
 
 ## Claim boundary

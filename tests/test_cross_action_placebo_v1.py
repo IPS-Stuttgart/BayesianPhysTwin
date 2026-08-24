@@ -91,7 +91,8 @@ def _rows(
                         scorer_id="f" * 64,
                         proper_score=(
                             physical_score
-                            if arm == protocol.physical_arm_label
+                            if not physical_selected
+                            or arm == protocol.physical_arm_label
                             else scores[arm]
                         ),
                     )
@@ -192,6 +193,13 @@ def test_fallback_must_be_byte_identical_across_all_controls() -> None:
             [rows[0], replace(rows[1], prediction=changed), *rows[2:]],
         )
 
+    changed_score = replace(rows[1], proper_score=rows[1].proper_score + 1.0)
+    with pytest.raises(ValueError, match="identical proper score"):
+        CrossActionPlaceboResultV1(
+            protocol,
+            [rows[0], changed_score, *rows[2:]],
+        )
+
 
 def test_result_identity_is_invariant_to_score_row_order() -> None:
     protocol = _protocol()
@@ -207,6 +215,8 @@ def test_protocol_and_rows_reject_target_informed_designs() -> None:
         replace(protocol, target_outcomes_used_for_selection=True)
     with pytest.raises(ValueError, match="duplicates"):
         replace(protocol, action_ids=("same", "same"))
+    with pytest.raises(ValueError, match="score_orientation"):
+        replace(protocol, score_orientation="higher_is_better")
     with pytest.raises(ValueError, match="exactly every registered arm"):
         replace(protocol, arm_construction_ids={"guarded_physical": DIGEST})
 
