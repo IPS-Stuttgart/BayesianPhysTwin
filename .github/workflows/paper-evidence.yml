@@ -1,48 +1,103 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Paper evidence contracts
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - src/bayesian_phystwin/claim_bundle_v1.py
-      - src/bayesian_phystwin/paper_evidence_v1.py
-      - src/bayesian_phystwin/cli/claim_bundle.py
-      - src/bayesian_phystwin/cli/command_registry.py
-      - src/bayesian_phystwin/cli/run_manifest.py
-      - tests/test_claim_bundle_v1.py
-      - tests/test_cli_main.py
-      - tests/test_paper_evidence_v1.py
-      - tests/test_paper_evidence_cli.py
-      - tests/test_paper_evidence_hardening.py
-      - docs/claim_bundle_v1.md
-      - docs/paper_evidence_profile.md
-      - .github/workflows/claim-bundle.yml
-      - .github/workflows/paper-evidence.yml
   pull_request:
     branches: [main]
     paths:
-      - src/bayesian_phystwin/claim_bundle_v1.py
-      - src/bayesian_phystwin/paper_evidence_v1.py
-      - src/bayesian_phystwin/cli/claim_bundle.py
-      - src/bayesian_phystwin/cli/command_registry.py
-      - src/bayesian_phystwin/cli/run_manifest.py
-      - tests/test_claim_bundle_v1.py
-      - tests/test_cli_main.py
-      - tests/test_paper_evidence_v1.py
-      - tests/test_paper_evidence_cli.py
-      - tests/test_paper_evidence_hardening.py
-      - docs/claim_bundle_v1.md
-      - docs/paper_evidence_profile.md
       - .github/workflows/claim-bundle.yml
       - .github/workflows/paper-evidence.yml
+      - pyproject.toml
+      - protocols/locks/simulation_based_calibration_v1.json
+      - scripts/science/analyze_recursive_corruption_selectivity_v1.py
+      - scripts/science/run_controlled_evidence_workflow_v1.py
+      - scripts/science/run_simulation_based_calibration_v1.py
+      - scripts/science/run_synthetic_benchmark_sbc_v1.py
+      - src/bayesian_phystwin/claim_bundle_v1.py
+      - src/bayesian_phystwin/cli/claim_bundle.py
+      - src/bayesian_phystwin/cli/command_registry.py
+      - src/bayesian_phystwin/cli/recursive_corruption_benchmark.py
+      - src/bayesian_phystwin/cli/run_manifest.py
+      - src/bayesian_phystwin/paper_evidence_v1.py
+      - src/bayesian_phystwin/recursive_corruption_benchmark.py
+      - src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py
+      - src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py
+      - tests/test_claim_bundle_v1.py
+      - tests/test_cli_main.py
+      - tests/test_controlled_scientific_evidence_workflow.py
+      - tests/test_paper_evidence_cli.py
+      - tests/test_paper_evidence_hardening.py
+      - tests/test_paper_evidence_v1.py
+      - tests/test_recursive_corruption_benchmark.py
+      - tests/test_simulation_based_calibration_v1.py
+      - tests/test_synthetic_benchmark_sbc_v1.py
+      - docs/claim_bundle_v1.md
+      - docs/controlled_scientific_evidence_workflow.md
+      - docs/paper_evidence_profile.md
+      - docs/recursive_corruption_benchmark.md
+      - docs/simulation_based_calibration_v1.md
+      - docs/synthetic_benchmark_sbc_v1.md
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/claim-bundle.yml
+      - .github/workflows/paper-evidence.yml
+      - pyproject.toml
+      - protocols/locks/simulation_based_calibration_v1.json
+      - scripts/science/analyze_recursive_corruption_selectivity_v1.py
+      - scripts/science/run_controlled_evidence_workflow_v1.py
+      - scripts/science/run_simulation_based_calibration_v1.py
+      - scripts/science/run_synthetic_benchmark_sbc_v1.py
+      - src/bayesian_phystwin/claim_bundle_v1.py
+      - src/bayesian_phystwin/cli/claim_bundle.py
+      - src/bayesian_phystwin/cli/command_registry.py
+      - src/bayesian_phystwin/cli/recursive_corruption_benchmark.py
+      - src/bayesian_phystwin/cli/run_manifest.py
+      - src/bayesian_phystwin/paper_evidence_v1.py
+      - src/bayesian_phystwin/recursive_corruption_benchmark.py
+      - src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py
+      - src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py
+      - tests/test_claim_bundle_v1.py
+      - tests/test_cli_main.py
+      - tests/test_controlled_scientific_evidence_workflow.py
+      - tests/test_paper_evidence_cli.py
+      - tests/test_paper_evidence_hardening.py
+      - tests/test_paper_evidence_v1.py
+      - tests/test_recursive_corruption_benchmark.py
+      - tests/test_simulation_based_calibration_v1.py
+      - tests/test_synthetic_benchmark_sbc_v1.py
+      - docs/claim_bundle_v1.md
+      - docs/controlled_scientific_evidence_workflow.md
+      - docs/paper_evidence_profile.md
+      - docs/recursive_corruption_benchmark.md
+      - docs/simulation_based_calibration_v1.md
+      - docs/synthetic_benchmark_sbc_v1.md
   workflow_dispatch:
+    inputs:
+      evidence_study:
+        description: Controlled target-free study to execute from reviewed main
+        required: true
+        default: contracts-only
+        type: choice
+        options:
+          - contracts-only
+          - simulation-based-calibration
+          - synthetic-benchmark-sbc
+          - recursive-corruption
+          - all-controlled
+      verify_replay:
+        description: Require byte-identical same-environment replay
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: paper-evidence-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: paper-evidence-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.evidence_study || 'contracts-only' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -56,7 +111,8 @@ jobs:
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+
     steps:
       - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -80,6 +136,7 @@ jobs:
           python -m pip check
 
       - name: Check stable evidence interfaces
+        shell: bash
         run: |
           set -euo pipefail
           files=(
@@ -88,11 +145,13 @@ jobs:
             src/bayesian_phystwin/cli/claim_bundle.py
             src/bayesian_phystwin/cli/command_registry.py
             src/bayesian_phystwin/cli/run_manifest.py
+            scripts/science/run_controlled_evidence_workflow_v1.py
             tests/test_claim_bundle_v1.py
             tests/test_cli_main.py
             tests/test_paper_evidence_v1.py
             tests/test_paper_evidence_cli.py
             tests/test_paper_evidence_hardening.py
+            tests/test_controlled_scientific_evidence_workflow.py
           )
           python -m ruff check "${files[@]}"
 
@@ -114,14 +173,14 @@ jobs:
           format_files=()
           while IFS= read -r changed_path; do
             for candidate in "${files[@]}"; do
-              if [[ "$changed_path" == "$candidate" ]]; then
-                format_files+=("$candidate")
+              if [[ "${changed_path}" == "${candidate}" ]]; then
+                format_files+=("${candidate}")
                 break
               fi
             done
           done < <(
             git diff --name-only --diff-filter=ACMR \
-              "$base_ref...$head_ref" -- "${files[@]}"
+              "${base_ref}...${head_ref}" -- "${files[@]}"
           )
 
           if (( ${#format_files[@]} > 0 )); then
@@ -150,9 +209,250 @@ jobs:
             tests/test_paper_evidence_cli.py \
             tests/test_paper_evidence_hardening.py \
             tests/test_claim_bundle_v1.py \
-            tests/test_cli_main.py
+            tests/test_cli_main.py \
+            tests/test_controlled_scientific_evidence_workflow.py \
+            tests/test_recursive_corruption_benchmark.py \
+            tests/test_simulation_based_calibration_v1.py \
+            tests/test_synthetic_benchmark_sbc_v1.py
+
+      - name: Validate scientific orchestration CLI
+        run: |
+          set -euo pipefail
+          python scripts/science/run_controlled_evidence_workflow_v1.py --help
+
+      - name: Validate referenced documentation
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          required = [
+              Path("docs/claim_bundle_v1.md"),
+              Path("docs/controlled_scientific_evidence_workflow.md"),
+              Path("docs/paper_evidence_profile.md"),
+              Path("docs/recursive_corruption_benchmark.md"),
+              Path("docs/simulation_based_calibration_v1.md"),
+              Path("docs/synthetic_benchmark_sbc_v1.md"),
+          ]
+          missing = [str(path) for path in required if not path.is_file()]
+          if missing:
+              raise SystemExit(f"missing documentation: {missing}")
+          PY
 
       - name: Verify read-only tracked state
         run: |
           set -euo pipefail
           git diff --exit-code
+
+  controlled-evidence:
+    name: Generate ${{ inputs.evidence_study }} evidence / Python 3.12
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.evidence_study != 'contracts-only'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      EVIDENCE_ROOT: outputs/controlled-scientific-evidence
+
+    steps:
+      - name: Check out exact reviewed main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Verify reviewed main revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Build exact wheel and isolated research overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${EVIDENCE_ROOT}/wheels"
+          python -m pip install --upgrade pip
+          python -m pip wheel \
+            --no-deps \
+            --wheel-dir "${EVIDENCE_ROOT}/wheels" \
+            .
+          mapfile -t wheels < <(
+            find "${EVIDENCE_ROOT}/wheels" -maxdepth 1 \
+              -name 'bayesian_phystwin-*.whl' -print
+          )
+          test "${#wheels[@]}" -eq 1
+          python -m venv .paper-evidence-venv
+          .paper-evidence-venv/bin/python -m pip install "${wheels[0]}"
+          .paper-evidence-venv/bin/python -m pip check
+
+          research_overlay="${RUNNER_TEMP}/bayesian-phystwin-research-source"
+          test ! -e "${research_overlay}"
+          mkdir -p "${research_overlay}"
+          cp -a src/bayesian_phystwin_experiments "${research_overlay}/"
+          echo "RESEARCH_OVERLAY=${research_overlay}" >> "${GITHUB_ENV}"
+
+          sha256sum "${wheels[0]}" \
+            | tee "${EVIDENCE_ROOT}/wheel-sha256.txt"
+          git ls-files -z -- \
+            protocols/locks/simulation_based_calibration_v1.json \
+            scripts/science/analyze_recursive_corruption_selectivity_v1.py \
+            scripts/science/run_controlled_evidence_workflow_v1.py \
+            scripts/science/run_simulation_based_calibration_v1.py \
+            scripts/science/run_synthetic_benchmark_sbc_v1.py \
+            src/bayesian_phystwin_experiments \
+            | LC_ALL=C sort -z \
+            | xargs -0 sha256sum \
+            > "${EVIDENCE_ROOT}/source-sha256.txt"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "commit=${GITHUB_SHA}"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            git status --porcelain=v1
+            .paper-evidence-venv/bin/python -VV
+            .paper-evidence-venv/bin/python -m pip --version
+            .paper-evidence-venv/bin/python -m pip freeze --all
+            uname -a
+          } > "${EVIDENCE_ROOT}/environment.txt"
+
+      - name: Verify wheel and research-source isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${RESEARCH_OVERLAY}" \
+            .paper-evidence-venv/bin/python - <<'PY'
+          import os
+          from pathlib import Path
+
+          import bayesian_phystwin
+          import bayesian_phystwin_experiments
+
+          checkout_source = (Path.cwd() / "src").resolve()
+          stable_origin = Path(bayesian_phystwin.__file__).resolve()
+          research_origin = Path(bayesian_phystwin_experiments.__file__).resolve()
+          research_overlay = Path(os.environ["RESEARCH_OVERLAY"]).resolve()
+          print(f"stable_origin={stable_origin}")
+          print(f"research_origin={research_origin}")
+          if stable_origin.is_relative_to(checkout_source):
+              raise SystemExit("stable package resolved from checkout source")
+          if not research_origin.is_relative_to(research_overlay):
+              raise SystemExit("research package did not resolve from exact overlay")
+          PY
+
+      - name: Record orchestration request
+        env:
+          EVIDENCE_STUDY: ${{ inputs.evidence_study }}
+          VERIFY_REPLAY: ${{ inputs.verify_replay }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          request = {
+              "schema_version": 1,
+              "artifact_kind": "ControlledScientificEvidenceRequest",
+              "study": os.environ["EVIDENCE_STUDY"],
+              "verify_replay": os.environ["VERIFY_REPLAY"] == "true",
+              "target_outcomes_used": False,
+          }
+          Path(
+              "outputs/controlled-scientific-evidence/request.json"
+          ).write_text(
+              json.dumps(request, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Execute registered controlled study
+        env:
+          EVIDENCE_STUDY: ${{ inputs.evidence_study }}
+          VERIFY_REPLAY: ${{ inputs.verify_replay }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --study "${EVIDENCE_STUDY}"
+            --output-root "${EVIDENCE_ROOT}"
+            --repository "${GITHUB_REPOSITORY}"
+            --commit "${GITHUB_SHA}"
+            --workflow-run-id "${GITHUB_RUN_ID}"
+            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"
+          )
+          if [[ "${VERIFY_REPLAY}" == "true" ]]; then
+            args+=(--verify-replay)
+          fi
+          PYTHONPATH="${RESEARCH_OVERLAY}" \
+            .paper-evidence-venv/bin/python \
+            scripts/science/run_controlled_evidence_workflow_v1.py \
+            "${args[@]}"
+
+      - name: Summarize retained result
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("outputs/controlled-scientific-evidence")
+          summary_path = root / "bundle-summary.json"
+          manifest_path = root / "manifest.json"
+          lines = ["### Controlled scientific evidence"]
+          if summary_path.is_file():
+              summary = json.loads(summary_path.read_text(encoding="utf-8"))
+              lines.extend(
+                  [
+                      "",
+                      f"- Selected: `{', '.join(summary['selected_studies'])}`",
+                      f"- All registered gates passed: `{summary['all_passed']}`",
+                      f"- Replay requested: `{summary['verify_replay']}`",
+                      "- Target outcomes used: `false`",
+                  ]
+              )
+              for study, outcome in summary["outcomes"].items():
+                  lines.append(f"- `{study}` passed: `{outcome['passed']}`")
+          else:
+              lines.extend(["", "- Bundle summary: `not produced`"])
+          if manifest_path.is_file():
+              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              lines.append(f"- Manifest ID: `{manifest['manifest_id']}`")
+          else:
+              lines.append("- Manifest ID: `not produced`")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
+              "a", encoding="utf-8"
+          ) as stream:
+              stream.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload retained evidence bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: controlled-scientific-evidence-${{ inputs.evidence_study }}-${{ github.run_id }}
+          path: outputs/controlled-scientific-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        run: |
+          rm -rf .paper-evidence-venv "${RESEARCH_OVERLAY:-}"
