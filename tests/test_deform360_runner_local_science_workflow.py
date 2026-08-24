@@ -43,7 +43,9 @@ def test_workflow_keeps_pull_request_validation_hosted_and_data_free() -> None:
     assert "workflow_call:" in reusable
     assert "source_sha:" in reusable
     assert "runs-on: ubuntu-latest" in reusable
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi, host-workstation2]" in science
+    assert (
+        "runs-on: [self-hosted, Linux, X64, nvidia-smi, host-workstation2]" in science
+    )
     assert "github.event_name == 'workflow_dispatch'" in science
     assert "github.ref == 'refs/heads/main'" in science
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in science

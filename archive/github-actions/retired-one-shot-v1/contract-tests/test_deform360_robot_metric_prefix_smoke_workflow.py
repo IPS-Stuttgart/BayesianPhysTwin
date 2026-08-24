@@ -22,7 +22,7 @@ def test_robot_metric_smoke_is_public_source_only_and_one_shot() -> None:
     assert isinstance(yaml.load(launcher, Loader=yaml.BaseLoader), dict)
     assert "workflow_call:" in text
     assert "workflow_dispatch:" not in text
-    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, host-workstation2]" in text
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
     assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
     assert 'PRODUCTION_RUN_ID: "31279398563"' in text

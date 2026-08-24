@@ -282,7 +282,13 @@ def test_workflow_runs_science_only_after_merge_on_workstation2() -> None:
     assert set(workflow["on"]) == {"pull_request", "push"}
     assert workflow["permissions"] == {"contents": "read"}
     evidence = workflow["jobs"]["evidence"]
-    assert evidence["runs-on"] == ["self-hosted", "Linux", "X64", "nvidia-smi", "host-workstation2"]
+    assert evidence["runs-on"] == [
+        "self-hosted",
+        "Linux",
+        "X64",
+        "nvidia-smi",
+        "host-workstation2",
+    ]
     assert "github.event_name == 'push'" in evidence["if"]
     assert "github.ref == 'refs/heads/main'" in evidence["if"]
     assert evidence["permissions"] == {

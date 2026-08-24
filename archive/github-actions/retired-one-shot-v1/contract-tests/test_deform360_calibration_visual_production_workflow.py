@@ -41,7 +41,7 @@ def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
     assert "inputs.resume == false" in text
     assert "github.ref == 'refs/heads/main'" in text
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
-    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, host-workstation2]" in text
     assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" not in text
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
     assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
@@ -178,7 +178,7 @@ def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
     text = _workflow()
 
     assert "Admitted all-camera production / sole Deform360 runner" in text
-    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, host-workstation2]" in text
     assert "runner_label_contract=self-hosted-only" in text
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
     assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
