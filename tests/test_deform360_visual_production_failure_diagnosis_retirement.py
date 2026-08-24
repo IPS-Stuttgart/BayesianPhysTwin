@@ -11,8 +11,7 @@ from bayesian_phystwin._portable_contracts import content_id
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "archive/github-actions/retired-one-shot-v1"
 RECORD_PATH = (
-    ROOT
-    / "results/diagnostics/"
+    ROOT / "results/diagnostics/"
     "deform360_visual_production_failure_diagnosis_retirement_v1/"
     "retirement.json"
 )
