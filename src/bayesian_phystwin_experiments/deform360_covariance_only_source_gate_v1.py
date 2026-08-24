@@ -383,9 +383,8 @@ def _validated_score_rows(
         disposition = row.get("disposition")
         if disposition not in {"candidate", "exact_fallback", "technical_failure"}:
             raise ValueError("invalid score-row disposition")
-        if (
-            disposition != "technical_failure"
-            and disposition != selected_record.get("disposition")
+        if disposition != "technical_failure" and disposition != selected_record.get(
+            "disposition"
         ):
             raise ValueError(
                 "score-row disposition does not match the selected prediction"
