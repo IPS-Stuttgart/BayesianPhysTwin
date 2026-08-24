@@ -90,8 +90,7 @@ def _wilson_interval(
         z
         / denominator
         * np.sqrt(
-            fraction * (1.0 - fraction) / total
-            + z_squared / (4.0 * total * total)
+            fraction * (1.0 - fraction) / total + z_squared / (4.0 * total * total)
         )
     )
     return max(0.0, float(center - radius)), min(1.0, float(center + radius))
@@ -210,12 +209,12 @@ class CrossActionTransportResultV1:
                     raise ValueError("physical fallback must be the baseline reference")
                 if len({row.target_outcome_id for row in arm_rows.values()}) != 1:
                     raise ValueError("all arms for one pair must score the same target")
-                if len(
-                    {
-                        row.prediction.baseline_belief_id
-                        for row in arm_rows.values()
-                    }
-                ) != 1:
+                if (
+                    len(
+                        {row.prediction.baseline_belief_id for row in arm_rows.values()}
+                    )
+                    != 1
+                ):
                     raise ValueError("all arms for one pair must share one baseline")
 
         off_diagonal = [key for key in by_pair if key[1] != key[2]]
@@ -299,12 +298,9 @@ class CrossActionTransportResultV1:
         if len(sessions) < self.protocol.minimum_sessions:
             decision = TransportDecision.INSUFFICIENT_SESSIONS
         elif (
-            physical_summary.gain_interval[0]
-            > self.protocol.minimum_off_diagonal_gain
-            and discrepancy_interval[0]
-            > self.protocol.minimum_discrepancy_contrast
-            and comparator_interval[0]
-            > self.protocol.minimum_comparator_contrast
+            physical_summary.gain_interval[0] > self.protocol.minimum_off_diagonal_gain
+            and discrepancy_interval[0] > self.protocol.minimum_discrepancy_contrast
+            and comparator_interval[0] > self.protocol.minimum_comparator_contrast
             and physical_summary.harmful_fraction_interval[1]
             <= self.protocol.maximum_harmful_session_fraction
             and physical_summary.selected_pairs > 0
@@ -347,9 +343,7 @@ class CrossActionTransportResultV1:
             "independent_session_count": self.independent_session_count,
             "arm_summaries": [summary.descriptor() for summary in self.arm_summaries],
             "discrepancy_contrast": self.discrepancy_contrast,
-            "discrepancy_contrast_interval": list(
-                self.discrepancy_contrast_interval
-            ),
+            "discrepancy_contrast_interval": list(self.discrepancy_contrast_interval),
             "comparator_contrast": self.comparator_contrast,
             "comparator_contrast_interval": list(self.comparator_contrast_interval),
             "decision": self.decision.value,
@@ -369,9 +363,7 @@ class CrossActionTransportResultV1:
             "supports_physical_transport": self.supports_physical_transport,
             "independent_session_count": self.independent_session_count,
             "discrepancy_contrast": self.discrepancy_contrast,
-            "discrepancy_contrast_interval": list(
-                self.discrepancy_contrast_interval
-            ),
+            "discrepancy_contrast_interval": list(self.discrepancy_contrast_interval),
             "comparator_contrast": self.comparator_contrast,
             "comparator_contrast_interval": list(self.comparator_contrast_interval),
             "arm_summaries": [summary.descriptor() for summary in self.arm_summaries],
