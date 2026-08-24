@@ -1,0 +1,85 @@
+name: Apply recursive-corruption v2 once
+
+on:
+  push:
+    branches:
+      - science/recursive-corruption-v2-matched-guards
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-recursive-corruption-v2-once
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@v7
+        with:
+          ref: science/recursive-corruption-v2-matched-guards
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Materialize reviewed source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/recursive-corruption-v2.b64" <<'PAYLOAD'
+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[...truncated for display...]
+PAYLOAD
+          base64 -d "$RUNNER_TEMP/recursive-corruption-v2.b64" > "$RUNNER_TEMP/recursive-corruption-v2.tar.gz"
+          echo 'e4c04130dc816c49f23d359241756df8aec7f366dcb5952f74560c7d64b61154  '"$RUNNER_TEMP/recursive-corruption-v2.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/recursive-corruption-v2.tar.gz"
+
+      - name: Install and validate focused revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e '.[dev]'
+          python -m ruff format \
+            src/bayesian_phystwin/recursive_corruption_benchmark_v2.py \
+            scripts/science/analyze_recursive_corruption_v2.py \
+            scripts/science/run_recursive_corruption_v2.py \
+            tests/test_recursive_corruption_benchmark_v2.py
+          python -m ruff check --fix \
+            src/bayesian_phystwin/recursive_corruption_benchmark_v2.py \
+            scripts/science/analyze_recursive_corruption_v2.py \
+            scripts/science/run_recursive_corruption_v2.py \
+            tests/test_recursive_corruption_benchmark_v2.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/recursive_corruption_benchmark_v2.py \
+            scripts/science/analyze_recursive_corruption_v2.py \
+            scripts/science/run_recursive_corruption_v2.py \
+            tests/test_recursive_corruption_benchmark_v2.py
+          python -m ruff check \
+            src/bayesian_phystwin/recursive_corruption_benchmark_v2.py \
+            scripts/science/analyze_recursive_corruption_v2.py \
+            scripts/science/run_recursive_corruption_v2.py \
+            tests/test_recursive_corruption_benchmark_v2.py
+          python -m pytest -q tests/test_recursive_corruption_benchmark_v2.py
+          python -m py_compile \
+            src/bayesian_phystwin/recursive_corruption_benchmark_v2.py \
+            scripts/science/analyze_recursive_corruption_v2.py \
+            scripts/science/run_recursive_corruption_v2.py
+          git diff --check
+
+      - name: Commit reviewed revision and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/apply-recursive-corruption-v2-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add matched-guard recursive corruption benchmark v2'
+          git push origin HEAD:science/recursive-corruption-v2-matched-guards
