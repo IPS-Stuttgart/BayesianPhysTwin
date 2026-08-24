@@ -123,12 +123,15 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def _write_json_no_clobber(path: Path, value: Mapping[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(
-        value,
-        indent=2,
-        sort_keys=True,
-        allow_nan=False,
-    ) + "\n"
+    encoded = (
+        json.dumps(
+            value,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n"
+    )
     with path.open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(encoded)
         stream.flush()
@@ -335,8 +338,8 @@ def _validate_recursive(
     if result.get("methods") != list(EXPECTED_RECURSIVE_METHODS):
         raise ValueError("recursive benchmark method roster drifted")
     records = result.get("records")
-    expected_record_count = 50 * len(EXPECTED_RECURSIVE_CONDITIONS) * len(
-        EXPECTED_RECURSIVE_METHODS
+    expected_record_count = (
+        50 * len(EXPECTED_RECURSIVE_CONDITIONS) * len(EXPECTED_RECURSIVE_METHODS)
     )
     if not isinstance(records, list) or len(records) != expected_record_count:
         raise ValueError("recursive benchmark record count drifted")
@@ -464,6 +467,74 @@ def _execute_study_once(
     raise ValueError(f"unknown controlled study {study!r}")
 
 
+def _compare_files(
+    primary_dir: Path,
+    replay_dir: Path,
+    filenames: Sequence[str],
+) -> dict[str, object]:
+    comparisons: list[dict[str, object]] = []
+    identical = True
+    for filename in filenames:
+        primary = primary_dir / filename
+        replay = replay_dir / filename
+        primary_hash = _sha256(primary)
+        replay_hash = _sha256(replay)
+        same = primary.read_bytes() == replay.read_bytes()
+        comparisons.append(
+            {
+                "path": filename,
+                "primary_sha256": primary_hash,
+                "replay_sha256": replay_hash,
+                "byte_identical": same,
+            }
+        )
+        identical = identical and same
+    return {"byte_identical": identical, "files": comparisons}
+
+
+def _execute_study_once(
+    study: str,
+    *,
+    repository_root: Path,
+    output_dir: Path,
+    command_label: str,
+) -> tuple[dict[str, object], tuple[str, ...]]:
+    if study == "simulation-based-calibration":
+        status = _run_command(
+            _simulation_command(output_dir),
+            cwd=repository_root,
+            output_dir=output_dir.parent / f"{command_label}-command",
+        )
+        return (
+            _validate_simulation(output_dir, exit_code=status),
+            ("result.json", "summary.json"),
+        )
+    if study == "synthetic-benchmark-sbc":
+        status = _run_command(
+            _synthetic_sbc_command(output_dir),
+            cwd=repository_root,
+            output_dir=output_dir.parent / f"{command_label}-command",
+        )
+        return (
+            _validate_synthetic_sbc(output_dir, exit_code=status),
+            ("result.json",),
+        )
+    if study == "recursive-corruption":
+        statuses = _run_recursive_commands(
+            cwd=repository_root,
+            output_dir=output_dir,
+        )
+        return (
+            _validate_recursive(
+                output_dir,
+                benchmark_exit_code=statuses[0],
+                selectivity_exit_code=statuses[1],
+            ),
+            ("result.json", "records.csv", "selectivity.json"),
+        )
+    raise ValueError(f"unknown controlled study {study!r}")
+
+
 def _run_study(
     study: str,
     *,
@@ -496,13 +567,10 @@ def _run_study(
             "validation": replay_validation,
             **_compare_files(primary_dir, replay_dir, filenames),
         }
-    replay_passed = (
-        replay is None
-        or (
-            replay.get("byte_identical") is True
-            and isinstance(replay.get("validation"), Mapping)
-            and replay["validation"].get("passed") is True
-        )
+    replay_passed = replay is None or (
+        replay.get("byte_identical") is True
+        and isinstance(replay.get("validation"), Mapping)
+        and replay["validation"].get("passed") is True
     )
     outcome: dict[str, object] = {
         "study": study,
