@@ -297,9 +297,7 @@ class CrossActionProtocolV1:
     @property
     def action_pairs(self) -> tuple[tuple[str, str], ...]:
         return tuple(
-            (source, target)
-            for source in self.action_ids
-            for target in self.action_ids
+            (source, target) for source in self.action_ids for target in self.action_ids
         )
 
     def descriptor(self) -> dict[str, object]:
@@ -334,9 +332,7 @@ class CrossActionProtocolV1:
             "minimum_off_diagonal_gain": self.minimum_off_diagonal_gain,
             "minimum_discrepancy_contrast": self.minimum_discrepancy_contrast,
             "minimum_comparator_contrast": self.minimum_comparator_contrast,
-            "maximum_harmful_session_fraction": (
-                self.maximum_harmful_session_fraction
-            ),
+            "maximum_harmful_session_fraction": (self.maximum_harmful_session_fraction),
             "harmful_gain_margin": self.harmful_gain_margin,
             "lower_is_better": self.lower_is_better,
             "method_frozen_before_target": self.method_frozen_before_target,
@@ -516,6 +512,7 @@ class TransportScoreRowV1:
     @property
     def score_row_id(self) -> str:
         return cast(str, content_id(self.descriptor()))
+
 
 __all__ = [
     "CROSS_ACTION_TRANSPORT_CLAIM_BOUNDARY",
