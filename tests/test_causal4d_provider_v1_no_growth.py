@@ -1,11 +1,5 @@
 """No-growth ratchets for the frozen Causal4D compatibility providers."""
 
-from __future__ import annotations
-
-import hashlib
-import importlib
-import json
-
 # Provider v1 is retained for frozen scientific and diagnostic consumers. New
 # capabilities belong in a role-specific versioned facade. Intentional changes
 # require a dedicated compatibility review that updates both count and digest.
@@ -20,6 +14,8 @@ _FROZEN_PROVIDER_V1_EXPORT_SHA256 = (
 
 
 def _export_digest(exports: list[str]) -> str:
+    hashlib = __import__("hashlib")
+    json = __import__("json")
     payload = json.dumps(
         sorted(exports),
         ensure_ascii=True,
@@ -28,8 +24,12 @@ def _export_digest(exports: list[str]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _provider_module(name: str) -> object:
+    return __import__(name, fromlist=("__all__",))
+
+
 def test_scientific_provider_v1_is_a_no_growth_surface() -> None:
-    scientific_v1 = importlib.import_module(
+    scientific_v1 = _provider_module(
         "bayesian_phystwin.causal4d_scientific_provider_v1"
     )
     exports = scientific_v1.__all__
@@ -39,7 +39,7 @@ def test_scientific_provider_v1_is_a_no_growth_surface() -> None:
 
 
 def test_aggregate_provider_v1_is_a_no_growth_surface() -> None:
-    provider_v1 = importlib.import_module("bayesian_phystwin.causal4d_provider_v1")
+    provider_v1 = _provider_module("bayesian_phystwin.causal4d_provider_v1")
     exports = provider_v1.__all__
 
     assert len(exports) == len(set(exports)) == _FROZEN_PROVIDER_V1_EXPORT_COUNT
