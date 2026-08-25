@@ -11,6 +11,8 @@ from .contracts import (
     CAMERA_RE,
     DATASET_REPOSITORY,
     DATASET_REVISION,
+    DATASET_TRANSPORT_REPAIR_ID,
+    DATASET_TRANSPORT_REVISION,
     MINIMUM_CAMERA_STREAMS,
     PARENT_PROTOCOL_ID,
     PLAN_SCHEMA,
@@ -327,7 +329,7 @@ def build_plan(
         entries = api.list_repo_tree(
             repo_id=DATASET_REPOSITORY,
             repo_type="dataset",
-            revision=DATASET_REVISION,
+            revision=DATASET_TRANSPORT_REVISION,
             path_in_repo=f"raw/{unit.object_id}",
             recursive=True,
             expand=True,
@@ -360,6 +362,8 @@ def build_plan(
         "visual_provider_source_sha256": file_sha256(provider_path),
         "dataset_repository": DATASET_REPOSITORY,
         "dataset_revision": DATASET_REVISION,
+        "dataset_transport_revision": DATASET_TRANSPORT_REVISION,
+        "dataset_transport_repair_id": DATASET_TRANSPORT_REPAIR_ID,
         "processing_repository": PROCESSING_REPOSITORY,
         "processing_revision": PROCESSING_REVISION,
         "tactile_baseline_policy": tactile_baseline_policy(),
@@ -408,6 +412,14 @@ def verify_plan(
     require(
         plan.get("dataset_revision") == DATASET_REVISION,
         "plan dataset changed",
+    )
+    require(
+        plan.get("dataset_transport_revision") == DATASET_TRANSPORT_REVISION,
+        "plan transport revision changed",
+    )
+    require(
+        plan.get("dataset_transport_repair_id") == DATASET_TRANSPORT_REPAIR_ID,
+        "plan transport repair changed",
     )
     require(
         plan.get("processing_revision") == PROCESSING_REVISION,

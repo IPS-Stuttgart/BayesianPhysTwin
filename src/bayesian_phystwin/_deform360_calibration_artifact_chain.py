@@ -15,6 +15,8 @@ from ._deform360_calibration_run_common import (
     DEFORM360_CALIBRATION_SOURCE_RESULT_SCHEMA,
     DEFORM360_DATASET_REPOSITORY,
     DEFORM360_DATASET_REVISION,
+    DEFORM360_DATASET_TRANSPORT_REPAIR_ID,
+    DEFORM360_DATASET_TRANSPORT_REVISION,
     DEFORM360_EXPECTED_TACTILE_BASELINE_POLICY,
     DEFORM360_PARENT_PROTOCOL_ID,
     DEFORM360_PROCESSING_REPOSITORY,
@@ -505,6 +507,10 @@ def plan_summary(
         if (
             value.get("dataset_repository") != DEFORM360_DATASET_REPOSITORY
             or value.get("dataset_revision") != DEFORM360_DATASET_REVISION
+            or value.get("dataset_transport_revision")
+            != DEFORM360_DATASET_TRANSPORT_REVISION
+            or value.get("dataset_transport_repair_id")
+            != DEFORM360_DATASET_TRANSPORT_REPAIR_ID
             or value.get("processing_repository") != DEFORM360_PROCESSING_REPOSITORY
             or value.get("processing_revision") != processing_revision
         ):
@@ -599,6 +605,13 @@ def download_summary(
             raise ValueError("download repository changed")
         if value.get("dataset_revision") != DEFORM360_DATASET_REVISION:
             raise ValueError("download dataset revision changed")
+        if (
+            value.get("dataset_transport_revision")
+            != DEFORM360_DATASET_TRANSPORT_REVISION
+            or value.get("dataset_transport_repair_id")
+            != DEFORM360_DATASET_TRANSPORT_REPAIR_ID
+        ):
+            raise ValueError("download dataset transport changed")
         if plan_sha256 is None or value.get("plan_sha256") != plan_sha256:
             raise ValueError("download plan binding changed")
         download_sha256 = sha256(
@@ -773,6 +786,13 @@ def result_summary(
             raise ValueError("result protocol changed")
         if value.get("dataset_revision") != DEFORM360_DATASET_REVISION:
             raise ValueError("result dataset revision changed")
+        if (
+            value.get("dataset_transport_revision")
+            != DEFORM360_DATASET_TRANSPORT_REVISION
+            or value.get("dataset_transport_repair_id")
+            != DEFORM360_DATASET_TRANSPORT_REPAIR_ID
+        ):
+            raise ValueError("result dataset transport changed")
         if value.get("processing_revision") != processing_revision:
             raise ValueError("result processing revision changed")
         if plan_sha256 is None or value.get("plan_sha256") != plan_sha256:

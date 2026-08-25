@@ -27,6 +27,10 @@ The execution binds:
   `protocols/locks/deform360_official_hub_visuotactile_v1_selection.json`;
 - official dataset revision:
   `f804696d7a133908c7497ffdab43819d879b5cbc`;
+- content-equivalent dataset transport revision:
+  `5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4`;
+- source-transport repair:
+  `protocols/amendments/deform360_official_hub_calibration_source_v1_transport_repair.json`;
 - official processing repository:
   `lhy0807/deform360`;
 - official processing revision:
@@ -40,12 +44,24 @@ The exact calibration units are the five sheet and five volumetric objects in
 Stage 0. The twelve confirmation object identifiers are used only as a denylist;
 their repository subtrees must not appear under the dedicated calibration root.
 
+The historical dataset revision remains immutable in Stage 0 and the source
+protocol. Upstream later squashed the public dataset repository, which removed
+that commit from the Hub without changing the selected calibration content. The
+transport repair binds the replacement commit separately. A names-only replay
+of all ten permitted calibration subtrees at the replacement commit reproduced
+the complete 908-file plan and the historical plan SHA-256
+`3a5d2390546ea55370f45a688036e4911f0ffefc99cfed0732d498bc5e2cc5f4`.
+The ten selected metadata files also retain their locked SHA-256 values. No
+confirmation subtree or payload was queried for this repair.
+
 ## Three information stages
 
 ### 1. Names-only plan
 
-The planner queries the exact official-Hub revision and lists only the ten locked
-calibration object subtrees. For each object it selects:
+The planner queries the exact content-equivalent transport revision and lists
+only the ten locked calibration object subtrees. It records both the unchanged
+historical revision and the explicit transport-repair identity. For each object
+it selects:
 
 - `metadata.json`;
 - every file in `calibration_refined/`;
@@ -76,7 +92,8 @@ replaced.
 ### 2. Exact calibration download
 
 Only the content-addressed paths in the plan are downloaded, always at the exact
-dataset revision. Each local file is required to:
+transport revision bound by the repair. The manifest retains the historical
+dataset revision separately. Each local file is required to:
 
 - resolve to its planned path beneath the dedicated calibration root;
 - be a regular non-symlink file;

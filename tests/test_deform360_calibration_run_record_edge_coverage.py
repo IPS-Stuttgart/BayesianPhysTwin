@@ -98,6 +98,32 @@ def test_download_rejects_lfs_identity_mismatch(tmp_path: Path) -> None:
     assert record["failure_stage"] == "download-contract"
 
 
+@pytest.mark.parametrize(
+    ("path_attribute", "digest_key", "valid_key", "failure_stage"),
+    (
+        ("download_path", "download_sha256", "download_valid", "download-contract"),
+        ("result_path", "result_sha256", "result_valid", "result-contract"),
+    ),
+)
+def test_artifact_chain_rejects_changed_transport_revision(
+    tmp_path: Path,
+    path_attribute: str,
+    digest_key: str,
+    valid_key: str,
+    failure_stage: str,
+) -> None:
+    chain = _build_chain(tmp_path)
+    path = getattr(chain, path_attribute)
+    artifact = json.loads(path.read_text(encoding="utf-8"))
+    artifact["dataset_transport_revision"] = "f" * 40
+    _rewrite(path, artifact, digest_key=digest_key)
+
+    record = _record(chain, workload_exit_code=1)
+
+    assert record[valid_key] is False
+    assert record["failure_stage"] == failure_stage
+
+
 def test_result_accepts_frozen_unsupported_rows_and_rejects_reclassification(
     tmp_path: Path,
 ) -> None:
