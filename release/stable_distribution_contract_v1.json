@@ -4,12 +4,13 @@
   "compatibility_line": "0.4",
   "wheel": {
     "maximum_size_bytes": 2550000,
-    "maximum_member_count": 609,
+    "maximum_member_count": 612,
     "required_members": [
       "bayesian_phystwin/__init__.py",
       "bayesian_phystwin/py.typed",
       "bayesian_phystwin/v1/__init__.py",
-      "bayesian_phystwin/inference/v1/__init__.py"
+      "bayesian_phystwin/inference/v1/__init__.py",
+      "bayesian_phystwin/inference/v2/__init__.py"
     ],
     "forbidden_member_prefixes": [
       ".github/",
@@ -84,12 +85,31 @@
           "bayesian_phystwin_experiments",
           "bayesian_phystwin.phystwin_"
         ]
+      },
+      {
+        "module": "bayesian_phystwin.inference.v2",
+        "api_manifest": "api/inference-session-public-api-v2.json",
+        "forbidden_external_modules": [
+          "cv2",
+          "h5py",
+          "numpyro",
+          "pymc",
+          "scipy",
+          "torch",
+          "warp"
+        ],
+        "forbidden_package_prefixes": [
+          "bayesian_phystwin.deform360_",
+          "bayesian_phystwin.experiments",
+          "bayesian_phystwin_experiments",
+          "bayesian_phystwin.phystwin_"
+        ]
       }
     ]
   },
   "sdist": {
-    "maximum_size_bytes": 3240000,
-    "maximum_regular_member_count": 1360,
+    "maximum_size_bytes": 3275000,
+    "maximum_regular_member_count": 1370,
     "required_members": [
       "release/stable_distribution_contract_v1.json",
       "docs/stable_distribution_contract_v1.md",
@@ -97,11 +117,15 @@
       "tools/release/build_release_evidence.py",
       "api/root-public-api-v0.4.json",
       "api/versioned-public-api-v1.json",
-      "api/inference-public-api-v1.json"
+      "api/inference-public-api-v1.json",
+      "api/inference-session-public-api-v2.json",
+      "docs/inference_v2.md"
     ],
     "supported_self_test_files": [
       "tests/test_versioned_api_v1.py",
       "tests/test_inference_v1.py",
+      "tests/test_inference_v2.py",
+      "tests/test_inference_v2_public_api.py",
       "tests/test_public_api_manifest.py",
       "tests/test_spd_system.py",
       "tests/test_spd_system_adversarial.py",

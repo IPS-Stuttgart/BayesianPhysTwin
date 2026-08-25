@@ -28,8 +28,8 @@ The wheel gate verifies all of the following without extracting the archive:
   `protocols/`, `docs/`, and the sibling source-only
   `bayesian_phystwin_experiments` namespace;
 - exactly one declared console script, `bpt`;
-- exact `__all__` parity with the root, portable-artifact, and guarded-inference
-  API manifests; and
+- exact `__all__` parity with the root, portable-artifact, strict guarded-
+  inference, and provider-neutral inference-session API manifests; and
 - isolated imports directly from the candidate wheel with no graph, vision,
   data, experiment, or heavy numerical dependency leakage.
 
@@ -123,6 +123,16 @@ supports controlled mechanism and local-closure infrastructure only; it does not
 establish real-provider competence, physical transfer, covariance calibration,
 intervention benefit, deployment safety, or state of the art.
 
+The provider-neutral inference session adds two NumPy-only installed modules:
+the orchestration implementation and its versioned v2 namespace. The wheel
+member ratchet is therefore raised narrowly from 609 to 612 while the existing
+2,550,000-byte limit is retained. The source distribution additionally includes
+its exact API snapshot, bounded guide, and two focused self-test files; the
+regular-member and compressed-size ratchets are raised to 1,370 and 3,275,000
+bytes. This allowance creates no new estimator or scientific result. It only
+makes the existing candidate/guard/exact-fallback separation accessible without
+requiring a Prob4D-specific public signature.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
@@ -139,6 +149,8 @@ from an unpacked sdist with:
 python -m pytest -q \
   tests/test_versioned_api_v1.py \
   tests/test_inference_v1.py \
+  tests/test_inference_v2.py \
+  tests/test_inference_v2_public_api.py \
   tests/test_public_api_manifest.py \
   tests/test_spd_system.py \
   tests/test_spd_system_adversarial.py \

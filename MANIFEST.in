@@ -7,10 +7,12 @@ include api/root-public-api-v0.4.json
 include api/root-export-migration-v1.json
 include api/versioned-public-api-v1.json
 include api/inference-public-api-v1.json
+include api/inference-session-public-api-v2.json
 include api/public-module-lifecycle-v1.json
 include docs/public_api_policy.md
 include docs/public_module_lifecycle_v1.md
 include docs/inference_v1.md
+include docs/inference_v2.md
 include docs/component_admission_v1.md
 include docs/releasing.md
 include docs/release_claim_sync_v1.md
@@ -23,6 +25,8 @@ include docs/stable_distribution_contract_v1.md
 include docs/backend_support_matrix_v1.md
 include tools/release/check_stable_distribution.py
 include tests/test_stable_distribution_contract.py
+include tests/test_inference_v2.py
+include tests/test_inference_v2_public_api.py
 exclude tests/test_deform_dlo*.py
 include tools/release/check_release_claim_sync.py
 include docs/ecosystem_compatibility_v1.md
