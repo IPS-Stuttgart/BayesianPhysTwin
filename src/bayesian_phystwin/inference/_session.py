@@ -6,22 +6,37 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Any, Generic, Protocol, TypeVar, cast, runtime_checkable
 
-from .._canonical_contracts import frozen_finite_json_mapping, genuine_boolean, plain_json
+from .._canonical_contracts import (
+    frozen_finite_json_mapping,
+    genuine_boolean,
+    plain_json,
+)
 from .._validation import lowercase_sha256
-from ..complete_belief_selection import ArtifactBelief, CompleteBeliefGuardDecisionV1
-from ._guarded import GuardedCandidateInference, GuardedUpdateResultV1, finalize_guarded_update
+from ..complete_belief_selection import (
+    ArtifactBelief,
+    CompleteBeliefGuardDecisionV1,
+)
+from ._guarded import (
+    GuardedCandidateInference,
+    GuardedUpdateResultV1,
+    finalize_guarded_update,
+)
 
 ObservationT = TypeVar("ObservationT")
 ObservationT_contra = TypeVar("ObservationT_contra", contravariant=True)
 BeliefT = TypeVar("BeliefT", bound=ArtifactBelief)
-BeliefT_contra = TypeVar("BeliefT_contra", bound=ArtifactBelief, contravariant=True)
+BeliefT_contra = TypeVar(
+    "BeliefT_contra",
+    bound=ArtifactBelief,
+    contravariant=True,
+)
 
 
 def _artifact_id(value: object, *, name: str) -> str:
     try:
-        artifact_id = value.artifact_id  # type: ignore[attr-defined]
+        artifact_id = cast(ArtifactBelief, value).artifact_id
     except AttributeError as error:
         raise TypeError(f"{name} must expose artifact_id") from error
     return lowercase_sha256(artifact_id, name=f"{name}.artifact_id")
@@ -48,8 +63,13 @@ class CandidateProposalV1(Generic[BeliefT]):
 
     def __post_init__(self) -> None:
         if not isinstance(self.inference, GuardedCandidateInference):
-            raise TypeError("inference must expose candidate_id and inference_admissible")
-        lowercase_sha256(self.inference.candidate_id, name="inference.candidate_id")
+            raise TypeError(
+                "inference must expose candidate_id and inference_admissible"
+            )
+        lowercase_sha256(
+            self.inference.candidate_id,
+            name="inference.candidate_id",
+        )
         genuine_boolean(
             self.inference.inference_admissible,
             name="inference.inference_admissible",
@@ -169,7 +189,9 @@ class InferenceSession(Generic[ObservationT, BeliefT]):
             context=validated_context,
         )
         if not isinstance(decision, CompleteBeliefGuardDecisionV1):
-            raise TypeError("guard_policy must return CompleteBeliefGuardDecisionV1")
+            raise TypeError(
+                "guard_policy must return CompleteBeliefGuardDecisionV1"
+            )
 
         return finalize_guarded_update(
             proposal.inference,
