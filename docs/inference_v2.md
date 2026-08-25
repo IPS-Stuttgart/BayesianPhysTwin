@@ -94,6 +94,12 @@ object, and immutable JSON context. It returns exactly one
 `CandidateProposalV1`. The observation type is provider-owned; the session does
 not require `ObservationBeliefV1` or any other provider-specific class.
 
+Numerical arrays, linearizations, solver objects, and callables belong in that
+provider-owned observation object or in the candidate-factory implementation.
+They do not belong in `context`, which is deliberately restricted to finite JSON
+so that the application metadata can be frozen and recorded without guessing
+serialization semantics.
+
 ### `SessionGuardPolicy`
 
 The guard receives the inference record, baseline belief, candidate belief, and
@@ -123,7 +129,9 @@ coefficients, copy the baseline, or select only part of a belief.
 
 ## Prob4D adapter pattern
 
-The strict Prob4D path remains deliberately explicit:
+The strict Prob4D path remains deliberately explicit. A provider adapter can
+use its own typed observation envelope for numerical inputs while keeping the
+session context identity-only:
 
 ```python
 from bayesian_phystwin.inference.v1 import infer_prob4d_candidate
@@ -132,25 +140,28 @@ from bayesian_phystwin.inference.v2 import CandidateProposalV1
 
 def build_prob4d_candidate(prior, observation, *, context):
     inference = infer_prob4d_candidate(
-        observation,
-        context["linearization"],
-        physical_prediction_xyz_m=context["physical_prediction_xyz_m"],
-        config=context["solver_config"],
+        observation.belief,
+        observation.linearization,
+        physical_prediction_xyz_m=observation.physical_prediction_xyz_m,
+        config=frozen_solver_config,
     )
-    candidate_belief = context["complete_belief_builder"](
-        prior,
-        inference,
-    )
+    candidate_belief = complete_belief_builder(prior, inference)
     return CandidateProposalV1(
         inference=inference,
         candidate_belief=candidate_belief,
-        metadata={"provider": "prob4d"},
+        metadata={
+            "provider": "prob4d",
+            "observation_artifact_id": observation.belief.artifact_id,
+            "case_id": context["case_id"],
+        },
     )
 ```
 
-Claim-bearing experiments should normally pass content identities in context
-rather than large numerical arrays. The abbreviated example above illustrates
-the adapter shape only; it is not a registered scientific protocol.
+Here `observation` is a provider-owned envelope; it may contain arrays and typed
+solver inputs whose identities are already bound by the strict Prob4D artifacts.
+`context` remains finite JSON and should normally contain only identities and
+other bounded application metadata. The abbreviated example illustrates the
+adapter shape only; it is not a registered scientific protocol.
 
 ## Failure behavior
 
