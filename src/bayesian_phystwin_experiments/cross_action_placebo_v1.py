@@ -21,6 +21,7 @@ import numpy as np
 
 CROSS_ACTION_PLACEBO_SCHEMA: Final = "bayesian_phystwin.cross_action_placebo"
 CROSS_ACTION_PLACEBO_VERSION: Final = 1
+CROSS_ACTION_PLACEBO_SCORE_ORIENTATION: Final = "lower_is_better"
 CROSS_ACTION_PLACEBO_CLAIM_BOUNDARY: Final = (
     "A positive result establishes bounded separation from the exact registered "
     "wrong-action, wrong-object, phase-shifted, and/or identity-permuted controls "
@@ -247,6 +248,7 @@ class CrossActionPlaceboProtocolV1:
     bootstrap_seed: int
     confidence_level: float
     minimum_placebo_contrast: float
+    score_orientation: str = CROSS_ACTION_PLACEBO_SCORE_ORIENTATION
     method_frozen_before_target: bool = True
     roster_frozen_before_target: bool = True
     predictions_sealed_before_target: bool = True
@@ -326,6 +328,10 @@ class CrossActionPlaceboProtocolV1:
                 minimum=0.0,
             ),
         )
+        orientation = _label(self.score_orientation, name="score_orientation")
+        if orientation != CROSS_ACTION_PLACEBO_SCORE_ORIENTATION:
+            raise ValueError("score_orientation must be 'lower_is_better'")
+        object.__setattr__(self, "score_orientation", orientation)
         for name in (
             "method_frozen_before_target",
             "roster_frozen_before_target",
@@ -383,6 +389,7 @@ class CrossActionPlaceboProtocolV1:
             "bootstrap_seed": self.bootstrap_seed,
             "confidence_level": self.confidence_level,
             "minimum_placebo_contrast": self.minimum_placebo_contrast,
+            "score_orientation": self.score_orientation,
             "method_frozen_before_target": self.method_frozen_before_target,
             "roster_frozen_before_target": self.roster_frozen_before_target,
             "predictions_sealed_before_target": self.predictions_sealed_before_target,
@@ -647,19 +654,23 @@ class CrossActionPlaceboResultV1:
                 selected, fallback = next(iter(dispositions))
                 if selected:
                     selected_count += 1
-                if (
-                    fallback
-                    and len(
-                        {
-                            prediction.prediction_artifact_id
-                            for prediction in predictions
-                        }
-                    )
-                    != 1
-                ):
-                    raise ValueError(
-                        "exact fallback must select one identical prediction artifact"
-                    )
+                if fallback:
+                    if (
+                        len(
+                            {
+                                prediction.prediction_artifact_id
+                                for prediction in predictions
+                            }
+                        )
+                        != 1
+                    ):
+                        raise ValueError(
+                            "exact fallback must select one identical prediction artifact"
+                        )
+                    if len({row.proper_score for row in pair_rows}) != 1:
+                        raise ValueError(
+                            "exact fallback must produce one identical proper score"
+                        )
             for arm_index, arm in enumerate(protocol.arm_labels):
                 arm_rows = [
                     by_key[(session, source, target, arm)]
@@ -757,6 +768,7 @@ class CrossActionPlaceboResultV1:
 __all__ = [
     "CROSS_ACTION_PLACEBO_CLAIM_BOUNDARY",
     "CROSS_ACTION_PLACEBO_SCHEMA",
+    "CROSS_ACTION_PLACEBO_SCORE_ORIENTATION",
     "CROSS_ACTION_PLACEBO_VERSION",
     "CrossActionPlaceboProtocolV1",
     "CrossActionPlaceboResultV1",
