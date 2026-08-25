@@ -9,6 +9,8 @@ import pytest
 
 from scripts.science.deform360_calibration_source.contracts import (
     DATASET_REVISION,
+    DATASET_TRANSPORT_REPAIR_ID,
+    DATASET_TRANSPORT_REVISION,
     PROCESSING_REVISION,
     PROTOCOL_ID,
     CalibrationUnit,
@@ -36,6 +38,10 @@ SELECTION = Path(
 PROVIDER = Path(
     "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/"
     "visual-provider-lock.json"
+)
+TRANSPORT_REPAIR = Path(
+    "protocols/amendments/"
+    "deform360_official_hub_calibration_source_v1_transport_repair.json"
 )
 
 
@@ -132,11 +138,24 @@ def _all_entries() -> dict[str, list[SimpleNamespace]]:
 
 def test_protocol_digest_and_locked_boundaries() -> None:
     protocol = load_protocol(PROTOCOL)
+    repair = json.loads(TRANSPORT_REPAIR.read_text(encoding="utf-8"))
 
     assert protocol["protocol_id"] == PROTOCOL_ID
     assert protocol["dataset"]["revision"] == DATASET_REVISION
     assert protocol["processing"]["revision"] == PROCESSING_REVISION
     assert protocol["information_boundary"]["confirmation_payloads_opened"] is False
+    assert repair["schema"] == (
+        "bayesian-phystwin.deform360-calibration-source-transport-repair"
+    )
+    assert repair["schema_version"] == 1
+    assert repair["repair_id"] == DATASET_TRANSPORT_REPAIR_ID
+    assert repair["repair_id"] == canonical_sha256(repair, digest_key="repair_id")
+    assert repair["frozen_source_contract"]["historical_revision"] == DATASET_REVISION
+    assert repair["successor_transport"]["revision"] == DATASET_TRANSPORT_REVISION
+    assert repair["successor_transport"]["complete_selected_plan_match"] is True
+    assert repair["successor_transport"]["selected_file_count"] == 908
+    assert repair["repair_scope"]["historical_revision_lock_changed"] is False
+    assert repair["information_boundary"]["confirmation_paths_queried"] is False
 
 
 def test_selected_episode_file_plan_uses_exact_sorted_recording() -> None:
@@ -305,7 +324,10 @@ def test_names_only_plan_excludes_every_confirmation_object(tmp_path: Path) -> N
         for path in paths
         for object_id in confirmations
     )
-    assert all(call["revision"] == DATASET_REVISION for call in api.calls)
+    assert plan["dataset_revision"] == DATASET_REVISION
+    assert plan["dataset_transport_revision"] == DATASET_TRANSPORT_REVISION
+    assert plan["dataset_transport_repair_id"] == DATASET_TRANSPORT_REPAIR_ID
+    assert all(call["revision"] == DATASET_TRANSPORT_REVISION for call in api.calls)
     assert json.loads(output.read_text(encoding="utf-8")) == plan
 
 
@@ -382,6 +404,28 @@ def test_plan_tactile_policy_tampering_fails_closed(tmp_path: Path) -> None:
         )
 
 
+def test_plan_transport_binding_tampering_fails_closed(tmp_path: Path) -> None:
+    output = tmp_path / "plan.json"
+    plan = build_plan(
+        protocol_path=PROTOCOL,
+        selection_path=SELECTION,
+        provider_path=PROVIDER,
+        output_path=output,
+        api=_Api(_all_entries()),
+    )
+    plan["dataset_transport_revision"] = "0" * 40
+    plan["plan_sha256"] = canonical_sha256(plan, digest_key="plan_sha256")
+    output.write_text(json.dumps(plan), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="plan transport revision changed"):
+        verify_plan(
+            output,
+            protocol_path=PROTOCOL,
+            selection_path=SELECTION,
+            provider_path=PROVIDER,
+        )
+
+
 def test_download_one_binds_lfs_sha256(tmp_path: Path) -> None:
     relative = "raw/201-example/metadata.json"
     payload = b"locked-calibration-bytes"
@@ -393,7 +437,7 @@ def test_download_one_binds_lfs_sha256(tmp_path: Path) -> None:
     }
 
     def download(**kwargs: object) -> str:
-        assert kwargs["revision"] == DATASET_REVISION
+        assert kwargs["revision"] == DATASET_TRANSPORT_REVISION
         path = tmp_path / str(kwargs["filename"])
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(payload)

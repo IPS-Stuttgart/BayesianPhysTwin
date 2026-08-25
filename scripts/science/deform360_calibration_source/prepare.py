@@ -279,6 +279,8 @@ def prepare_sources(
         "plan_sha256": plan["plan_sha256"],
         "download_sha256": download["download_sha256"],
         "dataset_revision": download["dataset_revision"],
+        "dataset_transport_revision": download["dataset_transport_revision"],
+        "dataset_transport_repair_id": download["dataset_transport_repair_id"],
         "processing_revision": PROCESSING_REVISION,
         "objects": rows,
         "gate": gate,

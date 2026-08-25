@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (
+    SOURCE_ROSTER,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
@@ -298,6 +303,15 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
         "git push",
     ):
         assert forbidden not in workflow_text
+
+    roster_start = workflow_text.index("          source_units = (")
+    roster_end = workflow_text.index("          )", roster_start)
+    workflow_source_roster = tuple(
+        re.findall(r'"([^"]+)"', workflow_text[roster_start:roster_end])
+    )
+    assert workflow_source_roster == tuple(
+        object_id for object_id, _episode, _stratum in SOURCE_ROSTER
+    )
 
     assert "twelve separately selected confirmation object-sessions" in document
     assert "A negative or inconclusive result is complete" in document

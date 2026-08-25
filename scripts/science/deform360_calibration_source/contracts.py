@@ -24,7 +24,14 @@ RESULT_SCHEMA = "bayesian-phystwin/deform360-calibration-source-result-v1"
 PROTOCOL_ID = "deform360-official-hub-calibration-source-v1"
 PARENT_PROTOCOL_ID = "deform360-official-hub-visuotactile-v1"
 DATASET_REPOSITORY = "brownu/deform360"
+# The Stage-0 and source-protocol locks retain the historical revision below.
+# Upstream later squashed repository history, so exact byte transport uses the
+# content-equivalent successor bound by the reviewed transport-repair artifact.
 DATASET_REVISION = "f804696d7a133908c7497ffdab43819d879b5cbc"
+DATASET_TRANSPORT_REVISION = "5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4"
+DATASET_TRANSPORT_REPAIR_ID = (
+    "a7582878b8cd7e2604b983a74a20b353bf7f6c3e40bf95bc367964438bcddb6a"
+)
 PROCESSING_REPOSITORY = "lhy0807/deform360"
 PROCESSING_REVISION = "d8522a4403b766aeb387510c04e89032a56fdf35"
 VISUAL_PROVIDER_LOCK_ID = (

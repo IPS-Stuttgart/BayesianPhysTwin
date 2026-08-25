@@ -13,6 +13,8 @@ from typing import Any, Final, cast
 from .contracts import (
     DATASET_REPOSITORY,
     DATASET_REVISION,
+    DATASET_TRANSPORT_REPAIR_ID,
+    DATASET_TRANSPORT_REVISION,
     DOWNLOAD_SCHEMA,
     PROTOCOL_ID,
     canonical_sha256,
@@ -178,7 +180,7 @@ def _download_once(
         hub_download(
             repo_id=DATASET_REPOSITORY,
             repo_type="dataset",
-            revision=DATASET_REVISION,
+            revision=DATASET_TRANSPORT_REVISION,
             filename=relative,
             local_dir=str(root),
         )
@@ -340,6 +342,8 @@ def download_plan(
         "plan_sha256": plan["plan_sha256"],
         "dataset_repository": DATASET_REPOSITORY,
         "dataset_revision": DATASET_REVISION,
+        "dataset_transport_revision": DATASET_TRANSPORT_REVISION,
+        "dataset_transport_repair_id": DATASET_TRANSPORT_REPAIR_ID,
         "data_root": str(root),
         "files": list(sorted(downloaded, key=lambda item: item["path"])),
         "object_ids": sorted(planned_objects),
@@ -382,6 +386,14 @@ def verify_download(
     require(
         value.get("dataset_revision") == DATASET_REVISION,
         "download revision changed",
+    )
+    require(
+        value.get("dataset_transport_revision") == DATASET_TRANSPORT_REVISION,
+        "download transport revision changed",
+    )
+    require(
+        value.get("dataset_transport_repair_id") == DATASET_TRANSPORT_REPAIR_ID,
+        "download transport repair changed",
     )
     require(
         Path(str(value.get("data_root"))).resolve() == data_root.resolve(),

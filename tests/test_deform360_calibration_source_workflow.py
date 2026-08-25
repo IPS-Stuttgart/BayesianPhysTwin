@@ -35,6 +35,16 @@ def test_processing_checkout_exclusion_is_one_shell_line() -> None:
     assert "printf '/_deform360_processing/\n' >>" not in text
 
 
+def test_transport_repair_is_a_source_workflow_trigger() -> None:
+    text = _workflow_text()
+    repair = (
+        '"protocols/amendments/'
+        'deform360_official_hub_calibration_source_v1_transport_repair.json"'
+    )
+
+    assert text.count(repair) == 2
+
+
 def test_trusted_contracts_use_isolated_self_hosted_execution() -> None:
     text = _workflow_text()
     contracts = text.index("  contracts:")

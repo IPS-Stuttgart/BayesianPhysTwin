@@ -1,0 +1,49 @@
+{
+  "claim_boundary": "Source-transport continuity for the already-frozen ten-object Deform360 calibration cohort. This repair changes no selected object, episode, file, provider, processing code, scientific method, support threshold, confirmation boundary, or claim, and it authorizes no confirmation access.",
+  "failed_execution_evidence": {
+    "calibration_payloads_opened": false,
+    "confirmation_payloads_opened": false,
+    "failure": "historical-dataset-revision-not-found-after-upstream-history-squash",
+    "failure_stage": "names-only-calibration-file-plan",
+    "workflow_run_id": 32776765871
+  },
+  "frozen_source_contract": {
+    "dataset_repository": "brownu/deform360",
+    "historical_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+    "prior_plan_sha256": "3a5d2390546ea55370f45a688036e4911f0ffefc99cfed0732d498bc5e2cc5f4",
+    "prior_selected_file_count": 908,
+    "prior_successful_artifact_id": 9094745863,
+    "prior_successful_workflow_run_id": 31474206348,
+    "protocol_path": "protocols/deform360_official_hub_calibration_source_v1.json",
+    "protocol_sha256": "a42c087caa268e0072fa96f461de37144014a23e1087d3321de0d40216565562",
+    "selection_lock_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+  },
+  "information_boundary": {
+    "calibration_object_subtrees_listed": 10,
+    "calibration_payloads_opened_for_repair": false,
+    "confirmation_paths_queried": false,
+    "confirmation_payloads_opened": false,
+    "replacement_allowed": false,
+    "target_outcomes_used": false
+  },
+  "repair_id": "a7582878b8cd7e2604b983a74a20b353bf7f6c3e40bf95bc367964438bcddb6a",
+  "repair_scope": {
+    "cohort_changed": false,
+    "file_plan_changed": false,
+    "historical_revision_lock_changed": false,
+    "processing_revision_changed": false,
+    "protocol_changed": false,
+    "selection_lock_changed": false,
+    "transport_revision_changed": true
+  },
+  "schema": "bayesian-phystwin.deform360-calibration-source-transport-repair",
+  "schema_version": 1,
+  "successor_transport": {
+    "calibration_metadata_files_hash_matched": 10,
+    "complete_selected_plan_match": true,
+    "reconstructed_historical_plan_sha256": "3a5d2390546ea55370f45a688036e4911f0ffefc99cfed0732d498bc5e2cc5f4",
+    "revision": "5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4",
+    "selected_file_count": 908,
+    "transport_only": true
+  }
+}

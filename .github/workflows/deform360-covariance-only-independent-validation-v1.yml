@@ -13,7 +13,9 @@ on:
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
       - "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+      - "src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
+      - "tests/test_deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
   push:
@@ -26,7 +28,9 @@ on:
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
       - "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+      - "src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
+      - "tests/test_deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
   issue_comment:
@@ -202,15 +206,15 @@ jobs:
           forbidden = Path(os.environ["RESOLVED_FORBIDDEN_ROOT"])
           source_units = (
               "167-glove-gray-cloth",
-              "29-hammer-white-cloth",
-              "2-box-white-paper",
-              "69-hammer-red-plastic",
-              "76-toy-yellow-rubber",
-              "136-drill-red-toy",
-              "146-rabbit-pink-toy",
-              "160-cookies-black-bag",
-              "161-dog-blue-toy",
-              "162-dog-gray-toy",
+              "198-kneepad-cloth",
+              "026-sock-cloth",
+              "031-cotton-cloth",
+              "036-napkin-cloth",
+              "153-cake",
+              "152-slime",
+              "186-monster",
+              "058-roll-napkin",
+              "193-frog",
           )
           interesting_tokens = (
               "belief",
