@@ -1,4 +1,4 @@
-"""Keep frozen scientific runtimes outside routine dependency-bump PRs."""
+"""Keep policy-bearing dependencies outside routine dependency-bump PRs."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ FROZEN_SCIENTIFIC_RUNTIMES = {
     "newton": "1.5.0",
     "pyrecest": "2.4.1",
 }
+MANUAL_DEPENDABOT_PIP_DEPENDENCIES = {"numpy", "pip"}
 
 
 def _pip_update() -> dict[str, Any]:
@@ -42,15 +43,15 @@ def _exact_project_pins() -> dict[str, str]:
     }
 
 
-def test_every_exact_scientific_runtime_is_explicitly_frozen() -> None:
+def test_policy_bearing_dependencies_are_excluded_from_dependabot() -> None:
     assert _exact_project_pins() == FROZEN_SCIENTIFIC_RUNTIMES
 
     ignored = _pip_update().get("ignore")
     assert isinstance(ignored, list)
     assert all(set(entry) == {"dependency-name"} for entry in ignored)
-    assert {entry["dependency-name"].lower() for entry in ignored} == set(
-        FROZEN_SCIENTIFIC_RUNTIMES
-    )
+    ignored_names = {entry["dependency-name"].lower() for entry in ignored}
+    expected = set(FROZEN_SCIENTIFIC_RUNTIMES) | MANUAL_DEPENDABOT_PIP_DEPENDENCIES
+    assert ignored_names == expected
 
 
 def test_evidence_first_admission_is_part_of_every_pull_request() -> None:
