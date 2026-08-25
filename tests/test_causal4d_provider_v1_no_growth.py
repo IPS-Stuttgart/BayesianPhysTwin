@@ -6,7 +6,6 @@ import hashlib
 import importlib
 import json
 
-
 # Provider v1 is retained for frozen scientific and diagnostic consumers. New
 # capabilities belong in a role-specific versioned facade. Intentional changes
 # require a dedicated compatibility review that updates both count and digest.
