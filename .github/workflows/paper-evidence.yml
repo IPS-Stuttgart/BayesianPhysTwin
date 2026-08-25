@@ -1,276 +1,60 @@
-# workflow-lifecycle: permanent
+# workflow-lifecycle: temporary-content-addressed-evidence-launcher
 # workflow-owner: IPS-Stuttgart maintainers
-name: Paper evidence contracts
+name: Recursive-corruption v2 exact merged evidence
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - .github/workflows/claim-bundle.yml
-      - .github/workflows/paper-evidence.yml
-      - pyproject.toml
-      - protocols/locks/simulation_based_calibration_v1.json
-      - scripts/science/analyze_recursive_corruption_selectivity_v1.py
-      - scripts/science/run_controlled_evidence_workflow_v1.py
-      - scripts/science/run_simulation_based_calibration_v1.py
-      - scripts/science/run_synthetic_benchmark_sbc_v1.py
-      - src/bayesian_phystwin/claim_bundle_v1.py
-      - src/bayesian_phystwin/cli/claim_bundle.py
-      - src/bayesian_phystwin/cli/command_registry.py
-      - src/bayesian_phystwin/cli/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin/cli/run_manifest.py
-      - src/bayesian_phystwin/paper_evidence_v1.py
-      - src/bayesian_phystwin/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py
-      - src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py
-      - tests/test_claim_bundle_v1.py
-      - tests/test_cli_main.py
-      - tests/test_controlled_scientific_evidence_workflow.py
-      - tests/test_paper_evidence_cli.py
-      - tests/test_paper_evidence_hardening.py
-      - tests/test_paper_evidence_v1.py
-      - tests/test_recursive_corruption_benchmark.py
-      - tests/test_simulation_based_calibration_v1.py
-      - tests/test_synthetic_benchmark_sbc_v1.py
-      - docs/claim_bundle_v1.md
-      - docs/controlled_scientific_evidence_workflow.md
-      - docs/paper_evidence_profile.md
-      - docs/recursive_corruption_benchmark.md
-      - docs/simulation_based_calibration_v1.md
-      - docs/synthetic_benchmark_sbc_v1.md
   push:
-    branches: [main]
-    paths:
-      - .github/workflows/claim-bundle.yml
-      - .github/workflows/paper-evidence.yml
-      - pyproject.toml
-      - protocols/locks/simulation_based_calibration_v1.json
-      - scripts/science/analyze_recursive_corruption_selectivity_v1.py
-      - scripts/science/run_controlled_evidence_workflow_v1.py
-      - scripts/science/run_simulation_based_calibration_v1.py
-      - scripts/science/run_synthetic_benchmark_sbc_v1.py
-      - src/bayesian_phystwin/claim_bundle_v1.py
-      - src/bayesian_phystwin/cli/claim_bundle.py
-      - src/bayesian_phystwin/cli/command_registry.py
-      - src/bayesian_phystwin/cli/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin/cli/run_manifest.py
-      - src/bayesian_phystwin/paper_evidence_v1.py
-      - src/bayesian_phystwin/recursive_corruption_benchmark.py
-      - src/bayesian_phystwin_experiments/simulation_based_calibration_v1.py
-      - src/bayesian_phystwin_experiments/synthetic_benchmark_sbc_v1.py
-      - tests/test_claim_bundle_v1.py
-      - tests/test_cli_main.py
-      - tests/test_controlled_scientific_evidence_workflow.py
-      - tests/test_paper_evidence_cli.py
-      - tests/test_paper_evidence_hardening.py
-      - tests/test_paper_evidence_v1.py
-      - tests/test_recursive_corruption_benchmark.py
-      - tests/test_simulation_based_calibration_v1.py
-      - tests/test_synthetic_benchmark_sbc_v1.py
-      - docs/claim_bundle_v1.md
-      - docs/controlled_scientific_evidence_workflow.md
-      - docs/paper_evidence_profile.md
-      - docs/recursive_corruption_benchmark.md
-      - docs/simulation_based_calibration_v1.md
-      - docs/synthetic_benchmark_sbc_v1.md
-  workflow_dispatch:
-    inputs:
-      evidence_study:
-        description: Controlled target-free study to execute from reviewed main
-        required: true
-        default: contracts-only
-        type: choice
-        options:
-          - contracts-only
-          - simulation-based-calibration
-          - synthetic-benchmark-sbc
-          - recursive-corruption
-          - all-controlled
-      verify_replay:
-        description: Require byte-identical same-environment replay
-        required: true
-        default: false
-        type: boolean
+    branches:
+      - evidence/recursive-corruption-v2-exact-main-20260825
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
-  group: paper-evidence-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.evidence_study || 'contracts-only' }}
-  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+  group: recursive-corruption-v2-exact-main-20260825
+  cancel-in-progress: false
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
   PYTHONDONTWRITEBYTECODE: "1"
+  SOURCE_COMMIT: b201c4c64622279623a32376dc296616469675d4
+  EVIDENCE_ROOT: outputs/recursive-corruption-v2-exact-main
+  LEDGER_ISSUE: "771"
 
 jobs:
-  validate:
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Check out exact reviewed revision
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-          clean: true
-
-      - name: Provision Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install development tools
-        run: |
-          set -euo pipefail
-          python -m pip install -e ".[dev]"
-          python -m pip check
-
-      - name: Check stable evidence interfaces
-        shell: bash
-        run: |
-          set -euo pipefail
-          files=(
-            src/bayesian_phystwin/claim_bundle_v1.py
-            src/bayesian_phystwin/paper_evidence_v1.py
-            src/bayesian_phystwin/cli/claim_bundle.py
-            src/bayesian_phystwin/cli/command_registry.py
-            src/bayesian_phystwin/cli/run_manifest.py
-            scripts/science/run_controlled_evidence_workflow_v1.py
-            tests/test_claim_bundle_v1.py
-            tests/test_cli_main.py
-            tests/test_paper_evidence_v1.py
-            tests/test_paper_evidence_cli.py
-            tests/test_paper_evidence_hardening.py
-            tests/test_controlled_scientific_evidence_workflow.py
-          )
-          python -m ruff check "${files[@]}"
-
-          case "${{ github.event_name }}" in
-            pull_request)
-              base_ref="${{ github.event.pull_request.base.sha }}"
-              head_ref="${{ github.event.pull_request.head.sha }}"
-              ;;
-            push)
-              base_ref="${{ github.event.before }}"
-              head_ref="${{ github.sha }}"
-              ;;
-            *)
-              base_ref="$(git rev-parse HEAD^)"
-              head_ref="$(git rev-parse HEAD)"
-              ;;
-          esac
-
-          format_files=()
-          while IFS= read -r changed_path; do
-            for candidate in "${files[@]}"; do
-              if [[ "${changed_path}" == "${candidate}" ]]; then
-                format_files+=("${candidate}")
-                break
-              fi
-            done
-          done < <(
-            git diff --name-only --diff-filter=ACMR \
-              "${base_ref}...${head_ref}" -- "${files[@]}"
-          )
-
-          if (( ${#format_files[@]} > 0 )); then
-            python -m ruff format --check "${format_files[@]}"
-          else
-            echo "No changed stable evidence Python interfaces require format checking."
-          fi
-
-      - name: Type-check evidence interfaces
-        run: |
-          set -euo pipefail
-          python -m mypy \
-            src/bayesian_phystwin/claim_bundle_v1.py \
-            src/bayesian_phystwin/paper_evidence_v1.py \
-            src/bayesian_phystwin/cli/claim_bundle.py \
-            src/bayesian_phystwin/cli/command_registry.py \
-            src/bayesian_phystwin/cli/run_manifest.py
-
-      - name: Run evidence contract tests
-        run: |
-          set -euo pipefail
-          python -m pytest -q -p no:cacheprovider \
-            tests/test_run_manifest_v2.py \
-            tests/test_run_manifest_cli.py \
-            tests/test_paper_evidence_v1.py \
-            tests/test_paper_evidence_cli.py \
-            tests/test_paper_evidence_hardening.py \
-            tests/test_claim_bundle_v1.py \
-            tests/test_cli_main.py \
-            tests/test_controlled_scientific_evidence_workflow.py \
-            tests/test_recursive_corruption_benchmark.py \
-            tests/test_simulation_based_calibration_v1.py \
-            tests/test_synthetic_benchmark_sbc_v1.py
-
-      - name: Validate scientific orchestration CLI
-        run: |
-          set -euo pipefail
-          python scripts/science/run_controlled_evidence_workflow_v1.py --help
-
-      - name: Validate referenced documentation
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          required = [
-              Path("docs/claim_bundle_v1.md"),
-              Path("docs/controlled_scientific_evidence_workflow.md"),
-              Path("docs/paper_evidence_profile.md"),
-              Path("docs/recursive_corruption_benchmark.md"),
-              Path("docs/simulation_based_calibration_v1.md"),
-              Path("docs/synthetic_benchmark_sbc_v1.md"),
-          ]
-          missing = [str(path) for path in required if not path.is_file()]
-          if missing:
-              raise SystemExit(f"missing documentation: {missing}")
-          PY
-
-      - name: Verify read-only tracked state
-        run: |
-          set -euo pipefail
-          git diff --exit-code
-
-  controlled-evidence:
-    name: Generate ${{ inputs.evidence_study }} evidence / Python 3.12
-    if: >-
-      github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/main' &&
-      inputs.evidence_study != 'contracts-only'
-    needs: validate
-    runs-on: ubuntu-latest
+  exact-merged-evidence:
+    name: Exact merged source / Python 3.12 / replay
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
-    env:
-      EVIDENCE_ROOT: outputs/controlled-scientific-evidence
 
     steps:
-      - name: Check out exact reviewed main revision
+      - name: Check out the exact merged scientific source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.SOURCE_COMMIT }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
 
-      - name: Verify reviewed main revision
+      - name: Verify source and launcher identities
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT}"
+          test "${GITHUB_REF_NAME}" = "evidence/recursive-corruption-v2-exact-main-20260825"
           test -z "$(git status --porcelain=v1)"
+          mkdir -p "${EVIDENCE_ROOT}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "source_commit=${SOURCE_COMMIT}"
+            echo "launcher_commit=${GITHUB_SHA}"
+            echo "workflow_ref=${GITHUB_WORKFLOW_REF}"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+          } > "${EVIDENCE_ROOT}/source-and-launcher-identity.txt"
 
       - name: Provision Python 3.12
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -279,7 +63,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Build exact wheel and isolated research overlay
+      - name: Build the exact stable wheel and isolated research overlay
         shell: bash
         run: |
           set -euo pipefail
@@ -294,49 +78,40 @@ jobs:
               -name 'bayesian_phystwin-*.whl' -print
           )
           test "${#wheels[@]}" -eq 1
-          python -m venv .paper-evidence-venv
-          .paper-evidence-venv/bin/python -m pip install "${wheels[0]}"
-          .paper-evidence-venv/bin/python -m pip check
+          python -m venv .recursive-corruption-v2-evidence-venv
+          .recursive-corruption-v2-evidence-venv/bin/python \
+            -m pip install "${wheels[0]}"
+          .recursive-corruption-v2-evidence-venv/bin/python -m pip check
 
-          research_overlay="${RUNNER_TEMP}/bayesian-phystwin-research-source"
+          research_overlay="${RUNNER_TEMP}/bayesian-phystwin-v2-research-source"
           test ! -e "${research_overlay}"
           mkdir -p "${research_overlay}"
           cp -a src/bayesian_phystwin_experiments "${research_overlay}/"
           echo "RESEARCH_OVERLAY=${research_overlay}" >> "${GITHUB_ENV}"
 
-          sha256sum "${wheels[0]}" \
-            | tee "${EVIDENCE_ROOT}/wheel-sha256.txt"
+          sha256sum "${wheels[0]}" > "${EVIDENCE_ROOT}/wheel-sha256.txt"
           git ls-files -z -- \
-            protocols/locks/simulation_based_calibration_v1.json \
-            scripts/science/analyze_recursive_corruption_selectivity_v1.py \
-            scripts/science/run_controlled_evidence_workflow_v1.py \
-            scripts/science/run_simulation_based_calibration_v1.py \
-            scripts/science/run_synthetic_benchmark_sbc_v1.py \
-            src/bayesian_phystwin_experiments \
+            scripts/science/run_recursive_corruption_v2.py \
+            scripts/science/analyze_recursive_corruption_v2.py \
+            src/bayesian_phystwin_experiments/recursive_corruption_benchmark_v2.py \
+            tests/test_recursive_corruption_benchmark_v2.py \
+            docs/recursive_corruption_benchmark_v2.md \
             | LC_ALL=C sort -z \
             | xargs -0 sha256sum \
-            > "${EVIDENCE_ROOT}/source-sha256.txt"
+            > "${EVIDENCE_ROOT}/scientific-source-sha256.txt"
           {
-            echo "repository=${GITHUB_REPOSITORY}"
-            echo "commit=${GITHUB_SHA}"
-            echo "workflow_run_id=${GITHUB_RUN_ID}"
-            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
-            echo "runner_name=${RUNNER_NAME}"
-            echo "runner_os=${RUNNER_OS}"
-            echo "runner_arch=${RUNNER_ARCH}"
-            git status --porcelain=v1
-            .paper-evidence-venv/bin/python -VV
-            .paper-evidence-venv/bin/python -m pip --version
-            .paper-evidence-venv/bin/python -m pip freeze --all
+            .recursive-corruption-v2-evidence-venv/bin/python -VV
+            .recursive-corruption-v2-evidence-venv/bin/python -m pip --version
+            .recursive-corruption-v2-evidence-venv/bin/python -m pip freeze --all
             uname -a
           } > "${EVIDENCE_ROOT}/environment.txt"
 
-      - name: Verify wheel and research-source isolation
+      - name: Verify stable-wheel and research-source isolation
         shell: bash
         run: |
           set -euo pipefail
           PYTHONPATH="${RESEARCH_OVERLAY}" \
-            .paper-evidence-venv/bin/python - <<'PY'
+            .recursive-corruption-v2-evidence-venv/bin/python - <<'PY'
           import os
           from pathlib import Path
 
@@ -355,104 +130,402 @@ jobs:
               raise SystemExit("research package did not resolve from exact overlay")
           PY
 
-      - name: Record orchestration request
-        env:
-          EVIDENCE_STUDY: ${{ inputs.evidence_study }}
-          VERIFY_REPLAY: ${{ inputs.verify_replay }}
+      - name: Execute the untouched 200-domain primary run
+        shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          PYTHONPATH="${RESEARCH_OVERLAY}" \
+          GITHUB_SHA="${SOURCE_COMMIT}" \
+            .recursive-corruption-v2-evidence-venv/bin/python \
+            scripts/science/run_recursive_corruption_v2.py \
+            --seeds 100000:100200 \
+            --output-dir "${EVIDENCE_ROOT}/primary"
+
+      - name: Execute the byte-identity replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${RESEARCH_OVERLAY}" \
+          GITHUB_SHA="${SOURCE_COMMIT}" \
+            .recursive-corruption-v2-evidence-venv/bin/python \
+            scripts/science/run_recursive_corruption_v2.py \
+            --seeds 100000:100200 \
+            --output-dir "${EVIDENCE_ROOT}/replay"
+
+      - name: Validate registered gates and seal the evidence bundle
+        env:
+          LAUNCHER_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          .recursive-corruption-v2-evidence-venv/bin/python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from typing import Any
+
+          root = Path(os.environ["EVIDENCE_ROOT"])
+          primary = root / "primary"
+          replay = root / "replay"
+          expected_seeds = list(range(100000, 100200))
+          expected_conditions = [
+              "clean",
+              "missing_burst",
+              "outlier_burst",
+              "coherent_drift",
+              "identity_switch",
+              "delayed_observation",
+              "density_drop",
+              "reliability_false_negative",
+              "reliability_false_positive",
+              "timestamp_jitter",
+              "partial_stale",
+              "mixed_identity",
+          ]
+          expected_methods = [
+              "physical_baseline",
+              "last_residual",
+              "guarded_last_residual",
+              "recursive_gaussian",
+              "guarded_recursive",
+          ]
+          expected_primary = [
+              "stress_full_rmse_guarded_recursive_minus_guarded_last_residual",
+              "stress_harmful_updates_guarded_recursive_minus_recursive_gaussian",
+          ]
+
+          def load(path: Path) -> dict[str, Any]:
+              value = json.loads(path.read_text(encoding="utf-8"))
+              if not isinstance(value, dict):
+                  raise SystemExit(f"{path} is not a JSON object")
+              return value
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as stream:
+                  for block in iter(lambda: stream.read(1024 * 1024), b""):
+                      digest.update(block)
+              return digest.hexdigest()
+
+          primary_result = load(primary / "result.json")
+          replay_result = load(replay / "result.json")
+          primary_analysis = load(primary / "analysis.json")
+          replay_analysis = load(replay / "analysis.json")
+          primary_run_manifest = load(primary / "run-manifest.json")
+          replay_run_manifest = load(replay / "run-manifest.json")
+
+          for label, result, analysis, run_manifest in (
+              ("primary", primary_result, primary_analysis, primary_run_manifest),
+              ("replay", replay_result, replay_analysis, replay_run_manifest),
+          ):
+              if result.get("seeds") != expected_seeds:
+                  raise SystemExit(f"{label} seed roster drifted")
+              if result.get("conditions") != expected_conditions:
+                  raise SystemExit(f"{label} condition roster drifted")
+              if result.get("methods") != expected_methods:
+                  raise SystemExit(f"{label} method roster drifted")
+              records = result.get("records")
+              if not isinstance(records, list) or len(records) != 12000:
+                  raise SystemExit(f"{label} record matrix drifted")
+              if analysis.get("fresh_seed_roster") != expected_seeds:
+                  raise SystemExit(f"{label} analysis seed roster drifted")
+              if analysis.get("primary_endpoint_names") != expected_primary:
+                  raise SystemExit(f"{label} primary endpoint roster drifted")
+              coequal = analysis.get("coequal_review")
+              if not isinstance(coequal, dict) or coequal.get("all_criteria_passed") is not True:
+                  raise SystemExit(f"{label} co-equal review did not pass")
+              if coequal.get("retuning_on_this_roster_authorized") is not False:
+                  raise SystemExit(f"{label} unexpectedly authorized retuning")
+              if analysis.get("guarded_exact_fallback_violation_count") != 0:
+                  raise SystemExit(f"{label} exact fallback identity failed")
+              source = run_manifest.get("source")
+              if not isinstance(source, dict) or source.get("commit") != os.environ["SOURCE_COMMIT"]:
+                  raise SystemExit(f"{label} source identity drifted")
+              if run_manifest.get("all_coequal_criteria_passed") is not True:
+                  raise SystemExit(f"{label} run manifest did not retain a passing decision")
+              access = run_manifest.get("access_boundary")
+              if not isinstance(access, dict):
+                  raise SystemExit(f"{label} access boundary is missing")
+              forbidden_true = [
+                  key
+                  for key, value in access.items()
+                  if isinstance(value, bool) and value
+              ]
+              if forbidden_true:
+                  raise SystemExit(
+                      f"{label} reports forbidden target access: {forbidden_true}"
+                  )
+
+          primary_files = sorted(
+              path.relative_to(primary).as_posix()
+              for path in primary.rglob("*")
+              if path.is_file()
+          )
+          replay_files = sorted(
+              path.relative_to(replay).as_posix()
+              for path in replay.rglob("*")
+              if path.is_file()
+          )
+          if primary_files != replay_files:
+              raise SystemExit("primary and replay file rosters differ")
+
+          comparisons: list[dict[str, object]] = []
+          all_scientific_files_identical = True
+          for relative in primary_files:
+              first = primary / relative
+              second = replay / relative
+              if relative == "run-manifest.json":
+                  continue
+              same = first.read_bytes() == second.read_bytes()
+              comparisons.append(
+                  {
+                      "path": relative,
+                      "primary_sha256": sha256(first),
+                      "replay_sha256": sha256(second),
+                      "byte_identical": same,
+                  }
+              )
+              all_scientific_files_identical &= same
+          if not all_scientific_files_identical:
+              raise SystemExit("scientific replay is not byte-identical")
+
+          def normalized_manifest(value: dict[str, Any]) -> dict[str, Any]:
+              normalized = json.loads(json.dumps(value))
+              invocation = normalized.get("invocation")
+              if isinstance(invocation, dict):
+                  invocation["output_dir"] = "<normalized-output-dir>"
+              return normalized
+
+          run_manifests_identical = normalized_manifest(
+              primary_run_manifest
+          ) == normalized_manifest(replay_run_manifest)
+          if not run_manifests_identical:
+              raise SystemExit("normalized run manifests differ")
+
+          primary_endpoints = primary_analysis["primary_endpoints"]
+          secondary_endpoints = primary_analysis["secondary_endpoints"]
+          summary = {
+              "schema": "bayesian-phystwin.recursive-corruption-v2-exact-main-evidence",
+              "schema_version": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "source_commit": os.environ["SOURCE_COMMIT"],
+              "launcher_commit": os.environ["LAUNCHER_COMMIT"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "result_id": primary_result["result_id"],
+              "seed_count": 200,
+              "record_count": 12000,
+              "condition_count": len(expected_conditions),
+              "method_count": len(expected_methods),
+              "primary_endpoints": primary_endpoints,
+              "registered_companion_endpoints": {
+                  key: secondary_endpoints[key]
+                  for key in (
+                      "stress_corruption_rmse_guarded_recursive_minus_guarded_last_residual",
+                      "stress_recovery_rmse_guarded_recursive_minus_guarded_last_residual",
+                      "clean_guarded_recursive_minus_recursive_gaussian_rmse",
+                      "imperfect_cue_rmse_guarded_recursive_minus_guarded_last_residual",
+                  )
+              },
+              "worst_seed_harm": primary_analysis["worst_seed_harm"],
+              "guarded_exact_fallback_violation_count": 0,
+              "coequal_review": primary_analysis["coequal_review"],
+              "scientific_replay_byte_identical": True,
+              "normalized_run_manifests_identical": run_manifests_identical,
+              "retuning_authorized": False,
+              "target_outcomes_used": False,
+              "deform360_confirmation_opened": False,
+              "causal4d_physical_outcome_used": False,
+              "scientific_boundary": primary_analysis["scientific_boundary"],
+              "access_boundary": primary_analysis["access_boundary"],
+          }
+          (root / "evidence-summary.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          replay_identity = {
+              "schema": "bayesian-phystwin.recursive-corruption-v2-replay-identity",
+              "schema_version": 1,
+              "scientific_files_byte_identical": True,
+              "normalized_run_manifests_identical": run_manifests_identical,
+              "files": comparisons,
+          }
+          (root / "replay-identity.json").write_text(
+              json.dumps(
+                  replay_identity,
+                  indent=2,
+                  sort_keys=True,
+                  allow_nan=False,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+
+          files: list[dict[str, object]] = []
+          for path in sorted(root.rglob("*")):
+              if not path.is_file() or path.name == "evidence-manifest.json":
+                  continue
+              files.append(
+                  {
+                      "path": path.relative_to(root).as_posix(),
+                      "bytes": path.stat().st_size,
+                      "sha256": sha256(path),
+                  }
+              )
+          manifest = {
+              "schema": "bayesian-phystwin.recursive-corruption-v2-evidence-manifest",
+              "schema_version": 1,
+              "source_commit": os.environ["SOURCE_COMMIT"],
+              "launcher_commit": os.environ["LAUNCHER_COMMIT"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "all_registered_gates_passed": True,
+              "replay_identity_passed": True,
+              "target_outcomes_used": False,
+              "files": files,
+          }
+          canonical = json.dumps(
+              manifest,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          manifest["manifest_id"] = hashlib.sha256(canonical).hexdigest()
+          (root / "evidence-manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True, allow_nan=False))
+          PY
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish an exact bounded result summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          .recursive-corruption-v2-evidence-venv/bin/python - <<'PY'
           import json
           import os
           from pathlib import Path
 
-          request = {
-              "schema_version": 1,
-              "artifact_kind": "ControlledScientificEvidenceRequest",
-              "study": os.environ["EVIDENCE_STUDY"],
-              "verify_replay": os.environ["VERIFY_REPLAY"] == "true",
-              "target_outcomes_used": False,
-          }
-          Path(
-              "outputs/controlled-scientific-evidence/request.json"
-          ).write_text(
-              json.dumps(request, indent=2, sort_keys=True) + "\n",
+          summary = json.loads(
+              Path(
+                  "outputs/recursive-corruption-v2-exact-main/evidence-summary.json"
+              ).read_text(encoding="utf-8")
+          )
+          p1 = summary["primary_endpoints"][
+              "stress_full_rmse_guarded_recursive_minus_guarded_last_residual"
+          ]
+          p2 = summary["primary_endpoints"][
+              "stress_harmful_updates_guarded_recursive_minus_recursive_gaussian"
+          ]
+          companions = summary["registered_companion_endpoints"]
+          corruption = companions[
+              "stress_corruption_rmse_guarded_recursive_minus_guarded_last_residual"
+          ]
+          recovery = companions[
+              "stress_recovery_rmse_guarded_recursive_minus_guarded_last_residual"
+          ]
+          clean = companions[
+              "clean_guarded_recursive_minus_recursive_gaussian_rmse"
+          ]
+          manifest = json.loads(
+              Path(
+                  "outputs/recursive-corruption-v2-exact-main/evidence-manifest.json"
+              ).read_text(encoding="utf-8")
+          )
+
+          def mm(value: float) -> str:
+              return f"{1000.0 * value:.3f}"
+
+          lines = [
+              "## Exact merged recursive-corruption v2 evidence",
+              "",
+              f"- source commit: `{summary['source_commit']}`",
+              f"- launcher commit: `{summary['launcher_commit']}`",
+              f"- result ID: `{summary['result_id']}`",
+              f"- manifest ID: `{manifest['manifest_id']}`",
+              "- independent seed-domains: `200`",
+              "- retained scalar records: `12,000`",
+              "- deterministic scientific replay: `byte-identical`",
+              "- all registered co-equal criteria passed: `true`",
+              "- retuning on the fresh roster authorized: `false`",
+              "",
+              (
+                  "Primary 1 — guarded recursion minus matched guarded residual, "
+                  f"stress full-sequence RMSE: `{mm(p1['estimate'])} mm` "
+                  f"(`{mm(p1['paired_95_interval'][0])}`, "
+                  f"`{mm(p1['paired_95_interval'][1])}` mm paired 95% interval)."
+              ),
+              (
+                  "Primary 2 — guarded recursion minus unguarded Gaussian recursion, "
+                  "materially harmful accepted updates per seed-domain: "
+                  f"`{p2['estimate']:.2f}` "
+                  f"(`{p2['paired_95_interval'][0]:.2f}`, "
+                  f"`{p2['paired_95_interval'][1]:.2f}` paired 95% interval)."
+              ),
+              (
+                  "Registered companions — corruption-window RMSE: "
+                  f"`{mm(corruption['estimate'])} mm`; recovery-window RMSE: "
+                  f"`{mm(recovery['estimate'])} mm`; clean-control cost: "
+                  f"`{mm(clean['estimate'])} mm`."
+              ),
+              "",
+              (
+                  "Scientific boundary: controlled synthetic mechanism evidence only. "
+                  "No real provider, Deform360 confirmation outcome, Causal4D physical "
+                  "execution, DLO4/DLO5 reserve, or held-v8 target was opened."
+              ),
+              "",
+              (
+                  "Artifact: "
+                  f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
+                  f"/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+              ),
+          ]
+          Path("evidence-ledger-comment.md").write_text(
+              "\n".join(lines) + "\n",
               encoding="utf-8",
           )
           PY
+          body="$(cat evidence-ledger-comment.md)"
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${LEDGER_ISSUE}/comments" \
+            -f body="$body" >/dev/null
 
-      - name: Execute registered controlled study
-        env:
-          EVIDENCE_STUDY: ${{ inputs.evidence_study }}
-          VERIFY_REPLAY: ${{ inputs.verify_replay }}
+      - name: Write the job summary
+        if: always()
         shell: bash
         run: |
-          set -euo pipefail
-          args=(
-            --study "${EVIDENCE_STUDY}"
-            --output-root "${EVIDENCE_ROOT}"
-            --repository "${GITHUB_REPOSITORY}"
-            --commit "${GITHUB_SHA}"
-            --workflow-run-id "${GITHUB_RUN_ID}"
-            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"
-          )
-          if [[ "${VERIFY_REPLAY}" == "true" ]]; then
-            args+=(--verify-replay)
+          if [[ -f evidence-ledger-comment.md ]]; then
+            cat evidence-ledger-comment.md >> "${GITHUB_STEP_SUMMARY}"
+          else
+            {
+              echo "## Exact merged recursive-corruption v2 evidence"
+              echo
+              echo "The evidence run did not reach its sealed summary."
+            } >> "${GITHUB_STEP_SUMMARY}"
           fi
-          PYTHONPATH="${RESEARCH_OVERLAY}" \
-            .paper-evidence-venv/bin/python \
-            scripts/science/run_controlled_evidence_workflow_v1.py \
-            "${args[@]}"
 
-      - name: Summarize retained result
+      - name: Upload the complete retained evidence bundle
         if: always()
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          root = Path("outputs/controlled-scientific-evidence")
-          summary_path = root / "bundle-summary.json"
-          manifest_path = root / "manifest.json"
-          lines = ["### Controlled scientific evidence"]
-          if summary_path.is_file():
-              summary = json.loads(summary_path.read_text(encoding="utf-8"))
-              lines.extend(
-                  [
-                      "",
-                      f"- Selected: `{', '.join(summary['selected_studies'])}`",
-                      f"- All registered gates passed: `{summary['all_passed']}`",
-                      f"- Replay requested: `{summary['verify_replay']}`",
-                      "- Target outcomes used: `false`",
-                  ]
-              )
-              for study, outcome in summary["outcomes"].items():
-                  lines.append(f"- `{study}` passed: `{outcome['passed']}`")
-          else:
-              lines.extend(["", "- Bundle summary: `not produced`"])
-          if manifest_path.is_file():
-              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-              lines.append(f"- Manifest ID: `{manifest['manifest_id']}`")
-          else:
-              lines.append("- Manifest ID: `not produced`")
-          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
-              "a", encoding="utf-8"
-          ) as stream:
-              stream.write("\n".join(lines) + "\n")
-          PY
-
-      - name: Upload retained evidence bundle
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: controlled-scientific-evidence-${{ inputs.evidence_study }}-${{ github.run_id }}
-          path: outputs/controlled-scientific-evidence
+          name: recursive-corruption-v2-exact-main-${{ github.run_id }}
+          path: outputs/recursive-corruption-v2-exact-main
           if-no-files-found: error
           retention-days: 90
 
-      - name: Remove isolated runtime
+      - name: Remove the isolated runtime
         if: always()
+        shell: bash
         run: |
-          rm -rf .paper-evidence-venv "${RESEARCH_OVERLAY:-}"
+          rm -rf \
+            .recursive-corruption-v2-evidence-venv \
+            "${RESEARCH_OVERLAY:-}"
