@@ -3,14 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 
-from bayesian_phystwin import (
-    causal4d_provider_v1 as provider_v1,
-)
-from bayesian_phystwin import (
-    causal4d_scientific_provider_v1 as scientific_v1,
-)
 
 # Provider v1 is retained for frozen scientific and diagnostic consumers. New
 # capabilities belong in a role-specific versioned facade. Intentional changes
@@ -35,6 +30,9 @@ def _export_digest(exports: list[str]) -> str:
 
 
 def test_scientific_provider_v1_is_a_no_growth_surface() -> None:
+    scientific_v1 = importlib.import_module(
+        "bayesian_phystwin.causal4d_scientific_provider_v1"
+    )
     exports = scientific_v1.__all__
 
     assert len(exports) == len(set(exports)) == _FROZEN_SCIENTIFIC_V1_EXPORT_COUNT
@@ -42,6 +40,7 @@ def test_scientific_provider_v1_is_a_no_growth_surface() -> None:
 
 
 def test_aggregate_provider_v1_is_a_no_growth_surface() -> None:
+    provider_v1 = importlib.import_module("bayesian_phystwin.causal4d_provider_v1")
     exports = provider_v1.__all__
 
     assert len(exports) == len(set(exports)) == _FROZEN_PROVIDER_V1_EXPORT_COUNT
