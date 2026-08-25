@@ -26,35 +26,34 @@ The example verifies the portable Prob4D-compatible observation contract,
 exercises accepted and exact-fallback routes, and records a Causal4D provider
 manifest. It is a deterministic software demonstration, not physical evidence.
 
-New integrations should keep candidate inference, guard choice, and
+New integrations should keep candidate construction, guard choice, and
 complete-belief routing separate:
 
 ```python
-from bayesian_phystwin.inference.v1 import (
-    finalize_guarded_update,
-    infer_prob4d_candidate,
-)
+from bayesian_phystwin.inference.v2 import InferenceSession
 
-candidate = infer_prob4d_candidate(
-    observation,
-    linearization,
-    physical_prediction_xyz_m=physical_prediction,
-    config=frozen_solver_config,
-)
-result = finalize_guarded_update(
-    candidate,
-    baseline_belief,
-    candidate_belief,
-    guard_decision,
+session = InferenceSession(
+    session_id=frozen_protocol_id,
+    candidate_factory=build_candidate,
+    guard_policy=choose_guard,
     metadata={"protocol_id": protocol_id},
 )
+result = session.assimilate(
+    prior=baseline_belief,
+    observation=observation,
+    context={"case_id": case_id},
+)
 assert result.selected_belief is (
-    baseline_belief if result.exact_fallback else candidate_belief
+    baseline_belief if result.exact_fallback else result.candidate_belief
 )
 ```
 
-Candidate inference does not choose a guard or establish covariance calibration.
-See the [guarded inference guide](docs/inference_v1.md) and the
+The session delegates candidate construction and guard choice to caller-owned
+policies. It does not choose a provider or establish covariance calibration.
+Strict claim-bearing Prob4D candidate construction remains available through
+`bayesian_phystwin.inference.v1`. See the
+[provider-neutral inference guide](docs/inference_v2.md), the
+[strict Prob4D inference guide](docs/inference_v1.md), and the
 [minimal ecosystem guide](docs/ecosystem_minimal_v1.md) for the exact contracts
 and scientific boundaries.
 
@@ -154,9 +153,12 @@ belief = load_observation_belief("observation_belief.npz")
 print(belief.summary())
 ```
 
-`bayesian_phystwin.inference.v1` owns candidate inference, caller-owned guards,
-and exact complete-belief fallback. The historical package-root namespace is a
-compatibility surface rather than the destination for new integrations.
+`bayesian_phystwin.inference.v2` owns provider-neutral candidate construction,
+caller-owned guard choice, and exact complete-belief routing.
+`bayesian_phystwin.inference.v1` retains the strict Prob4D-specific candidate
+surface and its frozen 0.4 compatibility contract. The historical package-root
+namespace is a compatibility surface rather than the destination for new
+integrations.
 
 A predictive readout-discrepancy belief is not automatically a corrected latent
 physical state. Released trajectories do not identify a unique physical cause.
@@ -226,6 +228,11 @@ identifiability gates.
 - [Minimal ecosystem smoke](docs/ecosystem_minimal_v1.md): executable
   Prob4D-compatible observation, guarded routing, exact fallback, and Causal4D
   provider manifest.
+- [Provider-neutral guarded inference API v2](docs/inference_v2.md): caller-owned
+  provider adapters, caller-owned guards, complete-belief routing, and exact
+  fallback.
+- [Strict Prob4D guarded inference API v1](docs/inference_v1.md): claim-bearing
+  Prob4D candidate inference and frozen 0.4 compatibility.
 - [Cross-action physical transport](docs/cross_action_transport_v1.md): sealed
   off-diagonal action evaluation and complete-session decision rules.
 - [Multi-action query identifiability](docs/multi_action_query_identifiability_v1.md):
@@ -240,8 +247,6 @@ identifiability gates.
 - [DEFORM DLO2 official protocol](docs/deform_dlo2_local_residual_official_v7.md):
   specialized DLO integration, frozen evaluation, and benchmark-specific claim
   boundary.
-- [Guarded inference API v1](docs/inference_v1.md): candidate inference,
-  caller-owned guard, and exact complete-belief fallback.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, commands, and placement policy.
 - [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
