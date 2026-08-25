@@ -26,7 +26,10 @@ def test_public_onboarding_uses_versioned_integration_namespaces() -> None:
     assert "[strict Prob4D inference guide](docs/inference_v1.md)" in readme
     assert "Keep point-mean and covariance decisions separate" in guide
     assert "exact baseline Python object" in guide
-    assert "Every ordinary rejection therefore returns the exact input baseline object" in guide_v2
+    assert (
+        "Every ordinary rejection therefore returns the exact input baseline object"
+        in guide_v2
+    )
 
 
 def test_guarded_inference_example_proves_exact_object_routing(
