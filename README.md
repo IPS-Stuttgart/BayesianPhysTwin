@@ -153,6 +153,15 @@ belief = load_observation_belief("observation_belief.npz")
 print(belief.summary())
 ```
 
+For strict Prob4D candidate construction, use the frozen v1 inference namespace:
+
+```python
+from bayesian_phystwin.inference.v1 import (
+    finalize_guarded_update,
+    infer_prob4d_candidate,
+)
+```
+
 `bayesian_phystwin.inference.v2` owns provider-neutral candidate construction,
 caller-owned guard choice, and exact complete-belief routing.
 `bayesian_phystwin.inference.v1` retains the strict Prob4D-specific candidate
