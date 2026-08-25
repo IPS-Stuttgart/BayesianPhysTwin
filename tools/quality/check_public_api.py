@@ -18,16 +18,24 @@ DEFAULT_PYPROJECT = ROOT / "pyproject.toml"
 ROOT_SCHEMA: Final = "bayesian-phystwin.root-public-api-snapshot"
 VERSIONED_SCHEMA: Final = "bayesian-phystwin.versioned-public-api-snapshot"
 INFERENCE_SCHEMA: Final = "bayesian-phystwin.inference-public-api-snapshot"
+INFERENCE_SESSION_SCHEMA: Final = (
+    "bayesian-phystwin.inference-session-public-api-snapshot"
+)
 SCHEMA_VERSION: Final = 1
 ROOT_POLICY: Final = "exact-legacy-root-export-surface"
 VERSIONED_POLICY: Final = "exact-versioned-integration-export-surface"
 INFERENCE_POLICY: Final = "exact-guarded-inference-export-surface"
+INFERENCE_SESSION_POLICY: Final = "exact-provider-neutral-session-export-surface"
 _ALLOWED_CONTRACTS: Final = {
     ROOT_SCHEMA: (ROOT_POLICY, "bayesian_phystwin"),
     VERSIONED_SCHEMA: (VERSIONED_POLICY, "bayesian_phystwin.v1"),
     INFERENCE_SCHEMA: (
         INFERENCE_POLICY,
         "bayesian_phystwin.inference.v1",
+    ),
+    INFERENCE_SESSION_SCHEMA: (
+        INFERENCE_SESSION_POLICY,
+        "bayesian_phystwin.inference.v2",
     ),
 }
 _FIELDS = frozenset(
