@@ -9,19 +9,24 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 README_PATH = ROOT / "README.md"
 INFERENCE_GUIDE_PATH = ROOT / "docs/inference_v1.md"
+INFERENCE_V2_GUIDE_PATH = ROOT / "docs/inference_v2.md"
 EXAMPLE_PATH = ROOT / "examples/guarded_inference_v1.py"
 
 
 def test_public_onboarding_uses_versioned_integration_namespaces() -> None:
     readme = README_PATH.read_text(encoding="utf-8")
     guide = INFERENCE_GUIDE_PATH.read_text(encoding="utf-8")
+    guide_v2 = INFERENCE_V2_GUIDE_PATH.read_text(encoding="utf-8")
 
     assert "from bayesian_phystwin import load_observation_belief" not in readme
     assert "from bayesian_phystwin.v1 import load_observation_belief" in readme
-    assert "from bayesian_phystwin.inference.v1 import (" in readme
-    assert "[Guarded inference API v1](docs/inference_v1.md)" in readme
+    assert "from bayesian_phystwin.inference.v2 import InferenceSession" in readme
+    assert "`bayesian_phystwin.inference.v1`" in readme
+    assert "[provider-neutral inference guide](docs/inference_v2.md)" in readme
+    assert "[strict Prob4D inference guide](docs/inference_v1.md)" in readme
     assert "Keep point-mean and covariance decisions separate" in guide
     assert "exact baseline Python object" in guide
+    assert "Every ordinary rejection therefore returns the exact input baseline object" in guide_v2
 
 
 def test_guarded_inference_example_proves_exact_object_routing(
