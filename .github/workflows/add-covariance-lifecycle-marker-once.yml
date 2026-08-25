@@ -1,0 +1,48 @@
+# workflow-lifecycle: temporary
+name: Add covariance lifecycle marker once
+
+on:
+  push:
+    branches:
+      - feature/covariance-source-readiness-dispatch-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-covariance-lifecycle-marker-once-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: feature/covariance-source-readiness-dispatch-v1
+          fetch-depth: 0
+      - name: Add permanent lifecycle declaration and retire this migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(".github/workflows/deform360-covariance-only-independent-validation-v1.yml")
+          marker = "# workflow-lifecycle: permanent\n"
+          text = path.read_text(encoding="utf-8")
+          if not text.startswith(marker):
+              path.write_text(marker + text, encoding="utf-8")
+          PY
+          rm .github/workflows/add-covariance-lifecycle-marker-once.yml
+          git diff --check
+      - name: Commit the lifecycle declaration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/deform360-covariance-only-independent-validation-v1.yml \
+            .github/workflows/add-covariance-lifecycle-marker-once.yml
+          git commit -m "Declare covariance validation workflow lifecycle"
+          git push origin HEAD:feature/covariance-source-readiness-dispatch-v1
