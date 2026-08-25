@@ -53,7 +53,7 @@ def test_repository_public_module_lifecycle_matches_policy() -> None:
         "compatibility_line": "0.4",
         "target_compatibility_line": "0.5",
         "policy": "explicit-stable-compatibility-experimental",
-        "stable_module_count": 26,
+        "stable_module_count": 27,
         "compatibility_module_count": 19,
         "experimental_module_count": 5,
         "root_owner_count": 30,
@@ -69,6 +69,13 @@ def test_component_admission_modules_are_stable_direct_imports() -> None:
         "bayesian_phystwin.inference.component_beliefs_v1",
         "bayesian_phystwin.inference.components_v1",
     } <= stable
+
+
+def test_provider_neutral_inference_session_is_a_stable_direct_import() -> None:
+    manifest = tool.load_lifecycle_manifest()
+    stable = set(manifest["stable_modules"])
+
+    assert "bayesian_phystwin.inference.v2" in stable
 
 
 def test_physical_cause_selection_versions_are_stable_direct_imports() -> None:
