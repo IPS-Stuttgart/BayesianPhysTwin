@@ -18,9 +18,7 @@ SUMMARY = ROOT / "results/science/full22_covariance_only_hybrid_v1/summary.json"
 COMPOSITION = ROOT / "src/bayesian_phystwin/covariance_only_hybrid.py"
 ANALYSIS = ROOT / "src/bayesian_phystwin/covariance_only_hybrid_analysis.py"
 DOCUMENT = ROOT / "docs/deform360_covariance_only_independent_validation_v1.md"
-INVENTORY_DOCUMENT = (
-    ROOT / "docs/deform360_covariance_source_input_inventory_v1.md"
-)
+INVENTORY_DOCUMENT = ROOT / "docs/deform360_covariance_source_input_inventory_v1.md"
 WORKFLOW = (
     ROOT / ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
 )
@@ -278,8 +276,7 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
         "github.event.issue.pull_request == null",
         "github.actor == 'FlorianPfaff'",
         "github.event.comment.user.login == 'FlorianPfaff'",
-        "github.event.comment.body == "
-        "'/bpt-inventory-covariance-source-v1'",
+        "github.event.comment.body == '/bpt-inventory-covariance-source-v1'",
     ):
         assert required in condition
 
@@ -287,12 +284,11 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
         "SOURCE_INVENTORY_COMMAND: /bpt-inventory-covariance-source-v1",
         "AUTHORIZED_RUNNER_NAME: workstation2",
         "FORBIDDEN_CONFIRMATION_ROOT:",
-        "test \"$RUNNER_NAME\" = \"$AUTHORIZED_RUNNER_NAME\"",
-        "\"array_values_read\": False",
-        "\"confirmation_root_entered\": False",
-        "\"target_outcomes_opened\": False",
-        "actions/upload-artifact@"
-        "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        'test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"',
+        '"array_values_read": False',
+        '"confirmation_root_entered": False',
+        '"target_outcomes_opened": False',
+        "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
         "repos/${GITHUB_REPOSITORY}/issues/461/comments",
     ):
         assert required in workflow_text
