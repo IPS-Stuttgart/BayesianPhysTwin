@@ -7,8 +7,6 @@ import json
 
 from bayesian_phystwin import (
     causal4d_provider_v1 as provider_v1,
-)
-from bayesian_phystwin import (
     causal4d_scientific_provider_v1 as scientific_v1,
 )
 
