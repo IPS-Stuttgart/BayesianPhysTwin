@@ -11,6 +11,53 @@ update is not identifiable or fails a prospective guard, the library returns
 the exact caller-owned physical baseline instead of silently applying an unsafe
 correction.
 
+## Five-minute start
+
+From a checked-out source tree:
+
+```bash
+python3 -m pip install -e ".[dev,graph]"
+python examples/ecosystem_minimal_v1.py \
+  --output-dir outputs/ecosystem-minimal-v1
+bpt commands list
+```
+
+The example verifies the portable Prob4D-compatible observation contract,
+exercises accepted and exact-fallback routes, and records a Causal4D provider
+manifest. It is a deterministic software demonstration, not physical evidence.
+
+New integrations should keep candidate inference, guard choice, and
+complete-belief routing separate:
+
+```python
+from bayesian_phystwin.inference.v1 import (
+    finalize_guarded_update,
+    infer_prob4d_candidate,
+)
+
+candidate = infer_prob4d_candidate(
+    observation,
+    linearization,
+    physical_prediction_xyz_m=physical_prediction,
+    config=frozen_solver_config,
+)
+result = finalize_guarded_update(
+    candidate,
+    baseline_belief,
+    candidate_belief,
+    guard_decision,
+    metadata={"protocol_id": protocol_id},
+)
+assert result.selected_belief is (
+    baseline_belief if result.exact_fallback else candidate_belief
+)
+```
+
+Candidate inference does not choose a guard or establish covariance calibration.
+See the [guarded inference guide](docs/inference_v1.md) and the
+[minimal ecosystem guide](docs/ecosystem_minimal_v1.md) for the exact contracts
+and scientific boundaries.
+
 ## Evidence at a glance
 
 <!-- public-claim-status:begin -->
@@ -60,7 +107,7 @@ Compatibility tests and synthetic examples do not authorize real-provider,
 calibration, fresh-transfer, or downstream-causal claims. The complete wording
 is maintained in the [release-facing claim contract](docs/phystwin_release_claim_v1.md).
 
-## Installation
+## Development installation
 
 ```bash
 python3 -m pip install -e ".[dev,data,graph]"
@@ -70,51 +117,6 @@ bpt --help
 
 The base package requires only NumPy. Optional groups add development tools,
 data retrieval, sparse graph routines, vision utilities, or PyRecEst.
-
-## Minimal guarded inference
-
-New consumers should use the versioned public namespaces. Candidate
-construction, guard choice, and complete-belief routing remain separate:
-
-```python
-from bayesian_phystwin.inference.v1 import (
-    finalize_guarded_update,
-    infer_prob4d_candidate,
-)
-
-candidate_inference = infer_prob4d_candidate(
-    observation,
-    linearization,
-    physical_prediction_xyz_m=physical_prediction,
-    config=frozen_solver_config,
-)
-result = finalize_guarded_update(
-    candidate_inference,
-    baseline_belief,
-    candidate_belief,
-    guard_decision,
-    metadata={"protocol_id": protocol_id},
-)
-assert result.selected_belief is (
-    baseline_belief if result.exact_fallback else candidate_belief
-)
-```
-
-Candidate inference does not choose a guard or establish covariance calibration.
-Point-mean and covariance-only candidates remain separate registered complete
-beliefs.
-
-Run the deterministic cross-repository contract smoke with:
-
-```bash
-python examples/ecosystem_minimal_v1.py \
-  --output-dir outputs/ecosystem-minimal-v1
-```
-
-It creates a Prob4D-compatible observation, verifies content-addressed round
-trip, exercises accepted and exact-fallback paths, and records the Causal4D
-provider manifest. See the [minimal ecosystem guide](docs/ecosystem_minimal_v1.md)
-for its deliberately limited scientific scope.
 
 ## Stable command surface
 
@@ -196,6 +198,24 @@ general deformable-object or cross-benchmark state-of-the-art claim. See the
 [executable protocol](docs/deform_dlo2_local_residual_official_v7.md) and the
 [canonical result record](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform_dlo2_local_residual_official_v7_result.md).
 
+## Experimental cross-action evaluation
+
+The following research instruments are intentionally outside the stable wheel
+and do not constitute physical evidence by themselves:
+
+- [Cross-action physical transport](docs/cross_action_transport_v1.md) compares
+  physical transport with discrepancy persistence, `last_residual`, and exact
+  fallback on complete held-out action matrices.
+- [Multi-action query identifiability](docs/multi_action_query_identifiability_v1.md)
+  tests whether complementary actions make registered queries identifiable
+  modulo one jointly declared nuisance model.
+- [Whole-trajectory and decision value](docs/trajectory_value_v1.md) defines
+  energy and variogram scores plus a target-blind finite-action regret record.
+
+A positive certificate cannot rescue a failed empirical transport result, and a
+favorable action regret cannot rescue failed provider, support, calibration, or
+identifiability gates.
+
 ## Documentation map
 
 - [Public claim snapshot](evidence/public_claim_snapshot_v1.json): generated
@@ -206,6 +226,13 @@ general deformable-object or cross-benchmark state-of-the-art claim. See the
 - [Minimal ecosystem smoke](docs/ecosystem_minimal_v1.md): executable
   Prob4D-compatible observation, guarded routing, exact fallback, and Causal4D
   provider manifest.
+- [Cross-action physical transport](docs/cross_action_transport_v1.md): sealed
+  off-diagonal action evaluation and complete-session decision rules.
+- [Multi-action query identifiability](docs/multi_action_query_identifiability_v1.md):
+  stacked action-conditioned designs, joint nuisance structure, and bounded
+  certificate semantics.
+- [Whole-trajectory and decision value](docs/trajectory_value_v1.md): energy,
+  variogram, and finite-action regret evaluation contracts.
 - [Evidence-first backend admission](docs/backend_admission_policy_v1.md):
   implementation-versus-evidence maturity and the qualification freeze.
 - [Five-backend support matrix](docs/backend_support_matrix_v1.md): installed
