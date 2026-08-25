@@ -11,10 +11,16 @@ updates:
     # Exact-pinned scientific runtimes are part of reviewed backend and
     # experiment identities. Upgrade them only through an explicit
     # requalification change rather than a routine dependency-bump PR.
+    # NumPy and pip also back policy-bearing compatibility/release fixtures:
+    # NumPy includes the tested compatibility floor, while pip is coupled to
+    # exact release-environment contracts. Their upgrades likewise require a
+    # coordinated policy/contract change rather than an isolated bot edit.
     ignore:
       - dependency-name: mujoco
       - dependency-name: newton
       - dependency-name: pyrecest
+      - dependency-name: numpy
+      - dependency-name: pip
     groups:
       development-tools:
         dependency-type: development
