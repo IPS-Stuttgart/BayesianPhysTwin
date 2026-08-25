@@ -1,0 +1,526 @@
+name: Repair covariance-source inventory roster once
+
+on:
+  push:
+    branches:
+      - fix/covariance-source-inventory-roster-binding
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-covariance-source-inventory-roster-once
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out the exact repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/covariance-source-inventory-roster-binding
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Patch the inventory to the frozen covariance roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          from pathlib import Path
+
+          workflow_path = Path(
+              ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
+          )
+          workflow = workflow_path.read_text(encoding="utf-8")
+
+          old_command = "/bpt-inventory-covariance-source-v1"
+          new_command = "/bpt-inventory-covariance-source-v2"
+          if workflow.count(old_command) != 2:
+              raise SystemExit(
+                  f"unexpected old inventory command count: {workflow.count(old_command)}"
+              )
+          workflow = workflow.replace(old_command, new_command)
+
+          trigger_anchor = (
+              '      - "protocols/locks/'
+              'deform360_covariance_only_independent_validation_v1.json"\n'
+          )
+          trigger_insert = trigger_anchor + (
+              '      - "protocols/locks/'
+              'deform360_official_hub_visuotactile_v1_selection.json"\n'
+          )
+          if workflow.count(trigger_anchor) != 2:
+              raise SystemExit("unexpected protocol trigger count")
+          workflow = workflow.replace(trigger_anchor, trigger_insert)
+
+          env_anchor = (
+              "  PROTOCOL_ID: "
+              "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc\n"
+              "  CROSSREPO_BINDING: >-\n"
+          )
+          env_insert = (
+              "  PROTOCOL_ID: "
+              "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc\n"
+              "  SELECTION: >-\n"
+              "    protocols/locks/"
+              "deform360_official_hub_visuotactile_v1_selection.json\n"
+              "  SELECTION_GIT_BLOB_SHA1: "
+              "9c1cc1167339a45e3659a9ed6096c1af16f6f62d\n"
+              "  CROSSREPO_BINDING: >-\n"
+          )
+          if workflow.count(env_anchor) != 1:
+              raise SystemExit("cannot locate protocol environment anchor")
+          workflow = workflow.replace(env_anchor, env_insert, 1)
+
+          verify_anchor = (
+              '          verify("PROTOCOL", "protocol_id", "PROTOCOL_ID")\n'
+              '          verify("CROSSREPO_BINDING", "binding_id", '
+              '"CROSSREPO_BINDING_ID")\n'
+              '          verify("DECISION_AMENDMENT", "amendment_id", '
+              '"DECISION_AMENDMENT_ID")\n'
+              "          PY\n"
+          )
+          verify_insert = (
+              '          verify("PROTOCOL", "protocol_id", "PROTOCOL_ID")\n'
+              '          verify("CROSSREPO_BINDING", "binding_id", '
+              '"CROSSREPO_BINDING_ID")\n'
+              '          verify("DECISION_AMENDMENT", "amendment_id", '
+              '"DECISION_AMENDMENT_ID")\n'
+              "          selection = Path(os.environ[\"SELECTION\"])\n"
+              "          selection_bytes = selection.read_bytes()\n"
+              "          selection_blob = hashlib.sha1(\n"
+              "              f\"blob {len(selection_bytes)}\\0\".encode(\"ascii\")\n"
+              "              + selection_bytes,\n"
+              "              usedforsecurity=False,\n"
+              "          ).hexdigest()\n"
+              "          if selection_blob != os.environ[\"SELECTION_GIT_BLOB_SHA1\"]:\n"
+              "              raise SystemExit(\n"
+              "                  f\"{selection.name} changed: {selection_blob}\"\n"
+              "              )\n"
+              "          PY\n"
+          )
+          if workflow.count(verify_anchor) != 1:
+              raise SystemExit("cannot locate contract verification anchor")
+          workflow = workflow.replace(verify_anchor, verify_insert, 1)
+
+          steps_anchor = (
+              "    permissions:\n"
+              "      contents: read\n"
+              "      issues: write\n"
+              "    steps:\n"
+              "      - name: Admit the retained source-data runner and path boundary\n"
+          )
+          steps_insert = (
+              "    permissions:\n"
+              "      contents: read\n"
+              "      issues: write\n"
+              "    steps:\n"
+              "      - name: Check out the exact default-branch protocol\n"
+              "        uses: actions/checkout@"
+              "3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n"
+              "        with:\n"
+              "          ref: ${{ github.sha }}\n"
+              "          fetch-depth: 1\n"
+              "          persist-credentials: false\n"
+              "          clean: true\n"
+              "\n"
+              "      - name: Admit the retained source-data runner and path boundary\n"
+          )
+          if workflow.count(steps_anchor) != 1:
+              raise SystemExit("cannot locate inventory step anchor")
+          workflow = workflow.replace(steps_anchor, steps_insert, 1)
+
+          import_anchor = (
+              "          import json\n"
+              "          import os\n"
+              "          import struct\n"
+              "          import zipfile\n"
+          )
+          import_insert = (
+              "          import hashlib\n"
+              "          import json\n"
+              "          import os\n"
+              "          import struct\n"
+              "          import sys\n"
+              "          import zipfile\n"
+          )
+          if workflow.count(import_anchor) != 1:
+              raise SystemExit("cannot locate inventory import anchor")
+          workflow = workflow.replace(import_anchor, import_insert, 1)
+
+          roster_anchor = '''          source_units = (
+              "167-glove-gray-cloth",
+              "29-hammer-white-cloth",
+              "2-box-white-paper",
+              "69-hammer-red-plastic",
+              "76-toy-yellow-rubber",
+              "136-drill-red-toy",
+              "146-rabbit-pink-toy",
+              "160-cookies-black-bag",
+              "161-dog-blue-toy",
+              "162-dog-gray-toy",
+          )
+'''
+          roster_insert = '''          selection_path = Path(os.environ["SELECTION"])
+          selection_bytes = selection_path.read_bytes()
+          selection_blob = hashlib.sha1(
+              f"blob {len(selection_bytes)}\\0".encode("ascii") + selection_bytes,
+              usedforsecurity=False,
+          ).hexdigest()
+          if selection_blob != os.environ["SELECTION_GIT_BLOB_SHA1"]:
+              raise SystemExit(
+                  f"selection blob changed: {selection_blob}"
+              )
+          selection_payload = json.loads(selection_bytes)
+          calibration = selection_payload["selection"]["calibration"]
+          source_units = tuple(
+              (
+                  str(row["object_id"]),
+                  int(row["episode_id"]),
+                  str(row["stratum"]),
+              )
+              for row in calibration
+          )
+          sys.path.insert(0, str(Path.cwd() / "src"))
+          from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (  # noqa: E501
+              SOURCE_ROSTER,
+          )
+
+          if source_units != SOURCE_ROSTER:
+              raise SystemExit(
+                  "selection calibration roster differs from the frozen source gate"
+              )
+          source_unit_keys = tuple(
+              f"{object_id}#{episode_id}"
+              for object_id, episode_id, _ in source_units
+          )
+'''
+          if workflow.count(roster_anchor) != 1:
+              raise SystemExit("cannot locate stale source roster")
+          workflow = workflow.replace(roster_anchor, roster_insert, 1)
+
+          counts_anchor = (
+              "          unit_path_counts = {unit: 0 for unit in source_units}\n"
+          )
+          counts_insert = (
+              "          unit_path_counts = {unit: 0 for unit in source_unit_keys}\n"
+          )
+          if workflow.count(counts_anchor) != 1:
+              raise SystemExit("cannot locate source unit count initializer")
+          workflow = workflow.replace(counts_anchor, counts_insert, 1)
+
+          loop_anchor = '''                      for unit in source_units:
+                          if unit in lower:
+                              unit_path_counts[unit] += 1
+'''
+          loop_insert = '''                      for object_id, episode_id, _ in source_units:
+                          if object_id in lower:
+                              unit_path_counts[f"{object_id}#{episode_id}"] += 1
+'''
+          if workflow.count(loop_anchor) != 1:
+              raise SystemExit("cannot locate stale source unit path loop")
+          workflow = workflow.replace(loop_anchor, loop_insert, 1)
+
+          json_keys_anchor = (
+              '                                      "case_id",\n'
+              '                                      "object_id",\n'
+          )
+          json_keys_insert = (
+              '                                      "case_id",\n'
+              '                                      "episode_id",\n'
+              '                                      "object_id",\n'
+          )
+          if workflow.count(json_keys_anchor) != 1:
+              raise SystemExit("cannot locate JSON identity-key roster")
+          workflow = workflow.replace(json_keys_anchor, json_keys_insert, 1)
+
+          schema_old = "covariance-source-input-inventory-v1"
+          schema_new = "covariance-source-input-inventory-v2"
+          if workflow.count(schema_old) != 2:
+              raise SystemExit(
+                  f"unexpected inventory schema/artifact count: {workflow.count(schema_old)}"
+              )
+          workflow = workflow.replace(schema_old, schema_new)
+          workflow = workflow.replace(
+              '              "schema_version": 1,\n',
+              '              "schema_version": 2,\n',
+              1,
+          )
+
+          payload_anchor = (
+              '              "event_revision": os.environ["GITHUB_SHA"],\n'
+              '              "information_boundary": {\n'
+          )
+          payload_insert = (
+              '              "event_revision": os.environ["GITHUB_SHA"],\n'
+              '              "selection": {\n'
+              '                  "path": str(selection_path),\n'
+              '                  "git_blob_sha1": selection_blob,\n'
+              '                  "selection_artifact_sha256": selection_payload[\n'
+              '                      "selection_artifact_sha256"\n'
+              '                  ],\n'
+              '              },\n'
+              '              "source_roster": [\n'
+              '                  {\n'
+              '                      "object_id": object_id,\n'
+              '                      "episode_id": episode_id,\n'
+              '                      "stratum": stratum,\n'
+              '                  }\n'
+              '                  for object_id, episode_id, stratum in source_units\n'
+              '              ],\n'
+              '              "source_unit_path_match_semantics": (\n'
+              '                  "object-id-token-only; episode and stratum identities "\n'
+              '                  "derive from the frozen selection lock"\n'
+              '              ),\n'
+              '              "information_boundary": {\n'
+          )
+          if workflow.count(payload_anchor) != 1:
+              raise SystemExit("cannot locate inventory payload anchor")
+          workflow = workflow.replace(payload_anchor, payload_insert, 1)
+
+          heading_old = '              "## Source-only covariance input inventory",\n'
+          heading_new = '              "## Source-only covariance input inventory v2",\n'
+          if workflow.count(heading_old) != 1:
+              raise SystemExit("cannot locate inventory heading")
+          workflow = workflow.replace(heading_old, heading_new, 1)
+
+          summary_anchor = (
+              "              f\"- workflow run: `{os.environ['GITHUB_RUN_ID']}`\",\n"
+              "              f\"- exact default-branch revision: `{os.environ['GITHUB_SHA']}`\",\n"
+          )
+          summary_insert = (
+              "              f\"- workflow run: `{os.environ['GITHUB_RUN_ID']}`\",\n"
+              "              f\"- exact default-branch revision: `{os.environ['GITHUB_SHA']}`\",\n"
+              "              f\"- frozen selection blob: `{selection_blob}`\",\n"
+              "              f\"- frozen source object-sessions: `{len(source_units)}`\",\n"
+          )
+          if workflow.count(summary_anchor) != 1:
+              raise SystemExit("cannot locate inventory summary anchor")
+          workflow = workflow.replace(summary_anchor, summary_insert, 1)
+
+          absent_old = (
+              '              f"- source units absent from all paths: '
+              '`{len(missing_source_units)}`",\n'
+          )
+          absent_new = (
+              '              f"- source object identifiers absent from all paths: '
+              '`{len(missing_source_units)}`",\n'
+              '              (\n'
+              '                  "- episode and stratum identities: frozen selection "\n'
+              '                  "lock (not inferred from payload values)"\n'
+              '              ),\n'
+          )
+          if workflow.count(absent_old) != 1:
+              raise SystemExit("cannot locate source-absence summary")
+          workflow = workflow.replace(absent_old, absent_new, 1)
+
+          boundary_note_old = (
+              '                      "This is a names/header-only source diagnostic. It is not "\n'
+          )
+          boundary_note_new = (
+              '                      "This is a selection-bound names/header-only source "\n'
+              '                      "diagnostic. Object path matches do not by themselves "\n'
+              '                      "establish episode-payload completeness. It is not "\n'
+          )
+          if workflow.count(boundary_note_old) != 1:
+              raise SystemExit("cannot locate inventory boundary note")
+          workflow = workflow.replace(boundary_note_old, boundary_note_new, 1)
+
+          workflow_path.write_text(workflow, encoding="utf-8")
+
+          test_path = Path(
+              "tests/test_deform360_covariance_only_independent_validation_v1.py"
+          )
+          test_text = test_path.read_text(encoding="utf-8")
+          if test_text.count(old_command) != 2:
+              raise SystemExit("unexpected test command count")
+          test_text = test_text.replace(old_command, new_command)
+          required_anchor = (
+              '        "FORBIDDEN_CONFIRMATION_ROOT:",\n'
+              '        \'test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"\',\n'
+          )
+          required_insert = (
+              '        "FORBIDDEN_CONFIRMATION_ROOT:",\n'
+              '        "SELECTION_GIT_BLOB_SHA1: '
+              '9c1cc1167339a45e3659a9ed6096c1af16f6f62d",\n'
+              '        "deform360_official_hub_visuotactile_v1_selection.json",\n'
+              '        "SOURCE_ROSTER",\n'
+              '        \'test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"\',\n'
+          )
+          if test_text.count(required_anchor) != 1:
+              raise SystemExit("cannot locate workflow-test requirement anchor")
+          test_text = test_text.replace(required_anchor, required_insert, 1)
+          test_path.write_text(test_text, encoding="utf-8")
+
+          doc_path = Path("docs/deform360_covariance_source_input_inventory_v1.md")
+          doc = doc_path.read_text(encoding="utf-8")
+          if doc.count("# Deform360 covariance source-input inventory v1") != 1:
+              raise SystemExit("cannot locate inventory document title")
+          doc = doc.replace(
+              "# Deform360 covariance source-input inventory v1",
+              "# Deform360 covariance source-input inventory v2",
+              1,
+          )
+          if doc.count(old_command) != 1:
+              raise SystemExit("unexpected document command count")
+          doc = doc.replace(old_command, new_command)
+          purpose_anchor = (
+              "The remaining operational problem is narrower: identify the exact retained\n"
+              "source manifests, residual histories, endpoint beliefs, physical predictions,\n"
+              "and related inputs available on the authorized source-data runner without\n"
+              "entering any confirmation data.\n"
+          )
+          purpose_insert = purpose_anchor + (
+              "\nVersion 2 derives the exact ordered source object-session roster from the\n"
+              "content-addressed official-Hub selection and verifies equality with the\n"
+              "merged covariance source-gate `SOURCE_ROSTER`. The earlier v1 execution\n"
+              "used an unrelated literal object list; it remains evidence of header-only,\n"
+              "confirmation-excluding traversal, but not of covariance-cohort readiness.\n"
+          )
+          if doc.count(purpose_anchor) != 1:
+              raise SystemExit("cannot locate inventory purpose anchor")
+          doc = doc.replace(purpose_anchor, purpose_insert, 1)
+          doc = doc.replace(
+              "inventory and source-unit path counts;",
+              "inventory, the selection-bound source roster, and object-identifier path counts;",
+          )
+          result_anchor = (
+              "The artifact is retained for 30 days. It is an operational diagnostic, not a\n"
+              "claim-bearing evidence bundle.\n"
+          )
+          result_insert = result_anchor + (
+              "\nThe path-count diagnostic matches object identifiers only. Episode and stratum\n"
+              "identities come from the frozen selection lock; the inventory does not claim\n"
+              "episode-payload completeness without the subsequent producer validation.\n"
+          )
+          if doc.count(result_anchor) != 1:
+              raise SystemExit("cannot locate inventory result anchor")
+          doc = doc.replace(result_anchor, result_insert, 1)
+          doc_path.write_text(doc, encoding="utf-8")
+
+          focused = Path(
+              "tests/test_deform360_covariance_source_inventory_roster_v2.py"
+          )
+          focused.write_text(
+              '''from __future__ import annotations
+
+import ast
+import json
+import re
+from pathlib import Path
+
+from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (
+    SOURCE_ROSTER,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW = ROOT / ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
+SELECTION = ROOT / "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+
+
+def test_inventory_v2_binds_the_frozen_selection_and_source_gate() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    selection = json.loads(SELECTION.read_text(encoding="utf-8"))
+    calibration = tuple(
+        (
+            row["object_id"],
+            row["episode_id"],
+            row["stratum"],
+        )
+        for row in selection["selection"]["calibration"]
+    )
+
+    assert calibration == SOURCE_ROSTER
+    assert "/bpt-inventory-covariance-source-v2" in workflow
+    assert "/bpt-inventory-covariance-source-v1" not in workflow
+    assert "SELECTION_GIT_BLOB_SHA1: 9c1cc1167339a45e3659a9ed6096c1af16f6f62d" in workflow
+    assert "deform360_official_hub_visuotactile_v1_selection.json" in workflow
+    assert "source_units != SOURCE_ROSTER" in workflow
+    assert "source_unit_path_match_semantics" in workflow
+    assert "covariance-source-input-inventory-v2" in workflow
+
+
+def test_inventory_does_not_retain_the_unrelated_literal_roster() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    for stale in (
+        "29-hammer-white-cloth",
+        "2-box-white-paper",
+        "69-hammer-red-plastic",
+        "76-toy-yellow-rubber",
+        "136-drill-red-toy",
+        "146-rabbit-pink-toy",
+        "160-cookies-black-bag",
+        "161-dog-blue-toy",
+        "162-dog-gray-toy",
+    ):
+        assert stale not in workflow
+
+
+def test_inventory_source_roster_is_runtime_derived_not_redeclared() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    match = re.search(
+        r"source_units = tuple\\(.*?for row in calibration\\n          \\)",
+        workflow,
+        flags=re.DOTALL,
+    )
+    assert match is not None
+    assert "row[\"object_id\"]" in match.group(0)
+    assert "row[\"episode_id\"]" in match.group(0)
+    assert "row[\"stratum\"]" in match.group(0)
+''',
+              encoding="utf-8",
+          )
+
+          one_shot = Path(
+              ".github/workflows/repair-covariance-source-inventory-roster-once.yml"
+          )
+          one_shot.unlink()
+          PY
+
+      - name: Validate the focused repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m ruff check \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_source_inventory_roster_v2.py
+          python -m ruff format --check \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_source_inventory_roster_v2.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_only_source_gate_v1.py \
+            tests/test_deform360_covariance_source_inventory_roster_v2.py \
+            tests/test_pull_request_workflow_integrity.py
+          git diff --check
+
+      - name: Commit the reviewed repair and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/deform360-covariance-only-independent-validation-v1.yml \
+            .github/workflows/repair-covariance-source-inventory-roster-once.yml \
+            docs/deform360_covariance_source_input_inventory_v1.md \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_source_inventory_roster_v2.py
+          git commit -m "Bind covariance source inventory to frozen roster"
+          git push origin HEAD:fix/covariance-source-inventory-roster-binding
