@@ -189,9 +189,7 @@ class InferenceSession(Generic[ObservationT, BeliefT]):
             context=validated_context,
         )
         if not isinstance(decision, CompleteBeliefGuardDecisionV1):
-            raise TypeError(
-                "guard_policy must return CompleteBeliefGuardDecisionV1"
-            )
+            raise TypeError("guard_policy must return CompleteBeliefGuardDecisionV1")
 
         return finalize_guarded_update(
             proposal.inference,
