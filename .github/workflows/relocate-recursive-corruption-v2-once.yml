@@ -36,7 +36,6 @@ jobs:
               Path("tests/test_recursive_corruption_benchmark_v2.py"),
               Path("scripts/science/run_recursive_corruption_v2.py"),
               Path("scripts/science/analyze_recursive_corruption_v2.py"),
-              Path("docs/recursive_corruption_benchmark_v2.md"),
           ]
           for path in paths:
               text = path.read_text(encoding="utf-8")
