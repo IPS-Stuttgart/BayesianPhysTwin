@@ -1,5 +1,5 @@
 """Versioned guarded-inference namespaces."""
 
-from . import v1
+from . import v1, v2
 
-__all__ = ["v1"]
+__all__ = ["v1", "v2"]
