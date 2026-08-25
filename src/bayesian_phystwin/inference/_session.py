@@ -75,6 +75,8 @@ class CandidateProposalV1(Generic[BeliefT]):
             name="inference.inference_admissible",
         )
         _artifact_id(self.candidate_belief, name="candidate_belief")
+        if not isinstance(self.metadata, Mapping):
+            raise TypeError("metadata must be a mapping")
         object.__setattr__(
             self,
             "metadata",
@@ -145,6 +147,8 @@ class InferenceSession(Generic[ObservationT, BeliefT]):
             raise TypeError("candidate_factory must be callable")
         if not isinstance(self.guard_policy, SessionGuardPolicy):
             raise TypeError("guard_policy must be callable")
+        if not isinstance(self.metadata, Mapping):
+            raise TypeError("metadata must be a mapping")
         object.__setattr__(
             self,
             "metadata",
