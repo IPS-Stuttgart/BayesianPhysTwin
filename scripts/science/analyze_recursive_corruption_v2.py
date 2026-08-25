@@ -19,7 +19,7 @@ from typing import Any, Final, cast
 
 import numpy as np
 
-from bayesian_phystwin.recursive_corruption_benchmark_v2 import (
+from bayesian_phystwin_experiments.recursive_corruption_benchmark_v2 import (
     CONDITIONS,
     FALLBACK_REASONS,
     IMPERFECT_CUE_CONDITIONS,

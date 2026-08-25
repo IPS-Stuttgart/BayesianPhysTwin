@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 from analyze_recursive_corruption_v2 import analyze
 
-from bayesian_phystwin.recursive_corruption_benchmark_v2 import (
+from bayesian_phystwin_experiments.recursive_corruption_benchmark_v2 import (
     CONDITIONS,
     RecursiveCorruptionV2Config,
     run_recursive_corruption_benchmark_v2,

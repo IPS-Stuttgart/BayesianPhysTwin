@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from bayesian_phystwin.recursive_corruption_benchmark_v2 import (
+from bayesian_phystwin_experiments.recursive_corruption_benchmark_v2 import (
     CONDITIONS,
     IMPERFECT_CUE_CONDITIONS,
     PRIMARY_ENDPOINTS,
