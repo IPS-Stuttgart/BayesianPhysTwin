@@ -1,8 +1,13 @@
 # Causal4D provider API v1
 
-`bayesian_phystwin.causal4d_provider_v1` is the supported integration surface
-for Causal4D. It centralizes the implementation-private dependencies that were
-previously imported directly by the downstream repository.
+`bayesian_phystwin.causal4d_provider_v1` is the supported historical
+compatibility surface for Causal4D. It centralizes the implementation-private
+dependencies that were previously imported directly by the downstream
+repository while preserving frozen scientific and diagnostic consumers.
+
+New production integrations should use the narrower role-specific provider
+facades documented alongside this module. Provider v1 is retained for
+compatibility; it is not the destination for new capabilities.
 
 ## Manifest and artifacts
 
@@ -60,18 +65,23 @@ longer require pickle.
 and resource cleanup. Causal4D should not access the wrapped simulator,
 Torch, or Warp objects directly in normal execution code.
 
-## Versioning policy
+## Versioning and no-growth policy
 
 BPT 0.4.x provides `causal4d_provider_v1`; Causal4D accepts
-`bayesian-phystwin>=0.4,<0.5` for normal development. Backward-compatible
-changes may be added to this module in 0.4.x. Removing or changing a required
-operation needs a new provider module/API version and a new BPT compatibility
-minor line.
+`bayesian-phystwin>=0.4,<0.5` for normal development. Existing operations may
+receive bug fixes, security hardening, and internal delegation changes that
+preserve their public meaning and behavior.
+
+The aggregate provider-v1 and scientific-provider-v1 export inventories are
+frozen no-growth surfaces. CI pins their exact canonical inventories. Adding a
+new exported capability to either v1 facade is not a backward-compatible
+maintenance change: it requires a role-specific versioned provider or a new API
+version and an explicit downstream compatibility review.
 
 Frozen experiments continue to record and install exact Git revisions. The
 version range is for upgradeable development environments; it does not replace
 experiment locks.
 
 Both repositories contain cross-repository tests. They validate the manifest,
-verify every facade name imported by Causal4D, and prevent new imports from
-underscore-prefixed BPT modules or functions.
+verify every facade name imported by Causal4D, prevent accidental export growth,
+and prevent new imports from underscore-prefixed BPT modules or functions.
