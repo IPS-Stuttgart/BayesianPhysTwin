@@ -13,9 +13,16 @@ on:
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
       - "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+      - "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+      - "scripts/science/run_deform360_covariance_source_producer_v1.py"
+      - "src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py"
+      - "src/bayesian_phystwin/deform360_covariance_source_producer_v1.py"
+      - "src/bayesian_phystwin/deform360_registered_residual_history_v1/**"
       - "src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
       - "tests/test_deform360_covariance_only_source_gate_v1.py"
+      - "tests/test_deform360_covariance_source_producer_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
   push:
@@ -28,9 +35,16 @@ on:
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
       - "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+      - "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+      - "scripts/science/run_deform360_covariance_source_producer_v1.py"
+      - "src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py"
+      - "src/bayesian_phystwin/deform360_covariance_source_producer_v1.py"
+      - "src/bayesian_phystwin/deform360_registered_residual_history_v1/**"
       - "src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
       - "tests/test_deform360_covariance_only_source_gate_v1.py"
+      - "tests/test_deform360_covariance_source_producer_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
   issue_comment:
@@ -51,23 +65,31 @@ concurrency:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONUNBUFFERED: "1"
-  PROTOCOL: >-
-    protocols/locks/deform360_covariance_only_independent_validation_v1.json
+  PROTOCOL: protocols/locks/deform360_covariance_only_independent_validation_v1.json
   PROTOCOL_ID: 0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc
-  CROSSREPO_BINDING: >-
-    protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json
+  SELECTION: protocols/locks/deform360_official_hub_visuotactile_v1_selection.json
+  CROSSREPO_BINDING: protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json
   CROSSREPO_BINDING_ID: 531123205959a3d3d0549d9256b6ec222dca636198bc1e93f1b468d1a77c8f33
-  DECISION_AMENDMENT: >-
-    protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json
+  DECISION_AMENDMENT: protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json
   DECISION_AMENDMENT_ID: efacabe4ceb6e1d3c4cd523e0959bdf16f8ff4253f9800e8de11574734623802
+  SOURCE_EXECUTION_LOCK: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
   SOURCE_INVENTORY_COMMAND: /bpt-inventory-covariance-source-v1
+  SOURCE_PRODUCER_COMMAND: /bpt-produce-covariance-source-v1
   AUTHORIZED_RUNNER_NAME: workstation2
-  SOURCE_ROOT: >-
-    /mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13/calibration-source
-  PROCESSED_ROOT: >-
-    /mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13/calibration-processed
-  FORBIDDEN_CONFIRMATION_ROOT: >-
-    /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  SOURCE_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-source
+  PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed
+  FORBIDDEN_CONFIRMATION_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  UPSTREAM_RUN_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-v6-source-prediction/f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f/6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+  BASE_RUN_ID: "31585420194"
+  BASE_RUN_ATTEMPT: "1"
+  BASE_HEAD_SHA: 6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+  BASE_WORKFLOW_NAME: Deform360 v6 source prediction evidence — dual CUDA runtimes
+  BASE_WORKFLOW_PATH: .github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml
+  BASE_ARTIFACT_ID: "9137481740"
+  BASE_ARTIFACT_NAME: deform360-v6-source-prediction-dual-runtime-31585420194-1
+  BASE_ARTIFACT_DIGEST: sha256:d811ff1ea4d6ad22a6e7476d2911602af1ee71f81339c0737e1cc60fd5883f9d
+  BASE_ARTIFACT_BYTES: "722235"
 
 jobs:
   contracts:
@@ -91,7 +113,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Validate the frozen target-closed protocol
+      - name: Validate the frozen target-closed implementation
         shell: bash
         run: |
           set -euo pipefail
@@ -101,15 +123,28 @@ jobs:
             "wheel==0.45.1"
           python -m pip install -e ".[dev]"
           python -m pip check
-          tests=(
+          files=(
+            scripts/science/run_deform360_covariance_source_producer_v1.py
+            src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py
+            src/bayesian_phystwin/deform360_covariance_source_producer_v1.py
+            src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py
             tests/test_deform360_covariance_only_independent_validation_v1.py
-            tests/test_deform360_covariance_only_crossrepo_binding_v1.py
-            tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py
+            tests/test_deform360_covariance_only_source_gate_v1.py
+            tests/test_deform360_covariance_source_producer_v1.py
           )
-          python -m ruff check "${tests[@]}"
-          python -m ruff format --check "${tests[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/run_deform360_covariance_source_producer_v1.py \
+            src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py \
+            src/bayesian_phystwin/deform360_covariance_source_producer_v1.py \
+            src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py
           python -m pytest -q -p no:cacheprovider \
-            "${tests[@]}" \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_only_crossrepo_binding_v1.py \
+            tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py \
+            tests/test_deform360_covariance_only_source_gate_v1.py \
+            tests/test_deform360_covariance_source_producer_v1.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
@@ -131,10 +166,7 @@ jobs:
               ).hexdigest()
               expected = os.environ[expected_name]
               if declared != expected or observed != expected:
-                  raise SystemExit(
-                      f"{path.name} changed: declared={declared} "
-                      f"observed={observed} expected={expected}"
-                  )
+                  raise SystemExit(f"{path.name} changed")
 
           verify("PROTOCOL", "protocol_id", "PROTOCOL_ID")
           verify("CROSSREPO_BINDING", "binding_id", "CROSSREPO_BINDING_ID")
@@ -145,10 +177,10 @@ jobs:
           test -z "$(git status --porcelain=v1)"
 
   source-input-inventory:
-    name: Source-only covariance input inventory
+    name: Roster-bound source-only covariance input inventory
     if: >-
       github.event_name == 'issue_comment' &&
-      github.event.issue.number == 461 &&
+      github.event.issue.number == 775 &&
       github.event.issue.pull_request == null &&
       github.actor == 'FlorianPfaff' &&
       github.event.comment.user.login == 'FlorianPfaff' &&
@@ -159,333 +191,300 @@ jobs:
       contents: read
       issues: write
     steps:
-      - name: Admit the retained source-data runner and path boundary
+      - name: Check out exact protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the exact source-only implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "numpy==2.2.6"
+          python -m pip install --no-deps -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Build and validate the roster-bound header inventory
         shell: bash
         run: |
           set -euo pipefail
           test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"
-          test "$RUNNER_OS" = "Linux"
-          test "$RUNNER_ARCH" = "X64"
-          test "${{ github.event.comment.body }}" = "$SOURCE_INVENTORY_COMMAND"
-          source_root="$(readlink -f -- "$SOURCE_ROOT")"
-          processed_root="$(readlink -f -- "$PROCESSED_ROOT")"
-          forbidden_root="$(readlink -f -- "$FORBIDDEN_CONFIRMATION_ROOT")"
-          test -d "$source_root"
-          test -d "$processed_root"
-          test -d "$forbidden_root"
-          test "$source_root" != "$forbidden_root"
-          test "$processed_root" != "$forbidden_root"
-          case "$source_root/" in "$forbidden_root/"*) exit 1 ;; esac
-          case "$processed_root/" in "$forbidden_root/"*) exit 1 ;; esac
-          {
-            echo "RESOLVED_SOURCE_ROOT=$source_root"
-            echo "RESOLVED_PROCESSED_ROOT=$processed_root"
-            echo "RESOLVED_FORBIDDEN_ROOT=$forbidden_root"
-            echo "INVENTORY_JSON=$RUNNER_TEMP/covariance-source-input-inventory.json"
-            echo "INVENTORY_MD=$RUNNER_TEMP/covariance-source-input-inventory.md"
-          } >> "$GITHUB_ENV"
-
-      - name: Inventory names, sizes, JSON keys, and array headers only
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from __future__ import annotations
-
-          import json
-          import os
-          import struct
-          import zipfile
-          from pathlib import Path
-          from typing import Any, BinaryIO
-
-          roots = {
-              "calibration_source": Path(os.environ["RESOLVED_SOURCE_ROOT"]),
-              "calibration_processed": Path(os.environ["RESOLVED_PROCESSED_ROOT"]),
-          }
-          forbidden = Path(os.environ["RESOLVED_FORBIDDEN_ROOT"])
-          source_units = (
-              "167-glove-gray-cloth",
-              "198-kneepad-cloth",
-              "026-sock-cloth",
-              "031-cotton-cloth",
-              "036-napkin-cloth",
-              "153-cake",
-              "152-slime",
-              "186-monster",
-              "058-roll-napkin",
-              "193-frog",
-          )
-          interesting_tokens = (
-              "belief",
-              "cov",
-              "endpoint",
-              "history",
-              "manifest",
-              "physical",
-              "prefix",
-              "prediction",
-              "residual",
-              "split",
-              "track",
-          )
-          interesting_suffixes = {
-              ".csv",
-              ".json",
-              ".npy",
-              ".npz",
-              ".pickle",
-              ".pkl",
-              ".pt",
-              ".pth",
-          }
-
-          def npy_header(stream: BinaryIO) -> dict[str, object]:
-              if stream.read(6) != b"\x93NUMPY":
-                  raise ValueError("not-npy")
-              major, minor = struct.unpack("BB", stream.read(2))
-              if major == 1:
-                  header_length = struct.unpack("<H", stream.read(2))[0]
-              elif major in {2, 3}:
-                  header_length = struct.unpack("<I", stream.read(4))[0]
-              else:
-                  raise ValueError(f"unsupported-npy-version-{major}.{minor}")
-              header = stream.read(header_length).decode(
-                  "latin1" if major < 3 else "utf-8"
-              )
-              import ast
-
-              parsed = ast.literal_eval(header)
-              shape = parsed.get("shape")
-              descriptor = parsed.get("descr")
-              order = parsed.get("fortran_order")
-              return {
-                  "shape": list(shape) if isinstance(shape, tuple) else shape,
-                  "dtype": descriptor,
-                  "fortran_order": order,
-              }
-
-          rows: list[dict[str, Any]] = []
-          root_summaries: dict[str, dict[str, Any]] = {}
-          unit_path_counts = {unit: 0 for unit in source_units}
-
-          for root_name, root in roots.items():
-              resolved_root = root.resolve(strict=True)
-              if resolved_root == forbidden or forbidden in resolved_root.parents:
-                  raise SystemExit("forbidden confirmation root was selected")
-              file_count = 0
-              byte_count = 0
-              suffix_counts: dict[str, int] = {}
-              for current_root, directory_names, file_names in os.walk(
-                  resolved_root,
-                  followlinks=False,
-              ):
-                  current = Path(current_root)
-                  directory_names[:] = sorted(
-                      name
-                      for name in directory_names
-                      if not (current / name).is_symlink()
-                  )
-                  for file_name in sorted(file_names):
-                      path = current / file_name
-                      if path.is_symlink() or not path.is_file():
-                          continue
-                      resolved = path.resolve(strict=True)
-                      if forbidden == resolved or forbidden in resolved.parents:
-                          raise SystemExit(
-                              "inventory attempted to enter confirmation data"
-                          )
-                      relative = path.relative_to(resolved_root).as_posix()
-                      stat = path.stat()
-                      file_count += 1
-                      byte_count += stat.st_size
-                      suffix = path.suffix.lower()
-                      suffix_counts[suffix or "<none>"] = (
-                          suffix_counts.get(suffix or "<none>", 0) + 1
-                      )
-                      lower = relative.lower()
-                      for unit in source_units:
-                          if unit in lower:
-                              unit_path_counts[unit] += 1
-                      if (
-                          suffix not in interesting_suffixes
-                          and not any(token in lower for token in interesting_tokens)
-                      ):
-                          continue
-                      row: dict[str, Any] = {
-                          "root": root_name,
-                          "relative_path": relative,
-                          "suffix": suffix,
-                          "size_bytes": stat.st_size,
-                      }
-                      if suffix == ".json" and stat.st_size <= 2_000_000:
-                          try:
-                              payload = json.loads(
-                                  path.read_text(encoding="utf-8")
-                              )
-                          except Exception as error:
-                              row["json_error"] = type(error).__name__
-                          else:
-                              row["json_type"] = type(payload).__name__
-                              if isinstance(payload, dict):
-                                  row["json_top_level_keys"] = sorted(
-                                      str(key) for key in payload
-                                  )[:80]
-                                  for key in (
-                                      "artifact_kind",
-                                      "case_id",
-                                      "object_id",
-                                      "schema",
-                                      "schema_version",
-                                      "source_unit_id",
-                                      "status",
-                                  ):
-                                      value = payload.get(key)
-                                      if (
-                                          isinstance(value, (str, int, float, bool))
-                                          or value is None
-                                      ):
-                                          row[f"json_{key}"] = value
-                      elif suffix == ".npy":
-                          try:
-                              with path.open("rb") as stream:
-                                  row["npy_header"] = npy_header(stream)
-                          except Exception as error:
-                              row["array_header_error"] = type(error).__name__
-                      elif suffix == ".npz":
-                          try:
-                              members: list[dict[str, object]] = []
-                              with zipfile.ZipFile(path) as archive:
-                                  for member_name in sorted(archive.namelist())[:80]:
-                                      member: dict[str, object] = {
-                                          "name": member_name
-                                      }
-                                      if member_name.endswith(".npy"):
-                                          with archive.open(member_name) as stream:
-                                              member.update(npy_header(stream))
-                                      members.append(member)
-                              row["npz_members"] = members
-                              row["npz_member_count"] = len(members)
-                          except Exception as error:
-                              row["array_header_error"] = type(error).__name__
-                      rows.append(row)
-              root_summaries[root_name] = {
-                  "byte_count": byte_count,
-                  "file_count": file_count,
-                  "suffix_counts": dict(sorted(suffix_counts.items())),
-              }
-
-          candidate_rows = [
-              row
-              for row in rows
-              if any(
-                  token in row["relative_path"].lower()
-                  for token in interesting_tokens
-              )
-          ]
-          missing_source_units = sorted(
-              unit for unit, count in unit_path_counts.items() if count == 0
-          )
-          payload = {
-              "schema": (
-                  "bayesian-phystwin/"
-                  "covariance-source-input-inventory-v1"
-              ),
-              "schema_version": 1,
-              "event_revision": os.environ["GITHUB_SHA"],
-              "information_boundary": {
-                  "array_values_read": False,
-                  "confirmation_root_entered": False,
-                  "file_payloads_scored": False,
-                  "source_roots_only": True,
-                  "target_outcomes_opened": False,
-              },
-              "roots": root_summaries,
-              "source_unit_path_counts": unit_path_counts,
-              "missing_source_units": missing_source_units,
-              "interesting_file_count": len(rows),
-              "candidate_file_count": len(candidate_rows),
-              "files": rows,
-          }
-          output_json = Path(os.environ["INVENTORY_JSON"])
-          output_json.write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-
-          lines = [
-              "## Source-only covariance input inventory",
-              "",
-              f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
-              f"- exact default-branch revision: `{os.environ['GITHUB_SHA']}`",
-              (
-                  "- source files traversed: "
-                  f"`{root_summaries['calibration_source']['file_count']}`"
-              ),
-              (
-                  "- processed files traversed: "
-                  f"`{root_summaries['calibration_processed']['file_count']}`"
-              ),
-              f"- interesting files retained: `{len(rows)}`",
-              (
-                  "- covariance/history/prediction candidates: "
-                  f"`{len(candidate_rows)}`"
-              ),
-              f"- source units absent from all paths: `{len(missing_source_units)}`",
-              "- confirmation payload entered: **no**",
-              "- target outcome opened: **no**",
-              "",
-              "### Candidate paths",
-              "",
-          ]
-          for row in candidate_rows[:100]:
-              lines.append(
-                  f"- `{row['root']}/{row['relative_path']}` "
-                  f"({row['size_bytes']} bytes)"
-              )
-          if len(candidate_rows) > 100:
-              lines.append(
-                  f"- ... and {len(candidate_rows) - 100} additional "
-                  "candidates in the artifact"
-              )
-          lines.extend(
-              [
-                  "",
-                  (
-                      "This is a names/header-only source diagnostic. It is not "
-                      "a source-positive, source-negative, or technical-negative "
-                      "covariance decision and authorizes no confirmation access."
-                  ),
-              ]
-          )
-          Path(os.environ["INVENTORY_MD"]).write_text(
-              "\n".join(lines) + "\n",
-              encoding="utf-8",
-          )
-          print("\n".join(lines))
-          PY
+          inventory="$RUNNER_TEMP/covariance-source-input-inventory.json"
+          python scripts/science/run_deform360_covariance_source_producer_v1.py \
+            inventory \
+            --protocol "$PROTOCOL" \
+            --selection "$SELECTION" \
+            --crossrepo-binding "$CROSSREPO_BINDING" \
+            --implementation-revision "$GITHUB_SHA" \
+            --source-root "$SOURCE_ROOT" \
+            --processed-root "$PROCESSED_ROOT" \
+            --forbidden-confirmation-root "$FORBIDDEN_CONFIRMATION_ROOT" \
+            --output "$inventory"
+          python scripts/science/run_deform360_covariance_source_producer_v1.py \
+            validate-inventory "$inventory"
+          echo "INVENTORY_JSON=$inventory" >> "$GITHUB_ENV"
 
       - name: Upload the complete bounded inventory
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: covariance-source-input-inventory-v1
-          path: |
-            ${{ env.INVENTORY_JSON }}
-            ${{ env.INVENTORY_MD }}
+          name: covariance-source-input-inventory-v1-${{ github.run_id }}
+          path: ${{ env.INVENTORY_JSON }}
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
-      - name: Publish the bounded summary to issue 461
+      - name: Publish the bounded inventory identity to issue 775
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          body="$(cat "$INVENTORY_MD")"
-          body="${body}
+          inventory_id="$(jq -r '.inventory_id' "$INVENTORY_JSON")"
+          files="$(jq -r '.files | length' "$INVENTORY_JSON")"
+          body="## Corrected covariance source inventory retained
+
+          - inventory ID: \`${inventory_id}\`
+          - frozen source units: \`10/10\`
+          - retained header records: \`${files}\`
+          - array values read: \`false\`
+          - confirmation root entered: \`false\`
+          - source suffix used: \`false\`
+          - target outcomes opened: \`false\`
 
           Artifact: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          gh api \
-            --method POST \
-            "repos/${GITHUB_REPOSITORY}/issues/461/comments" \
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/775/comments" \
             -f body="$body" >/dev/null
+
+  source-prediction-barrier:
+    name: Seal exact 100-record covariance source barrier
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.number == 775 &&
+      github.event.issue.pull_request == null &&
+      github.actor == 'FlorianPfaff' &&
+      github.event.comment.user.login == 'FlorianPfaff' &&
+      github.event.comment.body == '/bpt-produce-covariance-source-v1'
+    runs-on: [self-hosted, Linux, X64, host-workstation2]
+    timeout-minutes: 120
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Check out exact protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the exact reviewed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "numpy==2.2.6"
+          python -m pip install --no-deps -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Admit the source roots and consume the one-attempt ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"
+          source_root="$(realpath -e "$SOURCE_ROOT")"
+          processed_root="$(realpath -e "$PROCESSED_ROOT")"
+          forbidden_root="$(realpath -e "$FORBIDDEN_CONFIRMATION_ROOT")"
+          results_root="$(realpath -e "$RESULTS_ROOT")"
+          upstream_root="$(realpath -e "$UPSTREAM_RUN_ROOT")"
+          test "$source_root" = "$SOURCE_ROOT"
+          test "$processed_root" = "$PROCESSED_ROOT"
+          test "$forbidden_root" = "$FORBIDDEN_CONFIRMATION_ROOT"
+          test "$results_root" = "$RESULTS_ROOT"
+          test "$upstream_root" = "$UPSTREAM_RUN_ROOT"
+          case "$upstream_root/" in "$results_root/"*) ;; *) exit 2 ;; esac
+          for admitted in "$source_root" "$processed_root" "$results_root"; do
+            test "$admitted" != "$forbidden_root"
+            case "$admitted/" in "$forbidden_root/"*) exit 2 ;; esac
+            case "$forbidden_root/" in "$admitted/"*) exit 2 ;; esac
+          done
+          output="$results_root/bayesian-phystwin/deform360-covariance-source-panel-v1/$PROTOCOL_ID/$GITHUB_SHA"
+          claim="${output}.attempt"
+          mkdir -p "$(dirname "$output")"
+          test ! -e "$output"
+          umask 077
+          mkdir "$claim"
+          jq -n \
+            --arg revision "$GITHUB_SHA" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg command "$SOURCE_PRODUCER_COMMAND" \
+            '{implementation_revision:$revision,run_id:$run_id,run_attempt:$run_attempt,command:$command,consumed:true}' \
+            > "$claim/attempt.json"
+          {
+            echo "RESOLVED_SOURCE_ROOT=$source_root"
+            echo "RESOLVED_PROCESSED_ROOT=$processed_root"
+            echo "RESOLVED_FORBIDDEN_ROOT=$forbidden_root"
+            echo "RESOLVED_RESULTS_ROOT=$results_root"
+            echo "RESOLVED_UPSTREAM_ROOT=$upstream_root"
+            echo "RUN_OUTPUT=$output"
+            echo "RUN_CLAIM=$claim"
+            echo "INVENTORY_JSON=$RUNNER_TEMP/covariance-source-input-inventory.json"
+            echo "TECHNICAL_RECEIPT=$RUNNER_TEMP/covariance-source-technical-receipt.json"
+            echo "PRODUCER_LOG=$RUNNER_TEMP/covariance-source-producer.log"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify the immutable public source execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${BASE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"$run")" = "$BASE_WORKFLOW_NAME"
+          test "$(jq -r '.path' <<<"$run")" = "$BASE_WORKFLOW_PATH"
+          test "$(jq -r '.event' <<<"$run")" = "push"
+          test "$(jq -r '.head_branch' <<<"$run")" = "main"
+          test "$(jq -r '.head_sha' <<<"$run")" = "$BASE_HEAD_SHA"
+          test "$(jq -r '.status' <<<"$run")" = "completed"
+          test "$(jq -r '.conclusion' <<<"$run")" = "success"
+          test "$(jq -r '.run_attempt' <<<"$run")" = "$BASE_RUN_ATTEMPT"
+          artifact="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${BASE_ARTIFACT_ID}")"
+          test "$(jq -r '.name' <<<"$artifact")" = "$BASE_ARTIFACT_NAME"
+          test "$(jq -r '.digest' <<<"$artifact")" = "$BASE_ARTIFACT_DIGEST"
+          test "$(jq -r '.size_in_bytes' <<<"$artifact")" = "$BASE_ARTIFACT_BYTES"
+          test "$(jq -r '.expired' <<<"$artifact")" = "false"
+          test "$(jq -r '.workflow_run.id' <<<"$artifact")" = "$BASE_RUN_ID"
+          test "$(jq -r '.workflow_run.head_sha' <<<"$artifact")" = "$BASE_HEAD_SHA"
+
+      - name: Download only the exact compact public source artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: ${{ env.BASE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-v6-base-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.BASE_RUN_ID }}
+
+      - name: Build the inventory and seal the target-closed source panel
+        id: produce
+        shell: bash
+        run: |
+          set -uo pipefail
+          compact="$RUNNER_TEMP/deform360-v6-base-source"
+          set +e
+          python scripts/science/run_deform360_covariance_source_producer_v1.py \
+            execute \
+            --protocol "$PROTOCOL" \
+            --selection "$SELECTION" \
+            --crossrepo-binding "$CROSSREPO_BINDING" \
+            --implementation-revision "$GITHUB_SHA" \
+            --source-root "$RESOLVED_SOURCE_ROOT" \
+            --processed-root "$RESOLVED_PROCESSED_ROOT" \
+            --forbidden-confirmation-root "$RESOLVED_FORBIDDEN_ROOT" \
+            --inventory-output "$INVENTORY_JSON" \
+            --source-execution-lock "$SOURCE_EXECUTION_LOCK" \
+            --upstream-source-plan "$compact/source-plan.json" \
+            --upstream-prediction-batch "$compact/source-prediction-batch.json" \
+            --upstream-prediction-receipt "$compact/source-prediction-receipt.json" \
+            --upstream-execution-receipt "$compact/execution-receipt.json" \
+            --upstream-run-root "$RESOLVED_UPSTREAM_ROOT" \
+            --input-root "$RESOLVED_RESULTS_ROOT" \
+            --repository-root "$GITHUB_WORKSPACE" \
+            --output-root "$RUN_OUTPUT" \
+            --technical-receipt "$TECHNICAL_RECEIPT" \
+            > "$PRODUCER_LOG" 2>&1
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Rehash the complete 100-record barrier
+        if: steps.produce.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/run_deform360_covariance_source_producer_v1.py \
+            validate-panel "$RUN_OUTPUT"
+          test "$(jq -r '.prediction_record_count' "$RUN_OUTPUT/source-panel-receipt.json")" = "100"
+          test "$(jq -r '.source_suffix_scoring_authorized' "$RUN_OUTPUT/source-panel-receipt.json")" = "false"
+          test "$(jq -r '.confirmation_prediction_authorized' "$RUN_OUTPUT/source-panel-receipt.json")" = "false"
+
+      - name: Upload the complete source barrier
+        if: steps.produce.outputs.exit_code == '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: covariance-source-prediction-barrier-v1-${{ github.run_id }}
+          path: |
+            ${{ env.RUN_OUTPUT }}
+            ${{ env.INVENTORY_JSON }}
+            ${{ env.RUN_CLAIM }}/attempt.json
+            ${{ env.PRODUCER_LOG }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload a bounded technical receipt
+        if: steps.produce.outputs.exit_code != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: covariance-source-technical-receipt-v1-${{ github.run_id }}
+          path: |
+            ${{ env.TECHNICAL_RECEIPT }}
+            ${{ env.RUN_CLAIM }}/attempt.json
+            ${{ env.PRODUCER_LOG }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish the bounded source-barrier status to issue 775
+        if: always() && steps.produce.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.produce.outputs.exit_code }}" == "0" ]]; then
+            receipt="$RUN_OUTPUT/source-panel-receipt.json"
+            status="$(jq -r '.status' "$receipt")"
+            receipt_id="$(jq -r '.receipt_id' "$receipt")"
+            count="$(jq -r '.prediction_record_count' "$receipt")"
+          else
+            receipt="$TECHNICAL_RECEIPT"
+            status="$(jq -r '.status' "$receipt")"
+            receipt_id="$(jq -r '.receipt_id' "$receipt")"
+            count="0"
+          fi
+          body="## Covariance source barrier: \`${status}\`
+
+          - receipt ID: \`${receipt_id}\`
+          - sealed prefix-only records: \`${count}/100\`
+          - source suffix used: \`false\`
+          - confirmation payload opened: \`false\`
+          - target outcome opened: \`false\`
+          - confirmation authorized by this run: \`false\`
+
+          Artifact: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/775/comments" \
+            -f body="$body" >/dev/null
+
+      - name: Preserve technical failure as a failed run
+        if: steps.produce.outputs.exit_code != '0'
+        shell: bash
+        run: exit 1

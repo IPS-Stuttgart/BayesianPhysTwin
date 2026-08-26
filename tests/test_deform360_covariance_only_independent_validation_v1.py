@@ -2,15 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from pathlib import Path
 from typing import Any
 
 import yaml
-
-from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (
-    SOURCE_ROSTER,
-)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
@@ -26,6 +21,15 @@ DOCUMENT = ROOT / "docs/deform360_covariance_only_independent_validation_v1.md"
 INVENTORY_DOCUMENT = ROOT / "docs/deform360_covariance_source_input_inventory_v1.md"
 WORKFLOW = (
     ROOT / ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
+)
+INVENTORY_SOURCE = (
+    ROOT / "src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py"
+)
+PRODUCER_SOURCE = (
+    ROOT / "src/bayesian_phystwin/deform360_covariance_source_producer_v1.py"
+)
+PRODUCER_SCRIPT = (
+    ROOT / "scripts/science/run_deform360_covariance_source_producer_v1.py"
 )
 EXPECTED_PROTOCOL_ID = (
     "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc"
@@ -257,6 +261,7 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
     assert set(workflow["jobs"]) == {
         "contracts",
         "source-input-inventory",
+        "source-prediction-barrier",
     }
 
     contracts = workflow["jobs"]["contracts"]
@@ -277,7 +282,7 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
     condition = str(inventory["if"])
     for required in (
         "github.event_name == 'issue_comment'",
-        "github.event.issue.number == 461",
+        "github.event.issue.number == 775",
         "github.event.issue.pull_request == null",
         "github.actor == 'FlorianPfaff'",
         "github.event.comment.user.login == 'FlorianPfaff'",
@@ -287,14 +292,23 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
 
     for required in (
         "SOURCE_INVENTORY_COMMAND: /bpt-inventory-covariance-source-v1",
+        "SOURCE_PRODUCER_COMMAND: /bpt-produce-covariance-source-v1",
         "AUTHORIZED_RUNNER_NAME: workstation2",
+        (
+            "SOURCE_ROOT: /mnt/lexar4tb/datasets/"
+            "deform360_official_hub_visuotactile_v1/calibration-source"
+        ),
+        (
+            "PROCESSED_ROOT: /mnt/lexar4tb/datasets/"
+            "deform360_official_hub_visuotactile_v1/calibration-processed"
+        ),
         "FORBIDDEN_CONFIRMATION_ROOT:",
         'test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"',
-        '"array_values_read": False',
-        '"confirmation_root_entered": False',
-        '"target_outcomes_opened": False',
+        "run_deform360_covariance_source_producer_v1.py",
+        "validate-inventory",
+        "validate-panel",
         "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-        "repos/${GITHUB_REPOSITORY}/issues/461/comments",
+        "repos/${GITHUB_REPOSITORY}/issues/775/comments",
     ):
         assert required in workflow_text
     for forbidden in (
@@ -304,16 +318,57 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
     ):
         assert forbidden not in workflow_text
 
-    roster_start = workflow_text.index("          source_units = (")
-    roster_end = workflow_text.index("          )", roster_start)
-    workflow_source_roster = tuple(
-        re.findall(r'"([^"]+)"', workflow_text[roster_start:roster_end])
-    )
-    assert workflow_source_roster == tuple(
-        object_id for object_id, _episode, _stratum in SOURCE_ROSTER
-    )
+    producer = workflow["jobs"]["source-prediction-barrier"]
+    assert producer["runs-on"] == [
+        "self-hosted",
+        "Linux",
+        "X64",
+        "host-workstation2",
+    ]
+    assert producer["permissions"] == {
+        "actions": "read",
+        "contents": "read",
+        "issues": "write",
+    }
+    producer_condition = str(producer["if"])
+    for required in (
+        "github.event.issue.number == 775",
+        "github.actor == 'FlorianPfaff'",
+        "github.event.comment.body == '/bpt-produce-covariance-source-v1'",
+    ):
+        assert required in producer_condition
+    producer_steps = "\n".join(str(step.get("run", "")) for step in producer["steps"])
+    for required in (
+        'mkdir "$claim"',
+        "execute \\",
+        '--upstream-run-root "$RESOLVED_UPSTREAM_ROOT"',
+        '--forbidden-confirmation-root "$RESOLVED_FORBIDDEN_ROOT"',
+        "'.workflow_run.id'",
+        "'.workflow_run.head_sha'",
+        "source_suffix_scoring_authorized",
+        "confirmation_prediction_authorized",
+        "prediction_record_count",
+    ):
+        assert required in producer_steps
+    for forbidden in (
+        "evaluate_source_gate",
+        "source suffix scoring",
+        "confirmation-outcome",
+    ):
+        assert forbidden not in producer_steps.lower()
+
+    inventory_source = INVENTORY_SOURCE.read_text(encoding="utf-8")
+    producer_source = PRODUCER_SOURCE.read_text(encoding="utf-8")
+    producer_script = PRODUCER_SCRIPT.read_text(encoding="utf-8")
+    assert "selection calibration roster changed" in inventory_source
+    assert "roster = tuple(" in inventory_source
+    assert "SOURCE_ROSTER" in inventory_source
+    assert "for object_id, episode, stratum in SOURCE_ROSTER" in producer_source
+    assert 'source_suffix_scoring_authorized": False' in producer_source
+    assert "def _execute(" in producer_script
 
     assert "twelve separately selected confirmation object-sessions" in document
     assert "A negative or inconclusive result is complete" in document
     assert "/bpt-inventory-covariance-source-v1" in inventory_document
+    assert "/bpt-produce-covariance-source-v1" in inventory_document
     assert "never enters the confirmation root" in inventory_document
