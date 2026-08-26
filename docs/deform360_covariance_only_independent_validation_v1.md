@@ -66,6 +66,15 @@ The target prefix is frames `[0, 58)`, the scored future is `[58, 76)`, and
 `[76, 81)` remains an unscored buffer. The twelve future payloads may then be
 opened exactly once.
 
+The current public-data execution advances in explicit stages on issue `#775`.
+`/bpt-inventory-covariance-source-v1` creates the corrected roster-bound,
+header-only source inventory. `/bpt-produce-covariance-source-v1` then consumes
+one revision-specific attempt ledger, regenerates that inventory, and seals the
+exact 100-record prefix-only source barrier. The producer stops before source
+suffix scoring. It cannot run the source reducer, create confirmation
+predictions, or open confirmation data. Those later operations require separate
+reviewed execution stages after the complete barrier is retained.
+
 ## Cross-repository authority binding
 
 The software protocol and the paper preregistration have distinct, explicit

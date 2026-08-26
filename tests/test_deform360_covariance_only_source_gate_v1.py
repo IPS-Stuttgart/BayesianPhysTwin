@@ -11,12 +11,17 @@ import pytest
 from bayesian_phystwin_experiments.deform360_covariance_only_source_gate_v1 import (
     BATCH_SCHEMA,
     COVARIANCE_DONOR_ID,
+    COVARIANCE_EIGENVALUE_FLOOR_M2,
     COVARIANCE_SCALES,
+    CROSSREPO_BINDING_ID,
+    FUTURE_RANGE,
     OBSERVATION_STD_M,
     PAPER_PROTOCOL_ID,
+    PREFIX_RANGE,
     REFERENCE_PREDICTOR_ID,
     SCHEMA_VERSION,
     SCORES_SCHEMA,
+    SELECTION_SHA256,
     SOFTWARE_PROTOCOL_ID,
     SOURCE_ROSTER,
     evaluate_source_gate,
@@ -32,6 +37,104 @@ def _sha(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _content_id(value: dict[str, object]) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _record(*, fold_index: int, unit_index: int) -> dict[str, object]:
+    object_id, episode, stratum = SOURCE_ROSTER[unit_index]
+    outer_object, outer_episode, outer_stratum = SOURCE_ROSTER[fold_index]
+    mean_id = _sha(f"mean:{object_id}:{episode}:{fold_index}")
+    covariance_id = _sha(f"covariance:{object_id}:{episode}:{fold_index}")
+    payload: dict[str, object] = {
+        "software_protocol_id": SOFTWARE_PROTOCOL_ID,
+        "paper_protocol_id": PAPER_PROTOCOL_ID,
+        "crossrepo_binding_id": CROSSREPO_BINDING_ID,
+        "selection_sha256": SELECTION_SHA256,
+        "runtime_id": _sha("runtime"),
+        "implementation_revision": "1" * 40,
+        "distribution": {"name": "bayesian-phystwin", "version": "test"},
+        "environment": {
+            "byteorder": "little",
+            "machine": "test",
+            "python_implementation": "CPython",
+            "python_version": "3.12.0",
+            "system": "Linux",
+        },
+        "numerical_runtime": {
+            "float64_epsilon": 2.220446049250313e-16,
+            "numpy_version": "2.0.0",
+        },
+        "outer_fold_index": fold_index,
+        "outer_fold_context": {
+            "object_id": outer_object,
+            "episode": outer_episode,
+            "stratum": outer_stratum,
+        },
+        "source_unit_index": unit_index,
+        "object_id": object_id,
+        "episode": episode,
+        "stratum": stratum,
+        "prefix_range_half_open": list(PREFIX_RANGE),
+        "future_range_half_open": list(FUTURE_RANGE),
+        "future_horizon_steps": list(range(1, 19)),
+        "future_horizon_bins": ["early"] * 6 + ["middle"] * 6 + ["late"] * 6,
+        "reference_predictor_id": REFERENCE_PREDICTOR_ID,
+        "covariance_donor_id": COVARIANCE_DONOR_ID,
+        "early_middle_late_covariance_scales": list(COVARIANCE_SCALES),
+        "observation_std_m": OBSERVATION_STD_M,
+        "covariance_eigenvalue_floor_m2": COVARIANCE_EIGENVALUE_FLOOR_M2,
+        "mean_sha256": mean_id,
+        "reference_mean_sha256": mean_id,
+        "mean_dtype": "<f8",
+        "mean_shape": [18, 128, 3],
+        "mean_c_contiguous": True,
+        "mean_bytes_identical": True,
+        "covariance_sha256": covariance_id,
+        "covariance_shape": [18, 128, 3, 3],
+        "covariance_dtype": "<f8",
+        "covariance_units": "m^2",
+        "covariance_diagnostics": {
+            "finite": True,
+            "minimum_eigenvalue_m2": COVARIANCE_EIGENVALUE_FLOOR_M2,
+            "positive_semidefinite": True,
+            "symmetric": True,
+        },
+        "disposition": "candidate",
+        "exact_fallback": False,
+        "exact_fallback_reference_identity": None,
+        "technical_failure": False,
+        "technical_failure_code": None,
+        "diagnostic_code": "accepted",
+        "input_files": [
+            {
+                "logical_name": "prefix/input.npz",
+                "path": "source/input.npz",
+                "sha256": _sha("input"),
+                "size_bytes": 1,
+            }
+        ],
+        "unit_manifest_id": _sha(f"manifest:{object_id}:{episode}"),
+        "unit_manifest_file_sha256": _sha(f"manifest-file:{object_id}:{episode}"),
+        "prediction_payload_sha256": _sha(f"payload:{object_id}:{episode}"),
+        "source_suffix_used": False,
+        "confirmation_outcomes_used": False,
+    }
+    return {**payload, "prediction_id": _content_id(payload)}
+
+
+def _reseal_record(record: dict[str, object]) -> None:
+    record.pop("prediction_id", None)
+    record["prediction_id"] = _content_id(record)
+
+
 def _batch() -> dict[str, object]:
     units = [
         {"object_id": object_id, "episode": episode, "stratum": stratum}
@@ -39,27 +142,12 @@ def _batch() -> dict[str, object]:
     ]
     records: list[dict[str, object]] = []
     selected: dict[str, str] = {}
-    for unit_index, (object_id, episode, stratum) in enumerate(SOURCE_ROSTER):
-        for fold_index in range(10):
-            prediction_id = _sha(f"prediction:{object_id}:{episode}:{fold_index}")
-            mean_id = _sha(f"mean:{object_id}:{episode}:{fold_index}")
-            records.append(
-                {
-                    "prediction_id": prediction_id,
-                    "object_id": object_id,
-                    "episode": episode,
-                    "stratum": stratum,
-                    "outer_fold_index": fold_index,
-                    "mean_sha256": mean_id,
-                    "reference_mean_sha256": mean_id,
-                    "disposition": "candidate",
-                    "exact_fallback": False,
-                    "source_suffix_used": False,
-                    "confirmation_outcomes_used": False,
-                }
-            )
+    for fold_index in range(10):
+        for unit_index, (object_id, episode, _stratum) in enumerate(SOURCE_ROSTER):
+            record = _record(fold_index=fold_index, unit_index=unit_index)
+            records.append(record)
             if fold_index == unit_index:
-                selected[f"{object_id}#{episode}"] = prediction_id
+                selected[f"{object_id}#{episode}"] = str(record["prediction_id"])
     return seal_prediction_batch(
         {
             "schema": BATCH_SCHEMA,
@@ -218,6 +306,7 @@ def test_batch_rejects_mean_change_and_non_diagonal_scoring_record() -> None:
     record = records[0]
     assert isinstance(record, dict)
     record["mean_sha256"] = _sha("changed-mean")
+    _reseal_record(record)
     with pytest.raises(ValueError, match="changed the registered mean"):
         seal_prediction_batch(changed)
 
@@ -240,6 +329,33 @@ def test_batch_rejects_mean_change_and_non_diagonal_scoring_record() -> None:
         seal_prediction_batch(changed)
 
 
+def test_batch_rejects_malformed_runtime_covariance_and_forbidden_input() -> None:
+    batch = _batch()
+    changed = copy.deepcopy(batch)
+    changed.pop("batch_id")
+    record = changed["records"][0]
+    record["numerical_runtime"]["float64_epsilon"] = 1e-7
+    _reseal_record(record)
+    with pytest.raises(ValueError, match="numerical runtime changed"):
+        seal_prediction_batch(changed)
+
+    changed = copy.deepcopy(batch)
+    changed.pop("batch_id")
+    record = changed["records"][0]
+    record["covariance_diagnostics"]["positive_semidefinite"] = False
+    _reseal_record(record)
+    with pytest.raises(ValueError, match="covariance diagnostics failed"):
+        seal_prediction_batch(changed)
+
+    changed = copy.deepcopy(batch)
+    changed.pop("batch_id")
+    record = changed["records"][0]
+    record["input_files"][0]["path"] = "confirmation/forbidden.npz"
+    _reseal_record(record)
+    with pytest.raises(ValueError, match="forbidden suffix or target path"):
+        seal_prediction_batch(changed)
+
+
 def test_score_disposition_must_match_sealed_prediction() -> None:
     batch = _batch()
     changed = copy.deepcopy(batch)
@@ -253,6 +369,10 @@ def test_score_disposition_must_match_sealed_prediction() -> None:
     record = next(item for item in records if item["prediction_id"] == selected_id)
     record["disposition"] = "exact_fallback"
     record["exact_fallback"] = True
+    record["exact_fallback_reference_identity"] = record["covariance_sha256"]
+    record["diagnostic_code"] = "insufficient-per-track-support"
+    _reseal_record(record)
+    selected[f"{object_id}#{episode}"] = record["prediction_id"]
     batch = seal_prediction_batch(changed)
     with pytest.raises(ValueError, match="does not match the selected prediction"):
         evaluate_source_gate(batch, _scores(batch))

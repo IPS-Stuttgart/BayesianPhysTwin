@@ -28,6 +28,15 @@ REFERENCE_PREDICTOR_ID: Final = "last_residual"
 COVARIANCE_DONOR_ID: Final = "independent_endpoint_v1"
 COVARIANCE_SCALES: Final = (8.0, 16.0, 16.0)
 OBSERVATION_STD_M: Final = 0.005
+CROSSREPO_BINDING_ID: Final = (
+    "531123205959a3d3d0549d9256b6ec222dca636198bc1e93f1b468d1a77c8f33"
+)
+SELECTION_SHA256: Final = (
+    "4dd12af9889d64976095eb9e237eeb655f9675ff7d5940aa5dfc1d4ee11f295c"
+)
+COVARIANCE_EIGENVALUE_FLOOR_M2: Final = 1e-12
+PREFIX_RANGE: Final = (0, 58)
+FUTURE_RANGE: Final = (58, 76)
 
 SOURCE_ROSTER: Final = (
     ("167-glove-gray-cloth", 0, "sheet"),
@@ -95,6 +104,15 @@ def _sha256(value: object, *, name: str) -> str:
     return result
 
 
+def _sha1(value: object, *, name: str) -> str:
+    result = _literal_string(value, name=name)
+    if len(result) != 40 or any(
+        character not in "0123456789abcdef" for character in result
+    ):
+        raise ValueError(f"{name} must be a lowercase Git SHA-1 string")
+    return result
+
+
 def _boolean(value: object, *, name: str) -> bool:
     if not isinstance(value, bool):
         raise TypeError(f"{name} must be Boolean")
@@ -126,6 +144,204 @@ def _validate_identity(document: Mapping[str, Any], field: str) -> str:
     if declared != observed:
         raise ValueError(f"{field} does not match document content")
     return declared
+
+
+def _validate_input_files(value: object, *, record_index: int) -> None:
+    rows = _sequence(value, name=f"records[{record_index}].input_files")
+    if not rows:
+        raise ValueError("prediction record input-file roster is empty")
+    logical_names: list[str] = []
+    for input_index, raw in enumerate(rows):
+        row = _mapping(raw, name=f"input_files[{input_index}]")
+        logical_name = _literal_string(
+            row.get("logical_name"),
+            name=f"input_files[{input_index}].logical_name",
+        )
+        path = _literal_string(
+            row.get("path"),
+            name=f"input_files[{input_index}].path",
+        )
+        lowered = f"/{path.lower().strip('/')}"
+        if any(
+            token in lowered for token in ("/confirmation/", "/suffix/", "/target/")
+        ):
+            raise ValueError(
+                "prediction record binds a forbidden suffix or target path"
+            )
+        _sha256(row.get("sha256"), name=f"input_files[{input_index}].sha256")
+        size = _integer(row.get("size_bytes"), name="input size_bytes")
+        if size < 0:
+            raise ValueError("input size_bytes must be nonnegative")
+        logical_names.append(logical_name)
+    if logical_names != sorted(set(logical_names)):
+        raise ValueError("prediction input-file roster is duplicated or unordered")
+
+
+def _validate_rich_prediction_record(
+    record: Mapping[str, Any],
+    *,
+    record_index: int,
+    expected_outer_fold: int,
+    expected_unit_index: int,
+) -> None:
+    if record.get("software_protocol_id") != SOFTWARE_PROTOCOL_ID:
+        raise ValueError("prediction record software protocol changed")
+    if record.get("paper_protocol_id") != PAPER_PROTOCOL_ID:
+        raise ValueError("prediction record paper protocol changed")
+    if record.get("crossrepo_binding_id") != CROSSREPO_BINDING_ID:
+        raise ValueError("prediction record cross-repository binding changed")
+    if record.get("selection_sha256") != SELECTION_SHA256:
+        raise ValueError("prediction record selection identity changed")
+    _sha256(record.get("runtime_id"), name="runtime_id")
+    _sha1(record.get("implementation_revision"), name="implementation_revision")
+    distribution = _mapping(record.get("distribution"), name="distribution")
+    if distribution.get("name") != "bayesian-phystwin":
+        raise ValueError("prediction distribution changed")
+    _literal_string(distribution.get("version"), name="distribution.version")
+    environment = _mapping(record.get("environment"), name="environment")
+    for field in (
+        "byteorder",
+        "machine",
+        "python_implementation",
+        "python_version",
+        "system",
+    ):
+        _literal_string(environment.get(field), name=f"environment.{field}")
+    numerical = _mapping(record.get("numerical_runtime"), name="numerical_runtime")
+    _literal_string(numerical.get("numpy_version"), name="numerical_runtime.numpy")
+    epsilon = _finite(
+        numerical.get("float64_epsilon"),
+        name="numerical_runtime.float64_epsilon",
+    )
+    if epsilon != 2.220446049250313e-16:
+        raise ValueError("float64 numerical runtime changed")
+
+    if record.get("outer_fold_index") != expected_outer_fold:
+        raise ValueError("prediction record outer-fold order changed")
+    if record.get("source_unit_index") != expected_unit_index:
+        raise ValueError("prediction record source-unit order changed")
+    outer = _mapping(record.get("outer_fold_context"), name="outer_fold_context")
+    expected_outer = SOURCE_ROSTER[expected_outer_fold]
+    if outer != {
+        "object_id": expected_outer[0],
+        "episode": expected_outer[1],
+        "stratum": expected_outer[2],
+    }:
+        raise ValueError("prediction record outer-fold context changed")
+    expected_unit = SOURCE_ROSTER[expected_unit_index]
+    if (
+        record.get("object_id"),
+        record.get("episode"),
+        record.get("stratum"),
+    ) != expected_unit:
+        raise ValueError("prediction record source-unit identity changed")
+    if tuple(record.get("prefix_range_half_open", ())) != PREFIX_RANGE:
+        raise ValueError("prediction prefix range changed")
+    if tuple(record.get("future_range_half_open", ())) != FUTURE_RANGE:
+        raise ValueError("prediction future range changed")
+    if list(record.get("future_horizon_steps", ())) != list(range(1, 19)):
+        raise ValueError("prediction horizon steps changed")
+    if list(record.get("future_horizon_bins", ())) != (
+        ["early"] * 6 + ["middle"] * 6 + ["late"] * 6
+    ):
+        raise ValueError("prediction horizon bins changed")
+    if record.get("reference_predictor_id") != REFERENCE_PREDICTOR_ID:
+        raise ValueError("prediction reference mean changed")
+    if record.get("covariance_donor_id") != COVARIANCE_DONOR_ID:
+        raise ValueError("prediction covariance donor changed")
+    if tuple(record.get("early_middle_late_covariance_scales", ())) != (
+        COVARIANCE_SCALES
+    ):
+        raise ValueError("prediction covariance scales changed")
+    if _finite(record.get("observation_std_m"), name="observation_std_m") != (
+        OBSERVATION_STD_M
+    ):
+        raise ValueError("prediction observation noise changed")
+    if (
+        _finite(
+            record.get("covariance_eigenvalue_floor_m2"),
+            name="covariance_eigenvalue_floor_m2",
+        )
+        != COVARIANCE_EIGENVALUE_FLOOR_M2
+    ):
+        raise ValueError("prediction covariance floor changed")
+
+    mean_shape = list(_sequence(record.get("mean_shape"), name="mean_shape"))
+    covariance_shape = list(
+        _sequence(record.get("covariance_shape"), name="covariance_shape")
+    )
+    if (
+        len(mean_shape) != 3
+        or mean_shape[0] != 18
+        or not isinstance(mean_shape[1], int)
+        or isinstance(mean_shape[1], bool)
+        or mean_shape[1] < 128
+        or mean_shape[2] != 3
+        or covariance_shape != [*mean_shape, 3]
+    ):
+        raise ValueError("prediction mean/covariance shape changed")
+    if (
+        record.get("mean_dtype") != "<f8"
+        or record.get("covariance_dtype") != "<f8"
+        or record.get("covariance_units") != "m^2"
+        or _boolean(record.get("mean_c_contiguous"), name="mean_c_contiguous")
+        is not True
+        or _boolean(record.get("mean_bytes_identical"), name="mean_bytes_identical")
+        is not True
+    ):
+        raise ValueError("prediction representation or mean identity changed")
+    covariance_digest = _sha256(
+        record.get("covariance_sha256"),
+        name="covariance_sha256",
+    )
+    diagnostics = _mapping(
+        record.get("covariance_diagnostics"),
+        name="covariance_diagnostics",
+    )
+    if not (
+        _boolean(diagnostics.get("finite"), name="covariance finite")
+        and _boolean(diagnostics.get("symmetric"), name="covariance symmetric")
+        and _boolean(
+            diagnostics.get("positive_semidefinite"),
+            name="covariance positive_semidefinite",
+        )
+    ):
+        raise ValueError("prediction covariance diagnostics failed")
+    minimum = _finite(
+        diagnostics.get("minimum_eigenvalue_m2"),
+        name="covariance minimum eigenvalue",
+    )
+    if minimum < -COVARIANCE_EIGENVALUE_FLOOR_M2:
+        raise ValueError("prediction covariance is not positive semidefinite")
+    _validate_input_files(record.get("input_files"), record_index=record_index)
+    for field in (
+        "unit_manifest_id",
+        "unit_manifest_file_sha256",
+        "prediction_payload_sha256",
+    ):
+        _sha256(record.get(field), name=field)
+    if _boolean(record.get("technical_failure"), name="technical_failure"):
+        raise ValueError("a technical failure cannot enter the complete barrier")
+    if record.get("technical_failure_code") is not None:
+        raise ValueError("ordinary prediction has a technical failure code")
+    _literal_string(record.get("diagnostic_code"), name="diagnostic_code")
+    if _boolean(record.get("source_suffix_used"), name="source_suffix_used"):
+        raise ValueError("prediction record used the source suffix")
+    if _boolean(
+        record.get("confirmation_outcomes_used"),
+        name="confirmation_outcomes_used",
+    ):
+        raise ValueError("prediction record used confirmation outcomes")
+    exact_fallback = _boolean(record.get("exact_fallback"), name="exact_fallback")
+    fallback_identity = record.get("exact_fallback_reference_identity")
+    if exact_fallback:
+        if _sha256(fallback_identity, name="exact_fallback_reference_identity") != (
+            covariance_digest
+        ):
+            raise ValueError("exact fallback covariance identity changed")
+    elif fallback_identity is not None:
+        raise ValueError("candidate prediction has a fallback identity")
+    _validate_identity(record, "prediction_id")
 
 
 def seal_prediction_batch(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -225,6 +441,14 @@ def validate_prediction_batch(payload: Mapping[str, Any]) -> dict[str, Any]:
     }
     for index, raw in enumerate(records):
         record = _mapping(raw, name=f"records[{index}]")
+        expected_outer_fold = index // len(SOURCE_ROSTER)
+        expected_unit_index = index % len(SOURCE_ROSTER)
+        _validate_rich_prediction_record(
+            record,
+            record_index=index,
+            expected_outer_fold=expected_outer_fold,
+            expected_unit_index=expected_unit_index,
+        )
         prediction_id = _sha256(record.get("prediction_id"), name="prediction_id")
         if prediction_id in prediction_ids:
             raise ValueError("duplicate prediction_id")
@@ -278,19 +502,22 @@ def validate_prediction_batch(payload: Mapping[str, Any]) -> dict[str, Any]:
     if set(selected) != expected_selected_keys:
         raise ValueError("scoring prediction roster changed")
     for unit_index, (object_id, episode, _) in enumerate(SOURCE_ROSTER):
-        key = f"{object_id}#{episode}"
+        selected_key = f"{object_id}#{episode}"
         prediction_id = _sha256(
-            selected[key],
-            name=f"scoring_prediction_by_source_unit.{key}",
+            selected[selected_key],
+            name=f"scoring_prediction_by_source_unit.{selected_key}",
         )
-        record = record_by_id.get(prediction_id)
-        if record is None:
+        selected_record = record_by_id.get(prediction_id)
+        if selected_record is None:
             raise ValueError("selected scoring prediction is absent from the batch")
-        if record.get("object_id") != object_id or record.get("episode") != episode:
+        if (
+            selected_record.get("object_id") != object_id
+            or selected_record.get("episode") != episode
+        ):
             raise ValueError(
                 "selected scoring prediction belongs to another source unit"
             )
-        if record.get("outer_fold_index") != unit_index:
+        if selected_record.get("outer_fold_index") != unit_index:
             raise ValueError(
                 "selected scoring prediction is not the frozen diagonal record"
             )
@@ -438,8 +665,8 @@ def _validated_score_rows(
             ):
                 raise ValueError("exact fallback must reproduce the reference score")
         parsed.append(row)
-    expected = {_unit_key(obj, ep) for obj, ep, _ in SOURCE_ROSTER}
-    if seen != expected:
+    expected_units = {_unit_key(obj, ep) for obj, ep, _ in SOURCE_ROSTER}
+    if seen != expected_units:
         raise ValueError("source score roster is incomplete")
     return document, parsed
 

@@ -17,7 +17,7 @@ entering any confirmation data.
 ## Authenticated issue command
 
 Create this exact comment on
-`IPS-Stuttgart/BayesianPhysTwin#461`:
+`IPS-Stuttgart/BayesianPhysTwin#775`:
 
 ```text
 /bpt-inventory-covariance-source-v1
@@ -41,8 +41,8 @@ The inventory may inspect only the retained calibration-source and
 calibration-processed roots:
 
 ```text
-/mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13/calibration-source
-/mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13/calibration-processed
+/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-source
+/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed
 ```
 
 It resolves and explicitly forbids the separate confirmation root:
@@ -67,12 +67,20 @@ construct confirmation predictions.
 
 ## Result artifact
 
-The job uploads:
+The job uploads one content-addressed
+`covariance-source-input-inventory.json`. The implementation derives the exact
+ten object-session roster from the frozen selection lock and verifies it against
+the registered source reducer; the workflow contains no independent roster
+literal.
 
-- `covariance-source-input-inventory.json`, containing the complete bounded
-  inventory and source-unit path counts; and
-- `covariance-source-input-inventory.md`, containing the concise candidate
-  path summary posted to issue `#461`.
+The record binds:
+
+- the software and paper protocol identities;
+- the paper/code cross-repository binding;
+- the exact selection Git blob;
+- the implementation revision;
+- both admitted source roots; and
+- every retained header record and source-unit path count.
 
 Both records bind the exact default-branch workflow revision and state that:
 
@@ -84,23 +92,54 @@ array_values_read=false
 file_payloads_scored=false
 ```
 
-The artifact is retained for 30 days. It is an operational diagnostic, not a
+The artifact is retained for 90 days. It is an operational diagnostic, not a
 claim-bearing evidence bundle.
 
-## Next admissible action
+## Prefix-only source producer
 
-Use the inventory to identify the exact current source-side inputs required by
-the already frozen predictor. Then construct and seal the 100 source prediction
-records before any source suffix scoring. The existing source reducer must
-return exactly one of:
+After the corrected inventory implementation and producer merge to protected
+`main`, create this exact comment on issue `#775`:
+
+```text
+/bpt-produce-covariance-source-v1
+```
+
+The authenticated job recomputes the header-only inventory, binds the exact
+successful public Deform360 v6 prefix run and all consumed source-prefix files,
+then constructs the frozen covariance candidate. It publishes:
+
+- ten deterministic unit archives and manifests;
+- exactly 100 records in canonical outer-fold/source-unit order;
+- the content-addressed source-prediction batch;
+- a complete panel receipt; and
+- the one-attempt ledger and execution log.
+
+The candidate mean is the exact caller-owned `last_residual` array. The only
+added quantity is `independent_endpoint_v1` covariance with fixed horizon
+scales `[8, 16, 16]`, `5 mm` observation noise, and a `1e-12 m²` covariance
+floor. Unsupported units retain the byte-exact comparator fallback.
+
+The producer consumes one atomic, revision-specific attempt ledger before
+source values are read. A failure retains a bounded technical receipt and does
+not silently permit a retry, replacement, or partial barrier. The successful
+path validates all 100 records and then stops. It does not attach source
+suffixes, score outcomes, execute the reducer, create confirmation predictions,
+or authorize confirmation access.
+
+## Later decision stage
+
+Only after a complete 100-record receipt has been independently rehashed may a
+separately reviewed source-scoring execution attach the already-open source
+suffix and run the frozen reducer exactly once. That reducer must return one of:
 
 - `source-positive`;
 - `source-negative`; or
 - `source-technical-negative`.
 
-Only `source-positive` may authorize construction and sealing of the twelve
-prefix-only confirmation predictions. It still does not authorize opening any
-confirmation payload or outcome.
+Only `source-positive` may authorize the subsequent construction and sealing of
+the twelve prefix-only confirmation predictions. It still does not authorize
+opening any confirmation payload or outcome. No source-scoring or confirmation
+command is installed by this producer change.
 
 ## Scientific boundary
 
