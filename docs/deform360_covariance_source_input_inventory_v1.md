@@ -79,6 +79,14 @@ The repaired workflow uses the underlying canonical directory spelling
 only filesystem path binding. It changes no roster, source bytes, prediction,
 model, covariance, score, gate, or information boundary.
 
+Workflow run `33010672100` then passed canonical root admission and stopped
+while parsing a source file whose `.npy` suffix did not carry an NPY header. It
+also uploaded no inventory, posted no result comment, opened no source suffix,
+and did not dispatch or consume the source-producer ledger. The inventory now
+retains bounded `array_header_error` or `npz_header_error` metadata for malformed
+array containers, matching its existing malformed-JSON handling. It neither
+loads array values nor drops or replaces the affected file.
+
 ## Result artifact
 
 The job uploads one content-addressed
