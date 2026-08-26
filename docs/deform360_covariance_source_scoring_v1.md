@@ -58,11 +58,17 @@ confirmation payload or outcome.
 
 ## Current boundary
 
-The implementation and adversarial synthetic tests are available, but no
-empirical source-scoring issue command or workflow job is installed. The only
-registered public-data commands remain the source inventory and source
-prediction-barrier commands on issue `#775`. Source scoring must not run until
-those predecessor artifacts are complete and separately rehash-verified.
+The implementation and adversarial synthetic tests are available, but the
+empirical scorer is not authorized for this protocol. The sole registered
+source producer attempt, run `33012751418`, terminated with
+`source-technical-negative` and sealed `0/100` required prediction records.
+Its write-once attempt ledger is consumed. The source scorer, confirmation
+prediction construction, and confirmation outcome opening must not run, and the
+producer must not be retried or replaced.
+
+The exact result and compact receipt are documented in
+`docs/deform360_covariance_source_panel_v1_result.md` and
+`results/sota/diagnostics/deform360_covariance_source_panel_v1/`.
 
 This stage does not establish covariance value, calibration, transfer, point
 accuracy, benchmark parity, state of the art, Causal4D benefit, or deployment
