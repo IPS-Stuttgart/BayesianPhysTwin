@@ -41,8 +41,8 @@ The inventory may inspect only the retained calibration-source and
 calibration-processed roots:
 
 ```text
-/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-source
-/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed
+/mnt/lexar4tb/datasets/deform360-official-hub-visuotactile-v1/calibration-source
+/mnt/lexar4tb/datasets/deform360-official-hub-visuotactile-v1/calibration-processed
 ```
 
 It resolves and explicitly forbids the separate confirmation root:
@@ -64,6 +64,20 @@ tree. It inventories:
 It does not read NumPy array values, deserialize pickle or Torch payloads,
 score source or target outcomes, generate a candidate, select a scale, or
 construct confirmation predictions.
+
+### Retained pre-inventory failure
+
+Workflow run `32997229588` reached the inventory command on `workstation2` and
+stopped before directory traversal because the workflow supplied the legacy
+symlink spelling `deform360_official_hub_visuotactile_v1`. The inventory
+validator correctly rejected it as noncanonical. The run created and uploaded
+no inventory, posted no result comment, read no array values, and did not
+dispatch or consume the one-attempt source producer.
+
+The repaired workflow uses the underlying canonical directory spelling
+`deform360-official-hub-visuotactile-v1` for both admitted roots. This changes
+only filesystem path binding. It changes no roster, source bytes, prediction,
+model, covariance, score, gate, or information boundary.
 
 ## Result artifact
 

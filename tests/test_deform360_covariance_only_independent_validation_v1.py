@@ -296,11 +296,11 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
         "AUTHORIZED_RUNNER_NAME: workstation2",
         (
             "SOURCE_ROOT: /mnt/lexar4tb/datasets/"
-            "deform360_official_hub_visuotactile_v1/calibration-source"
+            "deform360-official-hub-visuotactile-v1/calibration-source"
         ),
         (
             "PROCESSED_ROOT: /mnt/lexar4tb/datasets/"
-            "deform360_official_hub_visuotactile_v1/calibration-processed"
+            "deform360-official-hub-visuotactile-v1/calibration-processed"
         ),
         "FORBIDDEN_CONFIRMATION_ROOT:",
         'test "$RUNNER_NAME" = "$AUTHORIZED_RUNNER_NAME"',
@@ -311,6 +311,7 @@ def test_contract_workflow_is_authenticated_source_only_and_data_closed() -> Non
         "repos/${GITHUB_REPOSITORY}/issues/775/comments",
     ):
         assert required in workflow_text
+    assert "deform360_official_hub_visuotactile_v1/calibration-" not in workflow_text
     for forbidden in (
         "workflow_dispatch:",
         "contents: write",
