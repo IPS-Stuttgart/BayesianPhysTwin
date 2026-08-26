@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import shutil
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -550,6 +551,10 @@ def test_inventory_records_npz_json_errors_and_publishes_once(tmp_path: Path) ->
     source, processed, forbidden = _inventory_roots(tmp_path)
     object_root = source / SOURCE_ROSTER[0][0]
     np.savez(object_root / "packed.npz", points=np.zeros((2, 3), dtype=np.float32))
+    (object_root / "invalid.npy").write_bytes(b"not-an-npy")
+    (object_root / "invalid.npz").write_bytes(b"not-an-npz")
+    with zipfile.ZipFile(object_root / "invalid-member.npz", "w") as archive:
+        archive.writestr("invalid.npy", b"not-an-npy")
     (object_root / "invalid.json").write_text("{", encoding="utf-8")
     inventory = build_covariance_source_inventory_v1(
         protocol_path=PROTOCOL,
@@ -560,20 +565,57 @@ def test_inventory_records_npz_json_errors_and_publishes_once(tmp_path: Path) ->
         forbidden_confirmation_root=forbidden,
         implementation_revision=REVISION,
     )
-    npz = next(row for row in inventory["files"] if row["suffix"] == ".npz")
+    npz = next(
+        row for row in inventory["files"] if row["relative_path"].endswith("packed.npz")
+    )
     invalid = next(
         row
         for row in inventory["files"]
         if row["relative_path"].endswith("invalid.json")
     )
+    invalid_npy = next(
+        row
+        for row in inventory["files"]
+        if row["relative_path"].endswith("invalid.npy")
+    )
+    invalid_npz = next(
+        row
+        for row in inventory["files"]
+        if row["relative_path"].endswith("invalid.npz")
+    )
+    invalid_member = next(
+        row
+        for row in inventory["files"]
+        if row["relative_path"].endswith("invalid-member.npz")
+    )
     assert npz["npz_members"][0]["array_header"]["shape"] == [2, 3]
     assert invalid["json_error"] == "ValueError"
+    assert invalid_npy["array_header_error"] == "ValueError"
+    assert invalid_npz["npz_header_error"] == "BadZipFile"
+    assert invalid_member["npz_members"][0]["array_header_error"] == "ValueError"
 
     output = tmp_path / "published" / "inventory.json"
     assert publish_covariance_source_inventory_v1(inventory, output) == output
     assert json.loads(output.read_text(encoding="utf-8")) == inventory
     with pytest.raises(FileExistsError):
         publish_covariance_source_inventory_v1(inventory, output)
+
+
+def test_inventory_still_rejects_npz_member_directories(tmp_path: Path) -> None:
+    source, processed, forbidden = _inventory_roots(tmp_path)
+    object_root = source / SOURCE_ROSTER[0][0]
+    with zipfile.ZipFile(object_root / "directory-member.npz", "w") as archive:
+        archive.writestr("nested/", b"")
+    with pytest.raises(ValueError, match="member directories are forbidden"):
+        build_covariance_source_inventory_v1(
+            protocol_path=PROTOCOL,
+            selection_path=SELECTION,
+            crossrepo_binding_path=BINDING,
+            calibration_source_root=source,
+            calibration_processed_root=processed,
+            forbidden_confirmation_root=forbidden,
+            implementation_revision=REVISION,
+        )
 
 
 def _source_plan_fixture(tmp_path: Path) -> tuple[dict[str, Any], Path, Path]:

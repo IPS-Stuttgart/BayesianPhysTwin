@@ -34,6 +34,7 @@ SELECTION_REPOSITORY_PATH: Final = (
 )
 _ARRAY_SUFFIXES: Final = frozenset({".npy", ".npz"})
 _JSON_LIMIT_BYTES: Final = 2_000_000
+_NPY_HEADER_LIMIT_BYTES: Final = 1_000_000
 _BOUNDARY: Final = {
     "array_values_read": False,
     "confirmation_root_entered": False,
@@ -166,7 +167,12 @@ def _npy_header(stream: IO[bytes]) -> dict[str, Any]:
         header_length = struct.unpack("<I", stream.read(4))[0]
     else:
         raise ValueError(f"unsupported NPY version {major}.{minor}")
+    _require(
+        0 < header_length <= _NPY_HEADER_LIMIT_BYTES,
+        "NPY header length is outside the inventory bound",
+    )
     encoded = stream.read(header_length)
+    _require(len(encoded) == header_length, "NPY header is truncated")
     parsed = ast.literal_eval(encoded.decode("latin1" if major < 3 else "utf-8"))
     _require(isinstance(parsed, dict), "NPY header is not a mapping")
     shape = parsed.get("shape")
@@ -179,6 +185,20 @@ def _npy_header(stream: IO[bytes]) -> dict[str, Any]:
     }
 
 
+_NPY_HEADER_ERRORS: Final = (
+    EOFError,
+    OSError,
+    SyntaxError,
+    UnicodeError,
+    ValueError,
+    struct.error,
+)
+_NPZ_CONTAINER_ERRORS: Final = (
+    OSError,
+    zipfile.BadZipFile,
+)
+
+
 def _header_record(path: Path, *, relative_path: str, root_name: str) -> dict[str, Any]:
     stat = path.stat()
     suffix = path.suffix.lower()
@@ -189,23 +209,35 @@ def _header_record(path: Path, *, relative_path: str, root_name: str) -> dict[st
         "suffix": suffix,
     }
     if suffix == ".npy":
-        with path.open("rb") as stream:
-            record["array_header"] = _npy_header(stream)
+        try:
+            with path.open("rb") as stream:
+                record["array_header"] = _npy_header(stream)
+        except _NPY_HEADER_ERRORS as error:
+            record["array_header_error"] = type(error).__name__
     elif suffix == ".npz":
         members: list[dict[str, Any]] = []
-        with zipfile.ZipFile(path) as archive:
-            for info in sorted(archive.infolist(), key=lambda value: value.filename):
-                _require(not info.is_dir(), "NPZ member directories are forbidden")
-                member: dict[str, Any] = {
-                    "compressed_size": info.compress_size,
-                    "name": info.filename,
-                    "size_bytes": info.file_size,
-                }
-                if info.filename.endswith(".npy"):
-                    with archive.open(info) as stream:
-                        member["array_header"] = _npy_header(stream)
-                members.append(member)
-        record["npz_members"] = members
+        try:
+            with zipfile.ZipFile(path) as archive:
+                for info in sorted(
+                    archive.infolist(), key=lambda value: value.filename
+                ):
+                    _require(not info.is_dir(), "NPZ member directories are forbidden")
+                    member: dict[str, Any] = {
+                        "compressed_size": info.compress_size,
+                        "name": info.filename,
+                        "size_bytes": info.file_size,
+                    }
+                    if info.filename.endswith(".npy"):
+                        try:
+                            with archive.open(info) as stream:
+                                member["array_header"] = _npy_header(stream)
+                        except _NPY_HEADER_ERRORS as error:
+                            member["array_header_error"] = type(error).__name__
+                    members.append(member)
+        except _NPZ_CONTAINER_ERRORS as error:
+            record["npz_header_error"] = type(error).__name__
+        else:
+            record["npz_members"] = members
     elif suffix == ".json" and stat.st_size <= _JSON_LIMIT_BYTES:
         try:
             value = load_strict_json_object(
