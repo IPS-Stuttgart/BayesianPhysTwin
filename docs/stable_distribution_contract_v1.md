@@ -133,6 +133,13 @@ bytes. This allowance creates no new estimator or scientific result. It only
 makes the existing candidate/guard/exact-fallback separation accessible without
 requiring a Prob4D-specific public signature.
 
+The public-data covariance source barrier adds two private Deform360 package
+modules without changing the public API or compressed-size ceilings. The wheel
+member ratchet is therefore raised narrowly from 612 to 614, and the source
+distribution regular-member ratchet from 1,370 to 1,372. This allowance only
+packages the registered inventory and prediction-barrier implementation; it is
+not source-gate, confirmation, calibration, or state-of-the-art evidence.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
