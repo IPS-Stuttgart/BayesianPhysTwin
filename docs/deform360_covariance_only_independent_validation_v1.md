@@ -75,6 +75,13 @@ suffix scoring. It cannot run the source reducer, create confirmation
 predictions, or open confirmation data. Those later operations require separate
 reviewed execution stages after the complete barrier is retained.
 
+The source-scoring implementation is separately documented in
+`docs/deform360_covariance_source_scoring_v1.md`. Its synthetic tests establish
+the score and custody contracts only. They do not authorize source-suffix
+opening. The empirical scorer remains blocked until the complete public-source
+inventory and 100-record prediction barrier have both been retained and
+rehash-verified.
+
 ## Cross-repository authority binding
 
 The software protocol and the paper preregistration have distinct, explicit

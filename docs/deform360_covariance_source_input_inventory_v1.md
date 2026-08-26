@@ -26,7 +26,7 @@ Create this exact comment on
 The command is admitted only when all of these conditions hold:
 
 - the event is a newly created issue comment;
-- the owning issue is exactly `#461`, not a pull request;
+- the owning issue is exactly `#775`, not a pull request;
 - both the event actor and comment author are exactly `FlorianPfaff`;
 - the comment body is an exact byte-for-byte command match; and
 - the job runs on the labelled `workstation2` source-data runner.
@@ -138,8 +138,9 @@ suffix and run the frozen reducer exactly once. That reducer must return one of:
 
 Only `source-positive` may authorize the subsequent construction and sealing of
 the twelve prefix-only confirmation predictions. It still does not authorize
-opening any confirmation payload or outcome. No source-scoring or confirmation
-command is installed by this producer change.
+opening any confirmation payload or outcome. A separately reviewed source
+scorer now exists, but no empirical source-scoring or confirmation trigger is
+installed by the producer change.
 
 ## Scientific boundary
 

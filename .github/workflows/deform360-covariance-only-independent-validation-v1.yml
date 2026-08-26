@@ -9,6 +9,7 @@ on:
       - ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
       - "docs/deform360_covariance_only_independent_validation_v1.md"
       - "docs/deform360_covariance_source_input_inventory_v1.md"
+      - "docs/deform360_covariance_source_scoring_v1.md"
       - "docs/deform360_covariance_only_crossrepo_decision_amendment_v1.md"
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
@@ -16,13 +17,16 @@ on:
       - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
       - "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
       - "scripts/science/run_deform360_covariance_source_producer_v1.py"
+      - "scripts/science/run_deform360_covariance_source_scoring_v1.py"
       - "src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py"
       - "src/bayesian_phystwin/deform360_covariance_source_producer_v1.py"
       - "src/bayesian_phystwin/deform360_registered_residual_history_v1/**"
       - "src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py"
+      - "src/bayesian_phystwin_experiments/deform360_covariance_source_scoring_v1.py"
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
       - "tests/test_deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_source_producer_v1.py"
+      - "tests/test_deform360_covariance_source_scoring_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
   push:
@@ -31,6 +35,7 @@ on:
       - ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
       - "docs/deform360_covariance_only_independent_validation_v1.md"
       - "docs/deform360_covariance_source_input_inventory_v1.md"
+      - "docs/deform360_covariance_source_scoring_v1.md"
       - "docs/deform360_covariance_only_crossrepo_decision_amendment_v1.md"
       - "protocols/amendments/deform360_covariance_only_crossrepo_decision_amendment_v1.json"
       - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
@@ -38,13 +43,16 @@ on:
       - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
       - "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
       - "scripts/science/run_deform360_covariance_source_producer_v1.py"
+      - "scripts/science/run_deform360_covariance_source_scoring_v1.py"
       - "src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py"
       - "src/bayesian_phystwin/deform360_covariance_source_producer_v1.py"
       - "src/bayesian_phystwin/deform360_registered_residual_history_v1/**"
       - "src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py"
+      - "src/bayesian_phystwin_experiments/deform360_covariance_source_scoring_v1.py"
       - "tests/test_deform360_covariance_only_independent_validation_v1.py"
       - "tests/test_deform360_covariance_only_source_gate_v1.py"
       - "tests/test_deform360_covariance_source_producer_v1.py"
+      - "tests/test_deform360_covariance_source_scoring_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
       - "tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py"
   issue_comment:
@@ -125,26 +133,32 @@ jobs:
           python -m pip check
           files=(
             scripts/science/run_deform360_covariance_source_producer_v1.py
+            scripts/science/run_deform360_covariance_source_scoring_v1.py
             src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py
             src/bayesian_phystwin/deform360_covariance_source_producer_v1.py
             src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py
+            src/bayesian_phystwin_experiments/deform360_covariance_source_scoring_v1.py
             tests/test_deform360_covariance_only_independent_validation_v1.py
             tests/test_deform360_covariance_only_source_gate_v1.py
             tests/test_deform360_covariance_source_producer_v1.py
+            tests/test_deform360_covariance_source_scoring_v1.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
             scripts/science/run_deform360_covariance_source_producer_v1.py \
+            scripts/science/run_deform360_covariance_source_scoring_v1.py \
             src/bayesian_phystwin/deform360_covariance_source_inventory_v1.py \
             src/bayesian_phystwin/deform360_covariance_source_producer_v1.py \
-            src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py
+            src/bayesian_phystwin_experiments/deform360_covariance_only_source_gate_v1.py \
+            src/bayesian_phystwin_experiments/deform360_covariance_source_scoring_v1.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_covariance_only_independent_validation_v1.py \
             tests/test_deform360_covariance_only_crossrepo_binding_v1.py \
             tests/test_deform360_covariance_only_crossrepo_decision_amendment_v1.py \
             tests/test_deform360_covariance_only_source_gate_v1.py \
             tests/test_deform360_covariance_source_producer_v1.py \
+            tests/test_deform360_covariance_source_scoring_v1.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
