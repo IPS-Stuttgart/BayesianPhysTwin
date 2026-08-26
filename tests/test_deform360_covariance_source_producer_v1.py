@@ -551,6 +551,8 @@ def test_inventory_records_npz_json_errors_and_publishes_once(tmp_path: Path) ->
     source, processed, forbidden = _inventory_roots(tmp_path)
     object_root = source / SOURCE_ROSTER[0][0]
     np.savez(object_root / "packed.npz", points=np.zeros((2, 3), dtype=np.float32))
+    with zipfile.ZipFile(object_root / "packed.npz", "a") as archive:
+        archive.writestr("metadata.txt", b"fixture")
     (object_root / "invalid.npy").write_bytes(b"not-an-npy")
     (object_root / "invalid.npz").write_bytes(b"not-an-npz")
     with zipfile.ZipFile(object_root / "invalid-member.npz", "w") as archive:
@@ -588,7 +590,9 @@ def test_inventory_records_npz_json_errors_and_publishes_once(tmp_path: Path) ->
         for row in inventory["files"]
         if row["relative_path"].endswith("invalid-member.npz")
     )
-    assert npz["npz_members"][0]["array_header"]["shape"] == [2, 3]
+    assert npz["npz_members"][0]["name"] == "metadata.txt"
+    assert "array_header" not in npz["npz_members"][0]
+    assert npz["npz_members"][1]["array_header"]["shape"] == [2, 3]
     assert invalid["json_error"] == "ValueError"
     assert invalid_npy["array_header_error"] == "ValueError"
     assert invalid_npz["npz_header_error"] == "BadZipFile"
