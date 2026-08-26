@@ -13,6 +13,7 @@ import pytest
 import bayesian_phystwin.deform360_covariance_source_producer_v1 as producer
 from bayesian_phystwin.deform360_covariance_source_inventory_v1 import (
     build_covariance_source_inventory_v1,
+    publish_covariance_source_inventory_v1,
     validate_covariance_source_inventory_v1,
 )
 from bayesian_phystwin.deform360_joint_sparse_materializer_v5 import (
@@ -33,6 +34,10 @@ SELECTION = (
 BINDING = (
     ROOT
     / "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+)
+SOURCE_EXECUTION_LOCK = (
+    ROOT
+    / "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
 )
 REVISION = "1" * 40
 
@@ -539,3 +544,374 @@ def test_panel_rehash_rejects_a_record_that_differs_from_the_batch(
     producer._write_json_once(panel / "source-panel-receipt.json", receipt)
     with pytest.raises(ValueError, match="batch-bound unit record"):
         producer.validate_covariance_source_panel_v1(panel)
+
+
+def test_inventory_records_npz_json_errors_and_publishes_once(tmp_path: Path) -> None:
+    source, processed, forbidden = _inventory_roots(tmp_path)
+    object_root = source / SOURCE_ROSTER[0][0]
+    np.savez(object_root / "packed.npz", points=np.zeros((2, 3), dtype=np.float32))
+    (object_root / "invalid.json").write_text("{", encoding="utf-8")
+    inventory = build_covariance_source_inventory_v1(
+        protocol_path=PROTOCOL,
+        selection_path=SELECTION,
+        crossrepo_binding_path=BINDING,
+        calibration_source_root=source,
+        calibration_processed_root=processed,
+        forbidden_confirmation_root=forbidden,
+        implementation_revision=REVISION,
+    )
+    npz = next(row for row in inventory["files"] if row["suffix"] == ".npz")
+    invalid = next(
+        row
+        for row in inventory["files"]
+        if row["relative_path"].endswith("invalid.json")
+    )
+    assert npz["npz_members"][0]["array_header"]["shape"] == [2, 3]
+    assert invalid["json_error"] == "ValueError"
+
+    output = tmp_path / "published" / "inventory.json"
+    assert publish_covariance_source_inventory_v1(inventory, output) == output
+    assert json.loads(output.read_text(encoding="utf-8")) == inventory
+    with pytest.raises(FileExistsError):
+        publish_covariance_source_inventory_v1(inventory, output)
+
+
+def _source_plan_fixture(tmp_path: Path) -> tuple[dict[str, Any], Path, Path]:
+    input_root = tmp_path / "source-inputs"
+    run_root = input_root / "registered-run"
+    evidence_root = tmp_path / "compact-evidence"
+    run_root.mkdir(parents=True)
+    evidence_root.mkdir()
+    objects: list[dict[str, Any]] = []
+    for index, (object_id, episode, stratum) in enumerate(SOURCE_ROSTER):
+        case_id = f"{object_id}-ep{episode:04d}"
+        physical = run_root / case_id / "prediction.npz"
+        physical.parent.mkdir()
+        physical.write_bytes(f"physical-{index}".encode("ascii"))
+        physical_record = {
+            "path": physical.relative_to(input_root).as_posix(),
+            "physical_mode": "warp_twin",
+            "sha256": producer._sha256_file(physical),
+        }
+        manifest = evidence_root / "physical-manifests" / case_id
+        manifest.mkdir(parents=True)
+        producer._write_json_once(
+            manifest / "physical_prediction_manifest.json",
+            {
+                "artifact_kind": "Deform360BiasAwareProspectivePhysicalPrediction",
+                "episode_id": episode,
+                "information_boundary": {
+                    "future_object_geometry_read": False,
+                    "future_object_rgb_read": False,
+                    "future_object_track_read": False,
+                    "outcome_read": False,
+                },
+                "object_id": object_id,
+                "passed": True,
+                "physical_mode": "warp_twin",
+                "physical_prediction_archive": {
+                    "file_sha256": physical_record["sha256"]
+                },
+                "schema_version": 1,
+                "stratum": stratum,
+            },
+        )
+        windows = []
+        for camera in ("provider-a", "provider-b"):
+            visual = input_root / "visual" / case_id / camera / "prediction.npz"
+            metric = input_root / "metric" / case_id / camera / "metric.npz"
+            visual.parent.mkdir(parents=True)
+            metric.parent.mkdir(parents=True)
+            visual.write_bytes(f"visual-{index}-{camera}".encode("ascii"))
+            metric.write_bytes(f"metric-{index}-{camera}".encode("ascii"))
+            windows.append(
+                {
+                    "camera_id": camera,
+                    "decoded_uniform": {
+                        "path": visual.relative_to(input_root).as_posix(),
+                        "sha256": producer._sha256_file(visual),
+                    },
+                    "metric_prefix": {
+                        "path": metric.relative_to(input_root).as_posix(),
+                        "sha256": producer._sha256_file(metric),
+                    },
+                }
+            )
+        objects.append(
+            {
+                "episode_id": episode,
+                "object_id": object_id,
+                "physical": physical_record,
+                "raw_prefix_range_half_open": [100, 158],
+                "reserved_endpoint_camera_ids": ["score-a", "score-b"],
+                "stratum": stratum,
+                "visual_windows": windows,
+            }
+        )
+    return {"objects": objects}, input_root, evidence_root
+
+
+def test_source_resolver_binds_disjoint_prefix_inputs(tmp_path: Path) -> None:
+    plan, input_root, evidence_root = _source_plan_fixture(tmp_path)
+    units = producer._resolve_source_inputs(
+        source_plan=plan,
+        input_root=input_root,
+        upstream_run_root=input_root / "registered-run",
+        upstream_evidence_root=evidence_root,
+        common_artifacts={
+            "contract.json": {
+                "path": "contract.json",
+                "sha256": _sha("contract"),
+                "size_bytes": 1,
+            }
+        },
+    )
+    assert len(units) == 10
+    assert [(unit.object_id, unit.episode, unit.stratum) for unit in units] == list(
+        SOURCE_ROSTER
+    )
+    assert all(
+        tuple(camera for camera, _visual, _metric in unit.visual_inputs)
+        == ("provider-a", "provider-b")
+        for unit in units
+    )
+    assert all(
+        not set(unit.reserved_scoring_camera_ids).intersection(
+            camera for camera, _visual, _metric in unit.visual_inputs
+        )
+        for unit in units
+    )
+
+
+def test_execution_receipt_is_content_and_boundary_validated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    identity = {
+        "artifacts": {
+            "prediction_batch": {"sha256": _sha("batch")},
+            "prediction_receipt": {"sha256": _sha("receipt")},
+            "source_plan": {"sha256": _sha("plan")},
+        },
+        "error": None,
+        "exit_code": 0,
+        "information_boundary": {
+            "development_suffix_opened": False,
+            "v5_confirmation_outcomes_used": False,
+            "v5_confirmation_payloads_opened": False,
+            "v6_target_outcomes_used": False,
+            "v6_target_payloads_opened": False,
+        },
+        "physical_manifest_count": 10,
+        "schema": "bayesian-phystwin.deform360-v6-source-prediction-execution-receipt",
+        "schema_version": 1,
+        "source_prediction_seal_count": 100,
+        "source_revision": producer.UPSTREAM_REVISION,
+        "status": "source-prediction-evidence-sealed",
+        "terminal_stage": "completed",
+    }
+    receipt = {**identity, "receipt_id": producer.content_id(identity)}
+    path = tmp_path / "execution-receipt.json"
+    producer._write_json_once(path, receipt)
+    monkeypatch.setattr(
+        producer, "UPSTREAM_EXECUTION_RECEIPT_FILE_SHA256", producer._sha256_file(path)
+    )
+    monkeypatch.setattr(
+        producer, "UPSTREAM_EXECUTION_RECEIPT_ID", receipt["receipt_id"]
+    )
+    monkeypatch.setattr(
+        producer, "UPSTREAM_PREDICTION_BATCH_FILE_SHA256", _sha("batch")
+    )
+    monkeypatch.setattr(
+        producer, "UPSTREAM_PREDICTION_RECEIPT_FILE_SHA256", _sha("receipt")
+    )
+    monkeypatch.setattr(producer, "UPSTREAM_SOURCE_PLAN_FILE_SHA256", _sha("plan"))
+    assert producer._validate_execution_receipt(path) == receipt
+
+    changed = copy.deepcopy(receipt)
+    changed["information_boundary"]["development_suffix_opened"] = True
+    changed.pop("receipt_id")
+    changed["receipt_id"] = producer.content_id(changed)
+    changed_path = tmp_path / "changed-execution-receipt.json"
+    producer._write_json_once(changed_path, changed)
+    monkeypatch.setattr(
+        producer,
+        "UPSTREAM_EXECUTION_RECEIPT_FILE_SHA256",
+        producer._sha256_file(changed_path),
+    )
+    monkeypatch.setattr(
+        producer, "UPSTREAM_EXECUTION_RECEIPT_ID", changed["receipt_id"]
+    )
+    with pytest.raises(ValueError, match="target-closed source run"):
+        producer._validate_execution_receipt(changed_path)
+
+
+def test_unit_arrays_preserve_registered_mean_and_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    base = _unit(tmp_path, 0)
+    source_artifacts = dict(base.source_artifacts)
+    for camera in ("provider-a", "provider-b"):
+        source_artifacts[f"visual/{base.object_id}/{camera}/prefix.npz"] = {
+            "path": f"visual/{camera}.npz",
+            "sha256": _sha(camera),
+            "size_bytes": 1,
+        }
+    unit = producer.CovarianceSourceUnitInputsV1(
+        object_id=base.object_id,
+        episode=base.episode,
+        stratum=base.stratum,
+        raw_prefix_range_half_open=base.raw_prefix_range_half_open,
+        physical_mode=base.physical_mode,
+        physical_archive_path=base.physical_archive_path,
+        visual_inputs=base.visual_inputs,
+        reserved_scoring_camera_ids=base.reserved_scoring_camera_ids,
+        source_artifacts=source_artifacts,
+    )
+    physical = np.zeros((76, 128, 3), dtype=np.float64)
+    monkeypatch.setattr(
+        producer, "_load_physical_archive", lambda *_args, **_kwargs: (physical, None)
+    )
+
+    def prepare(**kwargs: Any) -> tuple[Deform360JointSparseVisualWindowRowsV5, None]:
+        return (
+            _window(
+                camera=str(kwargs["camera_id"]),
+                points=np.asarray([[0.001, 0.0, 0.0]], dtype=np.float64),
+            ),
+            None,
+        )
+
+    monkeypatch.setattr(
+        producer, "prepare_deform360_disjoint_visual_window_v6_1", prepare
+    )
+    fit = producer.Deform360JointSparsePrefixFitV5(
+        fit_object_ids=tuple(sorted(item[0] for item in SOURCE_ROSTER)),
+        source_artifact_ids={"fit": _sha("fit")},
+    )
+    arrays, metadata = producer._unit_arrays(
+        unit,
+        source_inventory_id=_sha("inventory"),
+        implementation_revision=REVISION,
+        fit=fit,
+    )
+    assert arrays["mean_m"].shape == (18, 128, 3)
+    assert arrays["covariance_m2"].shape == (18, 128, 3, 3)
+    assert metadata["exact_fallback"] is True
+    assert np.array_equal(arrays["covariance_m2"], np.zeros((18, 128, 3, 3)))
+
+
+def test_complete_panel_publication_orchestrates_exact_100_records(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inventory_roots = tmp_path / "inventory-roots"
+    inventory_roots.mkdir()
+    inventory = _build_inventory(inventory_roots)
+    inventory_path = tmp_path / "inventory.json"
+    publish_covariance_source_inventory_v1(inventory, inventory_path)
+    upstream = tmp_path / "upstream"
+    upstream.mkdir()
+    upstream_files = {
+        name: upstream / f"{name}.json"
+        for name in ("plan", "batch", "prediction-receipt", "execution-receipt")
+    }
+    for path in upstream_files.values():
+        producer._write_json_once(path, {})
+    monkeypatch.setattr(
+        producer,
+        "UPSTREAM_SOURCE_PLAN_FILE_SHA256",
+        producer._sha256_file(upstream_files["plan"]),
+    )
+    monkeypatch.setattr(
+        producer,
+        "UPSTREAM_PREDICTION_BATCH_FILE_SHA256",
+        producer._sha256_file(upstream_files["batch"]),
+    )
+    monkeypatch.setattr(
+        producer,
+        "UPSTREAM_PREDICTION_RECEIPT_FILE_SHA256",
+        producer._sha256_file(upstream_files["prediction-receipt"]),
+    )
+    monkeypatch.setattr(
+        producer,
+        "UPSTREAM_EXECUTION_RECEIPT_FILE_SHA256",
+        producer._sha256_file(upstream_files["execution-receipt"]),
+    )
+    monkeypatch.setattr(
+        producer,
+        "validate_deform360_joint_sparse_source_prediction_plan_v5",
+        lambda *_args, **_kwargs: {
+            "implementation_revision": producer.UPSTREAM_REVISION,
+            "plan_id": producer.UPSTREAM_SOURCE_PLAN_ID,
+        },
+    )
+    monkeypatch.setattr(
+        producer,
+        "validate_deform360_joint_sparse_source_prediction_batch_v5",
+        lambda *_args, **_kwargs: {
+            "prediction_batch_id": producer.UPSTREAM_PREDICTION_BATCH_ID
+        },
+    )
+    monkeypatch.setattr(
+        producer,
+        "validate_deform360_joint_sparse_source_prediction_receipt_v5",
+        lambda *_args, **_kwargs: {
+            "receipt_id": producer.UPSTREAM_PREDICTION_RECEIPT_ID
+        },
+    )
+    monkeypatch.setattr(producer, "_validate_execution_receipt", lambda _path: {})
+    units = tuple(_unit(tmp_path, index) for index in range(10))
+    monkeypatch.setattr(producer, "_resolve_source_inputs", lambda **_kwargs: units)
+
+    def unit_arrays(
+        unit: producer.CovarianceSourceUnitInputsV1, **_kwargs: Any
+    ) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+        return _arrays(exact_fallback=unit.object_id == SOURCE_ROSTER[0][0])
+
+    monkeypatch.setattr(producer, "_unit_arrays", unit_arrays)
+    input_root = tmp_path / "input-root"
+    run_root = input_root / "run-root"
+    forbidden = tmp_path / "forbidden"
+    output_parent = tmp_path / "results"
+    run_root.mkdir(parents=True)
+    forbidden.mkdir()
+    output_parent.mkdir()
+    output = output_parent / "panel"
+    receipt = producer.publish_covariance_source_panel_v1(
+        protocol_path=PROTOCOL,
+        selection_path=SELECTION,
+        crossrepo_binding_path=BINDING,
+        source_execution_lock_path=SOURCE_EXECUTION_LOCK,
+        source_inventory_path=inventory_path,
+        upstream_source_plan_path=upstream_files["plan"],
+        upstream_prediction_batch_path=upstream_files["batch"],
+        upstream_prediction_receipt_path=upstream_files["prediction-receipt"],
+        upstream_execution_receipt_path=upstream_files["execution-receipt"],
+        upstream_run_root=run_root,
+        input_root=input_root,
+        forbidden_confirmation_root=forbidden,
+        repository_root=ROOT,
+        output_root=output,
+        implementation_revision=REVISION,
+    )
+    assert receipt["prediction_record_count"] == 100
+    assert receipt["candidate_unit_count"] == 9
+    assert receipt["exact_fallback_unit_count"] == 1
+    assert producer.validate_covariance_source_panel_v1(output) == receipt
+    with pytest.raises(ValueError, match="refusing to overwrite"):
+        producer.publish_covariance_source_panel_v1(
+            protocol_path=PROTOCOL,
+            selection_path=SELECTION,
+            crossrepo_binding_path=BINDING,
+            source_execution_lock_path=SOURCE_EXECUTION_LOCK,
+            source_inventory_path=inventory_path,
+            upstream_source_plan_path=upstream_files["plan"],
+            upstream_prediction_batch_path=upstream_files["batch"],
+            upstream_prediction_receipt_path=upstream_files["prediction-receipt"],
+            upstream_execution_receipt_path=upstream_files["execution-receipt"],
+            upstream_run_root=run_root,
+            input_root=input_root,
+            forbidden_confirmation_root=forbidden,
+            repository_root=ROOT,
+            output_root=output,
+            implementation_revision=REVISION,
+        )
