@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/scripts/science/run_deform360_covariance_source_producer_v1.py", line 235, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/scripts/science/run_deform360_covariance_source_producer_v1.py", line 220, in main
+    return _execute(args)
+           ^^^^^^^^^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/scripts/science/run_deform360_covariance_source_producer_v1.py", line 182, in _execute
+    receipt = publish_covariance_source_panel_v1(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/src/bayesian_phystwin/deform360_covariance_source_producer_v1.py", line 1511, in publish_covariance_source_panel_v1
+    arrays, metadata = _unit_arrays(
+                       ^^^^^^^^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/src/bayesian_phystwin/deform360_covariance_source_producer_v1.py", line 919, in _unit_arrays
+    rows, _gauge = prepare_deform360_disjoint_visual_window_v6_1(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py", line 58, in prepare_deform360_disjoint_visual_window_v6_1
+    rows, gauge = prepare_deform360_joint_sparse_visual_window_v5(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py", line 376, in prepare_deform360_joint_sparse_visual_window_v5
+    gauge = _fit_metric_gauge(
+            ^^^^^^^^^^^^^^^^^^
+  File "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py", line 288, in _fit_metric_gauge
+    raise ValueError("metric gauge lacks eight independent causal clusters")
+ValueError: metric gauge lacks eight independent causal clusters

@@ -117,14 +117,19 @@ file_payloads_scored=false
 The artifact is retained for 90 days. It is an operational diagnostic, not a
 claim-bearing evidence bundle.
 
-## Prefix-only source producer
+## Prefix-only source producer (consumed)
 
-After the corrected inventory implementation and producer merge to protected
-`main`, create this exact comment on issue `#775`:
+The one registered dispatch was the exact issue `#775` comment:
 
 ```text
 /bpt-produce-covariance-source-v1
 ```
+
+It was consumed by run `33012751418` and must not be created again for this
+protocol. The run retained `source-technical-negative` after the metric-gauge
+provider failed its frozen eight-independent-cluster requirement. It sealed
+`0/100` records, opened no source suffix or confirmation payload, and authorized
+no retry.
 
 The authenticated job recomputes the header-only inventory, binds the exact
 successful public Deform360 v6 prefix run and all consumed source-prefix files,
@@ -148,7 +153,7 @@ path validates all 100 records and then stops. It does not attach source
 suffixes, score outcomes, execute the reducer, create confirmation predictions,
 or authorize confirmation access.
 
-## Later decision stage
+## Later decision stage (not authorized)
 
 Only after a complete 100-record receipt has been independently rehashed may a
 separately reviewed source-scoring execution attach the already-open source
@@ -163,6 +168,10 @@ the twelve prefix-only confirmation predictions. It still does not authorize
 opening any confirmation payload or outcome. A separately reviewed source
 scorer now exists, but no empirical source-scoring or confirmation trigger is
 installed by the producer change.
+
+That prerequisite was not met. The source scorer and all confirmation stages
+are therefore permanently closed for this exact protocol. The frozen result is
+documented in `docs/deform360_covariance_source_panel_v1_result.md`.
 
 ## Scientific boundary
 

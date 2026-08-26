@@ -1,0 +1,61 @@
+{
+  "artifact_kind": "Deform360CovarianceOnlyIndependentValidationSourceResult",
+  "claim_boundary": "Prospective public-data source execution only; no source calibration metric, confirmation result, official Deform360 benchmark result, or state-of-the-art claim is available.",
+  "decision": {
+    "confirmation_authorized": false,
+    "confirmation_run": false,
+    "metric_source_gate_evaluated": false,
+    "retry_authorized": false,
+    "source_panel_complete": false,
+    "study_terminal_under_frozen_protocol": true
+  },
+  "failure": {
+    "diagnostic_code": "provider-materialization-failure",
+    "exception_message": "metric gauge lacks eight independent causal clusters",
+    "prediction_record_count": 0,
+    "required_prediction_record_count": 100,
+    "status": "source-technical-negative",
+    "terminal_stage": "source-panel-production"
+  },
+  "information_boundary": {
+    "confirmation_outcomes_used": false,
+    "confirmation_payloads_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "human_selection_used": false,
+    "replacement_used": false,
+    "source_suffix_used": false,
+    "target_informed_selection_used": false
+  },
+  "inventory": {
+    "artifact_digest": "sha256:b3eaa7fb1f24f39bbb215734a58224ebf9002f2f24fa019c0bada2a1a86750c7",
+    "artifact_id": 9623110927,
+    "artifact_name": "covariance-source-input-inventory-v1-33012437014",
+    "file_sha256": "029d65fabab9786d5f8b22bc6b676ddd0198b4fbf8048d6c4185a5d127dcc053",
+    "header_record_count": 5432,
+    "inventory_id": "254fc7e09e339d22d6030cc9d6a467cba9c01f757910942cd574c922341649db",
+    "missing_source_unit_count": 0,
+    "run_id": 33012437014,
+    "source_unit_count": 10
+  },
+  "producer": {
+    "artifact_digest": "sha256:7396755b951d55cd928988798609ac61f1b11e113f6eabc849de0559965606a6",
+    "artifact_id": 9623217382,
+    "artifact_name": "covariance-source-technical-receipt-v1-33012751418",
+    "artifact_size_bytes": 2400,
+    "attempt_file_sha256": "eb6d28cc51906f71185553a2103b5863a0ae558aa500d3f10668c1de8f68f4c8",
+    "implementation_revision": "d772b8ba84e52b99beb22e1aab2a37d766abab77",
+    "log_file_sha256": "a2bb8691b7937703ba93a711b3d7cd8a46db1e0f19592f3e7cff7612753505a8",
+    "receipt_file_sha256": "0c2c600a5a4e82822431a87a72cdf2cdbc3896a7299e9e373eaf200c1ad7ba39",
+    "receipt_id": "e705d19c50273e2b1f09ff1ccd09fd4cf08b250241f2d0f4c4f0a17bcb775df3",
+    "run_attempt": 1,
+    "run_id": 33012751418
+  },
+  "protocol": {
+    "crossrepo_binding_id": "531123205959a3d3d0549d9256b6ec222dca636198bc1e93f1b468d1a77c8f33",
+    "paper_protocol_id": "fa16c105e6d535d1e229ccf086fd69d05b2be74592b5c4e3f6c5289b8915fee3",
+    "software_protocol_id": "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc"
+  },
+  "result_id": "0d5b0f31da430210d05e4bc28659a06ca950a961896660b804750ddab7716f18",
+  "schema_version": 1,
+  "status": "source-technical-negative"
+}
