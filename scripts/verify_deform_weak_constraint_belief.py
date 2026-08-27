@@ -98,10 +98,20 @@ def independent_uq(error: np.ndarray, covariance: np.ndarray) -> dict[str, np.nd
     nees = np.square(whitened).sum(axis=-1)
     logdet = 2 * np.log(np.diagonal(factor, axis1=-2, axis2=-1)).sum(axis=-1)
     radius = 6.251388631170325
+    coverage = nees <= radius
+    boundary = np.abs(nees - radius) <= 64 * np.finfo(np.float64).eps * radius
+    if np.any(boundary):
+        # A fitted conformal quantile can be exactly on a binary boundary. Keep
+        # independent Cholesky continuous scores, but use the registered solver
+        # operation order for membership within float64 roundoff of that boundary.
+        solved = np.linalg.solve(covariance, error[..., None])[..., 0]
+        canonical_nees = np.einsum("...i,...i->...", error, solved)
+        np.testing.assert_allclose(canonical_nees, nees, atol=1e-10, rtol=1e-9)
+        coverage = np.where(boundary, canonical_nees <= radius, coverage)
     return {
         "nll": 0.5 * (nees + logdet + 3 * np.log(2 * np.pi)),
         "nees": nees,
-        "coverage_90": (nees <= radius).astype(float),
+        "coverage_90": coverage.astype(float),
         "ellipsoid_volume_mm3": (4 / 3)
         * np.pi
         * np.exp(logdet / 2)
@@ -481,6 +491,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         "independent_batch_inference": True,
         "independent_physical_increments": True,
         "independent_covariance_and_calibration": True,
+        "binary_coverage_boundary_convention": "registered-direct-solve-order-only-within-64-float64-epsilon-of-chi2-threshold",
         "old_means_byte_identical": True,
         "protected_data_access": False,
         "new_official_evaluation": False,
@@ -488,13 +499,17 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    global ROOT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-receipt", type=Path, required=True)
     parser.add_argument("--source-receipt-sha256", required=True)
     parser.add_argument("--calibration-sha256", required=True)
     parser.add_argument("--verification-output", type=Path, required=True)
+    parser.add_argument("--prediction-source-root", type=Path)
     args = parser.parse_args()
+    if args.prediction_source_root is not None:
+        ROOT = args.prediction_source_root.resolve()
     record = verify(args)
     write_json_once(args.verification_output, record)
     print(json.dumps(record, sort_keys=True), flush=True)

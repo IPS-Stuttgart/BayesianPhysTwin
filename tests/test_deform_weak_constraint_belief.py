@@ -300,6 +300,25 @@ def test_gaussian_metric_units_and_independent_cholesky_scores() -> None:
     assert 49 < values["geometric_full_width_mm"].mean() < 51
 
 
+def test_verifier_respects_registered_binary_conformal_boundary_order() -> None:
+    verifier = _load(
+        "weak_verifier_boundary",
+        ROOT / "scripts/verify_deform_weak_constraint_belief.py",
+    )
+    rng = np.random.default_rng(260835)
+    factors = rng.normal(0, 0.003, (128, 3, 3))
+    cov = factors @ factors.swapaxes(-2, -1) + 9e-6 * np.eye(3)
+    error = rng.normal(0, 0.01, (128, 3))
+    initial = gaussian_events(error, cov)["nees"]
+    error *= np.sqrt(6.251388631170325 / initial)[:, None]
+    expected = gaussian_events(error, cov)
+    verified = verifier.independent_uq(error, cov)
+    np.testing.assert_array_equal(verified["coverage_90"], expected["coverage_90"])
+    np.testing.assert_allclose(
+        verified["nees"], expected["nees"], atol=1e-12, rtol=1e-12
+    )
+
+
 @pytest.mark.parametrize("kind", ["negative", "nan", "asymmetric"])
 def test_invalid_covariance_rejected(kind: str) -> None:
     covariance = np.eye(3)
