@@ -1,0 +1,63 @@
+{
+  "schema": "deft-native-source-qualification-v1",
+  "purpose": "Qualify a native branched-rod restart interface before any source accuracy experiment",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFT",
+    "revision": "5781c70c7737fb84b8bd43261e3ed00ef2fd0fbc",
+    "checkpoint": "save_model/BDLO1/DEFT_ends_1_pretrained_full_model.pth",
+    "checkpoint_git_blob": "d25797dceef1b7b2c6feb0604a000a1584bcaf38",
+    "checkpoint_sha256": "8ce5d6c736edfd246506d0458efd95f852e0e6d2dd07fae01c798462209fbc9a",
+    "construction": "Exact released BDLO1 ends constructor and checkpoint loading; no derived-parameter refresh or retraining",
+    "physics": "Native torch iterative_predict; 20 constraint iterations; orientation and attachment constraints enabled; released learned residual retained"
+  },
+  "runtime": {
+    "device": "cpu",
+    "batch": 1,
+    "dtype": "float64",
+    "threads": 1,
+    "seed": 1,
+    "dt_s": 0.01,
+    "python": "3.10.12",
+    "torch": "2.0.1+cu118",
+    "numpy": "1.24.3",
+    "theseus": "0.2.1",
+    "numba": "0.59.1",
+    "pytorch3d": "0.7.7",
+    "pytorch3d_revision": "89653419d0973396f3eff1a381ba09a07fffc2ed",
+    "runtime_scope": "Pinned compatibility qualification; not the README's recommended Torch 2.5.1+ environment",
+    "optional_sparse_import": "Import-only CHOLMOD shim; any invocation raises; native Theseus LU dense solver is unchanged"
+  },
+  "synthetic_qualification": {
+    "initial_geometry": "Released source-code reference pose repeated for two zero-velocity frames",
+    "timesteps": 12,
+    "pause_after_completed_steps": 6,
+    "prescribed_clamp_translation_m": [0.001, 0.002, 0.0],
+    "input_policy": "Only the first two full states and four future parent clamp positions; all other future input entries are exact zero",
+    "required_checks": [
+      "finite_native_positions_and_velocities",
+      "resumable_vs_native_bitwise_positions_and_velocities",
+      "segmented_vs_monolithic_bitwise_positions_and_velocities",
+      "zero_update_bitwise_positions_velocities_and_final_internal_state",
+      "input_state_not_mutated_by_continuation",
+      "native_parent_clamp_error_at_most_1e-6_m"
+    ]
+  },
+  "prospective_training_pilot_candidate": {
+    "status": "Names-only candidate; not authorized for decode or scoring by this qualification lock",
+    "selection": "First lexicographic BDLO1 train file named BDLO_data_kinova_and_panda; no outcome or visual selection",
+    "path": "dataset/BDLO1/train/BDLO_data_kinova_and_panda_track1244_block1_frames301to800.pkl",
+    "git_blob": "f9c486815e6b0ff8818457fcce69a8ce44896a09",
+    "reason": "Robot-actuated training example; no new recordings and no public evaluation split",
+    "limitations": "Checkpoint training exposure; blocks from one original recording are not independent sessions"
+  },
+  "boundaries": {
+    "dataset_decode_authorized": false,
+    "source_accuracy_scoring_authorized": false,
+    "evaluation_or_test_decode_authorized": false,
+    "protected_deform_dlo3_dlo4_dlo5_access_authorized": false,
+    "held_v8_access_authorized": false,
+    "deform360_target_access_authorized": false,
+    "existing_deform_backend_changes_authorized": false,
+    "automatic_empirical_advancement": false
+  }
+}
