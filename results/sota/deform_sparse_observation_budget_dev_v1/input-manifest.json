@@ -1,0 +1,70 @@
+{
+  "baseline_retrained": false,
+  "case_count": 1,
+  "case_index": 0,
+  "config": {
+    "bias_repetitions": 16,
+    "budgets": [
+      0,
+      1,
+      2,
+      4,
+      8
+    ],
+    "candidate_nodes": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      11
+    ],
+    "case_name": "103.pkl",
+    "dataset_frame_offset": 2,
+    "forecast_end_exclusive": 170,
+    "graph_rank": 4,
+    "hidden_nodes": [
+      3,
+      5,
+      7,
+      9
+    ],
+    "measurement_std_m": 0.001,
+    "observation_frames": [
+      9,
+      17,
+      25,
+      33,
+      41,
+      49
+    ],
+    "prefix_end_exclusive": 50,
+    "random_policy_repetitions": 32,
+    "seed": 260827,
+    "shared_bias_std_m": 0.005,
+    "source_archive_sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b"
+  },
+  "config_sha256": "b0c114e7441a92822ecd2fea78d9cd469cdf9464fb2020c1fe5e8bb1ffa3a4e5",
+  "dlo4_dlo5_accessed": false,
+  "fresh_targets_accessed": false,
+  "future_truth_used_for_selection_or_update": false,
+  "held_v8_accessed": false,
+  "implementation": {
+    "config_sha256": "b0c114e7441a92822ecd2fea78d9cd469cdf9464fb2020c1fe5e8bb1ffa3a4e5",
+    "git_clean": true,
+    "git_revision": "6772036a2ff6052ab5cd7561301f974908d35413",
+    "numpy_version": "2.2.6",
+    "python_version": "3.12.13",
+    "source_sha256s": {
+      "scripts/run_deform_sparse_observation_budget.py": "7f832f12f0d4c691b2833198d92cd7d67172bd8ceb8c5c09885b042113ff8217",
+      "src/bayesian_phystwin/nuisance_aware_information.py": "d06e10497d880fb38b8488d2c5bc9cfacce34496cb6cd6a01ec86e44f04cd9e7",
+      "src/bayesian_phystwin/numerical_linear_algebra_v1.py": "036535d85c5d76f174ae23140e93f11a9bae6ec19b1772be8c035658407cfab6",
+      "src/bayesian_phystwin/query_aware_anchor_planning.py": "ef1baccee67eab494c96ca5425f2ebf60b46782a6d99f91a0366db2972a8091d",
+      "src/bayesian_phystwin_experiments/deform_sparse_observation_budget.py": "d75fcd5543bc9c118fb70fea1ba429d4aa24618d994dac5cb5936bcebcd383d7"
+    }
+  },
+  "reference_mean_sha256": "060dd7fbf3a996497efe7e49d7cfe12e2d710120ec84858728fc6f7d891a9f58",
+  "saved_marginal_variance_sha256": "0db700ec0f1339a1b83d6a4e12757eecbaa56ae197267cb564a8d0a2247e4981",
+  "schema": "deform-sparse-budget-input-v1",
+  "source_archive_sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b"
+}
