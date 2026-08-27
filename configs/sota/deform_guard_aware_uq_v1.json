@@ -1,0 +1,62 @@
+{
+  "schema": "deform-guard-aware-uq-v1",
+  "scope": "exploratory-only-on-the-already-open-three-object-roster",
+  "parent_protocol": {
+    "path": "configs/sota/deform_multiobject_state_restart_v1.json",
+    "sha256": "6ea78a8d4c412d1fbd3423e388bbfd85b78696e619a29ab6a961ab807e08af17"
+  },
+  "input_root": "/home/florianpfaff/source-only/deform-weak-belief-b87eea1e/run-v1",
+  "input_source_revision": "b87eea1e9477ad2b5c4445691f8b1af1b353a701",
+  "input_prediction_barrier_sha256": "1fe14811ffc26731584e0c601003bacb9e5634a52cd456250621c6f260700045",
+  "input_verification_path": "/home/florianpfaff/source-only/deform-weak-belief-b87eea1e/verification_v1_1.json",
+  "input_verification_sha256": "82190bec5ee0b442a0c66af5b19a7d627ff55d09ffad045f588f67c79ee0b4d9",
+  "point_mean": "previous_paired_8",
+  "shadow_belief": "strong_8",
+  "primary_arm": "fixed_mean_bridge__moment",
+  "run_root": "/home/florianpfaff/source-only/deform-guard-aware-uq-v1/run-v1",
+  "attempt_ledger": "/home/florianpfaff/source-only/deform-guard-aware-uq-v1/prediction_attempt.json",
+  "raw_covariance_arms": ["isotropic", "guard_scaled", "shadow", "fixed_mean_bridge", "rotated_bridge"],
+  "source_fitted_comparator": "source_full",
+  "calibration_variants": ["moment", "conformal"],
+  "config": {
+    "floor_std_m": 0.003,
+    "source_full_ridge_std_m": 0.000001,
+    "bootstrap_seed": 260835,
+    "bootstrap_replicates": 10000
+  },
+  "calibration": {
+    "object": "DLO2",
+    "case_count": 13,
+    "excluded_design_case": "103.pkl",
+    "horizons": [40, 40, 40],
+    "source_full": "equal-case-uncentered-error-second-moment-plus-fixed-ridge",
+    "moment": "mean-source-NEES-divided-by-three",
+    "conformal": "source-trajectory-90th-percentile-higher-then-maximum-divided-by-chi2_3_90",
+    "outer_rank": 13
+  },
+  "gate": {
+    "objects": ["DLO1", "DLO3"],
+    "nll_ci95_upper_below_zero_against": ["isotropic", "source_full", "shadow"],
+    "minimum_nll_wins_per_object": 5,
+    "wins_compared_against": ["isotropic", "source_full"],
+    "coverage_range": [0.8, 0.98],
+    "volume_nonincreasing_against": ["isotropic", "source_full"],
+    "point_arrays_byte_identical": true,
+    "all_required_checks_on_both_objects": true,
+    "secondary_arms_cannot_rescue_primary": true
+  },
+  "all_raw_predictions_sealed_before_new_calibration": true,
+  "calibration_sealed_before_transfer_metrics": true,
+  "shared_point_mean_only": true,
+  "new_native_rollouts": false,
+  "new_observation_queries": false,
+  "future_free_node_truth_is_model_input": false,
+  "future_clamped_actions_known_under_parent_contract": true,
+  "protected_data_access": false,
+  "new_official_evaluation": false,
+  "population_coverage_guarantee": false,
+  "exact_posterior_claim": false,
+  "automatic_promotion": false,
+  "outcome_publication": "local-or-private-paper-evidence-only",
+  "technical_failure_policy": "retain and stop; no replacement or outcome-driven rerun"
+}
