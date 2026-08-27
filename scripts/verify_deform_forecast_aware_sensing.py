@@ -207,6 +207,16 @@ def native_replay_inputs(
     return initial, actions
 
 
+def independent_noisy_queries(
+    points: np.ndarray, *, seed: int, shared: bool
+) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    independent = rng.normal(0, 0.001, points.shape)
+    bias = rng.normal(0, 0.005, (len(points), 1, 3))
+    noise = independent + bias if shared else independent
+    return points + noise
+
+
 def verify_native_primary(
     model: dict[str, np.ndarray],
     predictions: dict[str, np.ndarray],
@@ -334,14 +344,13 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             for repetition in range(repeats):
                 measurements = clean_points.copy()
                 if condition != "clean":
-                    rng = np.random.default_rng(
-                        protocol["noise"]["seed"]
+                    measurements = independent_noisy_queries(
+                        clean_points,
+                        seed=protocol["noise"]["seed"]
                         + item["noise_seed_offset"]
-                        + repetition
+                        + repetition,
+                        shared=condition_index == 2,
                     )
-                    error = rng.normal(0, 0.001, clean_points.shape)
-                    shared = rng.normal(0, 0.005, (len(clean_points), 1, 3))
-                    measurements += error + (shared if condition_index == 2 else 0)
                 verify_fits(
                     fits,
                     model,

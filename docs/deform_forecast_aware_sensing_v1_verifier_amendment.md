@@ -20,7 +20,15 @@ every original source-receipt entry and records its own file SHA-256 separately.
 The first standalone invocation also exposed a missing import path for the
 pre-existing metric verifier. It stopped before verification began. The amended
 checker explicitly adds both the frozen `scripts` and `scripts/remote` paths;
-both unsuccessful checker logs are retained with the final successful audit.
+these unsuccessful checker logs are retained with the final audit.
+
+After clean native replay succeeded, the noise check exposed a third checker-only
+defect: in-place addition rounded the independently regenerated noisy queries back
+to the raw archive's float32 dtype. The producer uses out-of-place addition and
+retains float64 noise. The verifier now does the same arithmetic in its separate
+noise generator, with float32/float64 and shared/independent synthetic regression
+tests. Exact equality is retained; no numerical tolerance is relaxed. This failed
+checker log is also preserved.
 
 No likelihood, inference, query schedule, native prediction, metric, threshold,
 denominator, protected-data boundary, or decision changes. The empirical run is

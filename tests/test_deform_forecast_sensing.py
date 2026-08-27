@@ -680,3 +680,19 @@ def test_native_verifier_owns_contiguous_causal_inputs(layout: str) -> None:
     np.testing.assert_array_equal(initial, raw[:, :2])
     np.testing.assert_array_equal(actions, raw[:, 2:172, clamps])
     np.testing.assert_array_equal(raw, original)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("shared", [False, True])
+def test_independent_noise_verifier_preserves_double_precision(dtype, shared) -> None:
+    path = ROOT / "scripts/verify_deform_forecast_aware_sensing.py"
+    spec = importlib.util.spec_from_file_location("sensing_verifier_noise_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    points = np.linspace(-0.8, 0.8, 3 * 16 * 3, dtype=dtype).reshape(3, 16, 3)
+    original = points.copy()
+    actual = module.independent_noisy_queries(points, seed=260832, shared=shared)
+    expected = points + query_noise(points.shape, seed=260832, shared=shared)
+    assert actual.dtype == np.float64
+    np.testing.assert_array_equal(actual, expected)
+    np.testing.assert_array_equal(points, original)
