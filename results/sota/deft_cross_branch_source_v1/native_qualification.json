@@ -1,0 +1,59 @@
+{
+  "boundaries": {
+    "accuracy_outcomes_read": false,
+    "empirical_advancement_authorized": false,
+    "existing_deform_modules_modified": false,
+    "held_v8_read": false,
+    "protected_targets_read": false,
+    "public_evaluation_split_read": false,
+    "synthetic_reference_only": true,
+    "trajectory_dataset_decoded": false
+  },
+  "checks": {
+    "finite_native_positions_and_velocities": true,
+    "input_state_not_mutated_by_continuation": true,
+    "native_parent_clamp_error_at_most_1e-6_m": true,
+    "resumable_vs_native_bitwise_positions_and_velocities": true,
+    "segmented_vs_monolithic_bitwise_positions_and_velocities": true,
+    "zero_update_bitwise_positions_velocities_and_final_internal_state": true
+  },
+  "clamp_max_error_m": 0.0,
+  "final_state_sha256s": {
+    "b_DLOs_velocity": "5cd40d9039b595827e0b7c9fad71a3edefd95b9cb873d2f0c5c8f573d2d58efc",
+    "b_DLOs_vertices": "fd75a5a758830c90aadb74e28c5feb00036803aef00349bf283ba2593962e179",
+    "b_DLOs_vertices_old": "fd75a5a758830c90aadb74e28c5feb00036803aef00349bf283ba2593962e179",
+    "children_rod_orientation": "f47be169863157b813252f2eb8b55c35b678b9e0a80fc54022067ebe736698ae",
+    "m_u0": "f73b46a965bf9e56adc78919eeabf683810fe6e1095451463c1f6315f3f0c58a",
+    "optimization_mask": "ae9e88dbd13cc29b64607462359dfc86b898d58d75610c11b787e48eb918faea",
+    "parent_rod_orientation": "02885f87ffc73672383990f84b0662250aa183406307eb75ffaaecd4bc0a9b30",
+    "previous_children_vertices_iteration_edge": "853ae71dcb57692d645bd84cc3c4597233190fbce01ee794f1f53c1d1fae2e5e",
+    "previous_parent_vertices_iteration_edge1": "ccc40c5eaf6205dbe491c07d51a0639d7720c317ce06fdc7fade3467dedc2a08",
+    "previous_parent_vertices_iteration_edge2": "31f910dd41d3c126e92ac44a0170fc7232056ff66475fa6dedb43e5eb21675b0",
+    "theta_full": "c2ba5051395b935973a0869b9764fe2e0c1f286957e0021a9eca50a3bc8deae5"
+  },
+  "model_id": "5d8830f881ddc58dcc6052e466814906bc996b8b69487b2b3f88931676f1acbc",
+  "native_position_array_sha256": "e27f5dc54e6eb10292be4960f99f46600774e598ec6a0fceddcfc7713c41cfaf",
+  "prediction_file_sha256": "e2df7dea99290c9c5c1c36f7344c48baba40f16c0ae127b5ee415241261d4486",
+  "protocol_sha256": "82ec0293b03f2a5fe3ee661aff06519e1326d5ede7d9d58de7f2e567b4d5097d",
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float64",
+    "numba": "0.59.1",
+    "numpy": "1.24.3",
+    "python": "3.10.12",
+    "pytorch3d": "0.7.7",
+    "pytorch3d_rotation_conversions_sha256": "a40594ac49e0f2e95b0e9d39003e169a68a8e3f04f53d4fe17c4e51c97144509",
+    "theseus": "0.2.1",
+    "threads": 1,
+    "torch": "2.0.1+cu118"
+  },
+  "schema": "deft-native-source-qualification-result-v1",
+  "source_receipt_sha256": "a532e9bb60b705fc0f508086674cc95d863a44e204c466cde61ea7599dfa41ff",
+  "source_revision": "9d21fdbf96b68d66a7b796ede7cf2d66ead2868b",
+  "sparse_import": {
+    "contract": "sksparse-import-only-stub-v1",
+    "sparse_path_invocation": "raises"
+  },
+  "status": "pass",
+  "wall_seconds": 4.71847287286073
+}

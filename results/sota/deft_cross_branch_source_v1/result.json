@@ -1,0 +1,241 @@
+{
+  "automatic_next_dataset_authorization": false,
+  "checkpoint_training_exposure": true,
+  "checks": {
+    "child1_l1_nonworsening_vs_native_full": false,
+    "child1_l1_nonworsening_vs_readout_linear_velocity": true,
+    "child1_l1_nonworsening_vs_readout_persistence": true,
+    "child1_late_nonworsening_vs_native_full": false,
+    "child1_late_nonworsening_vs_readout_linear_velocity": true,
+    "child1_late_nonworsening_vs_readout_persistence": true,
+    "child1_rmse_at_least_5pct_better_than_native_full": false,
+    "child1_rmse_at_least_5pct_better_than_readout_linear_velocity": true,
+    "child1_rmse_at_least_5pct_better_than_readout_persistence": true,
+    "child2_l1_nonworsening_vs_native_full": true,
+    "child2_l1_nonworsening_vs_readout_linear_velocity": true,
+    "child2_l1_nonworsening_vs_readout_persistence": false,
+    "child2_late_nonworsening_vs_native_full": false,
+    "child2_late_nonworsening_vs_readout_linear_velocity": true,
+    "child2_late_nonworsening_vs_readout_persistence": true,
+    "child2_rmse_at_least_5pct_better_than_native_full": false,
+    "child2_rmse_at_least_5pct_better_than_readout_linear_velocity": true,
+    "child2_rmse_at_least_5pct_better_than_readout_persistence": false
+  },
+  "independent_confirmation": false,
+  "inferential_confidence_interval": null,
+  "ordinary_successful_recordings": 1,
+  "outcome_publication": "local-or-private-paper-evidence-only",
+  "per_arm": {
+    "native_full": {
+      "child1": {
+        "coordinate_l1_mm": 13.2126649775926,
+        "fde_mm": 37.50705986887228,
+        "late_rmse_mm": 42.39028829476426,
+        "point_rmse_mm": 31.228665697712344
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.403792820943615,
+        "fde_mm": 25.63512153662929,
+        "late_rmse_mm": 21.921773736405786,
+        "point_rmse_mm": 24.78259011261995
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 12.808228899268109,
+        "fde_mm": 31.571090702750787,
+        "late_rmse_mm": 32.15603101558502,
+        "point_rmse_mm": 28.005627905166147
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 9.923843379921035,
+        "fde_mm": 20.50252377931532,
+        "point_rmse_mm": 20.819847010139018
+      }
+    },
+    "native_full_pose_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 13.95666776674582,
+        "fde_mm": 45.304820346638515,
+        "late_rmse_mm": 43.71194752794999,
+        "point_rmse_mm": 35.359320100378675
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.602229769991158,
+        "fde_mm": 24.871759035935973,
+        "late_rmse_mm": 23.36707979644113,
+        "point_rmse_mm": 25.61919004531202
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 13.27944876836849,
+        "fde_mm": 35.088289691287244,
+        "late_rmse_mm": 33.53951366219556,
+        "point_rmse_mm": 30.489255072845346
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 9.670653874277034,
+        "fde_mm": 19.62359507702082,
+        "point_rmse_mm": 21.156637415057098
+      }
+    },
+    "native_physics_only": {
+      "child1": {
+        "coordinate_l1_mm": 16.01340920371498,
+        "fde_mm": 36.02070537599465,
+        "late_rmse_mm": 48.09301809301956,
+        "point_rmse_mm": 36.64094793702789
+      },
+      "child2": {
+        "coordinate_l1_mm": 13.836282627731334,
+        "fde_mm": 30.708458043528985,
+        "late_rmse_mm": 27.267530213656883,
+        "point_rmse_mm": 29.10165443311555
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 14.924845915723157,
+        "fde_mm": 33.36458170976182,
+        "late_rmse_mm": 37.68027415333822,
+        "point_rmse_mm": 32.871301185071715
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 10.391386305584605,
+        "fde_mm": 23.64642938085249,
+        "point_rmse_mm": 22.702584653023244
+      }
+    },
+    "paired_parent_only_pose_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 13.165901133864704,
+        "fde_mm": 41.9526608744914,
+        "late_rmse_mm": 40.61342527011924,
+        "point_rmse_mm": 31.853618114944354
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.240829365792683,
+        "fde_mm": 26.693854823052895,
+        "late_rmse_mm": 22.806718417163136,
+        "point_rmse_mm": 24.879186657754985
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 12.703365249828693,
+        "fde_mm": 34.323257848772144,
+        "late_rmse_mm": 31.710071843641188,
+        "point_rmse_mm": 28.36640238634967
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 9.516393107431876,
+        "fde_mm": 18.421391095966808,
+        "point_rmse_mm": 20.39302957962136
+      }
+    },
+    "paired_physics_pose": {
+      "child1": {
+        "coordinate_l1_mm": 13.452347186617938,
+        "fde_mm": 40.33592686025518,
+        "late_rmse_mm": 43.48915088663021,
+        "point_rmse_mm": 33.739520142596255
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.208057304839226,
+        "fde_mm": 25.729490035508036,
+        "late_rmse_mm": 22.257667884551836,
+        "point_rmse_mm": 25.08847164044316
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 12.830202245728582,
+        "fde_mm": 33.0327084478816,
+        "late_rmse_mm": 32.873409385591025,
+        "point_rmse_mm": 29.413995891519708
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 9.474655126842988,
+        "fde_mm": 19.821136642106314,
+        "point_rmse_mm": 20.423037579527517
+      }
+    },
+    "paired_physics_pose_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 14.039093601344138,
+        "fde_mm": 44.87753096253638,
+        "late_rmse_mm": 44.94100598971604,
+        "point_rmse_mm": 35.57206993861411
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.288089267457096,
+        "fde_mm": 26.57067059618173,
+        "late_rmse_mm": 22.612594909288088,
+        "point_rmse_mm": 25.167229138227093
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 13.163591434400617,
+        "fde_mm": 35.724100779359055,
+        "late_rmse_mm": 33.77680044950206,
+        "point_rmse_mm": 30.369649538420603
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 9.565358579838207,
+        "fde_mm": 19.381292916258797,
+        "point_rmse_mm": 20.60760641748038
+      }
+    },
+    "readout_linear_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 26.25134243807856,
+        "fde_mm": 91.58433809274005,
+        "late_rmse_mm": 88.24634471187557,
+        "point_rmse_mm": 65.19810453467393
+      },
+      "child2": {
+        "coordinate_l1_mm": 14.684491262000257,
+        "fde_mm": 51.25888583169618,
+        "late_rmse_mm": 44.02768303498021,
+        "point_rmse_mm": 32.83789380001687
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 20.46791685003941,
+        "fde_mm": 71.42161196221812,
+        "late_rmse_mm": 66.13701387342789,
+        "point_rmse_mm": 49.0179991673454
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 10.743320652010565,
+        "fde_mm": 37.4799457557834,
+        "point_rmse_mm": 25.300661786355775
+      }
+    },
+    "readout_persistence": {
+      "child1": {
+        "coordinate_l1_mm": 18.30034688953638,
+        "fde_mm": 44.79209660769532,
+        "late_rmse_mm": 52.73649461091984,
+        "point_rmse_mm": 42.954460116237364
+      },
+      "child2": {
+        "coordinate_l1_mm": 7.704369171064485,
+        "fde_mm": 32.61394825306401,
+        "late_rmse_mm": 26.60324767543644,
+        "point_rmse_mm": 18.89525609966999
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 13.002358030300433,
+        "fde_mm": 38.70302243037966,
+        "late_rmse_mm": 39.66987114317814,
+        "point_rmse_mm": 30.924858107953675
+      },
+      "parent_hidden": {
+        "coordinate_l1_mm": 4.986911673033296,
+        "fde_mm": 9.976781454488787,
+        "point_rmse_mm": 11.206210864905147
+      }
+    }
+  },
+  "prediction_barrier_sha256": "6d1f16d4dc1b640fdb7edfe647c012be94695042e1c68dd272de70a4cfb5c191",
+  "primary_arm": "paired_physics_pose_velocity",
+  "protected_data_read": false,
+  "protocol_sha256": "7b0bff91bba56bbe8778b191a18e52b4a68af8d70250768533dcbbc3dbb44ce1",
+  "public_evaluation_or_test_split_read": false,
+  "recording_count": 1,
+  "schema": "deft-cross-branch-source-pilot-result-v1",
+  "source_pilot_gate_passed": false,
+  "source_revision": "c43fd4fa086c1625db11c3b5621fbe5255eccf17",
+  "technical_failures": 0,
+  "unsealable": 0
+}
