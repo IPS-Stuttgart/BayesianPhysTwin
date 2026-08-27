@@ -1,0 +1,906 @@
+{
+  "automatic_next_experiment_authorization": false,
+  "checkpoint_training_exposure": true,
+  "checks": {
+    "at_least_two_recording_joint_wins_vs_native_full": false,
+    "at_least_two_recording_joint_wins_vs_parent_paired_pose_velocity": false,
+    "at_least_two_recording_joint_wins_vs_topology_native_periodic_pose": true,
+    "at_least_two_recording_joint_wins_vs_topology_readout_linear_velocity": true,
+    "at_least_two_recording_joint_wins_vs_topology_readout_persistence": true,
+    "child1_coordinate_l1_mm_nonincreasing_vs_native_full": false,
+    "child1_coordinate_l1_mm_nonincreasing_vs_parent_paired_pose_velocity": false,
+    "child1_coordinate_l1_mm_nonincreasing_vs_topology_native_periodic_pose": true,
+    "child1_coordinate_l1_mm_nonincreasing_vs_topology_readout_linear_velocity": true,
+    "child1_coordinate_l1_mm_nonincreasing_vs_topology_readout_persistence": true,
+    "child1_late_rmse_mm_nonincreasing_vs_native_full": false,
+    "child1_late_rmse_mm_nonincreasing_vs_parent_paired_pose_velocity": false,
+    "child1_late_rmse_mm_nonincreasing_vs_topology_native_periodic_pose": false,
+    "child1_late_rmse_mm_nonincreasing_vs_topology_readout_linear_velocity": true,
+    "child1_late_rmse_mm_nonincreasing_vs_topology_readout_persistence": true,
+    "child1_rmse_gain_5pct_vs_native_full": false,
+    "child1_rmse_gain_5pct_vs_parent_paired_pose_velocity": false,
+    "child1_rmse_gain_5pct_vs_topology_native_periodic_pose": false,
+    "child1_rmse_gain_5pct_vs_topology_readout_linear_velocity": true,
+    "child1_rmse_gain_5pct_vs_topology_readout_persistence": true,
+    "child2_coordinate_l1_mm_nonincreasing_vs_native_full": false,
+    "child2_coordinate_l1_mm_nonincreasing_vs_parent_paired_pose_velocity": true,
+    "child2_coordinate_l1_mm_nonincreasing_vs_topology_native_periodic_pose": true,
+    "child2_coordinate_l1_mm_nonincreasing_vs_topology_readout_linear_velocity": true,
+    "child2_coordinate_l1_mm_nonincreasing_vs_topology_readout_persistence": false,
+    "child2_late_rmse_mm_nonincreasing_vs_native_full": true,
+    "child2_late_rmse_mm_nonincreasing_vs_parent_paired_pose_velocity": true,
+    "child2_late_rmse_mm_nonincreasing_vs_topology_native_periodic_pose": false,
+    "child2_late_rmse_mm_nonincreasing_vs_topology_readout_linear_velocity": true,
+    "child2_late_rmse_mm_nonincreasing_vs_topology_readout_persistence": false,
+    "child2_rmse_gain_5pct_vs_native_full": false,
+    "child2_rmse_gain_5pct_vs_parent_paired_pose_velocity": false,
+    "child2_rmse_gain_5pct_vs_topology_native_periodic_pose": false,
+    "child2_rmse_gain_5pct_vs_topology_readout_linear_velocity": true,
+    "child2_rmse_gain_5pct_vs_topology_readout_persistence": false,
+    "no_recording_more_than_10pct_worse_than_native": true
+  },
+  "confidence_interval": null,
+  "equal_recording_mean": {
+    "native_full": {
+      "child1": {
+        "coordinate_l1_mm": 9.301072418527374,
+        "fde_mm": 29.969454641189703,
+        "late_rmse_mm": 25.286797380106904,
+        "point_rmse_mm": 21.088063454486118
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.56640657556648,
+        "fde_mm": 39.12732169342616,
+        "late_rmse_mm": 34.396535888685975,
+        "point_rmse_mm": 27.777187777287253
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 10.933739497046927,
+        "fde_mm": 34.548388167307934,
+        "late_rmse_mm": 29.841666634396436,
+        "point_rmse_mm": 24.43262561588669
+      },
+      "parent": {
+        "coordinate_l1_mm": 8.638471983671074,
+        "fde_mm": 24.417014001576618,
+        "late_rmse_mm": 23.70330378019173,
+        "point_rmse_mm": 19.86521040462074
+      }
+    },
+    "parent_paired_pose_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 9.069293136275064,
+        "fde_mm": 30.562184509909457,
+        "late_rmse_mm": 25.541285873288825,
+        "point_rmse_mm": 21.06475777719186
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.634959491000819,
+        "fde_mm": 39.207907201531945,
+        "late_rmse_mm": 34.46314328066268,
+        "point_rmse_mm": 27.704100931664783
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 10.852126313637939,
+        "fde_mm": 34.8850458557207,
+        "late_rmse_mm": 30.00221457697575,
+        "point_rmse_mm": 24.38442935442832
+      },
+      "parent": {
+        "coordinate_l1_mm": 8.420229119347384,
+        "fde_mm": 23.932223305503047,
+        "late_rmse_mm": 22.877138272434305,
+        "point_rmse_mm": 19.52583615678745
+      }
+    },
+    "topology_direct_full_pose_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 9.748066054701098,
+        "fde_mm": 30.556606533143633,
+        "late_rmse_mm": 28.768116895727413,
+        "point_rmse_mm": 22.354270014955592
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.500732121452565,
+        "fde_mm": 37.800650950645185,
+        "late_rmse_mm": 34.059436985289814,
+        "point_rmse_mm": 27.709237400794862
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 11.124399088076833,
+        "fde_mm": 34.17862874189441,
+        "late_rmse_mm": 31.413776940508615,
+        "point_rmse_mm": 25.031753707875225
+      },
+      "parent": {
+        "coordinate_l1_mm": 8.520461989759985,
+        "fde_mm": 24.036153650714073,
+        "late_rmse_mm": 23.368086887313982,
+        "point_rmse_mm": 19.858674387371654
+      }
+    },
+    "topology_native_periodic_pose": {
+      "child1": {
+        "coordinate_l1_mm": 9.895934957747668,
+        "fde_mm": 29.34060376663218,
+        "late_rmse_mm": 28.34816439803211,
+        "point_rmse_mm": 22.527126937904143
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.72953178545954,
+        "fde_mm": 38.18907436941367,
+        "late_rmse_mm": 34.152672303368,
+        "point_rmse_mm": 28.08664298842591
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 11.312733371603604,
+        "fde_mm": 33.76483906802292,
+        "late_rmse_mm": 31.250418350700055,
+        "point_rmse_mm": 25.30688496316502
+      },
+      "parent": {
+        "coordinate_l1_mm": 8.644798121881854,
+        "fde_mm": 24.99275196671623,
+        "late_rmse_mm": 23.622494769446703,
+        "point_rmse_mm": 20.176673498031978
+      }
+    },
+    "topology_paired_pose": {
+      "child1": {
+        "coordinate_l1_mm": 9.437705832276952,
+        "fde_mm": 31.63918245465902,
+        "late_rmse_mm": 28.047151835561248,
+        "point_rmse_mm": 21.645787982670182
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.565930397071467,
+        "fde_mm": 39.2904239566164,
+        "late_rmse_mm": 34.48604043193322,
+        "point_rmse_mm": 27.68538789890452
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 11.00181811467421,
+        "fde_mm": 35.464803205637715,
+        "late_rmse_mm": 31.266596133747232,
+        "point_rmse_mm": 24.66558794078735
+      },
+      "parent": {
+        "coordinate_l1_mm": 8.403860096747039,
+        "fde_mm": 24.520236675728068,
+        "late_rmse_mm": 23.199981579820818,
+        "point_rmse_mm": 19.53066548381327
+      }
+    },
+    "topology_paired_pose_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 9.835363992519701,
+        "fde_mm": 31.473653826292928,
+        "late_rmse_mm": 28.749412830765664,
+        "point_rmse_mm": 22.555317432086454
+      },
+      "child2": {
+        "coordinate_l1_mm": 12.605053634501225,
+        "fde_mm": 38.65647057566157,
+        "late_rmse_mm": 34.21088939624955,
+        "point_rmse_mm": 27.71916540351859
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 11.220208813510462,
+        "fde_mm": 35.065062200977245,
+        "late_rmse_mm": 31.480151113507606,
+        "point_rmse_mm": 25.137241417802528
+      },
+      "parent": {
+        "coordinate_l1_mm": 8.467773251038627,
+        "fde_mm": 24.186226400617613,
+        "late_rmse_mm": 23.063814182379286,
+        "point_rmse_mm": 19.723662110934054
+      }
+    },
+    "topology_readout_linear_velocity": {
+      "child1": {
+        "coordinate_l1_mm": 25.7823696160751,
+        "fde_mm": 101.25328983103377,
+        "late_rmse_mm": 87.89578248248738,
+        "point_rmse_mm": 63.39377606808634
+      },
+      "child2": {
+        "coordinate_l1_mm": 13.436171702881479,
+        "fde_mm": 52.79345954851423,
+        "late_rmse_mm": 47.22632039564209,
+        "point_rmse_mm": 32.837585336645866
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 19.609270659478288,
+        "fde_mm": 77.023374689774,
+        "late_rmse_mm": 67.56105143906473,
+        "point_rmse_mm": 48.1156807023661
+      },
+      "parent": {
+        "coordinate_l1_mm": 12.712649525816646,
+        "fde_mm": 44.03283472113409,
+        "late_rmse_mm": 41.92435928910319,
+        "point_rmse_mm": 29.825401491290336
+      }
+    },
+    "topology_readout_persistence": {
+      "child1": {
+        "coordinate_l1_mm": 12.79692682530203,
+        "fde_mm": 41.013582773278266,
+        "late_rmse_mm": 36.4088254048195,
+        "point_rmse_mm": 29.99711514511013
+      },
+      "child2": {
+        "coordinate_l1_mm": 9.388685116579884,
+        "fde_mm": 34.87597040979577,
+        "late_rmse_mm": 30.841522191010053,
+        "point_rmse_mm": 22.690639535866524
+      },
+      "equal_child_branch": {
+        "coordinate_l1_mm": 11.092805970940958,
+        "fde_mm": 37.944776591537014,
+        "late_rmse_mm": 33.625173797914776,
+        "point_rmse_mm": 26.343877340488323
+      },
+      "parent": {
+        "coordinate_l1_mm": 6.493577287916794,
+        "fde_mm": 20.219074107899154,
+        "late_rmse_mm": 19.490476472401905,
+        "point_rmse_mm": 15.655884764987396
+      }
+    }
+  },
+  "independent_confirmation": false,
+  "ordinary_successful_recordings": 3,
+  "outcome_publication": "local-or-private-paper-evidence-only",
+  "per_recording": {
+    "robot-track1324": {
+      "native_full": {
+        "child1": {
+          "coordinate_l1_mm": 10.169316568719731,
+          "fde_mm": 26.378678838810348,
+          "late_rmse_mm": 20.18771746682512,
+          "point_rmse_mm": 21.262172759061766
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.403902210170116,
+          "fde_mm": 38.17833000902852,
+          "late_rmse_mm": 36.42917065810199,
+          "point_rmse_mm": 31.712418584263006
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.286609389444923,
+          "fde_mm": 32.278504423919436,
+          "late_rmse_mm": 28.308444062463554,
+          "point_rmse_mm": 26.487295671662388
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.28423033016508,
+          "fde_mm": 24.97405192551319,
+          "late_rmse_mm": 23.761202500167943,
+          "point_rmse_mm": 20.727901579093814
+        }
+      },
+      "parent_paired_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 10.602088997918182,
+          "fde_mm": 25.72211565255344,
+          "late_rmse_mm": 19.51031721772857,
+          "point_rmse_mm": 22.563212047572314
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.463375639048536,
+          "fde_mm": 38.634946441776826,
+          "late_rmse_mm": 37.185227884478465,
+          "point_rmse_mm": 31.85256776719886
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.532732318483358,
+          "fde_mm": 32.17853104716514,
+          "late_rmse_mm": 28.347772551103517,
+          "point_rmse_mm": 27.207889907385585
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.3463632201395,
+          "fde_mm": 24.688862590554535,
+          "late_rmse_mm": 23.521263116534453,
+          "point_rmse_mm": 20.85849485927399
+        }
+      },
+      "topology_direct_full_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 9.961419737284704,
+          "fde_mm": 23.901863427992843,
+          "late_rmse_mm": 21.648999126160483,
+          "point_rmse_mm": 20.750138497556364
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.240864116068567,
+          "fde_mm": 36.183860727131695,
+          "late_rmse_mm": 36.96471552588905,
+          "point_rmse_mm": 32.0029814335702
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.101141926676636,
+          "fde_mm": 30.04286207756227,
+          "late_rmse_mm": 29.306857326024765,
+          "point_rmse_mm": 26.37655996556328
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.244184444595037,
+          "fde_mm": 24.462538397269086,
+          "late_rmse_mm": 24.321991367665724,
+          "point_rmse_mm": 20.819882944896737
+        }
+      },
+      "topology_native_periodic_pose": {
+        "child1": {
+          "coordinate_l1_mm": 10.272331612451637,
+          "fde_mm": 24.057955311344024,
+          "late_rmse_mm": 21.2653349631802,
+          "point_rmse_mm": 21.273830686200693
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.503536270758438,
+          "fde_mm": 36.443707175720135,
+          "late_rmse_mm": 36.51996440220816,
+          "point_rmse_mm": 32.29463132068144
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.387933941605038,
+          "fde_mm": 30.25083124353208,
+          "late_rmse_mm": 28.89264968269418,
+          "point_rmse_mm": 26.784231003441064
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.401408312071627,
+          "fde_mm": 24.71470083943334,
+          "late_rmse_mm": 24.06410883534029,
+          "point_rmse_mm": 21.071792873092512
+        }
+      },
+      "topology_paired_pose": {
+        "child1": {
+          "coordinate_l1_mm": 9.971401095851801,
+          "fde_mm": 26.31496919892658,
+          "late_rmse_mm": 21.984450935279153,
+          "point_rmse_mm": 20.459012815079436
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.60691333122574,
+          "fde_mm": 38.5989033130242,
+          "late_rmse_mm": 38.25497326852614,
+          "point_rmse_mm": 32.424101738443575
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.289157213538772,
+          "fde_mm": 32.45693625597539,
+          "late_rmse_mm": 30.11971210190265,
+          "point_rmse_mm": 26.441557276761507
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.234574208279307,
+          "fde_mm": 25.51048613054153,
+          "late_rmse_mm": 24.8814098920575,
+          "point_rmse_mm": 20.85603785707268
+        }
+      },
+      "topology_paired_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 10.198344677803112,
+          "fde_mm": 26.392193463460345,
+          "late_rmse_mm": 22.040421809083348,
+          "point_rmse_mm": 21.305419082297696
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.556981972586794,
+          "fde_mm": 38.18140524075576,
+          "late_rmse_mm": 38.02803981558029,
+          "point_rmse_mm": 32.36957930834947
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.377663325194952,
+          "fde_mm": 32.28679935210805,
+          "late_rmse_mm": 30.03423081233182,
+          "point_rmse_mm": 26.837499195323584
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.321232923822146,
+          "fde_mm": 25.642153535828566,
+          "late_rmse_mm": 25.017674931406503,
+          "point_rmse_mm": 20.93255148364081
+        }
+      },
+      "topology_readout_linear_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 22.726365331342183,
+          "fde_mm": 87.98285503400972,
+          "late_rmse_mm": 76.19780303718714,
+          "point_rmse_mm": 52.83214487075953
+        },
+        "child2": {
+          "coordinate_l1_mm": 10.60775274471139,
+          "fde_mm": 38.31284320667601,
+          "late_rmse_mm": 33.95902780360198,
+          "point_rmse_mm": 26.21281120714366
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 16.667059038026785,
+          "fde_mm": 63.14784912034286,
+          "late_rmse_mm": 55.07841542039456,
+          "point_rmse_mm": 39.52247803895159
+        },
+        "parent": {
+          "coordinate_l1_mm": 16.409833351018246,
+          "fde_mm": 61.28407470939062,
+          "late_rmse_mm": 54.51267283739738,
+          "point_rmse_mm": 37.507534193308395
+        }
+      },
+      "topology_readout_persistence": {
+        "child1": {
+          "coordinate_l1_mm": 11.449326017674837,
+          "fde_mm": 29.140905754778874,
+          "late_rmse_mm": 25.288207782185065,
+          "point_rmse_mm": 27.0767989111697
+        },
+        "child2": {
+          "coordinate_l1_mm": 7.7357091027044245,
+          "fde_mm": 25.446632012011023,
+          "late_rmse_mm": 25.930978033861965,
+          "point_rmse_mm": 20.68314431241892
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.59251756018963,
+          "fde_mm": 27.293768883394947,
+          "late_rmse_mm": 25.609592908023515,
+          "point_rmse_mm": 23.87997161179431
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.264299916658126,
+          "fde_mm": 17.808999507421575,
+          "late_rmse_mm": 17.351944309376243,
+          "point_rmse_mm": 14.684842887265319
+        }
+      }
+    },
+    "robot-track1342": {
+      "native_full": {
+        "child1": {
+          "coordinate_l1_mm": 8.495020616995559,
+          "fde_mm": 19.971685827207477,
+          "late_rmse_mm": 22.7899925591554,
+          "point_rmse_mm": 19.340547655038332
+        },
+        "child2": {
+          "coordinate_l1_mm": 9.955404186137766,
+          "fde_mm": 33.0985158537431,
+          "late_rmse_mm": 24.833899851324812,
+          "point_rmse_mm": 20.512816608557504
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.225212401566662,
+          "fde_mm": 26.535100840475287,
+          "late_rmse_mm": 23.811946205240105,
+          "point_rmse_mm": 19.926682131797918
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.523513812780786,
+          "fde_mm": 18.133291294960344,
+          "late_rmse_mm": 17.62817764102463,
+          "point_rmse_mm": 15.665354717839929
+        }
+      },
+      "parent_paired_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 7.539062433761669,
+          "fde_mm": 17.33910571160266,
+          "late_rmse_mm": 20.49558454356806,
+          "point_rmse_mm": 17.191840184639634
+        },
+        "child2": {
+          "coordinate_l1_mm": 10.20725088248909,
+          "fde_mm": 32.236957366514474,
+          "late_rmse_mm": 24.528246694883798,
+          "point_rmse_mm": 20.3656742603456
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 8.87315665812538,
+          "fde_mm": 24.788031539058565,
+          "late_rmse_mm": 22.51191561922593,
+          "point_rmse_mm": 18.778757222492615
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.0700908959530615,
+          "fde_mm": 17.43738418306523,
+          "late_rmse_mm": 16.608788844184634,
+          "point_rmse_mm": 14.683288570705944
+        }
+      },
+      "topology_direct_full_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 8.642996384006388,
+          "fde_mm": 20.480894160879263,
+          "late_rmse_mm": 24.737599429998937,
+          "point_rmse_mm": 19.63873102549442
+        },
+        "child2": {
+          "coordinate_l1_mm": 9.591063672991462,
+          "fde_mm": 31.540236930628822,
+          "late_rmse_mm": 22.143843483148824,
+          "point_rmse_mm": 19.20148622977957
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.117030028498924,
+          "fde_mm": 26.01056554575404,
+          "late_rmse_mm": 23.440721456573883,
+          "point_rmse_mm": 19.420108627636992
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.306842041834554,
+          "fde_mm": 16.16604605429572,
+          "late_rmse_mm": 15.918627379464384,
+          "point_rmse_mm": 15.201681049780836
+        }
+      },
+      "topology_native_periodic_pose": {
+        "child1": {
+          "coordinate_l1_mm": 9.054217220732298,
+          "fde_mm": 18.689819321836705,
+          "late_rmse_mm": 24.259819330090266,
+          "point_rmse_mm": 20.130812363831936
+        },
+        "child2": {
+          "coordinate_l1_mm": 9.726651339032609,
+          "fde_mm": 33.368262722240054,
+          "late_rmse_mm": 23.193907428162696,
+          "point_rmse_mm": 19.691549583321734
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.390434279882452,
+          "fde_mm": 26.029041022038378,
+          "late_rmse_mm": 23.72686337912648,
+          "point_rmse_mm": 19.911180973576833
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.304363917154586,
+          "fde_mm": 18.323932784814275,
+          "late_rmse_mm": 16.419755580947708,
+          "point_rmse_mm": 15.33436287708772
+        }
+      },
+      "topology_paired_pose": {
+        "child1": {
+          "coordinate_l1_mm": 8.495364122173248,
+          "fde_mm": 18.53566223601368,
+          "late_rmse_mm": 24.14689993173559,
+          "point_rmse_mm": 19.507468072669162
+        },
+        "child2": {
+          "coordinate_l1_mm": 9.842975796191164,
+          "fde_mm": 32.09479110212995,
+          "late_rmse_mm": 23.109103333390603,
+          "point_rmse_mm": 19.66468708511228
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.169169959182206,
+          "fde_mm": 25.315226669071816,
+          "late_rmse_mm": 23.628001632563098,
+          "point_rmse_mm": 19.586077578890723
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.105004546906813,
+          "fde_mm": 18.02360945049897,
+          "late_rmse_mm": 16.063080761242027,
+          "point_rmse_mm": 14.610726351160675
+        }
+      },
+      "topology_paired_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 8.84682312317687,
+          "fde_mm": 17.12475670805028,
+          "late_rmse_mm": 24.5373687174285,
+          "point_rmse_mm": 20.019467900235377
+        },
+        "child2": {
+          "coordinate_l1_mm": 9.83063048288334,
+          "fde_mm": 30.659773028059536,
+          "late_rmse_mm": 21.990136372810365,
+          "point_rmse_mm": 19.40102966361275
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.338726803030106,
+          "fde_mm": 23.89226486805491,
+          "late_rmse_mm": 23.26375254511943,
+          "point_rmse_mm": 19.710248781924065
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.122729887817718,
+          "fde_mm": 16.81088086134452,
+          "late_rmse_mm": 15.272176757388209,
+          "point_rmse_mm": 14.807192571615971
+        }
+      },
+      "topology_readout_linear_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 37.73292431492357,
+          "fde_mm": 136.59803624664193,
+          "late_rmse_mm": 121.82046621017754,
+          "point_rmse_mm": 90.71311584032819
+        },
+        "child2": {
+          "coordinate_l1_mm": 15.107865233647303,
+          "fde_mm": 55.50798348535979,
+          "late_rmse_mm": 56.6727317132449,
+          "point_rmse_mm": 38.9001090856151
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 26.420394774285437,
+          "fde_mm": 96.05300986600085,
+          "late_rmse_mm": 89.24659896171121,
+          "point_rmse_mm": 64.80661246297164
+        },
+        "parent": {
+          "coordinate_l1_mm": 8.85499233380596,
+          "fde_mm": 22.9291258385203,
+          "late_rmse_mm": 25.28015506207095,
+          "point_rmse_mm": 20.793323568927146
+        }
+      },
+      "topology_readout_persistence": {
+        "child1": {
+          "coordinate_l1_mm": 13.541468060820304,
+          "fde_mm": 36.3402092661628,
+          "late_rmse_mm": 38.83203998934687,
+          "point_rmse_mm": 31.11786554194452
+        },
+        "child2": {
+          "coordinate_l1_mm": 6.0263869439007145,
+          "fde_mm": 25.71685736636294,
+          "late_rmse_mm": 18.197570654307842,
+          "point_rmse_mm": 14.274042833915464
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 9.783927502360509,
+          "fde_mm": 31.028533316262873,
+          "late_rmse_mm": 28.514805321827353,
+          "point_rmse_mm": 22.695954187929992
+        },
+        "parent": {
+          "coordinate_l1_mm": 6.021310823268671,
+          "fde_mm": 14.958411557402883,
+          "late_rmse_mm": 15.182894327691146,
+          "point_rmse_mm": 14.353094690399875
+        }
+      }
+    },
+    "robot-track24242": {
+      "native_full": {
+        "child1": {
+          "coordinate_l1_mm": 9.23888006986683,
+          "fde_mm": 43.55799925755128,
+          "late_rmse_mm": 32.88268211434019,
+          "point_rmse_mm": 22.661469949358253
+        },
+        "child2": {
+          "coordinate_l1_mm": 13.33991333039156,
+          "fde_mm": 46.10511921750686,
+          "late_rmse_mm": 41.92653715663113,
+          "point_rmse_mm": 31.106328139041253
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 11.289396700129195,
+          "fde_mm": 44.83155923752907,
+          "late_rmse_mm": 37.404609635485656,
+          "point_rmse_mm": 26.88389904419975
+        },
+        "parent": {
+          "coordinate_l1_mm": 10.107671808067359,
+          "fde_mm": 30.143698784256312,
+          "late_rmse_mm": 29.72053119938262,
+          "point_rmse_mm": 23.20237491692848
+        }
+      },
+      "parent_paired_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 9.066727977145339,
+          "fde_mm": 48.62533216557228,
+          "late_rmse_mm": 36.617955858569836,
+          "point_rmse_mm": 23.439221099363632
+        },
+        "child2": {
+          "coordinate_l1_mm": 13.234251951464827,
+          "fde_mm": 46.751817796304515,
+          "late_rmse_mm": 41.67595526262577,
+          "point_rmse_mm": 30.894060767449883
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 11.150489964305084,
+          "fde_mm": 47.6885749809384,
+          "late_rmse_mm": 39.1469555605978,
+          "point_rmse_mm": 27.166640933406757
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.844233241949592,
+          "fde_mm": 29.670423142889376,
+          "late_rmse_mm": 28.501362856583825,
+          "point_rmse_mm": 23.035725040382417
+        }
+      },
+      "topology_direct_full_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 10.639782042812204,
+          "fde_mm": 47.287062010558785,
+          "late_rmse_mm": 39.917752131022816,
+          "point_rmse_mm": 26.673940521816
+        },
+        "child2": {
+          "coordinate_l1_mm": 13.670268575297667,
+          "fde_mm": 45.677855194175024,
+          "late_rmse_mm": 43.06975194683158,
+          "point_rmse_mm": 31.92324453903482
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.155025309054935,
+          "fde_mm": 46.482458602366904,
+          "late_rmse_mm": 41.4937520389272,
+          "point_rmse_mm": 29.29859253042541
+        },
+        "parent": {
+          "coordinate_l1_mm": 10.010359482850365,
+          "fde_mm": 31.479876500577415,
+          "late_rmse_mm": 29.863641914811847,
+          "point_rmse_mm": 23.554459167437386
+        }
+      },
+      "topology_native_periodic_pose": {
+        "child1": {
+          "coordinate_l1_mm": 10.36125604005907,
+          "fde_mm": 45.27403666671581,
+          "late_rmse_mm": 39.51933890082586,
+          "point_rmse_mm": 26.17673776367979
+        },
+        "child2": {
+          "coordinate_l1_mm": 13.958407746587577,
+          "fde_mm": 44.755253210280806,
+          "late_rmse_mm": 42.74414507973313,
+          "point_rmse_mm": 32.27374806127457
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 12.159831893323323,
+          "fde_mm": 45.01464493849831,
+          "late_rmse_mm": 41.131741990279494,
+          "point_rmse_mm": 29.225242912477178
+        },
+        "parent": {
+          "coordinate_l1_mm": 10.228622136419348,
+          "fde_mm": 31.939622275901087,
+          "late_rmse_mm": 30.38361989205211,
+          "point_rmse_mm": 24.123864743915703
+        }
+      },
+      "topology_paired_pose": {
+        "child1": {
+          "coordinate_l1_mm": 9.84635227880581,
+          "fde_mm": 50.06691592903682,
+          "late_rmse_mm": 38.010104639669,
+          "point_rmse_mm": 24.97088306026194
+        },
+        "child2": {
+          "coordinate_l1_mm": 13.247902063797497,
+          "fde_mm": 47.177577454695054,
+          "late_rmse_mm": 42.094044693882914,
+          "point_rmse_mm": 30.967374873157702
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 11.547127171301653,
+          "fde_mm": 48.62224669186594,
+          "late_rmse_mm": 40.05207466677596,
+          "point_rmse_mm": 27.96912896670982
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.872001535054997,
+          "fde_mm": 30.026614446143704,
+          "late_rmse_mm": 28.65545408616293,
+          "point_rmse_mm": 23.12523224320645
+        }
+      },
+      "topology_paired_pose_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 10.460924176579121,
+          "fde_mm": 50.90401130736816,
+          "late_rmse_mm": 39.670447965785144,
+          "point_rmse_mm": 26.341065313726293
+        },
+        "child2": {
+          "coordinate_l1_mm": 13.42754844803354,
+          "fde_mm": 47.12823345816942,
+          "late_rmse_mm": 42.614492000357984,
+          "point_rmse_mm": 31.386887238593562
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 11.94423631230633,
+          "fde_mm": 49.016122382768785,
+          "late_rmse_mm": 41.142469983071564,
+          "point_rmse_mm": 28.863976276159928
+        },
+        "parent": {
+          "coordinate_l1_mm": 9.95935694147602,
+          "fde_mm": 30.105644804679756,
+          "late_rmse_mm": 28.901590858343134,
+          "point_rmse_mm": 23.431242277545383
+        }
+      },
+      "topology_readout_linear_velocity": {
+        "child1": {
+          "coordinate_l1_mm": 16.88781920195954,
+          "fde_mm": 79.17897821244966,
+          "late_rmse_mm": 65.6690782000974,
+          "point_rmse_mm": 46.63606749317131
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.592897130285744,
+          "fde_mm": 64.55955195350688,
+          "late_rmse_mm": 51.047201670079396,
+          "point_rmse_mm": 33.399835717178824
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 15.740358166122643,
+          "fde_mm": 71.86926508297827,
+          "late_rmse_mm": 58.3581399350884,
+          "point_rmse_mm": 40.01795160517507
+        },
+        "parent": {
+          "coordinate_l1_mm": 12.873122892625736,
+          "fde_mm": 47.88530361549132,
+          "late_rmse_mm": 45.98024996784122,
+          "point_rmse_mm": 31.175346711635473
+        }
+      },
+      "topology_readout_persistence": {
+        "child1": {
+          "coordinate_l1_mm": 13.39998639741095,
+          "fde_mm": 57.55963329889311,
+          "late_rmse_mm": 45.106228442926565,
+          "point_rmse_mm": 31.796680982216163
+        },
+        "child2": {
+          "coordinate_l1_mm": 14.403959303134515,
+          "fde_mm": 53.46442185101334,
+          "late_rmse_mm": 48.39601788486035,
+          "point_rmse_mm": 33.11473146126518
+        },
+        "equal_child_branch": {
+          "coordinate_l1_mm": 13.901972850272733,
+          "fde_mm": 55.51202757495322,
+          "late_rmse_mm": 46.75112316389345,
+          "point_rmse_mm": 32.45570622174067
+        },
+        "parent": {
+          "coordinate_l1_mm": 7.1951211238235855,
+          "fde_mm": 27.889811258873003,
+          "late_rmse_mm": 25.93659078013833,
+          "point_rmse_mm": 17.92971671729699
+        }
+      }
+    }
+  },
+  "physical_object_count": 1,
+  "prediction_barrier_sha256": "29c3bd38b358208883703b933b804fd0e8e82a60661047692b71ff3cbe0bd0f5",
+  "protected_data_read": false,
+  "protocol_sha256": "80453d56efde7a801f8dcc4fda3c34158f3f91b0a5bbfed5a6aca099a5157357",
+  "public_evaluation_or_test_content_inspected": false,
+  "recording_joint_wins": {
+    "native_full": 0,
+    "parent_paired_pose_velocity": 1,
+    "topology_native_periodic_pose": 2,
+    "topology_readout_linear_velocity": 3,
+    "topology_readout_persistence": 2
+  },
+  "schema": "deft-topology-observer-source-v1-result",
+  "source_gate_passed": false,
+  "source_receipt_sha256": "f66190c58917c4a6427b050651a28095edddf293fc9de091219d6a52b5f910c8",
+  "source_revision": "c585e3c2358e5e5003a8d6152ed8721100354f40",
+  "technical_failures": 0,
+  "unsealable": 0
+}
