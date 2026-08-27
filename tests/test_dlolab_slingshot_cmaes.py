@@ -11,6 +11,7 @@ from bayesian_phystwin_experiments.dlolab_slingshot_cmaes import (
     final_checks,
     protocol,
     task_metrics,
+    worker_environment,
 )
 
 
@@ -74,3 +75,27 @@ def test_selected_replay_cannot_change_control_identity_or_drop_memory():
     row.pop("memory_RODSolverState.vel")
     with pytest.raises(ValueError, match="complete"):
         final_checks(row, deepcopy(row), 6.9)
+
+
+def test_worker_uses_qualified_environment_after_upstream_import_mutation(monkeypatch):
+    environment = {
+        "CUDA_VISIBLE_DEVICES": "",
+        "PYOPENGL_PLATFORM": "osmesa",
+        "LIBGL_ALWAYS_SOFTWARE": "1",
+        "LD_LIBRARY_PATH": "/qualified/osmesa",
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+    }
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/qualified/osmesa:/upstream/ParticleMesher")
+    monkeypatch.setenv("PYTHONPATH", "src")
+    child = worker_environment({"environment": environment})
+    assert all(child[key] == value for key, value in environment.items())
+    assert child["PYTHONPATH"] == "src"
+    import os
+
+    assert os.environ["LD_LIBRARY_PATH"].endswith("/upstream/ParticleMesher")
+    with pytest.raises(ValueError, match="complete"):
+        worker_environment({"environment": {"LD_LIBRARY_PATH": "/qualified/osmesa"}})
+    environment["CUDA_VISIBLE_DEVICES"] = "0"
+    with pytest.raises(ValueError, match="CPU"):
+        worker_environment({"environment": environment})

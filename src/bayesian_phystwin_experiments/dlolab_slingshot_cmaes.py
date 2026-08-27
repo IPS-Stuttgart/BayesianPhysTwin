@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,9 @@ from .dlolab_slingshot_process import load_native_bundle
 
 def protocol() -> dict[str, Any]:
     return {
-        "schema": "dlolab-slingshot-cmaes-source-v1",
+        "schema": "dlolab-slingshot-cmaes-source-v1-1-runtime-binding",
+        "runtime_amendment": "fresh_children_use_qualified_preimport_environment",
+        "retained_zero_execution_failure_sha256": "5403a4d7b0ed0d311d0bb57b54f32cc856b653005256e84e19a309add0e00736",
         "role": "nominal_controller_development_not_bayesian_test",
         "optimizer": "cma.CMAEvolutionStrategy",
         "cma_version": "4.4.4",
@@ -54,6 +57,55 @@ def protocol() -> dict[str, Any]:
         "elastic_launch_mechanism_validated": False,
         "separate_rod_mechanism_audit_required": True,
     }
+
+
+def worker_environment(registered: dict[str, Any]) -> dict[str, str]:
+    """Keep upstream import-side environment changes out of fresh workers."""
+    environment = registered["environment"]
+    expected = {
+        "CUDA_VISIBLE_DEVICES",
+        "PYOPENGL_PLATFORM",
+        "LIBGL_ALWAYS_SOFTWARE",
+        "LD_LIBRARY_PATH",
+        "OPENBLAS_NUM_THREADS",
+        "OMP_NUM_THREADS",
+    }
+    if set(environment) != expected or any(
+        not isinstance(value, str) for value in environment.values()
+    ):
+        raise ValueError("complete qualified worker environment required")
+    if (
+        environment["CUDA_VISIBLE_DEVICES"] != ""
+        or environment["PYOPENGL_PLATFORM"] != "osmesa"
+    ):
+        raise ValueError("qualified CPU/software-rendering worker required")
+    return {**os.environ, **environment}
+
+
+def verify_retained_failure(path: Path) -> dict[str, Any]:
+    expected = {
+        "failure.json": "5403a4d7b0ed0d311d0bb57b54f32cc856b653005256e84e19a309add0e00736",
+        "lock.json": "270391bff05bbfd2b0fef785bdd30f4660060f9484eba20c889c22d4412902c1",
+        "batch-00/execution.log": "129284ba75568c4b609b2df58df7b56cdc97152f57d631584f93a2a3208898ad",
+    }
+    if any(file_digest(path / name) != digest for name, digest in expected.items()):
+        raise ValueError("retained pre-native failure changed")
+    failure, lock = read_record(path / "failure.json"), read_record(path / "lock.json")
+    preserved = protocol()
+    for key in ("schema", "runtime_amendment", "retained_zero_execution_failure_sha256"):
+        preserved.pop(key)
+    previous = dict(lock["protocol"])
+    previous.pop("schema")
+    if preserved != previous:
+        raise ValueError("runtime repair changed the frozen optimizer or scientific gates")
+    if failure["lock_id"] != lock["artifact_id"] or any(
+        (path / name).exists()
+        for name in ("batch-00/output", "batch-01", "selection.json", "result.json")
+    ):
+        raise ValueError(
+            "retained attempt is not the registered zero-execution failure"
+        )
+    return {"path": str(path.resolve()), "sha256": expected, "native_evaluations": 0}
 
 
 def verify_inputs(

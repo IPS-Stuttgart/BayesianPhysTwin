@@ -28,6 +28,8 @@ from bayesian_phystwin_experiments.dlolab_slingshot_cmaes import (
     protocol,
     task_metrics,
     verify_inputs,
+    verify_retained_failure,
+    worker_environment,
 )
 from bayesian_phystwin_experiments.dlolab_slingshot_process import (
     load_native_bundle,
@@ -47,6 +49,7 @@ SOURCES = (
     "scripts/remote/run_dlolab_slingshot_cmaes.py",
     "tests/test_dlolab_slingshot_cmaes.py",
     "docs/dlolab_slingshot_cmaes_source_v1.md",
+    "docs/dlolab_slingshot_cmaes_runtime_v1_1.md",
 )
 
 
@@ -65,6 +68,11 @@ def worker(output: Path, index: int) -> None:
         or lock["output_root"] != str(output.resolve())
     ):
         raise ValueError("optimizer source/lock changed")
+    if (
+        verify_retained_failure(Path(lock["retained_failure"]["path"]))
+        != lock["retained_failure"]
+    ):
+        raise ValueError("retained failure binding changed")
     if (
         runtime() != lock["verified"]["qualification"]["runtime"]
         or importlib.metadata.version("cma") != protocol()["cma_version"]
@@ -173,6 +181,7 @@ def execute_plan(
             stdout=log,
             stderr=subprocess.STDOUT,
             check=True,
+            env=worker_environment(lock["verified"]["qualification"]["runtime"]),
         )
     seal = read_record(directory / "output/seal.json")
     if seal["lock_id"] != lock["artifact_id"] or seal["plan_id"] != plan["artifact_id"]:
@@ -184,9 +193,14 @@ def execute_plan(
 
 
 def run(
-    output: Path, assets: Path, batch_result: Path, source_result: Path
+    output: Path,
+    assets: Path,
+    batch_result: Path,
+    source_result: Path,
+    retained_failure: Path,
 ) -> dict[str, Any]:
     revision = clean_revision(ROOT)
+    retained = verify_retained_failure(retained_failure)
     verified, x0, warm_arrays = verify_inputs(batch_result, source_result, ROOT)
     if (
         runtime() != verified["qualification"]["runtime"]
@@ -202,6 +216,7 @@ def run(
             "source_sha256": {name: file_digest(ROOT / name) for name in SOURCES},
             "protocol": protocol(),
             "verified": verified,
+            "retained_failure": retained,
             "assets_root": str(assets.resolve()),
             "output_root": str(output.resolve()),
             "protected_data_read": False,
@@ -339,10 +354,25 @@ if __name__ == "__main__":
     parser.add_argument("--batch-result", type=Path)
     parser.add_argument("--source-result", type=Path)
     parser.add_argument("--worker-index", type=int)
+    parser.add_argument("--retained-failure", type=Path)
     args = parser.parse_args()
     if args.worker_index is not None:
         worker(args.output, args.worker_index)
-    elif args.assets is None or args.batch_result is None or args.source_result is None:
+    elif any(
+        value is None
+        for value in (
+            args.assets,
+            args.batch_result,
+            args.source_result,
+            args.retained_failure,
+        )
+    ):
         parser.error("all frozen source input paths are required")
     else:
-        run(args.output, args.assets, args.batch_result, args.source_result)
+        run(
+            args.output,
+            args.assets,
+            args.batch_result,
+            args.source_result,
+            args.retained_failure,
+        )
