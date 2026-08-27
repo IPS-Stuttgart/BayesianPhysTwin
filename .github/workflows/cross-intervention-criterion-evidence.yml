@@ -10,6 +10,8 @@ on:
       - "scripts/science/run_cross_intervention_transport_criterion_v1.py"
       - "tests/test_cross_intervention_transport_criterion_v1.py"
       - "protocols/cross_action_transport/causal4d_sloth_multi_action_v1_sparse_pairs.json"
+      - "results/science/cross_intervention_transport_criterion_v1/result.json"
+      - "results/science/cross_intervention_transport_criterion_v1/report.md"
   push:
     branches: [main]
     paths:
@@ -17,6 +19,8 @@ on:
       - "scripts/science/run_cross_intervention_transport_criterion_v1.py"
       - "tests/test_cross_intervention_transport_criterion_v1.py"
       - "protocols/cross_action_transport/causal4d_sloth_multi_action_v1_sparse_pairs.json"
+      - "results/science/cross_intervention_transport_criterion_v1/result.json"
+      - "results/science/cross_intervention_transport_criterion_v1/report.md"
   workflow_dispatch:
 
 permissions:
@@ -80,6 +84,7 @@ jobs:
         run: |
           set -euo pipefail
           roster="protocols/cross_action_transport/causal4d_sloth_multi_action_v1_sparse_pairs.json"
+          retained="results/science/cross_intervention_transport_criterion_v1"
           for label in primary replay; do
             mkdir -p "evidence/${label}"
             python scripts/science/run_cross_intervention_transport_criterion_v1.py \
@@ -96,6 +101,8 @@ jobs:
           done
           cmp evidence/primary/result.json evidence/replay/result.json
           cmp evidence/primary/report.md evidence/replay/report.md
+          cmp evidence/primary/result.json "$retained/result.json"
+          cmp evidence/primary/report.md "$retained/report.md"
           python - <<'PY'
           from __future__ import annotations
 
@@ -126,6 +133,7 @@ jobs:
               "causal4d_physical_outcome_used": False,
               "deform360_confirmation_opened": False,
               "primary_replay_byte_identical": True,
+              "retained_result_byte_identical": True,
               "files": files,
               "claim_boundary": (
                   "Controlled target-free local-linear mechanism evidence only; "
