@@ -298,6 +298,32 @@ def test_target_blind_exact_fallback_is_enforced() -> None:
         replace(prediction, target_outcomes_used=True)
 
 
+def test_exact_fallback_score_must_match_physical_fallback() -> None:
+    protocol = _protocol(minimum_accepted=1)
+    dispositions = (
+        PredictionDisposition.CANDIDATE_SELECTED,
+        PredictionDisposition.EXACT_FALLBACK,
+        *(PredictionDisposition.CANDIDATE_SELECTED for _ in range(12)),
+    )
+    gains = (4.0, 0.0, *(4.0 for _ in range(12)))
+    rows = list(
+        _rows(
+            protocol,
+            physical_dispositions=dispositions,
+            physical_gains=gains,
+        )
+    )
+    index = next(
+        index
+        for index, row in enumerate(rows)
+        if row.prediction.object_session_id == "s01"
+        and row.prediction.arm is TransportArm.GUARDED_PHYSICAL
+    )
+    rows[index] = replace(rows[index], proper_score=9.5)
+    with pytest.raises(ValueError, match="score identically"):
+        _result(protocol, tuple(rows))
+
+
 def test_protocol_roster_is_canonical_and_execution_reuse_fails() -> None:
     protocol = _protocol()
     reordered = replace(protocol, session_pairs=tuple(reversed(protocol.session_pairs)))
