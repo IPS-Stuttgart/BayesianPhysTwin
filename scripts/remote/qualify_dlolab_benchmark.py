@@ -19,11 +19,12 @@ from bayesian_phystwin_experiments.dlolab_benchmark import (
     protocol,
     slingshot_actions,
     source_identity,
+    write_native_bundle,
 )
 from bayesian_phystwin_experiments.dlolab_regret_artifacts import (
     clean_revision,
+    read_record,
     runtime_identity,
-    write_bundle,
     write_record,
 )
 
@@ -36,6 +37,7 @@ SOURCES = (
     "scripts/remote/qualify_dlolab_benchmark.py",
     "tests/test_dlolab_benchmark.py",
     "docs/dlolab_native_benchmark_source_v1.md",
+    "docs/dlolab_native_benchmark_reporter_amendment_v1_1.md",
 )
 
 
@@ -60,7 +62,7 @@ def observe(env: Any) -> dict[str, np.ndarray]:
     return result
 
 
-def run(output: Path, assets: Path) -> dict[str, Any]:
+def run(output: Path, assets: Path, parent_failure: Path) -> dict[str, Any]:
     revision = clean_revision(ROOT)
     upstream, mushroom = assets / "upstream", assets / "mushroom-rl"
     source = source_identity(upstream, mushroom, assets / "dlo-lab.zip")
@@ -77,6 +79,26 @@ def run(output: Path, assets: Path) -> dict[str, Any]:
             "omegaconf",
         )
     }
+    if (
+        file_digest(parent_failure)
+        != "aecc4225c9e8c06998d4e339df28a53d32ca12ae26fde8a42f9bd34680819db3"
+    ):
+        raise ValueError("the retained v1 reporting failure must remain unchanged")
+    parent = read_record(parent_failure)
+    parent_attempt = read_record(parent_failure.parent / "attempt.json")
+    old_protocol = dict(parent_attempt["protocol"])
+    old_protocol["schema"] = protocol()["schema"]
+    old_protocol["reporter_repair_only"] = True
+    old_protocol["seal_each_rollout_before_analysis"] = True
+    if (
+        parent["attempt_id"] != parent_attempt["artifact_id"]
+        or parent_attempt["native_source"] != source
+        or parent_attempt["runtime"] != runtime
+        or old_protocol != protocol()
+        or parent["protected_data_read"] is not False
+        or parent["method_evaluation_authorized"] is not False
+    ):
+        raise ValueError("the reporter repair cannot change the native experiment")
     output.mkdir(parents=True, exist_ok=False)
     attempt = write_record(
         output / "attempt.json",
@@ -87,6 +109,11 @@ def run(output: Path, assets: Path) -> dict[str, Any]:
             "native_source": source,
             "runtime": runtime,
             "protocol": protocol(),
+            "retained_parent_failure": {
+                "artifact_id": parent["artifact_id"],
+                "file_sha256": file_digest(parent_failure),
+                "path": str(parent_failure.resolve()),
+            },
             "output_root": str(output.resolve()),
             "retry_authorized": False,
             "protected_data_read": False,
@@ -95,6 +122,7 @@ def run(output: Path, assets: Path) -> dict[str, Any]:
     )
     gs: Any = None
     stage = "imports"
+    completed_seals: list[str] = []
     started = time.monotonic()
     try:
         sys.path.insert(0, str(upstream))
@@ -166,8 +194,47 @@ def run(output: Path, assets: Path) -> dict[str, Any]:
                     "native_steps": len(trace),
                 }
             )
+            stage = f"seal-native-rollout-{run_index}"
+            run_directory = output / f"run-{run_index}"
+            run_directory.mkdir(exist_ok=False)
+            run_bundle = write_native_bundle(
+                run_directory,
+                {
+                    name: value
+                    for name, value in arrays.items()
+                    if name.startswith(f"run_{run_index}_")
+                },
+            )
+            run_seal = write_record(
+                run_directory / "seal.json",
+                {
+                    "schema": "dlolab-native-benchmark-rollout-seal-v1-1",
+                    "attempt_id": attempt["artifact_id"],
+                    "run_index": run_index,
+                    "summary": summaries[-1],
+                    "bundle": run_bundle,
+                    "protected_data_read": False,
+                    "method_evaluation_authorized": False,
+                },
+            )
+            completed_seals.append(run_seal["artifact_id"])
             print(f"completed native benchmark rollout {run_index + 1}/3", flush=True)
         env.scene.step = original_step
+        stage = "seal-all-native-rollouts"
+        bundle = write_native_bundle(output, arrays)
+        generation = write_record(
+            output / "generation.json",
+            {
+                "schema": "dlolab-native-benchmark-generation-v1-1",
+                "attempt_id": attempt["artifact_id"],
+                "rollout_seals": completed_seals,
+                "bundle": bundle,
+                "rollouts": summaries,
+                "protected_data_read": False,
+                "method_evaluation_authorized": False,
+            },
+        )
+        stage = "replay-analysis"
         replay_error = max(
             float(np.max(np.abs(arrays[f"run_1_{key}"] - arrays[f"run_2_{key}"])))
             for key in ("rod_pos_m", "sphere_pos_m", "cube_pos_m", "gripper_pos_m")
@@ -194,12 +261,12 @@ def run(output: Path, assets: Path) -> dict[str, Any]:
             "memory_replay_within_tolerance": memory["within_tolerance"],
         }
         stage = "seal"
-        bundle = write_bundle(output, arrays)
         result = write_record(
             output / "result.json",
             {
                 "schema": "dlolab-native-benchmark-qualification-result-v1",
                 "attempt_id": attempt["artifact_id"],
+                "generation_id": generation["artifact_id"],
                 "bundle": bundle,
                 "rollouts": summaries,
                 "checks": checks,
@@ -227,6 +294,7 @@ def run(output: Path, assets: Path) -> dict[str, Any]:
                 "schema": "dlolab-native-benchmark-failure-v1",
                 "attempt_id": attempt["artifact_id"],
                 "terminal_stage": stage,
+                "completed_rollout_seals": completed_seals,
                 "error_type": type(error).__name__,
                 "message": str(error),
                 "retry_authorized": False,
@@ -244,5 +312,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--assets", required=True, type=Path)
+    parser.add_argument("--parent-failure", required=True, type=Path)
     args = parser.parse_args()
-    run(args.output, args.assets)
+    run(args.output, args.assets, args.parent_failure)

@@ -35,7 +35,9 @@ def slingshot_actions() -> np.ndarray:
 
 def protocol() -> dict[str, Any]:
     return {
-        "schema": "dlolab-native-slingshot-qualification-v1",
+        "schema": "dlolab-native-slingshot-qualification-v1-1",
+        "reporter_repair_only": True,
+        "seal_each_rollout_before_analysis": True,
         "task": "slingshot",
         "n_envs": 1,
         "actions": slingshot_actions().tolist(),
@@ -136,7 +138,11 @@ def memory_comparison(
             np.allclose(a[k], b[k], rtol=1e-6, atol=1e-9) for k in a
         ),
         "maximum_absolute_difference": max(
-            float(np.max(np.abs(a[k] - b[k]))) for k in a if a[k].size
+            float(np.max(a[k] != b[k]))
+            if a[k].dtype.kind == "b"
+            else float(np.max(np.abs(a[k] - b[k])))
+            for k in a
+            if a[k].size
         ),
         "field_count": len(a),
     }
@@ -154,3 +160,21 @@ def fixed_endpoint_error(traces: list[np.ndarray]) -> float:
         float(np.max(np.abs(np.take(x, [0, 1, 10, 11], axis=2) - reference)))
         for x in traces
     )
+
+
+def write_native_bundle(
+    directory: Path, arrays: dict[str, np.ndarray]
+) -> dict[str, Any]:
+    """Lossless native-state transport, including boolean fixed-state fields."""
+    if not arrays or any(
+        x.dtype.kind not in "bifu" or not np.isfinite(x).all() for x in arrays.values()
+    ):
+        raise ValueError("native arrays must be finite numbers or booleans")
+    path = directory / "arrays.npz"
+    with path.open("xb") as stream:
+        np.savez_compressed(stream, **arrays)
+    return {
+        "file": "arrays.npz",
+        "file_sha256": file_digest(path),
+        "arrays": {name: array_digest(value) for name, value in sorted(arrays.items())},
+    }
