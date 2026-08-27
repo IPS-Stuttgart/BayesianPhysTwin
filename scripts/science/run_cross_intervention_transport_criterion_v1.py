@@ -418,9 +418,7 @@ def _run_regime(
                 np.mean(physical_gains - last_residual_gains)
             ),
             "accepted_physical_sessions": float(np.mean(selected_sessions)),
-            "materially_harmful_accepted_sessions": float(
-                np.mean(harmful_sessions)
-            ),
+            "materially_harmful_accepted_sessions": float(np.mean(harmful_sessions)),
         },
         "trial_mean_transport_gain_quantiles": {
             "q05": float(np.quantile(np.mean(physical_gains, axis=1), 0.05)),
@@ -644,9 +642,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         json.dumps(
             {
-                "all_registered_checks_passed": result[
-                    "all_registered_checks_passed"
-                ],
+                "all_registered_checks_passed": result["all_registered_checks_passed"],
                 "decision": result["decision"],
                 "result_id": result["result_id"],
             },
