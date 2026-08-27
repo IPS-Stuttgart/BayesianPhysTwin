@@ -83,3 +83,22 @@ def test_noise_summary_rejects_wrong_alignment(noise_runner):
             ["103.pkl", "a", "b"],
             RestartConfig(),
         )
+
+
+def test_independent_metric_formulas_preserve_repetition_and_case_axes():
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "noise_verifier", root / "scripts/verify_deform_state_restart_noise.py"
+    )
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    truth = np.zeros((2, 4, 3, 3))
+    points = np.broadcast_to([0.003, 0.004, 0.0], (5, *truth.shape)).copy()
+    metrics = verifier.metric_arrays(points, truth)
+    assert metrics["coordinate_l1_mm"].shape == (5, 2)
+    np.testing.assert_allclose(metrics["coordinate_l1_mm"], 7 / 3)
+    np.testing.assert_allclose(metrics["point_rmse_mm"], 5.0)
+    np.testing.assert_allclose(metrics["fde_mm"], 5.0)
+    points[0, 0, 0, 0, 0] = np.nan
+    with pytest.raises(ValueError, match="cannot be dropped"):
+        verifier.metric_arrays(points, truth)
