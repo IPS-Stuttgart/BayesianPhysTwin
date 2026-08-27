@@ -1,0 +1,150 @@
+# workflow-lifecycle: permanent
+# workflow-owner: BayesianPhysTwin maintainers
+# workflow-purpose: target-free controlled evidence for the cross-intervention transport criterion
+# workflow-retirement: remove only if the study is superseded by a versioned permanent evidence workflow
+name: Cross-intervention transport criterion evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cross-intervention-criterion-evidence.yml"
+      - "scripts/science/run_cross_intervention_transport_criterion_v1.py"
+      - "tests/test_cross_intervention_transport_criterion_v1.py"
+      - "protocols/cross_action_transport/causal4d_sloth_multi_action_v1_sparse_pairs.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cross-intervention-criterion-evidence.yml"
+      - "scripts/science/run_cross_intervention_transport_criterion_v1.py"
+      - "tests/test_cross_intervention_transport_criterion_v1.py"
+      - "protocols/cross_action_transport/causal4d_sloth_multi_action_v1_sparse_pairs.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-intervention-criterion-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  controlled-evidence:
+    name: Controlled target-free criterion evidence
+    if: >-
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository) &&
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONHASHSEED: "0"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install reviewed package and development tools
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate implementation and focused tests
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/run_cross_intervention_transport_criterion_v1.py \
+            tests/test_cross_intervention_transport_criterion_v1.py
+          python -m ruff format --check \
+            scripts/science/run_cross_intervention_transport_criterion_v1.py \
+            tests/test_cross_intervention_transport_criterion_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_cross_intervention_transport_criterion_v1.py
+          python -m compileall -q \
+            scripts/science/run_cross_intervention_transport_criterion_v1.py \
+            tests/test_cross_intervention_transport_criterion_v1.py
+
+      - name: Generate primary and deterministic replay evidence
+        run: |
+          set -euo pipefail
+          roster="protocols/cross_action_transport/causal4d_sloth_multi_action_v1_sparse_pairs.json"
+          for label in primary replay; do
+            mkdir -p "evidence/${label}"
+            python scripts/science/run_cross_intervention_transport_criterion_v1.py \
+              --roster "$roster" \
+              --trials 2000 \
+              --bootstrap-replicates 2000 \
+              --seed 20260827 \
+              --noise-scale 0.3 \
+              --guard-threshold 0.25 \
+              --harmful-gain-margin 0.25 \
+              --discrepancy-shrink 0.5 \
+              --output-json "evidence/${label}/result.json" \
+              --output-markdown "evidence/${label}/report.md"
+          done
+          cmp evidence/primary/result.json evidence/replay/result.json
+          cmp evidence/primary/report.md evidence/replay/report.md
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("evidence")
+          files = []
+          for path in sorted(root.rglob("*")):
+              if path.is_file():
+                  files.append(
+                      {
+                          "path": path.as_posix(),
+                          "bytes": path.stat().st_size,
+                          "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                      }
+                  )
+          manifest = {
+              "schema_version": 1,
+              "artifact_kind": "CrossInterventionTransportCriterionWorkflowEvidenceV1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "commit": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "target_outcomes_used": False,
+              "causal4d_physical_outcome_used": False,
+              "deform360_confirmation_opened": False,
+              "primary_replay_byte_identical": True,
+              "files": files,
+              "claim_boundary": (
+                  "Controlled target-free local-linear mechanism evidence only; "
+                  "not real physical or causal-identification evidence."
+              ),
+          }
+          (root / "manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload auditable evidence bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: cross-intervention-criterion-${{ github.sha }}
+          path: evidence
+          if-no-files-found: warn
+          retention-days: 30
