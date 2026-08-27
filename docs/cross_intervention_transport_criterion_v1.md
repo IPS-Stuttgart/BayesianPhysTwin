@@ -32,8 +32,6 @@ With 2,000 trials per regime and 2,000 session bootstraps:
 | Physical simulator sign error | 100.0% | 0.0% | 0.0% |
 | Physical/local mixture | 100.0% | 41.2% | 0.4% |
 
-Across ten independent seeds, the source-local-discrepancy transport false-positive rate ranged from 0.4% to 1.1%, genuine physical transport detection ranged from 99.6% to 100%, and every registered study check passed in all ten runs.
-
 ## Interpretation
 
 The theory is helpful as a **falsification criterion**. Same-action source fit is non-diagnostic and accepts local discrepancy almost universally; held-out intervention transport reduces this false physical attribution by roughly two orders of magnitude while preserving sensitivity to a shared physical coefficient.
@@ -44,7 +42,7 @@ The complete protocol is intentionally conservative. At the frozen 18-session sa
 
 ## Reproducible primary result
 
-The committed primary run is generated with:
+The canonical evidence runtime is CPython 3.12.14 with NumPy 2.2.6. The committed primary run is generated with:
 
 ```bash
 python scripts/science/run_cross_intervention_transport_criterion_v1.py \
@@ -60,9 +58,9 @@ python scripts/science/run_cross_intervention_transport_criterion_v1.py \
   --output-markdown report.md
 ```
 
-The expected decision is `criterion-useful-but-requires-declared-nuisance-and-conservative-guard` and the expected result ID is `9efa5ebb1152d099b3e1092f054bf3e4fa8b2c99a4c7e749ce0103a342e805ad`.
+The expected decision is `criterion-useful-but-requires-declared-nuisance-and-conservative-guard` and the canonical result ID is `b39b4bef293d0c976cb3ba1e86fce2dc22f505a8d9185f247fcfb02b695ad552`.
 
-The dedicated GitHub Actions workflow reruns the 2,000-trial study twice on the exact reviewed revision and requires byte-identical JSON and Markdown output before uploading the evidence bundle.
+The dedicated GitHub Actions workflow pins the canonical runtime, reruns the 2,000-trial study twice on the exact reviewed revision, requires primary and replay to be byte-identical, and additionally requires the regenerated JSON and Markdown to be byte-identical to the checked-in retained result before uploading the evidence bundle.
 
 ## Claim boundary
 
