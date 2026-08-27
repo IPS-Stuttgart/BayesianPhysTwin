@@ -1,0 +1,58 @@
+{
+  "artifact_id": "673ab5875b5a7514b6c6df786ae224e8fa2885e9e0080361d9de06b1421b4f30",
+  "band_motion_m": 0.01051916853585104,
+  "checks": {
+    "all_three_native_rollouts_complete": true,
+    "band_motion_at_least_10mm": true,
+    "finite_native_arrays": true,
+    "fixed_endpoints_unchanged": true,
+    "gripper_motion_at_least_10mm": true,
+    "memory_replay_within_tolerance": true,
+    "position_replay_within_1um": true
+  },
+  "gripper_motion_m": 0.10253721756018554,
+  "lock_id": "73e2b6f53c61eaef963c320be0fb282f6f284fd72f999942da01ae7a834f3e98",
+  "maximum_fixed_endpoint_error_m": 0.0,
+  "maximum_position_replay_error_m": 4.124284247453147e-12,
+  "memory_replay": {
+    "byte_identical": false,
+    "field_count": 23,
+    "maximum_absolute_difference": 7.603612184325925e-12,
+    "within_tolerance": true
+  },
+  "method_evaluation_authorized": false,
+  "native_qualification_passed": true,
+  "protected_data_read": false,
+  "rollout_seals": [
+    "032e99a4cd612107a3b4cfb095dc41e72462fa0845b9051d8cb8cd898baa2cc5",
+    "46e9afeaac77d8674aed08f7203167e70e1be1bf32f1bb82a0fdf50884c1636e",
+    "125663e017d2ec8406a76e32585635dfa3979a3fe6b6b5da5f086faeef45e0d0"
+  ],
+  "rollouts": [
+    {
+      "native_cumulative_reward": [
+        6.900000095367432
+      ],
+      "native_forward_seconds": 5.921053409576416,
+      "native_steps": 900,
+      "wall_seconds": 29.093552555001224
+    },
+    {
+      "native_cumulative_reward": [
+        6.900000095367432
+      ],
+      "native_forward_seconds": 5.7375853061676025,
+      "native_steps": 900,
+      "wall_seconds": 29.11779907899472
+    },
+    {
+      "native_cumulative_reward": [
+        6.900000095367432
+      ],
+      "native_forward_seconds": 5.746340990066528,
+      "native_steps": 900,
+      "wall_seconds": 28.939349542000855
+    }
+  ],
+  "schema": "dlolab-slingshot-fresh-process-result-v2"
+}
