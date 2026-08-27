@@ -32,6 +32,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--upstream", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--world-bank", action="store_true")
     args = parser.parse_args()
     revision = subprocess.check_output(
         ["git", "rev-parse", "HEAD"],
@@ -62,12 +63,23 @@ def main() -> None:
         "protected_data_read": False,
         "method_outcomes_read": False,
         "physical_execution": False,
+        "world_bank": args.world_bank,
     }
     write_json_once(args.output_dir / "attempt.json", attempt)
     start = time.monotonic()
     runtime = None
     try:
-        runtime = DloLabRuntime(args.upstream, config)
+        runtime = DloLabRuntime(
+            args.upstream,
+            config,
+            batch_size=3 if args.world_bank else 1,
+            bending_moduli=(config.bending_modulus * np.array([0.5, 1.0, 2.0]))
+            if args.world_bank
+            else None,
+            lateral_velocities=np.array([-0.15, 0.0, 0.15])
+            if args.world_bank
+            else None,
+        )
         initial = runtime.capture()
         clamps = runtime.initial_positions[:, :2].copy()
         prefix = np.broadcast_to(clamps, (25, *clamps.shape)).copy()
@@ -88,8 +100,8 @@ def main() -> None:
         reverse_commands = commands.copy()
         reverse_commands[:, :, :, 1] *= -1.0
         alternative = runtime.rollout(reverse_commands)
-        branch.validate(config)
-        initial.validate(config)
+        branch.validate(config, runtime.model_id)
+        initial.validate(config, runtime.model_id)
         max_clamp_error = float(np.max(np.abs(future[:, :, :2] - commands)))
         action_effect = float(
             np.max(

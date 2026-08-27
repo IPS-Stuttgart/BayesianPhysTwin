@@ -13,6 +13,7 @@ from bayesian_phystwin_experiments.dlolab_native import (
     clamp_only_state,
     native_state_arrays,
     native_state_digests,
+    world_parameters,
 )
 
 
@@ -95,3 +96,36 @@ def test_array_snapshots_are_owned_and_dtype_preserving():
 def test_invalid_configuration_rejected(changes):
     with pytest.raises(ValueError):
         dataclasses.replace(DloLabConfig(), **changes)
+
+
+def test_world_parameters_are_model_bound_and_clamp_velocity_is_zero():
+    config = DloLabConfig()
+    bending, velocity, identity = world_parameters(config, 3, None, None)
+    assert identity != config.identity
+    assert world_parameters(config, 1, None, None)[2] == config.identity
+    np.testing.assert_array_equal(velocity, 0)
+    assert np.all(bending == config.bending_modulus)
+    _, changed, new_identity = world_parameters(
+        config, 3, bending, np.array([-0.1, 0, 0.1])
+    )
+    assert new_identity != identity
+    np.testing.assert_array_equal(changed[:, :2], 0)
+    np.testing.assert_allclose(changed[:, -1, 1], [-0.1, 0, 0.1])
+    snapshot = NativeSnapshot(0, new_identity, _state(), native_state_digests(_state()))
+    snapshot.validate(config, new_identity)
+    with pytest.raises(ValueError, match="configuration"):
+        snapshot.validate(config)
+
+
+@pytest.mark.parametrize(
+    "bending,velocity",
+    [
+        ([1.0], [0.0, 0.1]),
+        ([1.0, -1.0], [0.0, 0.1]),
+        ([1.0, 1.0], [0.0, 0.6]),
+        ([1.0, 1.0], [0.0, np.nan]),
+    ],
+)
+def test_invalid_world_bank_rejected(bending, velocity):
+    with pytest.raises(ValueError):
+        world_parameters(DloLabConfig(), 2, np.array(bending), np.array(velocity))

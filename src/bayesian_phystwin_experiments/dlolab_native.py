@@ -157,21 +157,88 @@ class NativeSnapshot:
     native_state: Any
     field_digests: dict[str, str]
 
-    def validate(self, config: DloLabConfig) -> None:
+    def validate(self, config: DloLabConfig, model_id: str | None = None) -> None:
         if type(self.step_index) is not int or self.step_index < 0:
             raise ValueError("invalid snapshot index")
-        if self.config_id != config.identity:
+        if self.config_id != (config.identity if model_id is None else model_id):
             raise ValueError("snapshot model configuration changed")
         if self.field_digests != native_state_digests(self.native_state):
             raise ValueError("native snapshot was mutated")
 
 
+def world_parameters(
+    config: DloLabConfig,
+    batch_size: int,
+    bending_moduli: np.ndarray | None,
+    lateral_velocities: np.ndarray | None,
+) -> tuple[np.ndarray, np.ndarray, str]:
+    if type(batch_size) is not int or batch_size < 1:
+        raise ValueError("invalid batch size")
+    bending = (
+        np.full(batch_size, config.bending_modulus)
+        if bending_moduli is None
+        else np.asarray(bending_moduli, dtype=np.float64)
+    )
+    lateral = (
+        np.zeros(batch_size)
+        if lateral_velocities is None
+        else np.asarray(lateral_velocities, dtype=np.float64)
+    )
+    if (
+        bending.shape != (batch_size,)
+        or lateral.shape != (batch_size,)
+        or not np.isfinite(bending).all()
+        or not np.isfinite(lateral).all()
+        or np.any(bending <= 0)
+        or np.any(np.abs(lateral) > 0.5)
+    ):
+        raise ValueError("invalid material or initial-velocity hypothesis")
+    bending, lateral = bending.copy(), lateral.copy()
+    velocity = np.zeros((batch_size, config.node_count, 3), dtype=np.float64)
+    mode = np.sin(
+        np.clip((np.arange(config.node_count) - 1) / (config.node_count - 2), 0, 1)
+        * np.pi
+        / 2
+    )
+    velocity[:, :, 1] = lateral[:, None] * mode[None]
+    identity = config.identity
+    if (
+        batch_size != 1
+        or np.any(bending != config.bending_modulus)
+        or np.any(lateral != 0)
+    ):
+        identity = hashlib.sha256(
+            json.dumps(
+                {
+                    "config_id": config.identity,
+                    "bending": array_digest(bending),
+                    "velocity": array_digest(velocity),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+    return bending, velocity, identity
+
+
 class DloLabRuntime:
     """Native CPU/float64 procedural rod, without learned weights or raw data."""
 
-    def __init__(self, upstream: Path, config: DloLabConfig, *, batch_size: int = 1):
-        if type(batch_size) is not int or batch_size < 1:
-            raise ValueError("invalid batch size")
+    def __init__(
+        self,
+        upstream: Path,
+        config: DloLabConfig,
+        *,
+        batch_size: int = 1,
+        bending_moduli: np.ndarray | None = None,
+        lateral_velocities: np.ndarray | None = None,
+    ):
+        bending, velocity, self.model_id = world_parameters(
+            config,
+            batch_size,
+            bending_moduli,
+            lateral_velocities,
+        )
         self.provenance = verify_upstream(upstream)
         if "genesis" in sys.modules:
             raise ValueError("Genesis must not be imported before source validation")
@@ -224,6 +291,17 @@ class DloLabRuntime:
         )
         self.scene.build(n_envs=batch_size)
         self.rod.set_fixed_states(fixed_ids=[0, 1])
+        if np.any(bending != config.bending_modulus):
+            self.rod.set_bending_stiffness(torch.as_tensor(bending))
+        if np.any(velocity != 0):
+            self.rod.set_vel(self.scene.sim.cur_substep_local, velocity)
+        actual_bending = self.rod.get_all_bending_stiffness_tc().detach().cpu().numpy()
+        if not np.array_equal(actual_bending, bending):
+            raise RuntimeError("native material bank does not match its model identity")
+        if not np.array_equal(self.rod.get_all_vels(), velocity):
+            raise RuntimeError(
+                "native initial velocity does not match its model identity"
+            )
         self.initial_positions = self.positions()
 
     def positions(self) -> np.ndarray:
@@ -233,13 +311,13 @@ class DloLabRuntime:
         state = self.scene.get_state()
         return NativeSnapshot(
             self.step_index,
-            self.config.identity,
+            self.model_id,
             state,
             native_state_digests(state),
         )
 
     def restore(self, snapshot: NativeSnapshot) -> None:
-        snapshot.validate(self.config)
+        snapshot.validate(self.config, self.model_id)
         self.scene.reset(snapshot.native_state)
         self.step_index = snapshot.step_index
         if native_state_digests(self.scene.get_state()) != snapshot.field_digests:

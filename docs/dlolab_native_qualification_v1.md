@@ -31,6 +31,15 @@ most 10%; captured snapshots unchanged. The last two are basic sanity checks,
 not material validation or numerical-convergence evidence. Physical parameters
 are simulator settings, not inferred real material properties.
 
+The separate `--world-bank` qualification repeats these checks with three
+parallel environments: bending settings [0.5, 1, 2] times nominal and initial
+lateral velocities [-0.15, 0, 0.15] m/s in a smooth free-node mode. Both root
+velocities remain exactly zero. The runtime reads back the native material and
+velocity arrays and requires exact equality with their registered values before
+the prefix. Every snapshot binds the complete material/velocity bank identity;
+it cannot be replayed in a different bank. This tests the interface used by the
+decision study without generating or comparing any decision-study outcomes.
+
 The source must be clean and committed before native qualification. An exclusive
 output directory and attempt record precede runtime initialization; every failure
 is retained. Runtime or source repairs require a separate recorded revision and
