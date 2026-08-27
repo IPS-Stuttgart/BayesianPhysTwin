@@ -124,9 +124,7 @@ def _prediction(
         candidate_belief_id=candidate,
         selected_belief_id=selected,
         disposition=resolved,
-        prediction_artifact_id=_stable(
-            "prediction", pair.object_session_id, arm.value
-        ),
+        prediction_artifact_id=_stable("prediction", pair.object_session_id, arm.value),
         source_evidence_id=_id(30),
         admission_evidence_id=_id(31),
         prediction_batch_id=_id(40),
@@ -146,8 +144,7 @@ def _rows(
 ) -> tuple[TransportScoreRowV2, ...]:
     if physical_dispositions is None:
         physical_dispositions = tuple(
-            PredictionDisposition.CANDIDATE_SELECTED
-            for _ in protocol.session_pairs
+            PredictionDisposition.CANDIDATE_SELECTED for _ in protocol.session_pairs
         )
     if physical_gains is None:
         physical_gains = tuple(physical_gain for _ in protocol.session_pairs)
@@ -277,9 +274,7 @@ def test_reverse_same_session_reuse_fails_closed() -> None:
 def test_sparse_roster_accounting_is_complete_and_session_level() -> None:
     protocol = _protocol(minimum_sessions=14)
     incomplete = tuple(
-        row
-        for row in _rows(protocol)
-        if row.prediction.object_session_id != "s13"
+        row for row in _rows(protocol) if row.prediction.object_session_id != "s13"
     )
     with pytest.raises(ValueError, match="frozen sparse session roster"):
         _result(protocol, incomplete)
@@ -343,6 +338,5 @@ def test_checked_in_causal4d_sparse_pair_roster_matches_design() -> None:
     assert all(entry["source_execution_id"].endswith("-e1") for entry in sessions)
     assert all(entry["target_execution_id"].endswith("-e2") for entry in sessions)
     assert all(
-        entry["source_action_id"] != entry["target_action_id"]
-        for entry in sessions
+        entry["source_action_id"] != entry["target_action_id"] for entry in sessions
     )
