@@ -1,0 +1,98 @@
+{
+  "schema": "deft-cross-branch-source-pilot-v1",
+  "scope": "One metadata-selected public training recording; source capacity only",
+  "native_qualification": {
+    "source_revision": "9d21fdbf96b68d66a7b796ede7cf2d66ead2868b",
+    "result_sha256": "87e1649ffdb34602a995ce0e7d4760925e5ad0a29bc4e722fbbc9ca6b34840b2",
+    "prediction_sha256": "e2df7dea99290c9c5c1c36f7344c48baba40f16c0ae127b5ee415241261d4486"
+  },
+  "source": {
+    "upstream_revision": "5781c70c7737fb84b8bd43261e3ed00ef2fd0fbc",
+    "object": "BDLO1",
+    "split": "train",
+    "filename": "BDLO_data_kinova_and_panda_track1244_block1_frames301to800.pkl",
+    "git_blob": "f9c486815e6b0ff8818457fcce69a8ce44896a09",
+    "sha256": "f4fad890394c69a772532d3130f2a35c857a01b8bb4dc524842e567a7af1a347",
+    "selection": "First lexicographic BDLO1 training filename beginning BDLO_data_kinova_and_panda, declared before payload decode",
+    "recording_count": 1,
+    "checkpoint_training_exposure": true,
+    "replacement_allowed": false
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float64",
+    "threads": 1,
+    "seed": 1,
+    "python": "3.10.12",
+    "torch": "2.0.1+cu118",
+    "numpy": "1.24.3",
+    "theseus": "0.2.1",
+    "numba": "0.59.1",
+    "pytorch3d": "0.7.7"
+  },
+  "inputs": {
+    "initial_full_frames": [0, 1],
+    "raw_frame_offset": 2,
+    "prefix_length": 50,
+    "forecast_end": 170,
+    "dt_s": 0.01,
+    "observation_prediction_frames": [41, 49],
+    "observation_raw_frames": [43, 51],
+    "observed_parent_nodes": [2, 4, 6, 8],
+    "point_observation_budget": 8,
+    "future_parent_clamps": [0, 1, 11, 12],
+    "future_free_node_input": false,
+    "coordinate_transform": "raw (x,y,z) to (-z,-x,y), metres",
+    "state_update_gain": 1.0,
+    "velocity_update": "Slope of the two observed residuals, not replacement by measured point velocity",
+    "spatial_extension": "Existing piecewise-linear DEFORM parent interpolation, zero at clamps; each unobserved child receives its junction's constant harmonic extension",
+    "shadow": "Separate native checkpoint instance with learned residual weight set to zero; all physical parameters and constraints unchanged"
+  },
+  "arms": [
+    "native_full",
+    "native_physics_only",
+    "readout_persistence",
+    "readout_linear_velocity",
+    "paired_physics_pose",
+    "paired_physics_pose_velocity",
+    "paired_parent_only_pose_velocity",
+    "native_full_pose_velocity"
+  ],
+  "primary_arm": "paired_physics_pose_velocity",
+  "primary_formula": "native full forecast + physical-shadow(updated state) - physical-shadow(unchanged state)",
+  "hidden_outcomes": {
+    "child1_nodes": [1, 2, 3, 4],
+    "child2_nodes": [1, 2, 3],
+    "duplicate_junctions_scored": false,
+    "padded_nodes_scored": false,
+    "raw_future_frames_half_open": [52, 172],
+    "late_forecast_indices_half_open": [80, 120],
+    "primary_aggregation": "Equal mean of the two branch-level metrics; each branch is additionally a gate",
+    "metrics": ["3D point RMSE mm", "coordinate L1 mm", "late 3D point RMSE mm", "mean endpoint FDE mm"],
+    "significance_testing": false
+  },
+  "pilot_gate": {
+    "each_child_rmse_reduction_fraction_minimum": 0.05,
+    "comparators": ["native_full", "readout_persistence", "readout_linear_velocity"],
+    "each_child_coordinate_l1_nonworsening": true,
+    "each_child_late_rmse_nonworsening": true,
+    "zero_update_byte_identical": true,
+    "secondary_arms_cannot_rescue_primary_failure": true,
+    "automatic_confirmation_authorization": false
+  },
+  "registered_run_root": "/home/florianpfaff/source-only/deft-native-bdlo1-v1/cross-branch-pilot-v1",
+  "ordering": ["source-code freeze", "hash-verified native qualification", "restricted numeric source staging", "all eight predictions sealed", "reopen training future only for scoring"],
+  "boundaries": {
+    "source_payload_decoded_by_stager": true,
+    "source_future_values_used_by_predictor": false,
+    "new_recordings": false,
+    "public_evaluation_or_test_split_read": false,
+    "protected_deform_evaluation_read": false,
+    "held_v8_read": false,
+    "deform360_targets_read": false,
+    "parameter_or_gain_tuning": false,
+    "existing_deform_backend_modified": false,
+    "sota_or_calibration_claim": false
+  },
+  "outcome_publication": "local-or-private-paper-evidence-only"
+}
