@@ -4,9 +4,10 @@
 
 The workflow lifecycle policy governs ownership, expiry, permissions,
 concurrency, and immutable action references for changed workflows. The
-inventory budget adds a repository-wide monotone ratchet: deleting a workflow
-must lower the checked-in ceiling in the same change, so freed capacity cannot
-be silently spent later.
+inventory budget adds a repository-wide ratchet: deleting a workflow must lower
+the checked-in ceiling in the same change, so freed capacity cannot be silently
+spent later. A separately reviewed permanent workflow may raise the ceiling only
+when the same change records that increase explicitly.
 
 The budget is an engineering and provenance control. It does not alter an
 estimator, protocol, target-access boundary, artifact, metric, or scientific
@@ -25,10 +26,10 @@ At source revision
 The machine-readable contract is
 `.github/quality/workflow-inventory-budget-v1.json`.
 
-## Completed one-shot retirement
+## Completed one-shot retirement and current reviewed increase
 
-The twelve historical one-shot files are now absent from
-`.github/workflows`. Their exact Git blobs are retained below
+The twelve historical one-shot files are absent from `.github/workflows`. Their
+exact Git blobs are retained below
 `archive/github-actions/retired-one-shot-v1/`, together with a strict manifest
 that binds:
 
@@ -39,17 +40,25 @@ that binds:
 - the historical contract-test blobs that continue to exercise the archived
   workflow bytes.
 
-The one-shot retirement reduced the inventory to 83 workflows without requiring
-a replacement launcher. A later permanent Deform360 source-receipt router raised
-the reviewed ceiling to 84. The stale `agent-source-snapshot.yml` workflow was
-then retired because it triggered only on one historical agent branch and had no
-remaining repository consumer. The claim-bearing receipt router remains active,
-and the exact inventory is again:
+Subsequent lifecycle work continued to ratchet the active inventory down to 81
+ordinary workflows with zero temporary-looking files. The permanent
+`cross-intervention-criterion-evidence.yml` workflow is a deliberately reviewed
+addition: it runs the target-free controlled falsification study, requires
+primary/replay byte identity, binds regenerated output to the retained result,
+and records the exact reviewed head and canonical Python/NumPy runtime. Its
+addition raises the checked-in ceiling by one, from 81 to 82, without changing
+the retirement target.
 
-- 83 checked-in workflows; and
-- zero temporary-looking workflow files.
+The exact active inventory and targets are therefore:
 
-Both values are now the current ratchet and completed retirement target.
+- 82 checked-in workflows;
+- zero temporary-looking workflow files;
+- a retirement target of at most 81 checked-in workflows; and
+- a retirement target of zero temporary-looking workflows.
+
+The one-workflow retirement gap is intentional and visible. A future
+consolidation or retirement should lower the ceiling back to 81 in the same
+change rather than silently reusing that capacity.
 
 Validate the active inventory with:
 

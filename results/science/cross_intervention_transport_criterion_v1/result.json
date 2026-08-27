@@ -1,0 +1,406 @@
+{
+  "action_pairs": [
+    {
+      "object_session_id": "sloth-v1-c1-s1",
+      "source_action_id": "lift_low",
+      "target_action_id": "lift_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c1-s2",
+      "source_action_id": "lower_high",
+      "target_action_id": "lift_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c1-s3",
+      "source_action_id": "lift_low",
+      "target_action_id": "lateral_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c1-s4",
+      "source_action_id": "lower_high",
+      "target_action_id": "lift_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c1-s5",
+      "source_action_id": "lift_high",
+      "target_action_id": "lateral_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c1-s6",
+      "source_action_id": "lateral_low",
+      "target_action_id": "lower_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c2-s1",
+      "source_action_id": "lift_low",
+      "target_action_id": "lower_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c2-s2",
+      "source_action_id": "lateral_low",
+      "target_action_id": "lift_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c2-s3",
+      "source_action_id": "lift_high",
+      "target_action_id": "lower_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c2-s4",
+      "source_action_id": "lateral_low",
+      "target_action_id": "lift_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c2-s5",
+      "source_action_id": "lower_high",
+      "target_action_id": "lateral_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c2-s6",
+      "source_action_id": "lift_high",
+      "target_action_id": "lift_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c3-s1",
+      "source_action_id": "lateral_low",
+      "target_action_id": "lower_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c3-s2",
+      "source_action_id": "lower_high",
+      "target_action_id": "lift_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c3-s3",
+      "source_action_id": "lower_high",
+      "target_action_id": "lift_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c3-s4",
+      "source_action_id": "lift_low",
+      "target_action_id": "lateral_low"
+    },
+    {
+      "object_session_id": "sloth-v1-c3-s5",
+      "source_action_id": "lift_low",
+      "target_action_id": "lift_high"
+    },
+    {
+      "object_session_id": "sloth-v1-c3-s6",
+      "source_action_id": "lift_high",
+      "target_action_id": "lateral_low"
+    }
+  ],
+  "action_response": {
+    "lateral_low": 0.75,
+    "lift_high": 1.6,
+    "lift_low": 1.0,
+    "lower_high": -1.5
+  },
+  "all_registered_checks_passed": true,
+  "artifact_kind": "CrossInterventionTransportCriterionStudyV1",
+  "causal4d_design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+  "causal4d_physical_outcome_used": false,
+  "claim_boundary": "Controlled local-linear mechanism evidence only. A positive result shows that held-out intervention transport can reject source-local discrepancy under the registered simulation assumptions. It does not establish a unique physical cause, simulator adequacy, real-object transfer, real calibration, provider competence, Causal4D physical benefit, deployment safety, or state of the art.",
+  "decision": "criterion-useful-but-requires-declared-nuisance-and-conservative-guard",
+  "deform360_confirmation_opened": false,
+  "regimes": {
+    "action_aligned_declared_nuisance": {
+      "claim_rates": {
+        "full_protocol": 0.0,
+        "source_only": 1.0,
+        "transport_only": 0.0
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 0.0,
+        "materially_harmful_accepted_sessions": 0.0,
+        "source_gain": 1.6829991913869031,
+        "transport_gain": 0.0,
+        "transport_minus_discrepancy": 0.6704462068065408,
+        "transport_minus_last_residual": 2.1856710719060075
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 1.0,
+        "declared_identifiable": false,
+        "local_correlation": 0.0,
+        "local_scale": 0.0,
+        "physical_strength": 0.0,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 1.0
+      },
+      "regime": "action_aligned_declared_nuisance",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": 0.0,
+        "q50": 0.0,
+        "q95": 0.0
+      }
+    },
+    "action_aligned_undeclared_nuisance": {
+      "claim_rates": {
+        "full_protocol": 0.2845,
+        "source_only": 1.0,
+        "transport_only": 0.9795
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 16.5335,
+        "materially_harmful_accepted_sessions": 1.188,
+        "source_gain": 1.6926924981182463,
+        "transport_gain": 1.459078211297041,
+        "transport_minus_discrepancy": 2.1366347232899003,
+        "transport_minus_last_residual": 3.663781006807852
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 1.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.0,
+        "local_scale": 0.0,
+        "physical_strength": 0.0,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 1.0
+      },
+      "regime": "action_aligned_undeclared_nuisance",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": 0.6152747672911596,
+        "q50": 1.3780263020319377,
+        "q95": 2.6586429506867884
+      }
+    },
+    "correlated_local_discrepancy": {
+      "claim_rates": {
+        "full_protocol": 0.0,
+        "source_only": 1.0,
+        "transport_only": 0.0095
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 11.638,
+        "materially_harmful_accepted_sessions": 5.8105,
+        "source_gain": 1.389086653110435,
+        "transport_gain": -0.43286743183328696,
+        "transport_minus_discrepancy": -0.984572986541363,
+        "transport_minus_last_residual": -0.3692242032392462
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.5,
+        "local_scale": 1.5,
+        "physical_strength": 0.0,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 1.0
+      },
+      "regime": "correlated_local_discrepancy",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": -1.3603039037488027,
+        "q50": -0.3932147985552903,
+        "q95": 0.348154594550398
+      }
+    },
+    "physical_conservative_transport": {
+      "claim_rates": {
+        "full_protocol": 0.7855,
+        "source_only": 1.0,
+        "transport_only": 1.0
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 15.8815,
+        "materially_harmful_accepted_sessions": 0.173,
+        "source_gain": 3.679275856201523,
+        "transport_gain": 2.4769826481112514,
+        "transport_minus_discrepancy": 3.9381359504712647,
+        "transport_minus_last_residual": 7.24732591721784
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.0,
+        "local_scale": 0.1,
+        "physical_strength": 1.5,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 0.5
+      },
+      "regime": "physical_conservative_transport",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": 1.141333669739971,
+        "q50": 2.346418559143484,
+        "q95": 4.26679682784016
+      }
+    },
+    "physical_local_mixture": {
+      "claim_rates": {
+        "full_protocol": 0.004,
+        "source_only": 1.0,
+        "transport_only": 0.4125
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 14.939,
+        "materially_harmful_accepted_sessions": 4.1855,
+        "source_gain": 2.0601536381669217,
+        "transport_gain": 0.9453230471124106,
+        "transport_minus_discrepancy": 1.6251325196569055,
+        "transport_minus_last_residual": 3.467438302038509
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.2,
+        "local_scale": 0.8,
+        "physical_strength": 1.0,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 1.0
+      },
+      "regime": "physical_local_mixture",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": -0.02036536682641404,
+        "q50": 0.8692912894219792,
+        "q95": 2.1586986321005575
+      }
+    },
+    "physical_sign_error": {
+      "claim_rates": {
+        "full_protocol": 0.0,
+        "source_only": 1.0,
+        "transport_only": 0.0
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 15.9835,
+        "materially_harmful_accepted_sessions": 13.6675,
+        "source_gain": 3.701901983509272,
+        "transport_gain": -4.07088683968766,
+        "transport_minus_discrepancy": -2.580755002828912,
+        "transport_minus_last_residual": 0.7687058781193415
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.0,
+        "local_scale": 0.1,
+        "physical_strength": 1.5,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": -0.5
+      },
+      "regime": "physical_sign_error",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": -6.992130934550748,
+        "q50": -3.8692817001944624,
+        "q95": -1.9409386079886468
+      }
+    },
+    "shared_action_independent_bias": {
+      "claim_rates": {
+        "full_protocol": 0.0,
+        "source_only": 1.0,
+        "transport_only": 0.0025
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 11.635,
+        "materially_harmful_accepted_sessions": 5.698,
+        "source_gain": 1.3874080078480713,
+        "transport_gain": -0.5250189451955419,
+        "transport_minus_discrepancy": -2.182944868409271,
+        "transport_minus_last_residual": -2.676832631530339
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.0,
+        "local_scale": 0.0,
+        "physical_strength": 0.0,
+        "shared_bias_scale": 1.5,
+        "target_transport_scale": 1.0
+      },
+      "regime": "shared_action_independent_bias",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": -1.6327605630320867,
+        "q50": -0.46509090976056666,
+        "q95": 0.4146062137468558
+      }
+    },
+    "source_local_discrepancy": {
+      "claim_rates": {
+        "full_protocol": 0.0,
+        "source_only": 1.0,
+        "transport_only": 0.01
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 11.552,
+        "materially_harmful_accepted_sessions": 5.9005,
+        "source_gain": 1.3863653856290172,
+        "transport_gain": -0.3374371732265683,
+        "transport_minus_discrepancy": 0.2500427891860774,
+        "transport_minus_last_residual": 1.999836282734622
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.0,
+        "local_scale": 1.5,
+        "physical_strength": 0.0,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 1.0
+      },
+      "regime": "source_local_discrepancy",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": -1.137252407794049,
+        "q50": -0.31863888171044924,
+        "q95": 0.3351072282954582
+      }
+    },
+    "transportable_physical": {
+      "claim_rates": {
+        "full_protocol": 0.384,
+        "source_only": 1.0,
+        "transport_only": 1.0
+      },
+      "mean_session_statistics": {
+        "accepted_physical_sessions": 16.9175,
+        "materially_harmful_accepted_sessions": 0.931,
+        "source_gain": 3.7075257774975974,
+        "transport_gain": 3.407961702585455,
+        "transport_minus_discrepancy": 4.929068204831281,
+        "transport_minus_last_residual": 8.312324794416211
+      },
+      "mechanism": {
+        "action_aligned_bias_scale": 0.0,
+        "declared_identifiable": true,
+        "local_correlation": 0.0,
+        "local_scale": 0.1,
+        "physical_strength": 1.5,
+        "shared_bias_scale": 0.0,
+        "target_transport_scale": 1.0
+      },
+      "regime": "transportable_physical",
+      "trial_mean_transport_gain_quantiles": {
+        "q05": 1.5679804997734093,
+        "q50": 3.1970817194428225,
+        "q95": 5.821129884765197
+      }
+    }
+  },
+  "registered_checks": {
+    "conservative_transport_improves_full_protocol_power": true,
+    "declared_nonidentifiability_fails_closed": true,
+    "full_protocol_rejects_local_and_shared_bias": true,
+    "simulator_sign_error_is_not_misreported_as_transport": true,
+    "source_fit_falsely_accepts_local_discrepancy": true,
+    "transport_detects_registered_physical_mechanism": true,
+    "transport_rejects_source_local_discrepancy": true,
+    "undeclared_action_aligned_nuisance_can_fool_transport": true
+  },
+  "result_id": "b39b4bef293d0c976cb3ba1e86fce2dc22f505a8d9185f247fcfb02b695ad552",
+  "schema": "bayesian_phystwin.cross_intervention_transport_criterion",
+  "schema_version": 1,
+  "session_count": 18,
+  "simulation": {
+    "bootstrap_replicates": 2000,
+    "confidence_level": 0.95,
+    "discrepancy_shrink": 0.5,
+    "guard_threshold": 0.25,
+    "harmful_gain_margin": 0.25,
+    "maximum_harmful_accepted_fraction": 0.2,
+    "minimum_accepted_physical_sessions": 14,
+    "noise_scale": 0.3,
+    "seed": 20260827,
+    "trials_per_regime": 2000
+  },
+  "target_outcomes_used": false
+}
