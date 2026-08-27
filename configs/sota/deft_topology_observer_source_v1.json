@@ -1,0 +1,90 @@
+{
+  "schema": "deft-topology-observer-source-v1",
+  "scope": "Three untouched training recordings of BDLO1; source capacity and information-placement evidence only",
+  "upstream_revision": "5781c70c7737fb84b8bd43261e3ed00ef2fd0fbc",
+  "native_qualification": {
+    "source_revision": "9d21fdbf96b68d66a7b796ede7cf2d66ead2868b",
+    "result_sha256": "87e1649ffdb34602a995ce0e7d4760925e5ad0a29bc4e722fbbc9ca6b34840b2"
+  },
+  "selection": "First block of the first three lexicographic robot-actuated BDLO1 training recording IDs after excluding previously opened track1244; fixed before trajectory decode",
+  "source_cases": [
+    {
+      "id": "robot-track1324",
+      "filename": "BDLO_data_kinova_and_panda_track1324_block1_frames223to722.pkl",
+      "git_blob": "20db976643346fb7f23865bce526da4c202ca00b",
+      "sha256": "bafca1624138b54f9961e79e3ca830c43422e6dc2a75c6097b6e6ccb984a1351"
+    },
+    {
+      "id": "robot-track1342",
+      "filename": "BDLO_data_kinova_and_panda_track1342_block1_frames305to804.pkl",
+      "git_blob": "6dd1506cefdcb20ac1e10a9ceded665f474ec07a",
+      "sha256": "6719c3348105796370516ca165ff248359ee9aa284c0c99181a55f5e3c03fc2c"
+    },
+    {
+      "id": "robot-track24242",
+      "filename": "BDLO_data_kinova_and_panda_track24242_block1_frames356to855.pkl",
+      "git_blob": "6d96df66e48f37260ebd7282dd35f33c1504b884",
+      "sha256": "107c10766ef0724d76f82ca8dd38b6954a751ac3ddbb9650e9151a7065ad1577"
+    }
+  ],
+  "runtime": {
+    "device": "cpu", "dtype": "float64", "threads": 1, "seed": 1,
+    "python": "3.10.12", "torch": "2.0.1+cu118", "numpy": "1.24.3",
+    "theseus": "0.2.1", "numba": "0.59.1", "pytorch3d": "0.7.7"
+  },
+  "inputs": {
+    "initial_full_frames": [0, 1],
+    "observation_raw_frames": [43, 51],
+    "observation_prediction_frames": [41, 49],
+    "forecast_raw_frames_half_open": [52, 172],
+    "dt_s": 0.01,
+    "topology_observed_branch_nodes": [[0, 4], [0, 8], [1, 4], [2, 3]],
+    "parent_control_branch_nodes": [[0, 2], [0, 4], [0, 6], [0, 8]],
+    "point_observations_per_corrected_arm": 8,
+    "unique_point_observations_staged_for_both_policies": 12,
+    "future_clamps": [0, 1, 11, 12],
+    "state_update_gain": 1.0,
+    "spatial_rule": "Piecewise linear parent interpolation through two junction residuals and zero clamps; linear child interpolation from its junction to its measured tip",
+    "velocity_rule": "Slope of two residual fields over 0.08 s; no gain/cap/calibrator fitting",
+    "coordinate_transform": "raw (x,y,z) to (-z,-x,y), metres"
+  },
+  "primary_arm": "topology_paired_pose_velocity",
+  "primary_formula": "Unchanged native full prediction + physical shadow(updated state) - physical shadow(unchanged state)",
+  "arms": [
+    "native_full", "topology_readout_persistence", "topology_readout_linear_velocity",
+    "topology_paired_pose", "topology_paired_pose_velocity",
+    "topology_direct_full_pose_velocity", "topology_native_periodic_pose", "parent_paired_pose_velocity"
+  ],
+  "hidden_outcomes": {
+    "parent_nodes": [3, 5, 7, 9, 10], "child1_nodes": [1, 2, 3], "child2_nodes": [1, 2],
+    "observed_by_either_policy_scored": false,
+    "duplicates_or_padding_scored": false,
+    "late_forecast_indices_half_open": [80, 120],
+    "aggregation": "Equal child-branch mean within each recording, then equal mean over all three recordings; parent is separately reported",
+    "metrics": ["3D point RMSE mm", "coordinate L1 mm", "late 3D point RMSE mm", "mean endpoint FDE mm"]
+  },
+  "gate": {
+    "comparators": ["native_full", "topology_readout_persistence", "topology_readout_linear_velocity", "topology_native_periodic_pose", "parent_paired_pose_velocity"],
+    "each_child_aggregate_rmse_gain_fraction": 0.05,
+    "each_child_aggregate_l1_and_late_nonincreasing": true,
+    "minimum_recording_joint_rmse_l1_wins_per_comparator": 2,
+    "maximum_any_recording_rmse_ratio_to_native": 1.10,
+    "all_24_forecasts_sealed_before_any_score": true,
+    "all_three_ordinary_successes_required": true,
+    "secondary_arm_cannot_rescue_primary": true,
+    "automatic_next_evaluation_authorization": false
+  },
+  "registered_run_root": "/home/florianpfaff/source-only/deft-topology-observer-source-v1/run-v1",
+  "boundaries": {
+    "split": "train", "physical_object_count": 1, "checkpoint_training_exposure": true,
+    "source_container_decoded_only_by_stager_and_postseal_scorer": true,
+    "future_free_node_input": false, "replacement_or_empirical_retry": false,
+    "previous_pilot_outcomes_used_to_fit_parameters": false,
+    "parameter_checkpoint_or_gain_fitting": false,
+    "public_evaluation_or_test_content_inspection": false,
+    "protected_deform_or_deform360_or_held_v8_access": false,
+    "new_physical_recording": false, "independent_confirmation_or_sota_claim": false,
+    "uncertainty_calibration_claim": false
+  },
+  "outcome_publication": "local-or-private-paper-evidence-only"
+}
