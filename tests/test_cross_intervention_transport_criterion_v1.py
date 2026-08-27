@@ -59,10 +59,7 @@ def test_controlled_helpfulness_checks_pass(tmp_path: Path) -> None:
     assert all(result["registered_checks"].values())
     regimes = result["regimes"]
     assert regimes["source_local_discrepancy"]["claim_rates"]["source_only"] > 0.95
-    assert (
-        regimes["source_local_discrepancy"]["claim_rates"]["transport_only"]
-        < 0.05
-    )
+    assert regimes["source_local_discrepancy"]["claim_rates"]["transport_only"] < 0.05
     assert (
         regimes["action_aligned_declared_nuisance"]["claim_rates"]["full_protocol"]
         == 0.0
