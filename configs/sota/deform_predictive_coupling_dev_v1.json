@@ -1,0 +1,20 @@
+{
+  "schema": "deform-predictive-coupling-dev-v1",
+  "base_budget_config": "configs/sota/deform_sparse_observation_budget_dev_v1.json",
+  "source_archive_sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b",
+  "design_case": "103.pkl",
+  "expected_trajectory_count": 14,
+  "reported_holdout_count": 13,
+  "floor_fraction": 0.5,
+  "guard_blends": [0.0, 0.25, 0.5, 1.0],
+  "guard_minimum_mean_improvement": 0.01,
+  "guard_minimum_joint_win_fraction": 0.6666666666666666,
+  "guard_maximum_case_ratio": 1.1,
+  "guard_random_repetitions": 8,
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 260828,
+  "policies": ["random", "spatial", "maximum_variance", "global_information", "future_query", "latest_uniform"],
+  "methods": ["graph_persistence", "empirical_no_floor", "empirical_floor", "permuted_floor", "source_guarded_floor"],
+  "scope": "exploratory-whole-trajectory-crossfit-already-open-dlo2",
+  "fresh_confirmation_authorized": false
+}
