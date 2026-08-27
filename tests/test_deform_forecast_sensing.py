@@ -658,3 +658,25 @@ def test_independent_information_form_verifier_agrees(seed: int) -> None:
         assert module.independent_plan(design, weight, budget) == greedy_schedule(
             design, weight, budget, 0.001
         )
+
+
+@pytest.mark.parametrize("layout", ["c", "fortran", "strided"])
+def test_native_verifier_owns_contiguous_causal_inputs(layout: str) -> None:
+    path = ROOT / "scripts/verify_deform_forecast_aware_sensing.py"
+    spec = importlib.util.spec_from_file_location("sensing_verifier_layout_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    raw = np.arange(3 * 500 * 12 * 3, dtype=np.float64).reshape(3, 500, 12, 3)
+    if layout == "fortran":
+        raw = np.asfortranarray(raw)
+    elif layout == "strided":
+        raw = raw[:, :, ::-1]
+    original = raw.copy()
+    clamps = (0, 1, 10, 11)
+    initial, actions = module.native_replay_inputs(raw, clamps)
+    assert initial.flags.c_contiguous and actions.flags.c_contiguous
+    assert not np.shares_memory(initial, raw)
+    assert not np.shares_memory(actions, raw)
+    np.testing.assert_array_equal(initial, raw[:, :2])
+    np.testing.assert_array_equal(actions, raw[:, 2:172, clamps])
+    np.testing.assert_array_equal(raw, original)

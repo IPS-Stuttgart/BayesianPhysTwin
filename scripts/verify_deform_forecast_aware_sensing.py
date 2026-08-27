@@ -198,6 +198,15 @@ def verify_fits(
             )
 
 
+def native_replay_inputs(
+    raw: np.ndarray, clamped_nodes: list[int] | tuple[int, ...]
+) -> tuple[np.ndarray, np.ndarray]:
+    # The upstream .view consumer requires owned C-order action buffers.
+    initial = raw[:, :2].copy(order="C")
+    actions = raw[:, 2:172, clamped_nodes].copy(order="C")
+    return initial, actions
+
+
 def verify_native_primary(
     model: dict[str, np.ndarray],
     predictions: dict[str, np.ndarray],
@@ -216,8 +225,7 @@ def verify_native_primary(
     from bayesian_phystwin_experiments.deform_state_restart import RodState
 
     config = config_for_object(parent, item)
-    initial = raw[:, :2]
-    actions = raw[:, 2:172, item["clamped_nodes"]]
+    initial, actions = native_replay_inputs(raw, item["clamped_nodes"])
     checkpoint = torch.load(
         item["checkpoint"]["path"], map_location="cpu", weights_only=True
     )["model_state_dict"]
@@ -253,7 +261,8 @@ def verify_native_primary(
 
 
 def verify(args: argparse.Namespace) -> dict[str, Any]:
-    sys.path.insert(0, str(ROOT / "scripts/remote"))
+    prediction_root = getattr(args, "prediction_source_root", None) or ROOT
+    sys.path.insert(0, str(prediction_root / "scripts/remote"))
     import run_deform_dlo_source as source
     import run_deform_forecast_aware_sensing as runner
     import verify_deform_multiobject_state_restart as metric_verifier
@@ -261,7 +270,9 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
     receipt = runner.multi.native.verify_source(
         args.source_receipt, args.source_receipt_sha256
     )
-    protocol, parent = runner.load_protocol(ROOT / runner.PROTOCOL, ROOT)
+    protocol, parent = runner.load_protocol(
+        prediction_root / runner.PROTOCOL, prediction_root
+    )
     barrier = runner.validate_barrier(
         args.run, protocol, parent, receipt, file_digest(args.source_receipt)
     )
@@ -430,6 +441,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         "passed": True,
         "source_revision": receipt["revision"],
         "source_receipt_sha256": file_digest(args.source_receipt),
+        "verifier_file_sha256": file_digest(Path(__file__).resolve()),
+        "prediction_source_root": str(prediction_root.resolve()),
         "prediction_barrier_sha256": file_digest(args.run / "prediction_barrier.json"),
         "result_sha256": file_digest(args.run / "result.json"),
         "forecasts_metric_recomputed": verified,
@@ -451,6 +464,11 @@ def main() -> None:
     parser.add_argument("--source-receipt-sha256", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--native-replay", action="store_true")
+    parser.add_argument(
+        "--prediction-source-root",
+        type=Path,
+        help="Verify an untouched prediction checkout with a separate analysis script.",
+    )
     args = parser.parse_args()
     print(json.dumps(verify(args), sort_keys=True), flush=True)
 
