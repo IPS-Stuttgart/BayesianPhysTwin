@@ -124,7 +124,9 @@ def _aggregate(weights: FloatArray, classes: IntArray) -> FloatArray:
 def _relative_entropy(posterior: FloatArray, prior: FloatArray, *, name: str) -> float:
     positive = posterior > 0.0
     if np.any(prior[positive] <= 0.0):
-        raise ValueError(f"{name} is not absolutely continuous with respect to prior")
+        raise ValueError(
+            f"{name} is not absolutely continuous with respect to prior"
+        )
     result = float(
         np.sum(
             posterior[positive]
@@ -321,7 +323,9 @@ def minimum_information_query_lift(
         name="quotient_posterior_weights",
         expected_size=prior_quotient.size,
     )
-    unsupported = (quotient_posterior > 0.0) & (prior_quotient <= 0.0)
+    unsupported = (
+        quotient_posterior > 0.0
+    ) & (prior_quotient <= 0.0)
     if np.any(unsupported):
         raise ValueError(
             "positive quotient posterior mass has zero prior support for classes "
