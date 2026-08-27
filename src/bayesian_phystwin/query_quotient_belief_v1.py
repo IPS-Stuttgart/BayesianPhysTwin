@@ -84,9 +84,7 @@ def _class_index(value: object, *, expected_size: int | None = None) -> IntArray
     if array.ndim != 1 or array.size == 0:
         raise ValueError("class_index must be a nonempty one-dimensional vector")
     if expected_size is not None and array.size != expected_size:
-        raise ValueError(
-            f"class_index must contain exactly {expected_size} entries"
-        )
+        raise ValueError(f"class_index must contain exactly {expected_size} entries")
     if np.any(array < 0):
         raise ValueError("class_index labels must be nonnegative")
     unique = np.unique(array)
@@ -124,9 +122,7 @@ def _aggregate(weights: FloatArray, classes: IntArray) -> FloatArray:
 def _relative_entropy(posterior: FloatArray, prior: FloatArray, *, name: str) -> float:
     positive = posterior > 0.0
     if np.any(prior[positive] <= 0.0):
-        raise ValueError(
-            f"{name} is not absolutely continuous with respect to prior"
-        )
+        raise ValueError(f"{name} is not absolutely continuous with respect to prior")
     result = float(
         np.sum(
             posterior[positive]
@@ -323,9 +319,7 @@ def minimum_information_query_lift(
         name="quotient_posterior_weights",
         expected_size=prior_quotient.size,
     )
-    unsupported = (
-        quotient_posterior > 0.0
-    ) & (prior_quotient <= 0.0)
+    unsupported = (quotient_posterior > 0.0) & (prior_quotient <= 0.0)
     if np.any(unsupported):
         raise ValueError(
             "positive quotient posterior mass has zero prior support for classes "
@@ -377,9 +371,7 @@ def query_ambiguity_envelope(
     if values.ndim == 1:
         values = values[:, None]
     if values.ndim != 2 or values.shape[0] != classes.size:
-        raise ValueError(
-            "downstream_values must have one row per physical hypothesis"
-        )
+        raise ValueError("downstream_values must have one row per physical hypothesis")
     if values.shape[1] == 0:
         raise ValueError("downstream_values must contain at least one endpoint")
     if not np.all(np.isfinite(values)):
