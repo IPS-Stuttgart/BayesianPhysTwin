@@ -1,0 +1,60 @@
+{
+  "schema": "deform-forecast-aware-sensing-v1",
+  "scope": "exploratory-only-on-the-already-open-three-object-roster",
+  "parent_source_revision": "8851fb5d3b1c5d69668258aa5350edda77b00165",
+  "parent_protocol": {
+    "path": "configs/sota/deform_multiobject_state_restart_v1.json",
+    "sha256": "6ea78a8d4c412d1fbd3423e388bbfd85b78696e619a29ab6a961ab807e08af17"
+  },
+  "parent_prediction_root": "/home/florianpfaff/source-only/deform-multiobject-restart-8851fb5d/run-v1",
+  "parent_prediction_barrier_sha256": "1bee71aab51e5632316ae247d703484578f6eeb88f1ef2a32affc3e2915ece37",
+  "primary_arm": "forecast_8",
+  "comparison_arm": "uniform_8",
+  "sensing": {
+    "anchor_frame": 25,
+    "query_frames": [25, 33, 41, 49],
+    "position_std_m": 0.01,
+    "velocity_std_m_s": 0.1,
+    "shared_bias_std_m": 0.005,
+    "measurement_std_m": 0.001,
+    "finite_difference_fraction": 0.1,
+    "maximum_position_increment_m": 0.03,
+    "maximum_velocity_increment_m_s": 0.3,
+    "budgets": [4, 8, 12, 16],
+    "random_repetitions": 4,
+    "random_seed": 260831,
+    "temporal_time_constants_s": [0.1, 0.3, 1.0]
+  },
+  "noise": {
+    "conditions": ["independent_1mm", "independent_1mm_shared_5mm"],
+    "repetitions": 8,
+    "seed": 260832,
+    "independent_std_m": 0.001,
+    "shared_std_m": 0.005
+  },
+  "noise_native_arms": ["uniform_8", "forecast_8", "previous_paired_8"],
+  "selection": "greedy expected hidden-future mean squared position variance reduction with shared-bias marginalization",
+  "current_shape_control": "same greedy rule using prefix-end free-node position variance",
+  "uniform_control": "all four allowed identities at the latest budget/4 query times",
+  "random_control": "four frozen random eight-query schedules; score separately without ensembling point means",
+  "primary_gate": {
+    "objects": ["DLO1", "DLO3"],
+    "both_point_metrics_better_than_incumbent_and_uniform_on_each": true,
+    "minimum_rmse_improvement_over_uniform_percent_on_each": 2.0,
+    "must_beat_every_frozen_temporal_control_on_both_metrics": true,
+    "late_rmse_nonincreasing_over_incumbent_on_each": true,
+    "minimum_joint_wins_over_incumbent_on_each": 5,
+    "noise_and_secondary_budgets_cannot_rescue_primary": true
+  },
+  "all_predictions_sealed_before_new_metrics": true,
+  "protected_data_access": false,
+  "new_official_evaluation": false,
+  "checkpoint_or_readout_refitting": false,
+  "automatic_promotion": false,
+  "future_free_node_truth_is_model_input": false,
+  "measurement_values_used_in_schedule_selection": false,
+  "predictive_covariance_calibration_claim": false,
+  "future_clamped_actions_known_under_parent_contract": true,
+  "outcome_publication": "local-or-private-paper-evidence-only",
+  "technical_failure_policy": "retain failure and block advancement; no replacement or outcome-driven retry"
+}
