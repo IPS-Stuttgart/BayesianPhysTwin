@@ -1,0 +1,20 @@
+{
+  "schema": "deform-state-restart-noise-dev-v1",
+  "parent_source_revision": "b85b81623ce9d982d4dee32647a00342cea706cb",
+  "parent_result_sha256": "0e83bca3c39f3a6807698fe6c9c20606196943d9ba20545ad6226de917b1f85d",
+  "parent_barrier_sha256": "7e27713d02cf0a1b84a04f1f5bc3682728fe7614aae60121005aace3313c508c",
+  "parent_predictions_sha256": "a1b940359753c0d6dccda7f1709237b1d6d3cc2a8f6f0d96d670d7a4bd1beff4",
+  "parent_config": "configs/sota/deform_sparse_state_restart_dev_v1.json",
+  "scope": "post-parent-outcome-exploratory-robustness-already-open-dlo2",
+  "conditions": ["independent_1mm", "independent_1mm_shared_5mm"],
+  "independent_noise_std_m": 0.001,
+  "shared_bias_std_m": 0.005,
+  "repetitions": 16,
+  "seed": 260830,
+  "arms": ["incumbent", "readout_sparse_pose", "propagated_pose_velocity_full", "propagated_pose_velocity_quarter"],
+  "gains": [1.0, 0.25],
+  "noise_is_simulated_not_estimated_from_real_sensors": true,
+  "bootstrap_unit": "whole-trajectory-after-averaging-within-trajectory-noise-repetitions",
+  "predictions_sealed_before_metrics": true,
+  "fresh_confirmation_authorized": false
+}
