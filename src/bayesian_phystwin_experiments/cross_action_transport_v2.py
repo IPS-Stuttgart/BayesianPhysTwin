@@ -313,9 +313,7 @@ class CrossActionProtocolV2:
             raise ValueError(
                 "minimum_accepted_physical_sessions cannot exceed the frozen roster"
             )
-        object.__setattr__(
-            self, "minimum_accepted_physical_sessions", minimum_accepted
-        )
+        object.__setattr__(self, "minimum_accepted_physical_sessions", minimum_accepted)
         object.__setattr__(
             self,
             "bootstrap_replicates",
@@ -368,9 +366,7 @@ class CrossActionProtocolV2:
                 "harm cap is impossible for the frozen session roster "
                 "at the registered confidence level"
             )
-        lower_is_better = genuine_boolean(
-            self.lower_is_better, name="lower_is_better"
-        )
+        lower_is_better = genuine_boolean(self.lower_is_better, name="lower_is_better")
         if not lower_is_better:
             raise ValueError("v2 requires a lower-is-better registered score")
         object.__setattr__(self, "lower_is_better", lower_is_better)
@@ -862,6 +858,17 @@ class CrossActionTransportResultV2:
                 != 1
             ):
                 raise ValueError("all arms in one session must share one baseline")
+            for arm, row in arm_rows.items():
+                if (
+                    arm is not TransportArm.PHYSICAL_FALLBACK
+                    and row.prediction.disposition
+                    is PredictionDisposition.EXACT_FALLBACK
+                    and row.proper_score != baseline_row.proper_score
+                ):
+                    raise ValueError(
+                        "exact-fallback predictions must score identically to "
+                        "physical fallback"
+                    )
 
         summaries: list[ArmTransportSummaryV2] = []
         session_gain: dict[TransportArm, np.ndarray] = {}
@@ -902,8 +909,7 @@ class CrossActionTransportResultV2:
                 )
                 harmful_selected = int(
                     np.count_nonzero(
-                        selected_mask
-                        & (values < -self.protocol.harmful_gain_margin)
+                        selected_mask & (values < -self.protocol.harmful_gain_margin)
                     )
                 )
                 selected_count = int(np.count_nonzero(selected_mask))
@@ -973,14 +979,11 @@ class CrossActionTransportResultV2:
             ):
                 decision = SparseTransportDecision.INSUFFICIENT_ACCEPTED_UPDATES
             elif (
-                physical_summary.gain_interval[0]
-                > self.protocol.minimum_transport_gain
+                physical_summary.gain_interval[0] > self.protocol.minimum_transport_gain
                 and discrepancy_interval is not None
-                and discrepancy_interval[0]
-                > self.protocol.minimum_discrepancy_contrast
+                and discrepancy_interval[0] > self.protocol.minimum_discrepancy_contrast
                 and comparator_interval is not None
-                and comparator_interval[0]
-                > self.protocol.minimum_comparator_contrast
+                and comparator_interval[0] > self.protocol.minimum_comparator_contrast
                 and physical_summary.harmful_accepted_fraction_upper
                 <= self.protocol.maximum_harmful_accepted_fraction
             ):
@@ -996,9 +999,7 @@ class CrossActionTransportResultV2:
         object.__setattr__(self, "independent_session_count", len(scored_sessions))
         object.__setattr__(self, "arm_summaries", tuple(summaries))
         object.__setattr__(self, "discrepancy_contrast", discrepancy_contrast)
-        object.__setattr__(
-            self, "discrepancy_contrast_interval", discrepancy_interval
-        )
+        object.__setattr__(self, "discrepancy_contrast_interval", discrepancy_interval)
         object.__setattr__(self, "comparator_contrast", comparator_contrast)
         object.__setattr__(self, "comparator_contrast_interval", comparator_interval)
         object.__setattr__(self, "decision", decision)
@@ -1013,9 +1014,7 @@ class CrossActionTransportResultV2:
             "protocol_id": self.protocol.protocol_id,
             "target_accounting_id": self.target_accounting_id,
             "excluded_session_ids": list(self.excluded_session_ids),
-            "technical_failure_session_ids": list(
-                self.technical_failure_session_ids
-            ),
+            "technical_failure_session_ids": list(self.technical_failure_session_ids),
             "score_row_ids": [row.score_row_id for row in self.score_rows],
             "independent_session_count": self.independent_session_count,
             "arm_summaries": [summary.descriptor() for summary in self.arm_summaries],
@@ -1048,9 +1047,7 @@ class CrossActionTransportResultV2:
             "supports_physical_transport": self.supports_physical_transport,
             "independent_session_count": self.independent_session_count,
             "excluded_session_count": len(self.excluded_session_ids),
-            "technical_failure_session_count": len(
-                self.technical_failure_session_ids
-            ),
+            "technical_failure_session_count": len(self.technical_failure_session_ids),
             "discrepancy_contrast": self.discrepancy_contrast,
             "discrepancy_contrast_interval": (
                 None
