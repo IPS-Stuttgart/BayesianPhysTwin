@@ -17,6 +17,10 @@ tests proving identical values, unchanged input, and owned contiguous buffers.
 An explicit `--prediction-source-root` permits running the amended checker from
 outside the untouched frozen prediction checkout. The checker still verifies
 every original source-receipt entry and records its own file SHA-256 separately.
+The first standalone invocation also exposed a missing import path for the
+pre-existing metric verifier. It stopped before verification began. The amended
+checker explicitly adds both the frozen `scripts` and `scripts/remote` paths;
+both unsuccessful checker logs are retained with the final successful audit.
 
 No likelihood, inference, query schedule, native prediction, metric, threshold,
 denominator, protected-data boundary, or decision changes. The empirical run is

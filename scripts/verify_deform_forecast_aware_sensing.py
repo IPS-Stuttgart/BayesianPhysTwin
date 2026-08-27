@@ -262,6 +262,7 @@ def verify_native_primary(
 
 def verify(args: argparse.Namespace) -> dict[str, Any]:
     prediction_root = getattr(args, "prediction_source_root", None) or ROOT
+    sys.path.insert(0, str(prediction_root / "scripts"))
     sys.path.insert(0, str(prediction_root / "scripts/remote"))
     import run_deform_dlo_source as source
     import run_deform_forecast_aware_sensing as runner
