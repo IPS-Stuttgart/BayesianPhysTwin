@@ -9,14 +9,14 @@ remaining ambiguity of downstream physical quantities.
 from __future__ import annotations
 
 from numbers import Real
-from typing import Final, NamedTuple
+from typing import Final, NamedTuple, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
 
-FloatArray = npt.NDArray[np.float64]
-IntArray = npt.NDArray[np.int64]
-BoolArray = npt.NDArray[np.bool_]
+FloatArray: TypeAlias = npt.NDArray[np.float64]
+IntArray: TypeAlias = npt.NDArray[np.int64]
+BoolArray: TypeAlias = npt.NDArray[np.bool_]
 
 QUERY_QUOTIENT_BELIEF_VERSION: Final = 1
 QUERY_QUOTIENT_BELIEF_SEMANTICS: Final = (
@@ -271,7 +271,7 @@ def query_quotient_information_decomposition(
         name="posterior_quotient_weights",
     )
 
-    contributions = np.zeros(_class_count(classes), dtype=np.float64)
+    contributions: FloatArray = np.zeros(_class_count(classes), dtype=np.float64)
     for class_id in range(contributions.size):
         posterior_mass = float(posterior_quotient[class_id])
         if posterior_mass == 0.0:
@@ -381,7 +381,9 @@ def query_ambiguity_envelope(
         name="identifiability_tolerance",
     )
 
-    class_minimum = np.empty((quotient.size, values.shape[1]), dtype=np.float64)
+    class_minimum: FloatArray = np.empty(
+        (quotient.size, values.shape[1]), dtype=np.float64
+    )
     class_maximum = np.empty_like(class_minimum)
     for class_id in range(quotient.size):
         members = values[classes == class_id]
