@@ -1,0 +1,66 @@
+name: Revert unsupported new-data physicality pathway
+
+on:
+  push:
+    branches:
+      - revert/remove-physicality-pathway-final2
+
+permissions:
+  contents: write
+
+jobs:
+  revert:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: revert/remove-physicality-pathway-final2
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Remove future-acquisition-only extension
+        shell: bash
+        run: |
+          rm -f \
+            src/bayesian_phystwin_experiments/cross_action_placebo_v2.py \
+            tests/test_cross_action_placebo_v2.py \
+            docs/cross_action_placebo_v2.md
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("CHANGELOG.md")
+          text = path.read_text()
+          bullet = (
+              "- Added a target-closed chronological broken-mechanism physicality "
+              "certificate that binds four source-prefix-only placebos to the "
+              "cross-action v2 parent, enforces exact fallback, and uses joint "
+              "familywise session-bootstrap bounds.\n"
+          )
+          if bullet not in text:
+              raise SystemExit("expected chronological placebo changelog entry not found")
+          path.write_text(text.replace(bullet, "", 1))
+          PY
+      - name: Validate remaining existing protocol
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m ruff check -- src/bayesian_phystwin_experiments tests
+          python -m pytest -q tests/test_cross_action_transport_v2.py tests/test_cross_action_placebo_v1.py
+          if git grep -n "cross_action_placebo_v2\|chronological broken-mechanism physicality" -- ':!CHANGELOG.md'; then
+            echo "stale future-acquisition references remain" >&2
+            exit 1
+          fi
+          git diff --check
+      - name: Publish clean revert and remove one-shot workflow
+        shell: bash
+        run: |
+          rm .github/workflows/revert-remove-new-data-physicality.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove unsupported new-data physicality pathway"
+          git push origin HEAD:revert/remove-physicality-pathway-final2
