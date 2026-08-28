@@ -1,0 +1,1937 @@
+{
+  "accounting": {
+    "exact_fallback_technical_failure": 0,
+    "ordinary_success": 14,
+    "prediction_count": 14,
+    "unsealable": 0
+  },
+  "analysis_count": 13,
+  "artifact_id": "239d63202d6511f13cedb1f71ba4139b1c5190531a8e67a9915d1915c0ff3e11",
+  "contrasts": {
+    "half_blend": {
+      "rmse_difference_mm": -1.49794672827008,
+      "trajectory_bootstrap_ci95_mm": [
+        -3.2620428077229677,
+        0.2143249100159865
+      ]
+    },
+    "incumbent": {
+      "rmse_difference_mm": -1.294596640616788,
+      "trajectory_bootstrap_ci95_mm": [
+        -3.0902177185767177,
+        0.3048293305750032
+      ]
+    },
+    "paired": {
+      "rmse_difference_mm": 1.2531870774499354,
+      "trajectory_bootstrap_ci95_mm": [
+        0.4828451097477657,
+        2.1331410498941747
+      ]
+    },
+    "readout": {
+      "rmse_difference_mm": -8.680402896184766,
+      "trajectory_bootstrap_ci95_mm": [
+        -14.746278145696616,
+        -3.1359401413355874
+      ]
+    }
+  },
+  "fresh_confirmation": false,
+  "gate": {
+    "checks": {
+      "all_14_ordinary_predictions": true,
+      "at_least_2_percent_rmse_gain_over_every_control": false,
+      "at_least_9_of_13_joint_wins_over_paired": false,
+      "every_case_rmse_at_most_1_05_times_incumbent": false,
+      "late_rmse_no_worse_than_incumbent_and_paired": false,
+      "lower_l1_than_every_control": false,
+      "rmse_difference_upper_bound_below_zero_against_every_control": false
+    },
+    "passed": false
+  },
+  "joint_wins_over_paired": 1,
+  "metrics": {
+    "constraint_split": {
+      "cases": {
+        "104.pkl": {
+          "all": {
+            "coordinate_l1_mm": 5.782301541164903,
+            "fde_mm": 6.723160442460096,
+            "point_rmse_mm": 12.417374434216383
+          },
+          "early": {
+            "coordinate_l1_mm": 3.8558795384068683,
+            "fde_mm": 8.790677035221298,
+            "point_rmse_mm": 8.657187794457979
+          },
+          "late": {
+            "coordinate_l1_mm": 7.409707078810927,
+            "fde_mm": 6.723160442460096,
+            "point_rmse_mm": 15.317853638044937
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.0813180062769145,
+            "fde_mm": 16.744926984688167,
+            "point_rmse_mm": 12.368913571268621
+          }
+        },
+        "115.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.951443086425595,
+            "fde_mm": 19.144760633785612,
+            "point_rmse_mm": 30.497904280302087
+          },
+          "early": {
+            "coordinate_l1_mm": 10.147883801828389,
+            "fde_mm": 18.136361659239267,
+            "point_rmse_mm": 24.173921667823794
+          },
+          "late": {
+            "coordinate_l1_mm": 16.144826794424095,
+            "fde_mm": 19.144760633785612,
+            "point_rmse_mm": 38.30624244461553
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.561618663024305,
+            "fde_mm": 11.430748322555361,
+            "point_rmse_mm": 27.177560549903294
+          }
+        },
+        "119.pkl": {
+          "all": {
+            "coordinate_l1_mm": 14.784632621770422,
+            "fde_mm": 34.94979145302037,
+            "point_rmse_mm": 32.52856286419335
+          },
+          "early": {
+            "coordinate_l1_mm": 12.696310416474843,
+            "fde_mm": 25.643960793096202,
+            "point_rmse_mm": 28.227095498563177
+          },
+          "late": {
+            "coordinate_l1_mm": 14.722083776691589,
+            "fde_mm": 34.94979145302037,
+            "point_rmse_mm": 31.62499540208464
+          },
+          "middle": {
+            "coordinate_l1_mm": 16.935503672144844,
+            "fde_mm": 32.46586242923447,
+            "point_rmse_mm": 37.113514405974215
+          }
+        },
+        "13.pkl": {
+          "all": {
+            "coordinate_l1_mm": 9.25159990503354,
+            "fde_mm": 21.35892981833677,
+            "point_rmse_mm": 22.84030113367895
+          },
+          "early": {
+            "coordinate_l1_mm": 5.440601863481309,
+            "fde_mm": 9.600024677206964,
+            "point_rmse_mm": 12.056856158132666
+          },
+          "late": {
+            "coordinate_l1_mm": 12.347272967563208,
+            "fde_mm": 21.35892981833677,
+            "point_rmse_mm": 29.111974895396898
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.966924884056105,
+            "fde_mm": 20.34968676885692,
+            "point_rmse_mm": 23.919933212768118
+          }
+        },
+        "21.pkl": {
+          "all": {
+            "coordinate_l1_mm": 4.700673770444848,
+            "fde_mm": 15.785765037673393,
+            "point_rmse_mm": 10.652865162555173
+          },
+          "early": {
+            "coordinate_l1_mm": 4.3481369719214245,
+            "fde_mm": 14.407530618329785,
+            "point_rmse_mm": 9.595631772957214
+          },
+          "late": {
+            "coordinate_l1_mm": 5.425696077362758,
+            "fde_mm": 15.785765037673393,
+            "point_rmse_mm": 12.831594678572914
+          },
+          "middle": {
+            "coordinate_l1_mm": 4.32818826205036,
+            "fde_mm": 7.181889723806663,
+            "point_rmse_mm": 9.1501167969255
+          }
+        },
+        "30.pkl": {
+          "all": {
+            "coordinate_l1_mm": 7.7645292713561975,
+            "fde_mm": 12.467988779087168,
+            "point_rmse_mm": 19.138955920755443
+          },
+          "early": {
+            "coordinate_l1_mm": 7.713947372214386,
+            "fde_mm": 8.854269425380553,
+            "point_rmse_mm": 19.189587654592636
+          },
+          "late": {
+            "coordinate_l1_mm": 9.020007971324647,
+            "fde_mm": 12.467988779087168,
+            "point_rmse_mm": 21.525060075866183
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.559632470529562,
+            "fde_mm": 24.36771296085359,
+            "point_rmse_mm": 16.35024206508628
+          }
+        },
+        "41.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.800396448747907,
+            "fde_mm": 33.34351342743685,
+            "point_rmse_mm": 25.90608050177081
+          },
+          "early": {
+            "coordinate_l1_mm": 11.820662521780912,
+            "fde_mm": 22.151400218298857,
+            "point_rmse_mm": 26.179189653337215
+          },
+          "late": {
+            "coordinate_l1_mm": 10.799499282816475,
+            "fde_mm": 33.34351342743685,
+            "point_rmse_mm": 24.55147861997608
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.781027541646337,
+            "fde_mm": 20.458652244172185,
+            "point_rmse_mm": 26.930465045374707
+          }
+        },
+        "43.pkl": {
+          "all": {
+            "coordinate_l1_mm": 17.18342313895395,
+            "fde_mm": 40.25871733610428,
+            "point_rmse_mm": 42.6023479087537
+          },
+          "early": {
+            "coordinate_l1_mm": 11.814221728381517,
+            "fde_mm": 13.025467909156236,
+            "point_rmse_mm": 28.697039221576926
+          },
+          "late": {
+            "coordinate_l1_mm": 21.474679232908017,
+            "fde_mm": 40.25871733610428,
+            "point_rmse_mm": 54.938470000482056
+          },
+          "middle": {
+            "coordinate_l1_mm": 18.261368455572317,
+            "fde_mm": 23.086383811459758,
+            "point_rmse_mm": 40.03903839925333
+          }
+        },
+        "5.pkl": {
+          "all": {
+            "coordinate_l1_mm": 9.01898023702178,
+            "fde_mm": 11.779945282879606,
+            "point_rmse_mm": 23.420463719157684
+          },
+          "early": {
+            "coordinate_l1_mm": 4.978623055930534,
+            "fde_mm": 9.424566511074692,
+            "point_rmse_mm": 11.605299557757059
+          },
+          "late": {
+            "coordinate_l1_mm": 9.510551435019583,
+            "fde_mm": 11.779945282879606,
+            "point_rmse_mm": 22.424531194988113
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.567766220115224,
+            "fde_mm": 37.470542110602906,
+            "point_rmse_mm": 31.749201333590626
+          }
+        },
+        "59.pkl": {
+          "all": {
+            "coordinate_l1_mm": 13.170056343930396,
+            "fde_mm": 28.73756863005739,
+            "point_rmse_mm": 30.03681240254336
+          },
+          "early": {
+            "coordinate_l1_mm": 7.794206829869837,
+            "fde_mm": 28.063986445735846,
+            "point_rmse_mm": 18.80221697941637
+          },
+          "late": {
+            "coordinate_l1_mm": 17.376869961925074,
+            "fde_mm": 28.73756863005739,
+            "point_rmse_mm": 38.97975671514824
+          },
+          "middle": {
+            "coordinate_l1_mm": 14.339092239996273,
+            "fde_mm": 32.18996517274908,
+            "point_rmse_mm": 28.87361253815584
+          }
+        },
+        "71.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.306764897368142,
+            "fde_mm": 6.1697975018023845,
+            "point_rmse_mm": 14.367530466522437
+          },
+          "early": {
+            "coordinate_l1_mm": 3.1451748352209137,
+            "fde_mm": 6.95065371897215,
+            "point_rmse_mm": 6.83088027137978
+          },
+          "late": {
+            "coordinate_l1_mm": 7.406275134693955,
+            "fde_mm": 6.1697975018023845,
+            "point_rmse_mm": 16.614226069285913
+          },
+          "middle": {
+            "coordinate_l1_mm": 8.368844722189554,
+            "fde_mm": 13.0190331734938,
+            "point_rmse_mm": 17.221624834959275
+          }
+        },
+        "86.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.648182967671573,
+            "fde_mm": 14.080541878391783,
+            "point_rmse_mm": 26.009898280838758
+          },
+          "early": {
+            "coordinate_l1_mm": 5.006019057318271,
+            "fde_mm": 9.485509311533702,
+            "point_rmse_mm": 11.068773936406926
+          },
+          "late": {
+            "coordinate_l1_mm": 17.532874696208907,
+            "fde_mm": 14.080541878391783,
+            "point_rmse_mm": 37.7243961317383
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.405655149487544,
+            "fde_mm": 36.62867129757391,
+            "point_rmse_mm": 21.997650005833442
+          }
+        },
+        "87.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.798427355331327,
+            "fde_mm": 24.912599206299344,
+            "point_rmse_mm": 25.72983377635617
+          },
+          "early": {
+            "coordinate_l1_mm": 11.28028358140781,
+            "fde_mm": 13.090940472884318,
+            "point_rmse_mm": 26.66788998941275
+          },
+          "late": {
+            "coordinate_l1_mm": 13.914259038071227,
+            "fde_mm": 24.912599206299344,
+            "point_rmse_mm": 31.819325579935324
+          },
+          "middle": {
+            "coordinate_l1_mm": 7.200739446514949,
+            "fde_mm": 28.822798170289758,
+            "point_rmse_mm": 16.19960498368431
+          }
+        }
+      },
+      "mean": {
+        "all": {
+          "coordinate_l1_mm": 10.320108583478506,
+          "fde_mm": 20.747159955948845,
+          "point_rmse_mm": 24.319148527049563
+        },
+        "early": {
+          "coordinate_l1_mm": 7.695534736479771,
+          "fde_mm": 14.432719138163835,
+          "point_rmse_mm": 17.82704385813958
+        },
+        "late": {
+          "coordinate_l1_mm": 12.54496949598619,
+          "fde_mm": 20.747159955948845,
+          "point_rmse_mm": 28.90537734201039
+        },
+        "middle": {
+          "coordinate_l1_mm": 10.71982151796956,
+          "fde_mm": 23.401297936179738,
+          "point_rmse_mm": 23.7762675186752
+        }
+      }
+    },
+    "half_blend": {
+      "cases": {
+        "104.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.121563298487599,
+            "fde_mm": 7.329649034661105,
+            "point_rmse_mm": 13.117766351650873
+          },
+          "early": {
+            "coordinate_l1_mm": 4.090577040100538,
+            "fde_mm": 10.03482104051437,
+            "point_rmse_mm": 8.435032841079497
+          },
+          "late": {
+            "coordinate_l1_mm": 8.266641400210874,
+            "fde_mm": 7.329649034661105,
+            "point_rmse_mm": 17.144238213226217
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.00747145515138,
+            "fde_mm": 16.444478498011172,
+            "point_rmse_mm": 12.29441740090094
+          }
+        },
+        "115.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.083599662792551,
+            "fde_mm": 19.557804847069747,
+            "point_rmse_mm": 27.36199958717722
+          },
+          "early": {
+            "coordinate_l1_mm": 8.36722292222815,
+            "fde_mm": 16.1040732745991,
+            "point_rmse_mm": 19.007141045026863
+          },
+          "late": {
+            "coordinate_l1_mm": 14.039274538110817,
+            "fde_mm": 19.557804847069747,
+            "point_rmse_mm": 32.48145738868175
+          },
+          "middle": {
+            "coordinate_l1_mm": 13.844301528038683,
+            "fde_mm": 15.145974727918302,
+            "point_rmse_mm": 28.804870758740883
+          }
+        },
+        "119.pkl": {
+          "all": {
+            "coordinate_l1_mm": 15.480744945141522,
+            "fde_mm": 21.08085980322146,
+            "point_rmse_mm": 36.65795804828801
+          },
+          "early": {
+            "coordinate_l1_mm": 14.571828490896362,
+            "fde_mm": 29.089322030083657,
+            "point_rmse_mm": 34.74647493179476
+          },
+          "late": {
+            "coordinate_l1_mm": 15.353082262314874,
+            "fde_mm": 21.08085980322146,
+            "point_rmse_mm": 36.34063565921585
+          },
+          "middle": {
+            "coordinate_l1_mm": 16.517324082213328,
+            "fde_mm": 24.829367567796204,
+            "point_rmse_mm": 38.77445479318076
+          }
+        },
+        "13.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.35941120260938,
+            "fde_mm": 16.170432794071914,
+            "point_rmse_mm": 28.23754778845919
+          },
+          "early": {
+            "coordinate_l1_mm": 9.677698443240324,
+            "fde_mm": 12.307332911432402,
+            "point_rmse_mm": 21.241110113690777
+          },
+          "late": {
+            "coordinate_l1_mm": 16.679193573717974,
+            "fde_mm": 16.170432794071914,
+            "point_rmse_mm": 39.24159087687831
+          },
+          "middle": {
+            "coordinate_l1_mm": 7.721341590869847,
+            "fde_mm": 24.759446793695943,
+            "point_rmse_mm": 20.024737249370183
+          }
+        },
+        "21.pkl": {
+          "all": {
+            "coordinate_l1_mm": 4.553635323137607,
+            "fde_mm": 16.489081996877616,
+            "point_rmse_mm": 10.220300978530068
+          },
+          "early": {
+            "coordinate_l1_mm": 4.255158261819456,
+            "fde_mm": 13.666634925189241,
+            "point_rmse_mm": 9.57123848716863
+          },
+          "late": {
+            "coordinate_l1_mm": 4.836686524031841,
+            "fde_mm": 16.489081996877616,
+            "point_rmse_mm": 11.34767275274524
+          },
+          "middle": {
+            "coordinate_l1_mm": 4.569061183561526,
+            "fde_mm": 5.398007135336764,
+            "point_rmse_mm": 9.642892366586553
+          }
+        },
+        "30.pkl": {
+          "all": {
+            "coordinate_l1_mm": 7.164390069604908,
+            "fde_mm": 14.843148053515943,
+            "point_rmse_mm": 17.1042346786162
+          },
+          "early": {
+            "coordinate_l1_mm": 7.04297779521064,
+            "fde_mm": 9.385892158579294,
+            "point_rmse_mm": 16.46843787350283
+          },
+          "late": {
+            "coordinate_l1_mm": 8.415925184535022,
+            "fde_mm": 14.843148053515943,
+            "point_rmse_mm": 19.293622695104244
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.03426722906906,
+            "fde_mm": 21.6569531318095,
+            "point_rmse_mm": 15.30396057003112
+          }
+        },
+        "41.pkl": {
+          "all": {
+            "coordinate_l1_mm": 13.45962661418004,
+            "fde_mm": 29.83636194741898,
+            "point_rmse_mm": 32.52369414077287
+          },
+          "early": {
+            "coordinate_l1_mm": 13.084580614890482,
+            "fde_mm": 45.930598784075585,
+            "point_rmse_mm": 32.85445310932312
+          },
+          "late": {
+            "coordinate_l1_mm": 13.88091828414392,
+            "fde_mm": 29.83636194741898,
+            "point_rmse_mm": 33.92268922214276
+          },
+          "middle": {
+            "coordinate_l1_mm": 13.413380943505718,
+            "fde_mm": 20.87744858707637,
+            "point_rmse_mm": 30.71169335143926
+          }
+        },
+        "43.pkl": {
+          "all": {
+            "coordinate_l1_mm": 17.73435277940928,
+            "fde_mm": 40.28703000910216,
+            "point_rmse_mm": 44.662167120877825
+          },
+          "early": {
+            "coordinate_l1_mm": 13.052344648908532,
+            "fde_mm": 15.698302034887462,
+            "point_rmse_mm": 32.768634552516644
+          },
+          "late": {
+            "coordinate_l1_mm": 22.046172281409923,
+            "fde_mm": 40.28703000910216,
+            "point_rmse_mm": 57.33975256262871
+          },
+          "middle": {
+            "coordinate_l1_mm": 18.10454140790939,
+            "fde_mm": 17.72179284553536,
+            "point_rmse_mm": 40.280229411210996
+          }
+        },
+        "5.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.801550241417809,
+            "fde_mm": 14.253209062727246,
+            "point_rmse_mm": 30.615014612315345
+          },
+          "early": {
+            "coordinate_l1_mm": 13.040670560619821,
+            "fde_mm": 22.367926877587355,
+            "point_rmse_mm": 28.77917618082825
+          },
+          "late": {
+            "coordinate_l1_mm": 10.559180103501294,
+            "fde_mm": 14.253209062727246,
+            "point_rmse_mm": 25.214759757991917
+          },
+          "middle": {
+            "coordinate_l1_mm": 14.804800060132317,
+            "fde_mm": 50.76662028119021,
+            "point_rmse_mm": 36.71256280670754
+          }
+        },
+        "59.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.922738408605573,
+            "fde_mm": 25.972055410472805,
+            "point_rmse_mm": 31.0206036410609
+          },
+          "early": {
+            "coordinate_l1_mm": 6.388172822394403,
+            "fde_mm": 22.598546861632336,
+            "point_rmse_mm": 15.440812427095464
+          },
+          "late": {
+            "coordinate_l1_mm": 17.56079790563386,
+            "fde_mm": 25.972055410472805,
+            "point_rmse_mm": 41.12327228172744
+          },
+          "middle": {
+            "coordinate_l1_mm": 14.81924449778846,
+            "fde_mm": 35.538706029540215,
+            "point_rmse_mm": 30.940125067645823
+          }
+        },
+        "71.pkl": {
+          "all": {
+            "coordinate_l1_mm": 5.457857041202529,
+            "fde_mm": 5.733070624638979,
+            "point_rmse_mm": 12.550462526302923
+          },
+          "early": {
+            "coordinate_l1_mm": 4.90984785984547,
+            "fde_mm": 7.234997630033717,
+            "point_rmse_mm": 11.484974678525788
+          },
+          "late": {
+            "coordinate_l1_mm": 5.380730531269852,
+            "fde_mm": 5.733070624638979,
+            "point_rmse_mm": 12.736281308501882
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.082992732492266,
+            "fde_mm": 10.043114764658764,
+            "point_rmse_mm": 13.357575526147283
+          }
+        },
+        "86.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.46714052468651,
+            "fde_mm": 15.570409732744212,
+            "point_rmse_mm": 26.191189520765228
+          },
+          "early": {
+            "coordinate_l1_mm": 4.046994520899234,
+            "fde_mm": 7.897536883498849,
+            "point_rmse_mm": 9.102364320792336
+          },
+          "late": {
+            "coordinate_l1_mm": 17.535993658037807,
+            "fde_mm": 15.570409732744212,
+            "point_rmse_mm": 37.70479139881403
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.818433395122486,
+            "fde_mm": 30.509678258869947,
+            "point_rmse_mm": 23.5251120057145
+          }
+        },
+        "87.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.803168891361635,
+            "fde_mm": 19.000931573052107,
+            "point_rmse_mm": 25.359299324338693
+          },
+          "early": {
+            "coordinate_l1_mm": 12.359962386786552,
+            "fde_mm": 13.263330090720837,
+            "point_rmse_mm": 28.17562293652104
+          },
+          "late": {
+            "coordinate_l1_mm": 13.082703994967728,
+            "fde_mm": 19.000931573052107,
+            "point_rmse_mm": 29.639355635423072
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.966840292330624,
+            "fde_mm": 27.487223199341162,
+            "point_rmse_mm": 16.028881942297755
+          }
+        }
+      },
+      "mean": {
+        "all": {
+          "coordinate_l1_mm": 10.800752230972071,
+          "fde_mm": 18.932618837659557,
+          "point_rmse_mm": 25.817095255319643
+        },
+        "early": {
+          "coordinate_l1_mm": 8.837541259064611,
+          "fde_mm": 17.35225503867956,
+          "point_rmse_mm": 20.621190269066613
+        },
+        "late": {
+          "coordinate_l1_mm": 12.89517694168352,
+          "fde_mm": 18.932618837659557,
+          "point_rmse_mm": 30.271547673313965
+        },
+        "middle": {
+          "coordinate_l1_mm": 10.669538492168085,
+          "fde_mm": 23.167600909290762,
+          "point_rmse_mm": 24.33857794230566
+        }
+      }
+    },
+    "incumbent": {
+      "cases": {
+        "104.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.316526834258155,
+            "fde_mm": 7.55207881681374,
+            "point_rmse_mm": 12.972156948209792
+          },
+          "early": {
+            "coordinate_l1_mm": 5.11524073774964,
+            "fde_mm": 10.463040019400218,
+            "point_rmse_mm": 10.352858164585882
+          },
+          "late": {
+            "coordinate_l1_mm": 7.768341878213842,
+            "fde_mm": 7.55207881681374,
+            "point_rmse_mm": 15.504430432222286
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.065997886810984,
+            "fde_mm": 15.971883068625933,
+            "point_rmse_mm": 12.540396024979026
+          }
+        },
+        "115.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.749117905017457,
+            "fde_mm": 17.80109736784486,
+            "point_rmse_mm": 27.555060280533294
+          },
+          "early": {
+            "coordinate_l1_mm": 9.100156469063762,
+            "fde_mm": 10.998025862301512,
+            "point_rmse_mm": 21.686749654273743
+          },
+          "late": {
+            "coordinate_l1_mm": 14.563395006610735,
+            "fde_mm": 17.80109736784486,
+            "point_rmse_mm": 34.65570059267226
+          },
+          "middle": {
+            "coordinate_l1_mm": 11.583802239377876,
+            "fde_mm": 9.483216079939467,
+            "point_rmse_mm": 24.627451087259992
+          }
+        },
+        "119.pkl": {
+          "all": {
+            "coordinate_l1_mm": 14.361762290281227,
+            "fde_mm": 26.45496934473141,
+            "point_rmse_mm": 35.354623715664694
+          },
+          "early": {
+            "coordinate_l1_mm": 19.188326246131762,
+            "fde_mm": 27.17248375583388,
+            "point_rmse_mm": 45.564605703186444
+          },
+          "late": {
+            "coordinate_l1_mm": 10.044801412124023,
+            "fde_mm": 26.45496934473141,
+            "point_rmse_mm": 23.122406565678347
+          },
+          "middle": {
+            "coordinate_l1_mm": 13.852159212587898,
+            "fde_mm": 27.075427318189725,
+            "point_rmse_mm": 33.75010038434473
+          }
+        },
+        "13.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.131563760809726,
+            "fde_mm": 21.598720178468938,
+            "point_rmse_mm": 28.255557729040742
+          },
+          "early": {
+            "coordinate_l1_mm": 8.77411904013767,
+            "fde_mm": 12.490932962252131,
+            "point_rmse_mm": 20.114606588174777
+          },
+          "late": {
+            "coordinate_l1_mm": 14.095203545319139,
+            "fde_mm": 21.598720178468938,
+            "point_rmse_mm": 34.12114239729754
+          },
+          "middle": {
+            "coordinate_l1_mm": 10.52536869697237,
+            "fde_mm": 17.887386760999433,
+            "point_rmse_mm": 28.74508429355813
+          }
+        },
+        "21.pkl": {
+          "all": {
+            "coordinate_l1_mm": 4.0998379521498185,
+            "fde_mm": 13.412955869818386,
+            "point_rmse_mm": 9.48308956683558
+          },
+          "early": {
+            "coordinate_l1_mm": 3.869254388606312,
+            "fde_mm": 12.28469714155286,
+            "point_rmse_mm": 8.493099061773197
+          },
+          "late": {
+            "coordinate_l1_mm": 4.716965785883691,
+            "fde_mm": 13.412955869818386,
+            "point_rmse_mm": 11.639787817012017
+          },
+          "middle": {
+            "coordinate_l1_mm": 3.7132936819594518,
+            "fde_mm": 6.436783111702809,
+            "point_rmse_mm": 7.884768297148837
+          }
+        },
+        "30.pkl": {
+          "all": {
+            "coordinate_l1_mm": 7.184447165085568,
+            "fde_mm": 11.171513277598393,
+            "point_rmse_mm": 17.987549942249853
+          },
+          "early": {
+            "coordinate_l1_mm": 8.006690438344814,
+            "fde_mm": 7.888533996824302,
+            "point_rmse_mm": 18.66929373934872
+          },
+          "late": {
+            "coordinate_l1_mm": 7.99278115827135,
+            "fde_mm": 11.171513277598393,
+            "point_rmse_mm": 19.980303562194273
+          },
+          "middle": {
+            "coordinate_l1_mm": 5.55386989864054,
+            "fde_mm": 22.40087915002387,
+            "point_rmse_mm": 14.9298626789157
+          }
+        },
+        "41.pkl": {
+          "all": {
+            "coordinate_l1_mm": 14.29370293592672,
+            "fde_mm": 29.586945668794286,
+            "point_rmse_mm": 34.2999701613662
+          },
+          "early": {
+            "coordinate_l1_mm": 16.700359298417418,
+            "fde_mm": 45.94452645066548,
+            "point_rmse_mm": 41.56172134123725
+          },
+          "late": {
+            "coordinate_l1_mm": 10.980081657489476,
+            "fde_mm": 29.586945668794286,
+            "point_rmse_mm": 25.604815975315727
+          },
+          "middle": {
+            "coordinate_l1_mm": 15.200667851873266,
+            "fde_mm": 21.456342312222766,
+            "point_rmse_mm": 33.85971909563626
+          }
+        },
+        "43.pkl": {
+          "all": {
+            "coordinate_l1_mm": 17.00968236077211,
+            "fde_mm": 42.178720546031634,
+            "point_rmse_mm": 42.7208340059325
+          },
+          "early": {
+            "coordinate_l1_mm": 12.622695049684985,
+            "fde_mm": 14.115580363311546,
+            "point_rmse_mm": 31.45312005079636
+          },
+          "late": {
+            "coordinate_l1_mm": 21.519341332757392,
+            "fde_mm": 42.178720546031634,
+            "point_rmse_mm": 54.87635360922852
+          },
+          "middle": {
+            "coordinate_l1_mm": 16.887010699873958,
+            "fde_mm": 23.93576701021309,
+            "point_rmse_mm": 38.39916702367932
+          }
+        },
+        "5.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.924342948275125,
+            "fde_mm": 11.170785786103592,
+            "point_rmse_mm": 28.856996246193
+          },
+          "early": {
+            "coordinate_l1_mm": 12.293410289260157,
+            "fde_mm": 24.369056810604317,
+            "point_rmse_mm": 27.989557030842494
+          },
+          "late": {
+            "coordinate_l1_mm": 7.516428115812614,
+            "fde_mm": 11.170785786103592,
+            "point_rmse_mm": 18.524874487516076
+          },
+          "middle": {
+            "coordinate_l1_mm": 15.963190439752609,
+            "fde_mm": 40.560881304601,
+            "point_rmse_mm": 37.03501612659811
+          }
+        },
+        "59.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.230216434210174,
+            "fde_mm": 26.288677756611666,
+            "point_rmse_mm": 29.10667019171861
+          },
+          "early": {
+            "coordinate_l1_mm": 8.709657349714758,
+            "fde_mm": 24.09133185739156,
+            "point_rmse_mm": 19.66594146539222
+          },
+          "late": {
+            "coordinate_l1_mm": 16.52976718139062,
+            "fde_mm": 26.288677756611666,
+            "point_rmse_mm": 38.979316605329494
+          },
+          "middle": {
+            "coordinate_l1_mm": 11.45122477152514,
+            "fde_mm": 34.7248558226735,
+            "point_rmse_mm": 25.2082996691505
+          }
+        },
+        "71.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.232124548247864,
+            "fde_mm": 7.940376081246256,
+            "point_rmse_mm": 14.459425994906395
+          },
+          "early": {
+            "coordinate_l1_mm": 5.599073316029694,
+            "fde_mm": 6.0606100522245026,
+            "point_rmse_mm": 12.52801815439745
+          },
+          "late": {
+            "coordinate_l1_mm": 6.042071257179438,
+            "fde_mm": 7.940376081246256,
+            "point_rmse_mm": 13.435934349867809
+          },
+          "middle": {
+            "coordinate_l1_mm": 7.05522907153446,
+            "fde_mm": 10.682734610682711,
+            "point_rmse_mm": 17.02202777508175
+          }
+        },
+        "86.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.43030242139245,
+            "fde_mm": 12.124982272402933,
+            "point_rmse_mm": 27.147307011631426
+          },
+          "early": {
+            "coordinate_l1_mm": 6.966364319944693,
+            "fde_mm": 15.239630531791635,
+            "point_rmse_mm": 14.921186984047441
+          },
+          "late": {
+            "coordinate_l1_mm": 17.591148395049313,
+            "fde_mm": 12.124982272402933,
+            "point_rmse_mm": 38.71727685883682
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.733394549183343,
+            "fde_mm": 36.31086921485102,
+            "point_rmse_mm": 22.119210781006416
+          }
+        },
+        "87.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.788771349003659,
+            "fde_mm": 24.645690174632172,
+            "point_rmse_mm": 24.77944538538046
+          },
+          "early": {
+            "coordinate_l1_mm": 13.003277172294622,
+            "fde_mm": 19.208104637828058,
+            "point_rmse_mm": 28.407573574299292
+          },
+          "late": {
+            "coordinate_l1_mm": 12.674997515506277,
+            "fde_mm": 24.645690174632172,
+            "point_rmse_mm": 28.655938756083398
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.688039359210076,
+            "fde_mm": 21.94781671756273,
+            "point_rmse_mm": 14.625651385477799
+          }
+        }
+      },
+      "mean": {
+        "all": {
+          "coordinate_l1_mm": 10.67326145426385,
+          "fde_mm": 19.379039472392172,
+          "point_rmse_mm": 25.61374516766635
+        },
+        "early": {
+          "coordinate_l1_mm": 9.996048008875407,
+          "fde_mm": 17.717427264767846,
+          "point_rmse_mm": 23.185256270181178
+        },
+        "late": {
+          "coordinate_l1_mm": 11.695024941662147,
+          "fde_mm": 19.379039472392172,
+          "point_rmse_mm": 27.52448323148112
+        },
+        "middle": {
+          "coordinate_l1_mm": 10.328711412253996,
+          "fde_mm": 22.221141729406774,
+          "point_rmse_mm": 23.903596509448967
+        }
+      }
+    },
+    "paired": {
+      "cases": {
+        "104.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.399563447984883,
+            "fde_mm": 7.693691646747236,
+            "point_rmse_mm": 13.325401732911343
+          },
+          "early": {
+            "coordinate_l1_mm": 4.624348598886811,
+            "fde_mm": 10.321561867992944,
+            "point_rmse_mm": 9.718989158444092
+          },
+          "late": {
+            "coordinate_l1_mm": 8.120837643871457,
+            "fde_mm": 7.693691646747236,
+            "point_rmse_mm": 16.267091245320668
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.453504101196382,
+            "fde_mm": 17.43662840217014,
+            "point_rmse_mm": 13.176569590940119
+          }
+        },
+        "115.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.522772259183991,
+            "fde_mm": 19.09092337967235,
+            "point_rmse_mm": 29.782744618490558
+          },
+          "early": {
+            "coordinate_l1_mm": 9.509235386880395,
+            "fde_mm": 17.62736557261944,
+            "point_rmse_mm": 23.149249947127405
+          },
+          "late": {
+            "coordinate_l1_mm": 15.583826821944863,
+            "fde_mm": 19.09092337967235,
+            "point_rmse_mm": 37.43465465414296
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.475254568726717,
+            "fde_mm": 12.435649769315587,
+            "point_rmse_mm": 26.903428942072782
+          }
+        },
+        "119.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.896429337490554,
+            "fde_mm": 27.69771112875564,
+            "point_rmse_mm": 27.618773678102407
+          },
+          "early": {
+            "coordinate_l1_mm": 12.29926184852066,
+            "fde_mm": 24.651760889312246,
+            "point_rmse_mm": 28.43049378247707
+          },
+          "late": {
+            "coordinate_l1_mm": 9.345384575450295,
+            "fde_mm": 27.69771112875564,
+            "point_rmse_mm": 20.75593981876455
+          },
+          "middle": {
+            "coordinate_l1_mm": 14.044641588500706,
+            "fde_mm": 22.19495198169367,
+            "point_rmse_mm": 32.3927146743073
+          }
+        },
+        "13.pkl": {
+          "all": {
+            "coordinate_l1_mm": 8.948455340961813,
+            "fde_mm": 21.016328375223132,
+            "point_rmse_mm": 22.95503939858143
+          },
+          "early": {
+            "coordinate_l1_mm": 5.071192898839389,
+            "fde_mm": 7.859316426749623,
+            "point_rmse_mm": 11.46503083668457
+          },
+          "late": {
+            "coordinate_l1_mm": 12.24509604973285,
+            "fde_mm": 21.016328375223132,
+            "point_rmse_mm": 29.06934996227476
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.529077074313198,
+            "fde_mm": 21.04074795710622,
+            "point_rmse_mm": 24.583072673202295
+          }
+        },
+        "21.pkl": {
+          "all": {
+            "coordinate_l1_mm": 4.174395519261314,
+            "fde_mm": 14.23349048980072,
+            "point_rmse_mm": 9.901791586323057
+          },
+          "early": {
+            "coordinate_l1_mm": 3.5729052138512416,
+            "fde_mm": 12.512911347432057,
+            "point_rmse_mm": 8.190869905751178
+          },
+          "late": {
+            "coordinate_l1_mm": 4.995169335783966,
+            "fde_mm": 14.23349048980072,
+            "point_rmse_mm": 12.454839005406475
+          },
+          "middle": {
+            "coordinate_l1_mm": 3.9551120081487334,
+            "fde_mm": 6.864749382300985,
+            "point_rmse_mm": 8.480746747391965
+          }
+        },
+        "30.pkl": {
+          "all": {
+            "coordinate_l1_mm": 7.662248364476608,
+            "fde_mm": 12.065493856722432,
+            "point_rmse_mm": 19.160289155458667
+          },
+          "early": {
+            "coordinate_l1_mm": 7.62344919382873,
+            "fde_mm": 8.454884308573277,
+            "point_rmse_mm": 19.218632459933062
+          },
+          "late": {
+            "coordinate_l1_mm": 8.721203390402504,
+            "fde_mm": 12.065493856722432,
+            "point_rmse_mm": 21.30929212749457
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.6420925091985925,
+            "fde_mm": 23.806032145570914,
+            "point_rmse_mm": 16.67058118235434
+          }
+        },
+        "41.pkl": {
+          "all": {
+            "coordinate_l1_mm": 9.65522469686194,
+            "fde_mm": 32.32041714343835,
+            "point_rmse_mm": 22.397014355470397
+          },
+          "early": {
+            "coordinate_l1_mm": 7.713738511662856,
+            "fde_mm": 16.49763156913376,
+            "point_rmse_mm": 19.35388770657742
+          },
+          "late": {
+            "coordinate_l1_mm": 9.731109951920521,
+            "fde_mm": 32.32041714343835,
+            "point_rmse_mm": 22.697311385956773
+          },
+          "middle": {
+            "coordinate_l1_mm": 11.520825627002441,
+            "fde_mm": 10.001669015606536,
+            "point_rmse_mm": 24.8019725547697
+          }
+        },
+        "43.pkl": {
+          "all": {
+            "coordinate_l1_mm": 16.979679468760168,
+            "fde_mm": 40.3811391010415,
+            "point_rmse_mm": 42.02754226517634
+          },
+          "early": {
+            "coordinate_l1_mm": 11.690403708125473,
+            "fde_mm": 11.114153446457456,
+            "point_rmse_mm": 28.182546648928046
+          },
+          "late": {
+            "coordinate_l1_mm": 21.53062981297674,
+            "fde_mm": 40.3811391010415,
+            "point_rmse_mm": 54.48156700284548
+          },
+          "middle": {
+            "coordinate_l1_mm": 17.71800488517828,
+            "fde_mm": 23.505245579916803,
+            "point_rmse_mm": 39.19752349127435
+          }
+        },
+        "5.pkl": {
+          "all": {
+            "coordinate_l1_mm": 8.111850267327242,
+            "fde_mm": 11.075799138933437,
+            "point_rmse_mm": 21.403351063279768
+          },
+          "early": {
+            "coordinate_l1_mm": 4.891207857849591,
+            "fde_mm": 8.532600026491414,
+            "point_rmse_mm": 10.98906024202128
+          },
+          "late": {
+            "coordinate_l1_mm": 7.389843757400831,
+            "fde_mm": 11.075799138933437,
+            "point_rmse_mm": 17.858525265565042
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.054499186731306,
+            "fde_mm": 37.078077829718886,
+            "point_rmse_mm": 30.571619854865393
+          }
+        },
+        "59.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.555553504825141,
+            "fde_mm": 24.998543785268467,
+            "point_rmse_mm": 27.90754579538159
+          },
+          "early": {
+            "coordinate_l1_mm": 6.75000017037981,
+            "fde_mm": 22.536188192649714,
+            "point_rmse_mm": 16.75357699718901
+          },
+          "late": {
+            "coordinate_l1_mm": 15.516304126581085,
+            "fde_mm": 24.998543785268467,
+            "point_rmse_mm": 36.7217510434196
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.400356217514533,
+            "fde_mm": 31.85023179298148,
+            "point_rmse_mm": 26.595563447092683
+          }
+        },
+        "71.pkl": {
+          "all": {
+            "coordinate_l1_mm": 5.7265911530526195,
+            "fde_mm": 7.199234900339933,
+            "point_rmse_mm": 13.317327627392332
+          },
+          "early": {
+            "coordinate_l1_mm": 3.672889573041353,
+            "fde_mm": 5.040543146734252,
+            "point_rmse_mm": 8.140778152792821
+          },
+          "late": {
+            "coordinate_l1_mm": 6.96930577683994,
+            "fde_mm": 7.199234900339933,
+            "point_rmse_mm": 15.586164222235668
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.537578109276563,
+            "fde_mm": 11.3153072186451,
+            "point_rmse_mm": 14.92825714242735
+          }
+        },
+        "86.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.624625798421768,
+            "fde_mm": 11.615597876519484,
+            "point_rmse_mm": 25.79318307966303
+          },
+          "early": {
+            "coordinate_l1_mm": 5.3061503183000625,
+            "fde_mm": 9.608144324209219,
+            "point_rmse_mm": 11.433353837200272
+          },
+          "late": {
+            "coordinate_l1_mm": 17.055343466339735,
+            "fde_mm": 11.615597876519484,
+            "point_rmse_mm": 37.252054098610024
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.512383610625507,
+            "fde_mm": 36.43022538907074,
+            "point_rmse_mm": 21.850120494190776
+          }
+        },
+        "87.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.469472291498858,
+            "fde_mm": 24.36363198766253,
+            "point_rmse_mm": 24.267494488564218
+          },
+          "early": {
+            "coordinate_l1_mm": 10.878974817421284,
+            "fde_mm": 12.298456750134378,
+            "point_rmse_mm": 24.905213023409274
+          },
+          "late": {
+            "coordinate_l1_mm": 13.540099463545884,
+            "fde_mm": 24.36363198766253,
+            "point_rmse_mm": 30.268575467932187
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.989342593529409,
+            "fde_mm": 26.735047678510302,
+            "point_rmse_mm": 15.174899329424974
+          }
+        }
+      },
+      "mean": {
+        "all": {
+          "coordinate_l1_mm": 9.594373957700531,
+          "fde_mm": 19.51938483154809,
+          "point_rmse_mm": 23.065961449599627
+        },
+        "early": {
+          "coordinate_l1_mm": 7.20028908442982,
+          "fde_mm": 12.850424451422288,
+          "point_rmse_mm": 16.91782174604119
+        },
+        "late": {
+          "coordinate_l1_mm": 11.595704167137747,
+          "fde_mm": 19.51938483154809,
+          "point_rmse_mm": 27.089008869228362
+        },
+        "middle": {
+          "coordinate_l1_mm": 9.987128621534028,
+          "fde_mm": 21.591889549431336,
+          "point_rmse_mm": 22.717466932639542
+        }
+      }
+    },
+    "readout": {
+      "cases": {
+        "104.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.408862100395064,
+            "fde_mm": 8.995614328477279,
+            "point_rmse_mm": 14.03016939798534
+          },
+          "early": {
+            "coordinate_l1_mm": 4.317934328735945,
+            "fde_mm": 11.770596580302701,
+            "point_rmse_mm": 9.020462484182762
+          },
+          "late": {
+            "coordinate_l1_mm": 8.709743433826254,
+            "fde_mm": 8.995614328477279,
+            "point_rmse_mm": 18.719367495844928
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.19890853862299,
+            "fde_mm": 16.226744123376836,
+            "point_rmse_mm": 12.599741947176875
+          }
+        },
+        "115.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.548813893095279,
+            "fde_mm": 22.578077072413237,
+            "point_rmse_mm": 27.437089752591795
+          },
+          "early": {
+            "coordinate_l1_mm": 8.673089265631171,
+            "fde_mm": 19.655075883730312,
+            "point_rmse_mm": 18.732601991805453
+          },
+          "late": {
+            "coordinate_l1_mm": 13.272411153990598,
+            "fde_mm": 22.578077072413237,
+            "point_rmse_mm": 29.215628927675827
+          },
+          "middle": {
+            "coordinate_l1_mm": 15.700941259664065,
+            "fde_mm": 19.036345191231668,
+            "point_rmse_mm": 32.46410835449345
+          }
+        },
+        "119.pkl": {
+          "all": {
+            "coordinate_l1_mm": 26.858754350727743,
+            "fde_mm": 44.862794240596266,
+            "point_rmse_mm": 63.294126484479726
+          },
+          "early": {
+            "coordinate_l1_mm": 24.290829401633154,
+            "fde_mm": 66.0348043619484,
+            "point_rmse_mm": 58.7510166341931
+          },
+          "late": {
+            "coordinate_l1_mm": 29.451524653890704,
+            "fde_mm": 44.862794240596266,
+            "point_rmse_mm": 65.7943265082867
+          },
+          "middle": {
+            "coordinate_l1_mm": 26.83390899665938,
+            "fde_mm": 52.43700588716364,
+            "point_rmse_mm": 65.0988785315821
+          }
+        },
+        "13.pkl": {
+          "all": {
+            "coordinate_l1_mm": 15.147779035114773,
+            "fde_mm": 16.07169498201424,
+            "point_rmse_mm": 37.25967589559484
+          },
+          "early": {
+            "coordinate_l1_mm": 15.232979296177868,
+            "fde_mm": 27.973224522591558,
+            "point_rmse_mm": 34.11571258612735
+          },
+          "late": {
+            "coordinate_l1_mm": 21.713169638753143,
+            "fde_mm": 16.07169498201424,
+            "point_rmse_mm": 50.69625872387574
+          },
+          "middle": {
+            "coordinate_l1_mm": 8.49718817041331,
+            "fde_mm": 29.670378358699217,
+            "point_rmse_mm": 20.757115639628662
+          }
+        },
+        "21.pkl": {
+          "all": {
+            "coordinate_l1_mm": 5.366474178951439,
+            "fde_mm": 18.964446460852518,
+            "point_rmse_mm": 11.889497670019534
+          },
+          "early": {
+            "coordinate_l1_mm": 5.415722686802725,
+            "fde_mm": 15.604889759730472,
+            "point_rmse_mm": 12.501428060878931
+          },
+          "late": {
+            "coordinate_l1_mm": 5.056741973773412,
+            "fde_mm": 18.964446460852518,
+            "point_rmse_mm": 11.467647801561565
+          },
+          "middle": {
+            "coordinate_l1_mm": 5.626957876278182,
+            "fde_mm": 6.288704695957293,
+            "point_rmse_mm": 11.674237228796096
+          }
+        },
+        "30.pkl": {
+          "all": {
+            "coordinate_l1_mm": 7.960199285158173,
+            "fde_mm": 19.294050748395353,
+            "point_rmse_mm": 17.821361549517146
+          },
+          "early": {
+            "coordinate_l1_mm": 7.56966977588199,
+            "fde_mm": 10.93659601755335,
+            "point_rmse_mm": 16.94487793396976
+          },
+          "late": {
+            "coordinate_l1_mm": 9.12208343464192,
+            "fde_mm": 19.294050748395353,
+            "point_rmse_mm": 19.62748538815621
+          },
+          "middle": {
+            "coordinate_l1_mm": 7.188844644950603,
+            "fde_mm": 20.86680952970832,
+            "point_rmse_mm": 16.746214843253487
+          }
+        },
+        "41.pkl": {
+          "all": {
+            "coordinate_l1_mm": 19.89653856234633,
+            "fde_mm": 36.45732830142664,
+            "point_rmse_mm": 49.25132086441093
+          },
+          "early": {
+            "coordinate_l1_mm": 19.521744671409532,
+            "fde_mm": 75.86620588319528,
+            "point_rmse_mm": 49.50025175817864
+          },
+          "late": {
+            "coordinate_l1_mm": 20.69009011140914,
+            "fde_mm": 36.45732830142664,
+            "point_rmse_mm": 50.5902398337067
+          },
+          "middle": {
+            "coordinate_l1_mm": 19.477780904220314,
+            "fde_mm": 33.878780035976575,
+            "point_rmse_mm": 47.61754435197645
+          }
+        },
+        "43.pkl": {
+          "all": {
+            "coordinate_l1_mm": 19.220884468876317,
+            "fde_mm": 41.9026707289803,
+            "point_rmse_mm": 48.140741674913755
+          },
+          "early": {
+            "coordinate_l1_mm": 15.33212392430751,
+            "fde_mm": 21.0033043981714,
+            "point_rmse_mm": 38.39799914118389
+          },
+          "late": {
+            "coordinate_l1_mm": 23.434294379080395,
+            "fde_mm": 41.9026707289803,
+            "point_rmse_mm": 60.792572059192075
+          },
+          "middle": {
+            "coordinate_l1_mm": 18.896235103241047,
+            "fde_mm": 13.081656731129186,
+            "point_rmse_mm": 42.219069997027596
+          }
+        },
+        "5.pkl": {
+          "all": {
+            "coordinate_l1_mm": 20.855949459737428,
+            "fde_mm": 31.46912320719003,
+            "point_rmse_mm": 49.79210320274944
+          },
+          "early": {
+            "coordinate_l1_mm": 22.575564917733516,
+            "fde_mm": 47.58415478711574,
+            "point_rmse_mm": 52.38586416598503
+          },
+          "late": {
+            "coordinate_l1_mm": 19.30255714896484,
+            "fde_mm": 31.46912320719003,
+            "point_rmse_mm": 45.47186226919454
+          },
+          "middle": {
+            "coordinate_l1_mm": 20.689726312513923,
+            "fde_mm": 66.79879464237408,
+            "point_rmse_mm": 51.24247848625318
+          }
+        },
+        "59.pkl": {
+          "all": {
+            "coordinate_l1_mm": 16.208919831240777,
+            "fde_mm": 30.495427916429833,
+            "point_rmse_mm": 37.04151524020055
+          },
+          "early": {
+            "coordinate_l1_mm": 10.031657177536555,
+            "fde_mm": 25.046892930620608,
+            "point_rmse_mm": 22.154924841487357
+          },
+          "late": {
+            "coordinate_l1_mm": 20.676020083992118,
+            "fde_mm": 30.495427916429833,
+            "point_rmse_mm": 47.37410083437784
+          },
+          "middle": {
+            "coordinate_l1_mm": 17.91908223219366,
+            "fde_mm": 40.61306248177903,
+            "point_rmse_mm": 37.16282321450129
+          }
+        },
+        "71.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.467627877862554,
+            "fde_mm": 8.132057905726274,
+            "point_rmse_mm": 15.509662674139504
+          },
+          "early": {
+            "coordinate_l1_mm": 6.922259933524316,
+            "fde_mm": 13.502257103880943,
+            "point_rmse_mm": 18.887959808821723
+          },
+          "late": {
+            "coordinate_l1_mm": 6.1476305347813085,
+            "fde_mm": 8.132057905726274,
+            "point_rmse_mm": 13.347392653820116
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.332993165282039,
+            "fde_mm": 11.475864453617072,
+            "point_rmse_mm": 13.665320793961342
+          }
+        },
+        "86.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.80456609315605,
+            "fde_mm": 21.02913658541682,
+            "point_rmse_mm": 28.610044464119202
+          },
+          "early": {
+            "coordinate_l1_mm": 6.2707873173958735,
+            "fde_mm": 8.456931478715905,
+            "point_rmse_mm": 14.190181361701296
+          },
+          "late": {
+            "coordinate_l1_mm": 18.185302335151317,
+            "fde_mm": 21.02913658541682,
+            "point_rmse_mm": 39.06968811912179
+          },
+          "middle": {
+            "coordinate_l1_mm": 10.95760862692096,
+            "fde_mm": 24.737051396852664,
+            "point_rmse_mm": 26.9778085824852
+          }
+        },
+        "87.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.515399313014454,
+            "fde_mm": 14.988158039430056,
+            "point_rmse_mm": 28.916859631324495
+          },
+          "early": {
+            "coordinate_l1_mm": 14.515308251706246,
+            "fde_mm": 15.535467021913451,
+            "point_rmse_mm": 33.63223086900927
+          },
+          "late": {
+            "coordinate_l1_mm": 13.852011364261648,
+            "fde_mm": 14.988158039430056,
+            "point_rmse_mm": 30.874042493885845
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.178878323075475,
+            "fde_mm": 29.574239627289348,
+            "point_rmse_mm": 20.596622530710324
+          }
+        }
+      },
+      "mean": {
+        "all": {
+          "coordinate_l1_mm": 13.943136034590488,
+          "fde_mm": 24.249275424411454,
+          "point_rmse_mm": 32.99955142323433
+        },
+        "early": {
+          "coordinate_l1_mm": 12.359205457575108,
+          "fde_mm": 27.613107748420777,
+          "point_rmse_mm": 29.170423972117273
+        },
+        "late": {
+          "coordinate_l1_mm": 16.124121557424367,
+          "fde_mm": 24.249275424411454,
+          "point_rmse_mm": 37.15697023913076
+        },
+        "middle": {
+          "coordinate_l1_mm": 13.346081088771996,
+          "fde_mm": 28.052725935011917,
+          "point_rmse_mm": 30.67861265398815
+        }
+      }
+    },
+    "tangent_only": {
+      "cases": {
+        "104.pkl": {
+          "all": {
+            "coordinate_l1_mm": 6.400385128020621,
+            "fde_mm": 7.694253298726732,
+            "point_rmse_mm": 13.327451033592197
+          },
+          "early": {
+            "coordinate_l1_mm": 4.625454356828762,
+            "fde_mm": 10.332614313361137,
+            "point_rmse_mm": 9.726035405154722
+          },
+          "late": {
+            "coordinate_l1_mm": 8.121235272711878,
+            "fde_mm": 7.694253298726732,
+            "point_rmse_mm": 16.267025051199887
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.454465754521224,
+            "fde_mm": 17.43527656333471,
+            "point_rmse_mm": 13.177669916935438
+          }
+        },
+        "115.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.52699358832668,
+            "fde_mm": 19.09192546132051,
+            "point_rmse_mm": 29.78816431829155
+          },
+          "early": {
+            "coordinate_l1_mm": 9.521184441478582,
+            "fde_mm": 17.639559288453274,
+            "point_rmse_mm": 23.165198361810994
+          },
+          "late": {
+            "coordinate_l1_mm": 15.585388897283869,
+            "fde_mm": 19.09192546132051,
+            "point_rmse_mm": 37.43784546141334
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.474407426217597,
+            "fde_mm": 12.41542323433487,
+            "point_rmse_mm": 26.903262114953556
+          }
+        },
+        "119.pkl": {
+          "all": {
+            "coordinate_l1_mm": 12.046519579881963,
+            "fde_mm": 27.696634641968163,
+            "point_rmse_mm": 27.81635419944805
+          },
+          "early": {
+            "coordinate_l1_mm": 12.76409277319592,
+            "fde_mm": 24.494939726977723,
+            "point_rmse_mm": 28.968855040540767
+          },
+          "late": {
+            "coordinate_l1_mm": 9.33538393911574,
+            "fde_mm": 27.696634641968163,
+            "point_rmse_mm": 20.751577782258032
+          },
+          "middle": {
+            "coordinate_l1_mm": 14.040082027334222,
+            "fde_mm": 22.377042326880265,
+            "point_rmse_mm": 32.425701843360066
+          }
+        },
+        "13.pkl": {
+          "all": {
+            "coordinate_l1_mm": 8.942783777943157,
+            "fde_mm": 21.018886324120423,
+            "point_rmse_mm": 22.971472186607215
+          },
+          "early": {
+            "coordinate_l1_mm": 5.026584686976332,
+            "fde_mm": 7.878311871206028,
+            "point_rmse_mm": 11.450237460063112
+          },
+          "late": {
+            "coordinate_l1_mm": 12.24231774828982,
+            "fde_mm": 21.018886324120423,
+            "point_rmse_mm": 29.074367960894467
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.559448898563316,
+            "fde_mm": 21.0091893158045,
+            "point_rmse_mm": 24.630038429586083
+          }
+        },
+        "21.pkl": {
+          "all": {
+            "coordinate_l1_mm": 4.175073022551367,
+            "fde_mm": 14.232647774585459,
+            "point_rmse_mm": 9.902115641712426
+          },
+          "early": {
+            "coordinate_l1_mm": 3.5750832892978206,
+            "fde_mm": 12.51172509335599,
+            "point_rmse_mm": 8.193045213543195
+          },
+          "late": {
+            "coordinate_l1_mm": 4.995017628971946,
+            "fde_mm": 14.232647774585459,
+            "point_rmse_mm": 12.454830528839045
+          },
+          "middle": {
+            "coordinate_l1_mm": 3.955118149384337,
+            "fde_mm": 6.86512107179784,
+            "point_rmse_mm": 8.479792991121514
+          }
+        },
+        "30.pkl": {
+          "all": {
+            "coordinate_l1_mm": 7.682404279257338,
+            "fde_mm": 12.067024093106152,
+            "point_rmse_mm": 19.18178479119143
+          },
+          "early": {
+            "coordinate_l1_mm": 7.680164000763229,
+            "fde_mm": 8.431942348407697,
+            "point_rmse_mm": 19.28012203176507
+          },
+          "late": {
+            "coordinate_l1_mm": 8.72231760271119,
+            "fde_mm": 12.067024093106152,
+            "point_rmse_mm": 21.310802961420343
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.644731234297595,
+            "fde_mm": 23.80420935106244,
+            "point_rmse_mm": 16.671807787595004
+          }
+        },
+        "41.pkl": {
+          "all": {
+            "coordinate_l1_mm": 9.896600722460155,
+            "fde_mm": 32.32745566266834,
+            "point_rmse_mm": 22.674663818125474
+          },
+          "early": {
+            "coordinate_l1_mm": 8.298303378803107,
+            "fde_mm": 17.53474358696307,
+            "point_rmse_mm": 20.164353645797625
+          },
+          "late": {
+            "coordinate_l1_mm": 9.766940114029317,
+            "fde_mm": 32.32745566266834,
+            "point_rmse_mm": 22.711030563613576
+          },
+          "middle": {
+            "coordinate_l1_mm": 11.62455867454804,
+            "fde_mm": 10.501153707155684,
+            "point_rmse_mm": 24.900382940445784
+          }
+        },
+        "43.pkl": {
+          "all": {
+            "coordinate_l1_mm": 16.990363487379458,
+            "fde_mm": 40.37898613525088,
+            "point_rmse_mm": 42.04408818437129
+          },
+          "early": {
+            "coordinate_l1_mm": 11.704214809629713,
+            "fde_mm": 11.194999546361082,
+            "point_rmse_mm": 28.223981953420534
+          },
+          "late": {
+            "coordinate_l1_mm": 21.53439877126977,
+            "fde_mm": 40.37898613525088,
+            "point_rmse_mm": 54.48699392632051
+          },
+          "middle": {
+            "coordinate_l1_mm": 17.732476881238878,
+            "fde_mm": 23.5048505442944,
+            "point_rmse_mm": 39.21339553432821
+          }
+        },
+        "5.pkl": {
+          "all": {
+            "coordinate_l1_mm": 8.149750354559472,
+            "fde_mm": 11.068580124745026,
+            "point_rmse_mm": 21.446813579438423
+          },
+          "early": {
+            "coordinate_l1_mm": 5.019416651480213,
+            "fde_mm": 8.698149825328928,
+            "point_rmse_mm": 11.131961431157736
+          },
+          "late": {
+            "coordinate_l1_mm": 7.376066085404814,
+            "fde_mm": 11.068580124745026,
+            "point_rmse_mm": 17.8440814212425
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.05376832679339,
+            "fde_mm": 37.08928141045017,
+            "point_rmse_mm": 30.619693516768542
+          }
+        },
+        "59.pkl": {
+          "all": {
+            "coordinate_l1_mm": 11.603851251513472,
+            "fde_mm": 25.004013887613514,
+            "point_rmse_mm": 27.943412622245337
+          },
+          "early": {
+            "coordinate_l1_mm": 6.831638625240597,
+            "fde_mm": 22.878013260847293,
+            "point_rmse_mm": 16.838131383426724
+          },
+          "late": {
+            "coordinate_l1_mm": 15.522644805384381,
+            "fde_mm": 25.004013887613514,
+            "point_rmse_mm": 36.73035545029872
+          },
+          "middle": {
+            "coordinate_l1_mm": 12.457270323915438,
+            "fde_mm": 31.87597492373255,
+            "point_rmse_mm": 26.643221406961107
+          }
+        },
+        "71.pkl": {
+          "all": {
+            "coordinate_l1_mm": 5.7216287125624765,
+            "fde_mm": 7.192964377243945,
+            "point_rmse_mm": 13.310522926660614
+          },
+          "early": {
+            "coordinate_l1_mm": 3.6558083795630263,
+            "fde_mm": 5.035750954678556,
+            "point_rmse_mm": 8.097381529227937
+          },
+          "late": {
+            "coordinate_l1_mm": 6.966541301272744,
+            "fde_mm": 7.192964377243945,
+            "point_rmse_mm": 15.585867560653087
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.542536456851659,
+            "fde_mm": 11.316241969771408,
+            "point_rmse_mm": 14.93396151379042
+          }
+        },
+        "86.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.569791322585843,
+            "fde_mm": 11.625734964879362,
+            "point_rmse_mm": 25.767888232582823
+          },
+          "early": {
+            "coordinate_l1_mm": 5.135777013359557,
+            "fde_mm": 9.610128235925195,
+            "point_rmse_mm": 11.220251049402313
+          },
+          "late": {
+            "coordinate_l1_mm": 17.057563865460565,
+            "fde_mm": 11.625734964879362,
+            "point_rmse_mm": 37.260967028863156
+          },
+          "middle": {
+            "coordinate_l1_mm": 9.516033088937414,
+            "fde_mm": 36.42227643780249,
+            "point_rmse_mm": 21.855857209521663
+          }
+        },
+        "87.pkl": {
+          "all": {
+            "coordinate_l1_mm": 10.45278014728833,
+            "fde_mm": 24.356851526311903,
+            "point_rmse_mm": 24.289467125007523
+          },
+          "early": {
+            "coordinate_l1_mm": 10.849690558848277,
+            "fde_mm": 12.238061789065132,
+            "point_rmse_mm": 24.970702918387687
+          },
+          "late": {
+            "coordinate_l1_mm": 13.537691546276072,
+            "fde_mm": 24.356851526311903,
+            "point_rmse_mm": 30.27216420805489
+          },
+          "middle": {
+            "coordinate_l1_mm": 6.970958336740639,
+            "fde_mm": 26.71342908074446,
+            "point_rmse_mm": 15.165576466875532
+          }
+        }
+      },
+      "mean": {
+        "all": {
+          "coordinate_l1_mm": 9.627609644179257,
+          "fde_mm": 19.519689097887728,
+          "point_rmse_mm": 23.112630666098028
+        },
+        "early": {
+          "coordinate_l1_mm": 7.283647151189626,
+          "fde_mm": 12.959918449302393,
+          "point_rmse_mm": 17.03309672489988
+        },
+        "late": {
+          "coordinate_l1_mm": 11.597192890629394,
+          "fde_mm": 19.519689097887728,
+          "point_rmse_mm": 27.091377685005504
+        },
+        "middle": {
+          "coordinate_l1_mm": 10.001988890718751,
+          "fde_mm": 21.64072845670506,
+          "point_rmse_mm": 22.740027820941762
+        }
+      }
+    }
+  },
+  "native_replays_performed": false,
+  "new_transfer_or_target_execution_authorized": false,
+  "prediction_seal_id": "90ffb3b8b303ddfb6908ddf0f687faf4d4173df754487f6a5d0541bf1ead8d8a",
+  "prediction_seal_sha256": "c86e713d8cf6bc4d4b04771a39c8ab3ff8e6441047fda98c5b5db0d5c628e5ab",
+  "protected_data_access": false,
+  "schema": "deform-constraint-split-source-v1",
+  "source_lock_id": "081540c3e3f1ce58cdeb9af25e3efa333f602cc030aacf85c912f2d99a327226",
+  "source_truth_sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b",
+  "transfer_objects_accessed": false
+}
