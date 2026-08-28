@@ -1,0 +1,51 @@
+{
+  "arm_metrics": [
+    {
+      "cube_progress_m": 0.053995914124464806,
+      "minimum_gripper_cube_separation_m": 0.20292649932934356,
+      "native_reward": 7.019126892089844,
+      "sphere_progress_m": 0.18377760066646692
+    },
+    {
+      "cube_progress_m": 0.05400308977148799,
+      "minimum_gripper_cube_separation_m": 0.20292649932934356,
+      "native_reward": 7.019134044647217,
+      "sphere_progress_m": 0.18378150822190034
+    },
+    {
+      "cube_progress_m": 8.308326249206743e-12,
+      "minimum_gripper_cube_separation_m": 0.20292649932934356,
+      "native_reward": 6.900000095367432,
+      "sphere_progress_m": 0.0
+    }
+  ],
+  "artifact_id": "9b7caad55329e59d97c6da1010b3e42e9beb98125e793984ca00817df7a9c9aa",
+  "bayesian_gain": false,
+  "checks": {
+    "native_cube_progress_at_least_10mm": true,
+    "native_sphere_progress_at_least_10mm": true,
+    "projectile_contact_removal_reduces_cube_progress_at_least_80pct": true,
+    "projectile_contact_removal_reduces_sphere_progress_at_least_80pct": true,
+    "unchanged_native_rewards": true,
+    "unchanged_repeats_within_1um": false
+  },
+  "contact_disabled_progress_ratios": {
+    "cube_progress_m": 1.5386953594406054e-10,
+    "sphere_progress_m": 0.0
+  },
+  "lock_id": "0d0ce67d03027a5d716573266a4ecb301c19515545842446d1826f7635edac93",
+  "mechanism_audit_passed": false,
+  "parent_full_memory_gate_passed": false,
+  "position_replay_errors_m": [
+    5.2719228264497264e-05,
+    2.3260833001415016e-07
+  ],
+  "protected_data_read": false,
+  "schema": "dlolab-slingshot-mechanism-result-v1",
+  "seals": [
+    "543f5274b8c4b7765e1f1a9d2579afc0b9e34f52be3b74933a3c686d7a80d775",
+    "2487c07a9808673e0d2d5857940976a1d42f5aedb089bb86b20082a70a6c8ffd",
+    "5d49e66efb65142cf81a7d62c769b80c652ba6a7cb68c07d1ed61d68f4f55a65"
+  ],
+  "state_restart_authorized": false
+}
