@@ -1,0 +1,84 @@
+{
+  "artifact_id": "c42f273f8292fb23f2a3c9204edb207c1fe8eda479b9565b7fc684880fd1182f",
+  "index": 0,
+  "lock_id": "af8acc9e7de8bc4b25551a089be06e2af2a61fc7ff474c42e4ff5b49342d6672",
+  "native_qa": {
+    "checks": {
+      "common_prefix": true,
+      "duplicate_positions": true,
+      "duplicate_rewards": true,
+      "fixed_endpoints": true,
+      "sealed_prefix_replay": true
+    },
+    "common_prefix_error_m": 1.1685097334179773e-14,
+    "duplicate_error_m": 0.0,
+    "metrics": [
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      },
+      {
+        "cube_progress_m": 8.308326249206743e-12,
+        "minimum_gripper_cube_separation_m": 0.20292649932934356,
+        "native_reward": 6.900000095367432,
+        "sphere_progress_m": 0.0
+      }
+    ],
+    "prefix_replay_error_m": null,
+    "qa_passed": true
+  },
+  "passed": true,
+  "reference_replay": {
+    "checks": {
+      "fallback_positions_within_1um": true,
+      "fallback_reward_exact": true,
+      "prefix_replay_within_1um": true,
+      "retained_grip_positions_within_1um": true,
+      "retained_grip_rewards_exact": true
+    },
+    "fallback_error_m": 1.7715583405623903e-10,
+    "passed": true,
+    "prefix_error_m": 1.363145707422575e-13,
+    "retained_grip_error_m": 1.0997773958881796e-10
+  },
+  "schema": "dlolab-slingshot-contact-path-native-gate-v1",
+  "source_seal_id": "9c7243350f017709f105da37f36eb5e282335d6c8515b9fab1c74e0d7205753a"
+}
