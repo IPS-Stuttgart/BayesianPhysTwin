@@ -7,7 +7,6 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
-- Added a target-closed chronological broken-mechanism physicality certificate that binds four source-prefix-only placebos to the cross-action v2 parent, enforces exact fallback, and uses joint familywise session-bootstrap bounds.
 - Added a NumPy-only recursive corruption and recovery benchmark that compares residual persistence, unguarded recursion, and guarded exact-fallback routing under missing, stale, drifting, outlier, identity-substituted, and sparse observations.
 - Added a mapping-bound claim-bearing Prob4D candidate path that verifies the
   exact provider artifact, physical query, mapping protocol, and passing mapping
