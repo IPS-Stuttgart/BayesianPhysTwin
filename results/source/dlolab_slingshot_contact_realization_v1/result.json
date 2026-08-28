@@ -1,0 +1,116 @@
+{
+  "artifact_id": "09cd8e3f9ab6e879a872c06fb9ee039dd61b1d0b597ef656f4137114ee0c5d1a",
+  "claim_boundary": "Finite native-source information screen, not fresh control performance, calibrated safety, or published benchmark parity.",
+  "lock_id": "362175cce80bce8eb5409a02bcdd0476b376241525293d5aa7e9d05316631f67",
+  "method_evaluation_authorized": false,
+  "metrics": {
+    "arms": {
+      "bias_aware_map": {
+        "action_probability": [
+          0.33760579427083354,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.6623942057291667
+        ],
+        "expected_native_reward": 6.998296159435997,
+        "gain_over_best_blind": -0.0028670053385804195,
+        "monte_carlo_standard_error": 8.704965390567703e-05,
+        "source_world_expected_rewards": [
+          6.900000095367432,
+          7.065086328773759,
+          7.029802054166794
+        ]
+      },
+      "bias_aware_posterior_mean": {
+        "action_probability": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9999999999999986
+        ],
+        "expected_native_reward": 7.001163164774578,
+        "gain_over_best_blind": 8.881784197001252e-16,
+        "monte_carlo_standard_error": 9.813676864354909e-18,
+        "source_world_expected_rewards": [
+          6.900000095367432,
+          7.07336950302124,
+          7.030119895935059
+        ]
+      },
+      "ignored_shared_bias": {
+        "action_probability": [
+          0.01900227864583334,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.980997721354167
+        ],
+        "expected_native_reward": 7.00087803163721,
+        "gain_over_best_blind": -0.0002851331373667776,
+        "monte_carlo_standard_error": 2.9915864259248922e-05,
+        "source_world_expected_rewards": [
+          6.900000095367432,
+          7.072594569879584,
+          7.030039429664612
+        ]
+      }
+    },
+    "best_blind_action": 6,
+    "best_blind_reward": 7.001163164774577,
+    "blind_expected_rewards": [
+      6.973989009857178,
+      6.907345612843831,
+      6.9275557200113935,
+      6.928870519002278,
+      6.96254030863444,
+      6.9688827196757,
+      7.001163164774577
+    ],
+    "checks": {
+      "information_gain_at_least_0_005": false,
+      "information_gain_at_least_10pct_blind_excess": false,
+      "not_worse_than_ignored_shared_bias": true,
+      "posterior_gain_over_map_at_least_0_002": true
+    },
+    "integration_only_not_independent_control_performance": true,
+    "mahalanobis_prefix_distances": [
+      [
+        0.0,
+        2.319866494249012,
+        3.1956291922973676
+      ],
+      [
+        2.319866494249012,
+        0.0,
+        1.6335728974403225
+      ],
+      [
+        3.1956291922973676,
+        1.6335728974403225,
+        0.0
+      ]
+    ],
+    "oracle_actions": [
+      0,
+      6,
+      6
+    ],
+    "perfect_information_reward": 7.001163164774577,
+    "posterior_gain_over_ignored_bias": 0.000285133137367669,
+    "posterior_gain_over_map": 0.002867005338581935,
+    "source_information_value_passed": false
+  },
+  "native_worlds_completed": 3,
+  "protected_data_read": false,
+  "schema": "dlolab-slingshot-contact-source-result-v1",
+  "source_bank_id": "938f62c3eae46355027fdf91866640606ef5360f3819aafd3f8e2da7f16a9e8a",
+  "source_gate_passed": false
+}

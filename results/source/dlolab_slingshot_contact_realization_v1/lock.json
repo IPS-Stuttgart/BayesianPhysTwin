@@ -1,0 +1,93 @@
+{
+  "artifact_id": "362175cce80bce8eb5409a02bcdd0476b376241525293d5aa7e9d05316631f67",
+  "bank_id": "8ebf9c91322faf0658c84a2dcaa6895a98b1ff857e49e6714a2a2dad0c88d882",
+  "controls_sha256": "af88f1c5299c2daf67e06325a2c2487dee9d007315cfce00944e491f3b411203",
+  "output_root": "/home/fpfaff/source-only/dlolab-benchmark-source-v1/contact-realization-source-v1",
+  "parent_lock_id": "015e6d84aa68a2a4310552ef4880752b972890f02d3e09e333ff575c92b8df25",
+  "protocol": {
+    "bending_E": 100000.0,
+    "branch_frame": 299,
+    "calibration_or_evaluation_worlds_read": false,
+    "coefficient_is_native_tangential_coupling_not_measured_coulomb_friction": true,
+    "execution_order": [
+      2,
+      0,
+      1
+    ],
+    "gpu_work": false,
+    "independent_noise_sd_m": 0.002,
+    "integration_draws_per_world": 8192,
+    "integration_seed": 260909,
+    "method_evaluation_authorized": false,
+    "minimum_gain_over_map": 0.002,
+    "minimum_information_gain": 0.005,
+    "minimum_relative_excess_information_gain": 0.1,
+    "native_actions_reward_controller_and_release_unchanged": true,
+    "native_franka_coupling_coefficients": [
+      0.3,
+      0.6,
+      0.9
+    ],
+    "native_steps": 900,
+    "new_recordings": false,
+    "nominal_replay_position_atol_m": 1e-06,
+    "nominal_replay_reward_exact": true,
+    "observation_frames": [
+      139,
+      219,
+      299
+    ],
+    "observed_nodes": [
+      3,
+      6,
+      8
+    ],
+    "prior_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "protected_data_read": false,
+    "require_not_worse_than_ignored_bias": true,
+    "retry_authorized": false,
+    "role": "finite_source_mechanism_screen_not_method_confirmation",
+    "schema": "dlolab-slingshot-contact-realization-source-v1",
+    "shared_bias_sd_m": 0.005,
+    "source_world_count": 3,
+    "sphere_center_observed": true,
+    "stretching_K": 800000.0,
+    "x_offset_m": 0.0
+  },
+  "reference_action_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    5
+  ],
+  "reference_id": "cd2f32fa143b10349f5e895680b011d953ff53099587b685539c3159e853fc67",
+  "revision": "7899457e959746691970c8bb4a0fd9de595da596",
+  "schema": "dlolab-slingshot-contact-lock-v1",
+  "source_sha256": {
+    "docs/dlolab_slingshot_belief_control_source_v1.md": "8f018a00e1a3782e9916e125000dbaaeacf60db0bb40bfadded7ffe38bdc06c9",
+    "docs/dlolab_slingshot_contact_realization_source_v1.md": "da865d8c88a2bf73ac1e12543c1bb0759ca14877eb29820ac46b0ac6dbf6e28c",
+    "scripts/remote/run_dlolab_slingshot_belief.py": "a30413ec0effa0b7ee9e0e1b79380b929da2c9be51e67d53b3564d97df94714b",
+    "scripts/remote/run_dlolab_slingshot_contact.py": "d15a16611451b3110560f29b806078a644a19f670c200ceaaa65e3592cf4de98",
+    "src/bayesian_phystwin/guard_harm_risk.py": "facb0f537aca07b1d32ad670a3db681692fc0602f1bca340b520c9b3e9a8d0bf",
+    "src/bayesian_phystwin_experiments/coupled_action_regret.py": "fc587ac65a6c25d243a84a0f9b5cb3369eb8987d0bacee4df320a92232b344d8",
+    "src/bayesian_phystwin_experiments/dlolab_benchmark.py": "7e802fc456b99df27c882ec34ff0c8a43933020572705d931316e625b2bca057",
+    "src/bayesian_phystwin_experiments/dlolab_regret_artifacts.py": "c69571b47a399fe14f225bc64721ff19c1c9f2438f1d5dd38f277c233a2c2987",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_batch.py": "a213cfa3d17fa34997b1b5335664339c14f1e1492a9ec46285de178b2f988549",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_belief.py": "fb417469fd9e9c20729526048e08727421310132d1f825edf7404e293a82a2c8",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_belief_native.py": "28908b91eeaa50636d05bb86ba5a8828e6b7d3f89d3dbf10ea9ad9236f03c256",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_contact.py": "3e744ab3fa5eebc51dd3da40e9ee73904222f630f16b4b123cb0cea7517a5e5d",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_process.py": "625db26c1216927648162aed601392da0bd398cef2d544e9c92aaa2ee758a484",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_value.py": "06930e89908c005e23353516c6c2a2789003d46e13935f2068d95e4389b8ca19",
+    "tests/test_dlolab_slingshot_belief.py": "31c2e6c717046c23d74326d8c393f06029776f560a315c5093ca3cc4acf5ec46",
+    "tests/test_dlolab_slingshot_belief_custody.py": "04957d168c40cd84db7797fb22548bb28e890054c1f64df369a07e7097b53fd3",
+    "tests/test_dlolab_slingshot_contact.py": "8f9613488001703c48ec8bb0272e0c99cf0c2b51ac2c09a2e2a076fa658c8ec2"
+  }
+}
