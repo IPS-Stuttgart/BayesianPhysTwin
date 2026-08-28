@@ -1,0 +1,76 @@
+{
+  "arrays_verified": 43,
+  "artifact_id": "4a21cde4f09ff6f0efa4e7cc2c10a3753bb31c537425855523b664dee597ead9",
+  "auditor_sha256": "c3d671ba810ed681bcdec7d8458ae0e9dc20571cecd68313b1da192d315975d2",
+  "held_v8_access": false,
+  "independent_human_review": false,
+  "literal_command_exact_check_passed": false,
+  "lock_id": "07f17d1895c63c8f944c7febb1068f7f17e1c9306c168f01afac16b09167e1c8",
+  "metrics": {
+    "checks": {
+      "eight_of_thirteen_joint_wins": false,
+      "late_rmse_nonincreasing": false,
+      "rmse_bootstrap_upper_below_zero": false,
+      "two_percent_l1_gain": false,
+      "two_percent_rmse_gain": false,
+      "worst_rmse_ratio_at_most_1_05": false
+    },
+    "maximum_arithmetic_difference": 7.105427357601002e-15,
+    "metrics_verified": 624,
+    "source_value_gate_passed": false
+  },
+  "native_preservation_and_metric_audit_passed": true,
+  "new_native_execution": false,
+  "new_recordings": false,
+  "original_failed_decision_unchanged": true,
+  "original_failure_reproduced": {
+    "assertion": "exact(after[:, :, (0, 1, 10, 11)], arrays[\"future_actions\"])",
+    "error_type": "ValueError",
+    "line": 189,
+    "message": "state-transport arithmetic differs"
+  },
+  "original_second_arithmetic_passed": false,
+  "original_verifier_sha256": "0cd95f228b1d35b3c7ad12df03ea282409a27debe096dca06cee418d2452dd5f",
+  "posthoc": true,
+  "promotion_authorized": false,
+  "raw_native_command_maximum_difference_m": 0.010869026184082031,
+  "result_id": "efafc2177c453f1822e59ac6e19fa3d58e7361d39410c83ae23af4c7be194ed4",
+  "schema": "deform-reference-transport-posthoc-arithmetic-v1",
+  "source_files_verified": 672,
+  "target_access": false,
+  "traces": {
+    "reference_centered": {
+      "command_clamp_bytes_exact": false,
+      "maximum_command_difference_by_axis_m": [
+        0.003078460693359375,
+        0.0027456972748041153,
+        0.010869026184082031
+      ],
+      "maximum_command_difference_m": 0.010869026184082031,
+      "native_clamp_bytes_preserved": true,
+      "readout_maximum_arithmetic_difference_m": 1.1102230246251565e-16
+    },
+    "reference_initialized": {
+      "command_clamp_bytes_exact": false,
+      "maximum_command_difference_by_axis_m": [
+        0.003078460693359375,
+        0.0027456972748041153,
+        0.010869026184082031
+      ],
+      "maximum_command_difference_m": 0.010869026184082031,
+      "native_clamp_bytes_preserved": true,
+      "readout_maximum_arithmetic_difference_m": 1.1102230246251565e-16
+    },
+    "zero_reference": {
+      "command_clamp_bytes_exact": false,
+      "maximum_command_difference_by_axis_m": [
+        0.003078460693359375,
+        0.0027456972748041153,
+        0.010869026184082031
+      ],
+      "maximum_command_difference_m": 0.010869026184082031,
+      "native_clamp_bytes_preserved": true,
+      "readout_maximum_arithmetic_difference_m": 1.1102230246251565e-16
+    }
+  }
+}

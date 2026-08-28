@@ -1,0 +1,150 @@
+{
+  "artifact_id": "547c40d85883642568c74801fe1258c92b17f81c2daf5d6c869710d5b08e0d07",
+  "diagnostic_initialized_rmse_change_percent": -0.11028504229443348,
+  "frozen_files_sha256": {
+    "attempt.json": "74e095bf8da39ebafc61f7155a24afce799300d26cfd78cab88f1dbad471c24d",
+    "controls.json": "6a8b776539c27ab336de416800e237f46f0213193754ade24096c3e0f510fd46",
+    "lock.json": "41a3517f133273e2c096c8f10488d5aab2ead8f02c37a00e761e5716ffe2ab11",
+    "posthoc_arithmetic.json": "2a7e6848e94eee198cda42a64aeea4162ce7b38c295e135cfa17f66293542fbf",
+    "prediction_seal.json": "50463f7908f63b737e1e6b9f51e7947068f84f65ba4a016d6ae4a730c563ace0",
+    "result.json": "6e65c317914cd9242d140a6a0c6cf909da37f6c40b2213c49e10fdee024c47c3"
+  },
+  "means": {
+    "incumbent": {
+      "all": {
+        "coordinate_l1_mm": 10.67326145426385,
+        "fde_mm": 19.379039472392172,
+        "point_rmse_mm": 25.61374516766635
+      },
+      "early": {
+        "coordinate_l1_mm": 9.996048008875407,
+        "fde_mm": 17.717427264767846,
+        "point_rmse_mm": 23.185256270181178
+      },
+      "late": {
+        "coordinate_l1_mm": 11.695024941662147,
+        "fde_mm": 19.379039472392172,
+        "point_rmse_mm": 27.52448323148112
+      },
+      "middle": {
+        "coordinate_l1_mm": 10.328711412253996,
+        "fde_mm": 22.221141729406774,
+        "point_rmse_mm": 23.903596509448967
+      }
+    },
+    "paired": {
+      "all": {
+        "coordinate_l1_mm": 9.594373957700531,
+        "fde_mm": 19.51938483154809,
+        "point_rmse_mm": 23.065961449599627
+      },
+      "early": {
+        "coordinate_l1_mm": 7.20028908442982,
+        "fde_mm": 12.850424451422288,
+        "point_rmse_mm": 16.91782174604119
+      },
+      "late": {
+        "coordinate_l1_mm": 11.595704167137747,
+        "fde_mm": 19.51938483154809,
+        "point_rmse_mm": 27.089008869228362
+      },
+      "middle": {
+        "coordinate_l1_mm": 9.987128621534028,
+        "fde_mm": 21.591889549431336,
+        "point_rmse_mm": 22.717466932639542
+      }
+    },
+    "reference_centered": {
+      "all": {
+        "coordinate_l1_mm": 10.927374578019588,
+        "fde_mm": 24.00193040262235,
+        "point_rmse_mm": 26.692972702112346
+      },
+      "early": {
+        "coordinate_l1_mm": 7.730905829111657,
+        "fde_mm": 14.475232210027588,
+        "point_rmse_mm": 18.305466476641037
+      },
+      "late": {
+        "coordinate_l1_mm": 13.21686484401957,
+        "fde_mm": 24.00193040262235,
+        "point_rmse_mm": 31.389315262249507
+      },
+      "middle": {
+        "coordinate_l1_mm": 11.834353060927544,
+        "fde_mm": 26.7329588499248,
+        "point_rmse_mm": 27.098088305034587
+      }
+    },
+    "reference_initialized": {
+      "all": {
+        "coordinate_l1_mm": 9.592904611359849,
+        "fde_mm": 19.49704600610069,
+        "point_rmse_mm": 23.040523144259318
+      },
+      "early": {
+        "coordinate_l1_mm": 7.224387921627174,
+        "fde_mm": 12.876882877411637,
+        "point_rmse_mm": 16.958484462505314
+      },
+      "late": {
+        "coordinate_l1_mm": 11.573407421967792,
+        "fde_mm": 19.49704600610069,
+        "point_rmse_mm": 27.034364096756608
+      },
+      "middle": {
+        "coordinate_l1_mm": 9.980918490484582,
+        "fde_mm": 21.594861871897557,
+        "point_rmse_mm": 22.69443927155442
+      }
+    }
+  },
+  "native_command_maximum_difference_m": 0.010869026184082031,
+  "ordinary_prediction_successes": 14,
+  "original_second_arithmetic_passed": false,
+  "paired_rmse_difference_95pct_mm": [
+    0.8279707282900195,
+    6.904886995227522
+  ],
+  "posthoc_audit_id": "4a21cde4f09ff6f0efa4e7cc2c10a3753bb31c537425855523b664dee597ead9",
+  "posthoc_metric_and_native_preservation_audit_passed": true,
+  "pre_outcome_revision": "c1e31520b43d7ccccf65b719941dcf2e3c776c37",
+  "prediction_seal_id": "c1ba84ed1b2327c7c750c2c9b19a5090da1f89937603499065ac4db00e1c7980",
+  "prediction_technical_failures": 0,
+  "predictions_npz_sha256": "c7b7003110bcd11a62fe53d13cffe5d7ca4a1444fa0ab4a85145bab5950cd4a3",
+  "primary_joint_wins": 3,
+  "primary_late_rmse_change_percent": 15.87472769410201,
+  "primary_rmse_change_percent": 15.72451796747314,
+  "programmed_controls_passed": 6,
+  "programmed_controls_total": 6,
+  "replacements": 0,
+  "result_id": "efafc2177c453f1822e59ac6e19fa3d58e7361d39410c83ae23af4c7be194ed4",
+  "schema": "deform-reference-transport-source-result-summary-v1",
+  "scope": {
+    "already_open_dlo2_source_only": true,
+    "gpu_execution": false,
+    "held_v8_access": false,
+    "incumbent_modified": false,
+    "local_private_only": true,
+    "native_retry": false,
+    "new_recordings": false,
+    "promotion_authorized": false,
+    "push_or_main_merge": false,
+    "source_future_truth_scored_after_seal": true,
+    "target_access": false,
+    "transfer_authorized": false
+  },
+  "scored_non_design_trajectories": 13,
+  "status": "source_value_failed_with_additional_command_contract_failure",
+  "unsealable_predictions": 0,
+  "value_checks_passed": 0,
+  "value_checks_total": 6,
+  "verification": {
+    "deform_tests_passed": 528,
+    "diff_check_passed": true,
+    "focused_mypy_passed": true,
+    "independent_human_review": false,
+    "native_runtime_pre_run_focused_tests_passed": 23,
+    "ruff_passed": true
+  }
+}
