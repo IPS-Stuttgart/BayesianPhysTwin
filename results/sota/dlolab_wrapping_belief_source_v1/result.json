@@ -1,0 +1,147 @@
+{
+  "admitted_batches": 11,
+  "artifact_id": "5be8f1a54ac38e9dfc0745a5722a9490d8fa41299ca66080714caa8612a09ff0",
+  "attempted_batches": 11,
+  "completed_batches": 11,
+  "completed_native_trajectories": 99,
+  "completed_seal_ids": [
+    "73c8aec25aa5caefaa649ec780b0e690e0602523adc3078215d9a48ba378272f",
+    "b5991d23370af8bc013e68a14cea8c02370a22172235947d4186c004cd114da3",
+    "84e17367803a09ac4eed22b707b1d2a7a4c65fe751a07ac1a1aa68ee67b51967",
+    "c1164f675809c4a95ce04ce18fca7c91a34d52fbb02a163ffef933a7a24161b6",
+    "acf1feec67911f52b643a8a42cb43ca28639c851245dda57ea9d4ad8123741aa",
+    "daa04b060656d292d9a47517273dbec566a7467be6ab37ae70d6ba6d599b0928",
+    "8095b0d743255af8509b7a3119dba2bad4f000fdc6898686327edc0f887857c9",
+    "093a30874c5caca142c03ee7c1550f359874348d01be8def38b5e35c36050781",
+    "a04394a22cfeae5f0124dd0deff3fc583e42e6df01884fcd48bf71743a82ff13",
+    "37299a87e4cfbf4756966d7c0d7d06fd45b4026ac2a1af21444a202262d03447",
+    "7a39b872946d0e3628c5f2f4e20924239ea2a6871bf91a3b2848b8ac8f0234b8"
+  ],
+  "gpu_work": false,
+  "lock_id": "70e6054141a5652957590f5b173c36ccff99cc167b48a3f8b4f085ba4be20a31",
+  "method_promotion_authorized": false,
+  "metrics": {
+    "adjusted_bayes_gain": 0.02399693929363378,
+    "arms": {
+      "bias_aware_bayes": {
+        "action_probability": [
+          0.0,
+          0.0,
+          0.11234537760416669,
+          0.0,
+          0.0744900173611111,
+          0.8131646050347204,
+          0.0,
+          0.0
+        ],
+        "expected_native_final_reward": 0.9158106604735959,
+        "gain_over_best_fixed": 0.02599693929363378,
+        "monte_carlo_standard_error": 1.8862047071562624e-05,
+        "source_world_expected_rewards": [
+          0.9548892974853516,
+          0.9037861227989197,
+          0.9003773927688599,
+          0.9494555617857259,
+          0.8901606400395394,
+          0.8996753692626953,
+          0.9407895345211728,
+          0.9061711899339571,
+          0.8969908356666565
+        ]
+      },
+      "bias_aware_map": {
+        "action_probability": [
+          0.0,
+          0.0,
+          0.1118706597222222,
+          0.0,
+          0.0,
+          0.8881293402777759,
+          0.0,
+          0.0
+        ],
+        "expected_native_final_reward": 0.9129130961187527,
+        "gain_over_best_fixed": 0.02309937493879055,
+        "monte_carlo_standard_error": 0.00010641133868792151,
+        "source_world_expected_rewards": [
+          0.9548892974853516,
+          0.9037861227989197,
+          0.9003773927688599,
+          0.9494674801826477,
+          0.8926614295705804,
+          0.8996753692626953,
+          0.9407895345211728,
+          0.8775804028118728,
+          0.8969908356666565
+        ]
+      },
+      "ignored_shared_bias": {
+        "action_probability": [
+          0.0,
+          0.0,
+          0.1164822048611111,
+          0.0,
+          0.05164930555555556,
+          0.8318684895833319,
+          0.0,
+          0.0
+        ],
+        "expected_native_final_reward": 0.906145287372817,
+        "gain_over_best_fixed": 0.016331566192854807,
+        "monte_carlo_standard_error": 0.00014181648580433959,
+        "source_world_expected_rewards": [
+          0.9544410316157155,
+          0.8995300662500085,
+          0.9003773927688599,
+          0.9467461834137794,
+          0.8901334231777582,
+          0.8996753692626953,
+          0.9382981709641172,
+          0.8291151132361847,
+          0.8969908356666565
+        ]
+      }
+    },
+    "best_fixed_action": 4,
+    "best_fixed_reward": 0.8898137211799622,
+    "checks": {
+      "adjusted_bayes_gain_fraction_of_fixed_deficit": true,
+      "adjusted_bayes_gain_over_best_fixed": true,
+      "adjusted_bayes_gain_over_ignored_bias": true,
+      "adjusted_bayes_gain_over_map": false,
+      "adjusted_oracle_headroom": false,
+      "best_fixed_beats_prefix_hold": true,
+      "distinct_oracle_actions": true,
+      "three_worlds_with_useful_oracle_headroom": true
+    },
+    "method_promotion_authorized": false,
+    "monte_carlo_only_integrates_assumed_sensor_noise": true,
+    "nominal_world_action_expected_reward": 0.8863069083955553,
+    "nominal_world_best_action": 5,
+    "oracle_actions": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      2,
+      5
+    ],
+    "oracle_reward": 0.9167433381080627,
+    "prefix_hold_reward": 0.48832664887110394,
+    "source_gate_passed": false,
+    "source_worlds_are_prior_support_not_independent_evaluation": true
+  },
+  "new_recordings": false,
+  "ordinary_trajectories": 99,
+  "protected_data_read": false,
+  "qualified_trajectories": 99,
+  "retry_authorized": false,
+  "schema": "dlolab-wrapping-source-result-v1",
+  "source_bank_id": "004318c576af513f1682aab09d73d6e0cd1ab0b4d313f1d43a47f04c90cfaf50",
+  "source_gate_passed": false,
+  "status": "complete",
+  "unrun_batches": 0
+}
