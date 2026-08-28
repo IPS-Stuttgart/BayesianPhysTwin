@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 
 from bayesian_phystwin_experiments.cross_action_physicality_v1 import (
+    REQUIRED_PLACEBO_POLICIES,
     BrokenMechanismPolicy,
     CrossActionPhysicalityProtocolV1,
     CrossActionPhysicalityResultV1,
     PhysicalityDecision,
     PlaceboConstructionV1,
     PlaceboScoreRowV1,
-    REQUIRED_PLACEBO_POLICIES,
     SealedPlaceboPredictionV1,
 )
 from bayesian_phystwin_experiments.cross_action_transport_contracts_v1 import (
