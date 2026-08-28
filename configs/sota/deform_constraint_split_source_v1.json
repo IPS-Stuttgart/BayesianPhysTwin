@@ -1,0 +1,53 @@
+{
+  "schema": "deform-constraint-split-source-v1",
+  "scope": "already-open-DLO2-only-exploratory-screen",
+  "primary_arm": "constraint_split",
+  "arms": ["incumbent", "paired", "readout", "half_blend", "tangent_only", "constraint_split"],
+  "prediction_count": 14,
+  "analysis_count": 13,
+  "excluded_design_case": "103.pkl",
+  "prediction_frames": [50, 170],
+  "observations": {"frames": [41, 49], "identities": [2, 4, 6, 8], "count": 8},
+  "geometry": "unchanged_native_nominal_future",
+  "inner_product": "equal_weight_Euclidean_on_free_xyz_coordinates",
+  "method": "incumbent + P_t(paired-incumbent) + (I-P_t)last_prefix_offset",
+  "config": {
+    "node_count": 12,
+    "clamped_nodes": [0, 1, 10, 11],
+    "hidden_nodes": [3, 5, 7, 9],
+    "minimum_edge_length_m": 1e-8,
+    "relative_svd_tolerance": 1e-10,
+    "linear_constraint_tolerance_m": 1e-9,
+    "constant_readout_tolerance_m": 1e-12,
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 260913
+  },
+  "inputs": {
+    "parent_protocol": {"path": "configs/sota/deform_multiobject_state_restart_v1.json", "sha256": "6ea78a8d4c412d1fbd3423e388bbfd85b78696e619a29ab6a961ab807e08af17"},
+    "source_receipt": {"path": "/home/fpfaff/source-only/deform-multiobject-restart-8851fb5d/source_receipt.json", "sha256": "8333e5babfd4c1677c0a9c62bb89f6741e532b649051e97f7cfa3c48aa3186bf"},
+    "prediction_seal": {"path": "/home/fpfaff/source-only/deform-multiobject-restart-8851fb5d/run-v1/DLO2/prediction_seal.json", "sha256": "7d63eaf0b03e437d010c50ba42e78add8802088a63c6cd14c5d85f043973c743"},
+    "clean": {"path": "/home/fpfaff/source-only/deform-multiobject-restart-8851fb5d/run-v1/DLO2/clean.npz", "sha256": "273ad440708e6c3ec210662c5c446574c6cd02b67f387a211070aba3d69807e7"},
+    "source_truth": {"path": "/home/fpfaff/source-only/deform-sparse-inputs-v1/official_prediction.npz", "sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b", "key": "targets", "prediction_index_offset": 0}
+  },
+  "output_root": "/home/fpfaff/source-only/deform-constraint-split-source-v1",
+  "runtime": {"numpy": "2.5.2", "python": "3.12.13", "cpu_only": true, "threads": 1},
+  "gate": {
+    "minimum_rmse_gain_over_every_control_percent": 2.0,
+    "lower_l1_than_every_control": true,
+    "minimum_joint_wins_over_paired": 9,
+    "late_rmse_no_worse_than_incumbent_and_paired": true,
+    "maximum_case_rmse_ratio_to_incumbent": 1.05,
+    "rmse_difference_ci95_upper_below_zero_against_every_control": true,
+    "all_predictions_ordinary": true
+  },
+  "all_predictions_sealed_before_new_source_metrics": true,
+  "native_replays_performed": false,
+  "upstream_or_incumbent_modified": false,
+  "new_recordings": false,
+  "gpu_access": false,
+  "transfer_objects_accessed": false,
+  "protected_data_access": false,
+  "official_sota_claim": false,
+  "automatic_promotion": false,
+  "attempts": 1
+}
