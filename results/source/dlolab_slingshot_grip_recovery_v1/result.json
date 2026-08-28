@@ -1,0 +1,116 @@
+{
+  "artifact_id": "b97ff64f95db0cb76aecde90dc1eec504e9e5e8422fd95c280c0caac909651c2",
+  "claim_boundary": "Contact-source development with a new causal force action; not independent control performance or safety calibration.",
+  "lock_id": "5a6e51e361289121f3b07ac6a257ce5fc522689df63d288172c0e60623b1935b",
+  "method_evaluation_authorized": false,
+  "metrics": {
+    "arms": {
+      "bias_aware_map": {
+        "action_probability": [
+          0.33760579427083354,
+          0.0,
+          0.33874511718750006,
+          0.0,
+          0.0,
+          0.3236490885416668,
+          0.0
+        ],
+        "expected_native_reward": 7.013971472450067,
+        "gain_over_best_blind": 4.496640758677728e-05,
+        "monte_carlo_standard_error": 0.00014271839765434265,
+        "source_world_expected_rewards": [
+          6.900000095367432,
+          7.057453177694697,
+          7.0844611442880705
+        ]
+      },
+      "bias_aware_posterior_mean": {
+        "action_probability": [
+          0.0,
+          0.0,
+          0.3033040364583333,
+          0.0,
+          0.0,
+          0.4483235677083332,
+          0.24837239583333343
+        ],
+        "expected_native_reward": 7.018174007942434,
+        "gain_over_best_blind": 0.004247501899953932,
+        "monte_carlo_standard_error": 6.360284269992024e-05,
+        "source_world_expected_rewards": [
+          6.900000095367432,
+          7.062485420727171,
+          7.092036507732701
+        ]
+      },
+      "ignored_shared_bias": {
+        "action_probability": [
+          0.01900227864583334,
+          0.003824869791666665,
+          0.40995279947916663,
+          0.0,
+          0.0,
+          0.49047851562500017,
+          0.07674153645833336
+        ],
+        "expected_native_reward": 7.009888308898857,
+        "gain_over_best_blind": -0.004038197143623634,
+        "monte_carlo_standard_error": 9.3493066738319e-05,
+        "source_world_expected_rewards": [
+          6.900000095367432,
+          7.056143373833038,
+          7.073521457496099
+        ]
+      }
+    },
+    "best_blind_action": 6,
+    "best_blind_reward": 7.0139265060424805,
+    "blind_expected_rewards": [
+      6.975481828053792,
+      7.001500924428304,
+      7.011455059051514,
+      6.9688042004903155,
+      6.981918970743815,
+      7.001163164774577,
+      7.0139265060424805
+    ],
+    "checks": {
+      "information_gain_at_least_0_005": false,
+      "information_gain_at_least_10pct_blind_excess": false,
+      "not_worse_than_ignored_shared_bias": true,
+      "posterior_gain_over_map_at_least_0_002": true
+    },
+    "integration_only_not_independent_control_performance": true,
+    "mahalanobis_prefix_distances": [
+      [
+        0.0,
+        2.319866494333073,
+        3.1956291923705167
+      ],
+      [
+        2.319866494333073,
+        0.0,
+        1.6335728974491663
+      ],
+      [
+        3.1956291923705167,
+        1.6335728974491663,
+        0.0
+      ]
+    ],
+    "oracle_actions": [
+      0,
+      5,
+      2
+    ],
+    "perfect_information_reward": 7.024264971415202,
+    "posterior_gain_over_ignored_bias": 0.00828569904357835,
+    "posterior_gain_over_map": 0.004202535492368242,
+    "source_information_value_passed": false
+  },
+  "native_worlds_completed": 3,
+  "protected_data_read": false,
+  "schema": "dlolab-slingshot-grip-source-result-v1",
+  "source_bank_id": "01a22b627540e5e940bcda7071531d2350ed7c95f3942e2a1c304a58c9f05ddd",
+  "source_gate_passed": false
+}
