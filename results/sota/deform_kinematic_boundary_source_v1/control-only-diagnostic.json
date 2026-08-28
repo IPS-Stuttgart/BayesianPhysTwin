@@ -1,0 +1,61 @@
+{
+  "artifact_id": "b189610b67496d70085daaab5267360ed80900a8e8bba4f5f335e819dbd75200",
+  "cases": 14,
+  "clamped_nodes": [
+    0,
+    1,
+    10,
+    11
+  ],
+  "future_free_node_truth_read": false,
+  "held_v8_access": false,
+  "input_prediction_file_sha256": "c7b7003110bcd11a62fe53d13cffe5d7ca4a1444fa0ab4a85145bab5950cd4a3",
+  "known_action_frames_per_case": 120,
+  "maximum_point_displacement_m_by_node": [
+    0.0,
+    0.01129742471225381,
+    0.0,
+    0.0013104718242663853
+  ],
+  "new_native_execution": false,
+  "only_known_actions_and_sealed_native_clamps_read": true,
+  "pairs": [
+    {
+      "clamp_slots": [
+        0,
+        1
+      ],
+      "command_length_max_m": 0.0316589232586715,
+      "command_length_min_m": 0.019955700492032852,
+      "command_length_std_m": 0.0026139043649113206,
+      "maximum_direction_difference_rad": 2.7696925841968248e-06,
+      "maximum_perpendicular_shift_m": 8.656093303553017e-08,
+      "maximum_radial_length_identity_error_m": 1.198750300412943e-13,
+      "native_length_mean_m": 0.03125311981856113,
+      "native_length_std_m": 1.1863461657058177e-08
+    },
+    {
+      "clamp_slots": [
+        2,
+        3
+      ],
+      "command_length_max_m": 0.029479590311488807,
+      "command_length_min_m": 0.026867771711089675,
+      "command_length_std_m": 0.00038619593951482047,
+      "maximum_direction_difference_rad": 2.4618053226904165e-06,
+      "maximum_perpendicular_shift_m": 6.934660284603666e-08,
+      "maximum_radial_length_identity_error_m": 8.536097176325974e-14,
+      "native_length_mean_m": 0.02816910688302864,
+      "native_length_std_m": 1.3464530349402205e-08
+    }
+  ],
+  "posthoc_source_code_diagnostic": true,
+  "rms_point_displacement_m_by_node": [
+    0.0,
+    0.0036317758018296746,
+    0.0,
+    0.0003866020854494288
+  ],
+  "schema": "deform-native-clamp-control-only-diagnostic-v1",
+  "target_access": false
+}
