@@ -1,0 +1,262 @@
+{
+  "artifact_id": "26b58c8e47450eb1d1f59fea039697f563d4f307b52039b5d2ad46f2cdec85b5",
+  "controls_sha256": "f5cfcfb7054271f9d2da1bd966514788fc541daf300f3b38ad8bb49690848963",
+  "numerical_audit_id": "f9cf9969ae66d244408971700f6f1d9c0b6b6167df1e78afc24cb16bcd45b0fe",
+  "output_root": "/home/fpfaff/source-only/dlolab-benchmark-source-v1/late-branch-value-source-v1",
+  "parent_bank_id": "8ebf9c91322faf0658c84a2dcaa6895a98b1ff857e49e6714a2a2dad0c88d882",
+  "parent_lock_id": "015e6d84aa68a2a4310552ef4880752b972890f02d3e09e333ff575c92b8df25",
+  "protocol": {
+    "action_names": [
+      "retained_yaw_plus",
+      "zero_final_translation",
+      "half_final_translation",
+      "final_steering_minus20deg",
+      "final_steering_plus20deg",
+      "retained_yaw_minus",
+      "final_yaw_plus0_4",
+      "incumbent_duplicate"
+    ],
+    "branch_native_step": 500,
+    "earlier_failed_studies_reopened": false,
+    "entire_common_prefix_budget_m": 1e-06,
+    "fallback_is_cached_artifact_not_bit_exact_native_replay": true,
+    "gpu_work": false,
+    "independent_noise_sd_m": 0.002,
+    "method_evaluation_authorized": false,
+    "minimum_adjusted_gain_over_ignored_bias": 0.0,
+    "minimum_adjusted_gain_over_map": 0.002,
+    "minimum_adjusted_information_gain": 0.005,
+    "minimum_adjusted_relative_excess_gain": 0.1,
+    "minimum_whitened_stretching_secant_norm": 1.0,
+    "native_batches": 11,
+    "native_force_physics_reward_unchanged": true,
+    "native_horizon_steps": 900,
+    "native_release_step": 700,
+    "native_trajectories": 88,
+    "new_context_repeat_policy": "first_three_nominal_batches_all_actions",
+    "new_recordings": false,
+    "noise_draws_per_world": 8192,
+    "noise_seed": 260912,
+    "nominal_source_value_uses_first_batch_not_best_or_average": true,
+    "numeric_budget_is_population_bound": false,
+    "numeric_pair_margin": 0.0005,
+    "observation_frames": [
+      139,
+      319,
+      499
+    ],
+    "observed_cube": false,
+    "observed_rod_nodes": [
+      3,
+      6,
+      8
+    ],
+    "protected_data_read": false,
+    "reference_action_pairs": [
+      [
+        0,
+        5
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        7,
+        5
+      ]
+    ],
+    "reference_and_duplicate_position_budget_m": 0.001,
+    "reference_and_duplicate_reward_budget": 0.00025,
+    "require_not_worse_than_original_best_fixed_within_pair_margin": true,
+    "retry_authorized": false,
+    "role": "finite_source_feasibility_not_independent_method_evaluation",
+    "same_first_two_native_macros": true,
+    "schema": "dlolab-slingshot-late-branch-source-v1",
+    "shared_bias_sd_m": 0.005,
+    "source_material_prior": [
+      0.0625,
+      0.125,
+      0.0625,
+      0.125,
+      0.25,
+      0.125,
+      0.0625,
+      0.125,
+      0.0625
+    ],
+    "sphere_center_observed": true,
+    "tasks": [
+      {
+        "index": 0,
+        "name": "batch-00-material-4",
+        "qualification_repeat": false,
+        "source_world_index": 4,
+        "world": {
+          "bending_E": 100000.0,
+          "index": 13,
+          "stretching_K": 800000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 1,
+        "name": "batch-01-material-4",
+        "qualification_repeat": true,
+        "source_world_index": 4,
+        "world": {
+          "bending_E": 100000.0,
+          "index": 13,
+          "stretching_K": 800000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 2,
+        "name": "batch-02-material-4",
+        "qualification_repeat": true,
+        "source_world_index": 4,
+        "world": {
+          "bending_E": 100000.0,
+          "index": 13,
+          "stretching_K": 800000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 3,
+        "name": "batch-03-material-0",
+        "qualification_repeat": false,
+        "source_world_index": 0,
+        "world": {
+          "bending_E": 50000.0,
+          "index": 9,
+          "stretching_K": 400000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 4,
+        "name": "batch-04-material-1",
+        "qualification_repeat": false,
+        "source_world_index": 1,
+        "world": {
+          "bending_E": 50000.0,
+          "index": 10,
+          "stretching_K": 800000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 5,
+        "name": "batch-05-material-2",
+        "qualification_repeat": false,
+        "source_world_index": 2,
+        "world": {
+          "bending_E": 50000.0,
+          "index": 11,
+          "stretching_K": 1600000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 6,
+        "name": "batch-06-material-3",
+        "qualification_repeat": false,
+        "source_world_index": 3,
+        "world": {
+          "bending_E": 100000.0,
+          "index": 12,
+          "stretching_K": 400000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 7,
+        "name": "batch-07-material-5",
+        "qualification_repeat": false,
+        "source_world_index": 5,
+        "world": {
+          "bending_E": 100000.0,
+          "index": 14,
+          "stretching_K": 1600000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 8,
+        "name": "batch-08-material-6",
+        "qualification_repeat": false,
+        "source_world_index": 6,
+        "world": {
+          "bending_E": 200000.0,
+          "index": 15,
+          "stretching_K": 400000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 9,
+        "name": "batch-09-material-7",
+        "qualification_repeat": false,
+        "source_world_index": 7,
+        "world": {
+          "bending_E": 200000.0,
+          "index": 16,
+          "stretching_K": 800000.0,
+          "x_offset_m": 0.0
+        }
+      },
+      {
+        "index": 10,
+        "name": "batch-10-material-8",
+        "qualification_repeat": false,
+        "source_world_index": 8,
+        "world": {
+          "bending_E": 200000.0,
+          "index": 17,
+          "stretching_K": 1600000.0,
+          "x_offset_m": 0.0
+        }
+      }
+    ],
+    "unique_actions": 7
+  },
+  "reference_ids": [
+    "72399be3e35b97ae4c369f68618af0bd39f91446717019ac1369d49faaba28b1",
+    "af85eedf9a00bcac39ffc23815cae1b35c6c6be55ff18e2d4ad61f84159f66c2",
+    "ca69cee1d8d2ac7cb8c9081dff82dab1e873ef0c466cbaf0edaf1100cf15a93b",
+    "e8e7654be1f1fa64699605f3f31906690b3dde550be7503fbd55fd9f7e0302db",
+    "cd2f32fa143b10349f5e895680b011d953ff53099587b685539c3159e853fc67",
+    "e86aa9b474d9bb392a7248c840a7466d28a0e9fe9a80b4ccd56caac94b632738",
+    "13ca9869a89039de5b71fab47bca842ec8115a0affb1f08ae04fc9fd1300c868",
+    "044af250007cce8ee9da544ed7bd495d25df41fa52f1587072532eef89624a98",
+    "dfba6c4f02f5b1cd25692ef6e44a083a582566b826935b344e80d4d7958f30c6"
+  ],
+  "revision": "8d87a3f0139027dae7881c589cfed20085010047",
+  "schema": "dlolab-slingshot-late-lock-v1",
+  "source_sha256": {
+    "docs/dlolab_slingshot_belief_control_source_v1.md": "8f018a00e1a3782e9916e125000dbaaeacf60db0bb40bfadded7ffe38bdc06c9",
+    "docs/dlolab_slingshot_contact_realization_source_v1.md": "da865d8c88a2bf73ac1e12543c1bb0759ca14877eb29820ac46b0ac6dbf6e28c",
+    "docs/dlolab_slingshot_late_branch_source_v1.md": "1f58d5fac22527707cb9174cbfae1e4bf02b11fc5d732589762d07665e37c255",
+    "scripts/remote/run_dlolab_slingshot_belief.py": "a30413ec0effa0b7ee9e0e1b79380b929da2c9be51e67d53b3564d97df94714b",
+    "scripts/remote/run_dlolab_slingshot_contact.py": "d15a16611451b3110560f29b806078a644a19f670c200ceaaa65e3592cf4de98",
+    "scripts/remote/run_dlolab_slingshot_late.py": "d6c4fcbd38be891c7c7570ae26970e0e86e1a6597baed8c322f21557832fe800",
+    "src/bayesian_phystwin/guard_harm_risk.py": "facb0f537aca07b1d32ad670a3db681692fc0602f1bca340b520c9b3e9a8d0bf",
+    "src/bayesian_phystwin_experiments/coupled_action_regret.py": "fc587ac65a6c25d243a84a0f9b5cb3369eb8987d0bacee4df320a92232b344d8",
+    "src/bayesian_phystwin_experiments/dlolab_benchmark.py": "7e802fc456b99df27c882ec34ff0c8a43933020572705d931316e625b2bca057",
+    "src/bayesian_phystwin_experiments/dlolab_regret_artifacts.py": "c69571b47a399fe14f225bc64721ff19c1c9f2438f1d5dd38f277c233a2c2987",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_batch.py": "a213cfa3d17fa34997b1b5335664339c14f1e1492a9ec46285de178b2f988549",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_belief.py": "fb417469fd9e9c20729526048e08727421310132d1f825edf7404e293a82a2c8",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_belief_native.py": "28908b91eeaa50636d05bb86ba5a8828e6b7d3f89d3dbf10ea9ad9236f03c256",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_contact.py": "3e744ab3fa5eebc51dd3da40e9ee73904222f630f16b4b123cb0cea7517a5e5d",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_late.py": "594e87a0ed5692c71fe926c7a91d5ecf922b4825ed518c818995e4c289438b4a",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_probe.py": "e24617736cd38340774f2b2b62b24c63187fd94028027a8d4632d0cd26295dbe",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_process.py": "625db26c1216927648162aed601392da0bd398cef2d544e9c92aaa2ee758a484",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_value.py": "06930e89908c005e23353516c6c2a2789003d46e13935f2068d95e4389b8ca19",
+    "tests/test_dlolab_slingshot_belief.py": "31c2e6c717046c23d74326d8c393f06029776f560a315c5093ca3cc4acf5ec46",
+    "tests/test_dlolab_slingshot_belief_custody.py": "04957d168c40cd84db7797fb22548bb28e890054c1f64df369a07e7097b53fd3",
+    "tests/test_dlolab_slingshot_contact.py": "8f9613488001703c48ec8bb0272e0c99cf0c2b51ac2c09a2e2a076fa658c8ec2",
+    "tests/test_dlolab_slingshot_late.py": "304c08a75e729d2f6518777b86420e1fa27dc8344b24112109bf9b510c89f424"
+  }
+}

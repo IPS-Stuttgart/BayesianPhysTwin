@@ -1,0 +1,129 @@
+{
+  "admitted_batches": 11,
+  "artifact_id": "c424c7b2cf1224f7dca0e6da7a193a5cab95833afecb4a44b7be5246f7dde700",
+  "completed_batches": 11,
+  "lock_id": "26b58c8e47450eb1d1f59fea039697f563d4f307b52039b5d2ad46f2cdec85b5",
+  "method_evaluation_authorized": false,
+  "metrics": {
+    "adjusted_information_gain": 0.004982066382683115,
+    "arms": {
+      "bias_aware_map": {
+        "action_probability": [
+          0.041595458984375,
+          0.0,
+          0.0,
+          0.261260986328125,
+          0.050689697265625,
+          0.473297119140625,
+          0.17315673828125
+        ],
+        "expected_native_reward": 7.004792207990249,
+        "gain_over_best_fixed": 0.0014481489997706376,
+        "monte_carlo_standard_error": 4.255336987039214e-05,
+        "source_world_expected_rewards": [
+          7.048407030524686,
+          6.990794135606848,
+          6.9013016379904,
+          7.089753125677817,
+          7.027571881539188,
+          6.9013206223607995,
+          7.045986622804776,
+          7.052571404783521,
+          6.901813933509402
+        ]
+      },
+      "bias_aware_posterior_mean": {
+        "action_probability": [
+          0.1371307373046875,
+          0.0,
+          0.0,
+          0.25301361083984375,
+          0.45055389404296875,
+          0.1090850830078125,
+          0.0502166748046875
+        ],
+        "expected_native_reward": 7.008826125373162,
+        "gain_over_best_fixed": 0.005482066382683115,
+        "monte_carlo_standard_error": 3.143167903262219e-05,
+        "source_world_expected_rewards": [
+          7.052459622384049,
+          7.002510761201847,
+          6.901283891114872,
+          7.086991773569025,
+          7.018539538024925,
+          6.901370182458777,
+          7.049777674954385,
+          7.089978395495564,
+          6.9018364399671555
+        ]
+      },
+      "ignored_shared_bias": {
+        "action_probability": [
+          0.105316162109375,
+          0.0,
+          0.0,
+          0.30086517333984375,
+          0.34694671630859375,
+          0.16889190673828125,
+          0.07798004150390625
+        ],
+        "expected_native_reward": 6.9987707638974825,
+        "gain_over_best_fixed": -0.004573295092995977,
+        "monte_carlo_standard_error": 0.0001255500787090578,
+        "source_world_expected_rewards": [
+          7.045466888870578,
+          6.990892871341202,
+          6.901026943989564,
+          7.078505414712708,
+          7.009865923668258,
+          6.901084599550813,
+          7.027822795906104,
+          7.062012133770622,
+          6.90156186016975
+        ]
+      }
+    },
+    "best_fixed_action": 5,
+    "best_fixed_reward": 7.0033440589904785,
+    "checks": {
+      "adjusted_gain_at_least_10pct_fixed_excess": false,
+      "adjusted_gain_over_ignored_bias_nonnegative": true,
+      "adjusted_gain_over_map_at_least_0_002": true,
+      "adjusted_information_gain_at_least_0_005": false,
+      "not_below_original_best_fixed_within_margin": true
+    },
+    "integration_only_not_independent_control_performance": true,
+    "material_information": {
+      "whitened_bending_secant_norm": 0.39574211828644895,
+      "whitened_material_secant_singular_values": [
+        4.67781544933164,
+        0.33727545405586445
+      ],
+      "whitened_stretching_secant_norm": 4.673232316687082
+    },
+    "numerical_margin_is_not_statistical_bound": true,
+    "oracle_actions": [
+      5,
+      4,
+      0,
+      6,
+      5,
+      3,
+      3,
+      4,
+      3
+    ],
+    "original_best_fixed_reward": 7.008321106433868,
+    "perfect_information_reward": 7.01464056968689,
+    "posterior_gain_over_ignored_bias": 0.010055361475679092,
+    "posterior_gain_over_map": 0.0040339173829124775,
+    "source_information_value_passed": false
+  },
+  "planned_batches": 11,
+  "protected_data_read": false,
+  "schema": "dlolab-slingshot-late-result-v1",
+  "source_bank_id": "2bad8432f2d1f856446920e1b2439215e86b26abf8816928091002850c1010fa",
+  "source_gate_passed": false,
+  "terminal_stage": "complete",
+  "unrun_batches": 0
+}
