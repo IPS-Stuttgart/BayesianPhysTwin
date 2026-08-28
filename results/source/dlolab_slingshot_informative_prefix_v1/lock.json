@@ -1,0 +1,86 @@
+{
+  "artifact_id": "9224e18b38e06c24c1e89e0de503aeeb58b8fa383819f47d3a981cbc3c720cf9",
+  "bank_id": "8ebf9c91322faf0658c84a2dcaa6895a98b1ff857e49e6714a2a2dad0c88d882",
+  "output_root": "/home/fpfaff/source-only/dlolab-benchmark-source-v1/informative-prefix-source-v1",
+  "parent_lock_id": "015e6d84aa68a2a4310552ef4880752b972890f02d3e09e333ff575c92b8df25",
+  "probe_controls_sha256": [
+    "694b773f7870c4b53571fd5a83da32081f221cb076da2d453321fa0afc25322b",
+    "56545ba5a8b92252b06c1eb991667a47a0966403011276b7eff1b0a1c9f65031"
+  ],
+  "protocol": {
+    "angle_component_limit_rad": 1.0,
+    "calibration_or_evaluation_worlds_read": false,
+    "frontload_fractions": [
+      0.25,
+      0.5
+    ],
+    "full_source_world_count_if_prefix_passes": 27,
+    "gpu_work": false,
+    "independent_noise_sd_m": 0.002,
+    "macro_count": 3,
+    "method_evaluation_authorized": false,
+    "minimum_relative_excess_information_gain": 0.1,
+    "minimum_source_gain_over_map": 0.002,
+    "minimum_source_information_gain": 0.005,
+    "minimum_whitened_stretching_secant_norm": 1.0,
+    "new_recordings": false,
+    "observation_frames": [
+      139,
+      219,
+      299
+    ],
+    "observed_nodes": [
+      3,
+      6,
+      8
+    ],
+    "prefix_batches_per_probe": 2,
+    "prefix_steps": 300,
+    "prefix_world_indices": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "probe_selection": "highest_stretching_secant_norm_then_smaller_fraction",
+    "protected_data_read": false,
+    "redistribution": "add_fraction_of_incumbent_macro2_xyz_to_macro1_subtract_from_macro2",
+    "require_reward_not_below_original_best_blind": true,
+    "retry_authorized": false,
+    "role": "source_information_and_control_value_screen_not_method_confirmation",
+    "rotation_commands_unchanged": true,
+    "same_native_reward_physics_controller_and_release": true,
+    "schema": "dlolab-slingshot-informative-prefix-source-v1",
+    "shared_bias_sd_m": 0.005,
+    "source_noise_draws_per_world": 8192,
+    "source_noise_seed": 260907,
+    "sphere_center_observed": true,
+    "translation_norm_limit_m": 0.1
+  },
+  "revision": "8f2b0424bbfb12329f13449f5c11378156ad94df",
+  "schema": "dlolab-slingshot-probe-lock-v1",
+  "source_sha256": {
+    "docs/dlolab_slingshot_belief_control_source_v1.md": "8f018a00e1a3782e9916e125000dbaaeacf60db0bb40bfadded7ffe38bdc06c9",
+    "docs/dlolab_slingshot_informative_prefix_source_v1.md": "e82ba20e6cffddb27cc6a6f3e5acec3b65eccf9b309ec05d723dd0b09f188c33",
+    "scripts/remote/run_dlolab_slingshot_belief.py": "a30413ec0effa0b7ee9e0e1b79380b929da2c9be51e67d53b3564d97df94714b",
+    "scripts/remote/run_dlolab_slingshot_probe.py": "32ec4fa9343ddeda7e1edd1c6799c2d7f020203d63d30a4c4e976b82bf86a8c0",
+    "src/bayesian_phystwin/guard_harm_risk.py": "facb0f537aca07b1d32ad670a3db681692fc0602f1bca340b520c9b3e9a8d0bf",
+    "src/bayesian_phystwin_experiments/coupled_action_regret.py": "fc587ac65a6c25d243a84a0f9b5cb3369eb8987d0bacee4df320a92232b344d8",
+    "src/bayesian_phystwin_experiments/dlolab_benchmark.py": "7e802fc456b99df27c882ec34ff0c8a43933020572705d931316e625b2bca057",
+    "src/bayesian_phystwin_experiments/dlolab_regret_artifacts.py": "c69571b47a399fe14f225bc64721ff19c1c9f2438f1d5dd38f277c233a2c2987",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_batch.py": "a213cfa3d17fa34997b1b5335664339c14f1e1492a9ec46285de178b2f988549",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_belief.py": "fb417469fd9e9c20729526048e08727421310132d1f825edf7404e293a82a2c8",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_belief_native.py": "28908b91eeaa50636d05bb86ba5a8828e6b7d3f89d3dbf10ea9ad9236f03c256",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_probe.py": "e24617736cd38340774f2b2b62b24c63187fd94028027a8d4632d0cd26295dbe",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_process.py": "625db26c1216927648162aed601392da0bd398cef2d544e9c92aaa2ee758a484",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_value.py": "06930e89908c005e23353516c6c2a2789003d46e13935f2068d95e4389b8ca19",
+    "tests/test_dlolab_slingshot_belief.py": "31c2e6c717046c23d74326d8c393f06029776f560a315c5093ca3cc4acf5ec46",
+    "tests/test_dlolab_slingshot_belief_custody.py": "04957d168c40cd84db7797fb22548bb28e890054c1f64df369a07e7097b53fd3",
+    "tests/test_dlolab_slingshot_probe.py": "71df7fae2ff6625f41392eb976dbcd2855be6e000a31421f72e6e8fd698a5e95"
+  }
+}
