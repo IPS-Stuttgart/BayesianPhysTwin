@@ -1,0 +1,1247 @@
+{
+  "artifact_id": "3d33e111a95f9e504c83c1938cba63a77009e900f3aaf4e137b54563f892d3eb",
+  "calibrations": {
+    "independent": {
+      "count": 19,
+      "coverage": 0.9,
+      "offset": 0.06471667098999023,
+      "rank": 18
+    },
+    "joint": {
+      "count": 19,
+      "coverage": 0.9,
+      "offset": 0.06905016708374023,
+      "rank": 18
+    },
+    "mean": {
+      "count": 19,
+      "coverage": 0.9,
+      "offset": 0.7285524030751176,
+      "rank": 18
+    }
+  },
+  "count": 19,
+  "evaluation_futures_read": false,
+  "future_seals": [
+    "08779e59f8d464f6b25a60184db0679f359453cb62ca5c96a63cff608653ba00",
+    "35e3026e24f39426b4a2f5cf2332cdee218862c538fd525e753efb1462068ef4",
+    "a34b3918a62577ba73dcc4e27f7a1175d7d61a751b177ebf42f3f870fc851431",
+    "cc74c98b8f9ce16dec340756537d335c53c2af8162c612ea448eab3b7dcabbbb",
+    "4c173dda0997bb037cef2cd32a2f8b930c7eef717559b9c5a554abd99b9cfcc4",
+    "0a398296ff2c00df911bee467097e27c1971091190f8311ab40c9ee9d21f289c",
+    "02f4d37b94b77dd50713c6ee15aeef79a97a0a2a07006b29772e5121f5f63ece",
+    "152812f18f818017c3a7ac83b97fd5d0e478afa33630319aaf17948488d3af0d",
+    "12a11883b4ee10f81309c3d39114b566b810136a955b7522d1a4441d5e1f7f97",
+    "fcafb26fffbcc5a6876cce68dacf083bcced7610e95edceeede3f0a14a73b1fc",
+    "0d414a1e30990f0b031242ee5055e7f1e42de22b481c69dfdcfc4d3eb50aa1de",
+    "03b967f3bada36bb82dbd44cb582f53beaf37295a1d7d3b6121031d10021a3ff",
+    "fbf4cd96454cecba8abb6ed6fa72bd1651632abc286ccb2483abb5d1c1a0aea0",
+    "2518e97c258256ac5e2fd358e12bc11b88b943099f1b4f8aeb6f33cb45d4cf52",
+    "1dd6bebb20c3911ef335b6cd726e6710caf3a71ab5e880cbe53bf27cd2bbec2b",
+    "399f1b35434bd6fe3c58ebc92f38dce2871f4663c03105774490d9ef60c0c816",
+    "ec713b23ab3a7fdae2285d7a3bf65d51cdf3c03486f60a815503dd00bdbb6f5d",
+    "59bae00ca860d07376f5a16100286056912f8ff808c79387fd455a8eeb1d726f",
+    "321ad57687f95f434555da5207fd2fbf602ac4f7820122c87425f9db5313d41e"
+  ],
+  "lock_id": "015e6d84aa68a2a4310552ef4880752b972890f02d3e09e333ff575c92b8df25",
+  "native_qa": [
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 2.4730217873525362e-14,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.008990197318288096,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.909975051879883,
+          "sphere_progress_m": 0.18078395768575775
+        },
+        {
+          "cube_progress_m": 0.009441551871533727,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.927176475524902,
+          "sphere_progress_m": 0.11739290768674851
+        },
+        {
+          "cube_progress_m": 0.0023280597108492063,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.902328014373779,
+          "sphere_progress_m": 0.10831632317470408
+        },
+        {
+          "cube_progress_m": 0.00481826535064836,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.904818534851074,
+          "sphere_progress_m": 0.11234690231404881
+        },
+        {
+          "cube_progress_m": 0.012307597304366591,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.930719375610352,
+          "sphere_progress_m": 0.2950839493525164
+        },
+        {
+          "cube_progress_m": 0.009007376524907185,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.9098615646362305,
+          "sphere_progress_m": 0.18117320909589818
+        },
+        {
+          "cube_progress_m": 0.009203926291342007,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.91047477722168,
+          "sphere_progress_m": 0.18336386306845243
+        },
+        {
+          "cube_progress_m": 0.009007376524907185,
+          "minimum_gripper_cube_separation_m": 0.20360964329500983,
+          "native_reward": 6.9098615646362305,
+          "sphere_progress_m": 0.18117320909589818
+        }
+      ],
+      "prefix_replay_error_m": 4.558853294867049e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 7.146768732368969e-10,
+      "metrics": [
+        {
+          "cube_progress_m": 0.006050526224448655,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.906050682067871,
+          "sphere_progress_m": 0.11478890002936332
+        },
+        {
+          "cube_progress_m": 0.007326979689803836,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.9185638427734375,
+          "sphere_progress_m": 0.11432445652910808
+        },
+        {
+          "cube_progress_m": -1.1951634126816657e-11,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.900000095367432,
+          "sphere_progress_m": 0.027299380610843887
+        },
+        {
+          "cube_progress_m": 0.0011174732955171462,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.901117324829102,
+          "sphere_progress_m": 0.10979439744855946
+        },
+        {
+          "cube_progress_m": 0.010318745600255058,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.919010162353516,
+          "sphere_progress_m": 0.1238224694302493
+        },
+        {
+          "cube_progress_m": 0.006223135485511122,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.906223297119141,
+          "sphere_progress_m": 0.1177195082341852
+        },
+        {
+          "cube_progress_m": 0.006129186938038433,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.906129360198975,
+          "sphere_progress_m": 0.11686309133172071
+        },
+        {
+          "cube_progress_m": 0.006223135622586501,
+          "minimum_gripper_cube_separation_m": 0.20330273791390838,
+          "native_reward": 6.906223297119141,
+          "sphere_progress_m": 0.11771950824863903
+        }
+      ],
+      "prefix_replay_error_m": 1.790234627208065e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.08558440456709829,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 7.053582191467285,
+          "sphere_progress_m": 0.5637019609253888
+        },
+        {
+          "cube_progress_m": 0.0018394433387450282,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 6.903679370880127,
+          "sphere_progress_m": 0.31451700250407666
+        },
+        {
+          "cube_progress_m": 0.14195712627648635,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 7.0495219230651855,
+          "sphere_progress_m": 0.7104309900035213
+        },
+        {
+          "cube_progress_m": 0.08388739157675643,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 6.983997821807861,
+          "sphere_progress_m": 0.45993941323836446
+        },
+        {
+          "cube_progress_m": 0.06289956932525217,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 7.049752712249756,
+          "sphere_progress_m": 0.3551089742674648
+        },
+        {
+          "cube_progress_m": 0.08900619575267463,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 7.056672096252441,
+          "sphere_progress_m": 0.5599767985676292
+        },
+        {
+          "cube_progress_m": 0.09284820596113721,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 7.060646057128906,
+          "sphere_progress_m": 0.5704106410593928
+        },
+        {
+          "cube_progress_m": 0.08900619575267463,
+          "minimum_gripper_cube_separation_m": 0.20371130625912334,
+          "native_reward": 7.056672096252441,
+          "sphere_progress_m": 0.5599767985676292
+        }
+      ],
+      "prefix_replay_error_m": 4.4015138755959526e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.03407735286867136,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.972451210021973,
+          "sphere_progress_m": 0.9189281431658867
+        },
+        {
+          "cube_progress_m": 0.006888436309118284,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.910824298858643,
+          "sphere_progress_m": 0.11399619252329202
+        },
+        {
+          "cube_progress_m": 0.0002663734737661516,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.900444030761719,
+          "sphere_progress_m": 1.2436686123063403
+        },
+        {
+          "cube_progress_m": 0.062328294692978015,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.9628496170043945,
+          "sphere_progress_m": 0.6929825087552177
+        },
+        {
+          "cube_progress_m": 0.06691108394811646,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 7.069425582885742,
+          "sphere_progress_m": 0.5230444740423268
+        },
+        {
+          "cube_progress_m": 0.03288672785530844,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.971419811248779,
+          "sphere_progress_m": 0.9310040061304508
+        },
+        {
+          "cube_progress_m": 0.04506368464197136,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.988186836242676,
+          "sphere_progress_m": 0.8783187692233763
+        },
+        {
+          "cube_progress_m": 0.03288672785530844,
+          "minimum_gripper_cube_separation_m": 0.20308071434155583,
+          "native_reward": 6.971419811248779,
+          "sphere_progress_m": 0.9310040061304508
+        }
+      ],
+      "prefix_replay_error_m": 2.5422372540440108e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.013870518610939686,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.9182562828063965,
+          "sphere_progress_m": 0.1295649265233876
+        },
+        {
+          "cube_progress_m": 0.011903254706150501,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.93971586227417,
+          "sphere_progress_m": 0.12693794076372916
+        },
+        {
+          "cube_progress_m": -5.68803337763768e-12,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.900000095367432,
+          "sphere_progress_m": 0.06653485296796574
+        },
+        {
+          "cube_progress_m": 0.004001505992801219,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.904001712799072,
+          "sphere_progress_m": 0.11262093303843099
+        },
+        {
+          "cube_progress_m": 0.016163653424982993,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.936315059661865,
+          "sphere_progress_m": 0.13661531363319823
+        },
+        {
+          "cube_progress_m": 0.015580681208749891,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.921730995178223,
+          "sphere_progress_m": 0.1357520396030438
+        },
+        {
+          "cube_progress_m": 0.01302100337268422,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.916673183441162,
+          "sphere_progress_m": 0.1281858132166743
+        },
+        {
+          "cube_progress_m": 0.015580681208749891,
+          "minimum_gripper_cube_separation_m": 0.20292001322480283,
+          "native_reward": 6.921730995178223,
+          "sphere_progress_m": 0.1357520396030438
+        }
+      ],
+      "prefix_replay_error_m": 2.939315457695102e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.13529000575787004,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.140838146209717,
+          "sphere_progress_m": 0.5200267637633647
+        },
+        {
+          "cube_progress_m": 0.0075398358396988885,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 6.913548946380615,
+          "sphere_progress_m": 0.1191330365723478
+        },
+        {
+          "cube_progress_m": 0.1483530525311756,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.058330059051514,
+          "sphere_progress_m": 0.854918874915565
+        },
+        {
+          "cube_progress_m": 0.11994809833396664,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.021287441253662,
+          "sphere_progress_m": 0.3944901588744051
+        },
+        {
+          "cube_progress_m": 0.08684732300999837,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.117393970489502,
+          "sphere_progress_m": 0.3330396215618744
+        },
+        {
+          "cube_progress_m": 0.13661316969950388,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.142157554626465,
+          "sphere_progress_m": 0.5109833953471734
+        },
+        {
+          "cube_progress_m": 0.13558836586150885,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.141136169433594,
+          "sphere_progress_m": 0.5182875392168409
+        },
+        {
+          "cube_progress_m": 0.13661316969950388,
+          "minimum_gripper_cube_separation_m": 0.20293130999647493,
+          "native_reward": 7.142157554626465,
+          "sphere_progress_m": 0.5109833953471734
+        }
+      ],
+      "prefix_replay_error_m": 4.025946243046974e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.12698561728167385,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.133236885070801,
+          "sphere_progress_m": 0.5746371917474125
+        },
+        {
+          "cube_progress_m": 0.007833507366971415,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 6.915832042694092,
+          "sphere_progress_m": 0.12077180223420683
+        },
+        {
+          "cube_progress_m": 0.09124528956683065,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.002529621124268,
+          "sphere_progress_m": 1.0074070882638326
+        },
+        {
+          "cube_progress_m": 0.13277100941715125,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.03830099105835,
+          "sphere_progress_m": 0.4582826158964955
+        },
+        {
+          "cube_progress_m": 0.08222897565441412,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.123736381530762,
+          "sphere_progress_m": 0.45533480602290516
+        },
+        {
+          "cube_progress_m": 0.12378347551202129,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.130010604858398,
+          "sphere_progress_m": 0.5721228948836472
+        },
+        {
+          "cube_progress_m": 0.11971236869200086,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.1257429122924805,
+          "sphere_progress_m": 0.5686543017166956
+        },
+        {
+          "cube_progress_m": 0.12378347551202129,
+          "minimum_gripper_cube_separation_m": 0.2029607086120187,
+          "native_reward": 7.130010604858398,
+          "sphere_progress_m": 0.5721228948836472
+        }
+      ],
+      "prefix_replay_error_m": 2.634524542965977e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.15606668802331428,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 7.1645402908325195,
+          "sphere_progress_m": 0.7338127980751719
+        },
+        {
+          "cube_progress_m": 0.0074652825186992955,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 6.913203239440918,
+          "sphere_progress_m": 0.1197586671591627
+        },
+        {
+          "cube_progress_m": 0.041549163552399265,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 6.9491448402404785,
+          "sphere_progress_m": 1.3110596781482247
+        },
+        {
+          "cube_progress_m": 0.15577901883359183,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 7.060277938842773,
+          "sphere_progress_m": 0.49588508537952586
+        },
+        {
+          "cube_progress_m": 0.0900136959291725,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 7.1343231201171875,
+          "sphere_progress_m": 0.42000210010667705
+        },
+        {
+          "cube_progress_m": 0.15637731163313626,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 7.166034698486328,
+          "sphere_progress_m": 0.702406553906672
+        },
+        {
+          "cube_progress_m": 0.15427307426719608,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 7.16137170791626,
+          "sphere_progress_m": 0.734231890255828
+        },
+        {
+          "cube_progress_m": 0.15637731163313626,
+          "minimum_gripper_cube_separation_m": 0.2029343658234814,
+          "native_reward": 7.166034698486328,
+          "sphere_progress_m": 0.702406553906672
+        }
+      ],
+      "prefix_replay_error_m": 3.362934930528638e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 1.2864709297844001e-14,
+      "duplicate_error_m": 2.3314683517128287e-15,
+      "metrics": [
+        {
+          "cube_progress_m": 0.11163260974899453,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 7.088962554931641,
+          "sphere_progress_m": 0.6945976178267692
+        },
+        {
+          "cube_progress_m": 0.008342775795229906,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 6.915128231048584,
+          "sphere_progress_m": 0.1199104573938318
+        },
+        {
+          "cube_progress_m": 0.04367784508088246,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 6.95005989074707,
+          "sphere_progress_m": 1.189287137696172
+        },
+        {
+          "cube_progress_m": 0.08027155400083613,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 6.9817681312561035,
+          "sphere_progress_m": 0.7216175045491395
+        },
+        {
+          "cube_progress_m": 0.07117746137910108,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 7.076557636260986,
+          "sphere_progress_m": 0.43276203921300616
+        },
+        {
+          "cube_progress_m": 0.12003645714301064,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 7.099578857421875,
+          "sphere_progress_m": 0.696327855345003
+        },
+        {
+          "cube_progress_m": 0.11574844988146882,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 7.092777729034424,
+          "sphere_progress_m": 0.725973395214158
+        },
+        {
+          "cube_progress_m": 0.12003645714301064,
+          "minimum_gripper_cube_separation_m": 0.20317362937813505,
+          "native_reward": 7.099578857421875,
+          "sphere_progress_m": 0.696327855345003
+        }
+      ],
+      "prefix_replay_error_m": 1.3197776205231548e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 5.498726474151283e-14,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.08025009824069579,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 7.049623012542725,
+          "sphere_progress_m": 0.4804281855286891
+        },
+        {
+          "cube_progress_m": 0.006538730012853988,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 6.915102958679199,
+          "sphere_progress_m": 0.21270468989077573
+        },
+        {
+          "cube_progress_m": 0.13418151036314407,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 7.040990829467773,
+          "sphere_progress_m": 0.6230500111767205
+        },
+        {
+          "cube_progress_m": 0.09447202166203256,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 6.994668960571289,
+          "sphere_progress_m": 0.34717386807625145
+        },
+        {
+          "cube_progress_m": 0.05019948603185559,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 7.026132106781006,
+          "sphere_progress_m": 0.2803010133237914
+        },
+        {
+          "cube_progress_m": 0.08954053571186765,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 7.065064430236816,
+          "sphere_progress_m": 0.4764899918789642
+        },
+        {
+          "cube_progress_m": 0.07852078274257973,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 7.04715633392334,
+          "sphere_progress_m": 0.4852490189364977
+        },
+        {
+          "cube_progress_m": 0.08954053571186765,
+          "minimum_gripper_cube_separation_m": 0.20359219215873475,
+          "native_reward": 7.065064430236816,
+          "sphere_progress_m": 0.4764899918789642
+        }
+      ],
+      "prefix_replay_error_m": 3.462508058049707e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.040661541152217345,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.983046531677246,
+          "sphere_progress_m": 0.15760115423862098
+        },
+        {
+          "cube_progress_m": 0.008372374447139869,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.918607711791992,
+          "sphere_progress_m": 0.1167127908625081
+        },
+        {
+          "cube_progress_m": 0.03569395057920352,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.935694217681885,
+          "sphere_progress_m": 0.17665034682588723
+        },
+        {
+          "cube_progress_m": 0.044018794878844164,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.944018840789795,
+          "sphere_progress_m": 0.15394826704514783
+        },
+        {
+          "cube_progress_m": 0.033999276628742775,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.984930992126465,
+          "sphere_progress_m": 0.16396099267570102
+        },
+        {
+          "cube_progress_m": 0.04973048580619513,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.992599010467529,
+          "sphere_progress_m": 0.19751025020553054
+        },
+        {
+          "cube_progress_m": 0.04099904552208036,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.981499195098877,
+          "sphere_progress_m": 0.15822823350313028
+        },
+        {
+          "cube_progress_m": 0.04973048580619513,
+          "minimum_gripper_cube_separation_m": 0.20325625352226515,
+          "native_reward": 6.992599010467529,
+          "sphere_progress_m": 0.19751025020553054
+        }
+      ],
+      "prefix_replay_error_m": 2.6570759481536754e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 2.6608923398008244e-14,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.015257982973592543,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.919697284698486,
+          "sphere_progress_m": 0.13670404875922448
+        },
+        {
+          "cube_progress_m": 0.004774737382839123,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.905200958251953,
+          "sphere_progress_m": 0.10997435774468295
+        },
+        {
+          "cube_progress_m": -1.6274481762224013e-12,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.900000095367432,
+          "sphere_progress_m": 0.08224198675102337
+        },
+        {
+          "cube_progress_m": 0.0021667397645364905,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.902166843414307,
+          "sphere_progress_m": 0.10887394860265365
+        },
+        {
+          "cube_progress_m": 0.03740442298041838,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 7.004002571105957,
+          "sphere_progress_m": 0.1997064648501481
+        },
+        {
+          "cube_progress_m": 0.01568885069987322,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.9203643798828125,
+          "sphere_progress_m": 0.13950110491882062
+        },
+        {
+          "cube_progress_m": 0.015763321214522258,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.92078161239624,
+          "sphere_progress_m": 0.1388094652525929
+        },
+        {
+          "cube_progress_m": 0.01568885069987322,
+          "minimum_gripper_cube_separation_m": 0.20350856239581938,
+          "native_reward": 6.9203643798828125,
+          "sphere_progress_m": 0.13950110491882062
+        }
+      ],
+      "prefix_replay_error_m": 2.6608923398008244e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 1.4085954624931674e-14,
+      "duplicate_error_m": 1.6574813743730488e-10,
+      "metrics": [
+        {
+          "cube_progress_m": 0.12435195735548027,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.135016441345215,
+          "sphere_progress_m": 0.384605119095766
+        },
+        {
+          "cube_progress_m": 0.007608814837909317,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 6.915318965911865,
+          "sphere_progress_m": 0.12132895807364535
+        },
+        {
+          "cube_progress_m": 0.17569984519587795,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.084262847900391,
+          "sphere_progress_m": 0.41689832725909126
+        },
+        {
+          "cube_progress_m": 0.12051657687064676,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.023855209350586,
+          "sphere_progress_m": 0.2898306837191532
+        },
+        {
+          "cube_progress_m": 0.059515911574186176,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.082191467285156,
+          "sphere_progress_m": 0.27622438161984436
+        },
+        {
+          "cube_progress_m": 0.12508082961484468,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.1359405517578125,
+          "sphere_progress_m": 0.39102648367850135
+        },
+        {
+          "cube_progress_m": 0.12198190222295652,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.133232593536377,
+          "sphere_progress_m": 0.3887824359327838
+        },
+        {
+          "cube_progress_m": 0.12508082960741923,
+          "minimum_gripper_cube_separation_m": 0.20291985512171964,
+          "native_reward": 7.1359405517578125,
+          "sphere_progress_m": 0.3910264836695975
+        }
+      ],
+      "prefix_replay_error_m": 3.4508854107606624e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 1.857021481033172e-15,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.060351870934979596,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 7.01835823059082,
+          "sphere_progress_m": 0.8004465094453201
+        },
+        {
+          "cube_progress_m": 0.00929255654991809,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 6.9226274490356445,
+          "sphere_progress_m": 0.11690407953913001
+        },
+        {
+          "cube_progress_m": 0.041110958880593046,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 6.944692134857178,
+          "sphere_progress_m": 0.8790169681603428
+        },
+        {
+          "cube_progress_m": 0.10149874036757586,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 7.004741668701172,
+          "sphere_progress_m": 0.6015181219546464
+        },
+        {
+          "cube_progress_m": 0.0621255235278578,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 7.0646538734436035,
+          "sphere_progress_m": 0.5939838436638671
+        },
+        {
+          "cube_progress_m": 0.05531718491966467,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 7.011651992797852,
+          "sphere_progress_m": 0.8259695798776137
+        },
+        {
+          "cube_progress_m": 0.06553635063581872,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 7.024336338043213,
+          "sphere_progress_m": 0.774975319249509
+        },
+        {
+          "cube_progress_m": 0.05531718491966467,
+          "minimum_gripper_cube_separation_m": 0.20320867796773084,
+          "native_reward": 7.011651992797852,
+          "sphere_progress_m": 0.8259695798776137
+        }
+      ],
+      "prefix_replay_error_m": 2.130760845542312e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 5.767011868051952e-11,
+      "metrics": [
+        {
+          "cube_progress_m": 0.0799800534359777,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 7.04802942276001,
+          "sphere_progress_m": 0.3041151459347963
+        },
+        {
+          "cube_progress_m": 0.007889309894890645,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 6.917037010192871,
+          "sphere_progress_m": 0.11843570549933274
+        },
+        {
+          "cube_progress_m": 0.013632577952538083,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 6.913632869720459,
+          "sphere_progress_m": 0.1261861758363514
+        },
+        {
+          "cube_progress_m": 0.038397722252466016,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 6.9383978843688965,
+          "sphere_progress_m": 0.14243179989008692
+        },
+        {
+          "cube_progress_m": 0.068683396172175,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 7.082205772399902,
+          "sphere_progress_m": 0.311479389119903
+        },
+        {
+          "cube_progress_m": 0.07856447666736588,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 7.045405387878418,
+          "sphere_progress_m": 0.29997940852049376
+        },
+        {
+          "cube_progress_m": 0.07821874366877496,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 7.04310941696167,
+          "sphere_progress_m": 0.2975419196318982
+        },
+        {
+          "cube_progress_m": 0.07856447666439698,
+          "minimum_gripper_cube_separation_m": 0.20397819699816738,
+          "native_reward": 7.045405387878418,
+          "sphere_progress_m": 0.29997940852149724
+        }
+      ],
+      "prefix_replay_error_m": 7.265889279128857e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 2.1170565300820954e-14,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.03770250270979486,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 6.98526668548584,
+          "sphere_progress_m": 1.010591942273344
+        },
+        {
+          "cube_progress_m": 0.00847448796454342,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 6.920028209686279,
+          "sphere_progress_m": 0.11973798036260452
+        },
+        {
+          "cube_progress_m": 1.6821627424334906e-11,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 6.900000095367432,
+          "sphere_progress_m": 1.4750481012784626
+        },
+        {
+          "cube_progress_m": 0.10723721429529176,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 7.011017322540283,
+          "sphere_progress_m": 0.6879998844367883
+        },
+        {
+          "cube_progress_m": 0.08068547374950441,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 7.1098551750183105,
+          "sphere_progress_m": 0.5325103771337305
+        },
+        {
+          "cube_progress_m": 0.037685116741576874,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 6.985965251922607,
+          "sphere_progress_m": 1.0269637610190832
+        },
+        {
+          "cube_progress_m": 0.03856056200734648,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 6.986158847808838,
+          "sphere_progress_m": 0.9965732575638151
+        },
+        {
+          "cube_progress_m": 0.037685116741576874,
+          "minimum_gripper_cube_separation_m": 0.20304690708453269,
+          "native_reward": 6.985965251922607,
+          "sphere_progress_m": 1.0269637610190832
+        }
+      ],
+      "prefix_replay_error_m": 2.2220073003786922e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 9.62771529167128e-15,
+      "duplicate_error_m": 0.0,
+      "metrics": [
+        {
+          "cube_progress_m": 0.008165851859128687,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.90816593170166,
+          "sphere_progress_m": 0.12010745917572196
+        },
+        {
+          "cube_progress_m": 0.0049406569936095435,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.90626859664917,
+          "sphere_progress_m": 0.11244777316235471
+        },
+        {
+          "cube_progress_m": 0.0013694004594560216,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.901369571685791,
+          "sphere_progress_m": 0.10955215435992874
+        },
+        {
+          "cube_progress_m": 0.0046111071607695675,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.904611110687256,
+          "sphere_progress_m": 0.10895497691333189
+        },
+        {
+          "cube_progress_m": 0.011951632878091756,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.928691864013672,
+          "sphere_progress_m": 0.22977633332014213
+        },
+        {
+          "cube_progress_m": 0.007526665939552507,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.907526969909668,
+          "sphere_progress_m": 0.12284053389861638
+        },
+        {
+          "cube_progress_m": 0.008395590190205221,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.908395767211914,
+          "sphere_progress_m": 0.1211636321809911
+        },
+        {
+          "cube_progress_m": 0.007526665939552507,
+          "minimum_gripper_cube_separation_m": 0.20353076075339724,
+          "native_reward": 6.907526969909668,
+          "sphere_progress_m": 0.12284053389861638
+        }
+      ],
+      "prefix_replay_error_m": 2.5238491851986566e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 0.0,
+      "duplicate_error_m": 2.7529756252420157e-11,
+      "metrics": [
+        {
+          "cube_progress_m": 0.06865609634260894,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 7.032040596008301,
+          "sphere_progress_m": 0.726504273288137
+        },
+        {
+          "cube_progress_m": 0.008633110134346728,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 6.92072868347168,
+          "sphere_progress_m": 0.12019927063970248
+        },
+        {
+          "cube_progress_m": 0.09825283896685677,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 6.999805927276611,
+          "sphere_progress_m": 0.49756654863931654
+        },
+        {
+          "cube_progress_m": 0.112472763396672,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 7.015361785888672,
+          "sphere_progress_m": 0.4061426877672535
+        },
+        {
+          "cube_progress_m": 0.0631778020927608,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 7.071047782897949,
+          "sphere_progress_m": 0.551061512593445
+        },
+        {
+          "cube_progress_m": 0.0980017328147681,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 7.076476097106934,
+          "sphere_progress_m": 0.728836331786832
+        },
+        {
+          "cube_progress_m": 0.04590293385175043,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 6.995708465576172,
+          "sphere_progress_m": 0.7992590259749797
+        },
+        {
+          "cube_progress_m": 0.09800173278864605,
+          "minimum_gripper_cube_separation_m": 0.20335228273776046,
+          "native_reward": 7.076476097106934,
+          "sphere_progress_m": 0.7288363317934212
+        }
+      ],
+      "prefix_replay_error_m": 2.4287863387151276e-14,
+      "qa_passed": true
+    },
+    {
+      "checks": {
+        "common_prefix": true,
+        "duplicate_positions": true,
+        "duplicate_rewards": true,
+        "fixed_endpoints": true,
+        "sealed_prefix_replay": true
+      },
+      "common_prefix_error_m": 3.524958103184872e-15,
+      "duplicate_error_m": 1.7783305383822778e-10,
+      "metrics": [
+        {
+          "cube_progress_m": 0.007087254983628333,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.920496463775635,
+          "sphere_progress_m": 1.0770788899803843
+        },
+        {
+          "cube_progress_m": 0.016130484287005753,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.949930667877197,
+          "sphere_progress_m": 0.12285143856665526
+        },
+        {
+          "cube_progress_m": -6.609657265954638e-12,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.900000095367432,
+          "sphere_progress_m": 1.043073478106525
+        },
+        {
+          "cube_progress_m": -6.609657265954638e-12,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.900000095367432,
+          "sphere_progress_m": 0.9991744828633478
+        },
+        {
+          "cube_progress_m": 0.01808736981209816,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.9616594314575195,
+          "sphere_progress_m": 0.870843143388929
+        },
+        {
+          "cube_progress_m": 0.004597158049088973,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.91356086730957,
+          "sphere_progress_m": 1.0992685727252123
+        },
+        {
+          "cube_progress_m": 0.008396149709187423,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.924182415008545,
+          "sphere_progress_m": 1.0659824772266926
+        },
+        {
+          "cube_progress_m": 0.004597157890116277,
+          "minimum_gripper_cube_separation_m": 0.20383128320221008,
+          "native_reward": 6.91356086730957,
+          "sphere_progress_m": 1.0992685727252123
+        }
+      ],
+      "prefix_replay_error_m": 5.863365348801608e-14,
+      "qa_passed": true
+    }
+  ],
+  "schema": "dlolab-slingshot-belief-calibrator-v1"
+}
