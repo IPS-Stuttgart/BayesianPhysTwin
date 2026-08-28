@@ -1,0 +1,305 @@
+{
+  "admitted_batches": 15,
+  "artifact_id": "f9cf9969ae66d244408971700f6f1d9c0b6b6167df1e78afc24cb16bcd45b0fe",
+  "completed_batches": 15,
+  "lock_id": "b5598b27b174a0eb5e62635d008c1ecbb8b13f4199f2f771b44d898fcb1d0ca8",
+  "metrics": {
+    "checks": {
+      "observed_coordinate_span_within_1mm": true,
+      "observed_regret_span_within_0_0005": true,
+      "observed_reward_span_within_0_00025": true
+    },
+    "controller_value_or_posterior_computed": false,
+    "earlier_failed_path_study_reopened": false,
+    "maximum_coordinate_span_m": 0.0002805898396082973,
+    "maximum_paired_regret_span": 6.496906280517578e-05,
+    "maximum_reward_span": 8.344650268554688e-05,
+    "new_controller_evaluation_authorized": false,
+    "observed_numerical_budget_passed": true,
+    "population_repeatability_bound_established": false,
+    "worlds": [
+      {
+        "batch_count": 5,
+        "contact_index": 0,
+        "coupling": 0.3,
+        "descriptive_paired_regret_covariance": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "descriptive_reward_covariance": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "paired_regret_spans": [
+          0.0,
+          0.0
+        ],
+        "policies": [
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 1.3877787807814457e-17,
+              "gripper_pos_m": 3.6154412796918223e-13,
+              "rod_pos_m": 1.9115914406953038e-10,
+              "sphere_pos_m": 0.0
+            },
+            "grip_policy_index": 2,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 1.9115914406953038e-10,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 10,
+            "within_batch_coordinate_span_m": 1.2038245400525227e-10,
+            "within_batch_reward_span": 0.0
+          },
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 0.0,
+              "gripper_pos_m": 5.782874179516284e-13,
+              "rod_pos_m": 3.4668720672037523e-10,
+              "sphere_pos_m": 0.0
+            },
+            "grip_policy_index": 6,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 2.2300367108485375e-10,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 10,
+            "within_batch_coordinate_span_m": 1.7460638490618408e-10,
+            "within_batch_reward_span": 0.0
+          },
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 0.0,
+              "gripper_pos_m": 1.2023715356690445e-13,
+              "rod_pos_m": 1.484278761097052e-10,
+              "sphere_pos_m": 0.0
+            },
+            "grip_policy_index": 5,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 1.484278761097052e-10,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 20,
+            "within_batch_coordinate_span_m": 4.8128168117500536e-14,
+            "within_batch_reward_span": 0.0
+          }
+        ]
+      },
+      {
+        "batch_count": 5,
+        "contact_index": 1,
+        "coupling": 0.6,
+        "descriptive_paired_regret_covariance": [
+          [
+            5.968558980384842e-14,
+            -7.95807864051312e-13
+          ],
+          [
+            -7.95807864051312e-13,
+            7.627960485478981e-10
+          ]
+        ],
+        "descriptive_reward_covariance": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            7.644473498658045e-10,
+            8.554934538551605e-13
+          ],
+          [
+            0.0,
+            8.554934538551605e-13,
+            5.968558980384842e-14
+          ]
+        ],
+        "paired_regret_spans": [
+          4.76837158203125e-07,
+          6.496906280517578e-05
+        ],
+        "policies": [
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 2.0059648386805407e-10,
+              "gripper_pos_m": 1.0375866832390557e-12,
+              "rod_pos_m": 3.1861281472086306e-08,
+              "sphere_pos_m": 2.8166968202292253e-09
+            },
+            "grip_policy_index": 2,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 2.8512519824330784e-08,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 10,
+            "within_batch_coordinate_span_m": 1.2188989438003534e-08,
+            "within_batch_reward_span": 0.0
+          },
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 0.00015545046600040635,
+              "gripper_pos_m": 1.1310952174881095e-12,
+              "rod_pos_m": 1.6860789782587038e-08,
+              "sphere_pos_m": 0.0002805898396082973
+            },
+            "grip_policy_index": 6,
+            "layout_a_minus_b_mean_reward": 8.304913838408368e-06,
+            "reward_span": 8.344650268554688e-05,
+            "same_layout_same_slot_process_coordinate_span_m": 0.0002805103201705683,
+            "same_layout_same_slot_process_reward_span": 8.344650268554688e-05,
+            "trajectory_count": 10,
+            "within_batch_coordinate_span_m": 0.0002804189105848065,
+            "within_batch_reward_span": 8.344650268554688e-05
+          },
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 5.667694355504516e-07,
+              "gripper_pos_m": 2.7253477252742186e-12,
+              "rod_pos_m": 1.0883673381978376e-07,
+              "sphere_pos_m": 8.550206737067967e-09
+            },
+            "grip_policy_index": 5,
+            "layout_a_minus_b_mean_reward": 2.5828679373063324e-07,
+            "reward_span": 4.76837158203125e-07,
+            "same_layout_same_slot_process_coordinate_span_m": 5.667694355504516e-07,
+            "same_layout_same_slot_process_reward_span": 4.76837158203125e-07,
+            "trajectory_count": 20,
+            "within_batch_coordinate_span_m": 5.654183730108286e-07,
+            "within_batch_reward_span": 4.76837158203125e-07
+          }
+        ]
+      },
+      {
+        "batch_count": 5,
+        "contact_index": 2,
+        "coupling": 0.9,
+        "descriptive_paired_regret_covariance": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "descriptive_reward_covariance": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "paired_regret_spans": [
+          0.0,
+          0.0
+        ],
+        "policies": [
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 1.6323736806711509e-10,
+              "gripper_pos_m": 6.263323193422821e-13,
+              "rod_pos_m": 1.2405789468622475e-09,
+              "sphere_pos_m": 1.5686102416978542e-10
+            },
+            "grip_policy_index": 2,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 1.2057962180817006e-09,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 10,
+            "within_batch_coordinate_span_m": 5.0568617175617e-10,
+            "within_batch_reward_span": 0.0
+          },
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 2.0723112115206277e-10,
+              "gripper_pos_m": 6.621092563108277e-13,
+              "rod_pos_m": 2.1364614487262568e-09,
+              "sphere_pos_m": 6.937523611139085e-10
+            },
+            "grip_policy_index": 6,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 2.1364614487262568e-09,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 10,
+            "within_batch_coordinate_span_m": 1.3192533489247982e-09,
+            "within_batch_reward_span": 0.0
+          },
+          {
+            "coordinate_spans_m": {
+              "cube_pos_m": 4.387220586821172e-10,
+              "gripper_pos_m": 9.619249841108513e-13,
+              "rod_pos_m": 2.9781301591480513e-09,
+              "sphere_pos_m": 7.752260777760256e-10
+            },
+            "grip_policy_index": 5,
+            "layout_a_minus_b_mean_reward": 0.0,
+            "reward_span": 0.0,
+            "same_layout_same_slot_process_coordinate_span_m": 2.9187235683902912e-09,
+            "same_layout_same_slot_process_reward_span": 0.0,
+            "trajectory_count": 20,
+            "within_batch_coordinate_span_m": 8.401904449950592e-10,
+            "within_batch_reward_span": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  "native_trajectories": 120,
+  "new_controller_evaluation_authorized": false,
+  "observed_numerical_budget_passed": true,
+  "planned_batches": 15,
+  "protected_data_read": false,
+  "schema": "dlolab-slingshot-numerical-result-v1",
+  "source_seal_ids": [
+    "925b80f8b98416ea5ddedec00fc9ff87e7a81736050bb9a73a6190a80a629d04",
+    "5d43e82332fb5eb13bed9cc9acf1f89b3da13acd1d24408b94929cbb74c3c8cc",
+    "c1442d6112df20b3c8e03f4aa14bc1891ceec7445aa6ea678a33d1c2c7f99276",
+    "85a09061f5b8cb0f48774640d90ed29f4b68dcb528067103e2c91eb5fb38656c",
+    "06922e7ac3b1b3c13f075611acb002c95787482066d5efd2f0a93c3fa3e877a9",
+    "4250202f472930aa52b0cc839f18122772eccaf378c193e5ca9d834d03359d7e",
+    "96c463d7f1f20243f8ff12eebd157c20354a4f624a36a6840d62a4dc9e78e891",
+    "dc9730de825d32f50d553b2ce0ea87f6446d128ade7923e5ea4c5e0a4355e6cc",
+    "80e49f6da5974ee0ec35f48f6be79381ff1433ada4f9400c7b94e355b41a3585",
+    "41fceb1745abdef84d570f7ad54d29e4ccc925e145b3fd62c3c01ee9c9d4cd37",
+    "018e5989281ec7bb1b37a6193ee365330437b6f50e3e11bd77bc5093ebd4ebb9",
+    "1b2c1067e4c328945b7a5637fe7f44876705dd7a6e68adeb1490dd392f71d64b",
+    "6747951d1e7f1572cb73d1ea50e2c5c89451adc675bd134a98d0a506d5650251",
+    "7536846a40790e9c3f5c5cc619c5326adef66bf0053f75b9f3b98a0caab06335",
+    "83dcd3c2bd129cf4d66eec8af58b520663aa96ded4e129ddce8d744360a0cc45"
+  ],
+  "unrun_batches": 0
+}
