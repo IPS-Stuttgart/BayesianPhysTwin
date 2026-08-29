@@ -15,9 +15,31 @@ from bayesian_phystwin.hood_source_qualification_v1 import (
     assess_hood_source_replays_v1,
     build_hood_source_result_v1,
     consume_hood_source_attempt_v1,
+    file_sha256,
     load_hood_source_qualification_plan_v1,
     save_hood_source_result_v1,
 )
+
+
+def test_registered_plan_is_bound_to_exact_local_sources() -> None:
+    root = Path(__file__).parents[1]
+    plan = load_hood_source_qualification_plan_v1(
+        root / "protocols/execution_requests/hood_mesh_source_qualification_v1.json"
+    )
+    assert (
+        plan.plan_id
+        == "fcc5419f1e6dd5196bc39b581fe8fc71f5c064d09bf48e32375f264b185b70f8"
+    )
+    assert (
+        plan.value["implementation"]["revision"]
+        == "4b3e80b7243b91c9a744ff9fec4e41fbf8ad99a8"
+    )
+    assert (
+        plan.value["information_boundary"]["certification_execution_authorized"]
+        is False
+    )
+    for relative, expected in plan.implementation_source_files.items():
+        assert file_sha256(root / relative) == expected
 
 
 def _plan(tmp_path: Path) -> dict[str, Any]:
