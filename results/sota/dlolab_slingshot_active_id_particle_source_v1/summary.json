@@ -1,0 +1,63 @@
+{
+  "schema": "dlolab-slingshot-active-id-particle-summary-v1",
+  "artifact_id": "aa809e08271e874fbb452f8b1b1dbb6394129d45c2205abd48ea9a11774b353f",
+  "status": "particle_value_gate_failed",
+  "implementation_revision": "001b9403bc198bc70171fc15e74df3ef89e5de47",
+  "attempt_id": "2a5deea9edb5af7fe7574eaeb524a90155e6fd380053a89bbfb163b5e78e2c34",
+  "lock_id": "3dde6f7ec8aed5a68f040f387eb54dfc11a117341c82a282213169abe20d50ed",
+  "particle_bank_id": "17b96572a07a3d20818e19f3f31fec4afff98429aea8628f0872e70a3788c22a",
+  "result_id": "b202020e4e9e73a92b83a416a09d252394890b7ab02bcd188ac73889e92c3005",
+  "particle_count": 27,
+  "new_native_prefix_batch_count": 4,
+  "all_new_prefixes_native_qualified": true,
+  "best_blind_action": 4,
+  "best_blind_reward": 7.165733635425568,
+  "oracle_reward": 7.176108419895172,
+  "oracle_headroom": 0.010374784469604492,
+  "passive": {
+    "expected_bayes_reward": 7.16574868861062,
+    "expected_map_reward": 7.160140589046932,
+    "gain_over_blind": 1.5053185052238405e-05,
+    "mutual_information_nats": 1.0772549555108486,
+    "probability_action_differs_from_blind": 0.0127410888671875
+  },
+  "active_frontload_70": {
+    "expected_bayes_reward": 7.170392231531878,
+    "expected_map_reward": 7.150318108082502,
+    "gain_over_blind": 0.004658596106310142,
+    "gain_over_passive": 0.004643542921257904,
+    "fraction_oracle_headroom_captured": 0.44903063962038503,
+    "absolute_gate_shortfall": 0.0003414038936898579,
+    "mutual_information_nats": 1.910103007695351,
+    "probability_action_differs_from_blind": 0.4480247497558594,
+    "map_gain_over_blind": -0.01541552734306606,
+    "bayes_gain_over_map": 0.020074123449376202
+  },
+  "checks": {
+    "active_gain_over_blind_at_least_0_005": false,
+    "active_gain_over_passive_at_least_0_003": true,
+    "active_mutual_information_not_below_passive": true,
+    "all_new_prefixes_native_qualified": true,
+    "captures_at_least_25pct_oracle_headroom": true
+  },
+  "particle_value_gate_passed": false,
+  "continuous_truth_protocol_automatically_authorized": false,
+  "truth_probe_generated": false,
+  "truth_future_generated": false,
+  "method_promotion_authorized": false,
+  "fresh_evaluation_authorized": false,
+  "retry_authorized": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "official_dlo3_evaluation": false,
+  "new_recordings": false,
+  "gpu_work": false,
+  "file_sha256": {
+    "attempt.json": "9bd38b035e6f097836ac3b3e5122556ca09c4a0e950b3b789c4d7d3cd4ab0c2b",
+    "lock.json": "b239ae43c443fce6cdf7910dfec20bb3410b88fbe49e69eec0bfd1a647cec989",
+    "particle-bank/arrays.npz": "d2ec1f6fc9e8495a1eb99c20d2c8815868dadd7ce9f4449904fb3daf39d15e20",
+    "particle-bank/seal.json": "3d8d8bf60e50de58de55ed99351545390f2222bc7a4278e2c1223f8cb3e87afc",
+    "result.json": "12a28ebe74e9fac2743e0e8c02363e994d1b8dbf3e758ec81555d4f82e979724"
+  }
+}
