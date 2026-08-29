@@ -1,0 +1,57 @@
+{
+  "schema": "dlolab-matched-reset-dual-control-source-v1",
+  "role": "controlled_public_native_dual_control_source_study_not_confirmation",
+  "source_only": true,
+  "public_native_simulator_only": true,
+  "hidden_variable": "continuous bending modulus",
+  "particle_bending_scales": [0.45, 0.58, 0.74, 0.9, 1.08, 1.3, 1.58, 1.92, 2.3],
+  "truth_bending_scale": "log-uniform[0.48,2.20]",
+  "truth_count": 72,
+  "probe_names": [
+    "null_hold",
+    "low_frequency_lateral",
+    "high_frequency_lateral",
+    "high_frequency_vertical"
+  ],
+  "probe_selection": "maximum_expected_material_mutual_information",
+  "probe_selection_uses_task_reward_or_future": false,
+  "fixed_active_probe_control_index": 1,
+  "matched_reset": "byte-identical native snapshot restore before every probe and task branch",
+  "decision_must_precede_truth_task_futures": true,
+  "primary_arm": "active_bayes",
+  "comparators": [
+    "goal_conditioned_best_fixed",
+    "null_bayes",
+    "fixed_probe_bayes",
+    "active_map",
+    "active_guarded",
+    "oracle"
+  ],
+  "probe_gate": {
+    "selected_probe_nonnull": true,
+    "selected_probe_differs_from_fixed_control": true,
+    "minimum_information_gain_over_null_nats": 0.1,
+    "minimum_map_accuracy_gain_over_null": 0.1
+  },
+  "task_headroom_gate": {
+    "minimum_material_dependent_oracle_actions_per_goal": 2,
+    "minimum_oracle_gain_over_goal_conditioned_best_fixed": 0.05
+  },
+  "source_value_gate": {
+    "minimum_active_gain_over_best_fixed": 0.03,
+    "minimum_active_gain_over_null_bayes": 0.01,
+    "minimum_active_gain_over_fixed_probe_bayes": 0.005,
+    "paired_bootstrap_lower_gain_over_all_controls": 0.0,
+    "minimum_active_nonfixed_decisions": 12,
+    "maximum_active_harm_fraction_vs_null": 0.2
+  },
+  "fallback": "exact goal-conditioned best-fixed action",
+  "one_attempt": true,
+  "retry_authorized": false,
+  "new_recordings": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "official_dlo3_evaluation": false,
+  "automatic_fresh_evaluation": false
+}
