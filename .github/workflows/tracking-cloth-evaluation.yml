@@ -79,7 +79,10 @@ jobs:
   evaluation:
     name: Read-only cloth pilot / gpuserver6000
     needs: contracts
-    if: github.event_name == 'workflow_dispatch' && github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: [self-hosted, Linux, X64, gpuserver6000]
     timeout-minutes: 45
     env:
