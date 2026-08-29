@@ -1,0 +1,71 @@
+{
+  "schema": "dlolab-task-aware-voi-source-v1",
+  "role": "controlled_public_native_task_aware_dual_control_source_study",
+  "source_only": true,
+  "public_native_simulator_only": true,
+  "particle_worlds": {
+    "bending_scales": [0.52, 0.72, 1.0, 1.4, 1.95],
+    "twisting_scales": [0.2, 1.0, 5.0],
+    "count": 15
+  },
+  "truth_worlds": {
+    "bending_scale": "log-uniform[0.56,1.82]",
+    "twisting_scale": "log-uniform[0.24,4.20]",
+    "count": 90,
+    "seed": 261201
+  },
+  "probes": [
+    "null_hold",
+    "slow_vertical_bend",
+    "slow_lateral_bend",
+    "slow_conical_twist",
+    "fast_conical_twist"
+  ],
+  "primary_selector": "minimum expected downstream Bayes task loss",
+  "generic_information_control": "maximum full-latent mutual information",
+  "fixed_probe_control_index": 2,
+  "primary_selector_uses_truth_futures": false,
+  "matched_reset": "exact native snapshot restore before every probe and task branch",
+  "action_root_vertical_offsets_m": [-0.006, -0.0045, -0.003, -0.0015, 0.0, 0.0015, 0.003, 0.0045, 0.006],
+  "goal_tip_heights_m": [0.53, 0.58, 0.63],
+  "primary_arm": "task_aware_bayes",
+  "comparators": [
+    "goal_conditioned_best_fixed",
+    "null_bayes",
+    "fixed_probe_bayes",
+    "mi_probe_bayes",
+    "task_aware_map",
+    "task_aware_guarded",
+    "oracle"
+  ],
+  "selector_gate": {
+    "task_aware_probe_nonnull": true,
+    "generic_mi_probe_nonnull": true,
+    "selectors_differ": true,
+    "minimum_relative_risk_gain_over_null": 0.03,
+    "minimum_relative_risk_gain_over_generic_mi": 0.01,
+    "minimum_relative_risk_gain_over_fixed_probe": 0.01
+  },
+  "task_headroom_gate": {
+    "minimum_distinct_bending_conditioned_oracle_actions_per_goal": 2,
+    "minimum_oracle_relative_gain_over_best_fixed": 0.08,
+    "maximum_twisting_only_oracle_disagreement_fraction": 0.34
+  },
+  "source_value_gate": {
+    "minimum_gain_over_best_fixed": 0.03,
+    "minimum_gain_over_null_bayes": 0.01,
+    "minimum_gain_over_generic_mi_bayes": 0.005,
+    "minimum_gain_over_fixed_probe_bayes": 0.005,
+    "paired_bootstrap_upper_loss_difference_below_zero": true,
+    "minimum_action_differences_vs_generic_mi": 12,
+    "maximum_harm_fraction_vs_generic_mi": 0.25
+  },
+  "one_attempt": true,
+  "retry_authorized": false,
+  "new_recordings": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "official_dlo3_evaluation": false,
+  "automatic_fresh_evaluation": false
+}

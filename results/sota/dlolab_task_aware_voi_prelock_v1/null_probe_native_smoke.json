@@ -1,0 +1,86 @@
+{
+  "gpu_work": false,
+  "material_comparison_performed": false,
+  "native": {
+    "all_branches_qualified": true,
+    "bending_sha256": "50b0bc5fd201474c003d71785074772d7cadfd58f00f5e064cbe6e076ad50658",
+    "branch_count": 1,
+    "branch_names": [
+      "probe-0"
+    ],
+    "branch_qa": [
+      {
+        "maximum_clamp_error_m": 0.0,
+        "maximum_segment_ratio": 1.000009618336572,
+        "minimum_height_m": 0.5333373906466934,
+        "minimum_segment_ratio": 0.9999999999999964,
+        "ordinary": true,
+        "passed": true
+      }
+    ],
+    "command_sha256": [
+      "a829803cc82cbad61fe0c4d4ffe20869a000b22af8ee33cdb4f1bdfd08fcfa98"
+    ],
+    "device": "cpu",
+    "initial_position_sha256": "bb3aada1e1141575696f0d1e0a61fc66a327d6d773f7a939d9443b66bacd2b0f",
+    "initial_state_sha256": {
+      "d1": "74d84b2c407813906700e8052f250b319c85ed503456a305a21e46d87830caf3",
+      "d1_ref": "74d84b2c407813906700e8052f250b319c85ed503456a305a21e46d87830caf3",
+      "d2": "65ad2e7bb2ca7dc4f3f1d82bbe3f2ac9ccaf05d4bb0404ae0e9491d792a95dbf",
+      "d2_ref": "65ad2e7bb2ca7dc4f3f1d82bbe3f2ac9ccaf05d4bb0404ae0e9491d792a95dbf",
+      "d3": "e32275eb31fda5cf84081518f4c45ddf6d2f0aa2d644d1720dffd689eb79aa0c",
+      "edge": "de83f5f3fc09aec7f1f66d6bf118a73e37f4050b410b640a7367da8696985d87",
+      "fixed": "59e20ed59781b0058622a28f551edd6a8912e55ccab1febf7f7fea1774ac1748",
+      "kappa_rest": "0c3449f0fc7da6e8fe96d4d7b655b7ec88ccb02772200f45e6994df13dab459a",
+      "kb": "97be4f6859a8c1ba8f6d3892a822d4072668568cedbdcef3fbc3073240bc8843",
+      "length": "5926aa390cc6c8b509b14ada050a262000583debc0995d614eff874c5dcf8b7c",
+      "omega": "564e7394053fcc1c004c9e491581a86272534ae61c0de1294c7fb6291b972ad4",
+      "pos": "bb3aada1e1141575696f0d1e0a61fc66a327d6d773f7a939d9443b66bacd2b0f",
+      "theta": "564e7394053fcc1c004c9e491581a86272534ae61c0de1294c7fb6291b972ad4",
+      "twist": "cc3d7d87fb881ff2baafb5ff9b146cb15dc48fff837c6bf62c307845e7752063",
+      "vel": "35876e66c147a6e284e8aa1f236187e6575a0e9c6005a3e09aaff5c90137fcea"
+    },
+    "model_id": "174671d1cc7c48cb3a551a3220ac1460c62b7b32e040e81986ba9dd1a51a0b1b",
+    "native_source_modified": false,
+    "probe_and_task_state_coupled": false,
+    "restore_state_sha256": [
+      {
+        "d1": "74d84b2c407813906700e8052f250b319c85ed503456a305a21e46d87830caf3",
+        "d1_ref": "74d84b2c407813906700e8052f250b319c85ed503456a305a21e46d87830caf3",
+        "d2": "65ad2e7bb2ca7dc4f3f1d82bbe3f2ac9ccaf05d4bb0404ae0e9491d792a95dbf",
+        "d2_ref": "65ad2e7bb2ca7dc4f3f1d82bbe3f2ac9ccaf05d4bb0404ae0e9491d792a95dbf",
+        "d3": "e32275eb31fda5cf84081518f4c45ddf6d2f0aa2d644d1720dffd689eb79aa0c",
+        "edge": "de83f5f3fc09aec7f1f66d6bf118a73e37f4050b410b640a7367da8696985d87",
+        "fixed": "59e20ed59781b0058622a28f551edd6a8912e55ccab1febf7f7fea1774ac1748",
+        "kappa_rest": "0c3449f0fc7da6e8fe96d4d7b655b7ec88ccb02772200f45e6994df13dab459a",
+        "kb": "97be4f6859a8c1ba8f6d3892a822d4072668568cedbdcef3fbc3073240bc8843",
+        "length": "5926aa390cc6c8b509b14ada050a262000583debc0995d614eff874c5dcf8b7c",
+        "omega": "564e7394053fcc1c004c9e491581a86272534ae61c0de1294c7fb6291b972ad4",
+        "pos": "bb3aada1e1141575696f0d1e0a61fc66a327d6d773f7a939d9443b66bacd2b0f",
+        "theta": "564e7394053fcc1c004c9e491581a86272534ae61c0de1294c7fb6291b972ad4",
+        "twist": "cc3d7d87fb881ff2baafb5ff9b146cb15dc48fff837c6bf62c307845e7752063",
+        "vel": "35876e66c147a6e284e8aa1f236187e6575a0e9c6005a3e09aaff5c90137fcea"
+      }
+    ],
+    "runtime_camera_rendered": false,
+    "twisting_sha256": "022980eab0554535cc14f2b599e2c5b8bb3a38083c46a8b766aad72654f38ac5",
+    "wall_seconds": 9.0986935539986,
+    "world_count": 1
+  },
+  "passed": true,
+  "probe_name": "null_hold",
+  "protected_data_read": false,
+  "role": "prelock_nominal_null_probe_implementation_evidence_only",
+  "schema": "dlolab-task-aware-voi-null-probe-native-smoke-v1",
+  "selector_computed": false,
+  "source_test_world_read": false,
+  "task_action_executed": false,
+  "task_reward_read": false,
+  "trajectory_shape": [
+    1,
+    72,
+    16,
+    3
+  ],
+  "world_count": 1
+}
