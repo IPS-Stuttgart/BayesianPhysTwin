@@ -1,0 +1,165 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth Deformation evaluation
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/tracking-cloth-evaluation.yml
+      - experiments/tracking_cloth_deformation_v1/**
+      - tests/test_tracking_cloth_deformation_v1.py
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "inventory / source-only qualification / sealed shake-to-twist pilot"
+        type: choice
+        options: [inventory, source_only, evaluate]
+        default: source_only
+        required: true
+      dataset_root:
+        description: "Read-only cache; retained verified ZIP and extracted files must be present"
+        type: string
+        default: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+        required: true
+      workers:
+        description: "Source rollout CPU workers (GPU is not needed)"
+        type: choice
+        options: ["1", "2", "4", "8"]
+        default: "4"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-evaluation-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Tracking-cloth synthetic contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: experiments/tracking_cloth_deformation_v1/requirements.txt
+      - name: Install isolated test dependencies
+        run: python -m pip install -r experiments/tracking_cloth_deformation_v1/requirements.txt pytest ruff
+      - name: Test data boundaries, predictors, and sealed scoring
+        run: python -m pytest -q tests/test_tracking_cloth_deformation_v1.py
+      - name: Lint and formatting diagnostics
+        if: always()
+        run: |
+          python -m ruff format --diff experiments/tracking_cloth_deformation_v1 tests/test_tracking_cloth_deformation_v1.py > formatting.patch || true
+          cat formatting.patch
+          python -m ruff check experiments/tracking_cloth_deformation_v1 tests/test_tracking_cloth_deformation_v1.py
+          python -m ruff format --check experiments/tracking_cloth_deformation_v1 tests/test_tracking_cloth_deformation_v1.py
+      - name: Retain a formatting patch on validation failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-formatting-${{ github.run_id }}
+          path: formatting.patch
+          retention-days: 7
+          if-no-files-found: ignore
+
+  evaluation:
+    name: Read-only cloth pilot / gpuserver6000
+    needs: contracts
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 45
+    env:
+      DATASET_ROOT: ${{ inputs.dataset_root }}
+      EVALUATION_MODE: ${{ inputs.mode }}
+      WORKERS: ${{ inputs.workers }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Prepare private scratch and isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          test -r "$DATASET_ROOT"
+          echo "Runner: $RUNNER_NAME; required label: gpuserver6000"
+          echo "Included dataset license: CC BY-NC-SA 4.0; metadata conflict retained."
+          venv="$RUNNER_TEMP/tracking-cloth-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$RUNNER_TEMP/tracking-cloth-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          test ! -e "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          echo "CLOTH_PY=$venv/bin/python" >> "$GITHUB_ENV"
+          echo "CLOTH_OUT=$output" >> "$GITHUB_ENV"
+      - name: Audit, fit sources, and optionally seal target predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$EVALUATION_MODE" in
+            inventory) stage=inventory ;;
+            source_only) stage=source ;;
+            evaluate) stage=predict ;;
+            *) echo "Unsupported mode" >&2; exit 2 ;;
+          esac
+          "$CLOTH_PY" -m experiments.tracking_cloth_deformation_v1.run \
+            --dataset-root "$DATASET_ROOT" --output "$CLOTH_OUT" \
+            --stage "$stage" --workers "$WORKERS"
+      - name: Publish complete prediction seal before target scoring
+        if: inputs.mode == 'evaluate'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-prediction-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.CLOTH_OUT }}/protocol.json
+            ${{ env.CLOTH_OUT }}/source_fit.json
+            ${{ env.CLOTH_OUT }}/dataset_manifest.json
+            ${{ env.CLOTH_OUT }}/prediction_seal.json
+            ${{ env.CLOTH_OUT }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+      - name: Score only sealed twisting forecasts
+        if: inputs.mode == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CLOTH_PY" -m experiments.tracking_cloth_deformation_v1.run \
+            --dataset-root "$DATASET_ROOT" --output "$CLOTH_OUT" --stage score
+      - name: Publish operator summary
+        if: always() && env.CLOTH_OUT != ''
+        shell: bash
+        run: |
+          if test -f "$CLOTH_OUT/report.md"; then cat "$CLOTH_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          if test -f "$CLOTH_OUT/failure.json"; then
+            echo '## Incomplete run: no scientific conclusion' >> "$GITHUB_STEP_SUMMARY"
+            cat "$CLOTH_OUT/failure.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload aggregate evidence only, never raw recordings or trajectory arrays
+        if: always() && env.CLOTH_OUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-${{ inputs.mode }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.CLOTH_OUT }}/*.json
+            ${{ env.CLOTH_OUT }}/*.csv
+            ${{ env.CLOTH_OUT }}/report.md
+            ${{ env.CLOTH_OUT }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: warn
