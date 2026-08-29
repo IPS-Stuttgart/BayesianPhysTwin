@@ -1,0 +1,68 @@
+{
+  "arms": {
+    "continuous_bayes": {
+      "mean_gain_over_fixed": 0.02088735787371023,
+      "mean_native_reward": 0.9117579818855401,
+      "worlds_harmed_beyond_numeric_margin": 0
+    },
+    "continuous_map": {
+      "mean_gain_over_fixed": 0.020046080794029246,
+      "mean_native_reward": 0.9109167048058593,
+      "worlds_harmed_beyond_numeric_margin": 3
+    },
+    "continuous_prior_best_fixed": {
+      "mean_gain_over_fixed": 0.0,
+      "mean_native_reward": 0.89087062401183,
+      "worlds_harmed_beyond_numeric_margin": 0
+    },
+    "equal_resolution_ensemble": {
+      "mean_gain_over_fixed": 0.021555314421275194,
+      "mean_native_reward": 0.9124259384331052,
+      "worlds_harmed_beyond_numeric_margin": 0
+    },
+    "finite_particle_bayes": {
+      "mean_gain_over_fixed": 0.02178057646161033,
+      "mean_native_reward": 0.9126512004734403,
+      "worlds_harmed_beyond_numeric_margin": 2
+    },
+    "resolution_maximin": {
+      "mean_gain_over_fixed": 0.019189594750023863,
+      "mean_native_reward": 0.9100602187618538,
+      "worlds_harmed_beyond_numeric_margin": 0
+    }
+  },
+  "artifact_id": "b2c2365c3d8f8f5702d250d7d1de62cfd2ac283ba297203e8e920a51b5c6b594",
+  "development_file_sha256": {
+    "decisions/arrays.npz": "35cf83c309a2e82f3eb24baf2666ee73ebf17de74d1a1f71b8ef5262041e98dd",
+    "generation/arrays.npz": "2a7717f20fabaa3ae8eef4ee4004d1c078cc513117fdc3fce5f370d365dc9605",
+    "result.json": "716e8d65abeeddaf95935c08bc7269a07ff63cc6f24d457f801a9d5bfa7cbc98"
+  },
+  "development_v2_result_id": "2f95e41f51753881cdfe8ca77774cdd60c5d1f92a0552d5570e7299a3244b5bf",
+  "ensemble_decisions_different_from_continuous": 18563,
+  "ensemble_decisions_different_from_finite": 24209,
+  "ensemble_mean_gain_vs_continuous": 0.0006679565475649629,
+  "ensemble_mean_gain_vs_finite": -0.00022526204033513492,
+  "finite_gain_fraction_retained": 0.9896576639864343,
+  "future_experiment_authorized": false,
+  "lead_is_not_prospective_evidence": true,
+  "model_resolution_weights": {
+    "continuous": 0.5,
+    "finite": 0.5
+  },
+  "parent_file_sha256": {
+    "source-bank/arrays.npz": "914bd948df92e8b829ac65ca8c075c789d122a63a9ec32807a302bef16e2271d",
+    "source-bank/seal.json": "143686ee40ddfb8456e23cded5c8225015e60bd678a4f77bd4074946c33fe14f"
+  },
+  "protected_data_read": false,
+  "registered_v2_arm_reproduction": {
+    "continuous_bayes": true,
+    "continuous_map": true,
+    "finite_particle_bayes": true,
+    "fixed": true
+  },
+  "schema": "dlolab-wrapping-resolution-ensemble-development-v3",
+  "sensor_draws_per_world": 4096,
+  "status": "post_open_development_diagnostic",
+  "v2_source_gate_reclassified": false,
+  "worlds": 32
+}
