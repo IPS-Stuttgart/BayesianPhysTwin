@@ -257,10 +257,12 @@ def _base_native_qa(
     )
     fixed = float(np.abs(data["post_pos_m"] - POSTS).max())
     checks = {
-        "finite_extensible_segments": bool(ratios.min() >= 0.25 and ratios.max() <= 3),
-        "above_floor": float(data["rod_pos_m"][..., 2].min()) >= -0.01,
-        "attached_material_points": attachment <= 0.01,
-        "fixed_posts": fixed <= 1e-9,
+        "finite_extensible_segments": bool(
+            ratios.min() >= 0.25 and ratios.max() <= 3
+        ),
+        "above_floor": bool(float(data["rod_pos_m"][..., 2].min()) >= -0.01),
+        "attached_material_points": bool(attachment <= 0.01),
+        "fixed_posts": bool(fixed <= 1e-9),
     }
     return {
         "checks": checks,
@@ -325,11 +327,13 @@ def future_native_qa(
     checks = {
         **result["checks"],
         "ordinary_native_success": bool(np.all(reported > -98)),
-        "common_prefix": prefix_error <= 1e-5,
-        "duplicate_positions": duplicate_error <= 0.001,
-        "duplicate_rewards": abs(final[1] - final[8]) <= 0.001,
-        "native_final_reward": final_error <= 1e-7,
-        "native_cumulative_reward": np.array_equal(cumulative, cumulative_reported),
+        "common_prefix": bool(prefix_error <= 1e-5),
+        "duplicate_positions": bool(duplicate_error <= 0.001),
+        "duplicate_rewards": bool(abs(final[1] - final[8]) <= 0.001),
+        "native_final_reward": bool(final_error <= 1e-7),
+        "native_cumulative_reward": bool(
+            np.array_equal(cumulative, cumulative_reported)
+        ),
     }
     return {
         **result,

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin_experiments.dlolab_regret_artifacts import read_record
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -164,3 +166,17 @@ def test_decision_barrier_contents_cannot_claim_future_read() -> None:
     }
     assert value["future_simulated"] is False and value["future_read"] is False
     assert np.asarray([value["pre_future"]["pre_future_gate_passed"]]).all()
+
+
+def test_compact_terminal_summary_is_content_bound_and_unscored() -> None:
+    path = (
+        ROOT
+        / "results/sota/dlolab_wrapping_continuous_bayes_source_v1/summary.json"
+    )
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    artifact_id = summary.pop("artifact_id")
+    assert content_id(summary) == artifact_id
+    assert summary["status"] == "terminal_technical_failure"
+    assert summary["completed_future_worlds"] == 32
+    assert summary["task_value_scored"] is False
+    assert summary["retry_authorized"] is False

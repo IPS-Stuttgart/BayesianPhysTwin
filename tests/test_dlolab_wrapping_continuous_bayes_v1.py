@@ -64,6 +64,52 @@ def _prefix_fixture() -> tuple[dict[str, np.ndarray], dict[str, object]]:
     return data, native
 
 
+def _future_fixture() -> tuple[dict[str, np.ndarray], dict[str, object]]:
+    loop = _circle()
+    world = study.continuous_worlds()[0]
+    steps = 2200
+    data = {
+        "rod_pos_m": np.broadcast_to(loop, (steps, N_ENVS, 50, 3)),
+        "rod_vel_m_s": np.broadcast_to(
+            np.zeros((1, 1, 50, 3)), (steps, N_ENVS, 50, 3)
+        ),
+        "post_pos_m": np.broadcast_to(POSTS, (steps, N_ENVS, 3, 3)),
+        "gripper_pos_m": np.broadcast_to(
+            loop[[17, 33]], (steps, N_ENVS, 2, 3)
+        ),
+        "robot_qpos": np.broadcast_to(
+            np.zeros((1, 1, 18)), (steps, N_ENVS, 18)
+        ),
+        "controls": action_bank(),
+        "joint_targets": np.zeros((N_ENVS, 111, 18)),
+        "initial_rod_pos_m": np.broadcast_to(loop, (N_ENVS, 50, 3)),
+    }
+    data.update({name: np.zeros((N_ENVS, 1)) for name in MEMORY_NAMES})
+    final = study.native_reward(data["rod_pos_m"][-1], data["post_pos_m"][-1])
+    cumulative = np.zeros(N_ENVS, dtype=np.float32)
+    for _ in range(110):
+        cumulative += final.astype(np.float32) + np.float32(1)
+    native: dict[str, object] = {
+        "native_steps": steps,
+        "worlds": [world] * N_ENVS,
+        "world_realization": {
+            "bending": [world["bending_E"]] * N_ENVS,
+            "stretching": [world["stretching_K"]] * N_ENVS,
+        },
+        "prefix_only": False,
+        "future_simulated": True,
+        "reward_exposed": True,
+        "prefix_reward_excluded": False,
+        "native_final_reward": final.tolist(),
+        "native_cumulative_reward": cumulative.tolist(),
+        "twisting_stiffness_zero_preserved": True,
+        "device": "cpu",
+        "runtime_camera_rendered": False,
+        "native_source_modified": False,
+    }
+    return data, native
+
+
 def test_worlds_are_fresh_deterministic_and_covered_once() -> None:
     roster = study.continuous_worlds()
     assert len(roster) == study.WORLD_COUNT
@@ -114,6 +160,14 @@ def test_prefix_qa_excludes_future_and_reward() -> None:
     native["future_simulated"] = True
     with pytest.raises(ValueError, match="native execution contract"):
         study.prefix_native_qa(data, native, roster)
+
+
+def test_future_qa_contains_only_json_serializable_booleans() -> None:
+    data, native = _future_fixture()
+    result = study.future_native_qa(data, native, study.continuous_worlds()[0])
+    assert result["qa_passed"]
+    assert all(type(value) is bool for value in result["checks"].values())
+    json.dumps(result, sort_keys=True, allow_nan=False)
 
 
 def test_prefix_adapter_preserves_registered_frames_and_identities() -> None:

@@ -679,6 +679,7 @@ def _run(output: Path) -> None:
             future_qa.append(qa)
             prefix_match.append(difference)
         reward = np.asarray(rewards, dtype=np.float64)
+        stage = "generation"
         generation_dir = output / "generation"
         generation_dir.mkdir()
         generation = write_record(
