@@ -152,6 +152,24 @@ the source gate terminal.
 Dataset access and simulator-output availability must be audited before this
 split is registered. No dataset outcome is authorized by this document.
 
+### Current feasibility boundary
+
+The access audit on 2026-08-30 found no active or reserved 4D-DRESS lane, no
+dataset payload, no license or access receipt, and no active process on the two
+shared compute hosts. A detached code-only preprocessing checkout exists, but
+it is not evidence of dataset authorization. The exact access-closed record is
+`protocols/locks/fourddress_query_competence_feasibility_v1.json`.
+
+The feasibility record pins the public 4D-DRESS code repository at
+`d1685e18b438587f00227df41ec7659e67f04df1` and HOOD at
+`9bc1076195979ac6c027fdd729c6e960cad62f2a`. Source and certification execution
+remain unauthorized until a user-accepted dataset-license receipt, payload and
+participant-metadata manifests, HOOD checkpoint, permitted SMPL assets, source
+adapter qualification, and metadata-only participant split are independently
+hash-bound. The registered software can already derive the 8/24 split from a
+future names-only roster without reading outcomes. It cannot create or infer
+that roster while access is closed.
+
 ## Manipulation-domain stress test
 
 The handed-off RGBench MatPhys protocol remains useful as a domain-shift stress

@@ -1,0 +1,69 @@
+{
+  "schema": "bayesian-phystwin.fourddress-query-competence-feasibility-boundary",
+  "schema_version": 1,
+  "protocol_id": "b2981f1cca048ff9621ac1b70e03af42126d5c77510d046f9eab55bb589ac3a1",
+  "protocol_label": "4D-DRESS query-conditional simulator competence feasibility v1",
+  "claim_boundary": "Access-closed feasibility record for a future participant-balanced HOOD-versus-LBS query-conditional competence study on licensed 4D-DRESS data; this artifact authorizes metadata work only and is not simulator evidence, a dataset license, a source execution, a held-out execution, a safety claim, or state-of-the-art evidence.",
+  "upstreams": {
+    "dataset_repository": "eth-ait/4d-dress",
+    "dataset_revision": "d1685e18b438587f00227df41ec7659e67f04df1",
+    "dataset_project_url": "https://eth-ait.github.io/4d-dress/",
+    "simulator_repository": "Dolorousrtur/HOOD",
+    "simulator_revision": "9bc1076195979ac6c027fdd729c6e960cad62f2a"
+  },
+  "intended_study": {
+    "physical_group": "participant",
+    "required_participant_count": 32,
+    "method_selection_count": 8,
+    "certification_count": 24,
+    "participant_selection_salt": "fourddress-query-competence-participant-v1",
+    "participant_selection_method": "metadata-only-salted-sha256-ranking-v1",
+    "candidate_family": "hood-general-garment-dynamics-v1",
+    "fallback_family": "linear-blend-skinning-observed-pose-v1",
+    "risk_signal_family": "preoutcome-cross-runtime-disagreement-and-runtime-diagnostics-v1",
+    "query_functional": "garment-surface-pointset-forecast-v1",
+    "horizons_seconds": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "primary_loss": "participant-balanced-symmetric-garment-surface-distance-mm-v1",
+    "confidence_level": 0.95,
+    "maximum_accepted_harm_upper_bound": 0.2,
+    "minimum_accepted_certification_participants": 14,
+    "method_selection_precedes_certification": true,
+    "participant_balanced_inference_required": true
+  },
+  "access_audit": {
+    "audit_date_utc": "2026-08-30",
+    "hosts_checked": [
+      "gpuserver4090",
+      "gpuserver6000"
+    ],
+    "active_lane_found": false,
+    "reserved_cohort_found": false,
+    "dataset_payload_found": false,
+    "license_or_access_receipt_found": false,
+    "active_process_found": false,
+    "code_only_checkout_found": true
+  },
+  "unresolved_prerequisites": {
+    "user_accepted_dataset_license_receipt_sha256": null,
+    "dataset_payload_manifest_sha256": null,
+    "participant_metadata_manifest_sha256": null,
+    "hood_checkpoint_sha256": null,
+    "smpl_asset_receipt_sha256": null,
+    "source_adapter_qualification_id": null,
+    "participant_split_id": null
+  },
+  "information_boundary": {
+    "public_metadata_read": true,
+    "license_terms_accepted_by_agent": false,
+    "dataset_payload_read": false,
+    "participant_roster_read": false,
+    "physical_outcomes_read": false,
+    "source_execution_authorized": false,
+    "certification_execution_authorized": false,
+    "replacement_allowed": false
+  }
+}
