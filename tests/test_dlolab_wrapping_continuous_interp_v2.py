@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,6 +18,15 @@ from bayesian_phystwin_experiments.dlolab_wrapping_source import (
     action_bank,
     worlds,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
+VERIFIER_SPEC = importlib.util.spec_from_file_location(
+    "wrapping_continuous_interp_verifier",
+    ROOT / "scripts/verify_dlolab_wrapping_continuous_interp_v2.py",
+)
+assert VERIFIER_SPEC is not None and VERIFIER_SPEC.loader is not None
+verifier = importlib.util.module_from_spec(VERIFIER_SPEC)
+VERIFIER_SPEC.loader.exec_module(verifier)
 
 
 def _material_keys(rows: list[dict[str, object]]) -> set[tuple[object, object]]:
@@ -258,6 +269,24 @@ def test_pre_future_gate_and_score_use_equal_world_aggregation(
         "continuous_prior_best_fixed"
     ]["mean_gain"] == pytest.approx(0.065)
     json.dumps(result, sort_keys=True, allow_nan=False)
+
+
+def test_second_arithmetic_implementation_matches_registered_score() -> None:
+    rng = np.random.default_rng(712)
+    decisions = rng.integers(
+        0,
+        study.N_ACTIONS,
+        size=(study.WORLD_COUNT, study.SENSOR_DRAWS, len(study.ARM_NAMES)),
+    )
+    decisions[:, :, 0] = 0
+    rewards = rng.uniform(0.25, 0.95, size=(study.WORLD_COUNT, study.N_ACTIONS))
+    registered = study.score(decisions, rewards, all_native_qa=True)
+    independent = verifier._independent_arithmetic(decisions, rewards)
+    assert independent["arms"] == registered["arms"]
+    assert independent["paired"] == registered["paired_continuous_bayes_gain"]
+    assert independent["oracle_fraction"] == registered[
+        "oracle_headroom_fraction_captured"
+    ]
 
 
 def test_protocol_preserves_parent_failure_and_public_only_boundaries() -> None:
