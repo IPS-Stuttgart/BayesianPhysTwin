@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .deform_state_restart import array_digest
 from .dlolab_matched_reset_dual_control import (
@@ -21,7 +22,9 @@ from .dlolab_matched_reset_dual_control import (
 from .dlolab_native import DloLabConfig, DloLabRuntime, native_state_digests
 
 
-def _qualify(trajectory: np.ndarray, commands: np.ndarray) -> dict[str, float | bool]:
+def _qualify(
+    trajectory: NDArray[Any], commands: NDArray[Any]
+) -> dict[str, float | bool]:
     value = np.asarray(trajectory, dtype=np.float64)
     control = np.asarray(commands, dtype=np.float64)
     if (
@@ -56,9 +59,9 @@ def _qualify(trajectory: np.ndarray, commands: np.ndarray) -> dict[str, float | 
 
 def _branches(
     upstream: Path,
-    bending: np.ndarray,
+    bending: NDArray[Any],
     branches: tuple[tuple[str, int], ...],
-) -> tuple[np.ndarray, dict[str, Any]]:
+) -> tuple[list[NDArray[Any]], dict[str, Any]]:
     values = np.asarray(bending, dtype=np.float64)
     started = time.monotonic()
     runtime = DloLabRuntime(
@@ -96,7 +99,7 @@ def _branches(
             command_digests.append(array_digest(controls))
             branch_names.append(f"{kind}-{index}")
         snapshot.validate(runtime.config, runtime.model_id)
-        return np.stack(trajectories), {
+        return trajectories, {
             "model_id": runtime.model_id,
             "initial_position_sha256": array_digest(initial),
             "initial_state_sha256": initial_state,
@@ -117,7 +120,9 @@ def _branches(
         runtime.close()
 
 
-def generate_particle_bank(upstream: Path) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+def generate_particle_bank(
+    upstream: Path,
+) -> tuple[dict[str, NDArray[Any]], dict[str, Any]]:
     bending = particle_bending()
     branches = tuple(("probe", index) for index in range(len(PROBE_NAMES))) + tuple(
         ("action", index) for index in range(len(ACTION_AMPLITUDES_M))
@@ -127,8 +132,8 @@ def generate_particle_bank(upstream: Path) -> tuple[dict[str, np.ndarray], dict[
         bending,
         branches,
     )
-    probes = trajectories[: len(PROBE_NAMES)]
-    actions = trajectories[len(PROBE_NAMES) :]
+    probes = np.stack(trajectories[: len(PROBE_NAMES)])
+    actions = np.stack(trajectories[len(PROBE_NAMES) :])
     return {
         "bending": bending,
         "initial_position_m": probes[0, :, 0],
@@ -139,7 +144,7 @@ def generate_particle_bank(upstream: Path) -> tuple[dict[str, np.ndarray], dict[
 
 def generate_truth_probes(
     upstream: Path, selected_probe: int
-) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+) -> tuple[dict[str, NDArray[Any]], dict[str, Any]]:
     if type(selected_probe) is not int or selected_probe not in range(len(PROBE_NAMES)):
         raise ValueError("sealed selected probe required")
     truth = truth_partition()
@@ -151,23 +156,27 @@ def generate_truth_probes(
     )
     if selected_probe in (0, FIXED_CONTROL_PROBE_INDEX):
         raise ValueError("active source study requires a nonnull selected probe")
+    trajectory_array = np.stack(trajectories)
     return {
         **truth,
         "probe_indices": np.asarray(indices, dtype=np.int64),
-        "initial_position_m": trajectories[0, :, 0],
-        "probe_trajectory_m": trajectories,
+        "initial_position_m": trajectory_array[0, :, 0],
+        "probe_trajectory_m": trajectory_array,
     }, meta
 
 
-def generate_truth_futures(upstream: Path) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+def generate_truth_futures(
+    upstream: Path,
+) -> tuple[dict[str, NDArray[Any]], dict[str, Any]]:
     truth = truth_partition()
     trajectories, meta = _branches(
         upstream,
         truth["bending"],
         tuple(("action", index) for index in range(len(ACTION_AMPLITUDES_M))),
     )
+    trajectory_array = np.stack(trajectories)
     return {
         **truth,
-        "initial_position_m": trajectories[0, :, 0],
-        "action_trajectory_m": trajectories,
+        "initial_position_m": trajectory_array[0, :, 0],
+        "action_trajectory_m": trajectory_array,
     }, meta

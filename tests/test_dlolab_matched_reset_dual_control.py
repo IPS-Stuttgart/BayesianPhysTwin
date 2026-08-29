@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
+from bayesian_phystwin_experiments import dlolab_matched_reset_native as native
 from bayesian_phystwin_experiments.dlolab_matched_reset_dual_control import (
     ACTION_AMPLITUDES_M,
     ACTION_STEPS,
@@ -183,3 +186,20 @@ def test_positive_source_value_control_passes_all_gates() -> None:
 def test_incomplete_denominators_fail_closed() -> None:
     with pytest.raises(ValueError, match="complete truth action losses"):
         score_source({}, np.zeros((TRUTH_COUNT - 1, len(ACTION_AMPLITUDES_M))))
+
+
+def test_particle_transport_keeps_different_probe_and_action_horizons(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    probes = [
+        np.zeros((len(PARTICLE_SCALES), PROBE_STEPS, DloLabConfig().node_count, 3))
+        for _ in PROBE_NAMES
+    ]
+    actions = [
+        np.zeros((len(PARTICLE_SCALES), ACTION_STEPS, DloLabConfig().node_count, 3))
+        for _ in ACTION_AMPLITUDES_M
+    ]
+    monkeypatch.setattr(native, "_branches", lambda *args: (probes + actions, {}))
+    arrays, _ = native.generate_particle_bank(Path("/unused"))
+    assert arrays["probe_trajectory_m"].shape[2] == PROBE_STEPS
+    assert arrays["action_trajectory_m"].shape[2] == ACTION_STEPS
