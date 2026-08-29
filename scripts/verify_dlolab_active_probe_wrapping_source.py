@@ -31,7 +31,7 @@ from bayesian_phystwin_experiments.dlolab_regret_artifacts import (
 from bayesian_phystwin_experiments.dlolab_slingshot_process import load_native_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = Path("/home/fpfaff/source-only/dlolab-active-probe-wrapping-source-v1")
+OUTPUT = Path("/home/fpfaff/source-only/dlolab-active-probe-wrapping-source-v1-1")
 PASSIVE_RESULT = ROOT / "results/sota/dlolab_wrapping_belief_source_v1/result.json"
 
 
@@ -247,11 +247,13 @@ def verify() -> dict[str, Any]:
     result = read_record(OUTPUT / "result.json")
     if (
         lock["protocol"] != protocol()
+        or lock["schema"] != "dlolab-active-probe-wrapping-source-lock-v1-1"
         or lock["output_root"] != str(OUTPUT)
+        or result["schema"] != "dlolab-active-probe-wrapping-source-result-v1-1"
         or result["lock_id"] != lock["artifact_id"]
         or result["retry_authorized"] is not False
         or result["protected_data_read"] is not False
-        or len(lock["source_sha256"]) != 18
+        or len(lock["source_sha256"]) != 20
         or not {
             "src/bayesian_phystwin_experiments/dlolab_active_wrapping_source.py",
             "src/bayesian_phystwin_experiments/dlolab_active_wrapping_native.py",

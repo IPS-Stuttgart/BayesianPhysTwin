@@ -7,6 +7,14 @@ failed gate remain unchanged. Work is local/private and uses no new recording,
 real robot, GPU, held-v8, DLO4/DLO5, official DLO3 evaluation, PokeFlex
 continuation, or fresh/reserved Deform360 data.
 
+The first v1 invocation stopped before lock publication or native initialization
+because its shell omitted the registered CPU/OSMesa environment. It produced zero
+trajectory and no scientific payload. Its original receipt accidentally recorded
+an incorrect revision; both that immutable receipt and a correction receipt are
+bound in the repository. The separately versioned v1.1 runner preflights runtime
+and source identity before creating a new output root. The old root is terminal and
+cannot be reused. This is a bootstrap correction, not a retry of empirical science.
+
 ## Scientific Question
 
 Can a reversible, reward-blind probe make uncertain material belief useful for a

@@ -41,7 +41,7 @@ from bayesian_phystwin_experiments.dlolab_slingshot_process import load_native_b
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = Path("/home/fpfaff/source-only/dlolab-benchmark-source-v1-assets")
-OUTPUT = Path("/home/fpfaff/source-only/dlolab-active-probe-wrapping-source-v1")
+OUTPUT = Path("/home/fpfaff/source-only/dlolab-active-probe-wrapping-source-v1-1")
 PASSIVE_RESULT = ROOT / "results/sota/dlolab_wrapping_belief_source_v1/result.json"
 SOURCES = (
     "src/bayesian_phystwin_experiments/dlolab_active_wrapping_source.py",
@@ -53,6 +53,8 @@ SOURCES = (
     "docs/dlolab_active_probe_wrapping_source_v1.md",
     "configs/sota/dlolab_active_probe_wrapping_source_v1.json",
     "results/sota/dlolab_wrapping_belief_source_v1/result.json",
+    "results/sota/dlolab_active_probe_wrapping_prelock_v1/prelock-failure.json",
+    "results/sota/dlolab_active_probe_wrapping_prelock_v1/prelock-failure-correction.json",
     "src/bayesian_phystwin_experiments/dlolab_wrapping_source.py",
     "src/bayesian_phystwin_experiments/dlolab_benchmark.py",
     "src/bayesian_phystwin_experiments/dlolab_native.py",
@@ -108,7 +110,7 @@ def validate_lock(output: Path) -> dict:
         raise ValueError("terminal active-wrapping source study; no retry")
     lock = read_record(output / "lock.json")
     if (
-        lock["schema"] != "dlolab-active-probe-wrapping-source-lock-v1"
+        lock["schema"] != "dlolab-active-probe-wrapping-source-lock-v1-1"
         or lock["revision"] != clean_revision(ROOT)
         or lock["protocol"] != protocol()
         or lock["output_root"] != str(OUTPUT)
@@ -339,16 +341,18 @@ def run(output: Path) -> None:
     if output.resolve() != OUTPUT or output.exists() or output.is_symlink():
         raise ValueError("registered active-wrapping output root must be fresh")
     revision = clean_revision(ROOT)
+    native_source = source()
+    native_runtime = runtime()
     output.mkdir(parents=True, exist_ok=False)
     lock = write_record(
         output / "lock.json",
         {
-            "schema": "dlolab-active-probe-wrapping-source-lock-v1",
+            "schema": "dlolab-active-probe-wrapping-source-lock-v1-1",
             "revision": revision,
             "protocol": protocol(),
             "source_sha256": {path: file_digest(ROOT / path) for path in SOURCES},
-            "native_source": source(),
-            "runtime": runtime(),
+            "native_source": native_source,
+            "runtime": native_runtime,
             "passive_result_sha256": file_digest(PASSIVE_RESULT),
             "output_root": str(OUTPUT),
             "retry_authorized": False,
@@ -364,7 +368,7 @@ def run(output: Path) -> None:
         value = write_record(
             output / "result.json",
             {
-                "schema": "dlolab-active-probe-wrapping-source-result-v1",
+                "schema": "dlolab-active-probe-wrapping-source-result-v1-1",
                 "lock_id": lock["artifact_id"],
                 "status": status,
                 "completed_batches": len(completed),

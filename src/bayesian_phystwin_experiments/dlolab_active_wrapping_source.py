@@ -196,7 +196,7 @@ def full_action_controls(probe_index: int) -> np.ndarray:
 def protocol() -> dict[str, Any]:
     passive_result = "results/sota/dlolab_wrapping_belief_source_v1/result.json"
     return {
-        "schema": "dlolab-active-probe-wrapping-source-v1",
+        "schema": "dlolab-active-probe-wrapping-source-v1-1",
         "role": "finite_simulator_dual_control_source_screen_not_confirmation",
         "native_environment": "envs.env_wrapping.Train_Env_Wrapping",
         "native_reward_controller_scene_solver_unchanged": True,
@@ -271,6 +271,12 @@ def protocol() -> dict[str, Any]:
         "primary_reward": "unchanged_native_final_winding_reward",
         "passive_comparator_path": passive_result,
         "old_wrapping_outcomes_not_used_for_probe_selection": True,
+        "retained_zero_trajectory_parent_failure": {
+            "original_receipt": "results/sota/dlolab_active_probe_wrapping_prelock_v1/prelock-failure.json",
+            "correction_receipt": "results/sota/dlolab_active_probe_wrapping_prelock_v1/prelock-failure-correction.json",
+            "native_trajectories": 0,
+            "scientific_payload_generated": False,
+        },
         "all_prefix_banks_sealed_before_probe_selection": True,
         "both_full_banks_sealed_before_decision_analysis": True,
         "fallback": "unchanged_cached_passive_wrapping_and_deform_results",
@@ -572,9 +578,7 @@ def native_qa(
     )
     fixed = float(np.abs(data["post_pos_m"] - POSTS).max())
     endpoint_frame = -1 if stage == "probe" else PROBE_STEPS - 1
-    endpoint = float(
-        np.ptp(data["gripper_pos_m"][endpoint_frame], axis=0).max()
-    )
+    endpoint = float(np.ptp(data["gripper_pos_m"][endpoint_frame], axis=0).max())
     if stage == "probe":
         groups = ((0, 4, 8), (1, 5), (2, 6), (3, 7))
         duplicate = max(
