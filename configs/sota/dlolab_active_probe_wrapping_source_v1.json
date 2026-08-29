@@ -1,0 +1,38 @@
+{
+  "schema": "dlolab-active-probe-wrapping-source-v1-plan",
+  "role": "finite_simulator_dual_control_source_screen_not_confirmation",
+  "question": "Does a reward-blind, information-selected reversible probe increase Bayesian wrapping decision value over a matched null probe?",
+  "native_task": "unchanged_public_DLO_Lab_Train_Env_Wrapping",
+  "probe_candidates": [
+    "null_hold",
+    "symmetric_tension",
+    "symmetric_compression",
+    "axial_shear"
+  ],
+  "probe_selection": "maximum_expected_material_mutual_information",
+  "probe_selection_uses_future_reward": false,
+  "matched_conditions": [
+    "null_probe_then_unchanged_continuation_bank",
+    "selected_probe_then_unchanged_continuation_bank"
+  ],
+  "material_worlds": 9,
+  "continuation_actions": 8,
+  "native_trajectories_if_complete": 297,
+  "simulated_sensor_noise": {
+    "independent_sd_m": 0.002,
+    "shared_translation_bias_sd_m": 0.005
+  },
+  "primary_comparators": [
+    "matched_best_fixed",
+    "matched_bias_aware_MAP",
+    "matched_null_probe_Bayes",
+    "finite_world_oracle"
+  ],
+  "source_only": true,
+  "automatic_promotion": false,
+  "fresh_evaluation_authorized": false,
+  "retry_authorized": false,
+  "new_recordings": false,
+  "gpu_work": false,
+  "protected_data_read": false
+}
