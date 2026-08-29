@@ -38,8 +38,8 @@ PASSIVE_RESULT = ROOT / "results/sota/dlolab_wrapping_belief_source_v1/result.js
 def angular_reward(positions: np.ndarray, posts: np.ndarray) -> np.ndarray:
     relative = positions[..., :, None, :2] - posts[..., None, :, :2]
     angle = np.unwrap(np.arctan2(relative[..., 1], relative[..., 0]), axis=-2)
-    closing = np.arctan2(relative[..., 0, 1], relative[..., 0, 0])
-    last = np.arctan2(relative[..., -1, 1], relative[..., -1, 0])
+    closing = angle[..., 0, :]
+    last = angle[..., -1, :]
     closing = last + np.angle(np.exp(1j * (closing - last)))
     turns = (closing - angle[..., 0, :]) / (2 * np.pi)
     distance = np.linalg.norm(

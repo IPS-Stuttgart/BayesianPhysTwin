@@ -39,6 +39,15 @@ assert SPEC is not None and SPEC.loader is not None
 checker = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(checker)
 
+PARTIAL_SPEC = importlib.util.spec_from_file_location(
+    "active_wrapping_partial_checker",
+    Path(__file__).resolve().parents[1]
+    / "scripts/verify_dlolab_active_probe_wrapping_failure.py",
+)
+assert PARTIAL_SPEC is not None and PARTIAL_SPEC.loader is not None
+partial_checker = importlib.util.module_from_spec(PARTIAL_SPEC)
+PARTIAL_SPEC.loader.exec_module(partial_checker)
+
 
 def circle(center=(0.6, 0, 0.012), radius=0.14):
     angle = np.arange(50) * 2 * np.pi / 50 + 0.03
@@ -167,6 +176,17 @@ def test_full_prefix_adapter_uses_one_common_action_without_future():
     assert np.array_equal(selected[-1, -1], data[1199, 1, 49])
 
 
+def test_independent_reward_formulas_match_native_on_random_polygons():
+    rng = np.random.default_rng(261001)
+    points = rng.normal(0.1, 0.05, (3, 9, 50, 3))
+    posts = rng.normal(0.1, 0.05, (3, 9, 3, 3))
+    expected = native_reward(points, posts)
+    assert np.allclose(checker.angular_reward(points, posts), expected, atol=1e-13)
+    assert np.allclose(
+        partial_checker.angular_reward(points, posts), expected, atol=1e-13
+    )
+
+
 def synthetic_probe_prefix():
     result = np.zeros((9, 4, 5, 5, 3))
     pattern = np.linspace(-1, 1, 25).reshape(5, 5)
@@ -261,6 +281,13 @@ def test_native_qa_roundtrip(stage, probe):
     data, native = fixture(stage, probe)
     result = native_qa(data, native, worlds()[4], stage, probe)
     assert result["passed"]
+    if stage == "probe":
+        assert (
+            partial_checker.compare(
+                result, partial_checker.independent_qa(data, native)
+            )
+            < 1e-10
+        )
 
 
 @pytest.mark.parametrize(

@@ -1,0 +1,63 @@
+{
+  "schema": "dlolab-active-probe-wrapping-source-v1-1-compact-result",
+  "status": "probe_native_qualification_failed",
+  "decision": "source_gate_fail_no_information_selection_no_continuation",
+  "implementation_revision": "81022bd0a2cc194f5d9f2c65315cf25f19835142",
+  "parent_zero_trajectory_failure": {
+    "original_receipt_id": "4563dd610b43fe693131a4e74e9c3e82a2e2fe4e7494325b2a0680956dde6440",
+    "correction_receipt_id": "8e49571ecb8821823c6e7facce505d3ab095d5fe48992358a784d4bc1b6cc448",
+    "native_trajectories": 0
+  },
+  "lock": {
+    "artifact_id": "6a9bd9e9811c5c95a61b931e0489586e63bb567171618892e15a0f3d1060c525",
+    "file_sha256": "3b4efb3c03b80a24af076b8d9b90a241d53f786cc97208de3b8fbb8bad0b41e1",
+    "source_files": 20
+  },
+  "result": {
+    "artifact_id": "153c078ef2b09e74785cb2ead80b197c4f4c663b3663839da3fe3e9a267dbccc",
+    "file_sha256": "a23e1383d0bbb728aa0b688d0625e5e15c8b54096cec9920b017b1221583a631",
+    "attempted_batches": 1,
+    "completed_batches": 1,
+    "admitted_batches": 0,
+    "completed_native_trajectories": 9,
+    "qualified_trajectories": 0,
+    "unrun_batches": 32
+  },
+  "native_qualification": {
+    "passed": false,
+    "failed_checks": [
+      "common_probe_endpoint_tools"
+    ],
+    "maximum_common_probe_endpoint_tool_error_m": 0.0005688046399438262,
+    "registered_maximum_m": 0.00001,
+    "maximum_duplicate_coordinate_error_m": 2.0496601654818036e-7,
+    "segment_length_ratio_min": 0.9981659443225995,
+    "segment_length_ratio_max": 1.3930174271955893,
+    "maximum_attachment_distance_m": 3.5214071291693297e-6,
+    "fixed_post_error_m": 0.0,
+    "final_reward_reconstruction_error": 1.4067836451303606e-8,
+    "all_other_checks_passed": true
+  },
+  "second_arithmetic": {
+    "artifact_id": "82534d539f73b42199deb26e0585610f131c1a9297d421877e5e916b5b6944b7",
+    "file_sha256": "f4c69945e882eaf02f13fbafd43d14f6750ea50cd213b02030b1d833ba64c6a9",
+    "verified_source_files": 20,
+    "verified_native_trajectories": 9,
+    "verified_array_members": 31,
+    "maximum_arithmetic_difference": 0.0,
+    "native_physics_reexecuted": false,
+    "independent_human_review": false,
+    "passed": true
+  },
+  "information_selection_executed": false,
+  "continuation_rewards_generated": false,
+  "decision_analysis_executed": false,
+  "source_gate_passed": false,
+  "method_promotion_authorized": false,
+  "fresh_evaluation_authorized": false,
+  "retry_authorized": false,
+  "new_recordings": false,
+  "gpu_work": false,
+  "protected_data_read": false,
+  "interpretation": "The four commanded probe paths rejoined the same registered waypoint, but the native IK/controller realized endpoints differed by 0.569 mm across histories. The frozen 10 micrometre intervention-realization gate therefore failed before information or decision value was evaluated. This is an actuation-realization/interface result, not evidence for or against active Bayesian probing."
+}
