@@ -14,10 +14,20 @@ import numpy as np
 import pytest
 
 from experiments.tracking_cloth_deformation_v1.data import (
-    Case, audit_dataset, input_view, layout, scoring_view,
+    Case,
+    audit_dataset,
+    input_view,
+    layout,
+    scoring_view,
 )
 from experiments.tracking_cloth_deformation_v1.model import (
-    ARMS, Predictions, complete_beliefs, masks, parameter_bank, predict, score,
+    ARMS,
+    Predictions,
+    complete_beliefs,
+    masks,
+    parameter_bank,
+    predict,
+    score,
     source_weights,
 )
 from experiments.tracking_cloth_deformation_v1.run import aggregate, prepare, score_run
@@ -27,17 +37,29 @@ BASE = Path(__file__).resolve().parents[1] / "experiments/tracking_cloth_deforma
 
 def config():
     protocol = json.loads((BASE / "protocol.json").read_text())
-    protocol.update({"prefix_seconds": 0.2, "forecast_seconds": 0.2,
-                     "stiffness_per_mass": [400.0], "damping_per_mass": [2.0],
-                     "integration_substeps": 2, "bootstrap_repetitions": 100})
+    protocol.update(
+        {
+            "prefix_seconds": 0.2,
+            "forecast_seconds": 0.2,
+            "stiffness_per_mass": [400.0],
+            "damping_per_mass": [2.0],
+            "integration_substeps": 2,
+            "bootstrap_repetitions": 100,
+        }
+    )
     return protocol
 
 
 def initial_grid(size="A3"):
     rows, cols = (5, 4) if size == "A2" else (4, 3)
     spacing = 0.12
-    return np.array([[spacing * c, 0.0, 1.0 - spacing * r]
-                     for r in range(rows) for c in range(cols)])
+    return np.array(
+        [
+            [spacing * c, 0.0, 1.0 - spacing * r]
+            for r in range(rows)
+            for c in range(cols)
+        ]
+    )
 
 
 def csv_text(size="A3", poison_future=False, missing=False):
@@ -55,12 +77,12 @@ def csv_text(size="A3", poison_future=False, missing=False):
         positions[:, 1] += 0.002 * np.sin(2 * np.pi * t)
         values = positions.reshape(-1).astype(object)
         if missing and i == 40:
-            values[3 * 5:3 * 5 + 3] = ""
+            values[3 * 5 : 3 * 5 + 3] = ""
         if poison_future and t > 0.2 + 1e-8:
             # Only non-driven markers are poisoned, proving no numeric conversion.
             for marker in range(len(first)):
                 if marker not in (0, 2 if size == "A3" else 3):
-                    values[3 * marker:3 * marker + 3] = "UNOPENED_TARGET"
+                    values[3 * marker : 3 * marker + 3] = "UNOPENED_TARGET"
         writer.writerow([i, f"{t:.9f}", *values])
     return stream.getvalue()
 
@@ -77,8 +99,12 @@ def dataset(tmp_path):
     root.mkdir()
     payloads = {}
     for material, size, motion, speed, grasp in itertools.product(
-            ("cotton", "denim", "polyester", "wool"), ("A2", "A3"),
-            ("shake", "twist"), ("fast", "slow"), ("hands", "hanger")):
+        ("cotton", "denim", "polyester", "wool"),
+        ("A2", "A3"),
+        ("shake", "twist"),
+        ("fast", "slow"),
+        ("hands", "hanger"),
+    ):
         name = f"Free-hanging/{material}_{size}_{motion}_{speed}_{grasp}.csv"
         payloads[name] = csv_text(size)
     for i in range(56):
@@ -95,7 +121,9 @@ def dataset(tmp_path):
         for name, content in payloads.items():
             zipped.writestr("dataset/" + name, content)
     protocol = config()
-    protocol["archive_md5"] = hashlib.md5(archive.read_bytes(), usedforsecurity=False).hexdigest()
+    protocol["archive_md5"] = hashlib.md5(
+        archive.read_bytes(), usedforsecurity=False
+    ).hexdigest()
     return root, protocol
 
 
@@ -162,7 +190,7 @@ def test_causal_missing_values_not_filled_from_future(tmp_path):
     assert np.isfinite(inputs.prefix).all()
     valid = masks(inputs, truth)
     assert not np.any(valid[:, inputs.corners])
-    assert not np.any(valid[:inputs.cutoff + 1])
+    assert not np.any(valid[: inputs.cutoff + 1])
 
 
 def test_bad_timestamps_rejected(tmp_path):
@@ -180,12 +208,19 @@ def test_gibbs_weights_prefer_lower_source_loss():
 def test_exact_fallback_includes_covariance(tmp_path):
     inputs = input_view(case_file(tmp_path), config(), 1.0)
     prediction = predict(inputs, config())
-    fit = {"source_posterior_weights": [1.0], "guard_accepts": False,
-           "source_residual_variance_m2": {arm: [1e-5, 2e-5, 3e-5] for arm in ARMS[:-1]}}
+    fit = {
+        "source_posterior_weights": [1.0],
+        "guard_accepts": False,
+        "source_residual_variance_m2": {arm: [1e-5, 2e-5, 3e-5] for arm in ARMS[:-1]},
+    }
     beliefs = complete_beliefs(prediction, fit, config())
     assert beliefs["guarded_bayesian_physics"] is beliefs["nominal_physics"]
-    np.testing.assert_array_equal(prediction.nominal[:, inputs.corners], inputs.boundary)
-    np.testing.assert_array_equal(prediction.bank[0][:, inputs.corners], inputs.boundary)
+    np.testing.assert_array_equal(
+        prediction.nominal[:, inputs.corners], inputs.boundary
+    )
+    np.testing.assert_array_equal(
+        prediction.bank[0][:, inputs.corners], inputs.boundary
+    )
 
 
 def test_coordinate_score_ignores_driven_markers(tmp_path):
@@ -204,8 +239,11 @@ def test_posterior_total_variance_includes_parameter_spread(tmp_path):
     inputs = input_view(case_file(tmp_path), protocol, 1.0)
     nominal = np.zeros((len(inputs.times), 12, 3))
     prediction = Predictions(inputs, nominal, np.stack([nominal, nominal + 2]))
-    fit = {"source_posterior_weights": [0.5, 0.5], "guard_accepts": True,
-           "source_residual_variance_m2": {arm: [1.0] * 3 for arm in ARMS[:-1]}}
+    fit = {
+        "source_posterior_weights": [0.5, 0.5],
+        "guard_accepts": True,
+        "source_residual_variance_m2": {arm: [1.0] * 3 for arm in ARMS[:-1]},
+    }
     beliefs = complete_beliefs(prediction, fit, protocol)
     assert np.all(beliefs["bayesian_physics"][0] == 1)
     assert np.all(beliefs["bayesian_physics"][1] == 2)
@@ -221,7 +259,10 @@ def test_source_only_run_does_not_touch_target_numeric_payload(dataset, tmp_path
     assert not (output / "private_predictions").exists()
     assert not (output / "target_access.json").exists()
     assert not (output / "metrics.json").exists()
-    assert json.loads((output / "source_fit.json").read_text())["target_outcomes_used"] is False
+    assert (
+        json.loads((output / "source_fit.json").read_text())["target_outcomes_used"]
+        is False
+    )
 
 
 def test_complete_predict_seal_score_cycle(dataset, tmp_path):

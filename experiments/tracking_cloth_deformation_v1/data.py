@@ -59,7 +59,9 @@ def digest(path: Path, algorithm: str = "sha256") -> str:
 
 def object_digest(value: Any) -> str:
     return hashlib.sha256(
-        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        json.dumps(
+            value, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode()
     ).hexdigest()
 
 
@@ -67,7 +69,9 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n")
 
 
-def audit_dataset(root: Path, protocol: dict[str, Any]) -> tuple[list[Case], dict[str, Any]]:
+def audit_dataset(
+    root: Path, protocol: dict[str, Any]
+) -> tuple[list[Case], dict[str, Any]]:
     """Hash bytes, verify extraction against ZIP, and freeze the filename roster.
 
     Hashing/ZIP integrity reads bytes but does not interpret target measurements.
@@ -94,8 +98,12 @@ def audit_dataset(root: Path, protocol: dict[str, Any]) -> tuple[list[Case], dic
         raise ValueError("Expected four read_data.m readers and one License.txt")
     license_text = licenses[0].read_text(encoding="utf-8-sig")
     normalized = license_text.lower().replace(" ", "")
-    if not any(s in normalized for s in ("by-nc-sa", "noncommercial", "non-commercial")):
-        raise ValueError("Included license differs from the declared noncommercial policy")
+    if not any(
+        s in normalized for s in ("by-nc-sa", "noncommercial", "non-commercial")
+    ):
+        raise ValueError(
+            "Included license differs from the declared noncommercial policy"
+        )
     hashes = {p.name.lower(): digest(p) for p in csvs}
     with zipfile.ZipFile(archive) as zipped:
         bad = zipped.testzip()
@@ -117,12 +125,25 @@ def audit_dataset(root: Path, protocol: dict[str, Any]) -> tuple[list[Case], dic
         match = FREE_NAME.fullmatch(path.name)
         if match:
             material, size, motion, speed, grasp = match.groups()
-            cases.append(Case(path, material.lower(), size.upper(), motion.lower(),
-                              speed.lower(), grasp.lower()))
-    expected = set(itertools.product(
-        protocol["materials"], protocol["sizes"], ["shake", "twist"],
-        protocol["speeds"], protocol["grasps"],
-    ))
+            cases.append(
+                Case(
+                    path,
+                    material.lower(),
+                    size.upper(),
+                    motion.lower(),
+                    speed.lower(),
+                    grasp.lower(),
+                )
+            )
+    expected = set(
+        itertools.product(
+            protocol["materials"],
+            protocol["sizes"],
+            ["shake", "twist"],
+            protocol["speeds"],
+            protocol["grasps"],
+        )
+    )
     actual = {(c.material, c.size, c.motion, c.speed, c.grasp) for c in cases}
     if actual != expected or len(cases) != 64:
         raise ValueError("The complete 64-recording free-hanging factorial is required")
@@ -132,7 +153,9 @@ def audit_dataset(root: Path, protocol: dict[str, Any]) -> tuple[list[Case], dic
         "archive_md5": protocol["archive_md5"],
         "archive_sha256": digest(archive),
         "csv_count": len(csvs),
-        "source_count": 32, "target_count": 32, "unused_count": len(csvs) - 64,
+        "source_count": 32,
+        "target_count": 32,
+        "unused_count": len(csvs) - 64,
         "csv_sha256": hashes,
         "reader_sha256": {str(p.relative_to(root)): digest(p) for p in readers},
         "license_sha256": digest(licenses[0]),
@@ -158,14 +181,22 @@ def _rows(path: Path, markers: int):
                 frame, time = float(row[0]), float(row[1])
             except (ValueError, IndexError):
                 if started:
-                    raise ValueError(f"Nonnumeric row after data start: {path.name}") from None
+                    raise ValueError(
+                        f"Nonnumeric row after data start: {path.name}"
+                    ) from None
                 continue
             started = True
-            if (not np.isfinite([frame, time]).all() or frame != int(frame)
-                    or frame <= last_frame or time <= last_t):
+            if (
+                not np.isfinite([frame, time]).all()
+                or frame != int(frame)
+                or frame <= last_frame
+                or time <= last_t
+            ):
                 raise ValueError(f"Invalid frame/time order: {path.name}")
             if len(row) < width or any(cell.strip() for cell in row[width:]):
-                raise ValueError(f"Expected Frame, Time and {markers} XYZ triplets: {path.name}")
+                raise ValueError(
+                    f"Expected Frame, Time and {markers} XYZ triplets: {path.name}"
+                )
             last_t, last_frame = time, frame
             yield time, row[2:width]
     if not started:
@@ -175,8 +206,12 @@ def _rows(path: Path, markers: int):
 def _positions(cells: list[str], indices: np.ndarray) -> np.ndarray:
     values = []
     for marker in indices:
-        triple = [float(cells[3 * int(marker) + d])
-                  if cells[3 * int(marker) + d].strip() else np.nan for d in range(3)]
+        triple = [
+            float(cells[3 * int(marker) + d])
+            if cells[3 * int(marker) + d].strip()
+            else np.nan
+            for d in range(3)
+        ]
         if np.isinf(triple).any():
             raise ValueError("Infinite coordinate")
         values.append(triple if np.isfinite(triple).all() else [np.nan] * 3)
@@ -206,7 +241,9 @@ def infer_source_scale(case: Case, positions: np.ndarray) -> float:
     nominal = np.hypot(0.42, 0.594) if case.size == "A2" else np.hypot(0.297, 0.42)
     allowed = [s for s in (1.0, 0.01, 0.001) if 0.4 < diameter * s / nominal < 1.6]
     if len(allowed) != 1:
-        raise ValueError("Ambiguous coordinate units; inspect source readers before revising protocol")
+        raise ValueError(
+            "Ambiguous coordinate units; inspect source readers before revising protocol"
+        )
     return allowed[0]
 
 
@@ -222,17 +259,23 @@ def layout(initial: np.ndarray, size: str) -> tuple[np.ndarray, np.ndarray]:
     horizontal = vh[0]
     horizontal *= 1 if horizontal[np.argmax(abs(horizontal))] >= 0 else -1
     levels = np.argsort(-initial[:, 2], kind="stable").reshape(rows, cols)
-    order = np.concatenate([row[np.argsort(xy[row] @ horizontal, kind="stable")]
-                            for row in levels])
+    order = np.concatenate(
+        [row[np.argsort(xy[row] @ horizontal, kind="stable")] for row in levels]
+    )
     grid = initial[order].reshape(rows, cols, 3)
     vertical_steps = grid[:-1, :, 2].mean(axis=1) - grid[1:, :, 2].mean(axis=1)
     horizontal_steps = np.linalg.norm(np.diff(grid, axis=1), axis=2)
-    if (np.min(vertical_steps) < 0.025 or np.min(horizontal_steps) < 0.025
-            or np.max(horizontal_steps) > 0.25):
+    if (
+        np.min(vertical_steps) < 0.025
+        or np.min(horizontal_steps) < 0.025
+        or np.max(horizontal_steps) > 0.25
+    ):
         raise ValueError("Initial grid/corner assignment is unsupported")
     # This pilot assumes a near-vertical regular initial mesh, not arbitrary folds.
     if np.max(np.ptp(grid[:, :, 2], axis=1)) > 0.75 * np.median(vertical_steps):
-        raise ValueError("Initial row ordering is ambiguous; no outcome-based remapping")
+        raise ValueError(
+            "Initial row ordering is ambiguous; no outcome-based remapping"
+        )
     return order, np.array([0, cols - 1], dtype=int)
 
 
@@ -298,8 +341,16 @@ def input_view(case: Case, protocol: dict[str, Any], scale: float) -> Inputs:
         raise ValueError("Sampling does not match the frozen 120 Hz/stride contract")
     if times_array[-1] < end - 2 * stride / 120.0:
         raise ValueError("Recording does not cover the complete frozen horizon")
-    return Inputs(times_array, np.asarray(prefix), np.asarray(boundary), order,
-                  corners, len(prefix) - 1, initial_time, scale)
+    return Inputs(
+        times_array,
+        np.asarray(prefix),
+        np.asarray(boundary),
+        order,
+        corners,
+        len(prefix) - 1,
+        initial_time,
+        scale,
+    )
 
 
 def scoring_view(case: Case, inputs: Inputs) -> np.ndarray:
