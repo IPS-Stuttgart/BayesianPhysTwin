@@ -1,0 +1,173 @@
+{
+  "artifact_id": "281ca205c351d5dbe624e02b127784dc7f8be833e9d6be18d3c75af38b2785ed",
+  "candidate_probability_sweep": {
+    "0.5": {
+      "mean_downside_below_fixed": 0.002244431507375427,
+      "mean_gain_over_fixed": 0.019153984099694404,
+      "mean_native_reward": 0.9100509527543791,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "0.6": {
+      "mean_downside_below_fixed": 0.0019891492839461873,
+      "mean_gain_over_fixed": 0.01848107130933837,
+      "mean_native_reward": 0.9093780399640231,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "0.7": {
+      "mean_downside_below_fixed": 0.0015204376200921618,
+      "mean_gain_over_fixed": 0.017344346691468993,
+      "mean_native_reward": 0.9082413153461536,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "0.8": {
+      "mean_downside_below_fixed": 0.0009990241089911645,
+      "mean_gain_over_fixed": 0.0158917611468433,
+      "mean_native_reward": 0.9067887298015279,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "0.9": {
+      "mean_downside_below_fixed": 0.00042575981411344663,
+      "mean_gain_over_fixed": 0.014008701894539996,
+      "mean_native_reward": 0.9049056705492247,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "0.95": {
+      "mean_downside_below_fixed": 0.00013016427870289892,
+      "mean_gain_over_fixed": 0.012549103989207847,
+      "mean_native_reward": 0.9034460726438924,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "0.975": {
+      "mean_downside_below_fixed": 2.932055162441216e-06,
+      "mean_gain_over_fixed": 0.011390258144828434,
+      "mean_native_reward": 0.902287226799513,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 0
+    },
+    "0.99": {
+      "mean_downside_below_fixed": 2.3935132165170405e-06,
+      "mean_gain_over_fixed": 0.010138153700845122,
+      "mean_native_reward": 0.9010351223555298,
+      "worlds": 80,
+      "worlds_harmed_beyond_numeric_margin": 0
+    }
+  },
+  "cohorts": {
+    "v2": {
+      "continuous_bayes": {
+        "mean_downside_below_fixed": 0.0,
+        "mean_gain_over_fixed": 0.0208873578736997,
+        "mean_native_reward": 0.9117579818855319,
+        "nonfixed_sensor_decisions": 84340,
+        "worlds_harmed_beyond_numeric_margin": 0
+      },
+      "continuous_map": {
+        "mean_downside_below_fixed": 0.006395388544305956,
+        "mean_gain_over_fixed": 0.020046080794021096,
+        "mean_native_reward": 0.9109167048058533,
+        "nonfixed_sensor_decisions": 115728,
+        "worlds_harmed_beyond_numeric_margin": 3
+      },
+      "finite_particle_bayes": {
+        "mean_downside_below_fixed": 0.0011756704075853268,
+        "mean_gain_over_fixed": 0.021780576461604376,
+        "mean_native_reward": 0.9126512004734366,
+        "nonfixed_sensor_decisions": 112341,
+        "worlds_harmed_beyond_numeric_margin": 2
+      },
+      "registered_arm_reproduction": {
+        "continuous_bayes": true,
+        "continuous_map": true,
+        "finite_particle_bayes": true,
+        "fixed": true
+      },
+      "sensor_draws_per_world": 4096,
+      "worlds": 32
+    },
+    "v3": {
+      "continuous_bayes": {
+        "mean_downside_below_fixed": 0.0038055358538922174,
+        "mean_gain_over_fixed": 0.01878758736273256,
+        "mean_native_reward": 0.9097021191126521,
+        "nonfixed_sensor_decisions": 142492,
+        "worlds_harmed_beyond_numeric_margin": 1
+      },
+      "continuous_map": {
+        "mean_downside_below_fixed": 0.003822240628527563,
+        "mean_gain_over_fixed": 0.021881293434918816,
+        "mean_native_reward": 0.9127958251848384,
+        "nonfixed_sensor_decisions": 178557,
+        "worlds_harmed_beyond_numeric_margin": 2
+      },
+      "finite_particle_bayes": {
+        "mean_downside_below_fixed": 0.00575203743074919,
+        "mean_gain_over_fixed": 0.019341973689358635,
+        "mean_native_reward": 0.9102565054392784,
+        "nonfixed_sensor_decisions": 179529,
+        "worlds_harmed_beyond_numeric_margin": 3
+      },
+      "registered_arm_reproduction": {
+        "continuous_bayes": true,
+        "continuous_map": true,
+        "finite_particle_bayes": true,
+        "fixed": true
+      },
+      "sensor_draws_per_world": 4096,
+      "worlds": 48
+    }
+  },
+  "development_file_sha256": {
+    "v2": {
+      "decisions/arrays.npz": "35cf83c309a2e82f3eb24baf2666ee73ebf17de74d1a1f71b8ef5262041e98dd",
+      "generation/arrays.npz": "2a7717f20fabaa3ae8eef4ee4004d1c078cc513117fdc3fce5f370d365dc9605",
+      "result.json": "716e8d65abeeddaf95935c08bc7269a07ff63cc6f24d457f801a9d5bfa7cbc98"
+    },
+    "v3": {
+      "decisions/arrays.npz": "f812fc6e7249d5b29a1a1327ee29cb751299829f5489878cdffbf63075ef96f7",
+      "generation/arrays.npz": "9922b5eb64d0b9fab00874c48f65612146897140b594a590b2799170dd3459b7",
+      "result.json": "bfb02757a9879a0263388635e5fc5173cf806371af78511c1f3b50007539bc08"
+    }
+  },
+  "development_result_ids": {
+    "v2": "2f95e41f51753881cdfe8ca77774cdd60c5d1f92a0552d5570e7299a3244b5bf",
+    "v3": "c187d1002f9c0244cea0356a5daac7cf987d3bb754ebb1021d9329f15ac47b19"
+  },
+  "development_v2_v3_results_reclassified": false,
+  "dlo4_dlo5_read": false,
+  "fresh_stress_panel_normalized_log_ranges": {
+    "bending": [
+      0.02,
+      0.7
+    ],
+    "stretching": [
+      0.6,
+      0.995
+    ]
+  },
+  "future_experiment_automatically_authorized": false,
+  "held_v8_read": false,
+  "lead_is_not_prospective_evidence": true,
+  "parent_file_sha256": {
+    "source-bank/arrays.npz": "914bd948df92e8b829ac65ca8c075c789d122a63a9ec32807a302bef16e2271d",
+    "source-bank/seal.json": "143686ee40ddfb8456e23cded5c8225015e60bd678a4f77bd4074946c33fe14f"
+  },
+  "protected_data_read": false,
+  "schema": "dlolab-wrapping-risk-guard-development-v4",
+  "selected_development_metrics": {
+    "mean_downside_below_fixed": 2.932055162441216e-06,
+    "mean_gain_over_fixed": 0.011390258144828434,
+    "mean_native_reward": 0.902287226799513,
+    "worlds": 80,
+    "worlds_harmed_beyond_numeric_margin": 0
+  },
+  "selected_probability": 0.975,
+  "selection_rule": "smallest_registered_probability_with_zero_harmed_worlds_across_v2_v3",
+  "status": "post_open_development_diagnostic",
+  "stress_panel_reason": "source-and-open-development action-switch region; prospective worlds unseen"
+}
