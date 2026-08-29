@@ -170,6 +170,21 @@ hash-bound. The registered software can already derive the 8/24 split from a
 future names-only roster without reading outcomes. It cannot create or infer
 that roster while access is closed.
 
+### Public HOOD runtime qualification
+
+The separate `run_hood_mesh_source_qualification_v1.py` runner uses only HOOD's
+published arbitrary-mesh example and post-CVPR checkpoint. It binds the exact
+code, input files, Python environment, and one-attempt ledger before two
+independently reconstructed 30-step replays. It checks finite bounded
+coordinates, valid identical topology, nontrivial cloth and obstacle motion,
+and replay RMSE no greater than `1e-7 m`.
+
+This is an interface and numerical qualification, not a physical comparison.
+It does not establish correct attachment physics, force response, source
+competence, or any accepted-harm bound. It consumes no 4D-DRESS, SMPL model,
+physical outcome, or certification data, and it cannot authorize that later
+study by itself. Failed execution is retained without replacement.
+
 ## Manipulation-domain stress test
 
 The handed-off RGBench MatPhys protocol remains useful as a domain-shift stress
