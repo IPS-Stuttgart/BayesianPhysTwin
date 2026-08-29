@@ -208,14 +208,20 @@ def evaluate_candidates(
                 posterior_entropy += scale * float(
                     np.sum(-posterior * np.log(np.maximum(posterior, 1e-300)))
                 )
+        bayes_reward_value = float(bayes_reward)
+        map_reward_value = float(map_reward)
+        map_accuracy_value = float(map_accuracy)
+        posterior_entropy_value = float(posterior_entropy)
         rows.append(
             {
-                "expected_bayes_reward": bayes_reward,
-                "expected_map_reward": map_reward,
-                "gain_over_blind": bayes_reward - blind_reward,
-                "map_accuracy": map_accuracy,
-                "posterior_entropy_nats": posterior_entropy,
-                "mutual_information_nats": prior_entropy - posterior_entropy,
+                "expected_bayes_reward": bayes_reward_value,
+                "expected_map_reward": map_reward_value,
+                "gain_over_blind": float(bayes_reward_value - blind_reward),
+                "map_accuracy": map_accuracy_value,
+                "posterior_entropy_nats": posterior_entropy_value,
+                "mutual_information_nats": float(
+                    prior_entropy - posterior_entropy_value
+                ),
             }
         )
     task_index = int(np.argmax([row["expected_bayes_reward"] for row in rows]))
@@ -223,15 +229,16 @@ def evaluate_candidates(
     task_gain = rows[task_index]["gain_over_blind"]
     oracle_headroom = oracle_reward - blind_reward
     checks = {
-        "selected_probe_is_new": task_index >= 2,
-        "gain_over_blind_at_least_0_005": task_gain >= 0.005,
-        "gain_over_existing_50pct_at_least_0_001": rows[task_index][
-            "expected_bayes_reward"
-        ]
-        - rows[1]["expected_bayes_reward"]
-        >= 0.001,
-        "captures_at_least_25pct_oracle_headroom": task_gain
-        >= 0.25 * oracle_headroom,
+        "selected_probe_is_new": bool(task_index >= 2),
+        "gain_over_blind_at_least_0_005": bool(task_gain >= 0.005),
+        "gain_over_existing_50pct_at_least_0_001": bool(
+            rows[task_index]["expected_bayes_reward"]
+            - rows[1]["expected_bayes_reward"]
+            >= 0.001
+        ),
+        "captures_at_least_25pct_oracle_headroom": bool(
+            task_gain >= 0.25 * oracle_headroom
+        ),
     }
     return {
         "candidate_names": list(CANDIDATE_NAMES),
@@ -245,7 +252,7 @@ def evaluate_candidates(
         "generic_mi_probe_index": mi_index,
         "generic_mi_probe_name": CANDIDATE_NAMES[mi_index],
         "checks": checks,
-        "value_feasibility_passed": all(checks.values()),
+        "value_feasibility_passed": bool(all(checks.values())),
         "future_protocol_automatically_authorized": False,
         "truth_future_generated": False,
     }

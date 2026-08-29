@@ -1,0 +1,51 @@
+{
+  "schema": "dlolab-slingshot-task-probe-development-posthoc-v1",
+  "artifact_id": "b17366ed73f8206c39b92c3b4c10b8a021c732a4efe6294db13db38bd1eccc61",
+  "status": "terminal_result_serialization_failure_with_posthoc_bank_audit",
+  "implementation_revision": "7daf4d0b7e513ec310769808746cb3a9dd92562d",
+  "lock_id": "fe82b961ad6634a4eaa7bde1a7034cfc81c0331087c0b897e691778f693fcb1c",
+  "failure_id": "97724cd07621e6a6f63c8aa2da78f69a5308f370d64114544b0a75dff1cd35d7",
+  "development_bank_id": "e7ef7d214006b74273cddd4eed65b2b79b157f6611af3dce18fcd359e0cb5947",
+  "all_four_new_prefix_batches_qualified": true,
+  "blind_reward": 7.008321106433868,
+  "oracle_reward": 7.019442200660706,
+  "oracle_headroom": 0.011121094226837158,
+  "candidate_names": [
+    "original_passive",
+    "frontload_50_existing",
+    "frontload_60_new",
+    "frontload_70_new"
+  ],
+  "expected_bayes_reward": [
+    7.008364082481421,
+    7.0107064935909875,
+    7.011851385879709,
+    7.0150549400968885
+  ],
+  "gain_over_blind": [
+    4.297604755265638e-05,
+    0.002385387157119112,
+    0.0035302794458402786,
+    0.00673383366302005
+  ],
+  "mutual_information_nats": [
+    0.03727843922032115,
+    0.46452790978175007,
+    0.5892730676250824,
+    0.8675308287571228
+  ],
+  "task_aware_probe": "frontload_70_new",
+  "generic_mi_probe": "frontload_70_new",
+  "file_sha256": {
+    "lock.json": "256d2577aba61d411cdab72fb5d691f4362e68082f5d0d46f152cba34eaaaa44",
+    "failure.json": "89a349994decbcdc963d58643feea849ba7198960e3ac132e510e4cca69d24f7",
+    "development-bank/arrays.npz": "464bd19ff2b3c7a1e271fb5d8fe005fa53c87166452334fb18ee4a988c49b804",
+    "development-bank/seal.json": "6a25c83d48230e0afc9162cc4d831e34c040a0f42cafe507cef4c183b165f8fe"
+  },
+  "posthoc_value_checks_passed": true,
+  "prospective_result_published": false,
+  "future_protocol_automatically_authorized": false,
+  "truth_future_generated": false,
+  "protected_data_read": false,
+  "retry_authorized": false
+}

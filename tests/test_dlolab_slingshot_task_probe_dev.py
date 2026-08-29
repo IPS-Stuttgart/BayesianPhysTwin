@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
@@ -70,6 +72,7 @@ def test_task_value_can_prefer_a_new_probe() -> None:
     assert result["task_aware_probe_name"] == "frontload_70_new"
     assert result["generic_mi_probe_name"] == "frontload_70_new"
     assert result["value_feasibility_passed"] is True
+    json.dumps(result, sort_keys=True, allow_nan=False)
 
 
 def test_protocol_is_development_only_and_target_closed() -> None:
