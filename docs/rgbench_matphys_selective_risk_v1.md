@@ -68,6 +68,7 @@ Before target access, a separate source-gate artifact must demonstrate:
 - exact fallback or abstention when the provider or gate fails; and
 - complete ordinary-success, technical-failure, and unsealable accounting.
 
-The 15 source cells are development groups, not enough independent evidence for
-a deployment-harm guarantee. Passing the source gate would authorize only a
-separately frozen untouched-garment evaluation.
+The amended 21 source cells span seven development garments, not 21
+independent physical groups. They do not establish a deployment-harm
+guarantee. Passing the source gate would permit preparation of a separate
+target authorization; it does not itself open either reserved target garment.

@@ -181,9 +181,18 @@ and replay RMSE no greater than `1e-7 m`.
 
 This is an interface and numerical qualification, not a physical comparison.
 It does not establish correct attachment physics, force response, source
-competence, or any accepted-harm bound. It consumes no 4D-DRESS, SMPL model,
-physical outcome, or certification data, and it cannot authorize that later
-study by itself. Failed execution is retained without replacement.
+competence, or any accepted-harm bound, and it cannot authorize that later
+study by itself. The upstream example sets a non-null `smpl_model` even in
+mesh mode; its loader constructs that model before the sequence dataset. A
+permitted SMPL model or a separately authorized mesh-only configuration is
+therefore an additional prerequisite for successful initialization. The
+frozen v1 plan does not silently override that configuration. Failed execution
+is retained without replacement; 4D-DRESS and certification access stay closed.
+The registered v1 attempt reached that exact pre-rollout dependency failure and
+produced no qualification result or scientific score. Its public hash-only
+custody receipt is
+`evidence/hood_mesh_source_qualification_terminal_v1.json`; detailed records
+remain in the private paper repository.
 
 ## Manipulation-domain stress test
 

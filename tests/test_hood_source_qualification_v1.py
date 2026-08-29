@@ -42,6 +42,22 @@ def test_registered_plan_is_bound_to_exact_local_sources() -> None:
         assert file_sha256(root / relative) == expected
 
 
+def test_public_terminal_receipt_is_hash_bound_and_nonclaiming() -> None:
+    root = Path(__file__).parents[1]
+    receipt = json.loads(
+        (root / "evidence/hood_mesh_source_qualification_terminal_v1.json").read_text()
+    )
+    receipt_id = receipt.pop("receipt_id")
+    assert (
+        receipt_id == "c6f0a658e5bbc969e3e5f1a602ff6dc692d6807efc9701f2695f43cfb2177e85"
+    )
+    assert content_id(receipt) == receipt_id
+    assert receipt["qualification_result_produced"] is False
+    assert receipt["source_competence_claim_authorized"] is False
+    assert receipt["certification_execution_authorized"] is False
+    assert receipt["retry_authorized"] is False
+
+
 def _plan(tmp_path: Path) -> dict[str, Any]:
     value: dict[str, Any] = {
         "schema": "bayesian-phystwin.hood-mesh-source-qualification-plan",
