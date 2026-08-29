@@ -1,0 +1,57 @@
+{
+  "schema": "dlolab-wrapping-resolution-ensemble-summary-v3",
+  "status": "complete_source_gate_failed",
+  "frozen_revision": "78cc16b61e80f7745b3c7783739f965c3dcdf0e2",
+  "development_diagnostic_id": "b2c2365c3d8f8f5702d250d7d1de62cfd2ac283ba297203e8e920a51b5c6b594",
+  "attempt_id": "9a8628dcd7ef253a46441607250a0c0664e9aa6d73e7d67bcd2ea9cddb1c509e",
+  "preflight_result_id": "7537a19b82da8d478073466783d30e7d5a626ce5e1f149a39705c6aaef7fc43a",
+  "lock_id": "a783f8148dbdf1a570b2a060b526468c1924bd86d89b1574aa72845344a4026a",
+  "decision_barrier_id": "5d73917f1dc12bfec474433bf9b7c273481e9da8147cef93e705caa483565a42",
+  "generation_id": "a03062d2ffab0daa2ff656743800bdea65ac17fce4c00170541b93878bd96b58",
+  "result_id": "c187d1002f9c0244cea0356a5daac7cf987d3bb754ebb1021d9329f15ac47b19",
+  "ordinary_worlds": 48,
+  "sensor_draws_per_world": 4096,
+  "technical_failures": 0,
+  "replacements": 0,
+  "pre_future_gate_passed": true,
+  "ensemble_mean_native_reward": 0.9092820083048379,
+  "ensemble_gain_over_fixed": 0.01836747655490696,
+  "ensemble_gain_over_fixed_ci95": [
+    0.00299634642431245,
+    0.029760020673435642
+  ],
+  "ensemble_gain_over_finite_bayes": -0.0009744971344497222,
+  "ensemble_gain_over_finite_bayes_ci95": [
+    -0.0019398231817379648,
+    0.00010008053468929691
+  ],
+  "ensemble_gain_over_continuous_bayes": -0.00042011080782031657,
+  "ensemble_gain_over_continuous_bayes_ci95": [
+    -0.005052123720060246,
+    0.0029594176598363568
+  ],
+  "finite_gain_fraction_retained": 0.9496174925009871,
+  "ensemble_harmed_worlds": 2,
+  "finite_bayes_harmed_worlds": 3,
+  "continuous_bayes_harmed_worlds": 1,
+  "oracle_headroom_fraction_captured": 0.5784394673526452,
+  "distinct_oracle_actions": 3,
+  "failed_checks": [
+    "ensemble_retains_at_least_95pct_finite_gain",
+    "ensemble_mean_gain_over_continuous_nonnegative",
+    "ensemble_harms_no_more_worlds_than_continuous"
+  ],
+  "source_gate_passed": false,
+  "second_arithmetic_implementation_passed": true,
+  "independent_human_review": false,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "fresh_successor_automatically_authorized": false,
+  "official_benchmark_or_sota_claim": false,
+  "real_robot_or_physical_safety_claim": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "artifact_id": "01d5910cbe2c7eef47aefcad0689d34fe772eea8cb102fc96e241e99ae865c21"
+}
