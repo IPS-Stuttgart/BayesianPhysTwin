@@ -1,0 +1,72 @@
+{
+  "boundaries": {
+    "fresh_scientific_worlds_defined": false,
+    "physical_execution": false,
+    "protected_data_read": false,
+    "scientific_outcome_scored": false,
+    "v4_partial_future_artifacts_read": false,
+    "v4_retry": false,
+    "v5_runtime_artifacts_read": false,
+    "v5_retry": false,
+    "v6_runtime_artifacts_read": false,
+    "v6_retry": false
+  },
+  "gate": {
+    "constructor_successes_required": 24,
+    "full_rollout_successes_required": 4,
+    "replacement_authorized": false,
+    "retry_authorized": false,
+    "separate_process_per_probe": true,
+    "study_automatically_authorized": false
+  },
+  "host": {
+    "architecture": "x86_64",
+    "hostname": "workstation2",
+    "kernel_release": "7.0.0-28-generic",
+    "native_linux": true,
+    "os_release_sha256": "3e5851448bae5b36f351becde037a8b13b77307279f484eda808f8177d9a4293",
+    "wsl": false
+  },
+  "lineage": {
+    "v4_failure_id": "003be585e995ad8e38818cbb341fe9d39c8344d2dd8bc59d4bd6ace61945443f",
+    "v4_summary_artifact_id": "ef75f43b46654530ed8a788303feee13c36a3d448566041b42707fe898e07873",
+    "v4_summary_sha256": "128a81f30ec9bc6050eec65bb04a68c04ae54092134dc12f0f103292af27c145",
+    "v5_failure_id": "a83bfdece3cc2322a97a940ea74cd3232752bcb1ae7a688f15828141abccffab",
+    "v5_summary_artifact_id": "9fbd92685e9417057f28c5165862dd000ef27ab35106854aaa93589910d3e7b0",
+    "v5_summary_sha256": "20cc80d5c3adf4f3ac26fef964563d28194c2f812aa08b4ed7936496bae9c871",
+    "v6_failure_id": "0b2c9a8afacc8e4e309baa5683fc1b21d9e7ca9578cbd50a01264bd29af7df29",
+    "v6_summary_artifact_id": "1e380f455e780988a3d9542c5e313a13dd0a47ca2c385f636722daa696932965",
+    "v6_summary_sha256": "419d6640eb96b0b698289516eb1c988b618b55b4002c3e465a683ce5a5b1a7ec"
+  },
+  "native_workload": {
+    "constructor_processes": 24,
+    "constructor_requires_deferred_material_randomization": true,
+    "constructor_stops_after_init_cmaes_env": true,
+    "full_macro_steps": 11,
+    "full_rollout_processes": 4,
+    "full_rollout_requires_exact_post_reset_material_realization": true,
+    "micro_steps_per_macro": 200,
+    "preflight_world": {
+      "bending_E": 10000.0,
+      "index": -1,
+      "stretching_K": 100000.0
+    },
+    "worlds_per_process": 9
+  },
+  "output": {
+    "attempt_ledger": "/home/florianpfaff/source-only/dlolab-wrapping-risk-guard-runtime-qualification-v7.attempt.json",
+    "root": "/home/florianpfaff/source-only/dlolab-wrapping-risk-guard-runtime-qualification-v7"
+  },
+  "runtime": {
+    "device": "cpu",
+    "native_library_tree_id": "9e96ed5c5e969262aaa69e80e028b3893e1ee41f3a2052a034df9b062347f1f2",
+    "precision": "float64",
+    "python_binary": "/home/florianpfaff/source-only/dlolab-runtime-linux-v7-assets/venv/bin/python",
+    "python_binary_sha256": "9e7f0dd93c77a32d07aa66631b48116101db6266701b292ebdc56a30d6cc7924",
+    "python_version": "3.11.15",
+    "runtime_lock": "/home/florianpfaff/source-only/dlolab-runtime-linux-v7-assets/runtime-lock.txt",
+    "runtime_lock_sha256": "80bc64e1280519404f034872e471c43809269ebbf56902a2a7b45c51da14688c",
+    "software_rendering": "osmesa"
+  },
+  "schema": "dlolab-wrapping-risk-guard-runtime-qualification-v7"
+}
