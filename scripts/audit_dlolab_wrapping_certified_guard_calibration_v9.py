@@ -23,7 +23,7 @@ from bayesian_phystwin_experiments.dlolab_wrapping_certified_guard_v9 import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-V8 = Path("/home/fpfaff/source-only/dlolab-wrapping-risk-guard-source-v8")
+V8 = Path.home() / "source-only/dlolab-wrapping-risk-guard-source-v8"
 OUTPUT = (
     ROOT
     / "results/sota/dlolab_wrapping_certified_guard_calibration_v9/summary.json"
