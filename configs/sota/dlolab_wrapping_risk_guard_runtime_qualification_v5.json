@@ -1,0 +1,51 @@
+{
+  "boundaries": {
+    "fresh_scientific_worlds_defined": false,
+    "physical_execution": false,
+    "protected_data_read": false,
+    "scientific_outcome_scored": false,
+    "v4_partial_future_artifacts_read": false,
+    "v4_retry": false
+  },
+  "gate": {
+    "constructor_successes_required": 24,
+    "full_rollout_successes_required": 4,
+    "replacement_authorized": false,
+    "retry_authorized": false,
+    "separate_process_per_probe": true,
+    "study_automatically_authorized": false
+  },
+  "lineage": {
+    "v4_failure_id": "003be585e995ad8e38818cbb341fe9d39c8344d2dd8bc59d4bd6ace61945443f",
+    "v4_summary_artifact_id": "ef75f43b46654530ed8a788303feee13c36a3d448566041b42707fe898e07873",
+    "v4_summary_sha256": "128a81f30ec9bc6050eec65bb04a68c04ae54092134dc12f0f103292af27c145"
+  },
+  "native_workload": {
+    "constructor_processes": 24,
+    "constructor_stops_after_init_cmaes_env": true,
+    "full_macro_steps": 11,
+    "full_rollout_processes": 4,
+    "micro_steps_per_macro": 200,
+    "preflight_world": {
+      "bending_E": 10000.0,
+      "index": -1,
+      "stretching_K": 100000.0
+    },
+    "worlds_per_process": 9
+  },
+  "output": {
+    "attempt_ledger": "/home/fpfaff/source-only/dlolab-wrapping-risk-guard-runtime-qualification-v5.attempt.json",
+    "root": "/home/fpfaff/source-only/dlolab-wrapping-risk-guard-runtime-qualification-v5"
+  },
+  "runtime": {
+    "device": "cpu",
+    "precision": "float64",
+    "python_binary": "/home/fpfaff/source-only/dlolab-wrapping-risk-guard-runtime-v5-assets/venv/bin/python",
+    "python_binary_sha256": "9e7f0dd93c77a32d07aa66631b48116101db6266701b292ebdc56a30d6cc7924",
+    "python_version": "3.11.15",
+    "runtime_lock": "/home/fpfaff/source-only/dlolab-wrapping-risk-guard-runtime-v5-assets/runtime-lock.txt",
+    "runtime_lock_sha256": "406d86fd239267a5723a69ebe4a9dd71d37b60b146ec4d5a935e7e4739c821e0",
+    "software_rendering": "osmesa"
+  },
+  "schema": "dlolab-wrapping-risk-guard-runtime-qualification-v5"
+}
