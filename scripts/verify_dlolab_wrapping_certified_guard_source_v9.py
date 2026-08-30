@@ -123,6 +123,104 @@ def _expected_paths() -> set[str]:
     return paths
 
 
+def _portable_protocol_matches(recorded: object) -> bool:
+    """Compare a frozen roster across NumPy's last-bit exp implementations."""
+    if not isinstance(recorded, dict):
+        return False
+    expected = protocol()
+    recorded_without_worlds = {
+        key: value for key, value in recorded.items() if key != "worlds"
+    }
+    expected_without_worlds = {
+        key: value for key, value in expected.items() if key != "worlds"
+    }
+    recorded_worlds = recorded.get("worlds")
+    expected_worlds = expected.get("worlds")
+    if (
+        recorded_without_worlds != expected_without_worlds
+        or not isinstance(recorded_worlds, list)
+        or not isinstance(expected_worlds, list)
+        or len(recorded_worlds) != WORLD_COUNT
+        or len(expected_worlds) != WORLD_COUNT
+        or any(
+            not isinstance(world, dict)
+            or set(world) != {"index", "stretching_K", "bending_E"}
+            or type(world.get("index")) is not int
+            or world.get("index") != index
+            or any(
+                type(world.get(name)) is not float
+                for name in ("stretching_K", "bending_E")
+            )
+            for index, world in enumerate(recorded_worlds)
+        )
+    ):
+        return False
+    recorded_values = np.asarray(
+        [
+            [world["stretching_K"], world["bending_E"]]
+            for world in recorded_worlds
+        ],
+        dtype=np.float64,
+    )
+    expected_values = np.asarray(
+        [
+            [world["stretching_K"], world["bending_E"]]
+            for world in expected_worlds
+        ],
+        dtype=np.float64,
+    )
+    if not np.isfinite(recorded_values).all():
+        return False
+    try:
+        np.testing.assert_array_max_ulp(recorded_values, expected_values, maxulp=4)
+    except AssertionError:
+        return False
+    return True
+
+
+def _native_for_portable_qa(
+    native: dict[str, Any],
+    recorded_worlds: list[dict[str, Any]],
+    local_worlds: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Verify frozen worlds exactly, then adapt only local QA regeneration."""
+    realization = native.get("world_realization")
+    if (
+        native.get("worlds") != recorded_worlds
+        or not isinstance(realization, dict)
+        or realization.get("stretching")
+        != [world["stretching_K"] for world in recorded_worlds]
+        or realization.get("bending")
+        != [world["bending_E"] for world in recorded_worlds]
+    ):
+        raise ValueError("recorded native world roster changed")
+    return {
+        **native,
+        "worlds": local_worlds,
+        "world_realization": {
+            "stretching": [world["stretching_K"] for world in local_worlds],
+            "bending": [world["bending_E"] for world in local_worlds],
+        },
+    }
+
+
+def _decision_arrays_match(
+    recorded: dict[str, Array], regenerated: dict[str, Array]
+) -> bool:
+    if set(recorded) != set(regenerated):
+        return False
+    for name, expected in regenerated.items():
+        actual = recorded[name]
+        if actual.shape != expected.shape or actual.dtype != expected.dtype:
+            return False
+        if actual.dtype.kind in "iu":
+            if not np.array_equal(actual, expected):
+                return False
+        elif not np.allclose(actual, expected, rtol=5e-12, atol=1e-14):
+            return False
+    return True
+
+
 def _read_and_check_records(output: Path, attempt: Path) -> None:
     records = [attempt, *sorted(output.rglob("*.json"))]
     for path in records:
@@ -135,7 +233,8 @@ def _read_and_check_records(output: Path, attempt: Path) -> None:
 def _prefixes(
     output: Path, lock: dict[str, Any]
 ) -> tuple[Array, list[str], list[dict[str, Any]], list[dict[str, Array]]]:
-    roster = continuous_worlds()
+    recorded_roster = lock["protocol"]["worlds"]
+    local_roster = continuous_worlds()
     truth: Array = np.empty((WORLD_COUNT, 3, 5, 3), dtype=np.float64)
     seal_ids: list[str] = []
     qas: list[dict[str, Any]] = []
@@ -145,7 +244,12 @@ def _prefixes(
         directory = output / task["name"]
         claim = read_record(directory / "claim.json")
         seal = read_record(directory / "seal.json")
-        expected_worlds = [roster[index] for index in task["native_world_indices"]]
+        recorded_worlds = [
+            recorded_roster[index] for index in task["native_world_indices"]
+        ]
+        local_worlds = [
+            local_roster[index] for index in task["native_world_indices"]
+        ]
         if (
             claim.get("schema")
             != "dlolab-wrapping-risk-certified-guard-claim-v9"
@@ -160,7 +264,10 @@ def _prefixes(
         ):
             raise ValueError("prefix custody changed")
         data = load_native_bundle(directory, seal["bundle"])
-        qa = prefix_native_qa(data, seal["native"], expected_worlds)
+        portable_native = _native_for_portable_qa(
+            seal["native"], recorded_worlds, local_worlds
+        )
+        qa = prefix_native_qa(data, portable_native, local_worlds)
         count = len(task["world_indices"])
         truth[task["world_indices"]] = prefix_observation(data["rod_pos_m"])[:count]
         seal_ids.append(seal["artifact_id"])
@@ -175,7 +282,8 @@ def _futures(
     barrier: dict[str, Any],
     prefixes: list[dict[str, Array]],
 ) -> tuple[Array, list[str], list[dict[str, Any]], list[float]]:
-    roster = continuous_worlds()
+    recorded_roster = lock["protocol"]["worlds"]
+    local_roster = continuous_worlds()
     reward: Array = np.empty((WORLD_COUNT, 8), dtype=np.float64)
     seal_ids: list[str] = []
     qas: list[dict[str, Any]] = []
@@ -200,7 +308,12 @@ def _futures(
         ):
             raise ValueError("future custody changed")
         data = load_native_bundle(directory, seal["bundle"])
-        qa = future_native_qa(data, seal["native"], roster[index])
+        recorded_worlds = [recorded_roster[index]] * 9
+        local_worlds = [local_roster[index]] * 9
+        portable_native = _native_for_portable_qa(
+            seal["native"], recorded_worlds, local_worlds
+        )
+        qa = future_native_qa(data, portable_native, local_roster[index])
         slot = index % 9
         prefix = prefixes[index // 9]
         difference = max(
@@ -283,7 +396,7 @@ def verify(output: Path) -> dict[str, Any]:
         != "dlolab-wrapping-risk-certified-guard-attempt-v9"
         or attempt.get("artifact_id") != ATTEMPT_ID
         or attempt.get("revision") != FROZEN_REVISION
-        or attempt.get("protocol") != protocol()
+        or not _portable_protocol_matches(attempt.get("protocol"))
         or attempt.get("output_root") != str(RECORDED_OUTPUT)
         or lock.get("schema") != "dlolab-wrapping-risk-certified-guard-lock-v9"
         or lock.get("artifact_id") != LOCK_ID
@@ -338,11 +451,7 @@ def verify(output: Path) -> dict[str, Any]:
         or decision_seal.get("parent_source_bank_id") != parent_seal["artifact_id"]
         or decision_seal.get("future_simulated") is not False
         or decision_seal.get("future_read") is not False
-        or set(decisions) != set(expected_decisions)
-        or any(
-            not np.array_equal(decisions[name], expected_decisions[name])
-            for name in expected_decisions
-        )
+        or not _decision_arrays_match(decisions, expected_decisions)
     ):
         raise ValueError("sealed decisions do not reconstruct")
 

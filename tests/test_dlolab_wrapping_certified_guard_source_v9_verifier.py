@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib.util
 from pathlib import Path
 
@@ -65,6 +66,42 @@ def test_independent_arithmetic_matches_registered_score_definition() -> None:
     assert independent["downside_reduction_ci95"] == registered[
         "guard_downside_reduction_ci95"
     ]
+
+
+def test_protocol_verification_is_portable_only_within_four_ulps() -> None:
+    recorded = copy.deepcopy(study.protocol())
+    recorded["worlds"][5]["stretching_K"] = float(
+        np.nextafter(recorded["worlds"][5]["stretching_K"], np.inf)
+    )
+    assert verifier._portable_protocol_matches(recorded)
+
+    recorded["worlds"][5]["stretching_K"] += 1e-6
+    assert not verifier._portable_protocol_matches(recorded)
+
+    changed_contract = copy.deepcopy(study.protocol())
+    changed_contract["retry_authorized"] = True
+    assert not verifier._portable_protocol_matches(changed_contract)
+
+
+def test_decision_verification_requires_exact_actions_and_tight_float_agreement(
+) -> None:
+    regenerated = {
+        "decisions": np.array([[1, 2]], dtype=np.int64),
+        "probability": np.array([[0.2, 0.8]], dtype=np.float64),
+    }
+    recorded = {name: value.copy() for name, value in regenerated.items()}
+    recorded["probability"][0, 0] = np.nextafter(
+        recorded["probability"][0, 0], np.inf
+    )
+    assert verifier._decision_arrays_match(recorded, regenerated)
+
+    changed_action = {name: value.copy() for name, value in recorded.items()}
+    changed_action["decisions"][0, 0] = 0
+    assert not verifier._decision_arrays_match(changed_action, regenerated)
+
+    changed_probability = {name: value.copy() for name, value in recorded.items()}
+    changed_probability["probability"][0, 0] += 1e-9
+    assert not verifier._decision_arrays_match(changed_probability, regenerated)
 
 
 def test_compact_summary_preserves_positive_certified_guard_result() -> None:

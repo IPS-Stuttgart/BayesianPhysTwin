@@ -101,11 +101,14 @@ regenerates the decision bundle and pre-future barrier, checks all native
 futures and prefix parity, reconstructs reward and scoring, and independently
 recomputes the paired bootstrap intervals and exact Clopper-Pearson bound.
 Verification passed. It is an arithmetic and custody check, not independent
-human review.
+human review. The verifier requires byte-identical recorded worlds and actions,
+while allowing at most four ULPs when independently regenerating material
+parameters across NumPy runtimes and a tightly bounded floating-point tolerance
+for posterior diagnostics; the selected actions must remain exactly identical.
 
 Key identities:
 
-- compact summary: `134639c6f7a2fd20b1ec6902ae9d823d2017b2b52b6244f6fa7219d8b1cedbf9`
+- compact summary: `d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9`
 - attempt: `1b4430b526178d7247a0639ce1e662b3d84e1ac13a9c070cfafbc48882a4733a`
 - lock: `2f96bb2e52501a5e137e44faec4ed699b81dd828b00a98e3654f53e588e798ce`
 - calibration certificate: `790bc9facc33838bf32b64e232e10f8012035cd53f1f8880d629f7fdf06714c2`
