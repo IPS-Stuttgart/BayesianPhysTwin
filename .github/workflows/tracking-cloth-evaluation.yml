@@ -7,18 +7,22 @@ on:
     paths:
       - .github/workflows/tracking-cloth-evaluation.yml
       - .github/requests/tracking-cloth-deformation-v1-evaluate.json
+      - .github/requests/tracking-cloth-active-probe-v1.json
       - experiments/tracking_cloth_deformation_v1/**
       - tests/test_tracking_cloth_deformation_v1.py
+      - tests/test_tracking_cloth_active_probe_run_v1.py
+      - tests/test_tracking_cloth_active_probe_cli_v1.py
   push:
     branches: [main]
     paths:
       - .github/requests/tracking-cloth-deformation-v1-evaluate.json
+      - .github/requests/tracking-cloth-active-probe-v1.json
   workflow_dispatch:
     inputs:
       mode:
-        description: "inventory / source-only qualification / sealed shake-to-twist pilot"
+        description: "inventory / source qualification / sealed baseline or active replay"
         type: choice
-        options: [inventory, source_only, evaluate]
+        options: [inventory, source_only, evaluate, active_evaluate]
         default: source_only
         required: true
       workers:
@@ -57,51 +61,120 @@ jobs:
           cache: pip
           cache-dependency-path: experiments/tracking_cloth_deformation_v1/requirements.txt
       - name: Install isolated test dependencies
-        run: python -m pip install -r experiments/tracking_cloth_deformation_v1/requirements.txt pytest ruff
-      - name: Test data boundaries, predictors, and sealed scoring
-        run: python -m pytest -q tests/test_tracking_cloth_deformation_v1.py
-      - name: Validate a canonical real-data request when present
+        run: >-
+          python -m pip install
+          -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          pytest ruff
+      - name: Test data, sealing, and logged active-probe contracts
+        run: |
+          python -m pytest -q \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py
+      - name: Validate canonical real-data requests when present
         shell: bash
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
-          path = Path(".github/requests/tracking-cloth-deformation-v1-evaluate.json")
-          if not path.exists():
-              raise SystemExit(0)
-          request = json.loads(path.read_text())
-          required = {
-              "schema": "tracking-cloth-deformation-evaluation-request-v1",
-              "mode": "evaluate",
-              "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
-              "runner_label": "gpuserver4090",
-              "workers": 4,
-              "authorize_target_scoring": True,
-              "paper_claim_authorized": False,
+          dataset = (
+              "/home/github-runner/.cache/datasets/"
+              "tracking-cloth-deformation-v1-zenodo-14644526"
+          )
+          frozen = {
+              "active_probe.py": "bb641789f8387ea7d659ac3f098e5371c1ae1b3f",
+              "active_probe_protocol.json": (
+                  "8ee3f9b47b0faf0c228c738afd3ae6b1905329c4"
+              ),
+              "active_probe_run.py": (
+                  "ab0bc3c23b2f4d35f0c708d88bb3cf153b5091d9"
+              ),
           }
-          for key, value in required.items():
-              if request.get(key) != value:
-                  raise SystemExit(f"Invalid request field {key!r}: {request.get(key)!r}")
-          allowed = set(required) | {"request_id", "expected_source_revision", "evidence_class"}
-          unknown = set(request) - allowed
-          if unknown:
-              raise SystemExit(f"Unknown request fields: {sorted(unknown)}")
-          if not request.get("request_id"):
-              raise SystemExit("request_id must be nonempty")
-          revision = request.get("expected_source_revision", "")
-          if len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision):
-              raise SystemExit("expected_source_revision must be a lowercase commit SHA")
-          if request.get("evidence_class") != "public-real-data-pilot; no fresh-confirmation claim":
-              raise SystemExit("Unexpected evidence_class")
+          specifications = {
+              Path(
+                  ".github/requests/"
+                  "tracking-cloth-deformation-v1-evaluate.json"
+              ): {
+                  "schema": "tracking-cloth-deformation-evaluation-request-v1",
+                  "mode": "evaluate",
+                  "dataset_root": dataset,
+                  "runner_label": "gpuserver4090",
+                  "workers": 4,
+                  "authorize_target_scoring": True,
+                  "paper_claim_authorized": False,
+                  "evidence_class": (
+                      "public-real-data-pilot; no fresh-confirmation claim"
+                  ),
+              },
+              Path(
+                  ".github/requests/tracking-cloth-active-probe-v1.json"
+              ): {
+                  "schema": "tracking-cloth-active-probe-request-v1",
+                  "mode": "active_evaluate",
+                  "dataset_root": dataset,
+                  "runner_label": "gpuserver4090",
+                  "workers": 4,
+                  "authorize_target_scoring": True,
+                  "paper_claim_authorized": False,
+                  "evidence_class": (
+                      "public-real-data-retrospective-active-probe; "
+                      "protocol frozen before first target scoring; "
+                      "no fresh-confirmation claim"
+                  ),
+                  "prior_target_run_id": "33302686759",
+                  "frozen_selection_git_blobs": frozen,
+              },
+          }
+          for path, required in specifications.items():
+              if not path.exists():
+                  continue
+              request = json.loads(path.read_text())
+              for key, value in required.items():
+                  if request.get(key) != value:
+                      raise SystemExit(
+                          f"Invalid {path.name} field {key!r}: "
+                          f"{request.get(key)!r}"
+                      )
+              allowed = set(required) | {
+                  "request_id",
+                  "expected_source_revision",
+              }
+              unknown = set(request) - allowed
+              if unknown:
+                  raise SystemExit(
+                      f"Unknown {path.name} fields: {sorted(unknown)}"
+                  )
+              if not request.get("request_id"):
+                  raise SystemExit(f"{path.name}: request_id must be nonempty")
+              revision = request.get("expected_source_revision", "")
+              if len(revision) != 40 or any(
+                  character not in "0123456789abcdef" for character in revision
+              ):
+                  raise SystemExit(
+                      f"{path.name}: expected_source_revision must be a SHA"
+                  )
           PY
       - name: Lint and formatting diagnostics
         if: always()
         run: |
-          python -m ruff format --diff experiments/tracking_cloth_deformation_v1 tests/test_tracking_cloth_deformation_v1.py > formatting.patch || true
+          python -m ruff format --diff \
+            experiments/tracking_cloth_deformation_v1 \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py \
+            > formatting.patch || true
           cat formatting.patch
-          python -m ruff check experiments/tracking_cloth_deformation_v1 tests/test_tracking_cloth_deformation_v1.py
-          python -m ruff format --check experiments/tracking_cloth_deformation_v1 tests/test_tracking_cloth_deformation_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_deformation_v1 \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_deformation_v1 \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py
       - name: Retain a formatting patch on validation failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
@@ -116,47 +189,92 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.route.outputs.mode }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 2
-      - name: Require main for manual dispatch
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
-        run: test "$GITHUB_REF" = refs/heads/main
-      - name: Require one newly added canonical request on push
-        if: github.event_name == 'push'
+      - name: Route and validate the authorized request
+        id: route
         shell: bash
         env:
           BEFORE_SHA: ${{ github.event.before }}
           PUSH_FORCED: ${{ github.event.forced }}
+          DISPATCH_MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
-          request=.github/requests/tracking-cloth-deformation-v1-evaluate.json
           test "$GITHUB_REF" = refs/heads/main
+          if test "$GITHUB_EVENT_NAME" = workflow_dispatch; then
+            case "$DISPATCH_MODE" in
+              inventory|source_only|evaluate|active_evaluate) ;;
+              *) echo "Unsupported dispatch mode" >&2; exit 2 ;;
+            esac
+            echo "mode=$DISPATCH_MODE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          test "$GITHUB_EVENT_NAME" = push
           test "$PUSH_FORCED" = false
           test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
           mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
           printf 'Changed files:\n%s\n' "${changed[*]}"
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\t'"$request"
-          python - <<'PY'
+          case "${changed[0]}" in
+            $'A\t.github/requests/tracking-cloth-deformation-v1-evaluate.json')
+              request=.github/requests/tracking-cloth-deformation-v1-evaluate.json
+              mode=evaluate
+              ;;
+            $'A\t.github/requests/tracking-cloth-active-probe-v1.json')
+              request=.github/requests/tracking-cloth-active-probe-v1.json
+              mode=active_evaluate
+              ;;
+            *) echo "Push is not one newly added canonical request" >&2; exit 2 ;;
+          esac
+          REQUEST_PATH="$request" python - <<'PY'
           import json
           import os
           import subprocess
           from pathlib import Path
 
-          path = Path(".github/requests/tracking-cloth-deformation-v1-evaluate.json")
-          request = json.loads(path.read_text())
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
           parent = subprocess.check_output(
-              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"],
+              text=True,
           ).strip()
           if request["expected_source_revision"] != parent:
               raise SystemExit(
-                  "Request expected_source_revision does not equal the trigger commit parent"
+                  "Request expected_source_revision does not equal "
+                  "the trigger commit parent"
               )
+          if request["mode"] == "active_evaluate":
+              paths = {
+                  "active_probe.py": (
+                      "experiments/tracking_cloth_deformation_v1/active_probe.py"
+                  ),
+                  "active_probe_protocol.json": (
+                      "experiments/tracking_cloth_deformation_v1/"
+                      "active_probe_protocol.json"
+                  ),
+                  "active_probe_run.py": (
+                      "experiments/tracking_cloth_deformation_v1/"
+                      "active_probe_run.py"
+                  ),
+              }
+              for name, expected in request[
+                  "frozen_selection_git_blobs"
+              ].items():
+                  actual = subprocess.check_output(
+                      ["git", "rev-parse", f"{parent}:{paths[name]}"],
+                      text=True,
+                  ).strip()
+                  if actual != expected:
+                      raise SystemExit(
+                          f"Frozen selection blob changed for {name}: {actual}"
+                      )
           PY
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
 
   evaluation:
     name: Read-only cloth pilot / gpuserver4090
@@ -172,7 +290,9 @@ jobs:
     timeout-minutes: 90
     env:
       DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
-      EVALUATION_MODE: ${{ github.event_name == 'push' && 'evaluate' || inputs.mode }}
+      EVALUATION_MODE: >-
+        ${{ github.event_name == 'push' &&
+            needs.authorize-real-data.outputs.mode || inputs.mode }}
       WORKERS: ${{ github.event_name == 'push' && '4' || inputs.workers }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -188,29 +308,45 @@ jobs:
           test -d "$DATASET_ROOT"
           test -r "$DATASET_ROOT"
           echo "Runner: $RUNNER_NAME; required label: gpuserver4090"
-          echo "Included dataset license: CC BY-NC-SA 4.0; metadata conflict retained."
+          echo "Included dataset license: CC BY-NC-SA 4.0; conflict retained."
           venv="$RUNNER_TEMP/tracking-cloth-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           output="$RUNNER_TEMP/tracking-cloth-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           test ! -e "$venv"
           test ! -e "$output"
           python -m venv "$venv"
-          "$venv/bin/python" -m pip install -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          "$venv/bin/python" -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
           echo "CLOTH_PY=$venv/bin/python" >> "$GITHUB_ENV"
           echo "CLOTH_VENV=$venv" >> "$GITHUB_ENV"
           echo "CLOTH_OUT=$output" >> "$GITHUB_ENV"
-      - name: Audit, fit sources, and optionally seal target predictions
+      - name: Audit, fit sources, select logged probes, and seal predictions
         shell: bash
         run: |
           set -euo pipefail
           case "$EVALUATION_MODE" in
-            inventory) stage=inventory ;;
-            source_only) stage=source ;;
-            evaluate) stage=predict ;;
+            inventory)
+              module=experiments.tracking_cloth_deformation_v1.run
+              stage=inventory
+              ;;
+            source_only)
+              module=experiments.tracking_cloth_deformation_v1.run
+              stage=source
+              ;;
+            evaluate)
+              module=experiments.tracking_cloth_deformation_v1.run
+              stage=predict
+              ;;
+            active_evaluate)
+              module=experiments.tracking_cloth_deformation_v1.active_probe_cli
+              stage=predict
+              ;;
             *) echo "Unsupported mode" >&2; exit 2 ;;
           esac
-          "$CLOTH_PY" -m experiments.tracking_cloth_deformation_v1.run \
-            --dataset-root "$DATASET_ROOT" --output "$CLOTH_OUT" \
-            --stage "$stage" --workers "$WORKERS"
+          "$CLOTH_PY" -m "$module" \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$CLOTH_OUT" \
+            --stage "$stage" \
+            --workers "$WORKERS"
           "$CLOTH_PY" - <<'PY'
           import hashlib
           import json
@@ -218,29 +354,41 @@ jobs:
           from pathlib import Path
 
           event = os.environ["GITHUB_EVENT_NAME"]
-          request_path = Path(
-              ".github/requests/tracking-cloth-deformation-v1-evaluate.json"
-          )
+          mode = os.environ["EVALUATION_MODE"]
           if event == "push":
-              raw = request_path.read_bytes()
+              name = (
+                  "tracking-cloth-active-probe-v1.json"
+                  if mode == "active_evaluate"
+                  else "tracking-cloth-deformation-v1-evaluate.json"
+              )
+              path = Path(".github/requests") / name
+              raw = path.read_bytes()
               request = json.loads(raw)
-              request_sha256 = hashlib.sha256(raw).hexdigest()
           else:
               request = {
-                  "schema": "tracking-cloth-deformation-manual-dispatch-v1",
-                  "request_id": f"github-run-{os.environ['GITHUB_RUN_ID']}-attempt-{os.environ['GITHUB_RUN_ATTEMPT']}",
-                  "mode": os.environ["EVALUATION_MODE"],
+                  "schema": "tracking-cloth-manual-dispatch-v1",
+                  "request_id": (
+                      f"github-run-{os.environ['GITHUB_RUN_ID']}-"
+                      f"attempt-{os.environ['GITHUB_RUN_ATTEMPT']}"
+                  ),
+                  "mode": mode,
                   "dataset_root": os.environ["DATASET_ROOT"],
                   "runner_label": "gpuserver4090",
                   "workers": int(os.environ["WORKERS"]),
-                  "authorize_target_scoring": os.environ["EVALUATION_MODE"] == "evaluate",
+                  "authorize_target_scoring": mode in {
+                      "evaluate",
+                      "active_evaluate",
+                  },
                   "paper_claim_authorized": False,
               }
-              raw = json.dumps(request, sort_keys=True, separators=(",", ":")).encode()
-              request_sha256 = hashlib.sha256(raw).hexdigest()
+              raw = json.dumps(
+                  request,
+                  sort_keys=True,
+                  separators=(",", ":"),
+              ).encode()
           record = {
               **request,
-              "request_sha256": request_sha256,
+              "request_sha256": hashlib.sha256(raw).hexdigest(),
               "github_sha": os.environ["GITHUB_SHA"],
               "github_run_id": os.environ["GITHUB_RUN_ID"],
               "github_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -249,10 +397,12 @@ jobs:
           output.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
           PY
       - name: Publish complete prediction seal before target scoring
-        if: env.EVALUATION_MODE == 'evaluate'
+        if: >-
+          env.EVALUATION_MODE == 'evaluate' ||
+          env.EVALUATION_MODE == 'active_evaluate'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: tracking-cloth-prediction-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          name: tracking-cloth-${{ env.EVALUATION_MODE }}-seal-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ env.CLOTH_OUT }}/protocol.json
             ${{ env.CLOTH_OUT }}/source_fit.json
@@ -263,23 +413,35 @@ jobs:
             ${{ env.CLOTH_OUT }}/DATA_LICENSE.txt
           retention-days: 90
           if-no-files-found: error
-      - name: Score only sealed twisting forecasts
-        if: env.EVALUATION_MODE == 'evaluate'
+      - name: Score only the sealed twisting forecasts
+        if: >-
+          env.EVALUATION_MODE == 'evaluate' ||
+          env.EVALUATION_MODE == 'active_evaluate'
         shell: bash
         run: |
           set -euo pipefail
-          "$CLOTH_PY" -m experiments.tracking_cloth_deformation_v1.run \
-            --dataset-root "$DATASET_ROOT" --output "$CLOTH_OUT" --stage score
+          if test "$EVALUATION_MODE" = active_evaluate; then
+            module=experiments.tracking_cloth_deformation_v1.active_probe_cli
+          else
+            module=experiments.tracking_cloth_deformation_v1.run
+          fi
+          "$CLOTH_PY" -m "$module" \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$CLOTH_OUT" \
+            --stage score
       - name: Publish operator summary
         if: always() && env.CLOTH_OUT != ''
         shell: bash
         run: |
-          if test -f "$CLOTH_OUT/report.md"; then cat "$CLOTH_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          if test -f "$CLOTH_OUT/report.md"; then
+            cat "$CLOTH_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
           if test -f "$CLOTH_OUT/failure.json"; then
-            echo '## Incomplete run: no scientific conclusion' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Incomplete run: no scientific conclusion' \
+              >> "$GITHUB_STEP_SUMMARY"
             cat "$CLOTH_OUT/failure.json" >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Upload aggregate evidence only, never raw recordings or trajectory arrays
+      - name: Upload aggregate evidence only
         if: always() && env.CLOTH_OUT != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
@@ -295,5 +457,9 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if test -n "${CLOTH_OUT:-}"; then rm -rf "$CLOTH_OUT/private_predictions"; fi
-          if test -n "${CLOTH_VENV:-}"; then rm -rf "$CLOTH_VENV"; fi
+          if test -n "${CLOTH_OUT:-}"; then
+            rm -rf "$CLOTH_OUT/private_predictions"
+          fi
+          if test -n "${CLOTH_VENV:-}"; then
+            rm -rf "$CLOTH_VENV"
+          fi
