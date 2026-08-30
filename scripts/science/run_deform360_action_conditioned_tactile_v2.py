@@ -493,9 +493,7 @@ def design_for_episode(
     starts = starts_for(len(values), horizon, lag, stride)
     if len(starts) == 0:
         raise EvaluationError(
-            f"episode {episode.descriptor.episode_id} has no windows for horizon {
-                horizon
-            }"
+            f"episode {episode.descriptor.episode_id} has no windows for horizon {horizon}"
         )
     current = values[starts]
     truth = values[starts + horizon]
