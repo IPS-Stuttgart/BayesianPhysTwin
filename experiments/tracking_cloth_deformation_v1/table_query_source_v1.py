@@ -22,14 +22,15 @@ import re
 import sys
 import traceback
 import zipfile
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 
-from .active_probe import simulate_policy, update_weights, weights_from_records
+from .active_probe import simulate_policy, weights_from_records
 
 MATERIALS = ("cotton", "denim", "polyester", "wool")
 FRICTIONS = ("low_friction", "high_friction")
@@ -144,7 +145,9 @@ def audit_archive(root: Path, protocol: Mapping[str, Any]) -> dict[str, Any]:
         if zipped.testzip() is not None:
             raise ValueError("dataset archive integrity check failed")
         entries = [
-            entry for entry in zipped.infolist() if entry.filename.lower().endswith(".csv")
+            entry
+            for entry in zipped.infolist()
+            if entry.filename.lower().endswith(".csv")
         ]
         if len(entries) != len(csvs):
             raise ValueError("archive and extracted CSV counts disagree")
@@ -215,7 +218,9 @@ def numeric_rows(path: Path, markers: int = 20) -> Iterable[tuple[float, list[st
                 timestamp = float(row[1])
             except (ValueError, IndexError):
                 if started:
-                    raise ValueError(f"nonnumeric row after data start in {path.name}") from None
+                    raise ValueError(
+                        f"nonnumeric row after data start in {path.name}"
+                    ) from None
                 continue
             started = True
             if (
@@ -253,7 +258,9 @@ def infer_scale(initial: np.ndarray) -> float:
         np.max(np.linalg.norm(initial[:, None, :] - initial[None, :, :], axis=2))
     )
     nominal = math.hypot(0.42, 0.594)
-    allowed = [scale for scale in (1.0, 0.01, 0.001) if 0.4 < diameter * scale / nominal < 1.6]
+    allowed = [
+        scale for scale in (1.0, 0.01, 0.001) if 0.4 < diameter * scale / nominal < 1.6
+    ]
     if len(allowed) != 1:
         raise ValueError(f"ambiguous coordinate scale from diameter {diameter}")
     return allowed[0]
@@ -285,11 +292,18 @@ def _layout_candidate(initial: np.ndarray, row_axis: int, row_sign: int, col_sig
     col_lengths = np.linalg.norm(np.diff(grid, axis=1), axis=2)
     adjacency_cv = float(
         np.std(np.concatenate((row_lengths.ravel(), col_lengths.ravel())))
-        / max(np.mean(np.concatenate((row_lengths.ravel(), col_lengths.ravel()))), 1e-12)
+        / max(
+            np.mean(np.concatenate((row_lengths.ravel(), col_lengths.ravel()))), 1e-12
+        )
     )
     long_span = float(np.linalg.norm(grid[-1].mean(axis=0) - grid[0].mean(axis=0)))
-    short_span = float(np.linalg.norm(grid[:, -1].mean(axis=0) - grid[:, 0].mean(axis=0)))
-    ratio_penalty = abs(math.log(max(long_span, 1e-12) / max(short_span, 1e-12)) - math.log(0.594 / 0.42))
+    short_span = float(
+        np.linalg.norm(grid[:, -1].mean(axis=0) - grid[:, 0].mean(axis=0))
+    )
+    ratio_penalty = abs(
+        math.log(max(long_span, 1e-12) / max(short_span, 1e-12))
+        - math.log(0.594 / 0.42)
+    )
     plane_penalty = float(singular[2] / max(singular[1], 1e-12))
     score = row_cv + col_cv + adjacency_cv + ratio_penalty + 2.0 * plane_penalty
     return score, order, singular
@@ -357,7 +371,9 @@ def choose_grasped_edge(
     score, name, pair = min(scored)
     second = sorted(scored)[1][0]
     if second - score < 1e-5:
-        raise ValueError("grasped edge is not uniquely identified from the causal prefix")
+        raise ValueError(
+            "grasped edge is not uniquely identified from the causal prefix"
+        )
     return np.asarray(pair, dtype=int), {
         "selected_edge": name,
         "score_margin": float(second - score),
@@ -390,7 +406,9 @@ def _complete_prefix(path: Path, seconds: float):
     return np.asarray(times[first:]), raw[first:]
 
 
-def input_view(case: TableCase, protocol: Mapping[str, Any]) -> tuple[TableInputs, dict[str, Any]]:
+def input_view(
+    case: TableCase, protocol: Mapping[str, Any]
+) -> tuple[TableInputs, dict[str, Any]]:
     prefix_seconds = float(protocol["prefix_seconds"])
     prefix_times_raw, prefix_raw = _complete_prefix(case.path, prefix_seconds)
     scale = infer_scale(prefix_raw[0])
@@ -534,17 +552,15 @@ def rollout_bank(
     model_count = len(parameters)
     stiffness = np.asarray([value.stiffness for value in parameters])[:, None, None]
     damping = np.asarray([value.damping for value in parameters])[:, None, None]
-    friction = np.asarray(
-        [value.friction(friction_regime) for value in parameters]
-    )[:, None]
+    friction = np.asarray([value.friction(friction_regime) for value in parameters])[
+        :, None
+    ]
     x = np.broadcast_to(inputs.prefix[-1], (model_count, 20, 3)).copy()
     initial_velocity = estimate_velocity(
         inputs.times[: inputs.cutoff + 1], inputs.prefix
     )
     v = np.broadcast_to(initial_velocity, x.shape).copy()
-    rest = np.linalg.norm(
-        inputs.prefix[0, right] - inputs.prefix[0, left], axis=1
-    )
+    rest = np.linalg.norm(inputs.prefix[0, right] - inputs.prefix[0, left], axis=1)
     if np.min(rest) <= 1e-6:
         raise ValueError("degenerate spring rest length")
     result = np.empty((model_count, len(inputs.times), 20, 3), dtype=np.float64)
@@ -588,10 +604,9 @@ def rollout_bank(
                 v[:, :, :2] *= shrink[:, :, None]
 
             fraction = substep / substeps
-            driven = (
-                (1.0 - fraction) * inputs.boundary[time_index - 1]
-                + fraction * inputs.boundary[time_index]
-            )
+            driven = (1.0 - fraction) * inputs.boundary[
+                time_index - 1
+            ] + fraction * inputs.boundary[time_index]
             x[:, inputs.corners] = driven[None, :, :]
             v[:, inputs.corners] = boundary_velocity[None, :, :]
         if (
@@ -629,9 +644,9 @@ def pairwise_mse(bank: np.ndarray, mask: np.ndarray) -> np.ndarray:
     if selected.shape[1] == 0 or not np.all(np.isfinite(selected)):
         raise ValueError("empty or nonfinite model disagreement trajectory")
     squared = np.sum(selected * selected, axis=1)
-    distance = (
-        squared[:, None] + squared[None, :] - 2.0 * (selected @ selected.T)
-    ) / (selected.shape[1] / 3.0)
+    distance = (squared[:, None] + squared[None, :] - 2.0 * (selected @ selected.T)) / (
+        selected.shape[1] / 3.0
+    )
     distance = np.maximum(0.5 * (distance + distance.T), 0.0)
     np.fill_diagonal(distance, 0.0)
     return distance
@@ -670,8 +685,12 @@ def average_distances(values: Sequence[np.ndarray]) -> np.ndarray:
     return result
 
 
-def run_source(root: Path, output: Path, protocol: Mapping[str, Any], workers: int) -> None:
-    del workers  # vectorized NumPy bank; one process avoids nested BLAS oversubscription.
+def run_source(
+    root: Path, output: Path, protocol: Mapping[str, Any], workers: int
+) -> None:
+    del (
+        workers
+    )  # vectorized NumPy bank; one process avoids nested BLAS oversubscription.
     root = root.resolve(strict=True)
     output = output.resolve()
     if output.is_relative_to(root) or root.is_relative_to(output):
@@ -758,9 +777,7 @@ def run_source(root: Path, output: Path, protocol: Mapping[str, Any], workers: i
         }
         if set(held_sources) != set(ACTIONS):
             raise ValueError("held material lacks the two registered half-lay probes")
-        observed_losses = {
-            action: held_sources[action]["loss"] for action in ACTIONS
-        }
+        observed_losses = {action: held_sources[action]["loss"] for action in ACTIONS}
         fold_decisions: dict[str, Any] = {}
         for query in QUERIES:
             query_states: dict[str, Any] = {}
@@ -794,7 +811,9 @@ def run_source(root: Path, output: Path, protocol: Mapping[str, Any], workers: i
                 evaluation = held_sources[unselected]
                 truth = evaluation["truth"]
                 mask = evaluation["mask"]
-                prior_rmse = rmse_mm(weighted_mean(evaluation["bank"], prior), truth, mask)
+                prior_rmse = rmse_mm(
+                    weighted_mean(evaluation["bank"], prior), truth, mask
+                )
                 updated_rmse = rmse_mm(
                     weighted_mean(evaluation["bank"], state.weights), truth, mask
                 )
@@ -819,12 +838,10 @@ def run_source(root: Path, output: Path, protocol: Mapping[str, Any], workers: i
                     "held_material": held_material,
                     "query": query,
                     "fixed_order": query_states["fixed_order"]["selected_action"],
-                    "parameter_information": query_states[
-                        "parameter_information"
-                    ]["selected_action"],
-                    "task_directed": query_states["task_directed"][
+                    "parameter_information": query_states["parameter_information"][
                         "selected_action"
                     ],
+                    "task_directed": query_states["task_directed"]["selected_action"],
                     "task_vs_parameter_disagree": (
                         query_states["task_directed"]["selected_action"]
                         != query_states["parameter_information"]["selected_action"]
@@ -880,14 +897,18 @@ def run_source(root: Path, output: Path, protocol: Mapping[str, Any], workers: i
             protocol["minimum_task_vs_parameter_disagreements"]
         ),
         "task_vs_parameter_disagreements": int(disagreement_count),
-        "minimum_query_switch_materials": int(protocol["minimum_query_switch_materials"]),
+        "minimum_query_switch_materials": int(
+            protocol["minimum_query_switch_materials"]
+        ),
         "query_switch_materials": int(query_switch_materials),
         "task_transfer_mean_prior_rmse_mm": task_mean_prior,
         "task_transfer_mean_updated_rmse_mm": task_mean_updated,
         "task_transfer_mean_persistence_rmse_mm": task_mean_persistence,
         "task_transfer_wins_vs_prior": int(transfer_wins_prior),
         "task_transfer_wins_vs_persistence": int(transfer_wins_persistence),
-        "minimum_transfer_wins_vs_prior": int(protocol["minimum_transfer_wins_vs_prior"]),
+        "minimum_transfer_wins_vs_prior": int(
+            protocol["minimum_transfer_wins_vs_prior"]
+        ),
     }
     gate["selection_divergence_passes"] = bool(
         disagreement_count >= gate["minimum_task_vs_parameter_disagreements"]
@@ -1006,9 +1027,7 @@ def self_test() -> None:
         [[0.105 * col, 0.1485 * row, 0.1] for row in range(5) for col in range(4)],
         dtype=float,
     )
-    rotation = np.array(
-        [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
-    )
+    rotation = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
     order, diagnostic = planar_layout(points @ rotation.T)
     assert set(order.tolist()) == set(range(20))
     assert diagnostic["layout_score"] < 1.8
