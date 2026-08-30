@@ -1,0 +1,55 @@
+{
+  "schema": "bayesian-phystwin/deform360-rope-preprocess-development",
+  "schema_version": 1,
+  "protocol_id": "deform360-rope-preprocess-development-v1",
+  "status": "retrospective-development-frozen-before-media-decoding",
+  "runner_id": "gpuserver6000",
+  "raw_root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+  "persistent_output_root": "/mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-rope-preprocess-development-v1",
+  "object_id": "001-rope",
+  "source_action_mapping": {
+    "workflow_path": ".github/workflows/deform360-rope-pilot-gpuserver6000-v1b.yml",
+    "workflow_name": "Deform360 rope action mapping v3",
+    "branch": "science/deform360-rope-pilot-v1",
+    "artifact_prefix": "d360-action-map-v3-",
+    "require_robust_cross_action": true,
+    "require_bimanual_resolved": true
+  },
+  "official_processing": {
+    "repository": "lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "stages": [
+      "undistort-and-align",
+      "tactile-alignment",
+      "aruco-robot-state"
+    ]
+  },
+  "verification": {
+    "minimum_complete_camera_contracts_per_episode": 12,
+    "minimum_complete_tactile_contracts_per_episode": 2,
+    "require_robot_npz": true,
+    "require_robot_metadata": true
+  },
+  "information_boundary": {
+    "confirmatory_status": false,
+    "selected_source_media_may_be_decoded": true,
+    "selected_target_media_may_be_decoded_for_adapter_development": true,
+    "model_fitting_authorized": false,
+    "physical_parameter_inference_authorized": false,
+    "prediction_generation_authorized": false,
+    "target_scoring_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "next_stage_not_authorized_here": [
+    "object masks",
+    "Gaussian-splat reconstruction",
+    "rendered depth",
+    "dense object tracking",
+    "cleaned point clouds",
+    "PhysTwin control points",
+    "physical parameter fitting",
+    "target prediction",
+    "target scoring"
+  ],
+  "claim_boundary": "A successful execution establishes only that one frozen same-object source-target pair can be converted by the pinned official code into synchronized RGB, tactile, and robot-state contracts on the local fragments. The selected target is explicitly development-opened and cannot later be represented as untouched confirmation evidence. No model performance or physical-transport claim is authorized."
+}
