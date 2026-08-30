@@ -184,9 +184,7 @@ def _source(args: argparse.Namespace, protocol: Mapping[str, object]) -> int:
         np.asarray(fit_rollout["targets"]),
         fit_names,
         ridge=float(cast(Any, residual["ridge"])),
-        variance_floor_m2=float(
-            cast(Any, residual["coordinate_variance_floor_m2"])
-        ),
+        variance_floor_m2=float(cast(Any, residual["coordinate_variance_floor_m2"])),
     )
     full_model = augment_deform_local_residual_full_covariance(
         local_model,

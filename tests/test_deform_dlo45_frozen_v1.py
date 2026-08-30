@@ -16,12 +16,7 @@ if str(REMOTE) not in sys.path:
 
 from experiments.deform_dlo45_frozen_v1 import run  # noqa: E402
 
-PROTOCOL = (
-    ROOT
-    / "experiments"
-    / "deform_dlo45_frozen_v1"
-    / "protocol.json"
-)
+PROTOCOL = ROOT / "experiments" / "deform_dlo45_frozen_v1" / "protocol.json"
 
 
 def test_protocol_is_exact_and_target_jointly_sealed() -> None:
