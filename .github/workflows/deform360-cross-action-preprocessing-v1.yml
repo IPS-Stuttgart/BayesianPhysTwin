@@ -38,6 +38,7 @@ env:
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONNOUSERSITE: "1"
 
 jobs:
   contracts:
@@ -211,34 +212,56 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "${BASE_PYTHON}" -m venv --copies "${RUNTIME_ROOT}"
-          runtime_python="${RUNTIME_ROOT}/bin/python"
-          "${runtime_python}" -m pip install \
+          rm -rf -- "${RUNTIME_ROOT}"
+          runtime_site="${RUNTIME_ROOT}/site-packages"
+          mkdir -p -- "${runtime_site}"
+          if ! "${BASE_PYTHON}" -m pip --version; then
+            echo "The selected Python has no pip module." >&2
+            exit 1
+          fi
+          "${BASE_PYTHON}" -m pip install \
+            --target "${runtime_site}" \
             --constraint "${RUNTIME_LOCK}" \
-            "pip==25.2" \
             "setuptools==80.9.0" \
             "wheel==0.45.1" \
             "numpy==2.2.6" \
             "opencv-contrib-python==5.0.0.93" \
             "huggingface_hub==1.27.0"
-          "${runtime_python}" -m pip install \
+          PYTHONPATH="${runtime_site}" "${BASE_PYTHON}" -m pip install \
+            --target "${runtime_site}" \
             --constraint "${RUNTIME_LOCK}" \
             --no-deps \
             --no-build-isolation \
             "${UPSTREAM_ROOT}"
-          "${runtime_python}" -m pip check
-          "${runtime_python}" -m pip freeze --all \
-            | sort \
-            | tee "${EVIDENCE_ROOT}/python-packages.txt"
-          "${runtime_python}" - <<'PY' \
+          export RUNTIME_SITE="${runtime_site}"
+          {
+            echo "RUNTIME_SITE=${runtime_site}"
+            echo "PYTHONPATH=${runtime_site}"
+          } >> "${GITHUB_ENV}"
+          PYTHONPATH="${runtime_site}" "${BASE_PYTHON}" - <<'PY' \
             | tee "${EVIDENCE_ROOT}/runtime-imports.txt"
           import cv2
           import deform360
+          import huggingface_hub
           import numpy
 
           print(f"opencv={cv2.__version__}")
           print(f"numpy={numpy.__version__}")
+          print(f"huggingface_hub={huggingface_hub.__version__}")
           print(f"deform360={deform360.__file__}")
+          PY
+          "${BASE_PYTHON}" - <<'PY' \
+            | tee "${EVIDENCE_ROOT}/python-packages.txt"
+          import importlib.metadata
+          import os
+
+          site = os.environ["RUNTIME_SITE"]
+          distributions = importlib.metadata.distributions(path=[site])
+          for distribution in sorted(
+              distributions,
+              key=lambda item: item.metadata["Name"].casefold(),
+          ):
+              print(f"{distribution.metadata['Name']}=={distribution.version}")
           PY
 
       - name: Preprocess the eight fixed source and target episodes
@@ -248,7 +271,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "${RUNTIME_ROOT}/bin/python" "${RUNNER_SCRIPT}" process \
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" \
+            "${RUNNER_SCRIPT}" process \
             --protocol "${PROTOCOL}" \
             --pair-lock "${PAIR_LOCK}" \
             --output-root "${OUTPUT_ROOT}" \
