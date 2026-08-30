@@ -92,6 +92,20 @@ threshold, and fallback policy.
 Failure of H1 is a negative result and ends any deployment-style claim. H2-H5
 remain descriptive only when H1 fails.
 
+## Controlled mechanism experiment
+
+The first direct test of H1-H5 is the source-only spring-graph study in
+`docs/controlled_query_competence_v1.md`. It freezes one independently seeded
+episode per query, a nominal exact fallback, a practical baseline-relative harm
+margin, four source-trained risk-model arms, disjoint calibration/training/
+threshold/source-gate partitions, and one unopened confirmation partition.
+
+The claim is deliberately in-population over three declared topology classes.
+A development-only leave-one-topology-out rope stress test failed the harm
+bound, so unseen-topology transfer remains an explicit negative boundary. The
+controlled study cannot authorize physical or backend claims even if its
+one-shot confirmation passes.
+
 ## Baselines and ablations
 
 The primary comparison set is frozen before certification outcomes:
