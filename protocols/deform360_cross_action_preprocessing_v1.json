@@ -28,8 +28,19 @@
     "tactile_alignment_tolerance_us": 150000,
     "tactile_out_of_tolerance": "keep-and-flag",
     "robot_ransac_seed": 20260831,
-    "overwrite_within_unique-run_root": true,
-    "minimum_free_bytes": 21474836480
+    "overwrite_within_unique_run_root": true,
+    "minimum_free_bytes": 4294967296
+  },
+  "operational_amendment": {
+    "based_on_run_id": 33338380584,
+    "media_payload_decoded_before_amendment": false,
+    "model_prediction_computed_before_amendment": false,
+    "target_score_computed_before_amendment": false,
+    "reason": "The original 20 GiB reserve rejected the mounted development volume before preprocessing. The fixed workload contains only eight episodes and twelve cameras per episode. The reserve is reduced to 4 GiB, and every execution records and enforces the actual available-byte value before media decoding.",
+    "scientific_pair_lock_changed": false,
+    "camera_panel_changed": false,
+    "tactile_panel_changed": false,
+    "processing_revision_changed": false
   },
   "information_boundary": {
     "retrospective_development": true,

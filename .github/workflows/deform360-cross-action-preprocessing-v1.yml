@@ -148,8 +148,9 @@ jobs:
               exit 1
               ;;
           esac
-          available_bytes="$(df --output=avail -B1 "${resolved_persistent}" | tail -1)"
-          test "${available_bytes}" -ge 21474836480
+          available_bytes="$(df --output=avail -B1 "${resolved_persistent}" | tail -1 | tr -d '[:space:]')"
+          echo "available_bytes=${available_bytes}"
+          test "${available_bytes}" -ge 4294967296
 
           evidence_root="${RUNNER_TEMP}/d360-cross-action-preprocess-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           runtime_root="${RUNNER_TEMP}/d360-cross-action-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
