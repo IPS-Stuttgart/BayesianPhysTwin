@@ -186,7 +186,9 @@ def _predict(args: argparse.Namespace, protocol: Mapping[str, object]) -> int:
         "protocol": _identity(args.protocol.resolve()),
         "source_result": _identity(source_result_path),
         "target_authorization": _identity(args.authorization.resolve()),
-        "physical_checkpoint": _identity(cast(Path, trained["checkpoint_path"]), update=6400),
+        "physical_checkpoint": _identity(
+            cast(Path, trained["checkpoint_path"]), update=6400
+        ),
         "compute_matched_checkpoint": _identity(
             cast(Path, compute["checkpoint_path"]), update=compute["end_update"]
         ),
@@ -270,7 +272,9 @@ def _predict(args: argparse.Namespace, protocol: Mapping[str, object]) -> int:
         dlo_type=dlo,
         node_count=12,
     )
-    eval_initial, eval_action = local_runtime._causal_inputs(eval_trajectories, eval_names)
+    eval_initial, eval_action = local_runtime._causal_inputs(
+        eval_trajectories, eval_names
+    )
     bayesian = build_deform_bayesian_covariance_ablation_v1(
         full_model,
         eval_initial,
