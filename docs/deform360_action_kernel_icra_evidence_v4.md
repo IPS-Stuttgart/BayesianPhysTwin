@@ -64,3 +64,6 @@ work unless independently revalidated.
   `84e8b463f9d3092739227985319e7910e1aaff3a59998b4e366455b8a7213920`.
 - Reserved confirmation run: `33331368970`, artifact `9737749188`, SHA-256
   `bb82b44f9935dc839bfa293d044634219bac7e96fb7050f76c7f482cd874a382`.
+
+The implementation, frozen protocols, compact evidence and object-level table
+are collected in pull request #815 for ordinary protected-branch validation.
