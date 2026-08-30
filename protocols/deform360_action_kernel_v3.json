@@ -1,0 +1,112 @@
+{
+  "schema": "bayesian-phystwin/deform360-action-kernel-protocol-v3",
+  "schema_version": 3,
+  "protocol_id": "deform360-action-kernel-development-v3",
+  "status": "frozen-before-ridge-v2-target-result-available",
+  "frozen_predecessor_run_id": 33329809775,
+  "frozen_predecessor_revision": "d22bfde401d5696db3bded690b0e3d68aa9482bf",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "development_object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "072-cotton-clohesline",
+    "081-stripe-rope",
+    "008-pink-cloth",
+    "026-sock-cloth",
+    "031-cotton-cloth",
+    "036-napkin-cloth",
+    "038-mat-cloth",
+    "038-black-bag-cloth",
+    "053-squeezer",
+    "058-roll-napkin",
+    "063-flower"
+  ],
+  "reserved_object_ids": [
+    "066-glove-half-black-cloth",
+    "075-leather",
+    "080-wool",
+    "091-net-cloth",
+    "112-wristband-cloth",
+    "120-bread-plush",
+    "121-croissant-plush",
+    "123-pipe-cleaner",
+    "139-rubber-ball",
+    "143-silicone-wristband",
+    "164-sheep",
+    "165-glove-yellow-cloth"
+  ],
+  "selection": {
+    "minimum_episodes": 4,
+    "minimum_objects": 10,
+    "target_episode_rule": "highest available episode id selected from metadata and carrier identities before target tactile loading",
+    "source_episode_rule": "all other carrier-complete episodes of the same physical object",
+    "replacement_allowed": false
+  },
+  "shared_preprocessing": {
+    "base_protocol_path": "protocols/deform360_action_conditioned_tactile_v2.json",
+    "forecast_horizon_frames": 32,
+    "window_stride_frames": 8,
+    "tactile_state_rank": 16,
+    "tactile_delta_rank": 24,
+    "known_future_robot_trajectory": true,
+    "robot_tactile_alignment": "monotone common-endpoint resampling of released legacy robot and raw tactile carriers"
+  },
+  "kernel_candidates": {
+    "neighbor_counts": [4, 8, 16, 32],
+    "action_distance_scales": [0.25, 1.0, 4.0],
+    "distance": "mean standardized squared state distance plus action_distance_scale times mean standardized squared future-action distance",
+    "weighting": "softmax over negative selected-neighbor distance divided by its positive median",
+    "state_only_control_neighbor_counts": [4, 8, 16, 32]
+  },
+  "ridge_candidates": {
+    "include_predecessor_action_ridge_family": true,
+    "include_predecessor_state_ridge_control": true
+  },
+  "model_averaging": {
+    "candidate_families": [
+      "action_ridge",
+      "action_kernel"
+    ],
+    "weights": "generalized-Bayes weights from leave-one-source-episode-out active-field RMSE",
+    "temperature_floor_fraction": 0.05,
+    "source_only_bias_correction": true
+  },
+  "guard": {
+    "minimum_relative_gain": 0.01,
+    "maximum_episode_regret_fraction": 0.2,
+    "fallback_candidates": [
+      "persistence",
+      "last_trend",
+      "state_ridge",
+      "state_kernel"
+    ],
+    "all_decisions_source_only": true
+  },
+  "uncertainty": {
+    "coverage_probability": 0.9,
+    "maximum_low_rank": 8,
+    "energy_score_samples": 16,
+    "calibration": "leave-one-source-episode-out model-average residuals with donor-only mean correction and a source-fitted scalar covariance multiplier"
+  },
+  "statistics": {
+    "unit": "physical object",
+    "primary_metric": "object-balanced active-field RMSE at 32 frames",
+    "bootstrap_repetitions": 5000,
+    "random_seed": 73031,
+    "relation_breaking_control": "permute target future-action features while preserving target tactile prefixes and all source-fitted parameters"
+  },
+  "information_boundary": {
+    "protocol_frozen_before_predecessor_target_result_available": true,
+    "development_robot_trajectories_may_open": true,
+    "development_tactile_source_episodes_may_open": true,
+    "target_robot_trajectory_is_registered_intervention_input": true,
+    "target_tactile_may_open_only_after_source_fit_is_content_bound": true,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "reserved_object_payloads_may_open": false
+  },
+  "fresh_confirmation_authorized": false,
+  "paper_claim_authorized": false,
+  "claim_boundary": "Retrospective same-object cross-action tactile-response development evidence. The nonlinear candidate was frozen before the predecessor ridge target result became available. A positive result motivates separately locked reserved-object or 3-D confirmation; it is not itself an ICRA paper claim, strict counterfactual validation, dense 4-D geometry validation, or state-of-the-art evidence."
+}

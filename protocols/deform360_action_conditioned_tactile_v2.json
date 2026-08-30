@@ -1,0 +1,95 @@
+{
+  "schema": "bayesian-phystwin/deform360-action-conditioned-tactile-protocol-v2",
+  "schema_version": 2,
+  "protocol_id": "deform360-action-conditioned-tactile-development-v2",
+  "status": "frozen-before-v2-target-tactile-scoring",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "development_object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "072-cotton-clohesline",
+    "081-stripe-rope",
+    "008-pink-cloth",
+    "026-sock-cloth",
+    "031-cotton-cloth",
+    "036-napkin-cloth",
+    "038-mat-cloth",
+    "038-black-bag-cloth",
+    "053-squeezer",
+    "058-roll-napkin",
+    "063-flower"
+  ],
+  "reserved_object_ids": [
+    "066-glove-half-black-cloth",
+    "075-leather",
+    "080-wool",
+    "091-net-cloth",
+    "112-wristband-cloth",
+    "120-bread-plush",
+    "121-croissant-plush",
+    "123-pipe-cleaner",
+    "139-rubber-ball",
+    "143-silicone-wristband",
+    "164-sheep",
+    "165-glove-yellow-cloth"
+  ],
+  "selection": {
+    "minimum_episodes": 4,
+    "minimum_objects": 10,
+    "target_episode_rule": "highest available episode id selected from metadata and carrier identities before target tactile loading",
+    "source_episode_rule": "all other carrier-complete episodes of the same physical object",
+    "replacement_allowed": false
+  },
+  "model": {
+    "primary_horizon_frames": 32,
+    "window_stride_frames": 8,
+    "trend_lag_frames": 4,
+    "input_trend_lags_frames": [1, 4, 16],
+    "source_feature_scale_quantile": 0.995,
+    "normalized_feature_clip": 5.0,
+    "active_threshold": 0.05,
+    "state_rank": 16,
+    "delta_rank": 24,
+    "ridge_alphas": [0.1, 1.0, 10.0, 100.0],
+    "ensemble_temperature_floor_fraction": 0.05,
+    "known_future_robot_trajectory": true,
+    "robot_tactile_alignment": "monotone common-endpoint resampling because the mounted legacy robot arrays and raw tactile arrays expose no shared released timestamp carrier",
+    "tactile_preprocessing": "subtract matched released median, positive clamp, keep the twelve URDF taxel rows, clear column 31, 2x2 spatial pooling, source-only feature scaling"
+  },
+  "guard": {
+    "minimum_relative_gain": 0.01,
+    "maximum_episode_regret_fraction": 0.2,
+    "fallback_candidates": [
+      "persistence",
+      "last_trend",
+      "state_ridge"
+    ],
+    "all_decisions_source_only": true
+  },
+  "uncertainty": {
+    "coverage_probability": 0.9,
+    "maximum_low_rank": 8,
+    "energy_score_samples": 16,
+    "calibration": "leave-one-source-episode-out residuals with donor-only mean correction and a source-fitted scalar covariance multiplier"
+  },
+  "statistics": {
+    "unit": "physical object",
+    "bootstrap_repetitions": 5000,
+    "random_seed": 72031,
+    "primary_metric": "object-balanced active-field RMSE at 32 frames",
+    "relation_breaking_control": "permute target future-action features while preserving tactile prefixes and model parameters"
+  },
+  "information_boundary": {
+    "development_robot_trajectories_may_open": true,
+    "development_tactile_source_episodes_may_open": true,
+    "target_robot_trajectory_is_registered_intervention_input": true,
+    "target_tactile_may_open_only_after_source_fit_is_content_bound": true,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "reserved_object_payloads_may_open": false
+  },
+  "fresh_confirmation_authorized": false,
+  "paper_claim_authorized": false,
+  "claim_boundary": "Retrospective same-object cross-action tactile-response development evidence. A positive result motivates a separately frozen reserved-object or 3-D geometry confirmation; it is not itself an ICRA paper claim, strict counterfactual validation, dense 4-D geometry validation, or state-of-the-art evidence."
+}

@@ -1,0 +1,158 @@
+{
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "development": {
+    "artifact_id": 9737547119,
+    "artifact_sha256": "de41ab129d22a118a397e21b588cbfc1bc8a9792d4be3a9e504734d47f8c4167",
+    "bootstrap_95_interval": [
+      -0.047283629054324636,
+      -0.027711315454703553
+    ],
+    "ensemble_active_rmse": 0.6135991427468539,
+    "guard_acceptance_fraction": 0.9285714285714286,
+    "horizon_frames": 32,
+    "object_count": 14,
+    "object_wins_ties_losses": [
+      14,
+      0,
+      0
+    ],
+    "persistence_active_rmse": 0.6510200078423548,
+    "relative_change_vs_persistence": -0.0574803610407046,
+    "relative_change_vs_shuffled_action": -0.03785415591836206,
+    "run_id": 33330455808,
+    "shuffled_object_wins_ties_losses": [
+      14,
+      0,
+      0
+    ],
+    "source_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "uncertainty": {
+      "energy_score": 0.27803234415498673,
+      "joint_90_ellipsoid_coverage": 0.30016346465853533,
+      "joint_nanees": 1527.6545098043473,
+      "marginal_90_coverage": 0.8240220695102517,
+      "mean_marginal_90_width": 0.378909438298368,
+      "nll_per_dimension": 762.1637063510576
+    }
+  },
+  "interpretation": {
+    "calibrated_joint_uncertainty_supported": false,
+    "dense_4d_geometry_supported": false,
+    "fresh_confirmation_authorized": false,
+    "guarded_deployment_supported": false,
+    "icra_promising_point_evidence": true,
+    "paper_claim_authorized": false,
+    "real_action_conditioning_supported": true,
+    "relation_breaking_control_supported": true,
+    "strict_counterfactual_supported": false,
+    "unseen_object_zero_shot_supported": false
+  },
+  "method": {
+    "description": "source-fitted mixture of action_ridge and nonlinear action_kernel models",
+    "development_protocol_frozen_before_predecessor_target_result": true,
+    "development_protocol_sha256": "e250322028ec04bf4595db92227ac42127a7b4fcf7e89365c1d50d698846cc90",
+    "future_tactile_used_for_scoring_only": true,
+    "implementation_git_blob_sha1": "94abb4b94a84b004e3ad76bbb78fa88af5b82471",
+    "known_future_robot_trajectory_used": true,
+    "name": "bayesian_action_ensemble"
+  },
+  "reserved_confirmation": {
+    "artifact_id": 9737749188,
+    "artifact_sha256": "bb82b44f9935dc839bfa293d044634219bac7e96fb7050f76c7f482cd874a382",
+    "bootstrap_95_interval": [
+      -0.0687087879837999,
+      -0.0033560783896112723
+    ],
+    "ensemble_active_rmse": 0.7954284532623782,
+    "guard_acceptance_fraction": 0.5,
+    "horizon_frames": 32,
+    "object_count": 4,
+    "object_ids": [
+      "066-glove-half-black-cloth",
+      "075-leather",
+      "080-wool",
+      "091-net-cloth"
+    ],
+    "object_wins_ties_losses": [
+      4,
+      0,
+      0
+    ],
+    "objects": [
+      {
+        "ensemble_active_rmse": 1.1055686786274954,
+        "fallback_method": "state_ridge",
+        "guard_accepts": false,
+        "object_id": "066-glove-half-black-cloth",
+        "persistence_active_rmse": 1.1104971103316355,
+        "relative_change_vs_persistence": -0.0044380409982951,
+        "shuffled_action_active_rmse": 1.1081602783799342,
+        "target_action": "lift thumb and pinky",
+        "target_action_family": "lift",
+        "target_episode_id": 5
+      },
+      {
+        "ensemble_active_rmse": 1.224123428373077,
+        "fallback_method": "state_ridge",
+        "guard_accepts": false,
+        "object_id": "075-leather",
+        "persistence_active_rmse": 1.2259071534481596,
+        "relative_change_vs_persistence": -0.001455024607748925,
+        "shuffled_action_active_rmse": 1.224260693240024,
+        "target_action": "fold",
+        "target_action_family": "shape",
+        "target_episode_id": 9
+      },
+      {
+        "ensemble_active_rmse": 0.46446646548270076,
+        "fallback_method": "state_kernel",
+        "guard_accepts": true,
+        "object_id": "080-wool",
+        "persistence_active_rmse": 0.5544353722263873,
+        "relative_change_vs_persistence": -0.16227122447546577,
+        "shuffled_action_active_rmse": 0.5274904776989435,
+        "target_action": "drag opposite directions",
+        "target_action_family": "translate",
+        "target_episode_id": 8
+      },
+      {
+        "ensemble_active_rmse": 0.3875552405662395,
+        "fallback_method": "state_ridge",
+        "guard_accepts": true,
+        "object_id": "091-net-cloth",
+        "persistence_active_rmse": 0.42724107927328264,
+        "relative_change_vs_persistence": -0.09288863040638999,
+        "shuffled_action_active_rmse": 0.41229542485451515,
+        "target_action": "fold",
+        "target_action_family": "shape",
+        "target_episode_id": 9
+      }
+    ],
+    "persistence_active_rmse": 0.8295201788198663,
+    "point_confirmation_supported": true,
+    "probabilistic_confirmation_supported": false,
+    "readiness_artifact_id": 9737630207,
+    "readiness_artifact_sha256": "84e8b463f9d3092739227985319e7910e1aaff3a59998b4e366455b8a7213920",
+    "readiness_run_id": 33330710592,
+    "relative_change_vs_persistence": -0.04109812687858821,
+    "relative_change_vs_shuffled_action": -0.027655055014442907,
+    "run_id": 33331368970,
+    "shuffled_object_wins_ties_losses": [
+      4,
+      0,
+      0
+    ],
+    "source_revision": "406a55b584bacaa8bcbf8e09a27ae7f84d917020",
+    "uncertainty": {
+      "energy_score": 0.39214849711988337,
+      "joint_90_ellipsoid_coverage": 0.2699652777777778,
+      "joint_nanees": 115378.7072719298,
+      "marginal_90_coverage": 0.7503261373500631,
+      "mean_marginal_90_width": 0.2697962136922614,
+      "nll_per_dimension": 57686.83559720286
+    }
+  },
+  "schema": "bayesian-phystwin/deform360-action-kernel-icra-evidence-v4",
+  "schema_version": 4,
+  "status": "complete"
+}
