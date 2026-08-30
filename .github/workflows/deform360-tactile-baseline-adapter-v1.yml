@@ -1,0 +1,554 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 tactile baseline adapter
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-tactile-baseline-adapter-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-tactile-baseline-adapter-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-tactile-baseline-adapter-v1.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  OFFICIAL_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  tactile:
+    name: 038-mat-cloth episode 3 tactile / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+          fetch-depth: 2
+
+      - name: Check out pinned official Deform360 implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          clean: true
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one newly added source-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-tactile-baseline-adapter-request-v1",
+              "raw_root": os.environ["RAW_ROOT"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": "038-mat-cloth",
+              "source_episode": 3,
+              "runner_label": "gpuserver4090",
+              "official_processing_revision": os.environ["OFFICIAL_REVISION"],
+              "baseline_rule": "latest-baseline-timestamp-not-after-source-recording-anchor",
+              "maximum_cross_sensor_baseline_spread_us": 10000000,
+              "persistent_source_tactile_write_authorized": True,
+              "raw_tree_modification_authorized": False,
+              "requested_processed_tree_modification_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"invalid request field {key!r}")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from tactile adapter contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("expected_source_revision does not equal request parent")
+          if not request.get("request_id"):
+              raise SystemExit("request_id must be nonempty")
+          PY
+
+      - name: Prepare isolated official runtime and exact paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test -w "${STAGING_ROOT}"
+          test "$(git -C _deform360_official rev-parse HEAD)" = "${OFFICIAL_REVISION}"
+          source_episode="${STAGING_ROOT}/cross-action-source-v1/038-mat-cloth/episode_0003"
+          test -d "${source_episode}"
+          test -f "${source_episode}/robot/robot.npz"
+          test ! -d "${STAGING_ROOT}/cross-action-source-v1/038-mat-cloth/episode_0009"
+          venv="${RUNNER_TEMP}/deform360-tactile-v1-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          evidence="${RUNNER_TEMP}/deform360-tactile-v1-evidence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          adapter="${RUNNER_TEMP}/deform360-tactile-v1-raw-adapter-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          temp_output="${STAGING_ROOT}/cross-action-source-v1/.tactile-v1-tmp-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${venv}"
+          test ! -e "${evidence}"
+          test ! -e "${adapter}"
+          test ! -e "${temp_output}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check \
+            -e "${GITHUB_WORKSPACE}/_deform360_official"
+          "${venv}/bin/python" -m pip check
+          mkdir -p "${evidence}" "${adapter}"
+          {
+            echo "TACTILE_PYTHON=${venv}/bin/python"
+            echo "TACTILE_VENV=${venv}"
+            echo "EVIDENCE_ROOT=${evidence}"
+            echo "ADAPTER_ROOT=${adapter}"
+            echo "TEMP_OUTPUT_ROOT=${temp_output}"
+            echo "SOURCE_EPISODE_ROOT=${source_episode}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Audit causal baseline identity and materialize source tactile
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${TACTILE_PYTHON}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import shutil
+          import traceback
+          from pathlib import Path
+
+          import numpy as np
+
+          from deform360.layout import (
+              list_camera_names,
+              list_tactile_names,
+              recording_for_episode,
+              tactile_recordings,
+          )
+          from deform360.tactile import process_tactile_episode
+          from deform360.timestamps import parse_timestamp_file, timestamp_to_microseconds
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          raw_root = Path(request["raw_root"]).resolve(strict=True)
+          staging_root = Path(request["staging_root"]).resolve(strict=True)
+          object_id = request["source_object"]
+          episode_index = int(request["source_episode"])
+          raw_object = raw_root / "raw" / object_id
+          aligned_object = staging_root / "cross-action-source-v1" / object_id
+          source_episode = Path(os.environ["SOURCE_EPISODE_ROOT"])
+          adapter_object = Path(os.environ["ADAPTER_ROOT"]) / object_id
+          temp_object = Path(os.environ["TEMP_OUTPUT_ROOT"]) / object_id
+          temp_episode = temp_object / f"episode_{episode_index:04d}"
+          evidence_root = Path(os.environ["EVIDENCE_ROOT"])
+          timestamp_pattern = re.compile(r"(\d{13,})$")
+
+          def trailing_timestamp(stem: str) -> int:
+              match = timestamp_pattern.search(stem)
+              if match is None:
+                  raise ValueError(f"no trailing timestamp in stem {stem!r}")
+              return int(match.group(1))
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for block in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(block)
+              return digest.hexdigest()
+
+          result = {
+              "schema": "bayesian-phystwin/deform360-tactile-baseline-adapter-v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "required_runner_label": request["runner_label"],
+              "official_processing_revision": request["official_processing_revision"],
+              "source_object": object_id,
+              "source_episode": episode_index,
+              "raw_root": str(raw_root),
+              "requested_processed_root": request["requested_processed_root"],
+              "staging_root": str(staging_root),
+              "baseline_rule": request["baseline_rule"],
+              "sensor_rows": [],
+              "outputs": [],
+              "errors": [],
+              "information_boundary": {
+                  "raw_tree_modified": False,
+                  "requested_processed_tree_modified": False,
+                  "source_tactile_payload_opened": False,
+                  "earlier_episode_payload_opened": False,
+                  "target_episode_directory_inspected": False,
+                  "target_numeric_payload_opened": False,
+                  "target_output_directory_created": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+          }
+
+          try:
+              if not raw_object.is_dir():
+                  raise FileNotFoundError(raw_object)
+              if not source_episode.is_dir():
+                  raise FileNotFoundError(source_episode)
+              sensors = list_tactile_names(raw_object)
+              if not sensors:
+                  raise FileNotFoundError("no tactile sensor directories")
+
+              selected_rows = []
+              for sensor in sensors:
+                  sensor_dir = raw_object / sensor
+                  recordings = tactile_recordings(sensor_dir, strict=True)
+                  recording = recording_for_episode(recordings, episode_index)
+                  recording_stamp = trailing_timestamp(recording.data_path.stem)
+                  timestamp_pairs = parse_timestamp_file(recording.timestamp_path)
+                  if not timestamp_pairs:
+                      raise ValueError(f"empty timestamp sidecar for {sensor}")
+                  first_sample_us = timestamp_to_microseconds(timestamp_pairs[0][0])
+                  last_sample_us = timestamp_to_microseconds(timestamp_pairs[-1][0])
+                  anchor_us = min(recording_stamp, first_sample_us)
+                  baselines = sorted(sensor_dir.glob("median_*.npy"))
+                  baseline_rows = [
+                      {
+                          "path": path,
+                          "timestamp_us": trailing_timestamp(path.stem),
+                      }
+                      for path in baselines
+                  ]
+                  preceding = [
+                      row for row in baseline_rows if row["timestamp_us"] <= anchor_us
+                  ]
+                  if not preceding:
+                      raise ValueError(f"no causal baseline precedes source recording for {sensor}")
+                  selected = max(preceding, key=lambda row: row["timestamp_us"])
+                  following = [
+                      row for row in baseline_rows if row["timestamp_us"] > anchor_us
+                  ]
+                  next_following = (
+                      min(following, key=lambda row: row["timestamp_us"])
+                      if following
+                      else None
+                  )
+                  selected_index = baseline_rows.index(selected)
+                  nearest = min(
+                      baseline_rows,
+                      key=lambda row: abs(row["timestamp_us"] - anchor_us),
+                  )
+                  selected_rows.append(
+                      {
+                          "sensor": sensor,
+                          "recordings": recordings,
+                          "recording": recording,
+                          "recording_stamp_us": recording_stamp,
+                          "first_sample_us": first_sample_us,
+                          "last_sample_us": last_sample_us,
+                          "anchor_us": anchor_us,
+                          "baseline_rows": baseline_rows,
+                          "selected": selected,
+                          "selected_index": selected_index,
+                          "next_following": next_following,
+                          "nearest": nearest,
+                      }
+                  )
+
+              selected_indices = {row["selected_index"] for row in selected_rows}
+              if len(selected_indices) != 1:
+                  raise ValueError(
+                      f"sensors select different baseline ordinals: {sorted(selected_indices)}"
+                  )
+              selected_timestamps = [row["selected"]["timestamp_us"] for row in selected_rows]
+              spread = max(selected_timestamps) - min(selected_timestamps)
+              if spread > int(request["maximum_cross_sensor_baseline_spread_us"]):
+                  raise ValueError(
+                      f"cross-sensor selected baseline spread {spread} exceeds contract"
+                  )
+              recording_timestamps = [row["recording_stamp_us"] for row in selected_rows]
+              if max(recording_timestamps) - min(recording_timestamps) > 10000000:
+                  raise ValueError("source tactile recording timestamps disagree across sensors")
+
+              for row in selected_rows:
+                  selected = row["selected"]
+                  next_following = row["next_following"]
+                  public_row = {
+                      "sensor": row["sensor"],
+                      "recording_data_name": row["recording"].data_path.name,
+                      "recording_timestamp_name": row["recording"].timestamp_path.name,
+                      "recording_stamp_us": row["recording_stamp_us"],
+                      "first_sample_us": row["first_sample_us"],
+                      "last_sample_us": row["last_sample_us"],
+                      "anchor_us": row["anchor_us"],
+                      "baseline_names": [item["path"].name for item in row["baseline_rows"]],
+                      "selected_baseline_name": selected["path"].name,
+                      "selected_baseline_timestamp_us": selected["timestamp_us"],
+                      "selected_baseline_ordinal": row["selected_index"],
+                      "selected_age_us": row["anchor_us"] - selected["timestamp_us"],
+                      "next_following_baseline_name": (
+                          next_following["path"].name if next_following else None
+                      ),
+                      "next_following_distance_us": (
+                          next_following["timestamp_us"] - row["anchor_us"]
+                          if next_following
+                          else None
+                      ),
+                      "causal_choice_is_absolute_nearest": (
+                          row["nearest"]["path"] == selected["path"]
+                      ),
+                      "selected_baseline_sha256": sha256(selected["path"]),
+                      "recording_size_bytes": row["recording"].data_path.stat().st_size,
+                      "timestamp_size_bytes": row["recording"].timestamp_path.stat().st_size,
+                  }
+                  result["sensor_rows"].append(public_row)
+
+                  adapter_sensor = adapter_object / row["sensor"]
+                  adapter_sensor.mkdir(parents=True, exist_ok=False)
+                  for recording in row["recordings"][: episode_index + 1]:
+                      (adapter_sensor / recording.data_path.name).symlink_to(
+                          recording.data_path
+                      )
+                      (adapter_sensor / recording.timestamp_path.name).symlink_to(
+                          recording.timestamp_path
+                      )
+                  selected_path = selected["path"]
+                  (adapter_sensor / selected_path.name).symlink_to(selected_path)
+
+              if any((source_episode / sensor).exists() for sensor in sensors):
+                  raise FileExistsError("persistent source tactile output already exists")
+              temp_episode.mkdir(parents=True, exist_ok=False)
+              for camera in list_camera_names(source_episode):
+                  source_camera = source_episode / camera
+                  if (source_camera / "aligned_timestamps.txt").is_file():
+                      (temp_episode / camera).symlink_to(
+                          source_camera, target_is_directory=True
+                      )
+              if not list_camera_names(temp_episode):
+                  raise FileNotFoundError("temporary aligned view has no camera timeline")
+
+              outputs = process_tactile_episode(
+                  object_dir=adapter_object,
+                  aligned_dir=temp_object,
+                  episode_index=episode_index,
+                  overwrite=True,
+              )
+              result["information_boundary"]["source_tactile_payload_opened"] = True
+              if set(outputs) != set(sensors):
+                  raise ValueError("not every registered tactile sensor produced an output")
+
+              output_rows = []
+              for sensor, data_path in sorted(outputs.items()):
+                  sensor_dir = data_path.parent
+                  array = np.load(data_path, mmap_mode="r", allow_pickle=False)
+                  if array.ndim != 3 or array.shape[1:] != (16, 32):
+                      raise ValueError(f"unexpected tactile output shape for {sensor}: {array.shape}")
+                  metadata_path = sensor_dir / "metadata.json"
+                  alignment_path = sensor_dir / "alignment.json"
+                  if not metadata_path.is_file() or not alignment_path.is_file():
+                      raise FileNotFoundError(f"missing tactile provenance for {sensor}")
+                  output_rows.append(
+                      {
+                          "sensor": sensor,
+                          "shape": list(array.shape),
+                          "dtype": str(array.dtype),
+                          "nonzero_fraction": float(np.count_nonzero(array) / array.size),
+                          "maximum": float(np.max(array)),
+                          "data_sha256": sha256(data_path),
+                          "metadata_sha256": sha256(metadata_path),
+                          "alignment_sha256": sha256(alignment_path),
+                      }
+                  )
+
+              for sensor in sensors:
+                  temporary_sensor = temp_episode / sensor
+                  destination = source_episode / sensor
+                  if destination.exists():
+                      raise FileExistsError(destination)
+                  os.replace(temporary_sensor, destination)
+              result["outputs"] = output_rows
+              result["decision"] = "source-tactile-materialization-complete"
+              result["next_action"] = (
+                  "Run the pinned source-only model-backed geometry stages, then produce "
+                  "pcd_clean and PhysTwin control points before source qualification."
+              )
+          except Exception as error:
+              result["errors"].append(
+                  {
+                      "type": type(error).__name__,
+                      "message": str(error),
+                      "traceback": traceback.format_exc(limit=15),
+                  }
+              )
+              if result["sensor_rows"]:
+                  result["decision"] = "source-tactile-processing-failed-after-baseline-audit"
+              else:
+                  result["decision"] = "source-tactile-baseline-rule-not-admissible"
+              result["next_action"] = (
+                  "Retain this source-only result and repair only the exact baseline or tactile "
+                  "processing contract without reading a target episode."
+              )
+          finally:
+              shutil.rmtree(adapter_object.parent, ignore_errors=True)
+              shutil.rmtree(Path(os.environ["TEMP_OUTPUT_ROOT"]), ignore_errors=True)
+
+          result["information_boundary"]["target_output_directory_created"] = (
+              staging_root
+              / "cross-action-source-v1"
+              / object_id
+              / "episode_0009"
+          ).exists()
+          if result["information_boundary"]["target_output_directory_created"]:
+              raise SystemExit("target output directory exists unexpectedly")
+          result["claim_boundary"] = (
+              "Source-only public Deform360 tactile preprocessing evidence for one episode. "
+              "No target episode, geometry reconstruction, Prob4D qualification, BayesianPhysTwin "
+              "benefit, cross-action transport, Causal4D decision value, calibration, safety, "
+              "or state-of-the-art claim."
+          )
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False)
+          result["result_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+          (evidence_root / "result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          lines = [
+              "# Deform360 source tactile baseline adapter",
+              "",
+              f"Decision: `{result['decision']}`",
+              "",
+              f"Sensors audited: `{len(result['sensor_rows'])}`",
+              f"Tactile outputs: `{len(result['outputs'])}`",
+              "",
+              "| Sensor | Selected causal baseline | Age (s) | Absolute nearest |",
+              "| --- | --- | ---: | --- |",
+          ]
+          for row in result["sensor_rows"]:
+              lines.append(
+                  f"| {row['sensor']} | {row['selected_baseline_name']} | "
+                  f"{row['selected_age_us'] / 1e6:.3f} | "
+                  f"{row['causal_choice_is_absolute_nearest']} |"
+              )
+          lines.extend(
+              [
+                  "",
+                  f"Next action: {result['next_action']}",
+                  "",
+                  "The raw tree and requested processed tree were not modified. Only the registered "
+                  "source episode was decoded; no target episode or target score was opened.",
+                  "",
+              ]
+          )
+          (evidence_root / "report.md").write_text("\n".join(lines), encoding="utf-8")
+          print(json.dumps({
+              "decision": result["decision"],
+              "sensor_rows": result["sensor_rows"],
+              "outputs": result["outputs"],
+              "errors": result["errors"],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Verify target closure and persistent source outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${TACTILE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          boundary = result["information_boundary"]
+          required_false = (
+              "raw_tree_modified",
+              "requested_processed_tree_modified",
+              "earlier_episode_payload_opened",
+              "target_episode_directory_inspected",
+              "target_numeric_payload_opened",
+              "target_output_directory_created",
+              "target_scoring_performed",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          )
+          for name in required_false:
+              if boundary[name] is not False:
+                  raise SystemExit(f"closed boundary changed: {name}")
+          if result["decision"] == "source-tactile-materialization-complete":
+              if not boundary["source_tactile_payload_opened"]:
+                  raise SystemExit("source output completed without payload-open marker")
+              if len(result["outputs"]) != len(result["sensor_rows"]):
+                  raise SystemExit("source tactile output count differs from audited sensor count")
+          print(json.dumps({"decision": result["decision"], "outputs": result["outputs"]}, indent=2))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish compact summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/report.md" ]]; then
+            cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "## Tactile baseline adapter did not produce a result" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact source evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-tactile-baseline-adapter-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime and scratch
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- \
+            "${TACTILE_VENV:-}" \
+            "${ADAPTER_ROOT:-}" \
+            "${TEMP_OUTPUT_ROOT:-}" \
+            "${EVIDENCE_ROOT:-}"
