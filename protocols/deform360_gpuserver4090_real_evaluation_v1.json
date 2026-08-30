@@ -1,0 +1,108 @@
+{
+  "schema": "bayesian-phystwin/deform360-gpuserver4090-real-evaluation-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-gpuserver4090-real-evaluation-v1",
+  "status": "frozen-before-development-target-payload-scoring",
+  "dataset": {
+    "name": "Deform360",
+    "root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "official_processing_repository": "lhy0807/deform360",
+    "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  },
+  "runner": {
+    "required_labels": ["self-hosted", "Linux", "X64", "gpuserver4090"]
+  },
+  "development_object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "008-pink-cloth",
+    "026-sock-cloth",
+    "031-cotton-cloth",
+    "036-napkin-cloth",
+    "038-mat-cloth",
+    "038-black-bag-cloth",
+    "053-squeezer",
+    "058-roll-napkin",
+    "063-flower",
+    "072-cotton-clohesline",
+    "081-stripe-rope",
+    "083-blanket-cloth",
+    "085-scarf-cloth",
+    "086-cotton-scarf-cloth",
+    "087-plastic-bag-blue-cloth",
+    "092-squirrel",
+    "102-stress-ball",
+    "144-jar-opener-cloth",
+    "152-slime",
+    "153-cake",
+    "167-glove-gray-cloth",
+    "170-spider",
+    "171-penguin",
+    "186-monster",
+    "193-frog",
+    "198-kneepad-cloth"
+  ],
+  "forbidden_reserved_object_ids": [
+    "066-glove-half-black-cloth",
+    "075-leather",
+    "080-wool",
+    "091-net-cloth",
+    "112-wristband-cloth",
+    "120-bread-plush",
+    "121-croissant-plush",
+    "123-pipe-cleaner",
+    "139-rubber-ball",
+    "143-silicone-wristband",
+    "164-sheep",
+    "165-glove-yellow-cloth"
+  ],
+  "carrier_priority": [
+    "released_processed_3d_point_cloud_sequence",
+    "released_fixed_identity_3d_trajectory",
+    "released_raw_tactile_response"
+  ],
+  "limits": {
+    "maximum_objects": 16,
+    "maximum_sensor_groups_per_object": 4,
+    "maximum_source_recordings_per_group": 6,
+    "maximum_frames_per_recording": 320,
+    "maximum_points_per_cloud": 1024,
+    "minimum_frames_per_recording": 32,
+    "forecast_horizon_frames": 8,
+    "window_stride": 4,
+    "bootstrap_repetitions": 5000
+  },
+  "finite_motion_bank": {
+    "residual_gains": [0.0, 0.25, 0.5, 0.75, 1.0, 1.25],
+    "measurement_floor_standardized": 0.001,
+    "minimum_guard_relative_gain": 0.01,
+    "maximum_guard_recording_regret_fraction": 0.05
+  },
+  "joint_uncertainty": {
+    "maximum_low_rank": 6,
+    "diagonal_fraction": 0.15,
+    "marginal_coverage_probability": 0.9,
+    "source_calibration_multiplier_minimum": 0.25,
+    "source_calibration_multiplier_maximum": 100.0,
+    "energy_score_samples": 64,
+    "random_seed": 14644526
+  },
+  "aggregation": {
+    "primary_unit": "physical_object",
+    "sensor_recordings_are_averaged_within_object": true,
+    "frames_are_not_independent_inferential_units": true
+  },
+  "information_boundary": {
+    "object_and_target_recording_selection_from_names_and_metadata_only": true,
+    "source_fit_before_target_array_open": true,
+    "target_future_used_for_scoring_only": true,
+    "reserved_objects_opened": false,
+    "dataset_mutation_allowed": false,
+    "raw_data_upload": false
+  },
+  "evidence_class": "retrospective public-real-data development evaluation; not fresh confirmation",
+  "fresh_confirmation_authorized": false,
+  "paper_claim_authorized": false,
+  "replacement_allowed": false
+}
