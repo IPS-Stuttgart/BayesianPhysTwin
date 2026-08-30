@@ -1,0 +1,27 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Cancel invalid Deform360 runtime v1
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/cancel-deform360-invalid-runtime-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-heavy-runtime-mask-smoke-v1
+  cancel-in-progress: true
+
+jobs:
+  cancel-barrier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record cancellation barrier
+        run: |
+          echo "Superseding the invalid-pin Deform360 runtime v1 execution."
+          echo "The corrected source-date runtime is registered separately."
