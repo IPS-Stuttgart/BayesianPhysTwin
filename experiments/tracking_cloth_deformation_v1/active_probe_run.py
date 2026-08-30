@@ -39,9 +39,7 @@ def _residual_variance(value: object, *, name: str) -> np.ndarray:
 def _variance_field(
     inputs: Inputs, shape: tuple[int, ...], residual_variance: object
 ) -> np.ndarray:
-    residual = _residual_variance(
-        residual_variance, name="residual_variance"
-    )
+    residual = _residual_variance(residual_variance, name="residual_variance")
     bins = horizon_bins(inputs)
     variance = np.broadcast_to(residual[bins, None, None], shape).copy()
     if np.any(variance <= 0.0) or not np.all(np.isfinite(variance)):
@@ -104,9 +102,7 @@ def weighted_belief(
     if probabilities.shape != (bank.shape[0],):
         raise ValueError("weights must match the prediction-bank model count")
     mean = np.einsum("k,ktnd->tnd", probabilities, bank)
-    variance = np.einsum(
-        "k,ktnd->tnd", probabilities, (bank - mean[None, ...]) ** 2
-    )
+    variance = np.einsum("k,ktnd->tnd", probabilities, (bank - mean[None, ...]) ** 2)
     variance += _variance_field(prediction.inputs, mean.shape, residual_variance)
     if not np.all(np.isfinite(mean)) or np.any(variance <= 0.0):
         raise ValueError("invalid moment-matched belief")
@@ -279,9 +275,7 @@ def build_belief_arms(
     """Construct every registered arm without reading a target outcome."""
     validate_protocol(protocol)
     residuals = _mapping(fold["source_residual_variance_m2"], name="residuals")
-    nominal_mean = _finite_array(
-        prediction.nominal, name="prediction.nominal", ndim=3
-    )
+    nominal_mean = _finite_array(prediction.nominal, name="prediction.nominal", ndim=3)
     if nominal_mean.shape != prediction.bank.shape[1:]:
         raise ValueError("nominal trajectory and model bank disagree")
     result: dict[str, tuple[np.ndarray, np.ndarray]] = {
@@ -297,9 +291,7 @@ def build_belief_arms(
     last_mean = _last_residual_mean(prediction, prefix_last, boundary)
     result["last_residual"] = (
         last_mean,
-        _variance_field(
-            prediction.inputs, last_mean.shape, residuals["last_residual"]
-        ),
+        _variance_field(prediction.inputs, last_mean.shape, residuals["last_residual"]),
     )
     bayesian_residual = residuals["bayesian"]
     single = _mapping(specimen["single_probe_weights"], name="single_probe_weights")
