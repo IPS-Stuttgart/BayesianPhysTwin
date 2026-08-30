@@ -1,0 +1,56 @@
+{
+  "schema": "bayesian-phystwin/deform360-cross-action-preprocessing-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-cross-action-preprocessing-v1",
+  "status": "authorized-retrospective-fixed-pair-preprocessing",
+  "pair_lock": {
+    "path": "protocols/locks/deform360_cross_action_pair_lock_v1.json",
+    "lock_id": "3b8f2c17dac1d63bb955649311e2b0bb36d19b49044bdacb436080a19d6e3118"
+  },
+  "runner_label": "gpuserver6000",
+  "raw_root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+  "persistent_output_root": "/mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-cross-action-preprocessing-v1",
+  "official_processing": {
+    "repository": "lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "package_version": "0.2.0",
+    "stages": [
+      "undistort-and-synchronize-rgb",
+      "normalize-and-align-tactile",
+      "aruco-robot-state"
+    ]
+  },
+  "processing": {
+    "camera_count_per_pair": 12,
+    "camera_selection": "locked-pair-specific-panel",
+    "tactile_selection": "all-locked-pair-common-streams",
+    "camera_alignment_tolerance_us": 100000,
+    "tactile_alignment_tolerance_us": 150000,
+    "tactile_out_of_tolerance": "keep-and-flag",
+    "robot_ransac_seed": 20260831,
+    "overwrite_within_unique-run_root": true,
+    "minimum_free_bytes": 21474836480
+  },
+  "information_boundary": {
+    "retrospective_development": true,
+    "fixed_preprocessor_may_decode_selected_source_and_target_media": true,
+    "full_target_media_in_github_artifact": false,
+    "target_dependent_model_selection": false,
+    "physical_parameter_inference": false,
+    "model_prediction": false,
+    "target_scoring": false,
+    "paper_claim_authorized": false
+  },
+  "next_stage_not_authorized": [
+    "object-mask-generation",
+    "splat-reconstruction",
+    "rendered-depth",
+    "dense-object-tracking",
+    "cleaned-point-cloud",
+    "control-point-materialization",
+    "physical-parameter-inference",
+    "cross-action-model-scoring",
+    "paper-claim-promotion"
+  ],
+  "claim_boundary": "A successful run establishes only a uniform synchronized RGB, tactile, and robot-action carrier for the eight locked retrospective episodes. It does not establish model accuracy, uncertainty calibration, physical-parameter transport, fresh confirmation, benchmark parity, or a paper-level result."
+}
