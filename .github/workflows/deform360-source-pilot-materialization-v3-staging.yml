@@ -1,0 +1,251 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source pilot materialization v3 staging
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-pilot-materialization-v3-staging.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-pilot-materialization-v3-staging
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  REQUEST_PATH: .github/requests/deform360-source-pilot-materialization-v3-staging.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  OFFICIAL_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+
+jobs:
+  materialize:
+    name: 038-mat-cloth episode 3 / staging / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 720
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+          fetch-depth: 2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one newly added source staging request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status "${GITHUB_SHA}^" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-pilot-staging-request-v3",
+              "raw_root": os.environ["RAW_ROOT"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "staging_reason": (
+                  "requested processed root is read-only to github-runner and "
+                  "passwordless sudo is unavailable"
+              ),
+              "source_object": "038-mat-cloth",
+              "source_episode": 3,
+              "runner_label": "gpuserver4090",
+              "official_processing_revision": os.environ["OFFICIAL_REVISION"],
+              "stages": ["undistort", "tactile", "robot"],
+              "source_only": True,
+              "target_future_authorized": False,
+              "persistent_staging_write_authorized": True,
+              "requested_processed_tree_modification_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"invalid request field {key!r}")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from staging contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("expected_source_revision does not equal request parent")
+          PY
+
+      - name: Check out pinned official Deform360 implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          clean: true
+          fetch-depth: 1
+
+      - name: Create exact runner-owned staging root and derived driver request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${RAW_ROOT}"
+          test -r "${RAW_ROOT}"
+          test -d "${REQUESTED_PROCESSED_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test "$(readlink -f -- "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(readlink -f -- "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          case "${STAGING_ROOT}" in
+            /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1) ;;
+            *) echo "unexpected staging root" >&2; exit 1 ;;
+          esac
+
+          if [[ ! -d "${STAGING_ROOT}" ]]; then
+            install -d -m 2775 "${STAGING_ROOT}"
+          fi
+          test -w "${STAGING_ROOT}"
+          marker="${STAGING_ROOT}/.bayesian-phystwin-staging-v1.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          marker = Path(os.environ["STAGING_ROOT"]) / ".bayesian-phystwin-staging-v1.json"
+          value = {
+              "schema": "bayesian-phystwin/deform360-staging-v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "creating_revision": os.environ["GITHUB_SHA"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "scope": "source-only official Deform360 preprocessing",
+              "target_future_authorized": False,
+          }
+          if marker.exists():
+              prior = json.loads(marker.read_text())
+              if prior.get("schema") != value["schema"]:
+                  raise SystemExit("existing staging marker has a different schema")
+          else:
+              marker.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+          source_request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          derived = {
+              "schema": "deform360-source-pilot-materialization-request-v2",
+              "request_id": source_request["request_id"] + ":derived-driver-v2",
+              "expected_source_revision": source_request["expected_source_revision"],
+              "raw_root": os.environ["RAW_ROOT"],
+              "processed_root": os.environ["STAGING_ROOT"],
+              "raw_object": os.environ["RAW_ROOT"] + "/raw/038-mat-cloth",
+              "output_object": (
+                  os.environ["STAGING_ROOT"]
+                  + "/cross-action-source-v1/038-mat-cloth"
+              ),
+              "source_object": "038-mat-cloth",
+              "source_episode": 3,
+              "runner_label": "gpuserver4090",
+              "official_processing_revision": os.environ["OFFICIAL_REVISION"],
+              "stages": ["undistort", "tactile", "robot"],
+              "source_only": True,
+              "target_future_authorized": False,
+              "persistent_processed_write_authorized": True,
+          }
+          derived_path = Path(os.environ["RUNNER_TEMP"]) / (
+              "deform360-source-pilot-v3-derived-"
+              + os.environ["GITHUB_RUN_ID"]
+              + "-"
+              + os.environ["GITHUB_RUN_ATTEMPT"]
+              + ".json"
+          )
+          derived_path.write_text(json.dumps(derived, indent=2, sort_keys=True) + "\n")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as handle:
+              handle.write(f"DERIVED_REQUEST={derived_path}\n")
+          PY
+
+      - name: Execute source-only materialization in staging
+        id: driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-source-pilot-v3-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "EVIDENCE_ROOT=${evidence}" >> "${GITHUB_ENV}"
+          set +e
+          python scripts/science/run_deform360_source_pilot_materialization_v2.py \
+            --request "${DERIVED_REQUEST}" \
+            --raw-root "${RAW_ROOT}" \
+            --processed-root "${STAGING_ROOT}" \
+            --official-source "${GITHUB_WORKSPACE}/_deform360_official" \
+            --evidence-root "${evidence}"
+          code=$?
+          set -e
+          echo "exit_code=${code}" >> "${GITHUB_OUTPUT}"
+          exit "${code}"
+
+      - name: Bind requested path and staging location into result
+        if: always() && env.EVIDENCE_ROOT != '' && hashFiles(env.EVIDENCE_ROOT + '/result.json') != ''
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["EVIDENCE_ROOT"]) / "result.json"
+          value = json.loads(path.read_text())
+          value["requested_processed_root"] = os.environ["REQUESTED_PROCESSED_ROOT"]
+          value["actual_persistent_staging_root"] = os.environ["STAGING_ROOT"]
+          value["staging_reason"] = (
+              "requested processed root is 0755 owner florianpfaff; "
+              "github-runner has no write permission or passwordless sudo"
+          )
+          path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+          PY
+
+      - name: Publish compact summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/report.md" ]]; then
+            cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact source evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-pilot-v3-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/plan.json
+            ${{ env.EVIDENCE_ROOT }}/environment.txt
+            ${{ env.EVIDENCE_ROOT }}/runtime-bootstrap.log
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+            ${{ env.EVIDENCE_ROOT }}/undistort.log
+            ${{ env.EVIDENCE_ROOT }}/tactile.log
+            ${{ env.EVIDENCE_ROOT }}/robot.log
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove compact scratch
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: rm -rf -- "${EVIDENCE_ROOT}" "${DERIVED_REQUEST:-}"
