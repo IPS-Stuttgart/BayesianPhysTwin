@@ -201,9 +201,13 @@ jobs:
           exit "${code}"
 
       - name: Bind requested path and staging location into result
-        if: always() && env.EVIDENCE_ROOT != '' && hashFiles(env.EVIDENCE_ROOT + '/result.json') != ''
+        if: always() && env.EVIDENCE_ROOT != ''
         shell: bash
         run: |
+          set -euo pipefail
+          if [[ ! -f "${EVIDENCE_ROOT}/result.json" ]]; then
+            exit 0
+          fi
           python - <<'PY'
           import json
           import os
