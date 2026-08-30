@@ -22,10 +22,7 @@ from experiments.tracking_cloth_deformation_v1.active_probe_run import (
 from experiments.tracking_cloth_deformation_v1.data import Inputs
 from experiments.tracking_cloth_deformation_v1.model import Predictions
 
-BASE = (
-    Path(__file__).resolve().parents[1]
-    / "experiments/tracking_cloth_deformation_v1"
-)
+BASE = Path(__file__).resolve().parents[1] / "experiments/tracking_cloth_deformation_v1"
 
 
 def protocol() -> dict:
@@ -52,9 +49,7 @@ def prediction() -> Predictions:
     )
     bank = np.zeros((models, time_count, markers, 3), dtype=np.float64)
     for model in range(models):
-        bank[model, :, 1:-1, 0] = (
-            model * np.arange(time_count)[:, None] * 0.001
-        )
+        bank[model, :, 1:-1, 0] = model * np.arange(time_count)[:, None] * 0.001
     return Predictions(inputs, bank[4].copy(), bank)
 
 
@@ -120,12 +115,8 @@ def test_complete_arm_roster_and_common_endpoint_parity() -> None:
     for budget in (0, 4):
         reference = arms[f"fixed_order_k{budget}"]
         for policy in ("parameter_information", "task_directed"):
-            np.testing.assert_array_equal(
-                reference[0], arms[f"{policy}_k{budget}"][0]
-            )
-            np.testing.assert_array_equal(
-                reference[1], arms[f"{policy}_k{budget}"][1]
-            )
+            np.testing.assert_array_equal(reference[0], arms[f"{policy}_k{budget}"][0])
+            np.testing.assert_array_equal(reference[1], arms[f"{policy}_k{budget}"][1])
 
 
 def test_loss_temperature_residual_calibration_and_mask() -> None:
@@ -135,9 +126,7 @@ def test_loss_temperature_residual_calibration_and_mask() -> None:
     losses = loss_vector(candidate, truth)
     assert losses[3] == 0.0
     assert posterior_temperature(np.stack([losses, losses]), 0.001) > 0.0
-    residual = calibrated_residuals(
-        [(candidate, truth)], np.ones(9) / 9, value
-    )
+    residual = calibrated_residuals([(candidate, truth)], np.ones(9) / 9, value)
     assert set(residual) == {
         "bayesian",
         "nominal_physics",
