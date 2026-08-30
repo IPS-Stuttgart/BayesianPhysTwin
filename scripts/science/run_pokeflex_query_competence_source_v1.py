@@ -36,9 +36,7 @@ def main() -> None:
                 "protocol_sha256": protocol["protocol_sha256"],
                 "source_gate_passed": result["source_gate_passed"],
                 "validation_authorized": result["validation_authorized"],
-                "validation_take_count_opened": result[
-                    "validation_take_count_opened"
-                ],
+                "validation_take_count_opened": result["validation_take_count_opened"],
             },
             indent=2,
             sort_keys=True,

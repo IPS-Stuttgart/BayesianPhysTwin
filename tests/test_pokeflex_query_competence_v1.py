@@ -31,9 +31,7 @@ PROTOCOL_PATH = (
 PROTOCOL_FILE_SHA256 = (
     "3bb5ad6bfba877acf18af4c17bb114c32209f74e5e486e520beb0ab269493e99"
 )
-PROTOCOL_SHA256 = (
-    "ef3031d25b047f1293f4d4c4b1b7dabe876e1bcd459e26e95d8eaa49ff279ea5"
-)
+PROTOCOL_SHA256 = "ef3031d25b047f1293f4d4c4b1b7dabe876e1bcd459e26e95d8eaa49ff279ea5"
 IMPLEMENTATION_COMMIT = "de17ffb3ba00a9a7cf5a6f9ee8522eeae5c7aa00"
 
 
@@ -66,9 +64,7 @@ def _update(target_frame: int, *, harmful: bool) -> dict[str, object]:
 def _artifact(take_id: str, *, safe_error: float = 0.9) -> dict[str, object]:
     targets = []
     updates = []
-    candidate_key = (
-        "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
-    )
+    candidate_key = "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
     for index in range(10):
         target_frame = 6 + index
         harmful = index >= 5
@@ -96,7 +92,9 @@ def _artifact(take_id: str, *, safe_error: float = 0.9) -> dict[str, object]:
     }
 
 
-def _write_artifact(root: Path, take_id: str, payload: dict[str, object]) -> dict[str, object]:
+def _write_artifact(
+    root: Path, take_id: str, payload: dict[str, object]
+) -> dict[str, object]:
     path = root / f"{take_id}.json"
     path.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
     return {
@@ -107,7 +105,9 @@ def _write_artifact(root: Path, take_id: str, payload: dict[str, object]) -> dic
 
 
 def test_deterministic_split_keeps_every_object_in_every_stage() -> None:
-    take_ids = [f"Object{index:02d}_T{take}" for index in range(18) for take in range(1, 5)]
+    take_ids = [
+        f"Object{index:02d}_T{take}" for index in range(18) for take in range(1, 5)
+    ]
     split = deterministic_split_v1(take_ids)
     assert tuple(len(split[name]) for name in split) == (18, 18, 36)
     for name, roster in split.items():
@@ -174,9 +174,7 @@ def _frame(
     harmful: bool,
 ) -> PokeFlexFrameV1:
     features = np.zeros(len(FEATURE_NAMES), dtype=float)
-    features[FEATURE_NAMES.index("candidate_disagreement_mm")] = (
-        5.0 if harmful else 0.1
-    )
+    features[FEATURE_NAMES.index("candidate_disagreement_mm")] = 5.0 if harmful else 0.1
     features[FEATURE_NAMES.index("candidate_motion_ratio_log1p")] = (
         2.0 if harmful else 0.05
     )

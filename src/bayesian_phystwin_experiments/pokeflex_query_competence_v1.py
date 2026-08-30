@@ -195,14 +195,13 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
         )
     except ValueError as error:
         raise ValueError("PokeFlex protocol lock time changed") from error
-    if locked_at.tzinfo is None or locked_at.utcoffset() != timezone.utc.utcoffset(None):
+    if locked_at.tzinfo is None or locked_at.utcoffset() != timezone.utc.utcoffset(
+        None
+    ):
         raise ValueError("PokeFlex protocol lock time is not UTC")
     if protocol["claim_boundary"] != CLAIM_BOUNDARY:
         raise ValueError("PokeFlex competence claim boundary changed")
-    if (
-        protocol["parent_public78_protocol_sha256"]
-        != PARENT_PUBLIC78_PROTOCOL_SHA256
-    ):
+    if protocol["parent_public78_protocol_sha256"] != PARENT_PUBLIC78_PROTOCOL_SHA256:
         raise ValueError("PokeFlex parent protocol changed")
     if protocol["source_artifact_role"] != SOURCE_ARTIFACT_ROLE:
         raise ValueError("PokeFlex source artifact role changed")
@@ -213,7 +212,9 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
     if set(implementation) != {"git_commit", "module_path", "module_sha256"}:
         raise ValueError("PokeFlex implementation binding fields changed")
     git_commit = str(implementation["git_commit"])
-    if len(git_commit) != 40 or any(character not in "0123456789abcdef" for character in git_commit):
+    if len(git_commit) != 40 or any(
+        character not in "0123456789abcdef" for character in git_commit
+    ):
         raise ValueError("PokeFlex implementation commit changed")
     if implementation["module_path"] != IMPLEMENTATION_MODULE_PATH:
         raise ValueError("PokeFlex implementation module path changed")
@@ -286,9 +287,7 @@ class PokeFlexFrameV1:
 
     def __post_init__(self) -> None:
         features = np.asarray(self.feature_vector, dtype=np.float64)
-        if features.shape != (len(FEATURE_NAMES),) or not np.all(
-            np.isfinite(features)
-        ):
+        if features.shape != (len(FEATURE_NAMES),) or not np.all(np.isfinite(features)):
             raise ValueError("PokeFlex feature vector changed")
         immutable = features.copy()
         immutable.setflags(write=False)
@@ -331,9 +330,7 @@ def _cosine_features(value: object) -> tuple[float, float]:
     return max(-1.0, min(1.0, _finite_float(value, name="cosine"))), 0.0
 
 
-def _feature_vector(
-    update: Mapping[str, object], candidate_scale: float
-) -> FloatArray:
+def _feature_vector(update: Mapping[str, object], candidate_scale: float) -> FloatArray:
     correction_cosine, correction_missing = _cosine_features(
         update["correction_prior_motion_cosine"]
     )
@@ -349,9 +346,7 @@ def _feature_vector(
     )
     ratio = max(
         0.0,
-        _finite_float(
-            update["correction_to_prior_motion_ratio"], name="motion ratio"
-        ),
+        _finite_float(update["correction_to_prior_motion_ratio"], name="motion ratio"),
     )
     biases = np.asarray(update["camera_biases_m"], dtype=np.float64)
     if biases.shape != (2, 3) or not np.all(np.isfinite(biases)):
@@ -398,8 +393,7 @@ def _feature_vector(
 
 def _candidate_key(candidate_scale: float) -> str:
     return (
-        "checkpoint_action_local_state_relative_0.4_residual_scale_"
-        f"{candidate_scale:g}"
+        f"checkpoint_action_local_state_relative_0.4_residual_scale_{candidate_scale:g}"
     )
 
 
@@ -449,9 +443,7 @@ def load_take_artifact_v1(
         fallback_error = _finite_float(
             target["released_checkpoint_CD_UL1_mm"], name="fallback error"
         )
-        candidate_error = _finite_float(
-            target[candidate_key], name="candidate error"
-        )
+        candidate_error = _finite_float(target[candidate_key], name="candidate error")
         frames.append(
             PokeFlexFrameV1(
                 take_id=take_id,
@@ -512,7 +504,10 @@ class FrozenPhysicalRiskModelV1:
             raise ValueError("PokeFlex risk feature set changed")
         if self.l2_penalty != LOGISTIC_L2_PENALTY:
             raise ValueError("PokeFlex risk penalty changed")
-        if not self.converged or not 1 <= self.iteration_count <= LOGISTIC_MAX_ITERATIONS:
+        if (
+            not self.converged
+            or not 1 <= self.iteration_count <= LOGISTIC_MAX_ITERATIONS
+        ):
             raise ValueError("PokeFlex risk convergence record changed")
         count = len(self.selected_feature_names)
         center = np.array(self.feature_center, dtype=np.float64, copy=True)
@@ -639,9 +634,7 @@ def fit_risk_model_v1(
         hessian = design.T @ ((weights * variance)[:, None] * design)
         hessian += penalty
         try:
-            step = np.linalg.solve(
-                hessian + np.eye(hessian.shape[0]) * 1e-9, gradient
-            )
+            step = np.linalg.solve(hessian + np.eye(hessian.shape[0]) * 1e-9, gradient)
         except np.linalg.LinAlgError:
             step = np.linalg.pinv(hessian) @ gradient
         coefficients -= step
@@ -689,17 +682,13 @@ def _object_rows(
                 "accepted_count": accepted_count,
                 "coverage": float(np.mean(accepted[mask])),
                 "harm_rate": (
-                    0.0
-                    if accepted_count == 0
-                    else float(np.mean(harmful[selected]))
+                    0.0 if accepted_count == 0 else float(np.mean(harmful[selected]))
                 ),
                 "policy_regret": float(
                     np.mean(np.where(accepted[mask], regrets[mask], 0.0))
                 ),
                 "accepted_regret": (
-                    0.0
-                    if accepted_count == 0
-                    else float(np.mean(regrets[selected]))
+                    0.0 if accepted_count == 0 else float(np.mean(regrets[selected]))
                 ),
             }
         )
@@ -737,9 +726,7 @@ def _cluster_intervals(
     result: dict[str, dict[str, float]] = {}
     point_values = {
         "coverage": float(np.mean(coverage)),
-        "harm_rate": (
-            1.0 if not np.any(accepted) else float(np.mean(harm[accepted]))
-        ),
+        "harm_rate": (1.0 if not np.any(accepted) else float(np.mean(harm[accepted]))),
         "policy_regret": float(np.mean(regret)),
     }
     for name, values in estimates.items():
@@ -775,8 +762,7 @@ def evaluate_policy_v1(
     accepted_objects = sum(int(row["accepted_count"]) > 0 for row in rows)
     checks = {
         "minimum_object_balanced_coverage": (
-            intervals["coverage"]["estimate"]
-            >= MINIMUM_OBJECT_BALANCED_COVERAGE
+            intervals["coverage"]["estimate"] >= MINIMUM_OBJECT_BALANCED_COVERAGE
         ),
         "minimum_accepted_objects": accepted_objects >= MINIMUM_ACCEPTED_OBJECTS,
         "object_cluster_harm_upper_bound": (
@@ -978,7 +964,12 @@ def validate_source_result_v1(
         threshold = selection["selected_threshold"]
         if threshold is not None and float(threshold) not in THRESHOLD_GRID:
             raise ValueError("PokeFlex selected threshold changed")
-    if source_result["threshold_selection"]["model_disagreement_only"]["selection_passed"] is not True:
+    if (
+        source_result["threshold_selection"]["model_disagreement_only"][
+            "selection_passed"
+        ]
+        is not True
+    ):
         raise ValueError("PokeFlex primary source selection did not pass")
 
 

@@ -40,8 +40,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if len(args.implementation_commit) != 40 or any(
-        character not in "0123456789abcdef"
-        for character in args.implementation_commit
+        character not in "0123456789abcdef" for character in args.implementation_commit
     ):
         raise ValueError("implementation commit must be a lowercase full SHA-1")
     repository_root = Path(__file__).resolve().parents[2]
@@ -93,9 +92,7 @@ def main() -> None:
         },
         "gates": {
             "target_harm_probability": TARGET_HARM_PROBABILITY,
-            "minimum_object_balanced_coverage": (
-                MINIMUM_OBJECT_BALANCED_COVERAGE
-            ),
+            "minimum_object_balanced_coverage": (MINIMUM_OBJECT_BALANCED_COVERAGE),
             "minimum_accepted_objects": MINIMUM_ACCEPTED_OBJECTS,
             "harm_upper_bound": "object-cluster percentile 95% upper <= 0.10",
             "policy_regret": "object-cluster percentile 95% upper < 0",
