@@ -22,10 +22,11 @@ import os
 import platform
 import re
 import sys
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import NormalDist
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -179,9 +180,7 @@ def validate_protocol(protocol: Mapping[str, Any], dataset_root: Path) -> None:
             f"dataset root must equal the frozen path {expected}, got {dataset_root}"
         )
     development = tuple(str(value) for value in protocol["development_object_ids"])
-    reserved = tuple(
-        str(value) for value in protocol["forbidden_reserved_object_ids"]
-    )
+    reserved = tuple(str(value) for value in protocol["forbidden_reserved_object_ids"])
     if not development or len(development) != len(set(development)):
         raise EvaluationError("development object roster must be nonempty and unique")
     if len(reserved) != len(set(reserved)) or set(development) & set(reserved):
@@ -274,8 +273,12 @@ def discover_geometry(
                 key=str,
             )
             for index, pcd_dir in enumerate(pcd_dirs):
-                frames = tuple(sorted(pcd_dir.glob("*.npz"), key=lambda path: path.name))
-                if len(frames) < int(protocol["limits"]["minimum_frames_per_recording"]):
+                frames = tuple(
+                    sorted(pcd_dir.glob("*.npz"), key=lambda path: path.name)
+                )
+                if len(frames) < int(
+                    protocol["limits"]["minimum_frames_per_recording"]
+                ):
                     continue
                 episode = pcd_dir.parent.name or f"episode_{index:04d}"
                 descriptor = Descriptor(
@@ -286,7 +289,9 @@ def discover_geometry(
                     frames,
                     actions[index] if index < len(actions) else None,
                 )
-                groups.setdefault((descriptor.modality, descriptor.object_id, descriptor.group_id), []).append(descriptor)
+                groups.setdefault(
+                    (descriptor.modality, descriptor.object_id, descriptor.group_id), []
+                ).append(descriptor)
 
             # Fixed-identity trajectory archives are admitted by path identity first;
             # numeric shape qualification happens only after source/target selection.
@@ -318,7 +323,9 @@ def discover_geometry(
                     (path,),
                     actions[index] if index < len(actions) else None,
                 )
-                groups.setdefault((descriptor.modality, descriptor.object_id, descriptor.group_id), []).append(descriptor)
+                groups.setdefault(
+                    (descriptor.modality, descriptor.object_id, descriptor.group_id), []
+                ).append(descriptor)
     return groups
 
 
@@ -340,7 +347,9 @@ def discover_tactile(
                 if path.stat().st_size <= 0:
                     continue
                 by_parent.setdefault(path.parent.resolve(), []).append(path.resolve())
-            for parent, paths in sorted(by_parent.items(), key=lambda item: str(item[0])):
+            for parent, paths in sorted(
+                by_parent.items(), key=lambda item: str(item[0])
+            ):
                 paths = sorted(set(paths), key=lambda path: path.name)
                 group_id = str(parent.relative_to(object_dir)).replace(os.sep, "/")
                 for index, path in enumerate(paths):
@@ -352,7 +361,14 @@ def discover_tactile(
                         (path,),
                         actions[index] if index < len(actions) else None,
                     )
-                    groups.setdefault((descriptor.modality, descriptor.object_id, descriptor.group_id), []).append(descriptor)
+                    groups.setdefault(
+                        (
+                            descriptor.modality,
+                            descriptor.object_id,
+                            descriptor.group_id,
+                        ),
+                        [],
+                    ).append(descriptor)
     return groups
 
 
@@ -384,7 +400,9 @@ def load_geometry(
     minimum_frames = int(protocol["limits"]["minimum_frames_per_recording"])
     fingerprints = []
     if descriptor.modality == "geometry_3d_point_cloud":
-        indices, frame_stride = _subsample_indices(len(descriptor.paths), maximum_frames)
+        indices, frame_stride = _subsample_indices(
+            len(descriptor.paths), maximum_frames
+        )
         clouds: list[np.ndarray] = []
         selected_paths = [descriptor.paths[int(index)] for index in indices]
         for path in selected_paths:
@@ -405,7 +423,9 @@ def load_geometry(
                 }
             )
         if len(clouds) < minimum_frames:
-            raise EvaluationError("point-cloud sequence is too short after qualification")
+            raise EvaluationError(
+                "point-cloud sequence is too short after qualification"
+            )
         features = np.stack([cloud.mean(axis=0) for cloud in clouds])
         return LoadedSequence(
             descriptor,
@@ -430,7 +450,9 @@ def load_geometry(
     )
     trajectory = finite(array, name=f"trajectory in {path.name}", ndim=3)
     if trajectory.shape[-1] != 3 or trajectory.shape[0] < minimum_frames:
-        raise EvaluationError(f"unsupported fixed-identity trajectory shape in {path.name}")
+        raise EvaluationError(
+            f"unsupported fixed-identity trajectory shape in {path.name}"
+        )
     indices, frame_stride = _subsample_indices(trajectory.shape[0], maximum_frames)
     trajectory = trajectory[indices]
     if trajectory.shape[1] > maximum_points:
@@ -597,7 +619,9 @@ def load_sequence(
     raise EvaluationError(f"unknown modality: {descriptor.modality}")
 
 
-def robust_standardizer(sequences: Sequence[LoadedSequence]) -> tuple[np.ndarray, np.ndarray]:
+def robust_standardizer(
+    sequences: Sequence[LoadedSequence],
+) -> tuple[np.ndarray, np.ndarray]:
     if not sequences:
         raise EvaluationError("at least one source recording is required")
     values = np.concatenate([sequence.features for sequence in sequences], axis=0)
@@ -612,7 +636,9 @@ def robust_standardizer(sequences: Sequence[LoadedSequence]) -> tuple[np.ndarray
     )
 
 
-def standardized(sequence: LoadedSequence, location: np.ndarray, scale: np.ndarray) -> np.ndarray:
+def standardized(
+    sequence: LoadedSequence, location: np.ndarray, scale: np.ndarray
+) -> np.ndarray:
     if sequence.features.shape[1] != location.size or scale.shape != location.shape:
         raise EvaluationError("feature standardizer dimension mismatch")
     return finite(
@@ -635,9 +661,7 @@ def windows(
     current = values[starts]
     velocity = current - values[starts - 1]
     bank = current[:, None, None, :] + (
-        gains[None, :, None, None]
-        * steps
-        * velocity[:, None, None, :]
+        gains[None, :, None, None] * steps * velocity[:, None, None, :]
     )
     truth = np.stack([values[start + 1 : start + horizon + 1] for start in starts])
     return bank, truth, starts
@@ -667,14 +691,20 @@ def _method_prediction(bank: np.ndarray, fit: SourceFit, method: str) -> np.ndar
     raise EvaluationError(f"unknown method: {method}")
 
 
-def _fit_low_rank(second_moment: np.ndarray, rank: int, floor: float) -> tuple[np.ndarray, np.ndarray]:
+def _fit_low_rank(
+    second_moment: np.ndarray, rank: int, floor: float
+) -> tuple[np.ndarray, np.ndarray]:
     matrix = finite(second_moment, name="residual second moment", ndim=2)
     if matrix.shape[0] != matrix.shape[1]:
         raise EvaluationError("residual second moment must be square")
     matrix = 0.5 * (matrix + matrix.T)
     eigenvalues, eigenvectors = np.linalg.eigh(matrix)
     positive = np.flatnonzero(eigenvalues > floor)
-    selected = positive[-min(rank, len(positive)) :] if len(positive) else np.array([], dtype=int)
+    selected = (
+        positive[-min(rank, len(positive)) :]
+        if len(positive)
+        else np.array([], dtype=int)
+    )
     factor = (
         eigenvectors[:, selected] * np.sqrt(eigenvalues[selected])[None, :]
         if selected.size
@@ -685,7 +715,9 @@ def _fit_low_rank(second_moment: np.ndarray, rank: int, floor: float) -> tuple[n
     return diagonal, factor
 
 
-def _quadratic_and_logdet(error: np.ndarray, covariance: np.ndarray) -> tuple[float, float, np.ndarray]:
+def _quadratic_and_logdet(
+    error: np.ndarray, covariance: np.ndarray
+) -> tuple[float, float, np.ndarray]:
     covariance = finite(covariance, name="predictive covariance", ndim=2)
     covariance = 0.5 * (covariance + covariance.T)
     jitter = max(1e-10, 1e-10 * float(np.max(np.diag(covariance))))
@@ -706,7 +738,10 @@ def _window_covariance(bank: np.ndarray, fit: SourceFit) -> np.ndarray:
     mean = np.einsum("k,km->m", fit.weights, flattened)
     centered = flattened - mean[None, :]
     spread = np.einsum("k,ki,kj->ij", fit.weights, centered, centered)
-    base = np.diag(fit.covariance_diagonal) + fit.covariance_factor @ fit.covariance_factor.T
+    base = (
+        np.diag(fit.covariance_diagonal)
+        + fit.covariance_factor @ fit.covariance_factor.T
+    )
     return fit.covariance_multiplier * (base + spread)
 
 
@@ -718,8 +753,14 @@ def fit_sources(
         name="residual gains",
         ndim=1,
     )
-    if gains.size < 3 or not np.any(np.isclose(gains, 0.0)) or not np.any(np.isclose(gains, 1.0)):
-        raise EvaluationError("motion bank must include persistence and last-residual gains")
+    if (
+        gains.size < 3
+        or not np.any(np.isclose(gains, 0.0))
+        or not np.any(np.isclose(gains, 1.0))
+    ):
+        raise EvaluationError(
+            "motion bank must include persistence and last-residual gains"
+        )
     horizon = int(protocol["limits"]["forecast_horizon_frames"])
     stride = int(protocol["limits"]["window_stride"])
     floor = float(protocol["finite_motion_bank"]["measurement_floor_standardized"])
@@ -728,7 +769,9 @@ def fit_sources(
     truths: list[np.ndarray] = []
     losses: list[np.ndarray] = []
     for sequence in source:
-        bank, truth, _ = windows(standardized(sequence, location, scale), gains, horizon, stride)
+        bank, truth, _ = windows(
+            standardized(sequence, location, scale), gains, horizon, stride
+        )
         banks.append(bank)
         truths.append(truth)
         losses.append(np.mean((bank - truth[:, None, :, :]) ** 2, axis=(0, 2, 3)))
@@ -872,11 +915,15 @@ def _probabilistic_metrics(
         protocol["joint_uncertainty"]["marginal_coverage_probability"]
     )
     marginal_z = NormalDist().inv_cdf(0.5 + 0.5 * marginal_probability)
-    joint_q = dimension * (
-        1.0
-        - 2.0 / (9.0 * dimension)
-        + marginal_z * math.sqrt(2.0 / (9.0 * dimension))
-    ) ** 3
+    joint_q = (
+        dimension
+        * (
+            1.0
+            - 2.0 / (9.0 * dimension)
+            + marginal_z * math.sqrt(2.0 / (9.0 * dimension))
+        )
+        ** 3
+    )
     nll = []
     nees = []
     marginal_hits = []
@@ -887,7 +934,9 @@ def _probabilistic_metrics(
     for index, error in enumerate(errors):
         covariance = _window_covariance(bank[index], fit)
         quadratic, logdet, cholesky = _quadratic_and_logdet(error, covariance)
-        nll.append(0.5 * (dimension * math.log(2.0 * math.pi) + logdet + quadratic) / dimension)
+        nll.append(
+            0.5 * (dimension * math.log(2.0 * math.pi) + logdet + quadratic) / dimension
+        )
         nees.append(quadratic / dimension)
         standard = np.sqrt(np.maximum(np.diag(covariance), 1e-15))
         marginal_hits.append(float(np.mean(np.abs(error) <= marginal_z * standard)))
@@ -921,7 +970,9 @@ def _method_feature_metrics(
     for method in METHODS:
         prediction = _method_prediction(bank, fit, method)
         error = prediction - truth
-        raw_prediction = prediction * fit.scale[None, None, :] + fit.location[None, None, :]
+        raw_prediction = (
+            prediction * fit.scale[None, None, :] + fit.location[None, None, :]
+        )
         raw_error = raw_prediction - raw_truth
         metrics = {
             "rmse_standardized": float(np.sqrt(np.mean(error * error))),
@@ -1109,7 +1160,9 @@ def _qualified_groups(
 def _select_primary(rows: Sequence[Mapping[str, Any]]) -> str:
     objects_by_modality: dict[str, set[str]] = {}
     for row in rows:
-        objects_by_modality.setdefault(str(row["modality"]), set()).add(str(row["object_id"]))
+        objects_by_modality.setdefault(str(row["modality"]), set()).add(
+            str(row["object_id"])
+        )
     geometry = sum(
         len(objects)
         for modality, objects in objects_by_modality.items()
@@ -1127,7 +1180,11 @@ def _select_primary(rows: Sequence[Mapping[str, Any]]) -> str:
 
 def _row_matches_primary(row: Mapping[str, Any], primary: str) -> bool:
     modality = str(row["modality"])
-    return modality.startswith("geometry_3d") if primary == "geometry_3d" else modality == primary
+    return (
+        modality.startswith("geometry_3d")
+        if primary == "geometry_3d"
+        else modality == primary
+    )
 
 
 def aggregate(
@@ -1146,18 +1203,14 @@ def aggregate(
         methods = {}
         for method in METHODS:
             keys = sorted(
-                set.intersection(
-                    *(set(row["methods"][method]) for row in subset)
-                )
+                set.intersection(*(set(row["methods"][method]) for row in subset))
             )
             methods[method] = {
                 key: float(np.mean([row["methods"][method][key] for row in subset]))
                 for key in keys
             }
         uncertainty_keys = sorted(
-            set.intersection(
-                *(set(row["bayesian_uncertainty"]) for row in subset)
-            )
+            set.intersection(*(set(row["bayesian_uncertainty"]) for row in subset))
         )
         object_metrics[object_id] = {
             "group_count": len(subset),
@@ -1175,14 +1228,20 @@ def aggregate(
 
     common_method_keys = sorted(
         set.intersection(
-            *(set(object_metrics[object_id]["methods"][METHODS[0]]) for object_id in object_ids)
+            *(
+                set(object_metrics[object_id]["methods"][METHODS[0]])
+                for object_id in object_ids
+            )
         )
     )
     method_summary = {
         method: {
             key: float(
                 np.mean(
-                    [object_metrics[object_id]["methods"][method][key] for object_id in object_ids]
+                    [
+                        object_metrics[object_id]["methods"][method][key]
+                        for object_id in object_ids
+                    ]
                 )
             )
             for key in common_method_keys
@@ -1191,29 +1250,33 @@ def aggregate(
     }
     uncertainty_keys = sorted(
         set.intersection(
-            *(set(object_metrics[object_id]["bayesian_uncertainty"]) for object_id in object_ids)
+            *(
+                set(object_metrics[object_id]["bayesian_uncertainty"])
+                for object_id in object_ids
+            )
         )
     )
     uncertainty = {
         key: float(
             np.mean(
-                [object_metrics[object_id]["bayesian_uncertainty"][key] for object_id in object_ids]
+                [
+                    object_metrics[object_id]["bayesian_uncertainty"][key]
+                    for object_id in object_ids
+                ]
             )
         )
         for key in uncertainty_keys
     }
 
-    point_key = (
-        "centroid_rmse_mm"
-        if primary == "geometry_3d"
-        else "tactile_field_rmse"
-    )
+    point_key = "centroid_rmse_mm" if primary == "geometry_3d" else "tactile_field_rmse"
     rng = np.random.default_rng(int(protocol["joint_uncertainty"]["random_seed"]))
     contrasts = {}
     for comparator in ("persistence", "last_residual", "map_motion"):
         differences = np.array(
             [
-                object_metrics[object_id]["methods"]["guarded_bayesian_motion"][point_key]
+                object_metrics[object_id]["methods"]["guarded_bayesian_motion"][
+                    point_key
+                ]
                 - object_metrics[object_id]["methods"][comparator][point_key]
                 for object_id in object_ids
             ],
@@ -1311,7 +1374,9 @@ def make_report(result: Mapping[str, Any]) -> str:
     )
     for comparator, values in summary["contrasts"].items():
         interval = values["object_bootstrap_95_interval"]
-        record = f"{values['object_wins']}/{values['object_ties']}/{values['object_losses']}"
+        record = (
+            f"{values['object_wins']}/{values['object_ties']}/{values['object_losses']}"
+        )
         lines.append(
             f"| `{comparator}` | {values['guarded_minus_comparator']:.8g} | "
             f"[{interval[0]:.8g}, {interval[1]:.8g}] | {record} | "
@@ -1356,8 +1421,12 @@ def run(protocol_path: Path, dataset_root: Path) -> dict[str, Any]:
     carrier_inventory = {
         "geometry_descriptor_groups": len(geometry_groups),
         "tactile_descriptor_groups": len(tactile_groups),
-        "geometry_descriptor_recordings": int(sum(len(value) for value in geometry_groups.values())),
-        "tactile_descriptor_recordings": int(sum(len(value) for value in tactile_groups.values())),
+        "geometry_descriptor_recordings": int(
+            sum(len(value) for value in geometry_groups.values())
+        ),
+        "tactile_descriptor_recordings": int(
+            sum(len(value) for value in tactile_groups.values())
+        ),
         "numeric_payloads_opened_during_inventory": False,
         "reserved_object_payloads_opened": False,
     }
@@ -1417,7 +1486,9 @@ def run(protocol_path: Path, dataset_root: Path) -> dict[str, Any]:
                     "modality": modality,
                     "object_id": object_id,
                     "group_id": group_id,
-                    "source_recordings": [value.recording_id for value in source_descriptors],
+                    "source_recordings": [
+                        value.recording_id for value in source_descriptors
+                    ],
                     "target_recording": target_descriptor.recording_id,
                     "reason": f"{type(error).__name__}: {error}",
                     "replacement_attempted": False,

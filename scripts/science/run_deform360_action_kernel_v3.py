@@ -15,7 +15,6 @@ import argparse
 import hashlib
 import importlib.util
 import json
-import math
 import os
 import sys
 from dataclasses import dataclass
@@ -39,9 +38,7 @@ METHODS = (
 
 
 def load_base() -> Any:
-    path = Path(__file__).with_name(
-        "run_deform360_action_conditioned_tactile_v2.py"
-    )
+    path = Path(__file__).with_name("run_deform360_action_conditioned_tactile_v2.py")
     spec = importlib.util.spec_from_file_location(
         "deform360_action_conditioned_tactile_v2", path
     )
@@ -176,9 +173,7 @@ def kernel_predict(
     )
     if model.spec.action_scale > 0.0:
         action_distance = np.mean(
-            np.square(
-                query_action[:, None, :] - model.train_action[None, :, :]
-            ),
+            np.square(query_action[:, None, :] - model.train_action[None, :, :]),
             axis=2,
         )
         distance = state_distance + model.spec.action_scale * action_distance
@@ -187,9 +182,7 @@ def kernel_predict(
     neighbor_count = min(model.spec.neighbors, model.train_target.shape[0])
     if neighbor_count < 1:
         raise base.EvaluationError("kernel model has no training window")
-    indices = np.argpartition(distance, neighbor_count - 1, axis=1)[
-        :, :neighbor_count
-    ]
+    indices = np.argpartition(distance, neighbor_count - 1, axis=1)[:, :neighbor_count]
     selected_distance = np.take_along_axis(distance, indices, axis=1)
     selected_target = model.train_target[indices]
     positive = np.where(selected_distance > 0.0, selected_distance, np.nan)
@@ -198,9 +191,10 @@ def kernel_predict(
     fallback = np.maximum(np.mean(selected_distance, axis=1), 1e-12)
     bandwidth = np.where(np.isfinite(bandwidth), bandwidth, fallback)
     bandwidth = np.maximum(bandwidth, 1e-12)
-    logits = -(
-        selected_distance - np.min(selected_distance, axis=1, keepdims=True)
-    ) / bandwidth[:, None]
+    logits = (
+        -(selected_distance - np.min(selected_distance, axis=1, keepdims=True))
+        / bandwidth[:, None]
+    )
     weights = np.exp(logits)
     weights /= np.sum(weights, axis=1, keepdims=True)
     return np.einsum("qk,qkd->qd", weights, selected_target)
@@ -239,9 +233,7 @@ def kernel_cv_candidates(
             fit = fit_kernel(train_state, train_action, train_target, spec)
             state, action, _, current, truth, active = rows[held_id]
             latent = kernel_predict(fit, state, action)
-            prediction = base.decode_prediction(
-                latent, current, transform, clip
-            )
+            prediction = base.decode_prediction(latent, current, transform, clip)
             active_rmse = base.rmse(prediction, truth, active)[1]
             predictions[held_id] = prediction
             truths[held_id] = truth
@@ -278,14 +270,10 @@ def ridge_candidates(
             UnifiedCandidate(
                 name=candidate.name,
                 family=(
-                    "action_ridge"
-                    if candidate.variant == "action"
-                    else "state_ridge"
+                    "action_ridge" if candidate.variant == "action" else "state_ridge"
                 ),
                 cv_objective=float(candidate.cv_objective),
-                per_episode_active_rmse=dict(
-                    candidate.per_episode_active_rmse
-                ),
+                per_episode_active_rmse=dict(candidate.per_episode_active_rmse),
                 cv_predictions=dict(candidate.cv_predictions),
                 cv_truths=dict(candidate.cv_truths),
                 cv_currents=dict(candidate.cv_currents),
@@ -330,9 +318,7 @@ def ensemble_source_residuals(
         prediction = np.einsum("k,kwd->wd", weights, stacked)
         truth = candidates[0].cv_truths[episode_id]
         ensemble_predictions[episode_id] = prediction
-        raw_residuals[episode_id] = (truth - prediction).reshape(
-            len(truth), -1
-        )
+        raw_residuals[episode_id] = (truth - prediction).reshape(len(truth), -1)
     global_bias = np.concatenate(list(raw_residuals.values())).mean(axis=0)
     corrected_residuals: list[np.ndarray] = []
     per_episode: dict[int, float] = {}
@@ -346,15 +332,11 @@ def ensemble_source_residuals(
             ]
         )
         donor_bias = donor.mean(axis=0)
-        corrected_residuals.append(
-            raw_residuals[episode_id] - donor_bias[None, :]
-        )
+        corrected_residuals.append(raw_residuals[episode_id] - donor_bias[None, :])
         truth = candidates[0].cv_truths[episode_id]
         active = candidates[0].cv_masks[episode_id]
         prediction = ensemble_predictions[episode_id] + donor_bias[None, :]
-        per_episode[episode_id] = base.rmse(
-            prediction, truth, active
-        )[1]
+        per_episode[episode_id] = base.rmse(prediction, truth, active)[1]
     return np.concatenate(corrected_residuals), per_episode, global_bias
 
 
@@ -383,25 +365,17 @@ def source_guard(
     state_kernel: UnifiedCandidate,
     ensemble_per_episode: dict[int, float],
 ) -> tuple[bool, str, dict[str, float]]:
-    baselines = base.source_baseline_metrics(
-        source, transform, base_protocol, horizon
-    )
+    baselines = base.source_baseline_metrics(source, transform, base_protocol, horizon)
     means = {
-        "persistence": float(
-            np.mean(list(baselines["persistence"].values()))
-        ),
-        "last_trend": float(
-            np.mean(list(baselines["last_trend"].values()))
-        ),
+        "persistence": float(np.mean(list(baselines["persistence"].values()))),
+        "last_trend": float(np.mean(list(baselines["last_trend"].values()))),
         "state_ridge": float(
             np.mean(list(state_ridge.per_episode_active_rmse.values()))
         ),
         "state_kernel": float(
             np.mean(list(state_kernel.per_episode_active_rmse.values()))
         ),
-        "bayesian_action_ensemble": float(
-            np.mean(list(ensemble_per_episode.values()))
-        ),
+        "bayesian_action_ensemble": float(np.mean(list(ensemble_per_episode.values()))),
     }
     fallback = min(
         ("persistence", "last_trend", "state_ridge", "state_kernel"),
@@ -417,12 +391,8 @@ def source_guard(
             * min(
                 baselines["persistence"][episode.descriptor.episode_id],
                 baselines["last_trend"][episode.descriptor.episode_id],
-                state_ridge.per_episode_active_rmse[
-                    episode.descriptor.episode_id
-                ],
-                state_kernel.per_episode_active_rmse[
-                    episode.descriptor.episode_id
-                ],
+                state_ridge.per_episode_active_rmse[episode.descriptor.episode_id],
+                state_kernel.per_episode_active_rmse[episode.descriptor.episode_id],
             )
             for episode in source
         )
@@ -468,13 +438,9 @@ def shuffled_candidate_prediction(
     if candidate.ridge_index is not None:
         design = target_action_design.copy()
         design[:, state_width:] = design[permutation, state_width:]
-        latent = base.predict_ridge(
-            ridge_fits[candidate.ridge_index], design
-        )
+        latent = base.predict_ridge(ridge_fits[candidate.ridge_index], design)
     elif candidate.kernel_spec is not None:
-        latent = kernel_predict(
-            kernel_fits[candidate.name], state, action[permutation]
-        )
+        latent = kernel_predict(kernel_fits[candidate.name], state, action[permutation])
     else:
         raise base.EvaluationError("candidate has no fitted implementation")
     return base.decode_prediction(latent, current, transform, clip)
@@ -516,15 +482,27 @@ def evaluate_object(
         key=lambda candidate: candidate.cv_objective,
     )
     state_kernel = min(
-        (candidate for candidate in kernel_unified if candidate.family == "state_kernel"),
+        (
+            candidate
+            for candidate in kernel_unified
+            if candidate.family == "state_kernel"
+        ),
         key=lambda candidate: candidate.cv_objective,
     )
     action_ridge = min(
-        (candidate for candidate in ridge_unified if candidate.family == "action_ridge"),
+        (
+            candidate
+            for candidate in ridge_unified
+            if candidate.family == "action_ridge"
+        ),
         key=lambda candidate: candidate.cv_objective,
     )
     action_kernel = min(
-        (candidate for candidate in kernel_unified if candidate.family == "action_kernel"),
+        (
+            candidate
+            for candidate in kernel_unified
+            if candidate.family == "action_kernel"
+        ),
         key=lambda candidate: candidate.cv_objective,
     )
     action_candidates = [
@@ -584,17 +562,13 @@ def evaluate_object(
     )
 
     target = base.load_episode(target_descriptor)
-    target_rows = episode_rows(
-        target, transform, base_protocol, horizon
-    )
+    target_rows = episode_rows(target, transform, base_protocol, horizon)
     state, _, _, current, truth, active = target_rows
     target_action_design = base.design_for_episode(
         target, transform, base_protocol, horizon, "action"
     )[0]
     clip = float(base_protocol["model"]["normalized_feature_clip"])
-    values = base.normalize_tactile(
-        target.tactile, transform.feature_scale, clip
-    )
+    values = base.normalize_tactile(target.tactile, transform.feature_scale, clip)
     starts = base.starts_for(
         len(values),
         horizon,
@@ -670,9 +644,7 @@ def evaluate_object(
         ]
     )
     ensemble = np.einsum("k,kwd->wd", weights, candidate_predictions)
-    ensemble = np.clip(
-        ensemble + covariance.mean_error[None, :], 0.0, clip
-    )
+    ensemble = np.clip(ensemble + covariance.mean_error[None, :], 0.0, clip)
     predictions["bayesian_action_ensemble"] = ensemble
     permutation = rng.permutation(len(current))
     state_width = state_target_design.shape[1]
@@ -705,15 +677,11 @@ def evaluate_object(
 
     metrics: dict[str, dict[str, float]] = {}
     for method in METHODS:
-        all_rmse, active_rmse = base.rmse(
-            predictions[method], truth, active
-        )
+        all_rmse, active_rmse = base.rmse(predictions[method], truth, active)
         metrics[method] = {
             "field_rmse": all_rmse,
             "active_field_rmse": active_rmse,
-            "field_mae": float(
-                np.mean(np.abs(predictions[method] - truth))
-            ),
+            "field_mae": float(np.mean(np.abs(predictions[method] - truth))),
         }
     uncertainty = base.probabilistic_metrics(
         (truth - ensemble).reshape(len(truth), -1),
@@ -760,9 +728,7 @@ def evaluate_object(
     }
 
 
-def bootstrap_interval(
-    values: np.ndarray, repetitions: int, seed: int
-) -> list[float]:
+def bootstrap_interval(values: np.ndarray, repetitions: int, seed: int) -> list[float]:
     rng = np.random.default_rng(seed)
     if len(values) == 1:
         return [float(values[0]), float(values[0])]
@@ -771,15 +737,11 @@ def bootstrap_interval(
     return [float(value) for value in np.quantile(means, [0.025, 0.975])]
 
 
-def aggregate(
-    rows: list[dict[str, Any]], protocol: dict[str, Any]
-) -> dict[str, Any]:
+def aggregate(rows: list[dict[str, Any]], protocol: dict[str, Any]) -> dict[str, Any]:
     metric_names = ("field_rmse", "active_field_rmse", "field_mae")
     methods = {
         method: {
-            metric: float(
-                np.mean([row["metrics"][method][metric] for row in rows])
-            )
+            metric: float(np.mean([row["metrics"][method][metric] for row in rows]))
             for metric in metric_names
         }
         for method in METHODS
@@ -833,9 +795,7 @@ def aggregate(
         "guard_acceptance_fraction": float(
             np.mean([bool(row["guard_accepts"]) for row in rows])
         ),
-        "target_action_families": sorted(
-            {row["target_action_family"] for row in rows}
-        ),
+        "target_action_families": sorted({row["target_action_family"] for row in rows}),
         "uncertainty": uncertainty,
     }
 
@@ -912,7 +872,10 @@ def validate_protocols(
     base_protocol: dict[str, Any],
     root: Path,
 ) -> None:
-    if protocol.get("schema") != "bayesian-phystwin/deform360-action-kernel-protocol-v3":
+    if (
+        protocol.get("schema")
+        != "bayesian-phystwin/deform360-action-kernel-protocol-v3"
+    ):
         raise base.EvaluationError("unexpected v3 protocol schema")
     if Path(str(protocol["dataset_root"])) != root:
         raise base.EvaluationError("v3 dataset root changed")
@@ -926,13 +889,14 @@ def validate_protocols(
         base_protocol["reserved_object_ids"]
     ):
         raise base.EvaluationError("v3 reserved roster changed")
-    if set(protocol["development_object_ids"]) & set(
-        protocol["reserved_object_ids"]
-    ):
+    if set(protocol["development_object_ids"]) & set(protocol["reserved_object_ids"]):
         raise base.EvaluationError("development and reserved rosters overlap")
-    if protocol["information_boundary"].get(
-        "protocol_frozen_before_predecessor_target_result_available"
-    ) is not True:
+    if (
+        protocol["information_boundary"].get(
+            "protocol_frozen_before_predecessor_target_result_available"
+        )
+        is not True
+    ):
         raise base.EvaluationError("v3 pre-result freeze was not declared")
     if protocol.get("paper_claim_authorized") is not False:
         raise base.EvaluationError("v3 protocol self-authorized a claim")
@@ -940,9 +904,7 @@ def validate_protocols(
 
 def run(protocol_path: Path, root: Path) -> dict[str, Any]:
     protocol = read_json(protocol_path)
-    base_protocol_path = Path(
-        protocol["shared_preprocessing"]["base_protocol_path"]
-    )
+    base_protocol_path = Path(protocol["shared_preprocessing"]["base_protocol_path"])
     base_protocol = read_json(base_protocol_path)
     root = root.resolve(strict=True)
     validate_protocols(protocol, base_protocol, root)
@@ -964,15 +926,14 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         descriptors = descriptors_by_object.get(str(object_id))
         if descriptors is None:
             failures.append(
-                {"object_id": str(object_id), "reason": "registered-carriers-unavailable"}
+                {
+                    "object_id": str(object_id),
+                    "reason": "registered-carriers-unavailable",
+                }
             )
             continue
         try:
-            rows.append(
-                evaluate_object(
-                    descriptors, protocol, base_protocol, rng
-                )
-            )
+            rows.append(evaluate_object(descriptors, protocol, base_protocol, rng))
         except (
             base.EvaluationError,
             OSError,

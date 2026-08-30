@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -138,7 +137,9 @@ def npy_info(path: Path) -> dict[str, Any]:
     }
     if array.dtype.kind in "iuf" and array.size:
         flattened = array.reshape(-1)
-        indices = np.linspace(0, len(flattened) - 1, min(len(flattened), 4096), dtype=int)
+        indices = np.linspace(
+            0, len(flattened) - 1, min(len(flattened), 4096), dtype=int
+        )
         sample = np.asarray(flattened[indices], dtype=np.float64)
         finite = np.isfinite(sample)
         result["sampled_finite_fraction"] = float(np.mean(finite))
@@ -201,8 +202,12 @@ def tactile_sample_count(path: Path) -> dict[str, Any]:
         size = path.stat().st_size
         return {
             "path": str(path),
-            "format": "headerless-float32" if size % frame_bytes == 0 else "unsupported",
-            "sample_count": int(size // frame_bytes) if size % frame_bytes == 0 else None,
+            "format": "headerless-float32"
+            if size % frame_bytes == 0
+            else "unsupported",
+            "sample_count": int(size // frame_bytes)
+            if size % frame_bytes == 0
+            else None,
             "dtype": "float32" if size % frame_bytes == 0 else None,
             "size_bytes": int(size),
         }
@@ -213,7 +218,11 @@ def relative(path: Path, root: Path) -> str:
 
 
 def episode_directory(processed_object: Path, episode_id: int) -> Path | None:
-    for name in (f"episode_{episode_id}", f"episode_{episode_id:04d}", f"episode-{episode_id}"):
+    for name in (
+        f"episode_{episode_id}",
+        f"episode_{episode_id:04d}",
+        f"episode-{episode_id}",
+    ):
         candidate = processed_object / name
         if candidate.is_dir():
             return candidate
@@ -235,17 +244,24 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
     processed_object = root / "processed-repository" / "processed" / object_id
     metadata_path = raw_object / "metadata.json"
     if not metadata_path.is_file():
-        return {"object_id": object_id, "supported": False, "reason": "metadata-missing"}
+        return {
+            "object_id": object_id,
+            "supported": False,
+            "reason": "metadata-missing",
+        }
     episodes = episode_records(load_json(metadata_path))
     tactile_groups: list[tuple[str, list[Path]]] = []
-    for child in sorted((path for path in raw_object.iterdir() if path.is_dir()), key=lambda p: p.name):
+    for child in sorted(
+        (path for path in raw_object.iterdir() if path.is_dir()), key=lambda p: p.name
+    ):
         if not TACTILE_RE.search(child.name):
             continue
         files = sorted(
             (
                 path
                 for path in child.glob("*.npy")
-                if not path.name.lower().startswith("median_") and path.stat().st_size > 0
+                if not path.name.lower().startswith("median_")
+                and path.stat().st_size > 0
             ),
             key=lambda path: path.name,
         )
@@ -261,11 +277,16 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
             {
                 path.resolve()
                 for path in directory.rglob("*.npy")
-                if "robot" in path.name.lower() or "pose" in path.name.lower() or "opening" in path.name.lower()
+                if "robot" in path.name.lower()
+                or "pose" in path.name.lower()
+                or "opening" in path.name.lower()
             },
             key=str,
         )
-        robot_arrays = [{**npy_info(path), "path": relative(path, root)} for path in robot_candidates]
+        robot_arrays = [
+            {**npy_info(path), "path": relative(path, root)}
+            for path in robot_candidates
+        ]
         timing_candidates = sorted(
             {
                 path.resolve()
@@ -280,7 +301,15 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
                 continue
             if path.is_file() and any(
                 token in path.name.lower()
-                for token in ("robot", "pose", "opening", "align", "timestamp", "tactile", "control")
+                for token in (
+                    "robot",
+                    "pose",
+                    "opening",
+                    "align",
+                    "timestamp",
+                    "tactile",
+                    "control",
+                )
             ):
                 neighboring_paths.append(relative(path, root))
         tactile = []
@@ -291,7 +320,9 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
                 {
                     "group": group_name,
                     "payload": tactile_sample_count(path),
-                    "timestamps": text_timing_info(sidecar) if sidecar.is_file() else None,
+                    "timestamps": text_timing_info(sidecar)
+                    if sidecar.is_file()
+                    else None,
                 }
             )
         episode_rows.append(
@@ -310,7 +341,10 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
     usable = [
         row
         for row in episode_rows
-        if any(item.get("readable") and _frame_count(item) >= 12 for item in row["robot_arrays"])
+        if any(
+            item.get("readable") and _frame_count(item) >= 12
+            for item in row["robot_arrays"]
+        )
         and any(
             int(entry["payload"].get("sample_count") or 0) >= 12
             and entry.get("timestamps") is not None
@@ -345,7 +379,9 @@ def inspect(root: Path, protocol_path: Path) -> dict[str, Any]:
         if any(token in object_id for token in ("rope", "cable", "line"))
     ]
     remaining = [object_id for object_id in development if object_id not in priority]
-    objects = [inspect_object(resolved, object_id) for object_id in priority + remaining]
+    objects = [
+        inspect_object(resolved, object_id) for object_id in priority + remaining
+    ]
     supported = [row for row in objects if row["supported"]]
     supported.sort(
         key=lambda row: (

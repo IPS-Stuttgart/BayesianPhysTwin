@@ -309,11 +309,11 @@ def load_raw_tactile(path: Path) -> np.ndarray:
         if array.ndim != 3 or array.shape[1:] != (16, 32):
             raise ValueError
         result = np.asarray(array, dtype=np.float64)
-    except (OSError, ValueError):
+    except (OSError, ValueError) as error:
         frame_size = 16 * 32
         flat = np.fromfile(path, dtype=np.float32)
         if flat.size == 0 or flat.size % frame_size:
-            raise EvaluationError(f"unsupported tactile carrier: {path}")
+            raise EvaluationError(f"unsupported tactile carrier: {path}") from error
         result = np.asarray(flat.reshape(-1, 16, 32), dtype=np.float64)
     if not np.all(np.isfinite(result)) or len(result) < 32:
         raise EvaluationError(f"invalid tactile carrier: {path}")
@@ -493,7 +493,9 @@ def design_for_episode(
     starts = starts_for(len(values), horizon, lag, stride)
     if len(starts) == 0:
         raise EvaluationError(
-            f"episode {episode.descriptor.episode_id} has no windows for horizon {horizon}"
+            f"episode {episode.descriptor.episode_id} has no windows for horizon {
+                horizon
+            }"
         )
     current = values[starts]
     truth = values[starts + horizon]
@@ -503,9 +505,7 @@ def design_for_episode(
         trend_lag = int(trend_lag)
         previous_indices = np.maximum(starts - trend_lag, 0)
         trend = (current - values[previous_indices]) @ transform.state_basis.T
-        trends.append(
-            trend / np.maximum(starts - previous_indices, 1)[:, None]
-        )
+        trends.append(trend / np.maximum(starts - previous_indices, 1)[:, None])
     tactile_summary = simple_tactile_features(
         current, len(episode.descriptor.tactile_paths)
     )
@@ -535,9 +535,7 @@ def fit_ridge(x: np.ndarray, y: np.ndarray, alpha: float) -> RidgeModel:
     centered_y = y - y_mean
     gram = standardized_x.T @ standardized_x
     regularizer = alpha * np.eye(gram.shape[0], dtype=np.float64)
-    coefficients = np.linalg.solve(
-        gram + regularizer, standardized_x.T @ centered_y
-    )
+    coefficients = np.linalg.solve(gram + regularizer, standardized_x.T @ centered_y)
     return RidgeModel(x_mean, x_scale, y_mean, coefficients, float(alpha))
 
 
@@ -782,9 +780,10 @@ def fit_covariance(
     _, singular, right = np.linalg.svd(centered, full_matrices=False)
     retained = min(rank, len(singular), max(count - 1, 0))
     if retained:
-        factor = right[:retained].T * (
-            singular[:retained] / math.sqrt(max(count - 1, 1))
-        )[None, :]
+        factor = (
+            right[:retained].T
+            * (singular[:retained] / math.sqrt(max(count - 1, 1)))[None, :]
+        )
     else:
         factor = np.empty((dimension, 0), dtype=np.float64)
     variance = np.mean(centered * centered, axis=0)
@@ -796,16 +795,12 @@ def fit_covariance(
     )
     diagonal = np.maximum(diagonal, floor)
     stored_mean = residuals.mean(axis=0) if mean_error is None else mean_error
-    provisional = CovarianceModel(
-        stored_mean, diagonal, factor, 1.0, 1.0, 0.0, 0.0
-    )
+    provisional = CovarianceModel(stored_mean, diagonal, factor, 1.0, 1.0, 0.0, 0.0)
     nees = np.asarray(
         [woodbury_quadratic(error, provisional) / dimension for error in centered]
     )
     multiplier = max(float(np.mean(nees)), 1e-6)
-    marginal_variance = multiplier * (
-        diagonal + np.sum(factor * factor, axis=1)
-    )
+    marginal_variance = multiplier * (diagonal + np.sum(factor * factor, axis=1))
     ratios = np.abs(centered) / np.sqrt(marginal_variance)[None, :]
     marginal_z = float(np.quantile(ratios, probability))
     marginal_coverage = float(np.mean(ratios <= marginal_z))
@@ -840,9 +835,7 @@ def covariance_logdet(model: CovarianceModel) -> float:
     factor = math.sqrt(model.multiplier) * model.factor
     logdet = float(np.sum(np.log(diagonal)))
     if factor.shape[1]:
-        core = np.eye(factor.shape[1]) + factor.T @ (
-            factor / diagonal[:, None]
-        )
+        core = np.eye(factor.shape[1]) + factor.T @ (factor / diagonal[:, None])
         sign, value = np.linalg.slogdet(core)
         if sign <= 0:
             raise EvaluationError("covariance core is not positive definite")
@@ -859,30 +852,23 @@ def probabilistic_metrics(
 ) -> dict[str, float]:
     dimension = errors.shape[1]
     normal = NormalDist().inv_cdf(0.5 + probability / 2.0)
-    chi_square = dimension * (
-        1.0
-        - 2.0 / (9.0 * dimension)
-        + normal * math.sqrt(2.0 / (9.0 * dimension))
-    ) ** 3
+    chi_square = (
+        dimension
+        * (1.0 - 2.0 / (9.0 * dimension) + normal * math.sqrt(2.0 / (9.0 * dimension)))
+        ** 3
+    )
     marginal_variance = covariance.multiplier * (
         covariance.diagonal + np.sum(covariance.factor * covariance.factor, axis=1)
     )
     marginal_radius = covariance.marginal_z * np.sqrt(marginal_variance)
     logdet = covariance_logdet(covariance)
-    quadratics = np.asarray(
-        [woodbury_quadratic(error, covariance) for error in errors]
-    )
-    nll = 0.5 * (
-        dimension * math.log(2.0 * math.pi) + logdet + quadratics
-    ) / dimension
+    quadratics = np.asarray([woodbury_quadratic(error, covariance) for error in errors])
+    nll = 0.5 * (dimension * math.log(2.0 * math.pi) + logdet + quadratics) / dimension
     energy_values = []
     diagonal_std = np.sqrt(covariance.multiplier * covariance.diagonal)
     factor = math.sqrt(covariance.multiplier) * covariance.factor
     for error in errors:
-        draws = (
-            rng.standard_normal((sample_count, dimension))
-            * diagonal_std[None, :]
-        )
+        draws = rng.standard_normal((sample_count, dimension)) * diagonal_std[None, :]
         if factor.shape[1]:
             draws += rng.standard_normal((sample_count, factor.shape[1])) @ factor.T
         first = np.mean(np.linalg.norm(draws + error[None, :], axis=1))
@@ -901,9 +887,7 @@ def probabilistic_metrics(
     }
 
 
-def bootstrap_interval(
-    values: np.ndarray, repetitions: int, seed: int
-) -> list[float]:
+def bootstrap_interval(values: np.ndarray, repetitions: int, seed: int) -> list[float]:
     rng = np.random.default_rng(seed)
     if len(values) == 1:
         return [float(values[0]), float(values[0])]
@@ -940,9 +924,7 @@ def evaluate_object(
         action_candidates,
         float(protocol["model"]["ensemble_temperature_floor_fraction"]),
     )
-    fitted = fit_candidates_all_source(
-        source, transform, protocol, horizon, candidates
-    )
+    fitted = fit_candidates_all_source(source, transform, protocol, horizon, candidates)
     residuals, ensemble_source, source_bias = ensemble_cv_residuals(
         source, action_candidates, weights
     )
@@ -1043,9 +1025,7 @@ def evaluate_object(
         ),
     }
     state_best = state_best_index
-    action_best = min(
-        action_indices, key=lambda index: candidates[index].cv_objective
-    )
+    action_best = min(action_indices, key=lambda index: candidates[index].cv_objective)
     for name, index in (("state_ridge", state_best), ("action_ridge", action_best)):
         candidate = candidates[index]
         x = variants[candidate.variant][0]
@@ -1092,9 +1072,7 @@ def evaluate_object(
                 float(model["normalized_feature_clip"]),
             )
         )
-    shuffled = np.einsum(
-        "k,kwd->wd", weights, np.stack(shuffled_predictions)
-    )
+    shuffled = np.einsum("k,kwd->wd", weights, np.stack(shuffled_predictions))
     predictions["shuffled_action_control"] = np.clip(
         shuffled + covariance.mean_error[None, :],
         0.0,
@@ -1260,8 +1238,7 @@ def report(result: Mapping[str, Any]) -> str:
     for comparator, values in summary["comparisons"].items():
         interval = values["object_bootstrap_95_interval"]
         wtl = (
-            f"{values['object_wins']}/{values['object_ties']}/"
-            f"{values['object_losses']}"
+            f"{values['object_wins']}/{values['object_ties']}/{values['object_losses']}"
         )
         lines.append(
             f"| `{comparator}` | {values['ensemble_minus_comparator']:.8g} | "

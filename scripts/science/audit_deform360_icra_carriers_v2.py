@@ -63,7 +63,9 @@ def _episode_records(metadata: Mapping[str, Any]) -> list[dict[str, Any]]:
             raw.items(),
             key=lambda item: (
                 0 if isinstance(item[0], str) and item[0].isdigit() else 1,
-                int(item[0]) if isinstance(item[0], str) and item[0].isdigit() else str(item[0]),
+                int(item[0])
+                if isinstance(item[0], str) and item[0].isdigit()
+                else str(item[0]),
             ),
         )
     elif isinstance(raw, Sequence) and not isinstance(raw, (str, bytes, bytearray)):
@@ -90,7 +92,9 @@ def _episode_records(metadata: Mapping[str, Any]) -> list[dict[str, Any]]:
         records.append(
             {
                 "episode_id": episode_id,
-                "action": action.strip() if isinstance(action, str) and action.strip() else None,
+                "action": action.strip()
+                if isinstance(action, str) and action.strip()
+                else None,
                 "bimanual": value.get("bimanual"),
                 "nonprehensile": value.get("nonprehensile"),
                 "metadata_keys": sorted(map(str, value.keys())),
@@ -139,7 +143,10 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
         }
     metadata: dict[str, Any] = {}
     metadata_error: str | None = None
-    if _regular_readable(metadata_path) and metadata_path.stat().st_size <= 2 * 1024 * 1024:
+    if (
+        _regular_readable(metadata_path)
+        and metadata_path.stat().st_size <= 2 * 1024 * 1024
+    ):
         try:
             metadata = _load_json(metadata_path)
         except (OSError, ValueError, json.JSONDecodeError) as error:
@@ -152,11 +159,16 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
     tactile_groups: list[dict[str, Any]] = []
     camera_groups: list[dict[str, Any]] = []
     try:
-        children = sorted((path for path in object_dir.iterdir() if path.is_dir()), key=lambda p: p.name)
+        children = sorted(
+            (path for path in object_dir.iterdir() if path.is_dir()),
+            key=lambda p: p.name,
+        )
     except OSError:
         children = []
     for child in children:
-        tactile_files = _nonmedian_tactile(child) if TACTILE_RE.search(child.name) else []
+        tactile_files = (
+            _nonmedian_tactile(child) if TACTILE_RE.search(child.name) else []
+        )
         if tactile_files:
             tactile_groups.append(
                 {
@@ -164,11 +176,18 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
                     "recording_count": len(tactile_files),
                     "timestamp_sidecar_count": len(_files(child, ".txt")),
                     "median_count": len(
-                        [path for path in _files(child, ".npy") if path.name.lower().startswith("median_")]
+                        [
+                            path
+                            for path in _files(child, ".npy")
+                            if path.name.lower().startswith("median_")
+                        ]
                     ),
                     "recording_stems": [path.stem for path in tactile_files],
-                    "recording_sizes_bytes": [int(path.stat().st_size) for path in tactile_files],
-                    "episode_order_mapping_ready": episode_count > 0 and len(tactile_files) == episode_count,
+                    "recording_sizes_bytes": [
+                        int(path.stat().st_size) for path in tactile_files
+                    ],
+                    "episode_order_mapping_ready": episode_count > 0
+                    and len(tactile_files) == episode_count,
                 }
             )
         if CAMERA_RE.search(child.name):
@@ -180,8 +199,13 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
                         "directory": _safe_relative(child, root),
                         "video_count": len(videos),
                         "timestamp_count": len(stamps),
-                        "paired_episode_count": len(set(path.stem for path in videos) & set(path.stem for path in stamps)),
-                        "episode_order_mapping_ready": episode_count > 0 and len(videos) == episode_count and len(stamps) == episode_count,
+                        "paired_episode_count": len(
+                            set(path.stem for path in videos)
+                            & set(path.stem for path in stamps)
+                        ),
+                        "episode_order_mapping_ready": episode_count > 0
+                        and len(videos) == episode_count
+                        and len(stamps) == episode_count,
                     }
                 )
 
@@ -205,7 +229,12 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
             continue
         for path in processed_parent.rglob("*"):
             lower = path.name.lower()
-            if path.is_file() and lower in {"robot.npz", "robot.npy", "actions.npz", "controls.npz"}:
+            if path.is_file() and lower in {
+                "robot.npz",
+                "robot.npy",
+                "actions.npz",
+                "controls.npz",
+            }:
                 robot_candidates.append(_safe_relative(path, root))
             if path.is_dir() and path.name == "pcd_clean":
                 count = len(_files(path, ".npz"))
@@ -215,8 +244,12 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
             if path.is_file() and path.suffix.lower() in {".npz", ".h5", ".ply"}:
                 processed_candidates.append(_safe_relative(path, root))
 
-    camera_ready_count = sum(group["episode_order_mapping_ready"] for group in camera_groups)
-    tactile_ready_count = sum(group["episode_order_mapping_ready"] for group in tactile_groups)
+    camera_ready_count = sum(
+        group["episode_order_mapping_ready"] for group in camera_groups
+    )
+    tactile_ready_count = sum(
+        group["episode_order_mapping_ready"] for group in tactile_groups
+    )
     action_count = sum(record["action"] is not None for record in episodes)
     official_processing_candidate = bool(
         episode_count >= 3
@@ -225,14 +258,18 @@ def _object_row(root: Path, object_id: str) -> dict[str, Any]:
         and camera_ready_count >= 8
         and tactile_ready_count >= 2
     )
-    one_dimensional = any(token in object_id.lower() for token in ("rope", "cable", "line", "band"))
+    one_dimensional = any(
+        token in object_id.lower() for token in ("rope", "cable", "line", "band")
+    )
     return {
         "object_id": object_id,
         "present": True,
         "one_dimensional_priority": one_dimensional,
         "metadata": {
             "path": _safe_relative(metadata_path, root),
-            "sha256": _sha256_bytes(metadata_path.read_bytes()) if metadata and _regular_readable(metadata_path) else None,
+            "sha256": _sha256_bytes(metadata_path.read_bytes())
+            if metadata and _regular_readable(metadata_path)
+            else None,
             "error": metadata_error,
             "top_level_keys": sorted(map(str, metadata.keys())),
             "episode_count": episode_count,
@@ -309,8 +346,12 @@ def audit(data_root: Path, protocol_path: Path) -> dict[str, Any]:
                 for row in objects
             ),
             "official_robot_tactile_processing_candidate_count": len(candidates),
-            "objects_with_existing_robot_state": sum(bool(row.get("robot_state_candidates")) for row in objects),
-            "objects_with_existing_pcd_clean": sum(bool(row.get("pcd_clean_directories")) for row in objects),
+            "objects_with_existing_robot_state": sum(
+                bool(row.get("robot_state_candidates")) for row in objects
+            ),
+            "objects_with_existing_pcd_clean": sum(
+                bool(row.get("pcd_clean_directories")) for row in objects
+            ),
             "recommended_object_ids": [row["object_id"] for row in candidates[:8]],
             "action_vocabulary": dict(sorted(action_counts.items())),
         },
@@ -339,7 +380,10 @@ def report(result: Mapping[str, Any]) -> str:
     ]
     candidate_ids = set(summary["recommended_object_ids"])
     for row in result["objects"]:
-        if row.get("official_robot_tactile_processing_candidate") or row["object_id"] in candidate_ids:
+        if (
+            row.get("official_robot_tactile_processing_candidate")
+            or row["object_id"] in candidate_ids
+        ):
             metadata = row.get("metadata", {})
             lines.append(
                 f"| `{row['object_id']}` | {metadata.get('episode_count', 0)}/{metadata.get('action_count', 0)} | "

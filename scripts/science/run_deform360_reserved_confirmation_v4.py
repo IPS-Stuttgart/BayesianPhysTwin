@@ -65,9 +65,7 @@ def sha256_file(path: Path) -> str:
 
 
 def git_blob_sha1(path: Path) -> str:
-    return subprocess.check_output(
-        ["git", "hash-object", str(path)], text=True
-    ).strip()
+    return subprocess.check_output(["git", "hash-object", str(path)], text=True).strip()
 
 
 def canonical_digest(value: Any) -> str:
@@ -98,13 +96,15 @@ def validate_protocol(
     development_path = Path(str(binding["protocol_path"]))
     if sha256_file(development_path) != binding["protocol_file_sha256"]:
         raise base.EvaluationError("frozen development protocol bytes changed")
-    if git_blob_sha1(Path(str(binding["implementation_path"]))) != binding[
-        "implementation_git_blob_sha1"
-    ]:
+    if (
+        git_blob_sha1(Path(str(binding["implementation_path"])))
+        != binding["implementation_git_blob_sha1"]
+    ):
         raise base.EvaluationError("v3 implementation blob changed")
-    if git_blob_sha1(Path(str(binding["base_implementation_path"]))) != binding[
-        "base_implementation_git_blob_sha1"
-    ]:
+    if (
+        git_blob_sha1(Path(str(binding["base_implementation_path"])))
+        != binding["base_implementation_git_blob_sha1"]
+    ):
         raise base.EvaluationError("v2 base implementation blob changed")
     source_revision = str(binding["development_source_revision"])
     ancestor = subprocess.run(
@@ -135,9 +135,12 @@ def validate_protocol(
         raise base.EvaluationError("confirmation and development rosters overlap")
     if confirmation["selection"].get("replacement_allowed") is not False:
         raise base.EvaluationError("confirmation replacement must be disabled")
-    if confirmation["information_boundary"].get(
-        "protocol_frozen_before_reserved_numeric_payload_access"
-    ) is not True:
+    if (
+        confirmation["information_boundary"].get(
+            "protocol_frozen_before_reserved_numeric_payload_access"
+        )
+        is not True
+    ):
         raise base.EvaluationError("reserved pre-access freeze is absent")
     if confirmation.get("paper_claim_authorized") is not False:
         raise base.EvaluationError("protocol self-authorized a paper claim")
@@ -186,9 +189,7 @@ def confirmation_decision(
         "joint_coverage_near_90": (
             0.75 <= float(uncertainty["joint_90_ellipsoid_coverage"]) <= 0.98
         ),
-        "joint_nanees_reasonable": (
-            0.5 <= float(uncertainty["joint_nanees"]) <= 2.0
-        ),
+        "joint_nanees_reasonable": (0.5 <= float(uncertainty["joint_nanees"]) <= 2.0),
     }
     probabilistic_supported = all(uncertainty_diagnostic.values())
     return {
