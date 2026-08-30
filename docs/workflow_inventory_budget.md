@@ -26,7 +26,7 @@ At source revision
 The machine-readable contract is
 `.github/quality/workflow-inventory-budget-v1.json`.
 
-## Completed one-shot retirement and current reviewed increase
+## Completed one-shot retirement and reviewed permanent increases
 
 The twelve historical one-shot files are absent from `.github/workflows`. Their
 exact Git blobs are retained below
@@ -46,18 +46,27 @@ ordinary workflows with zero temporary-looking files. The permanent
 addition: it runs the target-free controlled falsification study, requires
 primary/replay byte identity, binds regenerated output to the retained result,
 and records the exact reviewed head and canonical Python/NumPy runtime. Its
-addition raises the checked-in ceiling by one, from 81 to 82, without changing
+addition raised the checked-in ceiling by one, from 81 to 82, without changing
 the retirement target.
+
+The permanent `tracking-cloth-evaluation.yml` workflow is a second deliberately
+reviewed addition. It provides synthetic contract validation plus a read-only,
+main-branch-only public real-data pilot on the protected `gpuserver4090` runner.
+The workflow freezes source-only shake fitting before twisting-target scoring,
+publishes the complete prediction seal before scoring, retains aggregate
+evidence only, and requires a canonical single-file authorization commit for
+the first target-scored run. Its addition raises the checked-in ceiling by one,
+from 82 to 83, without changing the retirement target.
 
 The exact active inventory and targets are therefore:
 
-- 82 checked-in workflows;
+- 83 checked-in workflows;
 - zero temporary-looking workflow files;
 - a retirement target of at most 81 checked-in workflows; and
 - a retirement target of zero temporary-looking workflows.
 
-The one-workflow retirement gap is intentional and visible. A future
-consolidation or retirement should lower the ceiling back to 81 in the same
+The two-workflow retirement gap is intentional and visible. Future
+consolidations or retirements should lower the ceiling toward 81 in the same
 change rather than silently reusing that capacity.
 
 Validate the active inventory with:
