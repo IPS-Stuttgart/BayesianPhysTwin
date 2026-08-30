@@ -1,0 +1,1336 @@
+{
+  "artifact_id": "f68efd7c9279219be470464a828720830ec0275c7647ce91aea115ec62656967",
+  "backend_count": 5,
+  "backend_wide_competence_claim": false,
+  "cross_backend_ranking_claim": false,
+  "dataset_count": 2,
+  "decision_counts": {
+    "prospective_certified": 1,
+    "rejected": 8
+  },
+  "entries": [
+    {
+      "backend_key": "dlolab-public-simulator-v1",
+      "dataset": "DLO-Lab",
+      "decision": "rejected",
+      "display_name": "DLO-Lab slingshot",
+      "entry_id": "2159ecb9d7145954762baff92b5f0ac32702ddfb811cb1cb45c83b8d9db21365",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "decision_headroom",
+      "furthest_evaluated_stage": "prospective_value",
+      "metadata": {
+        "full_horizon_mapping": "DLO-Lab native qualification covers the complete registered query rollout; no new outcome is inferred",
+        "source_query_competence_decision": "rejected",
+        "source_query_competence_entry_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+        "task": "slingshot"
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "9fc6627a87bfb62d639607e38ff170274e2d2b738c7d0123c5e308b5e1714d45",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "slingshot"
+        },
+        "metric_id": "e500c08d5fc9a49dcb0b9258689a022c6050a54da3f2db7f6251432dd900f4c0",
+        "observation_policy_id": "cf2a5f7ec947bb885a1c0987dbdf41c52d6ce10afe5b68c46a9550104ba22c9f",
+        "query_id": "ed9324074758582152cf987428789b2a95e82431f3a66eb56caf839788c1003d",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "fresh-simulator-world-mean-over-4096-sensor-draws-v1",
+        "task_id": "b39ae872ad9b23bed693cb48cb2065575987695c4ec8a1172bda42ce34ab54ac",
+        "world_distribution_id": "0d1d17a3c7fc8f0d77a76504a1d55494550f3bd2065418bacc6d44376f93473b"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [
+            {
+              "artifact_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "immutable DLO-Lab action-headroom decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "full_horizon_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered DLO-Lab query horizon completed under native checks",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "harm_risk_upper": 0.07495200896418834,
+            "mean_gain": 0.00022036606686823588,
+            "paired_gain_ci95": [
+              -0.00011082010377221094,
+              0.000529773406601129
+            ],
+            "source_certificate_id": "504b9fb24062e829ca7ac510f3a10882887c26d737e3bf904ad30f4341374c77",
+            "task": "slingshot"
+          },
+          "reason": "immutable DLO-Lab atlas native qualification",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "prospective_value": {
+          "evidence": [
+            {
+              "artifact_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "harm_risk_upper": 0.07495200896418834,
+            "mean_gain": 0.00022036606686823588,
+            "paired_gain_ci95": [
+              -0.00011082010377221094,
+              0.000529773406601129
+            ],
+            "source_certificate_id": "504b9fb24062e829ca7ac510f3a10882887c26d737e3bf904ad30f4341374c77",
+            "task": "slingshot"
+          },
+          "reason": "immutable DLO-Lab prospective value-and-harm decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered public DLO-Lab runtime executed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [
+            {
+              "artifact_id": "88057c0ca84301878a02db1b4ef9dbb9e0f9d631e4169cc646ea6f5a8c6d73f6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "immutable DLO-Lab source-transfer decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        }
+      },
+      "terminal_reason": "prospective-value-and-harm-gates-failed"
+    },
+    {
+      "backend_key": "matphys-pinned-runtime-v1",
+      "dataset": "RGBench",
+      "decision": "rejected",
+      "display_name": "MatPhys pinned runtime",
+      "entry_id": "225823c63afab07d3f0d9c28718a98506583af8d03e519439da950f84cc811c5",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "runtime_execution",
+      "furthest_evaluated_stage": "runtime_execution",
+      "metadata": {
+        "attempt_consumed": true,
+        "retry_authorized": false,
+        "source_future_outcome_opened": false,
+        "target_outcome_opened": false
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "bd6e3c50d877b880db0141b15759e0177769af99acd6ea2d8efc5fd22612f0c3",
+        "metadata": {
+          "attempt_limit": 1,
+          "backend": "MatPhys",
+          "public_dataset": "RGBench"
+        },
+        "metric_id": "ee89b6ec792463602e98f74a26eb8ef0c47d0aad2c0f70d01724d72827d72aad",
+        "observation_policy_id": "c1e8b8451cbe670e2af7de4f4145e2738ae67d43e254cc307ace3bf3056f1440",
+        "query_id": "3e87fd4b3cfd7bcd3254c03bfcbef96d235fa924754d2dea8f1b3994f84af282",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "ceb46bd35ba6ac80ab0c2729fa679b379eecd621e2640b90cdc7f49bde49e1ea",
+        "statistical_unit": "registered MatPhys technical smoke attempt",
+        "task_id": "7c14159e097f61474f2d5b2e5101ee32e5d1bbe464e7bf22cc6d5ac4c9c6dd98",
+        "world_distribution_id": "d46d0f567c1142af41bd8d768e3153c9e553eead51ef94083f9e7c9efae58dc3"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "the RGBench source comparison has one factual rollout, not an action bank",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_applicable"
+        },
+        "full_horizon_qualification": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "runtime import failure prevented simulator construction",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "native_qualification": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "runtime import failure prevented simulator construction",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "runtime import failure prevented simulator construction",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": "182b47e681e85d7bb4e6408240e95a15f3526cecb6fc04ef8d03b3b632ce2dd8",
+              "commit": "e42e587ef945585392222f0df4f48169a175486f",
+              "file_sha256": "7e210e9ebb096056af1bef05801cad5fe7658e6639c547e493f9fc402f25d36d",
+              "path": "evidence/rgbench_matphys_technical_smoke_terminal_v1.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "failure_type": "AttributeError"
+          },
+          "reason": "pinned MatPhys import failed before simulator construction",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "source_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "runtime import failure prevented simulator construction",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        }
+      },
+      "terminal_reason": "terminal-native-runtime-import-failure"
+    },
+    {
+      "backend_key": "dlolab-public-simulator-v1",
+      "dataset": "DLO-Lab",
+      "decision": "rejected",
+      "display_name": "DLO-Lab unknotting",
+      "entry_id": "60ae3e910804e5558be2edffd249dd98a23323d55e26145deccd70afa8edc357",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "native_qualification",
+      "furthest_evaluated_stage": "native_qualification",
+      "metadata": {
+        "full_horizon_mapping": "DLO-Lab native qualification covers the complete registered query rollout; no new outcome is inferred",
+        "source_query_competence_decision": "rejected",
+        "source_query_competence_entry_id": "9922e43367d7a591f907f4ff257315222d16d8363f0b3359431a6478f483939c",
+        "task": "unknotting"
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "1cee9cf57532d62211661ce11f8326b0b61573e142c49fe3b6360913b0f7a021",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "unknotting"
+        },
+        "metric_id": "37cbf7163b01e576be3452808ca8af7944daede5aa52432df57c57ceaed7e9b3",
+        "observation_policy_id": "38539941bae3bf1d908eb9cbea0b115c0ca9f16c5e9da7451c8da52eb5c2e488",
+        "query_id": "18c0344673d48a8f5133a7448bc25c113f17713829d5a87e5b299802f4db7238",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "registered-development-world-before-value-analysis-v1",
+        "task_id": "26af94a7bf742e726ae255dd6963f0a50ea7ed885651f29d3c6048f1afba1e47",
+        "world_distribution_id": "f0d2ac841665c28e2f49c0fad9b5cf709814ac3c61525354d6189587a4efaad8"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab action-headroom decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "full_horizon_qualification": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "native qualification stopped before horizon value admission",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "9922e43367d7a591f907f4ff257315222d16d8363f0b3359431a6478f483939c",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "backend_wide_conclusion": false,
+            "completed_worlds": 1,
+            "failed_checks": [
+              "segment_length"
+            ],
+            "independent_final_segment_relative_error": 0.15751209373415742,
+            "ordinary_native_success": true,
+            "reported_maximum_segment_relative_error": 0.1811057349566656,
+            "segment_relative_error_threshold": 0.1,
+            "summary_id": "53716b227b8cb6f8ffe2e3c5e788bd51a8615e3496c32faf60e4e4070e165113",
+            "task": "unknotting",
+            "unrun_worlds": 8
+          },
+          "reason": "immutable DLO-Lab atlas native qualification",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab prospective value-and-harm decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": "9922e43367d7a591f907f4ff257315222d16d8363f0b3359431a6478f483939c",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered public DLO-Lab runtime executed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab source-transfer decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        }
+      },
+      "terminal_reason": "registered-segment-length-qualification-failed"
+    },
+    {
+      "backend_key": "libuipc-ensemble-v4",
+      "dataset": "RGBench",
+      "decision": "rejected",
+      "display_name": "LibuIPC ensemble",
+      "entry_id": "67702c2d400fa9f33e22a4e4c839bd23caf1f3a466e42154b52b04115f2b0bd1",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "full_horizon_qualification",
+      "furthest_evaluated_stage": "full_horizon_qualification",
+      "metadata": {
+        "deterministic_dirac_claim": false,
+        "public_source_outcome_opened": false,
+        "source_case_count": 1,
+        "target_outcome_opened": false
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "be0a0c6df146a759e0edd0444396bcafed1e6f6efb7b620986f9ad55916196f2",
+        "metadata": {
+          "backend": "LibuIPC ensemble",
+          "public_dataset": "RGBench",
+          "source_case_count": 1
+        },
+        "metric_id": "c6f5c94e0d90c5ce4a99dcd18fb9cbaaedd0b86a27db0ce8226cdb01fe4e44c1",
+        "observation_policy_id": "5a79af0cb764cec204128ef6ac401e45292777b9aa8bf84308b0757c46c53011",
+        "query_id": "caa4fc6cfe7afac3183d09679f219cf4b2ddbe4e3be87f493c9230702aa017dc",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "978fdb834b7b51f432916c0b688d28a37768922aeeed4a557f58f9dfd288b318",
+        "statistical_unit": "one predeclared public RGBench source case",
+        "task_id": "414be633964fcc5332c446e00a04deb17e87b161d0a0bab157d8b92348c03418",
+        "world_distribution_id": "706bae49e1f2f258caa91a824f14df07987f32995e5ac5a5610d5bb87d0824d8"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "the RGBench source comparison has one factual rollout, not an action bank",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_applicable"
+        },
+        "full_horizon_qualification": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "d07d64605d0ba4cea98286e7027493d345c6c9fb",
+              "file_sha256": "9bf6afcc0fbe5da64ebe8ec1da3d19f37401617368ab54b781e48b4149f20fa4",
+              "path": "results/sota/rgbbench_libuipc_ensemble_v4/summary.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "failed_checks": [
+              "pairwise_rmse_within_limit",
+              "coordinate_difference_within_limit",
+              "pin_tracking_within_limit"
+            ],
+            "gate_limits": {
+              "maximum_pairwise_coordinate_difference_m": 0.001,
+              "maximum_pairwise_endpoint_rmse_m": 0.0001,
+              "maximum_pin_target_error_m": 0.02,
+              "minimum_mean_vertex_displacement_m": 0.02
+            },
+            "gate_metrics": {
+              "maximum_pairwise_coordinate_difference_m": 0.19843173031358394,
+              "maximum_pairwise_endpoint_rmse_m": 0.01795591540214452,
+              "maximum_pin_target_error_m": 0.04117654262035067,
+              "maximum_replay_variance_m2": 0.012830545476095395,
+              "mean_replay_variance_m2": 0.000101643394752813,
+              "minimum_mean_vertex_displacement_m": 0.5263402578222783
+            }
+          },
+          "reason": "registered ensemble exceeded replay-spread and pin-tracking limits",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "bcff26fd14960d9beb46cf70b1a4fb5ad7cbdb3a",
+              "file_sha256": "3e339c47d65a87c1ca53fd874607feaba8e61f0cc1f215cf3d65430bb8fc5662",
+              "path": "results/sota/rgbbench_libuipc_competence_v3/summary.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            },
+            {
+              "artifact_id": null,
+              "commit": "d07d64605d0ba4cea98286e7027493d345c6c9fb",
+              "file_sha256": "9bf6afcc0fbe5da64ebe8ec1da3d19f37401617368ab54b781e48b4149f20fa4",
+              "path": "results/sota/rgbbench_libuipc_ensemble_v4/summary.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "short_replay_difference": {
+              "different_scalar_count": 29595,
+              "face_count": 19555,
+              "maximum_absolute_m": 0.0002871107195486387,
+              "mean_absolute_m": 1.3851371538080273e-05,
+              "rmse_m": 2.115152924223717e-05,
+              "vertex_count": 9865
+            }
+          },
+          "reason": "ensemble successor explicitly represents the short-replay process spread",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "full-horizon ensemble failure closed calibration and target access",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "d07d64605d0ba4cea98286e7027493d345c6c9fb",
+              "file_sha256": "9bf6afcc0fbe5da64ebe8ec1da3d19f37401617368ab54b781e48b4149f20fa4",
+              "path": "results/sota/rgbbench_libuipc_ensemble_v4/summary.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered LibuIPC native processes completed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "full-horizon ensemble failure kept source outcomes sealed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        }
+      },
+      "terminal_reason": "full-horizon-replay-spread-and-pin-gates-failed"
+    },
+    {
+      "backend_key": "arcsim-dirichlet-v13",
+      "dataset": "RGBench",
+      "decision": "rejected",
+      "display_name": "ARCSim Dirichlet",
+      "entry_id": "790e9f9e0ecd4dca0bb6fa842cbc3682f0dc764d6872cbda7067df9f604ab279",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "source_value",
+      "furthest_evaluated_stage": "source_value",
+      "metadata": {
+        "prediction_sealed_before_source_scoring": true,
+        "public_source_outcome_opened": true,
+        "source_case_count": 1,
+        "target_outcome_opened": false
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "be0a0c6df146a759e0edd0444396bcafed1e6f6efb7b620986f9ad55916196f2",
+        "metadata": {
+          "backend": "ARCSim Dirichlet",
+          "public_dataset": "RGBench",
+          "source_case_count": 1
+        },
+        "metric_id": "0593d04f7e4ce10ac47e7ead194594077ce3ee61cf10e602b96c664cff6bdee6",
+        "observation_policy_id": "2b39764167a300d9bd1d6446aae7d80de43fd694db1a2151ea2d325af6702222",
+        "query_id": "7f635b0815b3f1688d4cb4528158fd1b96cefcb4122409155209dfd22ec650c1",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "7262c7ea7af0012f14995c17ba7a649eec7ff27499b1d1f0344a87b5d570cc24",
+        "statistical_unit": "one predeclared public RGBench source case",
+        "task_id": "414be633964fcc5332c446e00a04deb17e87b161d0a0bab157d8b92348c03418",
+        "world_distribution_id": "6fab0fc6138616d8e9f9c3e16251b290f90a311f635dd81e463de65736be6f1a"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "the RGBench source comparison has one factual rollout, not an action bank",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_applicable"
+        },
+        "full_horizon_qualification": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "373682f2d6ac360ffcb28e231312a5a88e37050b",
+              "file_sha256": "c5cbdd5c00a45fa9ad77606a25a08f2d35fb675718bf7573ad674ee2dd61ee43",
+              "path": "results/sota/rgbbench_arcsim_dirichlet_full_horizon_v12/gate.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "both registered 1636-step replays passed every target-free check",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "373682f2d6ac360ffcb28e231312a5a88e37050b",
+              "file_sha256": "c5cbdd5c00a45fa9ad77606a25a08f2d35fb675718bf7573ad674ee2dd61ee43",
+              "path": "results/sota/rgbbench_arcsim_dirichlet_full_horizon_v12/gate.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "maximum_pin_target_error_m": 3.81678052836853e-13,
+            "minimum_mean_vertex_displacement_m": 0.4622089072316669
+          },
+          "reason": "two native replays were finite, identity-preserving, and byte-identical",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "source gate failure closed calibration and target access",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "373682f2d6ac360ffcb28e231312a5a88e37050b",
+              "file_sha256": "c5cbdd5c00a45fa9ad77606a25a08f2d35fb675718bf7573ad674ee2dd61ee43",
+              "path": "results/sota/rgbbench_arcsim_dirichlet_full_horizon_v12/gate.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered ARCSim executable completed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "0680d2edb1a14647ffd92f2ddcb811fdc54a37d8",
+              "file_sha256": "bd3d3e3f1eaf822d1ac8317a77104ba5796065eae4fcc0d0b10a824a51821082",
+              "path": "results/sota/rgbbench_arcsim_dirichlet_source_v13/result.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "candidate_real_to_sim_l1_m": 0.05322464662233837,
+            "comparators": {
+              "physical_real_to_sim_l1_m": 0.05939356004993469,
+              "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+              "selected_dynamic_real_to_sim_l1_m": 0.04964315282920389
+            },
+            "relative_improvements": {
+              "physical_real_to_sim_l1_m": 0.10386502210693982,
+              "published_garment_dynamics_real_to_sim_l1_m": -0.27027796234697776,
+              "selected_dynamic_real_to_sim_l1_m": -0.07214476899677436
+            }
+          },
+          "reason": "candidate improved the raw physical prior but failed both stronger comparator gates",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        }
+      },
+      "terminal_reason": "source-comparator-gates-failed"
+    },
+    {
+      "backend_key": "dlolab-public-simulator-v1",
+      "dataset": "DLO-Lab",
+      "decision": "rejected",
+      "display_name": "DLO-Lab separation",
+      "entry_id": "8b3bb09e503166b8ed5332bcaaac4f97e7e056994232e3b14334ba47f3aef153",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "native_qualification",
+      "furthest_evaluated_stage": "native_qualification",
+      "metadata": {
+        "full_horizon_mapping": "DLO-Lab native qualification covers the complete registered query rollout; no new outcome is inferred",
+        "source_query_competence_decision": "rejected",
+        "source_query_competence_entry_id": "990604a0252a418d69568f279cf42fdfe50d6f18cb6ffb7e1aa2a63b0c1c5954",
+        "task": "separation"
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "ac5fca2f191274fc71da3962630b6a69ae4fcabf869fd746859479c56c787371",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "separation"
+        },
+        "metric_id": "3394509a58e29994f21c073400512cb727e207da6296b7917c19c9de7d59e699",
+        "observation_policy_id": "cbbc96075836daf6fc5beb62f71319d93e6ef36a2576a9881091ecff0cb6ebbd",
+        "query_id": "1b5084ba9ff2d7b677ba868feedb103ddceec661acebf0ffbc8ff9166200bd11",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "registered-development-world-before-value-analysis-v2",
+        "task_id": "7e6328862b1081867ad031fafdcace3aad919bfc7543267ed94b377f3ee807d9",
+        "world_distribution_id": "694a2d1dbb88125b406bb5b50d6d66cbae3974f89a5d105e7203e369202fa2fe"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab action-headroom decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "full_horizon_qualification": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "native qualification stopped before horizon value admission",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "990604a0252a418d69568f279cf42fdfe50d6f18cb6ffb7e1aa2a63b0c1c5954",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "attachment_distance_m": 0.03045183085429908,
+            "attachment_threshold_m": 0.02,
+            "backend_wide_conclusion": false,
+            "completed_worlds": 1,
+            "failed_checks": [
+              "material_attachment"
+            ],
+            "ordinary_native_success": true,
+            "summary_id": "bcb1805bf16325c65d63ec6a59fab06ffd697e2daf2afe0b7f0274e66d410a4b",
+            "task": "separation",
+            "unrun_worlds": 8
+          },
+          "reason": "immutable DLO-Lab atlas native qualification",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab prospective value-and-harm decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": "990604a0252a418d69568f279cf42fdfe50d6f18cb6ffb7e1aa2a63b0c1c5954",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered public DLO-Lab runtime executed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab source-transfer decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        }
+      },
+      "terminal_reason": "registered-material-attachment-qualification-failed"
+    },
+    {
+      "backend_key": "dlolab-public-simulator-v1",
+      "dataset": "DLO-Lab",
+      "decision": "rejected",
+      "display_name": "DLO-Lab coiling",
+      "entry_id": "b105cf0094641fb73cd379a84f11f927b6dd6d57e9a76d4e0d422e244ec97a88",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "decision_headroom",
+      "furthest_evaluated_stage": "source_value",
+      "metadata": {
+        "full_horizon_mapping": "DLO-Lab native qualification covers the complete registered query rollout; no new outcome is inferred",
+        "source_query_competence_decision": "rejected",
+        "source_query_competence_entry_id": "d1502f27c490e349cc7b55ad26d546d2c19641d0ecb0dade53d137fdb003eb02",
+        "task": "coiling"
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "df35380fb73484609e407c8e56ff933e71c961b55d7fac96020d528719df794f",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "coiling"
+        },
+        "metric_id": "c39af774c83a221c4bf73092db6270afca228c1af416af00062846703cab0b66",
+        "observation_policy_id": "2be57fa96c6b67e96a70c3d196c8be03980e9fb4f85d886d0a53df3ca55ebfa9",
+        "query_id": "b00d4c4af24e115b1c5000abaa634d1260697cb6d6d7df26c77bdea544883262",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "off-grid-source-world-mean-over-8192-sensor-draws-v2",
+        "task_id": "8181794cd4033c9ff79c492432e03588e225533a69b5fc8f1120050450c7d627",
+        "world_distribution_id": "f95f802c4ff368480e36237c8b2bd2e1b4d71473ec16d7447afbe28cce09533e"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [
+            {
+              "artifact_id": "d1502f27c490e349cc7b55ad26d546d2c19641d0ecb0dade53d137fdb003eb02",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "immutable DLO-Lab action-headroom decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "full_horizon_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "d1502f27c490e349cc7b55ad26d546d2c19641d0ecb0dade53d137fdb003eb02",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered DLO-Lab query horizon completed under native checks",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "d1502f27c490e349cc7b55ad26d546d2c19641d0ecb0dade53d137fdb003eb02",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "crossfit_guarded_mean_gain": -0.0004303340638860791,
+            "mean_observation_draw_harm_probability": 0.08333333333333333,
+            "oracle_headroom": 0.0016061967989121628,
+            "source_result_id": "23b0330f226d5ac5fd56d74922f22585e07b493375d39028be47ee6d7f310e06",
+            "task": "coiling"
+          },
+          "reason": "immutable DLO-Lab atlas native qualification",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "immutable DLO-Lab prospective value-and-harm decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": "d1502f27c490e349cc7b55ad26d546d2c19641d0ecb0dade53d137fdb003eb02",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered public DLO-Lab runtime executed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [
+            {
+              "artifact_id": "d1502f27c490e349cc7b55ad26d546d2c19641d0ecb0dade53d137fdb003eb02",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "immutable DLO-Lab source-transfer decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        }
+      },
+      "terminal_reason": "source-headroom-and-transfer-gates-failed"
+    },
+    {
+      "backend_key": "dlolab-public-simulator-v1",
+      "dataset": "DLO-Lab",
+      "decision": "prospective_certified",
+      "display_name": "DLO-Lab wrapping",
+      "entry_id": "ce6ee296013533d47cf060b466dc8c35b8aa5e92330a690dd819aef86ec958f0",
+      "exact_fallback_retained": true,
+      "first_failed_stage": null,
+      "furthest_evaluated_stage": "prospective_value",
+      "metadata": {
+        "full_horizon_mapping": "DLO-Lab native qualification covers the complete registered query rollout; no new outcome is inferred",
+        "source_query_competence_decision": "certified",
+        "source_query_competence_entry_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+        "task": "wrapping"
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "277af9771ee91fa28781845d2d34f4bf3daa1a44c3401e95ed448fbac66d1330",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "wrapping"
+        },
+        "metric_id": "6b66c3ba25e2b6e82867a420931ac5b926dd826984b412613f818c9030ee8cba",
+        "observation_policy_id": "091aede181429fb2059381d4e44fbf61c27b33b694eb7c560e0944c6e1d46fac",
+        "query_id": "629ffcd929207dfa6427c6dfe5aa2c601e9745fe53fdfe84696b85e6c6ce0a8a",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "fresh-simulator-world-mean-over-4096-sensor-draws-v1",
+        "task_id": "85e8620bef3f6be54450cf2a02b5ea94adac5a4eb256e9d161dd04b830e6a432",
+        "world_distribution_id": "4ed42d639ef784bd658f367820e6d470661ee135aa954629aff4e4529329c529"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [
+            {
+              "artifact_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "immutable DLO-Lab action-headroom decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "full_horizon_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered DLO-Lab query horizon completed under native checks",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "harm_risk_upper": 0.016365075773527655,
+            "mean_gain": 0.004721433249978326,
+            "paired_gain_ci95": [
+              0.0038941984708258824,
+              0.005597420470321563
+            ],
+            "source_certificate_id": "bc94830fe36448ffeb5c5d1f69ecab28afe54e7fbf1ab147e91b05a928674f4e",
+            "task": "wrapping"
+          },
+          "reason": "immutable DLO-Lab atlas native qualification",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "prospective_value": {
+          "evidence": [
+            {
+              "artifact_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "harm_risk_upper": 0.016365075773527655,
+            "mean_gain": 0.004721433249978326,
+            "paired_gain_ci95": [
+              0.0038941984708258824,
+              0.005597420470321563
+            ],
+            "source_certificate_id": "bc94830fe36448ffeb5c5d1f69ecab28afe54e7fbf1ab147e91b05a928674f4e",
+            "task": "wrapping"
+          },
+          "reason": "immutable DLO-Lab prospective value-and-harm decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "registered public DLO-Lab runtime executed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [
+            {
+              "artifact_id": "08e680a86e50b1cb71d9ec765db4b927bbeb0cc910a8f6cdbdf81230391ea2c6",
+              "commit": "225de3819b10d97c4984cde7caec023dd457c127",
+              "file_sha256": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+              "path": "results/source/dlolab_query_competence_atlas_v4/atlas.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "immutable DLO-Lab source-transfer decision",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        }
+      },
+      "terminal_reason": "prospective-query-certificate-passed"
+    },
+    {
+      "backend_key": "codim-ipc-v7",
+      "dataset": "RGBench",
+      "decision": "rejected",
+      "display_name": "Codim-IPC",
+      "entry_id": "fbb1c5385ee799df1067faa59e87c376df5f77ddc3766d2a404c2ec3bb9e227a",
+      "exact_fallback_retained": true,
+      "first_failed_stage": "full_horizon_qualification",
+      "furthest_evaluated_stage": "full_horizon_qualification",
+      "metadata": {
+        "public_source_outcome_opened": false,
+        "source_case_count": 1,
+        "target_outcome_opened": false
+      },
+      "new_recording_used": false,
+      "protected_target_data_read": false,
+      "protocol_frozen_before_outcomes": true,
+      "query_scope": {
+        "action_bank_id": "be0a0c6df146a759e0edd0444396bcafed1e6f6efb7b620986f9ad55916196f2",
+        "metadata": {
+          "backend": "Codim-IPC",
+          "public_dataset": "RGBench",
+          "source_case_count": 1
+        },
+        "metric_id": "f44f8ff0880956dc199c5acf6097710baa95088f830e8824e96c0ae0b8701c42",
+        "observation_policy_id": "f0980889abe8912f01aa2ee9a6deab2c6be9c127fb0b6338ec1a523e7be0f6f7",
+        "query_id": "03b2214a9394ef3d5f71ea906df65bc7f2ed6b1d2179a403a0ab3c6aa793828d",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "712e69c193bf3e20da05502381484c0c3ce64decd8aa9db9a4704d45ea7ab982",
+        "statistical_unit": "one predeclared public RGBench source case",
+        "task_id": "414be633964fcc5332c446e00a04deb17e87b161d0a0bab157d8b92348c03418",
+        "world_distribution_id": "abaf43ee3aabaf9ca5b2f0477c01a3e411f34fd9ce4150b98e96f1f0e7a5e0f2"
+      },
+      "schema": "bayesian_phystwin.simulator_validation_entry",
+      "schema_version": 1,
+      "stages": {
+        "decision_headroom": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "the RGBench source comparison has one factual rollout, not an action bank",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_applicable"
+        },
+        "full_horizon_qualification": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "4975c4b3b852e314d555c5d1c015c6294eee6ad2",
+              "file_sha256": "c8b44cba46030070a3462fb6c82df56d836c43dce25745b63af62d6479e41577",
+              "path": "results/sota/rgbbench_codim_ipc_full_horizon_v7/gate.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "replay_elapsed_seconds": [
+              1164.173272938002
+            ]
+          },
+          "reason": "nonlinear solve stalled on step 48 before the first full replay completed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "failed"
+        },
+        "native_qualification": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "17b26b5404600b0ed64024f2e1c3280dc3c6da0c",
+              "file_sha256": "3e02c039129ea48a154405eac3ed1b9b55134e045a1d57174eb8c079de809f17",
+              "path": "results/sota/rgbbench_codim_ipc_competence_v5/gate.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {
+            "maximum_pin_target_error_m": 0.0,
+            "minimum_mean_vertex_displacement_m": 0.0489664819751761
+          },
+          "reason": "short native replays were finite, deterministic, and exactly actuated",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "prospective_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "full-horizon failure closed calibration and target access",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        },
+        "runtime_execution": {
+          "evidence": [
+            {
+              "artifact_id": null,
+              "commit": "17b26b5404600b0ed64024f2e1c3280dc3c6da0c",
+              "file_sha256": "3e02c039129ea48a154405eac3ed1b9b55134e045a1d57174eb8c079de809f17",
+              "path": "results/sota/rgbbench_codim_ipc_competence_v5/gate.json",
+              "repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "schema": "bayesian_phystwin.simulator_validation_evidence_reference",
+              "schema_version": 1
+            }
+          ],
+          "metrics": {},
+          "reason": "two isolated Codim-IPC native replays completed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "passed"
+        },
+        "source_value": {
+          "evidence": [],
+          "metrics": {},
+          "reason": "full-horizon failure kept source point-cloud outcomes sealed",
+          "schema": "bayesian_phystwin.simulator_validation_stage_assessment",
+          "schema_version": 1,
+          "status": "not_evaluated"
+        }
+      },
+      "terminal_reason": "full-horizon-nonlinear-solver-stagnation"
+    }
+  ],
+  "entry_count": 9,
+  "metadata": {
+    "bound_source_sha256": {
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_arcsim_full_horizon_v12_gate.json": "c5cbdd5c00a45fa9ad77606a25a08f2d35fb675718bf7573ad674ee2dd61ee43",
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_arcsim_source_v13_result.json": "bd3d3e3f1eaf822d1ac8317a77104ba5796065eae4fcc0d0b10a824a51821082",
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_codim_ipc_competence_v5_gate.json": "3e02c039129ea48a154405eac3ed1b9b55134e045a1d57174eb8c079de809f17",
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_codim_ipc_full_horizon_v7_gate.json": "c8b44cba46030070a3462fb6c82df56d836c43dce25745b63af62d6479e41577",
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_libuipc_competence_v3_summary.json": "3e339c47d65a87c1ca53fd874607feaba8e61f0cc1f215cf3d65430bb8fc5662",
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_libuipc_ensemble_v4_summary.json": "9bf6afcc0fbe5da64ebe8ec1da3d19f37401617368ab54b781e48b4149f20fa4",
+      "results/source/cross_backend_validation_evidence_v1/rgbbench_matphys_technical_smoke_terminal_v1.json": "7e210e9ebb096056af1bef05801cad5fe7658e6639c547e493f9fc402f25d36d",
+      "results/source/dlolab_query_competence_atlas_v4/atlas.json": "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
+      "src/bayesian_phystwin/simulator_validation_atlas_v1.py": "2a9a17fc33c987f59a48bbe69eff5e5aa2b8acec2c83605d164d665d94f367bd"
+    },
+    "claim_boundary": "validation-domain map only; no backend-wide competence, cross-backend ranking, official benchmark, or new state-of-the-art claim",
+    "contains_one_prospective_public_simulator_certificate": true,
+    "independent_human_review": false,
+    "metrics_rewritten": false,
+    "new_outcomes_read": false,
+    "new_recordings": false,
+    "protected_target_data_read": false,
+    "public_data_and_simulator_evidence_only": true,
+    "public_datasets": [
+      "DLO-Lab",
+      "RGBench"
+    ],
+    "query_scope": "simulator-task-observation-action-metric-world-distribution",
+    "validation_ladder": [
+      "runtime_execution",
+      "native_qualification",
+      "full_horizon_qualification",
+      "decision_headroom",
+      "source_value",
+      "prospective_value"
+    ]
+  },
+  "official_benchmark_claim": false,
+  "prospectively_certified_query_ids": [
+    "629ffcd929207dfa6427c6dfe5aa2c601e9745fe53fdfe84696b85e6c6ce0a8a"
+  ],
+  "schema": "bayesian_phystwin.simulator_validation_atlas",
+  "schema_version": 1,
+  "stage_counts": {
+    "decision_headroom": {
+      "failed": 2,
+      "not_applicable": 4,
+      "not_evaluated": 2,
+      "passed": 1
+    },
+    "full_horizon_qualification": {
+      "failed": 2,
+      "not_applicable": 0,
+      "not_evaluated": 3,
+      "passed": 4
+    },
+    "native_qualification": {
+      "failed": 2,
+      "not_applicable": 0,
+      "not_evaluated": 1,
+      "passed": 6
+    },
+    "prospective_value": {
+      "failed": 1,
+      "not_applicable": 0,
+      "not_evaluated": 7,
+      "passed": 1
+    },
+    "runtime_execution": {
+      "failed": 1,
+      "not_applicable": 0,
+      "not_evaluated": 0,
+      "passed": 8
+    },
+    "source_value": {
+      "failed": 3,
+      "not_applicable": 0,
+      "not_evaluated": 5,
+      "passed": 1
+    }
+  }
+}

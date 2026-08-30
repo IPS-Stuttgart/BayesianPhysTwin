@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchLibuIPCEnsembleQualificationResult",
+  "protocol_id": "rgbbench-libuipc-ensemble-v4",
+  "status": "target_free_qualification_failed",
+  "implementation_commit": "5de9ad99beda721ce703bb40deeb69d227e6567b",
+  "protocol_sha256": "4b2a184d4127b6fcd68858c135c4953adae645c6966944779ad211fbf6c49339",
+  "remote_root": "/home/florianpfaff/results/rgbbench-libuipc-ensemble-v4-5de9ad9",
+  "qualification_file_sha256": "803411d9f37557ae2f1ceff9ee0f887d870245bece2f8eb155eae4733c1f170d",
+  "execution": {
+    "physical_gpu_index": 1,
+    "gpu_uuid": "GPU-2f726062-4a4a-97a1-0379-c33e6c5fb8ce",
+    "exclusive_gpu_observation": true,
+    "full_horizon_duration_s": 16.355,
+    "replay_count": 3,
+    "replay_elapsed_s": [
+      125.84418459469453,
+      122.29586861887947,
+      122.73824543459341
+    ],
+    "all_replays_complete": true,
+    "all_vertices_finite": true,
+    "vertex_count_preserved": true
+  },
+  "gate_metrics": {
+    "maximum_pairwise_endpoint_rmse_m": 0.01795591540214452,
+    "maximum_pairwise_coordinate_difference_m": 0.19843173031358394,
+    "maximum_pin_target_error_m": 0.04117654262035067,
+    "minimum_mean_vertex_displacement_m": 0.5263402578222783,
+    "mean_replay_variance_m2": 0.000101643394752813,
+    "maximum_replay_variance_m2": 0.012830545476095395
+  },
+  "gate_limits": {
+    "maximum_pairwise_endpoint_rmse_m": 0.0001,
+    "maximum_pairwise_coordinate_difference_m": 0.001,
+    "maximum_pin_target_error_m": 0.02,
+    "minimum_mean_vertex_displacement_m": 0.02
+  },
+  "failed_checks": [
+    "pairwise_rmse_within_limit",
+    "coordinate_difference_within_limit",
+    "pin_tracking_within_limit"
+  ],
+  "replay_sha256s": [
+    "10622a807e7356bdef02d7fd7dc0135d779427707a8bef2a306ca43798e4b836",
+    "fda94ec2b9450aa92b6799ee011970ac19cf5373668006482183a0c15b9e8dd0",
+    "ab1eb3651ebb2325b5c5c1e6f505c653e81f1dc02307cda983b6869692152912"
+  ],
+  "replay_metadata_sha256s": [
+    "0b20b7511cf39649f6a1e39d2468635ba8a6c0e746b7170d64e35500b64dee4e",
+    "3cf1b96974f718568acb67e7a140b63caa05b23d322f06b2f33c88155893d7dc",
+    "668c92c368ba29706e99e0ad85265caa1ed5476baf2db3330f0431494b7827e0"
+  ],
+  "information_boundary": {
+    "segmented_point_cloud_filenames_read": false,
+    "segmented_point_cloud_coordinates_read": false,
+    "source_accuracy_outcomes_read": false,
+    "calibration_outcomes_read": false,
+    "target_outcomes_read": false
+  },
+  "decision": {
+    "source_accuracy_run_authorized": false,
+    "libuipc_v4_arm_closed": true,
+    "next_backbone_requirement": "deterministic full-horizon dynamics with hard or verified kinematic constraints"
+  }
+}
