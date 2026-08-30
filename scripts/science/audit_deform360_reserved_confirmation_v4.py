@@ -44,7 +44,9 @@ def episode_records(metadata: Mapping[str, Any]) -> list[dict[str, Any]]:
         rows.append(
             {
                 "episode_id": int(raw_id) if str(raw_id).isdigit() else len(rows),
-                "action": action.strip() if isinstance(action, str) and action.strip() else None,
+                "action": action.strip()
+                if isinstance(action, str) and action.strip()
+                else None,
                 "bimanual": record.get("bimanual"),
             }
         )
@@ -52,7 +54,11 @@ def episode_records(metadata: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def episode_directory(parent: Path, episode_id: int) -> Path | None:
-    for name in (f"episode_{episode_id}", f"episode_{episode_id:04d}", f"episode-{episode_id}"):
+    for name in (
+        f"episode_{episode_id}",
+        f"episode_{episode_id:04d}",
+        f"episode-{episode_id}",
+    ):
         candidate = parent / name
         if candidate.is_dir():
             return candidate
@@ -72,18 +78,25 @@ def inspect_object(root: Path, object_id: str, minimum_episodes: int) -> dict[st
     metadata_bytes = metadata_path.read_bytes()
     metadata = json.loads(metadata_bytes)
     if not isinstance(metadata, dict):
-        return {"object_id": object_id, "eligible": False, "reason": "metadata-not-object"}
+        return {
+            "object_id": object_id,
+            "eligible": False,
+            "reason": "metadata-not-object",
+        }
     episodes = episode_records(metadata)
     tactile_groups: list[dict[str, Any]] = []
     if raw.is_dir():
-        for directory in sorted((path for path in raw.iterdir() if path.is_dir()), key=lambda p: p.name):
+        for directory in sorted(
+            (path for path in raw.iterdir() if path.is_dir()), key=lambda p: p.name
+        ):
             if not TACTILE_RE.search(directory.name):
                 continue
             files = sorted(
                 (
                     path
                     for path in directory.glob("*.npy")
-                    if not path.name.lower().startswith("median_") and path.stat().st_size > 0
+                    if not path.name.lower().startswith("median_")
+                    and path.stat().st_size > 0
                 ),
                 key=lambda path: path.name,
             )
@@ -106,7 +119,10 @@ def inspect_object(root: Path, object_id: str, minimum_episodes: int) -> dict[st
         robot = next(
             (
                 path
-                for path in (directory / "robot" / "robot.npz", directory / "robot" / "robot.npy")
+                for path in (
+                    directory / "robot" / "robot.npz",
+                    directory / "robot" / "robot.npy",
+                )
                 if path.is_file() and path.stat().st_size > 0
             ),
             None,
@@ -181,7 +197,9 @@ def run(root: Path, protocol_path: Path) -> dict[str, Any]:
         "confirmation_authorized": False,
         "paper_claim_authorized": False,
     }
-    canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    canonical = json.dumps(
+        result, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode()
     result["result_sha256"] = hashlib.sha256(canonical).hexdigest()
     return result
 
