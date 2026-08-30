@@ -1,0 +1,74 @@
+{
+  "amendment": {
+    "based_on_result_id": "49214ae1fae48fc194ef0589a24cea2aae69525feb04bd3b13c449c72f5a25c3",
+    "based_on_run_id": 33325025964,
+    "confirmatory_status": false,
+    "media_payload_decoded": false,
+    "numeric_arrays_loaded": false,
+    "observed_information": [
+      "directory names",
+      "file names",
+      "small metadata JSON",
+      "per-stream paired MP4/TXT and NPY/TXT existence"
+    ],
+    "reason": "The first target-blind inventory treated stream-local timestamped capture stems as cross-stream episode identifiers. The released names instead encode one synchronized capture timestamp per stream. Grouping by a 250 ms cross-stream timestamp gap recovers 9-10 physical episodes per object. Two objects retain 12 camera streams in most episodes, so 12 is the minimum complete four-object development panel.",
+    "target_futures_opened": false,
+    "target_outcomes_used": false
+  },
+  "claim_boundary": "This amended protocol is a retrospective, target-blind development roster. It can establish synchronized RGB-tactile episode grouping and four-object source-target availability. Because its timestamp grouping and 12-camera threshold were fixed after inspecting name-only coverage from run 33325025964, it cannot be used as fresh or confirmatory evidence. It does not establish model accuracy, calibration, physical-parameter transport, unseen-object generalization, official benchmark parity, or a paper-level result.",
+  "dataset": "Deform360",
+  "eligibility": {
+    "capture_grouping": "single-linkage by trailing capture timestamp across camera and tactile streams",
+    "capture_timestamp_unit": "microseconds",
+    "maximum_interstream_capture_gap": 250000,
+    "minimum_camera_pairs_per_episode": 12,
+    "minimum_eligible_episodes_per_object": 2,
+    "minimum_objects_for_pilot": 4,
+    "minimum_tactile_pairs_per_episode": 2,
+    "prefer_different_action_labels_when_resolved": true,
+    "preferred_camera_pairs_per_episode": 37,
+    "require_distinct_source_and_target_episode": true
+  },
+  "information_boundary": {
+    "directory_and_filename_inventory_only": true,
+    "large_payloads_hashed": false,
+    "maximum_metadata_json_bytes": 1048576,
+    "media_payload_decoded": false,
+    "numeric_arrays_loaded": false,
+    "score_bearing_outcomes_used": false,
+    "small_metadata_json_allowed": true,
+    "target_future_opened": false
+  },
+  "next_stage_contract": {
+    "raw_and_processed_only_objects_may_be_pooled": false,
+    "single_episode_objects_count_as_test_units": false,
+    "source_episode_may_be_opened_after_selection": true,
+    "target_future_requires_prediction_seal": true,
+    "target_initial_state_and_registered_action_may_be_opened_after_selection": true
+  },
+  "object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "081-stripe-rope"
+  ],
+  "protocol_id": "deform360-same-object-rope-pilot-v2",
+  "root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+  "runner_id": "gpuserver6000",
+  "schema": "bayesian-phystwin/deform360-same-object-rope-pilot-v2",
+  "schema_version": 2,
+  "selection": {
+    "one_primary_pair_per_object": true,
+    "pair_order": [
+      "different_action_label_when_resolved",
+      "both_visuotactile_eligible",
+      "minimum_camera_pair_count_descending",
+      "minimum_tactile_pair_count_descending",
+      "source_episode_index_ascending",
+      "target_episode_index_ascending"
+    ],
+    "source_target_relation": "same-object-cross-episode",
+    "unit": "physical_object"
+  },
+  "status": "frozen-before-payload-decoding-after-name-only-coverage-amendment"
+}
