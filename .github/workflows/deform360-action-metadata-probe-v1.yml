@@ -1,0 +1,303 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 action metadata schema probe v1
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - .github/workflows/deform360-action-metadata-probe-v1.yml
+      - triggers/deform360_action_metadata_probe_v1.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-action-metadata-probe-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  probe:
+    name: Small-metadata-only action schema / gpuserver6000
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 20
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+
+      - name: Check out exact branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Probe exact public metadata structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          output_root="${RUNNER_TEMP}/deform360-action-metadata-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}/metadata"
+          export OUTPUT_ROOT="${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["ROOT"])
+          output = Path(os.environ["OUTPUT_ROOT"])
+          object_ids = [
+              "001-rope",
+              "002-rope-silk",
+              "003-cable",
+              "081-stripe-rope",
+          ]
+          action_fragments = (
+              "action",
+              "activity",
+              "interaction",
+              "manipulation",
+              "motion",
+              "primitive",
+              "sequence",
+              "task",
+          )
+          time_fragments = ("time", "timestamp", "start", "end", "date")
+
+          def pairs_hook(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError(f"duplicate JSON key: {key}")
+                  result[key] = value
+              return result
+
+          def pointer(parts):
+              if not parts:
+                  return ""
+              return "/" + "/".join(
+                  part.replace("~", "~0").replace("/", "~1")
+                  for part in parts
+              )
+
+          def walk(value, path=()):
+              containers = []
+              scalars = []
+              if type(value) is dict:
+                  containers.append({
+                      "path": pointer(path),
+                      "type": "object",
+                      "length": len(value),
+                      "keys": sorted(value),
+                  })
+                  for key in sorted(value):
+                      child_containers, child_scalars = walk(
+                          value[key], (*path, key)
+                      )
+                      containers.extend(child_containers)
+                      scalars.extend(child_scalars)
+              elif type(value) is list:
+                  containers.append({
+                      "path": pointer(path),
+                      "type": "array",
+                      "length": len(value),
+                  })
+                  for index, child in enumerate(value):
+                      child_containers, child_scalars = walk(
+                          child, (*path, str(index))
+                      )
+                      containers.extend(child_containers)
+                      scalars.extend(child_scalars)
+              else:
+                  rendered = value
+                  if type(value) is str and len(value) > 500:
+                      rendered = value[:500] + "…"
+                  scalars.append({
+                      "path": pointer(path),
+                      "type": type(value).__name__,
+                      "value": rendered,
+                  })
+              return containers, scalars
+
+          def branch_matches(path, fragments):
+              lowered = path.casefold()
+              return any(fragment in lowered for fragment in fragments)
+
+          def sequence_candidates(value, path=()):
+              rows = []
+              if type(value) is list:
+                  if 8 <= len(value) <= 12:
+                      rows.append({
+                          "path": pointer(path),
+                          "type": "array",
+                          "length": len(value),
+                          "item_types": sorted({type(item).__name__ for item in value}),
+                      })
+                  for index, child in enumerate(value):
+                      rows.extend(sequence_candidates(child, (*path, str(index))))
+              elif type(value) is dict:
+                  if 8 <= len(value) <= 12:
+                      rows.append({
+                          "path": pointer(path),
+                          "type": "object",
+                          "length": len(value),
+                          "keys": sorted(value),
+                      })
+                  for key in sorted(value):
+                      rows.extend(sequence_candidates(value[key], (*path, key)))
+              return rows
+
+          records = []
+          for object_id in object_ids:
+              path = root / object_id / "metadata.json"
+              if not path.is_file() or path.is_symlink():
+                  raise RuntimeError(f"metadata unavailable: {path}")
+              raw = path.read_bytes()
+              if not 0 < len(raw) <= 1_048_576:
+                  raise RuntimeError(f"metadata size outside policy: {path}")
+              value = json.loads(
+                  raw.decode("utf-8"), object_pairs_hook=pairs_hook
+              )
+              canonical = json.dumps(
+                  value,
+                  indent=2,
+                  sort_keys=True,
+                  ensure_ascii=False,
+                  allow_nan=False,
+              ) + "\n"
+              copy = output / "metadata" / f"{object_id}.metadata.json"
+              copy.write_text(canonical, encoding="utf-8")
+              containers, scalars = walk(value)
+              action_scalars = [
+                  row for row in scalars
+                  if branch_matches(row["path"], action_fragments)
+              ]
+              time_scalars = [
+                  row for row in scalars
+                  if branch_matches(row["path"], time_fragments)
+              ]
+              records.append({
+                  "object_id": object_id,
+                  "metadata_path": str(path),
+                  "metadata_size_bytes": len(raw),
+                  "metadata_sha256": hashlib.sha256(raw).hexdigest(),
+                  "canonical_copy_sha256": hashlib.sha256(
+                      canonical.encode("utf-8")
+                  ).hexdigest(),
+                  "top_level_type": type(value).__name__,
+                  "top_level_keys": sorted(value) if type(value) is dict else None,
+                  "containers": containers,
+                  "scalars": scalars,
+                  "action_related_scalars": action_scalars,
+                  "time_related_scalars": time_scalars,
+                  "sequence_candidates": sequence_candidates(value),
+              })
+
+          result = {
+              "schema": "bayesian-phystwin/deform360-action-metadata-probe-v1",
+              "schema_version": 1,
+              "repository_revision": os.environ["GITHUB_SHA"],
+              "source_roster_run_id": 33335964618,
+              "root": str(root),
+              "objects": records,
+              "information_boundary": {
+                  "small_metadata_json_only": True,
+                  "media_payload_decoded": False,
+                  "numeric_arrays_loaded": False,
+                  "target_future_opened": False,
+                  "score_bearing_outcomes_used": False,
+              },
+              "claim_boundary": (
+                  "Schema-resolution diagnostic only; no model, transport, "
+                  "calibration, confirmation, or paper claim is authorized."
+              ),
+          }
+          identity_payload = json.dumps(
+              result,
+              sort_keys=True,
+              separators=(",", ":"),
+              ensure_ascii=False,
+              allow_nan=False,
+          ).encode("utf-8")
+          result["result_id"] = hashlib.sha256(identity_payload).hexdigest()
+          (output / "probe.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False)
+              + "\n",
+              encoding="utf-8",
+          )
+          summary = {
+              record["object_id"]: {
+                  "action_related_scalar_count": len(
+                      record["action_related_scalars"]
+                  ),
+                  "time_related_scalar_count": len(
+                      record["time_related_scalars"]
+                  ),
+                  "sequence_candidate_count": len(
+                      record["sequence_candidates"]
+                  ),
+              }
+              for record in records
+          }
+          (output / "summary.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "object_count": len(records),
+              "result_id": result["result_id"],
+              "summary": summary,
+          }, sort_keys=True))
+          PY
+          test -s "${OUTPUT_ROOT}/probe.json"
+          test "$(find "${OUTPUT_ROOT}/metadata" -maxdepth 1 -type f | wc -l)" -eq 4
+
+      - name: Publish bounded schema summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Deform360 action metadata schema probe"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\`"
+            echo "- Repository revision: \`${GITHUB_SHA}\`"
+            echo "- Media decoded: \`false\`"
+            echo "- Numeric arrays loaded: \`false\`"
+            echo "- Target futures opened: \`false\`"
+            if [[ -f "${OUTPUT_ROOT:-}/summary.json" ]]; then
+              echo
+              echo '```json'
+              cat "${OUTPUT_ROOT}/summary.json"
+              echo '```'
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload metadata-schema evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: d360-action-metadata-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
