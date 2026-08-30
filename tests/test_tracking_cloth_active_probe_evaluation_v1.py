@@ -147,6 +147,9 @@ def test_fold_is_complete_target_outcome_free_and_json_serializable() -> None:
     assert fold["training_materials"] == ["denim", "polyester", "wool"]
     assert fold["target_outcomes_used"] is False
     assert fold["held_material_twist_inputs_used_for_selection"] is False
+    assert fold["residual_calibration"] == "leave-one-source-record-out"
+    assert len(fold["source_crossfit_temperatures_m2"]) == 24
+    assert len(fold["source_crossfit_weight_vectors"]) == 24
     assert len(fold["prior_weights"]) == 3
     assert sum(fold["prior_weights"]) == pytest.approx(1.0)
     assert set(fold["probe_distance_m2"]) == set(protocol()["probe_conditions"])

@@ -127,9 +127,8 @@ def _validate_roster(
         raise ValueError(
             f"{name} must contain the complete factorial roster exactly once"
         )
-    if (
-        any(not value for value in recordings)
-        or len(set(recordings)) != len(recordings)
+    if any(not value for value in recordings) or len(set(recordings)) != len(
+        recordings
     ):
         raise ValueError(f"{name} recording IDs must be nonempty and unique")
     model_counts = {
@@ -158,6 +157,44 @@ def _mean_distance(predictions: Sequence[Predictions], *, models: int) -> np.nda
         raise ValueError("nonfinite disagreement template")
     result.setflags(write=False)
     return result
+
+
+def _cross_fitted_residuals(
+    ordered_sources: Sequence[SourceOutcome],
+    loss_matrix: np.ndarray,
+    protocol: Mapping[str, Any],
+) -> tuple[dict[str, list[float]], dict[str, float], dict[str, list[float]]]:
+    if len(ordered_sources) < 2 or loss_matrix.shape[0] != len(ordered_sources):
+        raise ValueError(
+            "cross-fitted calibration requires at least two source records"
+        )
+    collected: dict[str, list[list[float]]] = {
+        "bayesian": [[], [], []],
+        "nominal_physics": [[], [], []],
+        "last_residual": [[], [], []],
+    }
+    temperatures = {}
+    weights_by_record = {}
+    floor = float(protocol["measurement_floor_m"])
+    for index, record in enumerate(ordered_sources):
+        training_losses = np.delete(loss_matrix, index, axis=0)
+        temperature = posterior_temperature(training_losses, floor)
+        weights = weights_from_records(training_losses, temperature)
+        residuals = calibrated_residuals(
+            [(record.prediction, np.asarray(record.truth, dtype=np.float64))],
+            weights,
+            protocol,
+        )
+        temperatures[record.recording] = temperature
+        weights_by_record[record.recording] = weights.tolist()
+        for name, bins in residuals.items():
+            for bin_index, value in enumerate(bins):
+                collected[name][bin_index].append(float(value))
+    result = {
+        name: [float(np.mean(values)) for values in horizon_values]
+        for name, horizon_values in collected.items()
+    }
+    return result, temperatures, weights_by_record
 
 
 def fit_leave_one_material_out(
@@ -202,7 +239,6 @@ def fit_leave_one_material_out(
 
     ordered_sources = sorted(source_outcomes, key=lambda record: record.recording)
     losses_by_record: dict[str, list[float]] = {}
-    source_pairs: list[tuple[Predictions, np.ndarray]] = []
     losses = []
     for record in ordered_sources:
         truth = np.asarray(record.truth, dtype=np.float64)
@@ -213,13 +249,14 @@ def fit_leave_one_material_out(
             raise ValueError("source loss vector has the wrong model count")
         losses.append(vector)
         losses_by_record[record.recording] = vector.tolist()
-        source_pairs.append((record.prediction, truth))
     loss_matrix = np.stack(losses)
     temperature = posterior_temperature(
         loss_matrix, float(protocol["measurement_floor_m"])
     )
     prior = weights_from_records(loss_matrix, temperature)
-    residuals = calibrated_residuals(source_pairs, prior, protocol)
+    residuals, crossfit_temperatures, crossfit_weights = _cross_fitted_residuals(
+        ordered_sources, loss_matrix, protocol
+    )
 
     ordered_targets = sorted(target_templates, key=lambda record: record.recording)
     probe_distances = {
@@ -246,12 +283,13 @@ def fit_leave_one_material_out(
         "temperature_m2": temperature,
         "prior_weights": prior.tolist(),
         "source_residual_variance_m2": residuals,
+        "residual_calibration": "leave-one-source-record-out",
+        "source_crossfit_temperatures_m2": crossfit_temperatures,
+        "source_crossfit_weight_vectors": crossfit_weights,
         "probe_distance_m2": probe_distances,
         "target_distance_m2": target_distance.tolist(),
         "source_recordings": [record.recording for record in ordered_sources],
-        "target_template_recordings": [
-            record.recording for record in ordered_targets
-        ],
+        "target_template_recordings": [record.recording for record in ordered_targets],
         "source_loss_vectors_m2": losses_by_record,
         "source_outcomes_used": True,
         "target_outcomes_used": False,
