@@ -1,0 +1,492 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 DLO cross-episode pilot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-dlo-cross-episode-pilot.yml"
+      - "protocols/deform360_dlo_cross_episode_pilot_v1.json"
+      - "requests/deform360_dlo_cross_episode_pilot_request_v1.json"
+      - "scripts/science/plan_deform360_dlo_cross_episode_pilot_v1.py"
+      - "requirements/locks/deform360-runner-local-science-py312.txt"
+  push:
+    branches:
+      - science/deform360-dlo-cross-episode-pilot-v1
+    paths:
+      - "requests/deform360_dlo_cross_episode_pilot_request_v1.json"
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: Execute the frozen retrospective preprocessing pilot.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-dlo-cross-episode-pilot-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: protocols/deform360_dlo_cross_episode_pilot_v1.json
+  REQUEST: requests/deform360_dlo_cross_episode_pilot_request_v1.json
+  PLANNER: scripts/science/plan_deform360_dlo_cross_episode_pilot_v1.py
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  RUNTIME_LOCK: requirements/locks/deform360-runner-local-science-py312.txt
+  RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw
+  PERSISTENT_BASE: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-dlo-cross-episode-pilot-v1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  contracts:
+    name: Frozen pilot contracts / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact quality tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate the frozen planner and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check "${PLANNER}"
+          python -m ruff format --check "${PLANNER}"
+          python -m py_compile "${PLANNER}"
+          python "${PLANNER}" self-test
+          python -m json.tool "${PROTOCOL}" >/dev/null
+          python -m json.tool "${REQUEST}" >/dev/null
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  pilot:
+    name: Four-object synchronized RGB-tactile-robot pilot / gpuserver6000
+    needs: contracts
+    if: >-
+      (github.event_name == 'push' &&
+       github.ref == 'refs/heads/science/deform360-dlo-cross-episode-pilot-v1' &&
+       github.repository == 'IPS-Stuttgart/BayesianPhysTwin') ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/main' &&
+       inputs.execute == true &&
+       github.repository == 'IPS-Stuttgart/BayesianPhysTwin')
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 480
+    steps:
+      - name: Admit the requested self-hosted runner class
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+          command -v nvidia-smi >/dev/null
+          nvidia-smi -L
+
+      - name: Check out exact trusted BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.PROCESSING_REVISION }}
+          path: _deform360_processing
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Initialize isolated evidence and output roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C _deform360_processing rev-parse HEAD)" = \
+            "${PROCESSING_REVISION}"
+          raw_root="$(realpath -e -- "${RAW_ROOT}")"
+          test "${raw_root}" = "${RAW_ROOT}"
+          test -d "${raw_root}"
+          mkdir -p -- "${PERSISTENT_BASE}"
+          persistent_base="$(realpath -e -- "${PERSISTENT_BASE}")"
+          case "${persistent_base}/" in
+            "${raw_root}/"*)
+              echo "Pilot output must not live inside the raw snapshot." >&2
+              exit 1
+              ;;
+          esac
+          available_bytes="$(df --output=avail -B1 "${persistent_base}" | tail -1)"
+          test "${available_bytes}" -ge 21474836480
+
+          evidence_root="${RUNNER_TEMP}/deform360-dlo-pilot-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime="${RUNNER_TEMP}/deform360-dlo-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${evidence_root}" "${runtime}"
+          mkdir -p -- "${evidence_root}"
+          printf '%s\n' '/_deform360_processing/' >> .git/info/exclude
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "RUNTIME=${runtime}"
+            echo "PROCESSING_REPO=${GITHUB_WORKSPACE}/_deform360_processing"
+            echo "RESOLVED_RAW_ROOT=${raw_root}"
+            echo "RESOLVED_PERSISTENT_BASE=${persistent_base}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Record runner, repository, and mounted-root identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "repository_revision=${GITHUB_SHA}"
+            echo "processing_revision=${PROCESSING_REVISION}"
+            echo "raw_root=${RESOLVED_RAW_ROOT}"
+            echo "persistent_base=${RESOLVED_PERSISTENT_BASE}"
+            python --version
+            uname -a
+            stat -c 'raw device=%d inode=%i mode=%a' "${RESOLVED_RAW_ROOT}"
+            df -h "${RESOLVED_RAW_ROOT}" "${RESOLVED_PERSISTENT_BASE}"
+          } | tee "${EVIDENCE_ROOT}/environment.txt"
+          nvidia-smi \
+            --query-gpu=index,name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee "${EVIDENCE_ROOT}/gpus.csv"
+
+      - name: Freeze four object-level source-target pairs before media decoding
+        id: plan
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile "${PLANNER}"
+          python "${PLANNER}" self-test
+          python "${PLANNER}" plan \
+            --protocol "${PROTOCOL}" \
+            --request "${REQUEST}" \
+            --repository-revision "${GITHUB_SHA}" \
+            --output "${EVIDENCE_ROOT}/plan.json" \
+            | tee "${EVIDENCE_ROOT}/plan.log"
+          python "${PLANNER}" worklist \
+            --plan "${EVIDENCE_ROOT}/plan.json" \
+            > "${EVIDENCE_ROOT}/worklist.tsv"
+          test "$(wc -l < "${EVIDENCE_ROOT}/worklist.tsv")" -eq 4
+          plan_id="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          plan = json.loads(
+              (Path(os.environ["EVIDENCE_ROOT"]) / "plan.json").read_text()
+          )
+          print(plan["plan_id"])
+          PY
+          )"
+          execution_root="${RESOLVED_PERSISTENT_BASE}/${GITHUB_SHA}/${plan_id}"
+          test ! -e "${execution_root}"
+          mkdir -p -- "${execution_root}/aligned"
+          cp --no-clobber "${PROTOCOL}" "${execution_root}/protocol.json"
+          cp --no-clobber "${REQUEST}" "${execution_root}/request.json"
+          cp --no-clobber "${EVIDENCE_ROOT}/plan.json" "${execution_root}/plan.json"
+          chmod 0444 \
+            "${execution_root}/protocol.json" \
+            "${execution_root}/request.json" \
+            "${execution_root}/plan.json"
+          {
+            echo "PLAN_ID=${plan_id}"
+            echo "EXECUTION_ROOT=${execution_root}"
+            echo "PROCESSED_ROOT=${execution_root}/aligned"
+          } >> "${GITHUB_ENV}"
+          sha256sum \
+            "${PROTOCOL}" \
+            "${REQUEST}" \
+            "${EVIDENCE_ROOT}/plan.json" \
+            > "${EVIDENCE_ROOT}/frozen-inputs.sha256"
+
+      - name: Build the minimal locked official-processing runtime
+        id: runtime
+        if: steps.plan.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv --copies "${RUNTIME}"
+          runtime_python="${RUNTIME}/bin/python"
+          "${runtime_python}" -m pip install \
+            --constraint "${RUNTIME_LOCK}" \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6" \
+            "opencv-contrib-python==5.0.0.93" \
+            "huggingface_hub==1.27.0"
+          "${runtime_python}" -m pip install \
+            --constraint "${RUNTIME_LOCK}" \
+            --no-deps \
+            --no-build-isolation \
+            "${PROCESSING_REPO}"
+          "${runtime_python}" -m pip check
+          "${runtime_python}" -m pip freeze --all \
+            | sort \
+            | tee "${EVIDENCE_ROOT}/python-packages.txt"
+          "${runtime_python}" - <<'PY'
+          import cv2
+          import deform360
+          import numpy
+
+          print(f"opencv={cv2.__version__}")
+          print(f"numpy={numpy.__version__}")
+          print(f"deform360={deform360.__file__}")
+          PY
+
+      - name: Process all eight frozen source and target episodes
+        id: processing
+        if: >-
+          steps.plan.outcome == 'success' &&
+          steps.runtime.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS=$'\t' read -r \
+            object_id source_episode target_episode \
+            source_bimanual target_bimanual pairing_tier
+          do
+            test -n "${object_id}"
+            object_log="${EVIDENCE_ROOT}/${object_id}.log"
+            {
+              echo "object_id=${object_id}"
+              echo "source_episode=${source_episode}"
+              echo "target_episode=${target_episode}"
+              echo "source_bimanual=${source_bimanual}"
+              echo "target_bimanual=${target_bimanual}"
+              echo "pairing_tier=${pairing_tier}"
+              "${RUNTIME}/bin/deform360-undistort" \
+                --object-dir "${RESOLVED_RAW_ROOT}/${object_id}" \
+                --output-dir "${PROCESSED_ROOT}/${object_id}" \
+                --episodes "${source_episode}" "${target_episode}"
+              "${RUNTIME}/bin/deform360-process-tactile" \
+                --object-dir "${RESOLVED_RAW_ROOT}/${object_id}" \
+                --aligned-dir "${PROCESSED_ROOT}/${object_id}" \
+                --episodes "${source_episode}" "${target_episode}"
+              ALIGNED_OBJECT="${PROCESSED_ROOT}/${object_id}" \
+              SOURCE_EPISODE="${source_episode}" \
+              TARGET_EPISODE="${target_episode}" \
+              SOURCE_BIMANUAL="${source_bimanual}" \
+              TARGET_BIMANUAL="${target_bimanual}" \
+                "${RUNTIME}/bin/python" - <<'PY'
+          import os
+
+          from deform360.processing.robot_stage import process_robot_episode
+
+          aligned = os.environ["ALIGNED_OBJECT"]
+          for role in ("SOURCE", "TARGET"):
+              process_robot_episode(
+                  aligned,
+                  int(os.environ[f"{role}_EPISODE"]),
+                  bimanual=bool(int(os.environ[f"{role}_BIMANUAL"])),
+                  seed=20260831,
+                  overwrite=True,
+                  plot=False,
+              )
+          PY
+            } 2>&1 | tee "${object_log}"
+          done < "${EVIDENCE_ROOT}/worklist.tsv"
+
+      - name: Verify synchronized RGB, tactile, and robot contracts
+        id: verify
+        if: steps.processing.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "${PLANNER}" verify \
+            --protocol "${PROTOCOL}" \
+            --plan "${EVIDENCE_ROOT}/plan.json" \
+            --processed-root "${PROCESSED_ROOT}" \
+            --output "${EVIDENCE_ROOT}/verification.json" \
+            | tee "${EVIDENCE_ROOT}/verification.log"
+          cp --no-clobber \
+            "${EVIDENCE_ROOT}/verification.json" \
+            "${EXECUTION_ROOT}/verification.json"
+          chmod 0444 "${EXECUTION_ROOT}/verification.json"
+
+      - name: Write compact execution receipt and checksums
+        if: always() && steps.plan.outcome == 'success'
+        shell: bash
+        env:
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          PROCESSING_OUTCOME: ${{ steps.processing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          receipt = {
+              "schema": "bayesian-phystwin/deform360-dlo-pilot-execution-receipt",
+              "schema_version": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "repository_revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "runner_name": os.environ["RUNNER_NAME"],
+              "runner_label": "gpuserver6000",
+              "processing_revision": os.environ["PROCESSING_REVISION"],
+              "plan_id": os.environ.get("PLAN_ID"),
+              "execution_root": os.environ.get("EXECUTION_ROOT"),
+              "outcomes": {
+                  "plan": os.environ["PLAN_OUTCOME"],
+                  "runtime": os.environ["RUNTIME_OUTCOME"],
+                  "processing": os.environ["PROCESSING_OUTCOME"],
+                  "verification": os.environ["VERIFY_OUTCOME"],
+              },
+              "information_boundary": {
+                  "fresh_confirmation": False,
+                  "model_scoring_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+          }
+          encoded = json.dumps(
+              receipt,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode()
+          receipt["receipt_id"] = hashlib.sha256(encoded).hexdigest()
+          (evidence / "execution-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          find "${EVIDENCE_ROOT}" -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "${EVIDENCE_ROOT}/SHA256SUMS"
+          if [[ -n "${EXECUTION_ROOT:-}" ]]; then
+            cp --no-clobber \
+              "${EVIDENCE_ROOT}/execution-receipt.json" \
+              "${EXECUTION_ROOT}/execution-receipt.json"
+            chmod 0444 "${EXECUTION_ROOT}/execution-receipt.json"
+          fi
+
+      - name: Publish the bounded pilot summary
+        if: always()
+        shell: bash
+        env:
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          PROCESSING_OUTCOME: ${{ steps.processing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          {
+            echo "### Deform360 four-object DLO preprocessing pilot"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\` / \`gpuserver6000\`"
+            echo "- Repository revision: \`${GITHUB_SHA}\`"
+            echo "- Pair-plan outcome: \`${PLAN_OUTCOME}\`"
+            echo "- Runtime outcome: \`${RUNTIME_OUTCOME}\`"
+            echo "- Processing outcome: \`${PROCESSING_OUTCOME}\`"
+            echo "- Contract verification outcome: \`${VERIFY_OUTCOME}\`"
+            echo "- Plan ID: \`${PLAN_ID:-unavailable}\`"
+            echo "- Persistent output: \`${EXECUTION_ROOT:-unavailable}\`"
+            echo "- Model scores computed: \`false\`"
+            echo "- Paper claim authorized: \`false\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -f "${EVIDENCE_ROOT}/plan.json" ]]; then
+            python - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          import os
+          from pathlib import Path
+
+          plan = json.loads(
+              (Path(os.environ["EVIDENCE_ROOT"]) / "plan.json").read_text()
+          )
+          print()
+          print("| Object | Source | Target | Pairing tier |")
+          print("|---|---:|---:|---|")
+          for record in plan["object_records"]:
+              pair = record["selected_pair"]
+              if pair is None:
+                  print(f"| `{record['object_id']}` | — | — | unavailable |")
+              else:
+                  print(
+                      f"| `{record['object_id']}` | "
+                      f"{pair['source_episode_index']} | "
+                      f"{pair['target_episode_index']} | "
+                      f"{pair['pairing_tier']} |"
+                  )
+          PY
+          fi
+
+      - name: Upload compact pilot evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-dlo-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Enforce the registered preprocessing gate
+        if: always()
+        shell: bash
+        env:
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          PROCESSING_OUTCOME: ${{ steps.processing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          set -euo pipefail
+          test "${PLAN_OUTCOME}" = "success"
+          test "${RUNTIME_OUTCOME}" = "success"
+          test "${PROCESSING_OUTCOME}" = "success"
+          test "${VERIFY_OUTCOME}" = "success"
