@@ -25,9 +25,7 @@ CONFIRMATION_PLAN = (
     ROOT
     / "protocols/execution_requests/controlled_query_competence_confirmation_v1.json"
 )
-SOURCE_RECEIPT = (
-    ROOT / "evidence/controlled_query_competence_source_receipt_v1.json"
-)
+SOURCE_RECEIPT = ROOT / "evidence/controlled_query_competence_source_receipt_v1.json"
 
 
 def _module(path: Path, name: str) -> ModuleType:
@@ -137,23 +135,27 @@ def test_registered_confirmation_plan_is_exactly_once_and_source_bound() -> None
     assert implementation["runner_relative_path"] == (
         "scripts/science/run_controlled_query_competence_confirmation_v1.py"
     )
-    assert implementation["runner_sha256"] == hashlib.sha256(
-        CONFIRMATION_RUNNER.read_bytes()
-    ).hexdigest()
+    assert (
+        implementation["runner_sha256"]
+        == hashlib.sha256(CONFIRMATION_RUNNER.read_bytes()).hexdigest()
+    )
     module_path = ROOT / implementation["module_relative_path"]
-    assert implementation["module_sha256"] == hashlib.sha256(
-        module_path.read_bytes()
-    ).hexdigest()
+    assert (
+        implementation["module_sha256"]
+        == hashlib.sha256(module_path.read_bytes()).hexdigest()
+    )
     assert plan["protocol"] == experiment_protocol_v1()
     assert plan["source_gate_passed"] is True
     assert plan["source_execution_result_id"] == receipt["execution_result_id"]
     assert plan["source_result_id"] == receipt["source_result_id"]
-    assert plan["source_execution_result_sha256"] == (
-        receipt["source_execution_result_file_sha256"]
+    assert (
+        plan["source_execution_result_sha256"]
+        == (receipt["source_execution_result_file_sha256"])
     )
-    assert plan["controlled_source_receipt_file_sha256"] == hashlib.sha256(
-        SOURCE_RECEIPT.read_bytes()
-    ).hexdigest()
+    assert (
+        plan["controlled_source_receipt_file_sha256"]
+        == hashlib.sha256(SOURCE_RECEIPT.read_bytes()).hexdigest()
+    )
     assert plan["attempt_limit"] == 1
     assert plan["confirmation_outcomes_authorized"] is True
     assert plan["physical_confirmation_authorized"] is False
