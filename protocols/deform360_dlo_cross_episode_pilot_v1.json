@@ -1,0 +1,80 @@
+{
+  "schema": "bayesian-phystwin/deform360-dlo-cross-episode-pilot-protocol",
+  "schema_version": 1,
+  "protocol_id": "deform360-dlo-cross-episode-pilot-v1",
+  "status": "retrospective-development-frozen-before-run",
+  "runner_label": "gpuserver6000",
+  "raw_root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+  "persistent_output_root": "/mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-dlo-cross-episode-pilot-v1",
+  "objects": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "081-stripe-rope"
+  ],
+  "primary_object": "001-rope",
+  "maximum_metadata_json_bytes": 1048576,
+  "thresholds": {
+    "minimum_camera_pairs_per_episode": 32,
+    "minimum_tactile_pairs_per_episode": 4,
+    "minimum_episodes_per_object": 2,
+    "minimum_ready_objects": 4
+  },
+  "pairing": {
+    "episode_index_mapping": "lexicographic exact-paired raw stem order",
+    "selection": "prefer different action family, then different action signature, then maximum common camera and tactile support, with deterministic episode-index tie breaking",
+    "source_target_must_be_distinct": true,
+    "replacement_allowed": false
+  },
+  "official_processing": {
+    "repository": "lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "stages": [
+      "undistort-and-align",
+      "tactile-alignment",
+      "aruco-robot-state"
+    ],
+    "heavy_geometry_stages_authorized": false
+  },
+  "statistical_contract": {
+    "independent_unit": "physical_object",
+    "nested_units": [
+      "episode",
+      "action",
+      "camera",
+      "frame",
+      "tactile_sample"
+    ],
+    "this_execution_role": "four-object-preprocessing-and-action-carrier-pilot",
+    "single_run_claim_limit": "pipeline-feasibility-only"
+  },
+  "information_boundary": {
+    "fresh_confirmation": false,
+    "planner_decodes_media": false,
+    "planner_loads_numeric_arrays": false,
+    "pairing_frozen_before_media_decode": true,
+    "preprocessing_may_decode_selected_media": true,
+    "model_scoring_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "next_stage_not_authorized_here": {
+    "object_masks": true,
+    "splat_reconstruction": true,
+    "rendered_depth": true,
+    "dense_tracking": true,
+    "cleaned_point_cloud": true,
+    "control_point_materialization": true,
+    "physical_parameter_inference": true,
+    "target_future_scoring": true
+  },
+  "prohibited_interpretations": [
+    "fresh Deform360 confirmation",
+    "complete Deform360 benchmark",
+    "model accuracy result",
+    "uncertainty calibration result",
+    "physical parameter transport result",
+    "unseen-object generalization",
+    "paper-level evidence",
+    "state of the art"
+  ]
+}
