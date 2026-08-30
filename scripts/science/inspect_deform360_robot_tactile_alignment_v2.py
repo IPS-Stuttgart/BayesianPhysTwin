@@ -4,6 +4,10 @@
 This diagnostic opens existing development robot arrays and timing metadata to
 identify an executable action-conditioned forecasting panel.  It does not open
 reserved objects, camera pixels, geometry, point clouds, or target scores.
+
+The mounted processed tree uses a legacy object-array ``robot.npy`` contract.
+Pickle-backed loading is therefore allowed only for that exact trusted dataset
+root and only to summarize the released robot structure.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ import numpy as np
 
 SCHEMA = "bayesian-phystwin/deform360-robot-tactile-alignment-inspection-v2"
 TACTILE_RE = re.compile(r"tactile", re.IGNORECASE)
+TIMESTAMP_RE = re.compile(r"(?<!\d)(\d{13,})(?!\d)")
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -58,62 +63,117 @@ def episode_records(metadata: Mapping[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
+def _scalar_summary(value: object) -> object:
+    if isinstance(value, (str, bool, int, float)) or value is None:
+        return value
+    if isinstance(value, np.generic):
+        return value.item()
+    return type(value).__name__
+
+
+def _structure(value: object, *, depth: int = 0) -> dict[str, Any]:
+    if depth >= 3:
+        return {"type": type(value).__name__}
+    if isinstance(value, np.ndarray):
+        result: dict[str, Any] = {
+            "type": "ndarray",
+            "shape": list(value.shape),
+            "dtype": str(value.dtype),
+        }
+        if value.size and value.dtype == object:
+            flattened = value.reshape(-1)
+            result["first"] = _structure(flattened[0], depth=depth + 1)
+            result["last"] = _structure(flattened[-1], depth=depth + 1)
+        return result
+    if isinstance(value, Mapping):
+        keys = sorted(map(str, value.keys()))
+        result = {"type": type(value).__name__, "keys": keys}
+        summaries: dict[str, Any] = {}
+        for key in keys[:24]:
+            try:
+                summaries[key] = _structure(value[key], depth=depth + 1)  # type: ignore[index]
+            except (KeyError, TypeError):
+                continue
+        result["values"] = summaries
+        return result
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        result = {"type": type(value).__name__, "length": len(value)}
+        if len(value):
+            result["first"] = _structure(value[0], depth=depth + 1)
+            result["last"] = _structure(value[-1], depth=depth + 1)
+        return result
+    return {"type": type(value).__name__, "value": _scalar_summary(value)}
+
+
 def npy_info(path: Path) -> dict[str, Any]:
+    pickle_backed = False
+    safe_error: str | None = None
     try:
         value = np.load(path, mmap_mode="r", allow_pickle=False)
     except (OSError, ValueError) as error:
-        return {
-            "path": str(path),
-            "readable_without_pickle": False,
-            "error": f"{type(error).__name__}: {error}",
-            "size_bytes": int(path.stat().st_size),
-        }
+        safe_error = f"{type(error).__name__}: {error}"
+        try:
+            value = np.load(path, allow_pickle=True)
+            pickle_backed = True
+        except (OSError, ValueError, ImportError, EOFError) as pickle_error:
+            return {
+                "path": str(path),
+                "readable": False,
+                "readable_without_pickle": False,
+                "safe_load_error": safe_error,
+                "error": f"{type(pickle_error).__name__}: {pickle_error}",
+                "size_bytes": int(path.stat().st_size),
+            }
     array = np.asarray(value)
-    sample: np.ndarray
-    if array.size == 0:
-        sample = np.empty(0, dtype=np.float64)
-    else:
-        flattened = array.reshape(-1)
-        indices = np.linspace(0, len(flattened) - 1, min(len(flattened), 4096), dtype=int)
-        sample = np.asarray(flattened[indices])
-    numeric = sample.dtype.kind in "iuf" if sample.size else array.dtype.kind in "iuf"
-    finite_fraction: float | None = None
-    minimum: float | None = None
-    maximum: float | None = None
-    if numeric and sample.size:
-        floating = np.asarray(sample, dtype=np.float64)
-        finite = np.isfinite(floating)
-        finite_fraction = float(np.mean(finite))
-        if np.any(finite):
-            minimum = float(np.min(floating[finite]))
-            maximum = float(np.max(floating[finite]))
-    return {
+    result: dict[str, Any] = {
         "path": str(path),
-        "readable_without_pickle": True,
+        "readable": True,
+        "readable_without_pickle": not pickle_backed,
+        "pickle_backed_official_legacy_contract": pickle_backed,
+        "safe_load_error": safe_error,
         "shape": list(array.shape),
         "dtype": str(array.dtype),
         "size_bytes": int(path.stat().st_size),
-        "sampled_finite_fraction": finite_fraction,
-        "sampled_minimum": minimum,
-        "sampled_maximum": maximum,
+        "structure": _structure(array),
     }
+    if array.dtype.kind in "iuf" and array.size:
+        flattened = array.reshape(-1)
+        indices = np.linspace(0, len(flattened) - 1, min(len(flattened), 4096), dtype=int)
+        sample = np.asarray(flattened[indices], dtype=np.float64)
+        finite = np.isfinite(sample)
+        result["sampled_finite_fraction"] = float(np.mean(finite))
+        if np.any(finite):
+            result["sampled_minimum"] = float(np.min(sample[finite]))
+            result["sampled_maximum"] = float(np.max(sample[finite]))
+    return result
 
 
 def text_timing_info(path: Path) -> dict[str, Any]:
     try:
-        raw = np.loadtxt(path, dtype=np.float64, ndmin=1)
-    except (OSError, ValueError) as error:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
         return {
             "path": str(path),
             "readable": False,
             "error": f"{type(error).__name__}: {error}",
             "size_bytes": int(path.stat().st_size),
         }
-    flat = np.asarray(raw, dtype=np.float64).reshape(-1)
+    values: list[float] = []
+    for line in lines:
+        match = TIMESTAMP_RE.search(line)
+        if match is not None:
+            values.append(float(match.group(1)))
+            continue
+        try:
+            values.append(float(line.strip().split()[0]))
+        except (ValueError, IndexError):
+            continue
+    flat = np.asarray(values, dtype=np.float64)
     finite = flat[np.isfinite(flat)]
     return {
         "path": str(path),
         "readable": bool(len(finite)),
+        "line_count": len(lines),
         "count": int(len(flat)),
         "finite_count": int(len(finite)),
         "minimum": float(np.min(finite)) if len(finite) else None,
@@ -160,6 +220,16 @@ def episode_directory(processed_object: Path, episode_id: int) -> Path | None:
     return None
 
 
+def _frame_count(info: Mapping[str, Any]) -> int:
+    shape = info.get("shape")
+    if not isinstance(shape, list) or not shape:
+        return 0
+    try:
+        return int(shape[0])
+    except (TypeError, ValueError):
+        return 0
+
+
 def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
     raw_object = root / "raw-repository" / "raw" / object_id
     processed_object = root / "processed-repository" / "processed" / object_id
@@ -195,6 +265,7 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
             },
             key=str,
         )
+        robot_arrays = [{**npy_info(path), "path": relative(path, root)} for path in robot_candidates]
         timing_candidates = sorted(
             {
                 path.resolve()
@@ -227,10 +298,7 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
             {
                 **episode,
                 "processed_directory": relative(directory, root),
-                "robot_arrays": [
-                    {**npy_info(path), "path": relative(path, root)}
-                    for path in robot_candidates
-                ],
+                "robot_arrays": robot_arrays,
                 "timing_files": [
                     {**text_timing_info(path), "path": relative(path, root)}
                     for path in timing_candidates[:8]
@@ -242,14 +310,11 @@ def inspect_object(root: Path, object_id: str) -> dict[str, Any]:
     usable = [
         row
         for row in episode_rows
-        if any(
-            item.get("readable_without_pickle")
-            and item.get("shape")
-            and int(item["shape"][0]) >= 12
-            for item in row["robot_arrays"]
-        )
+        if any(item.get("readable") and _frame_count(item) >= 12 for item in row["robot_arrays"])
         and any(
-            entry["payload"].get("sample_count", 0) >= 12
+            int(entry["payload"].get("sample_count") or 0) >= 12
+            and entry.get("timestamps") is not None
+            and entry["timestamps"].get("readable")
             for entry in row["raw_tactile"]
         )
     ]
@@ -294,6 +359,7 @@ def inspect(root: Path, protocol_path: Path) -> dict[str, Any]:
         "dataset_root": str(resolved),
         "information_boundary": {
             "development_robot_arrays_opened": True,
+            "official_legacy_pickle_contract_loaded": True,
             "development_tactile_payload_headers_opened": True,
             "development_timing_metadata_opened": True,
             "camera_pixels_decoded": False,
