@@ -1,0 +1,179 @@
+# workflow-lifecycle: one-shot source-only development
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth table-query source feasibility v1
+
+on:
+  push:
+    branches: [science/tracking-cloth-table-query-source-v1]
+    paths:
+      - .github/requests/tracking-cloth-table-query-source-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-table-query-source-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: experiments/tracking_cloth_deformation_v1/requirements.txt
+      - name: Install isolated validation dependencies
+        run: >-
+          python -m pip install
+          -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          ruff
+      - name: Run deterministic synthetic contracts
+        run: >-
+          python -m experiments.tracking_cloth_deformation_v1.table_query_source_v1
+          --self-test
+      - name: Check source quality
+        run: |
+          python -m ruff check \
+            experiments/tracking_cloth_deformation_v1/table_query_source_v1.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_deformation_v1/table_query_source_v1.py
+
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Require one canonical source-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = \
+            refs/heads/science/tracking-cloth-table-query-source-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          request=.github/requests/tracking-cloth-table-query-source-v1.json
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"$request"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(
+              Path(
+                  ".github/requests/tracking-cloth-table-query-source-v1.json"
+              ).read_text()
+          )
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"],
+              text=True,
+          ).strip()
+          required = {
+              "schema": "tracking-cloth-table-query-source-v1-request",
+              "mode": "source_only",
+              "dataset_root": (
+                  "/home/github-runner/.cache/datasets/"
+                  "tracking-cloth-deformation-v1-zenodo-14644526"
+              ),
+              "runner_label": "gpuserver4090",
+              "workers": 1,
+              "full_lay_target_scoring_authorized": False,
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+          }
+          if request != required:
+              raise SystemExit(
+                  "request does not exactly match the frozen source-only contract"
+              )
+          PY
+
+  source:
+    needs: [validate, authorize]
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Prepare isolated source environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          test -r "$DATASET_ROOT"
+          venv="$RUNNER_TEMP/table-query-v1-venv-$GITHUB_RUN_ID"
+          output="$RUNNER_TEMP/table-query-v1-$GITHUB_RUN_ID"
+          test ! -e "$venv"
+          test ! -e "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          echo "TABLE_PY=$venv/bin/python" >> "$GITHUB_ENV"
+          echo "TABLE_VENV=$venv" >> "$GITHUB_ENV"
+          echo "TABLE_OUT=$output" >> "$GITHUB_ENV"
+      - name: Run target-closed source feasibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$TABLE_PY" -m \
+            experiments.tracking_cloth_deformation_v1.table_query_source_v1 \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$TABLE_OUT" \
+            --protocol \
+            experiments/tracking_cloth_deformation_v1/table_query_protocol_v1.json \
+            --workers 1
+      - name: Publish source-only summary
+        if: always() && env.TABLE_OUT != ''
+        shell: bash
+        run: |
+          if test -f "$TABLE_OUT/report.md"; then
+            cat "$TABLE_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f "$TABLE_OUT/failure.json"; then
+            echo '## Incomplete source run: no target authorization' \
+              >> "$GITHUB_STEP_SUMMARY"
+            cat "$TABLE_OUT/failure.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload aggregate source evidence only
+        if: always() && env.TABLE_OUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-table-query-source-v1-${{ github.run_id }}
+          path: |
+            ${{ env.TABLE_OUT }}/*.json
+            ${{ env.TABLE_OUT }}/*.csv
+            ${{ env.TABLE_OUT }}/report.md
+            ${{ env.TABLE_OUT }}/DATA_LICENSE.txt
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Remove isolated environment
+        if: always()
+        shell: bash
+        run: |
+          if test -n "${TABLE_VENV:-}"; then rm -rf "$TABLE_VENV"; fi
