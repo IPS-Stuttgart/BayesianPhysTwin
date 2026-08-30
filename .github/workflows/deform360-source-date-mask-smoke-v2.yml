@@ -1,0 +1,577 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source-date mask smoke v2
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-date-mask-smoke-v2.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-date-mask-smoke-v2
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-date-mask-smoke-v2.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  SOURCE_OBJECT: 038-mat-cloth
+  SOURCE_EPISODE: "3"
+  OFFICIAL_DEFORM360_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  OFFICIAL_UNAVAILABLE_SAM3_REVISION: 35e52973bd14d2b1b939ef8e8c44d4183b31a466
+  SAM3_SOURCE_DATE_REVISION: 46957e47805eaa273f4aa7bbbd25a88bca9108ce
+  SOURCE_DATE_CUTOFF_UTC: 2026-07-19T22:07:17Z
+  MASK_ENV_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/runtime/deform360-mask-d8522a44-sam3-46957e47-py312
+  MODEL_CACHE_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/runtime/model-cache
+  PIP_CACHE_DIR: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/runtime/pip-cache
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  CUDA_VISIBLE_DEVICES: "0"
+  TOKENIZERS_PARALLELISM: "false"
+
+jobs:
+  smoke:
+    name: Source-date SAM3 mask / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Check out pinned official Deform360 implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_DEFORM360_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one file-triggered source-only execution
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-date-mask-smoke-request-v2",
+              "raw_root": os.environ["RAW_ROOT"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runner_label": "gpuserver4090",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "official_unavailable_sam3_revision": os.environ["OFFICIAL_UNAVAILABLE_SAM3_REVISION"],
+              "sam3_source_date_revision": os.environ["SAM3_SOURCE_DATE_REVISION"],
+              "source_date_cutoff_utc": os.environ["SOURCE_DATE_CUTOFF_UTC"],
+              "revision_resolution_rule": "latest-public-commit-not-after-official-deform360-snapshot",
+              "camera_selection": "lexicographically-first-aligned-camera",
+              "prompt_source": "raw-metadata-sam_prompt",
+              "source_mask_smoke_authorized": True,
+              "persistent_runtime_and_model_cache_authorized": True,
+              "persistent_source_mask_write_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"request field {key!r} changed")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from the v2 mask contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind the exact source parent")
+          if not request["request_id"]:
+              raise SystemExit("request_id must be nonempty")
+          PY
+
+      - name: Verify source state and prepare isolated paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test -w "${STAGING_ROOT}"
+          test "$(git -C _deform360_official rev-parse HEAD)" = "${OFFICIAL_DEFORM360_REVISION}"
+          source_episode="${STAGING_ROOT}/cross-action-source-v1/${SOURCE_OBJECT}/episode_0003"
+          test -d "${source_episode}"
+          test -f "${source_episode}/robot/robot.npz"
+          for sensor in \
+            brics-odroid_tactilel_left \
+            brics-odroid_tactilel_right \
+            brics-odroid_tactiler_left \
+            brics-odroid_tactiler_right; do
+            test -f "${source_episode}/${sensor}/synced_tactile.npy"
+          done
+          evidence="${RUNNER_TEMP}/deform360-source-date-mask-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          smoke="${RUNNER_TEMP}/deform360-source-date-mask-tree-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          build="${MASK_ENV_ROOT}.build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${evidence}"
+          test ! -e "${smoke}"
+          test ! -e "${build}"
+          mkdir -p \
+            "${evidence}" \
+            "${smoke}" \
+            "$(dirname "${MASK_ENV_ROOT}")" \
+            "${MODEL_CACHE_ROOT}/huggingface" \
+            "${MODEL_CACHE_ROOT}/torch" \
+            "${PIP_CACHE_DIR}"
+          {
+            echo "SOURCE_EPISODE_ROOT=${source_episode}"
+            echo "EVIDENCE_ROOT=${evidence}"
+            echo "SMOKE_ROOT=${smoke}"
+            echo "MASK_ENV_BUILD=${build}"
+            echo "HF_HOME=${MODEL_CACHE_ROOT}/huggingface"
+            echo "HUGGINGFACE_HUB_CACHE=${MODEL_CACHE_ROOT}/huggingface/hub"
+            echo "TORCH_HOME=${MODEL_CACHE_ROOT}/torch"
+          } >> "${GITHUB_ENV}"
+
+      - name: Bootstrap source-date-resolved mask runtime
+        id: runtime
+        shell: bash
+        run: |
+          set -u
+          ready=false
+          reused=false
+          log="${EVIDENCE_ROOT}/runtime-install.log"
+          manifest="${MASK_ENV_ROOT}/runtime-manifest.json"
+          if [[ -x "${MASK_ENV_ROOT}/bin/python" && -f "${manifest}" ]]; then
+            if "${MASK_ENV_ROOT}/bin/python" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads((Path(os.environ["MASK_ENV_ROOT"]) / "runtime-manifest.json").read_text())
+          expected = {
+              "kind": "deform360-source-date-mask-runtime-v2",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "sam3_source_date_revision": os.environ["SAM3_SOURCE_DATE_REVISION"],
+              "python_series": "3.12",
+          }
+          for key, value in expected.items():
+              if manifest.get(key) != value:
+                  raise SystemExit(f"runtime manifest mismatch: {key}")
+          PY
+            then
+              ready=true
+              reused=true
+              echo "Reusing ${MASK_ENV_ROOT}" | tee "${log}"
+            fi
+          fi
+          if [[ "${ready}" != true ]]; then
+            rm -rf -- "${MASK_ENV_BUILD}"
+            python -m venv "${MASK_ENV_BUILD}"
+            set +e
+            "${MASK_ENV_BUILD}/bin/python" -m pip install --disable-pip-version-check \
+              "${GITHUB_WORKSPACE}/_deform360_official[annotations]" \
+              "torch==2.9.1" \
+              "torchvision==0.24.1" \
+              "git+https://github.com/facebookresearch/sam3.git@${SAM3_SOURCE_DATE_REVISION}" \
+              > "${log}" 2>&1
+            code=$?
+            if [[ "${code}" -eq 0 ]]; then
+              "${MASK_ENV_BUILD}/bin/python" -m pip check >> "${log}" 2>&1
+              code=$?
+            fi
+            if [[ "${code}" -eq 0 ]]; then
+              RUNTIME_ROOT="${MASK_ENV_BUILD}" \
+              "${MASK_ENV_BUILD}/bin/python" - <<'PY' >> "${log}" 2>&1
+          import importlib
+          import json
+          import os
+          import platform
+          import sys
+          from pathlib import Path
+
+          for name in ("cv2", "deform360", "h5py", "numpy", "sam3", "torch", "torchvision"):
+              importlib.import_module(name)
+          import torch
+          if not torch.cuda.is_available():
+              raise SystemExit("CUDA unavailable")
+          payload = {
+              "kind": "deform360-source-date-mask-runtime-v2",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "official_unavailable_sam3_revision": os.environ["OFFICIAL_UNAVAILABLE_SAM3_REVISION"],
+              "sam3_source_date_revision": os.environ["SAM3_SOURCE_DATE_REVISION"],
+              "source_date_cutoff_utc": os.environ["SOURCE_DATE_CUTOFF_UTC"],
+              "revision_resolution_rule": "latest-public-commit-not-after-official-deform360-snapshot",
+              "python_series": "3.12",
+              "python": sys.version,
+              "platform": platform.platform(),
+              "torch": torch.__version__,
+              "torch_cuda": torch.version.cuda,
+              "cuda_device_count": torch.cuda.device_count(),
+              "cuda_devices": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+          }
+          (Path(os.environ["RUNTIME_ROOT"]) / "runtime-manifest.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+              code=$?
+            fi
+            set -e
+            if [[ "${code}" -eq 0 ]]; then
+              if [[ -e "${MASK_ENV_ROOT}" ]]; then
+                rm -rf -- "${MASK_ENV_BUILD}"
+                echo "Runtime appeared concurrently; refusing replacement." >> "${log}"
+              else
+                mv "${MASK_ENV_BUILD}" "${MASK_ENV_ROOT}"
+              fi
+              ready=true
+            else
+              rm -rf -- "${MASK_ENV_BUILD}"
+            fi
+          fi
+          echo "ready=${ready}" >> "${GITHUB_OUTPUT}"
+          echo "reused=${reused}" >> "${GITHUB_OUTPUT}"
+          echo "RUNTIME_READY=${ready}" >> "${GITHUB_ENV}"
+          echo "RUNTIME_REUSED=${reused}" >> "${GITHUB_ENV}"
+          exit 0
+
+      - name: Run one-camera source mask smoke
+        if: steps.runtime.outputs.ready == 'true'
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          "${MASK_ENV_ROOT}/bin/python" - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          import traceback
+          from pathlib import Path
+
+          import h5py
+          import numpy as np
+          import torch
+
+          from deform360.processing.masks import process_masks_episode
+          from deform360.processing.sam3_predictor import Sam3MaskPredictor
+
+          source_episode = Path(os.environ["SOURCE_EPISODE_ROOT"])
+          metadata_path = (
+              Path(os.environ["RAW_ROOT"])
+              / "raw"
+              / os.environ["SOURCE_OBJECT"]
+              / "metadata.json"
+          )
+          smoke_root = Path(os.environ["SMOKE_ROOT"])
+          aligned_object = smoke_root / os.environ["SOURCE_OBJECT"]
+          smoke_episode = aligned_object / "episode_0003"
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for block in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(block)
+              return digest.hexdigest()
+
+          result = {
+              "schema": "bayesian-phystwin/deform360-source-date-mask-smoke-v2",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "required_runner_label": "gpuserver4090",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "official_unavailable_sam3_revision": os.environ["OFFICIAL_UNAVAILABLE_SAM3_REVISION"],
+              "sam3_source_date_revision": os.environ["SAM3_SOURCE_DATE_REVISION"],
+              "source_date_cutoff_utc": os.environ["SOURCE_DATE_CUTOFF_UTC"],
+              "revision_resolution_rule": "latest-public-commit-not-after-official-deform360-snapshot",
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runtime_reused": os.environ.get("RUNTIME_REUSED") == "true",
+              "runtime": {
+                  "torch": torch.__version__,
+                  "torch_cuda": torch.version.cuda,
+                  "cuda_available": torch.cuda.is_available(),
+                  "cuda_device_count": torch.cuda.device_count(),
+                  "cuda_device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+              },
+              "mask": {},
+              "errors": [],
+              "information_boundary": {
+                  "source_video_decoded": False,
+                  "persistent_runtime_or_model_cache_written": True,
+                  "persistent_source_mask_written": False,
+                  "requested_processed_tree_modified": False,
+                  "target_directory_contents_listed": False,
+                  "target_numeric_payload_opened": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+          }
+          predictor = None
+          try:
+              metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+              prompt = str(metadata.get("sam_prompt", "")).strip()
+              if not prompt:
+                  raise ValueError("source metadata has no sam_prompt")
+              cameras = sorted(
+                  path.name
+                  for path in source_episode.iterdir()
+                  if path.is_dir()
+                  and (path / "undistorted.mp4").is_file()
+                  and (path / "aligned_timestamps.txt").is_file()
+              )
+              if not cameras:
+                  raise FileNotFoundError("source episode has no aligned cameras")
+              camera = cameras[0]
+              smoke_camera = smoke_episode / camera
+              smoke_camera.mkdir(parents=True, exist_ok=False)
+              for name in ("undistorted.mp4", "aligned_timestamps.txt"):
+                  (smoke_camera / name).symlink_to(source_episode / camera / name)
+              result["mask"].update(
+                  {
+                      "camera_selection": "lexicographically-first-aligned-camera",
+                      "camera": camera,
+                      "aligned_camera_count": len(cameras),
+                      "prompt": prompt,
+                      "prompt_source": "raw-metadata-sam_prompt",
+                  }
+              )
+              predictor = Sam3MaskPredictor()
+              outputs = process_masks_episode(
+                  aligned_object,
+                  int(os.environ["SOURCE_EPISODE"]),
+                  prompt=prompt,
+                  predictor=predictor,
+                  cameras=[camera],
+                  first_frame_box_fn=None,
+                  overwrite=True,
+                  preview=False,
+              )
+              result["information_boundary"]["source_video_decoded"] = True
+              mask_path = outputs[camera]
+              meta_path = mask_path.with_name("mask_refined.meta.json")
+              meta = json.loads(meta_path.read_text(encoding="utf-8"))
+              with h5py.File(mask_path, "r") as store:
+                  dataset = store["data"]
+                  indices = np.linspace(0, dataset.shape[0] - 1, min(12, dataset.shape[0]), dtype=int)
+                  sampled_nonzero = [int(np.count_nonzero(dataset[int(i)])) for i in indices]
+                  shape = [int(value) for value in dataset.shape]
+                  dtype = str(dataset.dtype)
+              frames_with_mask = int(meta["outputs"]["frames_with_mask"])
+              grounded = bool(meta["parameters"]["grounded"])
+              if not grounded or frames_with_mask < 1:
+                  raise RuntimeError("SAM3 produced no grounded source mask")
+              result["mask"].update(
+                  {
+                      "status": "success",
+                      "model_id": meta.get("model", {}).get("id"),
+                      "grounded": grounded,
+                      "frames_with_mask": frames_with_mask,
+                      "shape": shape,
+                      "dtype": dtype,
+                      "sampled_frame_indices": indices.astype(int).tolist(),
+                      "sampled_nonzero_pixels": sampled_nonzero,
+                      "mask_size_bytes": mask_path.stat().st_size,
+                      "mask_sha256": sha256(mask_path),
+                      "metadata_sha256": sha256(meta_path),
+                  }
+              )
+              result["decision"] = "source-date-mask-runtime-qualified"
+              result["next_action"] = (
+                  "Run all-camera source masks with this exact runtime, then gripper masks and "
+                  "a bounded source reconstruction pilot."
+              )
+          except Exception as error:
+              result["mask"]["status"] = "failure"
+              result["errors"].append(
+                  {
+                      "type": type(error).__name__,
+                      "message": str(error),
+                      "traceback": traceback.format_exc(limit=18),
+                  }
+              )
+              result["decision"] = "source-date-mask-runtime-or-prompt-not-qualified"
+              result["next_action"] = (
+                  "Retain the exact source-only failure and repair only runtime, model access, "
+                  "or the source prompt contract."
+              )
+          finally:
+              if predictor is not None:
+                  try:
+                      predictor.close()
+                  except Exception:
+                      pass
+              if torch.cuda.is_available():
+                  torch.cuda.empty_cache()
+              shutil.rmtree(smoke_root, ignore_errors=True)
+
+          result["claim_boundary"] = (
+              "Source-only one-camera segmentation evidence on public Deform360 data. No persistent "
+              "source mask, multi-view geometry, Prob4D qualification, BayesianPhysTwin benefit, "
+              "cross-action transport, Causal4D decision value, target result, calibration, safety, "
+              "or state-of-the-art claim."
+          )
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False)
+          result["result_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+          (evidence / "result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          (evidence / "report.md").write_text(
+              "# Deform360 source-date mask smoke v2\n\n"
+              f"Decision: `{result['decision']}`\n\n"
+              f"Camera: `{result['mask'].get('camera', 'unresolved')}`\n\n"
+              f"Frames with mask: `{result['mask'].get('frames_with_mask', 0)}`\n\n"
+              f"Next action: {result['next_action']}\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+
+      - name: Record runtime bootstrap failure
+        if: steps.runtime.outputs.ready != 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          result = {
+              "schema": "bayesian-phystwin/deform360-source-date-mask-smoke-v2",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "official_unavailable_sam3_revision": os.environ["OFFICIAL_UNAVAILABLE_SAM3_REVISION"],
+              "sam3_source_date_revision": os.environ["SAM3_SOURCE_DATE_REVISION"],
+              "source_date_cutoff_utc": os.environ["SOURCE_DATE_CUTOFF_UTC"],
+              "revision_resolution_rule": "latest-public-commit-not-after-official-deform360-snapshot",
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runtime_reused": False,
+              "mask": {"status": "not-run"},
+              "decision": "source-date-mask-runtime-bootstrap-failed",
+              "next_action": "Retain the exact installation log and repair the source-date runtime.",
+              "information_boundary": {
+                  "source_video_decoded": False,
+                  "persistent_runtime_or_model_cache_written": True,
+                  "persistent_source_mask_written": False,
+                  "requested_processed_tree_modified": False,
+                  "target_directory_contents_listed": False,
+                  "target_numeric_payload_opened": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+              "claim_boundary": (
+                  "Source-only technical runtime evidence. No source video, mask, geometry, target, "
+                  "Prob4D, BayesianPhysTwin, Causal4D, calibration, safety, or SOTA claim."
+              ),
+          }
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False)
+          result["result_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+          (evidence / "result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          (evidence / "report.md").write_text(
+              "# Deform360 source-date mask smoke v2\n\n"
+              "Decision: `source-date-mask-runtime-bootstrap-failed`\n\n"
+              "No source video or target payload was decoded.\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Verify closed target and source-annotation boundaries
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          boundary = result["information_boundary"]
+          for key in (
+              "persistent_source_mask_written",
+              "requested_processed_tree_modified",
+              "target_directory_contents_listed",
+              "target_numeric_payload_opened",
+              "target_scoring_performed",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          print(json.dumps({"decision": result["decision"], "mask": result["mask"]}, indent=2))
+          PY
+
+      - name: Publish source-date mask summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload compact source-date mask evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-date-mask-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/runtime-install.log
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove nonpersistent scratch
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- \
+            "${MASK_ENV_BUILD:-}" \
+            "${SMOKE_ROOT:-}" \
+            "${EVIDENCE_ROOT:-}"
