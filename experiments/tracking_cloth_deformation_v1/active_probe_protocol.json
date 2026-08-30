@@ -1,0 +1,53 @@
+{
+  "study_id": "tracking-cloth-task-directed-active-probe-v1",
+  "dataset_record": "14644526",
+  "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+  "csv_count": 120,
+  "source_motion": "shake",
+  "target_motion": "twist",
+  "materials": ["cotton", "denim", "polyester", "wool"],
+  "sizes": ["A2", "A3"],
+  "speeds": ["fast", "slow"],
+  "grasps": ["hands", "hanger"],
+  "sample_stride": 4,
+  "prefix_seconds": 1.0,
+  "forecast_seconds": 5.0,
+  "initial_complete_frame_deadline_seconds": 0.25,
+  "stiffness_per_mass": [100.0, 400.0, 1600.0],
+  "damping_per_mass": [0.5, 2.0, 8.0],
+  "nominal_parameters": [400.0, 2.0],
+  "integration_substeps": 8,
+  "gravity_m_s2": 9.80665,
+  "measurement_floor_m": 0.001,
+  "fold_rule": "leave-one-material-out",
+  "probe_conditions": [
+    "fast_hands",
+    "fast_hanger",
+    "slow_hands",
+    "slow_hanger"
+  ],
+  "fixed_probe_order": [
+    "fast_hands",
+    "fast_hanger",
+    "slow_hands",
+    "slow_hanger"
+  ],
+  "probe_policies": [
+    "fixed_order",
+    "parameter_information",
+    "task_directed"
+  ],
+  "probe_budgets": [0, 1, 2, 4],
+  "primary_budget": 1,
+  "selection_model": "finite-model pseudo-outcome expected contraction",
+  "selection_templates": "other-material shake and twist-input model disagreement only",
+  "held_material_candidate_inputs_used_for_selection": false,
+  "held_material_twist_inputs_used_for_selection": false,
+  "bootstrap_repetitions": 10000,
+  "bootstrap_seed": 14644526,
+  "information_regime": "recorded-corner-boundary-conditioned target forecast; source-frozen probe selection",
+  "evidence_class": "cross-validated public-real-data active-probe pilot; prior exposure not assumed absent",
+  "license_policy": "CC-BY-NC-SA-4.0 pending author clarification of conflicting CC-BY-SA-4.0 metadata",
+  "raw_data_upload": false,
+  "paper_claim_authorized": false
+}
