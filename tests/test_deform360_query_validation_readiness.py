@@ -151,9 +151,7 @@ def test_builds_deterministic_metadata_design_without_target_access(
         pair = row["source_target_pair"]
         assert pair["source"]["action_family"] != pair["target"]["action_family"]
     assert (
-        first["historical_exclusion"][
-            "current_complete_cross_project_union_verified"
-        ]
+        first["historical_exclusion"]["current_complete_cross_project_union_verified"]
         is False
     )
     assert first["information_boundary"]["target_future_opened"] is False

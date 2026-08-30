@@ -461,10 +461,7 @@ def _report(result: Mapping[str, Any]) -> str:
         "",
         f"- Decision: `{decision['status']}`",
         f"- Recognized objects: `{dataset['recognized_object_count']}`",
-        (
-            "- Historical exclusion hashes: "
-            f"`{exclusion['object_hash_count']}`"
-        ),
+        (f"- Historical exclusion hashes: `{exclusion['object_hash_count']}`"),
         (
             "- Provisionally unexcluded by the historical union: "
             f"`{exclusion['provisionally_unexcluded_object_count']}`"
