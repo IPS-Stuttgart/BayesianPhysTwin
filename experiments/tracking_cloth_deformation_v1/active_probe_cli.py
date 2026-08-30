@@ -290,9 +290,7 @@ def fit_fold(
     fold = {
         "held_material": held_material,
         "source_materials": [
-            material
-            for material in protocol["materials"]
-            if material != held_material
+            material for material in protocol["materials"] if material != held_material
         ],
         "prior_weights": prior_weights.tolist(),
         "posterior_temperature_m2": temperature,
@@ -505,9 +503,7 @@ def specimen_table(
     for specimen in specimens:
         for arm in arms:
             subset = [
-                row
-                for row in rows
-                if row["specimen"] == specimen and row["arm"] == arm
+                row for row in rows if row["specimen"] == specimen and row["arm"] == arm
             ]
             if len(subset) != 4:
                 raise ValueError(
@@ -594,13 +590,7 @@ def aggregate(
     summaries = {
         arm: {
             metric: float(
-                np.mean(
-                    [
-                        float(row[metric])
-                        for row in table
-                        if row["arm"] == arm
-                    ]
-                )
+                np.mean([float(row[metric]) for row in table if row["arm"] == arm])
             )
             for metric in METRICS
         }
@@ -648,15 +638,11 @@ def aggregate(
     difference = task - parameter
     rng = np.random.default_rng(int(protocol["bootstrap_seed"]))
     contrasts = {
-        "parameter_information_k1": contrast(
-            task, parameter, specimens, protocol, rng
-        ),
+        "parameter_information_k1": contrast(task, parameter, specimens, protocol, rng),
         "fixed_order_k1": contrast(task, fixed, specimens, protocol, rng),
         "no_probe_k0": contrast(task, prior, specimens, protocol, rng),
         "persistence": contrast(task, persistence, specimens, protocol, rng),
-        "random_expected_k1": contrast(
-            task, random_expected, specimens, protocol, rng
-        ),
+        "random_expected_k1": contrast(task, random_expected, specimens, protocol, rng),
         "single_probe_oracle_k1": contrast(
             task, oracle_single, specimens, protocol, rng
         ),
@@ -704,9 +690,7 @@ def aggregate(
                 if np.any(disagreement)
                 else False
             ),
-            "task_directed_beats_persistence": bool(
-                np.mean(task - persistence) < 0.0
-            ),
+            "task_directed_beats_persistence": bool(np.mean(task - persistence) < 0.0),
         },
         "inferential_unit": (
             "8 material-size specimens; 4-material sensitivity also reported"
@@ -834,9 +818,7 @@ def score_run(root: Path, output: Path) -> None:
         f"disagree on {selection['task_vs_parameter_disagreement_count']}/8 "
         "material-size specimens. "
     )
-    disagreement_effect = selection[
-        "task_minus_parameter_rmse_on_disagreements_mm"
-    ]
+    disagreement_effect = selection["task_minus_parameter_rmse_on_disagreements_mm"]
     if disagreement_effect is None:
         report += "No disagreement-conditional performance claim is available.\n\n"
     else:
