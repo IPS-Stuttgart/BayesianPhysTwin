@@ -56,7 +56,10 @@ def test_persistence_belief_preserves_boundary_and_positive_variance() -> None:
     np.testing.assert_array_equal(
         mean[:, candidate.inputs.corners], candidate.inputs.boundary
     )
-    np.testing.assert_array_equal(mean[3:, 1], candidate.inputs.prefix[-1, 1])
+    expected_persistence = np.repeat(
+        candidate.inputs.prefix[-1, 1][None, :], mean.shape[0] - 3, axis=0
+    )
+    np.testing.assert_array_equal(mean[3:, 1], expected_persistence)
     assert mean.shape == variance.shape == candidate.nominal.shape
     assert np.all(variance > 0.0)
 
