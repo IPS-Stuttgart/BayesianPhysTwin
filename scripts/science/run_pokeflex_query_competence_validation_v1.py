@@ -7,7 +7,10 @@ import argparse
 import json
 from pathlib import Path
 
+from bayesian_phystwin._portable_contracts import write_atomic_json
 from bayesian_phystwin_experiments.pokeflex_query_competence_v1 import (
+    bound_execution_path_v1,
+    consume_stage_attempt_v1,
     file_sha256,
     load_protocol_v1,
     run_validation_stage_v1,
@@ -23,16 +26,22 @@ def main() -> None:
     parser.add_argument("--expected-source-file-sha256", required=True)
     args = parser.parse_args()
 
+    protocol = load_protocol_v1(args.protocol)
+    expected_source = bound_execution_path_v1(protocol, stage="source", kind="result")
+    if args.source_result.resolve() != expected_source:
+        raise ValueError("PokeFlex source result path changed")
     if file_sha256(args.source_result) != args.expected_source_file_sha256:
         raise ValueError("PokeFlex source result file identity changed")
-    protocol = load_protocol_v1(args.protocol)
+    consume_stage_attempt_v1(
+        protocol,
+        protocol_file_sha256=file_sha256(args.protocol),
+        stage="validation",
+        output=args.output,
+        source_file_sha256=args.expected_source_file_sha256,
+    )
     source_result = json.loads(args.source_result.read_text(encoding="utf-8"))
     result = run_validation_stage_v1(protocol, source_result, args.artifact_root)
-    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
-    if args.output.exists():
-        raise ValueError("PokeFlex validation output already exists; retry prohibited")
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(rendered, encoding="utf-8")
+    write_atomic_json(result, args.output, overwrite=False)
     print(
         json.dumps(
             {

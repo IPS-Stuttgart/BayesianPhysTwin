@@ -37,6 +37,7 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     parser.add_argument("--locked-at-utc", required=True)
     parser.add_argument("--implementation-commit", required=True)
+    parser.add_argument("--execution-root", type=Path, required=True)
     args = parser.parse_args()
 
     if len(args.implementation_commit) != 40 or any(
@@ -45,6 +46,9 @@ def main() -> None:
         raise ValueError("implementation commit must be a lowercase full SHA-1")
     repository_root = Path(__file__).resolve().parents[2]
     implementation_module = repository_root / IMPLEMENTATION_MODULE_PATH
+    if not args.execution_root.is_absolute():
+        raise ValueError("execution root must be absolute")
+    commit_prefix = args.implementation_commit[:8]
 
     paths = sorted(args.artifact_root.glob("*.json"))
     if len(paths) != 78:
@@ -70,6 +74,13 @@ def main() -> None:
             "git_commit": args.implementation_commit,
             "module_path": IMPLEMENTATION_MODULE_PATH,
             "module_sha256": file_sha256(implementation_module),
+        },
+        "execution": {
+            "root": str(args.execution_root),
+            "source_attempt_filename": f"source-attempt-{commit_prefix}.json",
+            "source_result_filename": f"source-result-{commit_prefix}.json",
+            "validation_attempt_filename": (f"validation-attempt-{commit_prefix}.json"),
+            "validation_result_filename": f"validation-result-{commit_prefix}.json",
         },
         "artifact_inventory": inventory,
         "split": {name: list(values) for name, values in split.items()},

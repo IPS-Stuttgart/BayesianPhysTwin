@@ -24,7 +24,7 @@ from typing import Any, Final, TypeAlias, cast
 import numpy as np
 import numpy.typing as npt
 
-from bayesian_phystwin._portable_contracts import content_id
+from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
 
 SCHEMA: Final = "bayesian-phystwin.pokeflex-query-competence"
 SCHEMA_VERSION: Final = 1
@@ -177,6 +177,7 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
         "parent_public78_protocol_sha256",
         "source_artifact_role",
         "implementation",
+        "execution",
         "artifact_inventory",
         "split",
         "method",
@@ -220,6 +221,27 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
         raise ValueError("PokeFlex implementation module path changed")
     if file_sha256(Path(__file__)) != implementation["module_sha256"]:
         raise ValueError("PokeFlex analysis implementation bytes changed")
+    execution = protocol["execution"]
+    if set(execution) != {
+        "root",
+        "source_attempt_filename",
+        "source_result_filename",
+        "validation_attempt_filename",
+        "validation_result_filename",
+    }:
+        raise ValueError("PokeFlex execution binding fields changed")
+    execution_root = Path(str(execution["root"]))
+    if not execution_root.is_absolute():
+        raise ValueError("PokeFlex execution root must be absolute")
+    commit_prefix = git_commit[:8]
+    expected_execution_names = {
+        "source_attempt_filename": f"source-attempt-{commit_prefix}.json",
+        "source_result_filename": f"source-result-{commit_prefix}.json",
+        "validation_attempt_filename": f"validation-attempt-{commit_prefix}.json",
+        "validation_result_filename": f"validation-result-{commit_prefix}.json",
+    }
+    if any(execution[key] != value for key, value in expected_execution_names.items()):
+        raise ValueError("PokeFlex execution filenames changed")
     without_identity = dict(protocol)
     protocol_sha256 = without_identity.pop("protocol_sha256")
     if protocol_sha256 != _canonical_json_sha256(without_identity):
@@ -272,7 +294,80 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
         raise ValueError("PokeFlex threshold grid changed")
     if float(method["harm_margin_relative"]) != HARM_MARGIN_RELATIVE:
         raise ValueError("PokeFlex harm margin changed")
+    if method["candidate"] != (
+        "frozen object-scale causal action-local correction from the parent "
+        "public78 protocol"
+    ):
+        raise ValueError("PokeFlex candidate changed")
+    if method["fallback"] != "byte-identical released checkpoint prediction":
+        raise ValueError("PokeFlex fallback changed")
+    if method["risk_fit"] != "deterministic object-balanced L2 logistic regression":
+        raise ValueError("PokeFlex risk fit changed")
+    if method["uncertainty"] != (
+        f"{BOOTSTRAP_REPLICATES} replicate physical-object cluster bootstrap"
+    ):
+        raise ValueError("PokeFlex uncertainty procedure changed")
+    if protocol["gates"] != {
+        "target_harm_probability": TARGET_HARM_PROBABILITY,
+        "minimum_object_balanced_coverage": MINIMUM_OBJECT_BALANCED_COVERAGE,
+        "minimum_accepted_objects": MINIMUM_ACCEPTED_OBJECTS,
+        "harm_upper_bound": "object-cluster percentile 95% upper <= 0.10",
+        "policy_regret": "object-cluster percentile 95% upper < 0",
+        "source_requirement": (
+            "primary arm must pass on the 18 threshold-selection takes before "
+            "any of the 42 validation artifacts are opened"
+        ),
+    }:
+        raise ValueError("PokeFlex gate definition changed")
     return protocol
+
+
+def bound_execution_path_v1(
+    protocol: Mapping[str, Any], *, stage: str, kind: str
+) -> Path:
+    if stage not in {"source", "validation"} or kind not in {"attempt", "result"}:
+        raise ValueError("unknown PokeFlex execution path")
+    execution = protocol["execution"]
+    return Path(str(execution["root"])) / str(execution[f"{stage}_{kind}_filename"])
+
+
+def consume_stage_attempt_v1(
+    protocol: Mapping[str, Any],
+    *,
+    protocol_file_sha256: str,
+    stage: str,
+    output: Path,
+    source_file_sha256: str | None = None,
+) -> Path:
+    expected_output = bound_execution_path_v1(protocol, stage=stage, kind="result")
+    attempt_path = bound_execution_path_v1(protocol, stage=stage, kind="attempt")
+    if output.resolve() != expected_output:
+        raise ValueError(f"PokeFlex {stage} output path changed")
+    if output.exists() or attempt_path.exists():
+        raise ValueError(f"PokeFlex {stage} attempt already consumed; retry prohibited")
+    for name, value in {
+        "protocol file": protocol_file_sha256,
+        "source file": source_file_sha256,
+    }.items():
+        if value is not None and (
+            len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError(f"PokeFlex {name} identity changed")
+    if (stage == "source") != (source_file_sha256 is None):
+        raise ValueError("PokeFlex stage source binding changed")
+    attempt: dict[str, object] = {
+        "schema": "bayesian-phystwin.pokeflex-query-competence-attempt",
+        "schema_version": 1,
+        "stage": stage,
+        "protocol_file_sha256": protocol_file_sha256,
+        "protocol_sha256": protocol["protocol_sha256"],
+        "output": str(expected_output),
+    }
+    if source_file_sha256 is not None:
+        attempt["source_file_sha256"] = source_file_sha256
+    write_atomic_json(attempt, attempt_path, overwrite=False)
+    return attempt_path
 
 
 @dataclass(frozen=True, slots=True)
@@ -330,6 +425,12 @@ def _cosine_features(value: object) -> tuple[float, float]:
     return max(-1.0, min(1.0, _finite_float(value, name="cosine"))), 0.0
 
 
+def _strict_bool(value: object, *, name: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"non-boolean PokeFlex {name}")
+    return value
+
+
 def _feature_vector(update: Mapping[str, object], candidate_scale: float) -> FloatArray:
     correction_cosine, correction_missing = _cosine_features(
         update["correction_prior_motion_cosine"]
@@ -385,8 +486,8 @@ def _feature_vector(update: Mapping[str, object], candidate_scale: float) -> Flo
         previous_cosine,
         correction_missing,
         previous_missing,
-        float(bool(update["accepted"])),
-        float(bool(update["action_supported"])),
+        float(_strict_bool(update["accepted"], name="accepted")),
+        float(_strict_bool(update["action_supported"], name="action support")),
     )
     return cast(FloatArray, np.asarray(values, dtype=np.float64))
 
@@ -411,9 +512,7 @@ def load_take_artifact_v1(
     artifact = json.loads(path.read_text(encoding="utf-8"))
     if artifact.get("future_observation_used") is not False:
         raise ValueError("PokeFlex artifact used future observations")
-    if artifact.get("retrospective_prediction_role") != (
-        "previously exposed public action; fixed all18 scale; never prospective evidence"
-    ):
+    if artifact.get("retrospective_prediction_role") != SOURCE_ARTIFACT_ROLE:
         raise ValueError("PokeFlex retrospective role changed")
     if artifact.get("public_transfer_protocol_sha256") != (
         PARENT_PUBLIC78_PROTOCOL_SHA256
@@ -435,11 +534,17 @@ def load_take_artifact_v1(
         raise ValueError("PokeFlex update frame identity changed")
     candidate_key = _candidate_key(candidate_scale)
     frames: list[PokeFlexFrameV1] = []
+    seen_targets: set[int] = set()
     for target in targets:
         target_frame = int(target["target_frame"])
+        if target_frame in seen_targets:
+            raise ValueError("PokeFlex target frame identity changed")
+        seen_targets.add(target_frame)
         if target_frame not in update_by_target:
             raise ValueError("PokeFlex target lacks pre-outcome update")
         update = update_by_target[target_frame]
+        if int(update["source_frame"]) != target_frame - 1:
+            raise ValueError("PokeFlex update is not a one-frame causal prefix")
         fallback_error = _finite_float(
             target["released_checkpoint_CD_UL1_mm"], name="fallback error"
         )
@@ -450,8 +555,8 @@ def load_take_artifact_v1(
                 object_name=_object_name(take_id),
                 target_frame=target_frame,
                 feature_vector=_feature_vector(update, candidate_scale),
-                candidate_available=bool(update["accepted"])
-                and bool(update["action_supported"]),
+                candidate_available=_strict_bool(update["accepted"], name="accepted")
+                and _strict_bool(update["action_supported"], name="action support"),
                 fallback_error_mm=fallback_error,
                 candidate_error_mm=candidate_error,
             )

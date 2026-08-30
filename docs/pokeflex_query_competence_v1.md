@@ -60,8 +60,9 @@ validation require:
 - exact fallback identity for every rejection.
 
 The source command opens only the 36 risk/threshold artifacts. Validation remains
-closed unless the primary disagreement arm passes. The validation command is
-one-shot and refuses an existing output file.
+closed unless the primary disagreement arm passes. Both commands consume a
+write-once attempt ledger before reading their stage artifacts, use protocol-bound
+absolute output paths, and refuse retries.
 
 ## Claim boundary
 

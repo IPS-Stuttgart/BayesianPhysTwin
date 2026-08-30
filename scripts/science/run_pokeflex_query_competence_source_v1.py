@@ -7,7 +7,9 @@ import argparse
 import json
 from pathlib import Path
 
+from bayesian_phystwin._portable_contracts import write_atomic_json
 from bayesian_phystwin_experiments.pokeflex_query_competence_v1 import (
+    consume_stage_attempt_v1,
     file_sha256,
     load_protocol_v1,
     run_source_stage_v1,
@@ -22,12 +24,14 @@ def main() -> None:
     args = parser.parse_args()
 
     protocol = load_protocol_v1(args.protocol)
+    consume_stage_attempt_v1(
+        protocol,
+        protocol_file_sha256=file_sha256(args.protocol),
+        stage="source",
+        output=args.output,
+    )
     result = run_source_stage_v1(protocol, args.artifact_root)
-    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
-    if args.output.exists() and args.output.read_text(encoding="utf-8") != rendered:
-        raise ValueError("existing PokeFlex source result differs")
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(rendered, encoding="utf-8")
+    write_atomic_json(result, args.output, overwrite=False)
     print(
         json.dumps(
             {

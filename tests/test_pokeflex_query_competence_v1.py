@@ -12,6 +12,7 @@ from bayesian_phystwin_experiments.pokeflex_query_competence_v1 import (
     PRIMARY_FEATURES,
     FrozenPhysicalRiskModelV1,
     PokeFlexFrameV1,
+    consume_stage_attempt_v1,
     deterministic_split_v1,
     evaluate_policy_v1,
     file_sha256,
@@ -164,6 +165,60 @@ def test_artifact_loader_rejects_future_observation_use(tmp_path: Path) -> None:
             take_id="FoamDice_T2",
             expected_sha256=str(row["sha256"]),
             expected_bytes=int(row["bytes"]),
+        )
+
+
+def test_artifact_loader_enforces_direct_causal_prefix_and_booleans(
+    tmp_path: Path,
+) -> None:
+    payload = _artifact("FoamDice_T2")
+    payload["updates"][0]["source_frame"] = payload["updates"][0]["target_frame"]
+    row = _write_artifact(tmp_path, "FoamDice_T2", payload)
+    with pytest.raises(ValueError, match="one-frame causal prefix"):
+        load_take_artifact_v1(
+            tmp_path / row["filename"],
+            take_id="FoamDice_T2",
+            expected_sha256=str(row["sha256"]),
+            expected_bytes=int(row["bytes"]),
+        )
+
+    payload = _artifact("FoamDice_T2")
+    payload["updates"][0]["accepted"] = "true"
+    row = _write_artifact(tmp_path, "FoamDice_T2", payload)
+    with pytest.raises(ValueError, match="non-boolean PokeFlex accepted"):
+        load_take_artifact_v1(
+            tmp_path / row["filename"],
+            take_id="FoamDice_T2",
+            expected_sha256=str(row["sha256"]),
+            expected_bytes=int(row["bytes"]),
+        )
+
+
+def test_attempt_ledger_is_consumed_before_stage_execution(tmp_path: Path) -> None:
+    protocol = {
+        "protocol_sha256": "1" * 64,
+        "execution": {
+            "root": str(tmp_path),
+            "source_attempt_filename": "source-attempt.json",
+            "source_result_filename": "source-result.json",
+            "validation_attempt_filename": "validation-attempt.json",
+            "validation_result_filename": "validation-result.json",
+        },
+    }
+    output = tmp_path / "source-result.json"
+    attempt = consume_stage_attempt_v1(
+        protocol,
+        protocol_file_sha256="2" * 64,
+        stage="source",
+        output=output,
+    )
+    assert json.loads(attempt.read_text(encoding="utf-8"))["stage"] == "source"
+    with pytest.raises(ValueError, match="attempt already consumed"):
+        consume_stage_attempt_v1(
+            protocol,
+            protocol_file_sha256="2" * 64,
+            stage="source",
+            output=output,
         )
 
 
