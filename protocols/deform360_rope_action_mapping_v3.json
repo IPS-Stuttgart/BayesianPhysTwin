@@ -1,0 +1,46 @@
+{
+  "schema": "bayesian-phystwin/deform360-rope-action-mapping",
+  "schema_version": 3,
+  "protocol_id": "deform360-rope-action-mapping-v3",
+  "status": "frozen-before-action-metadata-resolution-after-name-only-roster",
+  "dataset": "Deform360",
+  "runner_id": "gpuserver6000",
+  "root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+  "object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "081-stripe-rope"
+  ],
+  "maximum_metadata_json_bytes": 1048576,
+  "source_roster": {
+    "run_id": 33335964618,
+    "artifact_id": 9739028037,
+    "artifact_name": "d360-rope-v2-33335964618-1",
+    "artifact_digest": "sha256:b01dcab5d87063a7bf6f43e20b4c2c4f6da8849a64f5442c479545e9f6c23598",
+    "result_id": "140a15ca2dece8feaa9f8b01fef1b2b57ba4837e20a53547b6e28a62430a045a"
+  },
+  "mapping": {
+    "chronological_monotone_alignment": true,
+    "maximum_missing_sequence_records": 2,
+    "require_semantic_action_values_for_cross_action": true,
+    "robust_cross_action_definition": "source and target semantic action signatures differ under every admissible monotone capture-to-sequence alignment",
+    "source_must_precede_target": true
+  },
+  "information_boundary": {
+    "directory_and_filename_inventory_only": true,
+    "small_metadata_json_allowed": true,
+    "media_payload_decoded": false,
+    "numeric_arrays_loaded": false,
+    "large_payloads_hashed": false,
+    "target_future_opened": false,
+    "score_bearing_outcomes_used": false
+  },
+  "next_stage_contract": {
+    "preprocess_only_after_pair_manifest_is_content_addressed": true,
+    "target_future_requires_prediction_seal": true,
+    "physical_parameter_inference_authorized": false,
+    "target_scoring_authorized": false
+  },
+  "claim_boundary": "This target-blind retrospective development protocol may bind released ordered sequence metadata to the previously frozen timestamp-clustered capture roster and may certify action separation only when it holds under every admissible monotone missing-sequence alignment. It does not establish model accuracy, calibration, physical-parameter transport, unseen-object generalization, official benchmark parity, fresh confirmation, or paper-level evidence."
+}
