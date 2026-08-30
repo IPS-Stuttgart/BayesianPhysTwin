@@ -21,6 +21,10 @@ CONFIRMATION_RUNNER = (
 SOURCE_PLAN = (
     ROOT / "protocols/execution_requests/controlled_query_competence_source_v1.json"
 )
+CONFIRMATION_PLAN = (
+    ROOT
+    / "protocols/execution_requests/controlled_query_competence_confirmation_v1.json"
+)
 SOURCE_RECEIPT = (
     ROOT / "evidence/controlled_query_competence_source_receipt_v1.json"
 )
@@ -113,6 +117,52 @@ def test_registered_source_receipt_binds_private_evidence() -> None:
     assert private["evidence_record_id"] == (
         "879acdf40ea00ef6677bffaf33814b7837474262a9a6ca3fa0eaa817a599a7e3"
     )
+
+
+def test_registered_confirmation_plan_is_exactly_once_and_source_bound() -> None:
+    confirmation_module = _module(
+        CONFIRMATION_RUNNER, "registered_controlled_confirmation_runner"
+    )
+    digest = hashlib.sha256(CONFIRMATION_PLAN.read_bytes()).hexdigest()
+    plan = confirmation_module._load_plan(CONFIRMATION_PLAN, digest)
+    receipt = json.loads(SOURCE_RECEIPT.read_text(encoding="utf-8"))
+    source_plan = json.loads(SOURCE_PLAN.read_text(encoding="utf-8"))
+    implementation = plan["implementation"]
+
+    assert digest == "f1f147ebb983a0f5d029073af813f70a51daf664982a8c24dbb764073e565e7b"
+    assert plan["plan_id"] == (
+        "e5cca87174bc465467b810fdeacf0b00a800a244ba6965fe68c2ef5a17d18809"
+    )
+    assert implementation["revision"] == ("f9f0d72d050efff44559e4e000d71a73170b95d8")
+    assert implementation["runner_relative_path"] == (
+        "scripts/science/run_controlled_query_competence_confirmation_v1.py"
+    )
+    assert implementation["runner_sha256"] == hashlib.sha256(
+        CONFIRMATION_RUNNER.read_bytes()
+    ).hexdigest()
+    module_path = ROOT / implementation["module_relative_path"]
+    assert implementation["module_sha256"] == hashlib.sha256(
+        module_path.read_bytes()
+    ).hexdigest()
+    assert plan["protocol"] == experiment_protocol_v1()
+    assert plan["source_gate_passed"] is True
+    assert plan["source_execution_result_id"] == receipt["execution_result_id"]
+    assert plan["source_result_id"] == receipt["source_result_id"]
+    assert plan["source_execution_result_sha256"] == (
+        receipt["source_execution_result_file_sha256"]
+    )
+    assert plan["controlled_source_receipt_file_sha256"] == hashlib.sha256(
+        SOURCE_RECEIPT.read_bytes()
+    ).hexdigest()
+    assert plan["attempt_limit"] == 1
+    assert plan["confirmation_outcomes_authorized"] is True
+    assert plan["physical_confirmation_authorized"] is False
+    assert plan["protected_artifacts_authorized"] is False
+    assert plan["replacement_or_retry_authorized"] is False
+    assert plan["attempt_ledger_path"] != source_plan["attempt_ledger_path"]
+    assert plan["output_root"] != source_plan["output_root"]
+    assert "confirmation-attempt" in plan["attempt_ledger_path"]
+    assert "confirmation-" in plan["output_root"]
 
 
 def test_runner_plan_identity_and_attempt_ledger_are_fail_closed(
