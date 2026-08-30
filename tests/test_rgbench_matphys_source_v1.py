@@ -213,6 +213,14 @@ def test_camera_transform_uses_inverse_world_to_camera_convention() -> None:
     np.testing.assert_allclose(actual, ((0.0, 0.0, 0.0),))
 
 
+def test_camera_transform_rejects_ill_conditioned_extrinsic() -> None:
+    transform = np.eye(4)
+    transform[2, 2] = 1e-12
+
+    with pytest.raises(ValueError, match="ill-conditioned"):
+        camera_points_to_world_v1(np.asarray(((1.0, 2.0, 3.0),)), transform)
+
+
 def test_farthest_sampling_is_permutation_invariant_and_graph_is_connected() -> None:
     grid = np.asarray(
         [

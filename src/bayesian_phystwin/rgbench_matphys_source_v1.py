@@ -230,7 +230,20 @@ def camera_points_to_world_v1(
     _require(len(points) > 0 and np.all(np.isfinite(points)), "points must be finite")
     _require(transform.shape == (4, 4), "world-to-camera matrix must be 4 by 4")
     homogeneous = np.concatenate((points, np.ones((len(points), 1))), axis=1)
-    world = homogeneous @ np.linalg.inv(transform).T
+    condition_number = float(np.linalg.cond(transform))
+    _require(
+        np.isfinite(condition_number) and condition_number <= 1e8,
+        "world-to-camera matrix is ill-conditioned",
+    )
+    world = np.linalg.solve(transform, homogeneous.T).T
+    residual = float(np.linalg.norm(world @ transform.T - homogeneous, ord=np.inf))
+    residual_tolerance = (
+        64.0
+        * np.finfo(np.float64).eps
+        * condition_number
+        * max(1.0, float(np.linalg.norm(homogeneous, ord=np.inf)))
+    )
+    _require(residual <= residual_tolerance, "camera transform solve is inaccurate")
     _require(
         np.allclose(world[:, 3], 1.0, rtol=0.0, atol=1e-8),
         "camera transform produced invalid homogeneous coordinates",
@@ -409,7 +422,7 @@ def deterministic_farthest_points_v1(
     _require(
         type(count) is int and 2 <= count <= len(canonical), "sample count is invalid"
     )
-    selected = np.empty(count, dtype=np.int64)
+    selected: npt.NDArray[np.int64] = np.empty(count, dtype=np.int64)
     selected[0] = 0
     minimum_squared = np.sum(np.square(canonical - canonical[0]), axis=1)
     for index in range(1, count):
@@ -433,7 +446,7 @@ def spring_graph_component_count_v1(graph: PhysTwinSpringGraph) -> int:
     _require(object_count > 0, "spring graph object count is invalid")
     edges = np.asarray(graph.springs[: graph.num_object_springs], dtype=np.int64)
     _require(len(edges) > 0, "spring graph has no object edges")
-    parents = np.arange(object_count, dtype=np.int64)
+    parents: npt.NDArray[np.int64] = np.arange(object_count, dtype=np.int64)
 
     def find(value: int) -> int:
         while parents[value] != value:
@@ -490,7 +503,9 @@ def build_rgbench_matphys_graph_v1(
         set((controller_ids - object_count).tolist()) == {0, 1},
         "RGBench controller graph does not anchor both arms",
     )
-    masses = np.full(len(graph.vertices), total_mass_kg / node_count, dtype=np.float32)
+    masses: npt.NDArray[np.float32] = np.full(
+        len(graph.vertices), total_mass_kg / node_count, dtype=np.float32
+    )
     masses[node_count:] = 1.0
     return replace(graph, masses=masses)
 
