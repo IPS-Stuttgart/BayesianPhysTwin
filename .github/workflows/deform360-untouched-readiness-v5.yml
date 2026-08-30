@@ -1,0 +1,106 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 untouched-object readiness v5
+
+on:
+  push:
+    branches: [science/deform360-stronger-confirmation-v5]
+    paths:
+      - ".github/requests/deform360-untouched-readiness-v5.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-untouched-readiness-v5-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL_PATH: protocols/deform360_untouched_readiness_v5.json
+  AUDITOR_PATH: scripts/science/audit_deform360_untouched_confirmation_v5.py
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  audit:
+    name: Untouched carrier readiness / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact readiness source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Audit metadata and file identities only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          output="${RUNNER_TEMP}/deform360-untouched-readiness-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output}"
+          mkdir -p -- "${output}"
+          echo "OUTPUT_ROOT=${output}" >> "${GITHUB_ENV}"
+          python3 -m py_compile "${AUDITOR_PATH}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum "${PROTOCOL_PATH}" "${AUDITOR_PATH}"
+            python3 --version
+            uname -a
+          } | tee "${output}/environment.txt"
+          python3 "${AUDITOR_PATH}" \
+            --data-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output-json "${output}/readiness.json" \
+            --output-report "${output}/report.md" \
+            | tee "${output}/console.log"
+          cat "${output}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Enforce unopened numeric boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["OUTPUT_ROOT"]) / "readiness.json").read_text()
+          )
+          boundary = result["information_boundary"]
+          for key in (
+              "robot_numeric_payloads_opened",
+              "tactile_numeric_payloads_opened",
+              "target_outcomes_scored",
+              "camera_pixels_opened",
+              "geometry_or_point_cloud_opened",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"untouched boundary changed: {key}")
+          if result["confirmation_authorized"] is not False:
+              raise SystemExit("readiness audit self-authorized confirmation")
+          if result["paper_claim_authorized"] is not False:
+              raise SystemExit("readiness audit self-authorized a paper claim")
+          PY
+          cp "${PROTOCOL_PATH}" "${OUTPUT_ROOT}/readiness-protocol.json"
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Upload compact readiness evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-untouched-readiness-v5-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
