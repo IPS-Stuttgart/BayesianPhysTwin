@@ -1,0 +1,129 @@
+# workflow-lifecycle: one-shot target-outcome-blind inventory
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth table duration inventory v2
+
+on:
+  push:
+    branches: [science/tracking-cloth-table-query-source-v1]
+    paths:
+      - .github/requests/tracking-cloth-table-duration-inventory-v2.json
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Read filename and timestamp columns only
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/table-duration-v2-$GITHUB_RUN_ID"
+          mkdir "$output"
+          echo "DURATION_OUT=$output" >> "$GITHUB_ENV"
+          DATASET_ROOT="$DATASET_ROOT" OUTPUT="$output" python - <<'PY'
+          import csv
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          pattern = re.compile(
+              r"^(cotton|denim|polyester|wool)_A2_"
+              r"(half_lay|full_lay)_(low_friction|high_friction)\.csv$",
+              re.IGNORECASE,
+          )
+          root = Path(os.environ["DATASET_ROOT"]).resolve(strict=True)
+          records = []
+          for path in sorted(root.rglob("*.csv")):
+              match = pattern.fullmatch(path.name)
+              if not match:
+                  continue
+              first = None
+              last = None
+              count = 0
+              with path.open(encoding="utf-8-sig", newline="") as stream:
+                  for row in csv.reader(stream):
+                      if len(row) < 2:
+                          continue
+                      try:
+                          timestamp = float(row[1])
+                      except ValueError:
+                          continue
+                      if first is None:
+                          first = timestamp
+                      last = timestamp
+                      count += 1
+              if first is None or last is None or count < 2:
+                  raise SystemExit(f"No timestamp series in {path.name}")
+              records.append(
+                  {
+                      "recording": path.name,
+                      "material": match.group(1).lower(),
+                      "lay": match.group(2).lower(),
+                      "friction": match.group(3).lower(),
+                      "numeric_rows": count,
+                      "first_time_seconds": first,
+                      "last_time_seconds": last,
+                      "duration_seconds": last - first,
+                  }
+              )
+          if len(records) != 16:
+              raise SystemExit(f"Expected 16 table recordings, found {len(records)}")
+          minimum = min(record["duration_seconds"] for record in records)
+          result = {
+              "schema": "tracking-cloth-table-duration-inventory-v2",
+              "coordinate_columns_read": False,
+              "table_record_count": len(records),
+              "minimum_duration_seconds": minimum,
+              "minimum_recordings": [
+                  record["recording"]
+                  for record in records
+                  if record["duration_seconds"] == minimum
+              ],
+              "records": records,
+              "paper_claim_authorized": False,
+          }
+          output = Path(os.environ["OUTPUT"])
+          (output / "duration_inventory.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          with (output / "duration_inventory.csv").open("w", newline="") as stream:
+              writer = csv.DictWriter(stream, fieldnames=list(records[0]))
+              writer.writeheader()
+              writer.writerows(records)
+          summary = [
+              "# Tracking Cloth table timestamp support",
+              "",
+              "Only filenames and Frame/Time columns were read; no marker coordinate was parsed.",
+              "",
+              f"Minimum duration: `{minimum:.6f} s`.",
+              "",
+              "| Recording | Duration [s] | Rows |",
+              "| --- | ---: | ---: |",
+          ]
+          summary.extend(
+              f"| {record['recording']} | {record['duration_seconds']:.6f} | "
+              f"{record['numeric_rows']} |"
+              for record in records
+          )
+          (output / "report.md").write_text("\n".join(summary) + "\n")
+          PY
+      - name: Publish inventory summary
+        run: cat "$DURATION_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-table-duration-inventory-v2-${{ github.run_id }}
+          path: ${{ env.DURATION_OUT }}
+          retention-days: 30
+          if-no-files-found: error
