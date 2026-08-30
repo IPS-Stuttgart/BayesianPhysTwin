@@ -1,6 +1,6 @@
 # workflow-lifecycle: one-shot
 # workflow-owner: IPS-Stuttgart maintainers
-name: Deform360 rope pilot gpuserver6000 v2
+name: Deform360 rope action mapping v3
 
 on:
   push:
@@ -8,80 +8,71 @@ on:
       - science/deform360-rope-pilot-v1
     paths:
       - .github/workflows/deform360-rope-pilot-gpuserver6000-v1b.yml
-      - protocols/deform360_same_object_rope_pilot_v2.json
-      - scripts/science/prepare_deform360_same_object_rope_pilot_v2.py
+      - protocols/deform360_rope_action_mapping_v3.json
+      - scripts/science/resolve_deform360_rope_action_mapping_v3.py
       - triggers/deform360_rope_pilot_gpuserver6000_v1b.txt
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
-  group: deform360-rope-pilot-gpuserver6000-v2-${{ github.ref }}
+  group: deform360-rope-action-mapping-v3-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  PROTOCOL: protocols/deform360_same_object_rope_pilot_v2.json
-  SELECTOR: scripts/science/prepare_deform360_same_object_rope_pilot_v2.py
+  PROTOCOL: protocols/deform360_rope_action_mapping_v3.json
+  RESOLVER: scripts/science/resolve_deform360_rope_action_mapping_v3.py
+  SOURCE_ARTIFACT_ID: "9739028037"
+  SOURCE_RESULT_ID: 140a15ca2dece8feaa9f8b01fef1b2b57ba4837e20a53547b6e28a62430a045a
   PYTHONDONTWRITEBYTECODE: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
 
 jobs:
   contracts:
-    name: Timestamp-clustered rope-pilot contracts v2
+    name: Target-blind action-mapping contracts v3
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Check out exact candidate revision
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
           clean: true
 
-      - name: Validate amended selector and protocol
+      - name: Validate resolver and frozen protocol
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
-          python3 -m py_compile "${SELECTOR}"
-          python3 "${SELECTOR}" --self-test
+          python3 -m py_compile "${RESOLVER}"
+          python3 "${RESOLVER}" --self-test
           python3 - <<'PY'
           import json
           import os
           from pathlib import Path
 
-          value = json.loads(
-              Path(os.environ["PROTOCOL"]).read_text(encoding="utf-8")
-          )
-          assert value["schema_version"] == 2
-          assert value["runner_id"] == "gpuserver6000"
-          assert value["object_ids"] == [
-              "001-rope",
-              "002-rope-silk",
-              "003-cable",
-              "081-stripe-rope",
-          ]
-          eligibility = value["eligibility"]
-          assert eligibility["maximum_interstream_capture_gap"] == 250000
-          assert eligibility["minimum_camera_pairs_per_episode"] == 12
-          assert eligibility["minimum_tactile_pairs_per_episode"] == 2
-          amendment = value["amendment"]
-          assert amendment["based_on_run_id"] == 33325025964
-          assert amendment["target_outcomes_used"] is False
+          value = json.loads(Path(os.environ["PROTOCOL"]).read_text())
+          assert value["schema_version"] == 3
+          assert value["source_roster"]["artifact_id"] == 9739028037
+          assert value["source_roster"]["result_id"] == os.environ["SOURCE_RESULT_ID"]
+          assert value["mapping"]["chronological_monotone_alignment"] is True
+          assert value["mapping"]["maximum_missing_sequence_records"] == 2
           assert value["information_boundary"]["target_future_opened"] is False
           PY
           test -z "$(git status --porcelain --untracked-files=all)"
 
-  prepare:
-    name: Timestamp-clustered source-target roster / gpuserver6000
+  resolve:
+    name: Robust action mapping / gpuserver6000
     needs: contracts
     runs-on: [self-hosted, gpuserver6000]
     timeout-minutes: 30
     steps:
-      - name: Admit actual assigned runner before checkout
+      - name: Admit assigned runner
         shell: bash
         run: |
           set -euo pipefail
@@ -90,7 +81,7 @@ jobs:
           test "${RUNNER_ARCH}" = "X64"
 
       - name: Check out exact candidate revision
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
@@ -119,42 +110,78 @@ jobs:
           test -n "${base_python}"
           echo "BASE_PYTHON=${base_python}" >> "${GITHUB_ENV}"
 
-      - name: Build timestamp-clustered target-blind roster
-        id: roster
+      - name: Recover exact successful timestamp-clustered roster
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          output_root="${RUNNER_TEMP}/deform360-action-map-v3-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}/source-artifact" "${output_root}/resolved"
+          export OUTPUT_ROOT="${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+
+          curl --fail --silent --show-error --location \
+            --retry 3 \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}/zip" \
+            --output "${output_root}/source-artifact.zip"
+
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          import zipfile
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          with zipfile.ZipFile(root / "source-artifact.zip") as archive:
+              archive.extractall(root / "source-artifact")
+          candidates = list((root / "source-artifact").rglob("result.json"))
+          if len(candidates) != 1:
+              raise SystemExit(f"expected one result.json, found {len(candidates)}")
+          payload = json.loads(candidates[0].read_text(encoding="utf-8"))
+          expected = os.environ["SOURCE_RESULT_ID"]
+          if payload.get("result_id") != expected:
+              raise SystemExit("source roster result ID mismatch")
+          target = root / "source_roster_result.json"
+          target.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          sha256sum "${output_root}/source-artifact.zip" \
+            "${output_root}/source_roster_result.json" \
+            > "${output_root}/source-inputs.sha256"
+
+      - name: Resolve robust capture-to-action mappings
+        id: mapping
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
-          "${BASE_PYTHON}" -m py_compile "${SELECTOR}"
-          "${BASE_PYTHON}" "${SELECTOR}" --self-test
-
-          output_root="${RUNNER_TEMP}/deform360-rope-pilot-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf -- "${output_root}"
-          mkdir -p -- "${output_root}"
-          export OUTPUT_ROOT="${output_root}"
-          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
-
+          "${BASE_PYTHON}" -m py_compile "${RESOLVER}"
+          "${BASE_PYTHON}" "${RESOLVER}" --self-test
           {
             echo "runner_name=${RUNNER_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "runner_arch=${RUNNER_ARCH}"
             echo "repository=${GITHUB_REPOSITORY}"
             echo "revision=${GITHUB_SHA}"
-            echo "source_inventory_run_id=33325025964"
+            echo "source_roster_run_id=33335964618"
+            echo "source_roster_artifact_id=${SOURCE_ARTIFACT_ID}"
             "${BASE_PYTHON}" --version
             uname -a
-            if command -v nvidia-smi >/dev/null 2>&1; then
-              nvidia-smi \
-                --query-gpu=name,uuid,driver_version,memory.total \
-                --format=csv,noheader
-            fi
           } | tee "${OUTPUT_ROOT}/environment.txt"
 
-          "${BASE_PYTHON}" "${SELECTOR}" \
+          "${BASE_PYTHON}" "${RESOLVER}" \
             --protocol "${PROTOCOL}" \
-            --revision "${GITHUB_SHA}" \
-            --output "${OUTPUT_ROOT}" \
-            | tee "${OUTPUT_ROOT}/preparation.log"
+            --roster-result "${OUTPUT_ROOT}/source_roster_result.json" \
+            --repository-revision "${GITHUB_SHA}" \
+            --output "${OUTPUT_ROOT}/resolved" \
+            | tee "${OUTPUT_ROOT}/mapping.log"
 
           "${BASE_PYTHON}" - <<'PY'
           import json
@@ -163,70 +190,65 @@ jobs:
 
           root = Path(os.environ["OUTPUT_ROOT"])
           result = json.loads(
-              (root / "result.json").read_text(encoding="utf-8")
+              (root / "resolved" / "action_mapping.json").read_text()
           )
           summary = result["summary"]
-          with Path(os.environ["GITHUB_OUTPUT"]).open(
-              "a",
-              encoding="utf-8",
-          ) as stream:
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as stream:
               for key, value in (
                   ("decision", summary["decision"]),
-                  ("accessible", summary["accessible_object_count"]),
-                  ("episodes", summary["episode_count"]),
-                  ("visual", summary["visual_pairable_object_count"]),
+                  ("selected", summary["selected_pair_count"]),
+                  ("exact", summary["exact_ordinal_mapping_object_count"]),
                   (
-                      "visuotactile",
-                      summary["visuotactile_pairable_object_count"],
+                      "ambiguous",
+                      summary["ambiguous_monotone_mapping_object_count"],
                   ),
                   (
-                      "different_action",
-                      summary["different_action_selected_pair_count"],
+                      "semantic",
+                      summary["all_sequences_semantically_labelled_object_count"],
                   ),
                   (
-                      "action_sequences",
-                      summary["action_sequence_resolved_object_count"],
+                      "robust",
+                      summary["robust_cross_action_selected_object_count"],
+                  ),
+                  (
+                      "bimanual",
+                      summary["bimanual_resolved_selected_object_count"],
                   ),
                   ("result_id", result["result_id"]),
               ):
                   stream.write(f"{key}={value}\n")
           PY
 
-      - name: Publish result summary
+      - name: Publish action-mapping summary
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          echo "### Deform360 timestamp-clustered rope/cable roster v2" \
+          echo "### Deform360 target-blind action mapping v3" \
             >> "${GITHUB_STEP_SUMMARY}"
           echo >> "${GITHUB_STEP_SUMMARY}"
-          if [[ -f "${OUTPUT_ROOT:-}/report.md" ]]; then
-            cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -f "${OUTPUT_ROOT:-}/resolved/report.md" ]]; then
+            cat "${OUTPUT_ROOT}/resolved/report.md" \
+              >> "${GITHUB_STEP_SUMMARY}"
           else
-            echo "No target-blind result was produced." \
+            echo "No action-mapping result was produced." \
               >> "${GITHUB_STEP_SUMMARY}"
           fi
 
-      - name: Upload target-blind roster
+      - name: Upload target-blind action-mapping evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: d360-rope-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          name: d360-action-map-v3-${{ steps.mapping.outputs.decision }}-r${{ steps.mapping.outputs.robust }}-e${{ steps.mapping.outputs.exact }}-b${{ steps.mapping.outputs.bimanual }}
           path: ${{ env.OUTPUT_ROOT }}
           if-no-files-found: error
           retention-days: 30
           compression-level: 6
 
-      - name: Enforce four-object visuotactile readiness
+      - name: Enforce completed four-object mapping attempt
         shell: bash
         env:
-          ACCESSIBLE: ${{ steps.roster.outputs.accessible }}
-          EPISODES: ${{ steps.roster.outputs.episodes }}
-          VISUAL: ${{ steps.roster.outputs.visual }}
-          VISUOTACTILE: ${{ steps.roster.outputs.visuotactile }}
+          SELECTED: ${{ steps.mapping.outputs.selected }}
         run: |
           set -euo pipefail
-          test "${ACCESSIBLE}" -ge 4
-          test "${EPISODES}" -ge 8
-          test "${VISUAL}" -ge 4
-          test "${VISUOTACTILE}" -ge 4
+          test "${SELECTED}" -eq 4
