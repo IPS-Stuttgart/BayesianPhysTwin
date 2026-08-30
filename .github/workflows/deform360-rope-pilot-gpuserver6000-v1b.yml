@@ -1,0 +1,193 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 rope pilot gpuserver6000 v1b
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - .github/workflows/deform360-rope-pilot-gpuserver6000-v1b.yml
+      - protocols/deform360_same_object_rope_pilot_v1.json
+      - scripts/science/prepare_deform360_same_object_rope_pilot_v1.py
+      - triggers/deform360_rope_pilot_gpuserver6000_v1b.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-rope-pilot-gpuserver6000-v1b-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Target-blind rope-pilot contracts v1b
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Validate selector and protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python3 -m py_compile \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py
+          python3 scripts/science/prepare_deform360_same_object_rope_pilot_v1.py \
+            --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(
+              Path("protocols/deform360_same_object_rope_pilot_v1.json")
+              .read_text(encoding="utf-8")
+          )
+          assert value["runner_id"] == "gpuserver6000"
+          assert value["object_ids"] == [
+              "001-rope", "002-rope-silk", "003-cable", "081-stripe-rope"
+          ]
+          assert value["information_boundary"]["target_future_opened"] is False
+          PY
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  prepare:
+    name: Source-target roster / gpuserver6000 tag only
+    needs: contracts
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 30
+    steps:
+      - name: Admit actual assigned runner before checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve dependency-free Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          test -n "${base_python}"
+          echo "BASE_PYTHON=${base_python}" >> "${GITHUB_ENV}"
+
+      - name: Build target-blind source-target roster
+        id: roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          "${BASE_PYTHON}" -m py_compile \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py
+          "${BASE_PYTHON}" \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py \
+            --self-test
+          output_root="${RUNNER_TEMP}/deform360-rope-pilot-v1b-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            "${BASE_PYTHON}" --version
+            uname -a
+            if command -v nvidia-smi >/dev/null 2>&1; then
+              nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+                --format=csv,noheader
+            fi
+          } | tee "${output_root}/environment.txt"
+          "${BASE_PYTHON}" \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py \
+            --protocol protocols/deform360_same_object_rope_pilot_v1.json \
+            --revision "${GITHUB_SHA}" \
+            --output "${output_root}" \
+            | tee "${output_root}/preparation.log"
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["OUTPUT_ROOT"])
+          result = json.loads((root / "result.json").read_text(encoding="utf-8"))
+          summary = result["summary"]
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as stream:
+              for key, value in (
+                  ("decision", summary["decision"]),
+                  ("accessible", summary["accessible_object_count"]),
+                  ("visual", summary["visual_pairable_object_count"]),
+                  ("visuotactile", summary["visuotactile_pairable_object_count"]),
+                  ("different_action", summary["different_action_selected_pair_count"]),
+                  ("result_id", result["result_id"]),
+              ):
+                  stream.write(f"{key}={value}\n")
+          PY
+
+      - name: Publish result summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "### Deform360 rope/cable source-target roster" >> "${GITHUB_STEP_SUMMARY}"
+          echo >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -f "${OUTPUT_ROOT:-}/report.md" ]]; then
+            cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "No target-blind result was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload target-blind roster
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: d360-rope-v1b-${{ steps.roster.outputs.decision }}-a${{ steps.roster.outputs.accessible }}-v${{ steps.roster.outputs.visual }}-t${{ steps.roster.outputs.visuotactile }}-x${{ steps.roster.outputs.different_action }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+
+      - name: Enforce four-object visual readiness
+        shell: bash
+        env:
+          ACCESSIBLE: ${{ steps.roster.outputs.accessible }}
+          VISUAL: ${{ steps.roster.outputs.visual }}
+        run: |
+          set -euo pipefail
+          test "${ACCESSIBLE}" -ge 4
+          test "${VISUAL}" -ge 4
