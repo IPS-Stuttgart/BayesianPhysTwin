@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install ruff==0.16.5
+          python -m pip install pytest==9.1.1 ruff==0.16.5
           python -m ruff format \
             scripts/science/audit_deform360_query_validation_readiness.py \
             tests/test_deform360_query_validation_readiness.py
