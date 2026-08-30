@@ -1,0 +1,22 @@
+{
+  "schema": "deform360-source-pilot-staging-request-v3",
+  "request_id": "deform360-source-pilot-staging-v3-20260831",
+  "expected_source_revision": "96c0c11a0d25ce83ce526c18494f9eceedc5cc4d",
+  "raw_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository",
+  "requested_processed_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository",
+  "staging_root": "/mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1",
+  "staging_reason": "requested processed root is read-only to github-runner and passwordless sudo is unavailable",
+  "source_object": "038-mat-cloth",
+  "source_episode": 3,
+  "runner_label": "gpuserver4090",
+  "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+  "stages": [
+    "undistort",
+    "tactile",
+    "robot"
+  ],
+  "source_only": true,
+  "target_future_authorized": false,
+  "persistent_staging_write_authorized": true,
+  "requested_processed_tree_modification_authorized": false
+}
