@@ -1,0 +1,194 @@
+{
+  "artifact_id": "017fe497894142cb5b4cffac933d8e1ff2ee6bd9e18463f43e1868b0ad731a4b",
+  "certificates": [
+    {
+      "artifact_id": "bc94830fe36448ffeb5c5d1f69ecab28afe54e7fbf1ab147e91b05a928674f4e",
+      "baseline_policy_id": "1dc200c7aa9bba176fdc2cd672ff58b7e3d4c3ebadd6d81dd1dc085d5168ec5d",
+      "candidate_policy_id": "e3c0272c06b447543cbba6fa298262a04777f76f5abbd053f4336e3f3535b2a3",
+      "certified": true,
+      "downside_reduction_fraction": 0.9771841397191956,
+      "failed_checks": [],
+      "gate": {
+        "expected_group_count": 288,
+        "gate_id": "3de9930605152cb657325c2b6d814b58e22ff5299caf584a363d190f2496ed03",
+        "maximum_harm_risk_upper": 0.05,
+        "maximum_replacements": 0,
+        "maximum_retries": 0,
+        "maximum_technical_failures": 0,
+        "metadata": {
+          "registered_protocol": "wrapping-certified-guard-v9"
+        },
+        "minimum_downside_reduction_fraction": 0.75,
+        "minimum_mean_gain": 0.003,
+        "minimum_oracle_headroom_fraction": 0.05,
+        "minimum_retained_candidate_gain_fraction": 0.15,
+        "require_positive_paired_lower_bound": true,
+        "schema": "bayesian_phystwin.query_competence_gate",
+        "schema_version": 1
+      },
+      "group_count": 288,
+      "harm_confidence_level": 0.95,
+      "harm_risk_upper": 0.016365075773527655,
+      "harmful_group_count": 1,
+      "independent_implementation_replay": true,
+      "mean_gain": 0.004721433249978326,
+      "metadata": {
+        "claim_boundary": "public-simulator-query-only-not-robot-safety",
+        "independent_human_review": false,
+        "result_doc_sha256": "8df24ceee53ffd6560860e8fb3264cbf0041d1eabd8f860fffb6ae0c10673a28",
+        "source_revision": "1b66630b939852547798a1d421a728b429cd7d88",
+        "source_schema": "dlolab-wrapping-risk-certified-guard-source-v9-summary-v1",
+        "verifier_source_sha256": "1bee4b823a6636079140e44030e64ec751c6f19274711310b5cff8539435d76f"
+      },
+      "oracle_headroom_fraction": 0.08704281718509738,
+      "outcomes_used_for_policy_or_gate_selection": false,
+      "paired_gain_ci95": [
+        0.0038941984708258824,
+        0.005597420470321563
+      ],
+      "protocol_frozen_before_outcomes": true,
+      "protocol_id": "2f96bb2e52501a5e137e44faec4ed699b81dd828b00a98e3654f53e588e798ce",
+      "query_scope": {
+        "action_bank_id": "277af9771ee91fa28781845d2d34f4bf3daa1a44c3401e95ed448fbac66d1330",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "wrapping"
+        },
+        "metric_id": "6b66c3ba25e2b6e82867a420931ac5b926dd826984b412613f818c9030ee8cba",
+        "observation_policy_id": "091aede181429fb2059381d4e44fbf61c27b33b694eb7c560e0944c6e1d46fac",
+        "query_id": "629ffcd929207dfa6427c6dfe5aa2c601e9745fe53fdfe84696b85e6c6ce0a8a",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "fresh-simulator-world-mean-over-4096-sensor-draws-v1",
+        "task_id": "85e8620bef3f6be54450cf2a02b5ea94adac5a4eb256e9d161dd04b830e6a432",
+        "world_distribution_id": "4ed42d639ef784bd658f367820e6d470661ee135aa954629aff4e4529329c529"
+      },
+      "replacements": 0,
+      "retained_candidate_gain_fraction": 0.19430485277742182,
+      "retries": 0,
+      "schema": "bayesian_phystwin.query_competence_certificate",
+      "schema_version": 1,
+      "source_gate_passed": true,
+      "source_result_id": "50801d4da518238ffc2e2d1995d7467f97286cb4535eff60633a5f3d0112b32d",
+      "source_summary_artifact_id": "d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9",
+      "source_summary_sha256": "45877e22f1af55ba4f5c7e1a66ab213e148733c9a3da9d82a1dafe545b77a4d1",
+      "technical_failures": 0,
+      "verification_artifact_id": "ffca78f511c882446b95d283458aebb469942bc7d98dd66fb7b5844bcdecef5c",
+      "verification_file_sha256": "973826ab96141c3efd7178daddfbeed75e5b3a0870d56570441a55e1c540c6d5",
+      "verified_tree_id": "ffca78f511c882446b95d283458aebb469942bc7d98dd66fb7b5844bcdecef5c"
+    },
+    {
+      "artifact_id": "504b9fb24062e829ca7ac510f3a10882887c26d737e3bf904ad30f4341374c77",
+      "baseline_policy_id": "c065e1488778803147cd05541bc7224c7515c589b7d9d68f75e7b0024ed11cb4",
+      "candidate_policy_id": "122df5d64bc5dbdff8831616a45c12d74e98b7bb76699762b4c67b736ec1ce7d",
+      "certified": false,
+      "downside_reduction_fraction": 0.9265427750335868,
+      "failed_checks": [
+        "harm-risk-upper-bound-exceeded",
+        "mean-gain-below-threshold",
+        "oracle-headroom-below-threshold",
+        "paired-gain-lower-bound-not-positive",
+        "registered-source-gate-rejected",
+        "retained-value-below-threshold"
+      ],
+      "gate": {
+        "expected_group_count": 288,
+        "gate_id": "cc57f949ff390f210a45e72c30d392ca3f74d7dfe8c495455ec5738033e798c7",
+        "maximum_harm_risk_upper": 0.05,
+        "maximum_replacements": 0,
+        "maximum_retries": 0,
+        "maximum_technical_failures": 0,
+        "metadata": {
+          "registered_protocol": "slingshot-certified-guard-v2"
+        },
+        "minimum_downside_reduction_fraction": 0.75,
+        "minimum_mean_gain": 0.001,
+        "minimum_oracle_headroom_fraction": 0.05,
+        "minimum_retained_candidate_gain_fraction": 0.1,
+        "require_positive_paired_lower_bound": true,
+        "schema": "bayesian_phystwin.query_competence_gate",
+        "schema_version": 1
+      },
+      "group_count": 288,
+      "harm_confidence_level": 0.95,
+      "harm_risk_upper": 0.07495200896418834,
+      "harmful_group_count": 14,
+      "independent_implementation_replay": true,
+      "mean_gain": 0.00022036606686823588,
+      "metadata": {
+        "claim_boundary": "public-simulator-query-only-not-robot-safety",
+        "independent_human_review": false,
+        "result_doc_sha256": "472b01c13699dd90ff6644ecdf7b4342d19b98e10bae4c31ec5ad92647fc7e6a",
+        "source_revision": "7da610e3c321f605be29682d1360357496693c7e",
+        "source_schema": "dlolab-slingshot-certified-guard-source-v2-summary",
+        "verifier_source_sha256": "7f436ceec3101f94702d8de00e9c0749214d6a406198d1df2e5b633567de82dc"
+      },
+      "oracle_headroom_fraction": 0.008592475029876073,
+      "outcomes_used_for_policy_or_gate_selection": false,
+      "paired_gain_ci95": [
+        -0.00011082010377221094,
+        0.000529773406601129
+      ],
+      "protocol_frozen_before_outcomes": true,
+      "protocol_id": "7008acbe9ab7fd805832df4e97794f5c6924d00153bb25b6a5b6a2aa9abd54ef",
+      "query_scope": {
+        "action_bank_id": "9fc6627a87bfb62d639607e38ff170274e2d2b738c7d0123c5e308b5e1714d45",
+        "metadata": {
+          "public_simulator": "DLO-Lab",
+          "task": "slingshot"
+        },
+        "metric_id": "e500c08d5fc9a49dcb0b9258689a022c6050a54da3f2db7f6251432dd900f4c0",
+        "observation_policy_id": "cf2a5f7ec947bb885a1c0987dbdf41c52d6ce10afe5b68c46a9550104ba22c9f",
+        "query_id": "ed9324074758582152cf987428789b2a95e82431f3a66eb56caf839788c1003d",
+        "schema": "bayesian_phystwin.simulator_query_scope",
+        "schema_version": 1,
+        "simulator_id": "64e38e1f7fd43645fb0dea9ced2df04092722370a8837fc1d3ca4b2d89c0b4e5",
+        "statistical_unit": "fresh-simulator-world-mean-over-4096-sensor-draws-v1",
+        "task_id": "b39ae872ad9b23bed693cb48cb2065575987695c4ec8a1172bda42ce34ab54ac",
+        "world_distribution_id": "0d1d17a3c7fc8f0d77a76504a1d55494550f3bd2065418bacc6d44376f93473b"
+      },
+      "replacements": 0,
+      "retained_candidate_gain_fraction": 0.013783169271828296,
+      "retries": 0,
+      "schema": "bayesian_phystwin.query_competence_certificate",
+      "schema_version": 1,
+      "source_gate_passed": false,
+      "source_result_id": "35388657b9d3e162a5dcadeb003f6943123b3f19a9d8ac04b2eccd1cdec32ba1",
+      "source_summary_artifact_id": "f7947a626d6bf941704b532aebf6cde5447a7cde25e00a587ffe20a566f21086",
+      "source_summary_sha256": "85ea08c0a0f9bac17f39e40fa60f2734dd7a5fdcf7d63b30f23285ad353eaad3",
+      "technical_failures": 0,
+      "verification_artifact_id": "c5206613f48bfb68c682f3c63289046252432d5cb4a144ef4e48e2345bd4ce94",
+      "verification_file_sha256": "f1f4639c196dac8618084cac059f2901a8c1db6fcf9bb725b7459dd67ea5011a",
+      "verified_tree_id": "9c66f1a3f241465966d1ba37e0de8fe91622a9d7f87d910436d18c021803424f"
+    }
+  ],
+  "certified_query_ids": [
+    "629ffcd929207dfa6427c6dfe5aa2c601e9745fe53fdfe84696b85e6c6ce0a8a"
+  ],
+  "failed_query_ids": [
+    "ed9324074758582152cf987428789b2a95e82431f3a66eb56caf839788c1003d"
+  ],
+  "metadata": {
+    "backend_wide_competence_claim": false,
+    "evidence_family": "prospective-public-simulator-cross-task-v1",
+    "failed_or_unknown_queries": "exact-complete-belief-fallback",
+    "independent_human_review": false,
+    "policy_granularity": "exact-query-and-policy",
+    "simulator_family": "DLO-Lab",
+    "source_artifact_sha256s": {
+      "docs/dlolab_slingshot_certified_guard_source_v2.md": "4b86c545171a28fdb4904f21d87eae90cc1830e5029213fccca88d07c86432a3",
+      "docs/dlolab_slingshot_certified_guard_source_v2_result.md": "472b01c13699dd90ff6644ecdf7b4342d19b98e10bae4c31ec5ad92647fc7e6a",
+      "docs/dlolab_wrapping_certified_guard_source_v9.md": "cbf609800f01500a3c565b973577ab23c169b8a6384dfa6eb42de290f7fddd72",
+      "docs/dlolab_wrapping_risk_certified_guard_source_v9_result.md": "8df24ceee53ffd6560860e8fb3264cbf0041d1eabd8f860fffb6ae0c10673a28",
+      "results/sota/dlolab_wrapping_risk_certified_guard_source_v9/summary.json": "45877e22f1af55ba4f5c7e1a66ab213e148733c9a3da9d82a1dafe545b77a4d1",
+      "results/source/dlolab_slingshot_certified_guard_source_v2/summary.json": "85ea08c0a0f9bac17f39e40fa60f2734dd7a5fdcf7d63b30f23285ad353eaad3",
+      "results/source/dlolab_slingshot_certified_guard_source_v2/verification.json": "f1f4639c196dac8618084cac059f2901a8c1db6fcf9bb725b7459dd67ea5011a",
+      "scripts/verify_dlolab_slingshot_certified_guard_source_v2.py": "7f436ceec3101f94702d8de00e9c0749214d6a406198d1df2e5b633567de82dc",
+      "scripts/verify_dlolab_wrapping_certified_guard_source_v9.py": "1bee4b823a6636079140e44030e64ec751c6f19274711310b5cff8539435d76f",
+      "src/bayesian_phystwin/query_competence_certificate_v1.py": "3ddbe58808558681037bbb10ab2d3fe005413ae3949834d4d8fcb3f3d4a441de"
+    }
+  },
+  "schema": "bayesian_phystwin.query_competence_registry",
+  "schema_version": 1
+}
