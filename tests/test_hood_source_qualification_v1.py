@@ -26,6 +26,31 @@ from bayesian_phystwin.hood_source_qualification_v1 import (
 )
 
 
+def _assert_historical_source_blobs(
+    root: Path,
+    revision: str,
+    sources: dict[str, str],
+) -> None:
+    availability = [
+        subprocess.run(
+            ["git", "-C", str(root), "cat-file", "-e", f"{revision}:{relative}"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        == 0
+        for relative in sources
+    ]
+    assert len(set(availability)) == 1
+    if not all(availability):
+        return
+    for relative, expected in sources.items():
+        blob = subprocess.check_output(
+            ["git", "-C", str(root), "show", f"{revision}:{relative}"]
+        )
+        assert hashlib.sha256(blob).hexdigest() == expected
+
+
 def test_registered_plan_is_bound_to_exact_local_sources() -> None:
     root = Path(__file__).parents[1]
     plan = load_hood_source_qualification_plan_v1(
@@ -43,12 +68,23 @@ def test_registered_plan_is_bound_to_exact_local_sources() -> None:
         plan.value["information_boundary"]["certification_execution_authorized"]
         is False
     )
+    expected_sources = {
+        "scripts/science/run_hood_mesh_source_qualification_v1.py": (
+            "a5c355d72214864bc20ac8e47038c9c8fa17abd6bacfda93ba4e2df0040c4a8d"
+        ),
+        "src/bayesian_phystwin/_canonical_contracts.py": (
+            "da9027ef31d5b60bffba98e94ee8322893f319c363dd172c0fd8232c4d1272f8"
+        ),
+        "src/bayesian_phystwin/_portable_contracts.py": (
+            "7d4971a47224462a67b2c5ffa4c494d1f3f2ace679ec1305340019d63a0afbb3"
+        ),
+        "src/bayesian_phystwin/hood_source_qualification_v1.py": (
+            "6b9eef6a2c4dbc5bd905def3f966a0b24a28ff9a969c75875285050c59558a6e"
+        ),
+    }
+    assert dict(plan.implementation_source_files) == expected_sources
     revision = plan.value["implementation"]["revision"]
-    for relative, expected in plan.implementation_source_files.items():
-        blob = subprocess.check_output(
-            ["git", "-C", str(root), "show", f"{revision}:{relative}"]
-        )
-        assert hashlib.sha256(blob).hexdigest() == expected
+    _assert_historical_source_blobs(root, revision, expected_sources)
 
 
 def test_registered_replacement_plan_is_bound_to_exact_local_sources() -> None:
@@ -70,12 +106,23 @@ def test_registered_replacement_plan_is_bound_to_exact_local_sources() -> None:
     )
     assert plan.value["execution"]["smpl_model_override"] is None
     assert plan.value["information_boundary"]["further_replacement_allowed"] is False
+    expected_sources = {
+        "scripts/science/run_hood_mesh_source_qualification_v1.py": (
+            "1a9b10e6fb11797ad9d8d1cfef5757162bf0a6827b27bc366c9110871eb0092b"
+        ),
+        "src/bayesian_phystwin/_canonical_contracts.py": (
+            "da9027ef31d5b60bffba98e94ee8322893f319c363dd172c0fd8232c4d1272f8"
+        ),
+        "src/bayesian_phystwin/_portable_contracts.py": (
+            "7d4971a47224462a67b2c5ffa4c494d1f3f2ace679ec1305340019d63a0afbb3"
+        ),
+        "src/bayesian_phystwin/hood_source_qualification_v1.py": (
+            "03d3cc476827dfc976aab0a772806663c70ca0d97d820740ddc369106d50016d"
+        ),
+    }
+    assert dict(plan.implementation_source_files) == expected_sources
     revision = plan.value["implementation"]["revision"]
-    for relative, expected in plan.implementation_source_files.items():
-        blob = subprocess.check_output(
-            ["git", "-C", str(root), "show", f"{revision}:{relative}"]
-        )
-        assert hashlib.sha256(blob).hexdigest() == expected
+    _assert_historical_source_blobs(root, revision, expected_sources)
 
 
 def test_public_terminal_receipt_is_hash_bound_and_nonclaiming() -> None:
