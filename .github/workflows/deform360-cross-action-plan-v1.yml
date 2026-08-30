@@ -1,0 +1,216 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 matched-nuisance cross-action plan v1
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - .github/workflows/deform360-cross-action-plan-v1.yml
+      - protocols/deform360_same_object_rope_pilot_v2.json
+      - scripts/science/prepare_deform360_same_object_rope_pilot_v2.py
+      - scripts/science/bind_deform360_cross_action_pairs_v1.py
+      - triggers/deform360_cross_action_plan_v1.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-cross-action-plan-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROTOCOL: protocols/deform360_same_object_rope_pilot_v2.json
+  ROSTER: scripts/science/prepare_deform360_same_object_rope_pilot_v2.py
+  BINDER: scripts/science/bind_deform360_cross_action_pairs_v1.py
+  RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Cross-action binding contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Validate dependency-free selectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python3 -m py_compile "${ROSTER}" "${BINDER}"
+          python3 "${ROSTER}" --self-test
+          python3 "${BINDER}" --self-test
+          python3 -m json.tool "${PROTOCOL}" >/dev/null
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  plan:
+    name: Bind official action indices / gpuserver6000
+    needs: contracts
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 30
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+
+      - name: Check out exact branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve dependency-free Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          test -n "${base_python}"
+          echo "BASE_PYTHON=${base_python}" >> "${GITHUB_ENV}"
+
+      - name: Rebuild the target-blind timestamp roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_root="${RUNNER_TEMP}/deform360-cross-action-plan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}"
+          export OUTPUT_ROOT="${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          "${BASE_PYTHON}" -m py_compile "${ROSTER}" "${BINDER}"
+          "${BASE_PYTHON}" "${ROSTER}" --self-test
+          "${BASE_PYTHON}" "${BINDER}" --self-test
+          "${BASE_PYTHON}" "${ROSTER}" \
+            --protocol "${PROTOCOL}" \
+            --revision "${GITHUB_SHA}" \
+            --output "${OUTPUT_ROOT}/roster" \
+            | tee "${OUTPUT_ROOT}/roster.log"
+
+      - name: Bind official sequence indices and freeze cross-action pairs
+        id: bind
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" "${BINDER}" \
+            --roster "${OUTPUT_ROOT}/roster/result.json" \
+            --metadata-root "${RAW_ROOT}" \
+            --repository-revision "${GITHUB_SHA}" \
+            --source-roster-run-id 33335964618 \
+            --metadata-probe-run-id 33337433438 \
+            --output "${OUTPUT_ROOT}/plan" \
+            | tee "${OUTPUT_ROOT}/binding.log"
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          plan = json.loads(
+              (root / "plan" / "cross_action_plan.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          summary = plan["summary"]
+          with Path(os.environ["GITHUB_OUTPUT"]).open(
+              "a", encoding="utf-8"
+          ) as stream:
+              for key, value in (
+                  ("decision", summary["decision"]),
+                  ("pairs", summary["cross_action_pair_count"]),
+                  ("cameras", summary["minimum_common_camera_count"]),
+                  ("tactile", summary["minimum_common_tactile_count"]),
+                  ("plan_id", plan["plan_id"]),
+              ):
+                  stream.write(f"{key}={value}\n")
+          expected = {
+              "001-rope": (0, 2, "move", "lift"),
+              "002-rope-silk": (0, 2, "lift", "drag"),
+              "003-cable": (0, 2, "lift", "drag"),
+              "081-stripe-rope": (0, 2, "move", "lift"),
+          }
+          actual = {
+              pair["object_id"]: (
+                  pair["source_episode_index"],
+                  pair["target_episode_index"],
+                  pair["source_action_family"],
+                  pair["target_action_family"],
+              )
+              for pair in plan["selected_pairs"]
+          }
+          if actual != expected:
+              raise SystemExit(
+                  f"frozen action-pair identity changed: {actual!r}"
+              )
+          PY
+
+      - name: Publish cross-action plan
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Deform360 matched-nuisance cross-action plan"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\`"
+            echo "- Repository revision: \`${GITHUB_SHA}\`"
+            if [[ -f "${OUTPUT_ROOT:-}/plan/report.md" ]]; then
+              cat "${OUTPUT_ROOT}/plan/report.md"
+            else
+              echo "No plan was produced."
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload frozen roster and action plan
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: d360-cross-action-plan-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+
+      - name: Enforce matched-nuisance cross-action readiness
+        shell: bash
+        env:
+          DECISION: ${{ steps.bind.outputs.decision }}
+          PAIRS: ${{ steps.bind.outputs.pairs }}
+          CAMERAS: ${{ steps.bind.outputs.cameras }}
+          TACTILE: ${{ steps.bind.outputs.tactile }}
+        run: |
+          set -euo pipefail
+          test "${DECISION}" = \
+            "four-object-matched-nuisance-cross-action-plan-ready"
+          test "${PAIRS}" -eq 4
+          test "${CAMERAS}" -ge 12
+          test "${TACTILE}" -ge 2
