@@ -42,13 +42,9 @@ def dense_rows(
     ):
         raise ValueError(f"{path.name} is not one dense strict-parser segment")
     duration = float(times[-1] - times[0])
-    if duration + 1e-9 < float(
-        protocol["minimum_motion_segment_duration_seconds"]
-    ):
+    if duration + 1e-9 < float(protocol["minimum_motion_segment_duration_seconds"]):
         raise ValueError(f"{path.name} is shorter than the strict inventory lock")
-    required = float(protocol["prefix_seconds"]) + float(
-        protocol["forecast_seconds"]
-    )
+    required = float(protocol["prefix_seconds"]) + float(protocol["forecast_seconds"])
     if duration + 1e-9 < required:
         raise ValueError(f"{path.name} does not cover the frozen source horizon")
     return rows[0], rows
@@ -107,9 +103,7 @@ def patch_outputs(output: Path, protocol: Mapping[str, Any]) -> None:
             "wrapper_sha256": base.sha256(Path(__file__)),
             "source_fit_sha256": base.sha256(source_fit_path),
             "source_gate_sha256": base.sha256(source_gate_path),
-            "strict_time_inventory_run_id": protocol[
-                "strict_time_inventory_run_id"
-            ],
+            "strict_time_inventory_run_id": protocol["strict_time_inventory_run_id"],
             "full_lay_post_prefix_free_marker_outcomes_read": False,
         }
     )
@@ -168,9 +162,7 @@ def self_test() -> None:
         path = Path(directory) / "cotton_A2_full_lay_low_friction.csv"
         with path.open("w", newline="") as stream:
             writer = csv.writer(stream)
-            writer.writerow(
-                ["Frame", "Time", *(f"c{index}" for index in range(60))]
-            )
+            writer.writerow(["Frame", "Time", *(f"c{index}" for index in range(60))])
             for index in range(601):
                 timestamp = 20.0 + index / 120.0
                 values = grid.copy()
