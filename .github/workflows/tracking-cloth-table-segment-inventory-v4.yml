@@ -1,0 +1,150 @@
+# workflow-lifecycle: one-shot target-outcome-blind inventory
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth table segment inventory v4
+
+on:
+  push:
+    branches: [science/tracking-cloth-table-query-source-v1]
+    paths:
+      - .github/requests/tracking-cloth-table-segment-inventory-v4.json
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Inventory contiguous timestamp segments only
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/table-segments-v4-$GITHUB_RUN_ID"
+          mkdir "$output"
+          echo "SEGMENT_OUT=$output" >> "$GITHUB_ENV"
+          DATASET_ROOT="$DATASET_ROOT" OUTPUT="$output" python - <<'PY'
+          import csv
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          import numpy as np
+
+          pattern = re.compile(
+              r"^(cotton|denim|polyester|wool)_A2_"
+              r"(half_lay|full_lay)_(low_friction|high_friction)\.csv$",
+              re.IGNORECASE,
+          )
+          root = Path(os.environ["DATASET_ROOT"]).resolve(strict=True)
+          rows = []
+          for path in sorted(root.rglob("*.csv")):
+              match = pattern.fullmatch(path.name)
+              if not match:
+                  continue
+              times = []
+              with path.open(encoding="utf-8-sig", newline="") as stream:
+                  for row in csv.reader(stream):
+                      if len(row) < 2:
+                          continue
+                      try:
+                          times.append(float(row[1]))
+                      except ValueError:
+                          continue
+              values = np.asarray(times, dtype=float)
+              cuts = np.flatnonzero(np.diff(values) > 0.05) + 1
+              segments = np.split(np.arange(len(values)), cuts)
+              summary = [
+                  {
+                      "start_index": int(segment[0]),
+                      "end_index": int(segment[-1]),
+                      "rows": int(len(segment)),
+                      "start_time_seconds": float(values[segment[0]]),
+                      "end_time_seconds": float(values[segment[-1]]),
+                      "duration_seconds": float(
+                          values[segment[-1]] - values[segment[0]]
+                      ),
+                      "median_dt_seconds": (
+                          float(np.median(np.diff(values[segment])))
+                          if len(segment) > 1
+                          else None
+                      ),
+                  }
+                  for segment in segments
+              ]
+              longest = max(summary, key=lambda item: item["rows"])
+              rows.append(
+                  {
+                      "recording": path.name,
+                      "segment_count": len(summary),
+                      "setup_rows_before_longest": longest["start_index"],
+                      "longest_segment_rows": longest["rows"],
+                      "longest_segment_duration_seconds": longest[
+                          "duration_seconds"
+                      ],
+                      "longest_segment_start_time_seconds": longest[
+                          "start_time_seconds"
+                      ],
+                      "longest_segment_end_time_seconds": longest[
+                          "end_time_seconds"
+                      ],
+                      "segments": summary,
+                  }
+              )
+          if len(rows) != 16:
+              raise SystemExit(f"Expected 16 table files, found {len(rows)}")
+          result = {
+              "schema": "tracking-cloth-table-segment-inventory-v4",
+              "coordinate_columns_read": False,
+              "gap_threshold_seconds": 0.05,
+              "minimum_longest_segment_rows": min(
+                  row["longest_segment_rows"] for row in rows
+              ),
+              "minimum_longest_segment_duration_seconds": min(
+                  row["longest_segment_duration_seconds"] for row in rows
+              ),
+              "records": rows,
+              "paper_claim_authorized": False,
+          }
+          output = Path(os.environ["OUTPUT"])
+          (output / "segment_inventory.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          report = [
+              "# Tracking Cloth table contiguous-segment inventory",
+              "",
+              "Only filename and Frame/Time columns were read; no marker coordinate was parsed.",
+              "",
+              f"Minimum longest-segment support: "
+              f"`{result['minimum_longest_segment_rows']} rows / "
+              f"{result['minimum_longest_segment_duration_seconds']:.6f} s`.",
+              "",
+              "| Recording | segments | setup rows | motion rows | motion duration [s] |",
+              "| --- | ---: | ---: | ---: | ---: |",
+          ]
+          report.extend(
+              f"| {row['recording']} | {row['segment_count']} | "
+              f"{row['setup_rows_before_longest']} | "
+              f"{row['longest_segment_rows']} | "
+              f"{row['longest_segment_duration_seconds']:.6f} |"
+              for row in rows
+          )
+          (output / "report.md").write_text("\n".join(report) + "\n")
+          PY
+      - name: Publish segment summary
+        run: cat "$SEGMENT_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-table-segment-inventory-v4-${{ github.run_id }}
+          path: ${{ env.SEGMENT_OUT }}
+          retention-days: 30
+          if-no-files-found: error
