@@ -18,9 +18,10 @@ import math
 import os
 import re
 import shutil
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -58,7 +59,7 @@ class Profile:
     max_candidate_archives: int
 
     @classmethod
-    def from_mapping(cls, value: Mapping[str, Any]) -> "Profile":
+    def from_mapping(cls, value: Mapping[str, Any]) -> Profile:
         fields = {
             "max_cases",
             "max_frames",
