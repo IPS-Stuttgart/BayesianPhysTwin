@@ -13,16 +13,24 @@ request for new physical recordings. It changes no historical result or claim.
 
 ## Run on GitHub
 
-Open **Actions -> Tracking Cloth Deformation evaluation -> Run workflow**.
-The evaluation job requires labels `[self-hosted, Linux, X64, gpuserver6000]`.
-The intended server is workstation2; routing follows the user-specified label,
-not the earlier gpuserver4090 installation note. The default read-only cache is:
+The evaluation job requires labels `[self-hosted, Linux, X64, gpuserver4090]`.
+The complete read-only dataset cache is fixed at:
 
 ```text
 /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
 ```
 
-The modes are:
+The first sealed evaluation can be initiated by adding exactly one canonical
+request file at
+`.github/requests/tracking-cloth-deformation-v1-evaluate.json` on a protected
+branch and merging it to `main`. The hosted authorization job requires the push
+to add only that file, rejects forced pushes, validates the fixed dataset path,
+runner label, mode and evidence boundary, and requires the request's
+`expected_source_revision` to equal the trigger commit's parent. This separates
+review of the evaluator from the one target-scoring authorization.
+
+Manual runs remain available through **Actions -> Tracking Cloth Deformation
+evaluation -> Run workflow** on `main`. The modes are:
 
 | Mode | Data access | Outputs |
 | --- | --- | --- |
@@ -30,21 +38,20 @@ The modes are:
 | `source_only` (default) | 32 shaking recordings only | Four-fold source scores, parameter weights, empirical guards, variance calibration |
 | `evaluate` | Source fitting, then target initialization/corners; all 32 predictions sealed before target free-marker scoring | Per-record/per-specimen scores, paired contrasts, coverage/width, fallback audit |
 
-Choose `source_only` first. Review source model competence and the initialization
-geometry/units assumptions before explicitly choosing `evaluate`. The latter
-repeats the same source fit from the same versioned protocol, publishes its
-prediction-seal artifact, and only then runs a separate target-scoring process.
-A failed preparation or upload prevents scoring. A changed source model,
-protocol, implementation, dataset or prediction artifact invalidates the seal.
-All runs remain pilots: prior public outcome exposure is unknown, and rerunning
-already-scored targets never creates fresh confirmation.
+Use `source_only` for ordinary qualification. An `evaluate` run repeats the same
+source fit from the same versioned protocol, publishes its prediction-seal
+artifact, and only then invokes a separate target-scoring process. A failed
+preparation or seal upload prevents scoring. A changed source model, protocol,
+implementation, dataset or prediction artifact invalidates the seal. All runs
+remain pilots: prior public outcome exposure is unknown, and rerunning an
+already-scored target never creates fresh confirmation.
 
-The cache is never downloaded, extracted, modified, or chmod'ed. A private
+The cache is never downloaded, extracted, modified or chmod'ed. A private
 scratch directory and isolated Python environment are created in `RUNNER_TEMP`.
 Only NumPy and CPU are required. Four CPU workers are the default. Pull requests
 run **synthetic tests on GitHub-hosted runners only**; they never access the
-self-hosted dataset. No runner/organization secret or repository-write permission
-is needed. Concurrency does not cancel an active evidence run.
+self-hosted dataset. No runner/organization secret or repository-write
+permission is needed. Concurrency does not cancel an active evidence run.
 
 ## Frozen v1 design
 
@@ -86,7 +93,7 @@ The physical backend is a small equal-marker-mass 3-D spring mesh with structura
 shear and two-hop bending springs, gravity, viscous damping, symplectic
 integration and prescribed corner positions. Its rest lengths come from the
 initial frame. The fixed bank contains stiffness-per-mass values
-`[100, 400, 1600]` and damping-per-mass values `[0.5, 2, 8]`. This is a transparent
+`[100, 400, 1600]` and damping-per-mass values `[0.5, 2.0, 8.0]`. This is a transparent
 qualification baseline, not a high-fidelity material/contact model.
 
 The seven arms are:
@@ -140,12 +147,13 @@ physical specimens. No case is silently removed from the registered factorial.
 
 Artifacts contain `protocol.json`, dataset/code hashes, `source_fit.json`,
 `source_scores.csv`, `prediction_seal.json`, `target_scores.csv`,
-`specimen_scores.csv`, `metrics.json`, `run_manifest.json`, `report.md`, and the
-included license. Prediction trajectory arrays stay in private runner scratch
-and are **not uploaded**, as are all raw recordings and the ZIP. Reports are
-retained for 90 days, not forever; a paper claim needs a separate durable evidence
-intake after scientific review. A technical failure emits `failure.json` and no
-complete scientific decision. Green unit tests are synthetic software evidence.
+`specimen_scores.csv`, `metrics.json`, `run_manifest.json`,
+`evaluation_request.json`, `report.md`, and the included license. Prediction
+trajectory arrays stay in private runner scratch and are **not uploaded**, as
+are all raw recordings and the ZIP. Reports are retained for 90 days, not
+forever; a paper claim needs a separate durable evidence intake after scientific
+review. A technical failure emits `failure.json` and no complete scientific
+decision. Green unit tests are synthetic software evidence.
 
 ## License conflict
 
@@ -177,6 +185,7 @@ Classification: **operational prerequisite and scored diagnostic** for the
 untested external real-cloth shake-to-twist question, specifically authorized by
 the user after installing this dataset. The existing Cloth Sim2Real workflow is
 bound to a different Zenodo release, simulator, cohort and historical evidence;
-repurposing it would silently change its scientific contract. This one maintained
-entry point provides inventory, source qualification and sealed scoring, with
-experiment logic in versioned Python. No one-shot bootstrap workflow is added.
+repurposing it would silently change its scientific contract. One maintained
+workflow provides inventory, source qualification, sealed scoring and a
+fail-closed canonical request-file trigger; no separate bootstrap workflow is
+introduced.
