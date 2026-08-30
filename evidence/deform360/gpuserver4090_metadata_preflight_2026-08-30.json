@@ -96,9 +96,24 @@
     ],
     "privilege_escalation_attempted": false
   },
+  "confirmatory_status_rerun": {
+    "repository_revision": "4fd7fb7b3b571e7698e7ff7b9bfd2d81b2d060b2",
+    "workflow_run_id": 33302068191,
+    "workflow_job_id": 99231960821,
+    "conclusion": "success",
+    "raw_object_directory_count": 190,
+    "materialized_processed_directory_candidates": 0,
+    "incomplete_file_count": 6,
+    "incomplete_file_bytes": 0,
+    "status_file_present": true,
+    "status_file_readable_by_runner": false,
+    "status_file_mode": "-rw-------",
+    "dataset_payload_opened": false,
+    "reserved_target_outcomes_opened": false
+  },
   "decision": {
     "status": "stable-staging-tree-completion-not-certified",
-    "interpretation": "The mounted tree was stable over the observed interval and all six Hugging Face .incomplete markers were zero-byte and approximately ten hours old. The download.status file was not readable by the GitHub runner, so this record does not certify that the downloader declared completion or that every released payload is valid.",
+    "interpretation": "The mounted tree was stable over the observed interval, 190 raw object directories were materialized, and all six Hugging Face .incomplete markers were zero-byte. No materialized processed directory was found at the expected processed-repository roots. The download.status file was not readable by the GitHub runner, so this record does not certify that the downloader declared completion or that every released payload is valid.",
     "scoring_authorized": false,
     "target_payload_access_authorized": false,
     "cohort_lock_authorized": false
@@ -110,7 +125,8 @@
     "requires_adapter_specific_contract_tests": true,
     "requires_reserved_target_exclusion": true,
     "requires_object_balanced_analysis": true,
-    "requires_target_closed_prediction_sealing": true
+    "requires_target_closed_prediction_sealing": true,
+    "requires_processed_annotation_materialization_or_frozen_processing": true
   },
   "information_boundary": {
     "dataset_payload_opened": false,
