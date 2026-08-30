@@ -55,6 +55,34 @@ def test_protocol_id_binds_every_field() -> None:
 
 
 @pytest.mark.parametrize(
+    ("field", "replacement", "match"),
+    [
+        ("schema", "wrong-schema", "schema changed"),
+        ("schema_version", 2, "version changed"),
+        ("protocol_id", "0" * 64, "protocol_id changed"),
+    ],
+)
+def test_top_level_identity_substitutions_are_rejected(
+    tmp_path: Path,
+    field: str,
+    replacement: object,
+    match: str,
+) -> None:
+    value = _payload()
+    value[field] = replacement
+    with pytest.raises(ValueError, match=match):
+        load_fourddress_competence_feasibility_v1(_write(tmp_path, value))
+
+
+def test_protocol_rejects_nonmapping_sections(tmp_path: Path) -> None:
+    value = _payload()
+    value["upstreams"] = []
+    _reseal(value)
+    with pytest.raises(ValueError, match="upstreams must be a mapping"):
+        load_fourddress_competence_feasibility_v1(_write(tmp_path, value))
+
+
+@pytest.mark.parametrize(
     ("section", "field", "replacement", "match"),
     [
         ("upstreams", "simulator_revision", "0" * 40, "upstreams changed"),

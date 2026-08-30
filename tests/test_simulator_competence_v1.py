@@ -385,6 +385,69 @@ def test_query_context_rejects_any_opened_outcome() -> None:
         _query(outcome_observed=True)
 
 
+def test_query_context_validation_and_record_boundaries() -> None:
+    query = _query()
+    assert query.to_record()["artifact_id"] == query.artifact_id
+    with pytest.raises(ValueError, match="canonical string"):
+        _query(loss_metric=" endpoint-rmse-m")
+    with pytest.raises(ValueError, match="positive"):
+        _query(horizon_seconds=0.0)
+    with pytest.raises(ValueError, match="artifact_id does not match"):
+        _query(artifact_id=A)
+    with pytest.raises(ValueError, match="mapping"):
+        SimulatorQueryContextV1.from_mapping(None)
+
+    record = query.to_record()
+    record["schema"] = "wrong"
+    with pytest.raises(ValueError, match="schema"):
+        SimulatorQueryContextV1.from_mapping(record)
+    record = query.to_record()
+    record["schema_version"] = 2
+    with pytest.raises(ValueError, match="version"):
+        SimulatorQueryContextV1.from_mapping(record)
+
+
+def test_policy_validation_and_record_boundaries() -> None:
+    qualification = _qualification()
+    source = _source_decision(qualification)
+    status = _status(qualification, source)
+    policy = _policy(status)
+
+    with pytest.raises(ValueError, match="canonical_profile_id"):
+        _policy(status, canonical_profile_id="wrong-profile")
+    with pytest.raises(ValueError, match="below the minimum"):
+        _policy(status, maximum_horizon_seconds=0.05)
+    with pytest.raises(ValueError, match="exact_fallback_required"):
+        _policy(status, exact_fallback_required=False)
+    with pytest.raises(
+        ValueError,
+        match="certification_outcomes_used_for_method_selection",
+    ):
+        _policy(status, certification_outcomes_used_for_method_selection=True)
+    with pytest.raises(ValueError, match="policy_id does not match"):
+        _policy(status, policy_id=A)
+    with pytest.raises(ValueError, match="canonical strings"):
+        _policy(status, method_selection_group_ids=("source-a", " source-b"))
+    with pytest.raises(ValueError, match="unique strings"):
+        _policy(status, method_selection_group_ids=("source-a", "source-a"))
+    with pytest.raises(ValueError, match="unique digests"):
+        _policy(status, allowed_query_functional_ids=(EIGHT, EIGHT))
+    with pytest.raises(ValueError, match="mapping"):
+        SimulatorCompetencePolicyV1.from_mapping(None)
+
+    mutations = (
+        ("schema", "wrong", "schema"),
+        ("schema_version", 2, "version"),
+        ("claim_boundary", "changed", "claim boundary"),
+        ("risk_score_semantics", "changed", "risk-score semantics"),
+    )
+    for key, replacement, message in mutations:
+        record = policy.to_record()
+        record[key] = replacement
+        with pytest.raises(ValueError, match=message):
+            SimulatorCompetencePolicyV1.from_mapping(record)
+
+
 def test_underpowered_or_overlapping_certificate_fails_closed() -> None:
     qualification = _qualification()
     source = _source_decision(qualification)
@@ -479,6 +542,106 @@ def test_source_decision_must_bind_method_and_partition() -> None:
         )
 
 
+def test_certificate_type_binding_and_freeze_validation() -> None:
+    qualification, source, status, policy, risk, certificate = _bundle()
+    values: dict[str, Any] = {
+        "policy": policy,
+        "backend_evidence_status": status,
+        "harm_risk_certificate": risk,
+        "certificate_frozen_before_target_outcomes": True,
+        "target_outcomes_used": False,
+    }
+    for field, message in (
+        ("policy", "policy must be"),
+        ("backend_evidence_status", "backend_evidence_status must be"),
+        ("harm_risk_certificate", "harm_risk_certificate must be"),
+    ):
+        changed = dict(values)
+        changed[field] = object()
+        with pytest.raises(TypeError, match=message):
+            QueryConditionalCompetenceCertificateV1(**changed)
+
+    qualified_only = build_material_backend_evidence_status_v1(
+        canonical_profile_id="jax-fem-quasistatic-v1",
+        producer_profile_id="jax-fem-quasistatic-v1",
+        adapter_evidence_id=FOUR,
+        runtime_id=A,
+        native_replay_evidence_id=FIVE,
+        qualification=qualification,
+    )
+    with pytest.raises(ValueError, match="source-competent"):
+        QueryConditionalCompetenceCertificateV1(
+            policy=policy,
+            backend_evidence_status=qualified_only,
+            harm_risk_certificate=risk,
+            certificate_frozen_before_target_outcomes=True,
+            target_outcomes_used=False,
+        )
+
+    mismatched_policy = _policy(status, backend_evidence_status_id=A)
+    mismatched_risk = _risk_certificate(mismatched_policy)
+    with pytest.raises(ValueError, match="status does not match policy"):
+        QueryConditionalCompetenceCertificateV1(
+            policy=mismatched_policy,
+            backend_evidence_status=status,
+            harm_risk_certificate=mismatched_risk,
+            certificate_frozen_before_target_outcomes=True,
+            target_outcomes_used=False,
+        )
+
+    incomplete_groups = _policy(
+        status,
+        method_selection_group_ids=("source-a", "source-b", "threshold-a"),
+    )
+    incomplete_risk = _risk_certificate(incomplete_groups)
+    with pytest.raises(ValueError, match="source groups"):
+        QueryConditionalCompetenceCertificateV1(
+            policy=incomplete_groups,
+            backend_evidence_status=status,
+            harm_risk_certificate=incomplete_risk,
+            certificate_frozen_before_target_outcomes=True,
+            target_outcomes_used=False,
+        )
+
+    with pytest.raises(ValueError, match="frozen before target"):
+        QueryConditionalCompetenceCertificateV1(
+            policy=policy,
+            backend_evidence_status=status,
+            harm_risk_certificate=risk,
+            certificate_frozen_before_target_outcomes=False,
+            target_outcomes_used=False,
+        )
+    with pytest.raises(ValueError, match="artifact_id does not match"):
+        replace(certificate, artifact_id=A)
+
+    assert source.status == "pass"
+
+
+def test_certificate_record_validation_is_fail_closed() -> None:
+    *_, certificate = _bundle()
+    with pytest.raises(ValueError, match="mapping"):
+        QueryConditionalCompetenceCertificateV1.from_mapping(None)
+
+    mutations = (
+        ("schema", "wrong", "schema"),
+        ("schema_version", 2, "version"),
+        ("claim_boundary", "changed", "claim boundary"),
+        ("policy_id", A, "embedded policy identity"),
+        ("backend_evidence_status_id", A, "embedded backend evidence identity"),
+        ("harm_risk_certificate_id", A, "embedded harm-risk identity"),
+    )
+    for key, replacement, message in mutations:
+        record = certificate.to_record()
+        record[key] = replacement
+        with pytest.raises(ValueError, match=message):
+            QueryConditionalCompetenceCertificateV1.from_mapping(record)
+
+    record = certificate.to_record()
+    record["backend_evidence_status"] = None
+    with pytest.raises(ValueError, match="backend_evidence_status must be a mapping"):
+        QueryConditionalCompetenceCertificateV1.from_mapping(record)
+
+
 def test_certificate_roundtrip_preserves_all_nested_identities(tmp_path: Path) -> None:
     *_, certificate = _bundle()
     path = tmp_path / "competence-certificate.json"
@@ -498,14 +661,27 @@ def test_certificate_roundtrip_preserves_all_nested_identities(tmp_path: Path) -
     )
     with pytest.raises(FileExistsError):
         save_query_conditional_competence_certificate_v1(certificate, path)
+    with pytest.raises(TypeError, match="certificate must be"):
+        save_query_conditional_competence_certificate_v1(
+            object(), tmp_path / "bad.json"
+        )
 
 
 def test_prediction_id_alias_and_decision_tampering_are_rejected() -> None:
     *_, certificate = _bundle()
+    with pytest.raises(TypeError, match="certificate must be"):
+        _route(object())
+    with pytest.raises(TypeError, match="query must be"):
+        _route(certificate, query=object())
     with pytest.raises(ValueError, match="must differ"):
         _route(certificate, fallback_prediction_id=FOUR)
 
     decision, *_ = _route(certificate)
+    assert decision.to_record()["artifact_id"] == decision.artifact_id
+    with pytest.raises(ValueError, match="opposite of authorized"):
+        replace(decision, exact_fallback=True)
+    with pytest.raises(ValueError, match="authorized does not match"):
+        replace(decision, reasons=("different-reason",))
     with pytest.raises(ValueError, match="selected prediction contradicts"):
         replace(decision, selected_prediction_id=decision.fallback_prediction_id)
     with pytest.raises(ValueError, match="artifact_id does not match"):

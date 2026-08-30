@@ -18,8 +18,11 @@ from bayesian_phystwin.hood_source_qualification_v1 import (
     ROLLOUT_STEPS,
     assess_hood_source_replays_v1,
     build_hood_source_result_v1,
+    consume_hood_source_attempt,
     consume_hood_source_attempt_v1,
     consume_hood_source_replacement_attempt_v2,
+    file_sha256,
+    load_hood_source_qualification_plan,
     load_hood_source_qualification_plan_v1,
     load_hood_source_qualification_replacement_plan_v2,
     save_hood_source_result_v1,
@@ -482,6 +485,172 @@ def test_plan_requires_exact_json_types(
         load_hood_source_qualification_plan_v1(_write(tmp_path, value))
 
 
+def test_plan_rejects_every_bound_runtime_component(tmp_path: Path) -> None:
+    cases = (
+        ("implementation", "repository", "other/repository", "repository"),
+        ("upstream", "repository", "other/HOOD", "HOOD repository"),
+        ("upstream", "revision", "0" * 40, "HOOD revision"),
+        ("upstream", "config_relative_path", "config.yaml", "configuration path"),
+        ("public_source", "checkpoint_sha256", "0" * 64, "public HOOD"),
+        ("runtime", "torch_version", "2.1.0", "torch version"),
+        ("runtime", "torch_cuda_version", "12.1", "torch CUDA"),
+        (
+            "runtime",
+            "torch_geometric_version",
+            "2.5.0",
+            "torch-geometric",
+        ),
+        ("runtime", "pytorch3d_version", "0.7.5", "PyTorch3D"),
+    )
+    for section, key, replacement, message in cases:
+        value = _plan(tmp_path)
+        value[section][key] = replacement
+        value.pop("plan_id")
+        value["plan_id"] = content_id(value)
+        with pytest.raises(ValueError, match=message):
+            load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+
+def test_plan_rejects_malformed_identity_paths_and_layout(tmp_path: Path) -> None:
+    value = _plan(tmp_path)
+    value["schema"] = "wrong-schema"
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="schema"):
+        load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+    value = _plan(tmp_path)
+    value["plan_id"] = "0" * 64
+    with pytest.raises(ValueError, match="plan_id"):
+        load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+    value = _plan(tmp_path)
+    value["claim_boundary"] = "changed"
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="claim boundary"):
+        load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+    value = _plan(tmp_path)
+    value["implementation"] = []
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="mapping"):
+        load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+    value = _plan(tmp_path)
+    value["runtime"]["base_python_path"] = "relative/python"
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="canonical absolute path"):
+        load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+    value = _plan(tmp_path)
+    value["execution"]["attempt_ledger_path"] = str(
+        Path(value["execution"]["output_root"]) / "attempt.json"
+    )
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="separate"):
+        load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+
+
+def test_replacement_rejects_parent_path_reuse(tmp_path: Path) -> None:
+    value = _replacement_plan(tmp_path)
+    value["execution"]["output_root"] = str(
+        Path(value["parent_failure"]["failure_path"]).parent
+    )
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="output root"):
+        load_hood_source_qualification_replacement_plan_v2(_write(tmp_path, value))
+
+    value = _replacement_plan(tmp_path)
+    value["execution"]["attempt_ledger_path"] = value["parent_failure"][
+        "attempt_ledger_path"
+    ]
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match="parent ledger"):
+        load_hood_source_qualification_replacement_plan_v2(_write(tmp_path, value))
+
+
+def test_generic_loader_and_attempt_dispatch_are_fail_closed(tmp_path: Path) -> None:
+    v1 = load_hood_source_qualification_plan(_write(tmp_path, _plan(tmp_path)))
+    assert consume_hood_source_attempt(v1)["schema_version"] == 1
+
+    replacement_value = _replacement_plan(tmp_path)
+    replacement_value["execution"]["attempt_ledger_path"] = str(
+        tmp_path / "replacement-attempt.json"
+    )
+    replacement_value.pop("plan_id")
+    replacement_value["plan_id"] = content_id(replacement_value)
+    replacement = load_hood_source_qualification_plan(
+        _write(tmp_path, replacement_value)
+    )
+    assert consume_hood_source_attempt(replacement)["schema_version"] == 2
+    with pytest.raises(ValueError, match="schema-v2"):
+        consume_hood_source_replacement_attempt_v2(v1)
+
+    unknown = _plan(tmp_path)
+    unknown["schema"] = "unknown"
+    unknown.pop("plan_id")
+    unknown["plan_id"] = content_id(unknown)
+    with pytest.raises(ValueError, match="unrecognized"):
+        load_hood_source_qualification_plan(_write(tmp_path, unknown))
+
+
+def test_attempt_ledgers_require_directory_parents(tmp_path: Path) -> None:
+    parent = tmp_path / "ledger-parent"
+    parent.write_text("not a directory", encoding="utf-8")
+    value = _plan(tmp_path)
+    value["execution"]["attempt_ledger_path"] = str(parent / "attempt.json")
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    plan = load_hood_source_qualification_plan_v1(_write(tmp_path, value))
+    with pytest.raises(ValueError, match="parent must be a directory"):
+        consume_hood_source_attempt_v1(plan)
+
+    value = _replacement_plan(tmp_path)
+    value["execution"]["attempt_ledger_path"] = str(parent / "replacement.json")
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    replacement = load_hood_source_qualification_replacement_plan_v2(
+        _write(tmp_path, value)
+    )
+    with pytest.raises(ValueError, match="parent must be a directory"):
+        consume_hood_source_replacement_attempt_v2(replacement)
+
+
+@pytest.mark.parametrize(
+    ("keyword", "invalid"),
+    [
+        ("rollout_steps", 0),
+        ("rollout_steps", True),
+        ("maximum_repeat_rmse_m", True),
+        ("maximum_repeat_rmse_m", float("nan")),
+        ("minimum_cloth_motion_m", -1.0),
+    ],
+)
+def test_replay_thresholds_require_valid_scalars(keyword: str, invalid: object) -> None:
+    cloth, obstacles, faces = _valid_replays()
+    with pytest.raises(ValueError, match="finite real|positive integer"):
+        assess_hood_source_replays_v1(
+            cloth,
+            obstacles,
+            faces,
+            faces,
+            **{keyword: invalid},
+        )
+
+
+def test_file_digest_reads_complete_content(tmp_path: Path) -> None:
+    payload = b"a" * (1024 * 1024 + 17)
+    path = tmp_path / "payload.bin"
+    path.write_bytes(payload)
+    assert file_sha256(path) == hashlib.sha256(payload).hexdigest()
+
+
 def test_repeatable_moving_replays_pass() -> None:
     cloth, obstacles, faces = _valid_replays()
     assessment = assess_hood_source_replays_v1(cloth, obstacles, faces, faces)
@@ -530,6 +699,31 @@ def test_shape_and_count_substitutions_are_rejected() -> None:
         assess_hood_source_replays_v1(
             [cloth[0][..., :2], cloth[1][..., :2]],
             obstacles,
+            faces,
+            faces,
+        )
+    with pytest.raises(ValueError, match="obstacles must have shape"):
+        assess_hood_source_replays_v1(
+            cloth,
+            [obstacles[0][..., :2], obstacles[1][..., :2]],
+            faces,
+            faces,
+        )
+    with pytest.raises(ValueError, match="cloth faces must have shape"):
+        assess_hood_source_replays_v1(cloth, obstacles, [faces[0][:, :2]] * 2, faces)
+    with pytest.raises(ValueError, match="obstacle faces must have shape"):
+        assess_hood_source_replays_v1(cloth, obstacles, faces, [faces[0][:, :2]] * 2)
+    with pytest.raises(ValueError, match="prediction shapes changed"):
+        assess_hood_source_replays_v1(
+            [cloth[0], cloth[1][:, :-1]],
+            obstacles,
+            faces,
+            faces,
+        )
+    with pytest.raises(ValueError, match="obstacle shapes changed"):
+        assess_hood_source_replays_v1(
+            cloth,
+            [obstacles[0], obstacles[1][:, :-1]],
             faces,
             faces,
         )

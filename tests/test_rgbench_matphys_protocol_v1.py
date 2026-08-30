@@ -81,6 +81,34 @@ def test_policy_id_binds_every_contract_field() -> None:
 
 
 @pytest.mark.parametrize(
+    ("path", "replacement", "match"),
+    [
+        (("upstreams",), [], "upstreams must be a mapping"),
+        (("selection", "actions"), "not-a-list", "actions must be a list"),
+        (
+            ("selection", "source_cells"),
+            {},
+            "source_cells must be a list",
+        ),
+    ],
+)
+def test_protocol_rejects_structural_type_substitutions(
+    tmp_path: Path,
+    path: tuple[str, ...],
+    replacement: object,
+    match: str,
+) -> None:
+    payload = _payload()
+    if len(path) == 1:
+        payload[path[0]] = replacement
+    else:
+        payload[path[0]][path[1]] = replacement
+    _reseal(payload)
+    with pytest.raises(ValueError, match=match):
+        load_rgbench_matphys_protocol_v1(_write(tmp_path, payload))
+
+
+@pytest.mark.parametrize(
     ("section", "field", "value", "match"),
     [
         ("upstreams", "matphys_revision", "0" * 40, "MatPhys revision changed"),
