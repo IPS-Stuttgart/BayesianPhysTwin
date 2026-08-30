@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from .core import (
+    INTERNAL,
     Any,
     Array,
-    INTERNAL,
     Mapping,
     Path,
     Sequence,
