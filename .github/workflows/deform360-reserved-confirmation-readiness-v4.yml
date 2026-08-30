@@ -1,0 +1,100 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 reserved confirmation readiness v4
+
+on:
+  push:
+    branches: [science/deform360-icra-development-v2]
+    paths:
+      - ".github/requests/deform360-reserved-confirmation-readiness-v4.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-reserved-readiness-v4-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL_PATH: protocols/deform360_action_kernel_v3.json
+  AUDITOR_PATH: scripts/science/audit_deform360_reserved_confirmation_v4.py
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  audit:
+    name: Reserved carrier readiness / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact audit source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Admit exact mount and audit without numeric loading
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          output="${RUNNER_TEMP}/deform360-reserved-readiness-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output}"
+          mkdir -p -- "${output}"
+          echo "OUTPUT_ROOT=${output}" >> "${GITHUB_ENV}"
+          python3 -m py_compile "${AUDITOR_PATH}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum "${PROTOCOL_PATH}" "${AUDITOR_PATH}"
+            python3 --version
+            uname -a
+          } | tee "${output}/environment.txt"
+          python3 "${AUDITOR_PATH}" \
+            --data-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output-json "${output}/readiness.json" \
+            --output-report "${output}/report.md" \
+            | tee "${output}/console.log"
+          cat "${output}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+      - name: Verify unopened reserved payload boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["OUTPUT_ROOT"]) / "readiness.json").read_text())
+          boundary = result["information_boundary"]
+          for key in (
+              "reserved_robot_numeric_payloads_opened",
+              "reserved_tactile_numeric_payloads_opened",
+              "reserved_target_scores_computed",
+              "camera_pixels_opened",
+              "geometry_or_point_cloud_opened",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"reserved boundary changed: {key}")
+          if result["confirmation_authorized"] is not False:
+              raise SystemExit("audit self-authorized confirmation")
+          PY
+          cp "${PROTOCOL_PATH}" "${OUTPUT_ROOT}/development-protocol.json"
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Upload compact readiness evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-reserved-confirmation-readiness-v4-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
