@@ -39,10 +39,11 @@ jobs:
           set -euo pipefail
           python -m pip install \
             ruff==0.14.14 \
-            autopep8==2.3.2
+            autopep8==2.3.2 \
+            numpy==1.26.4 \
+            pytest
           files=(
             scripts/science/audit_deform360_icra_carriers_v2.py
-            scripts/science/audit_deform360_reserved_confirmation_readiness_v4.py
             scripts/science/inspect_deform360_robot_tactile_alignment_v2.py
             scripts/science/run_deform360_action_conditioned_tactile_v2.py
             scripts/science/run_deform360_action_kernel_v3.py
@@ -50,14 +51,43 @@ jobs:
             scripts/science/run_deform360_reserved_confirmation_v4.py
             tests/test_deform360_gpuserver4090_real_evaluation_v1.py
           )
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "scripts/science/run_deform360_action_conditioned_tactile_v2.py"
+          )
+          source = path.read_text(encoding="utf-8")
+          old = '''    except (OSError, ValueError):
+        flat = np.fromfile(path, dtype=np.float32)
+        if flat.size == 0 or flat.size % frame_size:
+            raise EvaluationError(f"unsupported tactile carrier: {path}")
+'''
+          new = '''    except (OSError, ValueError) as error:
+        flat = np.fromfile(path, dtype=np.float32)
+        if flat.size == 0 or flat.size % frame_size:
+            raise EvaluationError(
+                f"unsupported tactile carrier: {path}"
+            ) from error
+'''
+          if old not in source:
+              raise SystemExit("expected tactile exception block was not found")
+          path.write_text(source.replace(old, new, 1), encoding="utf-8")
+          PY
           python -m autopep8 \
             --in-place \
             --aggressive \
             --aggressive \
             --max-line-length 88 \
             scripts/science/run_deform360_action_conditioned_tactile_v2.py
-          python -m ruff check --fix --unsafe-fixes "${files[@]}" || true
+          python -m ruff check --fix --unsafe-fixes "${files[@]}"
           python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m compileall -q \
+            scripts/science \
+            tests/test_deform360_gpuserver4090_real_evaluation_v1.py
+          python -m pytest -q \
+            tests/test_deform360_gpuserver4090_real_evaluation_v1.py
           git diff --check
 
       - name: Remove one-shot launcher and publish formatting commit
