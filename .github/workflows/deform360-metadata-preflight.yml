@@ -8,11 +8,23 @@ on:
     paths:
       - ".github/workflows/deform360-metadata-preflight.yml"
       - "protocols/deform360_metadata_preflight_v1.json"
+      - "protocols/deform360_existing_data_eligibility_v1.json"
       - "scripts/science/build_deform360_metadata_inventory.py"
+      - "scripts/science/audit_deform360_existing_data_eligibility_v1.py"
       - "tests/test_deform360_metadata_inventory.py"
+      - "tests/test_deform360_existing_data_eligibility_v1.py"
       - "docs/deform360_metadata_preflight.md"
+      - "docs/deform360_existing_data_eligibility_v1.md"
       - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
       - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-metadata-preflight.yml"
+      - "protocols/deform360_existing_data_eligibility_v1.json"
+      - "scripts/science/audit_deform360_existing_data_eligibility_v1.py"
+      - "tests/test_deform360_existing_data_eligibility_v1.py"
+      - "docs/deform360_existing_data_eligibility_v1.md"
   workflow_dispatch:
 
 permissions:
@@ -20,16 +32,47 @@ permissions:
 
 concurrency:
   group: deform360-metadata-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 env:
   DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
+  eligibility-contracts:
+    name: Existing-data eligibility contracts
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate protocol, implementation, and synthetic fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            scripts/science/audit_deform360_existing_data_eligibility_v1.py \
+            tests/test_deform360_existing_data_eligibility_v1.py
+          python tests/test_deform360_existing_data_eligibility_v1.py
+          python scripts/science/audit_deform360_existing_data_eligibility_v1.py --help
+          git diff --exit-code
+
   inventory:
     name: Target-blind names-only cache inventory
+    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, Linux, X64, nvidia-smi, data-deform360-v1]
     timeout-minutes: 60
     steps:
@@ -148,4 +191,152 @@ jobs:
           name: deform360-metadata-${{ github.run_id }}-${{ github.run_attempt }}
           path: deform360-metadata-preflight
           if-no-files-found: error
+          retention-days: 30
+
+  existing-data-eligibility:
+    name: Existing-data eligibility / ${{ matrix.runner_id }}
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: eligibility-contracts
+    strategy:
+      fail-fast: false
+      matrix:
+        runner_id: [gpuserver6000, gpuserver4090]
+    runs-on: [self-hosted, Linux, X64, "${{ matrix.runner_id }}"]
+    timeout-minutes: 90
+    steps:
+      - name: Admit exact runner class before checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+          case "${{ matrix.runner_id }}" in
+            gpuserver6000|gpuserver4090) ;;
+            *) exit 2 ;;
+          esac
+
+      - name: Check out exact trusted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve a system Python without installing dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          test -n "${base_python}"
+          echo "BASE_PYTHON=${base_python}" >> "${GITHUB_ENV}"
+
+      - name: Revalidate exact non-decoding implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          "${BASE_PYTHON}" -m py_compile \
+            scripts/science/audit_deform360_existing_data_eligibility_v1.py \
+            tests/test_deform360_existing_data_eligibility_v1.py
+          "${BASE_PYTHON}" tests/test_deform360_existing_data_eligibility_v1.py
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Audit runner-resident fragments without decoding payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_root="${RUNNER_TEMP}/deform360-existing-data-${{ matrix.runner_id }}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_id=${{ matrix.runner_id }}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            "${BASE_PYTHON}" --version
+            uname -a
+            if command -v nvidia-smi >/dev/null; then
+              nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+                --format=csv,noheader
+            fi
+          } | tee "${output_root}/environment.txt"
+          "${BASE_PYTHON}" \
+            scripts/science/audit_deform360_existing_data_eligibility_v1.py \
+            --protocol protocols/deform360_existing_data_eligibility_v1.json \
+            --runner-id "${{ matrix.runner_id }}" \
+            --output "${output_root}/eligibility.json" \
+            | tee "${output_root}/eligibility.log"
+
+      - name: Publish eligibility summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "${OUTPUT_ROOT}/eligibility.json" ]]; then
+            "${BASE_PYTHON}" - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(
+              (Path(os.environ["OUTPUT_ROOT"]) / "eligibility.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          summary = payload["summary"]
+          print(f"### Deform360 existing-data eligibility: {payload['runner_id']}")
+          print()
+          print(f"- Decision: `{payload['decision']}`")
+          print(f"- Result ID: `{payload['result_id']}`")
+          print(f"- Recognized objects: `{summary['recognized_object_count']}`")
+          print(
+              "- Multi-episode transport candidates: "
+              f"`{summary['core_multi_episode_candidate_count']}`"
+          )
+          print(
+              "- Immediately processed and action-labelled: "
+              f"`{summary['processed_transport_ready_object_count']}`"
+          )
+          print(f"- Classification counts: `{summary['classification_counts']}`")
+          print("- Media decoded: `false`")
+          print("- Numeric arrays loaded: `false`")
+          print("- Target outcomes used: `false`")
+          PY
+          else
+            echo "### Deform360 existing-data eligibility" >> "${GITHUB_STEP_SUMMARY}"
+            echo >> "${GITHUB_STEP_SUMMARY}"
+            echo "No eligibility artifact was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact eligibility evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-existing-data-${{ matrix.runner_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUTPUT_ROOT }}/environment.txt
+            ${{ env.OUTPUT_ROOT }}/eligibility.json
+            ${{ env.OUTPUT_ROOT }}/eligibility.log
+          if-no-files-found: warn
           retention-days: 30

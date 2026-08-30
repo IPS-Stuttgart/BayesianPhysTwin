@@ -1,0 +1,106 @@
+{
+  "schema": "bayesian-phystwin/deform360-existing-data-eligibility-protocol",
+  "schema_version": 1,
+  "protocol_id": "deform360-existing-data-eligibility-v1",
+  "status": "frozen-before-fragment-payload-audit",
+  "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+  "information_boundary": {
+    "directory_and_filename_inventory_only": true,
+    "small_metadata_json_allowed": true,
+    "media_payload_decoded": false,
+    "numeric_arrays_loaded": false,
+    "large_payloads_hashed": false,
+    "target_outcomes_used": false
+  },
+  "metadata": {
+    "maximum_json_bytes": 1048576,
+    "allowed_basenames": [
+      "action.json",
+      "config.json",
+      "episode.json",
+      "info.json",
+      "manifest.json",
+      "metadata.json",
+      "recording.json",
+      "task.json"
+    ],
+    "action_key_fragments": [
+      "action",
+      "interaction",
+      "manipulation",
+      "motion",
+      "primitive",
+      "task"
+    ]
+  },
+  "thresholds": {
+    "minimum_raw_camera_pairs_per_episode": 32,
+    "minimum_raw_tactile_pairs_per_episode": 4,
+    "minimum_processed_camera_videos_per_episode": 24,
+    "recommended_common_camera_floor": 32,
+    "minimum_episodes_per_transport_object": 2,
+    "minimum_multi_episode_objects_for_pilot": 5,
+    "minimum_multi_episode_objects_for_bounded_study": 8
+  },
+  "runners": {
+    "gpuserver6000": {
+      "roots": [
+        {
+          "root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+          "kind": "raw",
+          "expected_object_ids": [
+            "001-rope",
+            "002-rope-silk",
+            "003-cable",
+            "081-stripe-rope",
+            "083-blanket-cloth",
+            "085-scarf-cloth",
+            "086-cotton-scarf-cloth",
+            "092-squirrel",
+            "170-spider",
+            "171-penguin"
+          ]
+        },
+        {
+          "root": "/mnt/lexar4tb/datasets/deform360/fresh-download-20260811-v1/raw",
+          "kind": "raw",
+          "expected_object_ids": [
+            "097-pillow",
+            "106-baking-mat",
+            "118-envelope-cloth",
+            "140-rubber-glove-cloth",
+            "148-crepe-paper-cloth",
+            "194-fish-orange"
+          ]
+        },
+        {
+          "root": "/mnt/lexar4tb/datasets/deform360-official-hub-visuotactile-v1",
+          "kind": "mixed",
+          "expected_object_ids": [
+            "026-sock-cloth",
+            "031-cotton-cloth",
+            "036-napkin-cloth",
+            "058-roll-napkin",
+            "152-slime",
+            "153-cake",
+            "167-glove-gray-cloth",
+            "186-monster",
+            "193-frog",
+            "198-kneepad-cloth"
+          ]
+        }
+      ]
+    },
+    "gpuserver4090": {
+      "roots": [
+        {
+          "root": "/home/florianpfaff/deform360-reusable-sota-v1/aligned",
+          "kind": "processed",
+          "expected_object_ids": [
+            "004-rubber-band"
+          ]
+        }
+      ]
+    }
+  }
+}
