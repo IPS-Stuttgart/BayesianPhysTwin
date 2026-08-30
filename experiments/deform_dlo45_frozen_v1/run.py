@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from .core import DLOS, _load_protocol, _parse_args, _partition_names
-from .model import _point_summary, _source_gate, _target_gate
+from .core import _load_protocol, _parse_args
 from .predict import _predict
 from .score import _failure_receipt, _score, _seal
 from .source import _authorize, _inventory, _source
