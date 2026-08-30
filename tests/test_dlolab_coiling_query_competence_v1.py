@@ -8,6 +8,7 @@ from bayesian_phystwin_experiments.dlolab_coiling_query_competence_v1 import (
     native_qa,
     native_reward,
     protocol,
+    protocol_v1_1,
     source_value,
     task,
     worlds,
@@ -35,6 +36,18 @@ def test_protocol_is_development_only_and_complete():
     assert not value["protected_data_read"]
     assert not value["gpu_work"]
     assert len({(x["bending_E"], x["twisting_G"]) for x in worlds()}) == 9
+
+
+def test_v1_1_changes_only_replacement_metadata():
+    original = protocol()
+    replacement = protocol_v1_1()
+    assert replacement["replacement"]["parent_native_scene_steps_completed"] == 0
+    assert not replacement["replacement"]["scientific_fields_changed"]
+    assert not replacement["replacement"]["further_replacement_authorized"]
+    original.pop("schema")
+    replacement.pop("schema")
+    replacement.pop("replacement")
+    assert replacement == original
 
 
 def test_tasks_are_exactly_the_registered_worlds():

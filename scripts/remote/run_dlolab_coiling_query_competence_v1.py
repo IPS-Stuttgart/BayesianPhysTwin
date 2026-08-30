@@ -14,6 +14,7 @@ from typing import Any, TypeAlias, cast
 import numpy as np
 from numpy.typing import NDArray
 
+from bayesian_phystwin._portable_contracts import load_strict_json_object
 from bayesian_phystwin_experiments.deform_state_restart import file_digest
 from bayesian_phystwin_experiments.dlolab_benchmark import (
     source_identity,
@@ -21,8 +22,11 @@ from bayesian_phystwin_experiments.dlolab_benchmark import (
 )
 from bayesian_phystwin_experiments.dlolab_coiling_native_v1 import run_world
 from bayesian_phystwin_experiments.dlolab_coiling_query_competence_v1 import (
+    PARENT_FAILURE_ID,
+    PARENT_LOCK_ID,
+    PARENT_TASK_FAILURE_ID,
     native_qa,
-    protocol,
+    protocol_v1_1,
     source_value,
     task,
     worlds,
@@ -39,7 +43,15 @@ from bayesian_phystwin_experiments.dlolab_slingshot_process import (
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = Path("/home/fpfaff/source-only/dlolab-benchmark-source-v1-assets")
-OUTPUT = Path("/home/fpfaff/source-only/dlolab-coiling-query-competence-development-v1")
+OUTPUT = Path(
+    "/home/fpfaff/source-only/dlolab-coiling-query-competence-development-v1-1"
+)
+PARENT_SUMMARY = (
+    ROOT / "results/source/dlolab_coiling_query_competence_development_v1/summary.json"
+)
+PARENT_SUMMARY_SHA256 = (
+    "c89ce240fe6931f0f12540ec2b91ddd00a6843ad16ffc0177340195c7c3dce05"
+)
 SOURCES = (
     "src/bayesian_phystwin_experiments/dlolab_coiling_query_competence_v1.py",
     "src/bayesian_phystwin_experiments/dlolab_coiling_native_v1.py",
@@ -47,6 +59,9 @@ SOURCES = (
     "tests/test_dlolab_coiling_query_competence_v1.py",
     "tests/test_dlolab_coiling_runner_v1.py",
     "docs/dlolab_coiling_query_competence_development_v1.md",
+    "docs/dlolab_coiling_query_competence_development_v1_result.md",
+    "docs/dlolab_coiling_query_competence_development_v1_1.md",
+    "results/source/dlolab_coiling_query_competence_development_v1/summary.json",
     "src/bayesian_phystwin_experiments/dlolab_benchmark.py",
     "src/bayesian_phystwin_experiments/dlolab_native.py",
     "src/bayesian_phystwin_experiments/dlolab_regret_artifacts.py",
@@ -57,6 +72,25 @@ SOURCES = (
 )
 
 Array: TypeAlias = NDArray[Any]
+
+
+def parent_failure() -> dict[str, Any]:
+    value = dict(
+        load_strict_json_object(PARENT_SUMMARY, label="coiling parent failure")
+    )
+    if (
+        file_digest(PARENT_SUMMARY) != PARENT_SUMMARY_SHA256
+        or value.get("lock_id") != PARENT_LOCK_ID
+        or value.get("failure_id") != PARENT_FAILURE_ID
+        or value.get("first_task_failure_id") != PARENT_TASK_FAILURE_ID
+        or value.get("native_scene_steps_completed") != 0
+        or value.get("native_rewards_generated") is not False
+        or value.get("value_analysis_executed") is not False
+        or value.get("parent_root_retry_authorized") is not False
+        or value.get("replacement_may_change_scientific_fields") is not False
+    ):
+        raise ValueError("exact zero-step parent failure required")
+    return value
 
 
 def runtime() -> dict[str, Any]:
@@ -93,9 +127,10 @@ def validate_lock(output: Path) -> dict[str, Any]:
     lock = read_record(output / "lock.json")
     expected_source = {path: file_digest(ROOT / path) for path in SOURCES}
     if (
-        lock.get("schema") != "dlolab-coiling-development-lock-v1"
+        lock.get("schema") != "dlolab-coiling-development-lock-v1-1"
         or lock.get("revision") != clean_revision(ROOT)
-        or lock.get("protocol") != protocol()
+        or lock.get("protocol") != protocol_v1_1()
+        or lock.get("parent_failure") != parent_failure()
         or lock.get("output_root") != str(OUTPUT)
         or lock.get("runtime") != runtime()
         or lock.get("native_source") != source()
@@ -181,9 +216,10 @@ def run(output: Path) -> None:
     lock = write_record(
         output / "lock.json",
         {
-            "schema": "dlolab-coiling-development-lock-v1",
+            "schema": "dlolab-coiling-development-lock-v1-1",
             "revision": revision,
-            "protocol": protocol(),
+            "protocol": protocol_v1_1(),
+            "parent_failure": parent_failure(),
             "source_sha256": {path: file_digest(ROOT / path) for path in SOURCES},
             "native_source": source(),
             "runtime": runtime(),
@@ -200,7 +236,7 @@ def run(output: Path) -> None:
         result = write_record(
             output / "result.json",
             {
-                "schema": "dlolab-coiling-development-result-v1",
+                "schema": "dlolab-coiling-development-result-v1-1",
                 "lock_id": lock["artifact_id"],
                 "status": status,
                 "completed_worlds": len(completed),

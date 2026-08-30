@@ -35,6 +35,11 @@ INDEPENDENT_NOISE_STD_M = 0.002
 SHARED_BIAS_STD_M = 0.005
 REWARD_BUDGET = 0.001
 PAIR_MARGIN = 2 * REWARD_BUDGET
+PARENT_LOCK_ID = "4e7c5001ba5dcdbb3e49d19fa8b816343e89c272ef180d10a71c49dde9f1f5e6"
+PARENT_FAILURE_ID = "eb815bffa5914090ddad03ecc919a9c79fa4c6189f79bdce35714737f03f45f3"
+PARENT_TASK_FAILURE_ID = (
+    "7e1bae2447c4e65b0e7328b7ba74ed6dec0819ef10a41f1b7f51e667b22228f9"
+)
 MEMORY_NAMES = tuple(f"memory_RigidSolverState.{key}" for key in RIGID_FIELDS) + tuple(
     f"memory_RODSolverState.{key}" for key in STATE_FIELDS
 )
@@ -171,6 +176,25 @@ def protocol() -> dict[str, Any]:
         "dlo4_dlo5_read": False,
         "official_dlo3_evaluation": False,
     }
+
+
+def protocol_v1_1() -> dict[str, Any]:
+    """Bind the sole zero-step implementation replacement without drift."""
+    value = protocol()
+    value["schema"] = "dlolab-coiling-query-competence-development-v1-1"
+    value["replacement"] = {
+        "kind": "zero-step-environment-specific-material-field-shape-repair",
+        "parent_lock_id": PARENT_LOCK_ID,
+        "parent_failure_id": PARENT_FAILURE_ID,
+        "parent_task_failure_id": PARENT_TASK_FAILURE_ID,
+        "parent_native_scene_steps_completed": 0,
+        "parent_native_rewards_generated": False,
+        "parent_value_analysis_executed": False,
+        "scientific_fields_changed": False,
+        "parent_root_retry_authorized": False,
+        "further_replacement_authorized": False,
+    }
+    return value
 
 
 def native_reward(positions_m: Array) -> Array:

@@ -29,10 +29,12 @@ def _frozen_root(tmp_path, monkeypatch, mutation=None):
     monkeypatch.setattr(runner, "clean_revision", lambda _: "a" * 40)
     monkeypatch.setattr(runner, "source", lambda: {"native": "frozen"})
     monkeypatch.setattr(runner, "runtime", lambda: {"device": "cpu"})
+    monkeypatch.setattr(runner, "parent_failure", lambda: {"status": "zero-step"})
     value = {
-        "schema": "dlolab-coiling-development-lock-v1",
+        "schema": "dlolab-coiling-development-lock-v1-1",
         "revision": "a" * 40,
-        "protocol": runner.protocol(),
+        "protocol": runner.protocol_v1_1(),
+        "parent_failure": runner.parent_failure(),
         "output_root": str(output),
         "source_sha256": {"frozen.py": runner.file_digest(root / "frozen.py")},
         "runtime": runner.runtime(),
@@ -48,6 +50,8 @@ def _frozen_root(tmp_path, monkeypatch, mutation=None):
         value["protocol"]["native_steps"] = 1900
     elif mutation == "native":
         value["native_source"] = {"native": "other"}
+    elif mutation == "parent":
+        value["parent_failure"] = {"status": "other"}
     return output, write_record(output / "lock.json", value)
 
 
@@ -57,7 +61,7 @@ def test_exact_lock_roundtrip(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "mutation", ["revision", "source", "runtime", "protocol", "native"]
+    "mutation", ["revision", "source", "runtime", "protocol", "native", "parent"]
 )
 def test_source_runtime_and_protocol_custody_fail_closed(
     tmp_path, monkeypatch, mutation

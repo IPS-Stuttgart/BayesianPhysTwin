@@ -64,9 +64,9 @@ def run_world(
             getattr(self.rope, f"set_{name}_stiffness")(values)
             actual = field.to_numpy()
             if (
-                actual.shape != (3, 8)
+                actual.shape != (1, 8)
                 or not np.all(actual[0] == world[key])
-                or not np.array_equal(actual[1:], before[1:])
+                or before.shape != actual.shape
             ):
                 raise ValueError("native coiling material realization changed")
             captured[name] = actual[0].tolist()
