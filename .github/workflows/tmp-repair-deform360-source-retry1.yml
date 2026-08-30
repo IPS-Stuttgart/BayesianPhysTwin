@@ -33,52 +33,59 @@ jobs:
               ".github/workflows/"
               "deform360-source-pilot-materialization-v1-retry1.yml"
           )
-          text = path.read_text(encoding="utf-8")
-          invalid_env = '''    env:
-                EVIDENCE_ROOT: ${{ runner.temp }}/deform360-source-pilot-retry1-${{ github.run_id }}-${{ github.run_attempt }}
-                RUNTIME_ROOT: ${{ runner.temp }}/deform360-source-pilot-venv-retry1-${{ github.run_id }}-${{ github.run_attempt }}
-                RUNTIME_PYTHON: ${{ runner.temp }}/deform360-source-pilot-venv-retry1-${{ github.run_id }}-${{ github.run_attempt }}/bin/python
-          '''
-          invalid_env = "\n".join(
-              line[10:] if line.startswith("          ") else line
-              for line in invalid_env.splitlines()
-          ) + "\n"
-          if text.count(invalid_env) != 1:
-              raise SystemExit("unexpected job-level runner.temp block")
-          text = text.replace(invalid_env, "", 1)
+          lines = path.read_text(encoding="utf-8").splitlines()
 
-          anchor = '''      - name: Authorize one newly added retry request
-          '''
-          if text.count(anchor) != 1:
-              raise SystemExit("authorization anchor changed")
-          initializer = '''      - name: Initialize isolated runner paths
-                shell: bash
-                run: |
-                  set -euo pipefail
-                  evidence="${RUNNER_TEMP}/deform360-source-pilot-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-                  runtime="${RUNNER_TEMP}/deform360-source-pilot-venv-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-                  test ! -e "${evidence}"
-                  test ! -e "${runtime}"
-                  mkdir -p "${evidence}"
-                  {
-                    echo "EVIDENCE_ROOT=${evidence}"
-                    echo "RUNTIME_ROOT=${runtime}"
-                    echo "RUNTIME_PYTHON=${runtime}/bin/python"
-                  } >> "${GITHUB_ENV}"
+          timeout_index = lines.index("    timeout-minutes: 720")
+          env_index = lines.index("    env:", timeout_index + 1)
+          expected_names = (
+              "EVIDENCE_ROOT:",
+              "RUNTIME_ROOT:",
+              "RUNTIME_PYTHON:",
+          )
+          actual_names = tuple(
+              lines[env_index + offset].strip().split(maxsplit=1)[0]
+              for offset in range(1, 4)
+          )
+          if actual_names != expected_names:
+              raise SystemExit(
+                  f"unexpected job environment block: {actual_names!r}"
+              )
+          del lines[env_index : env_index + 4]
 
-          '''
-          initializer = "\n".join(
-              line[6:] if line.startswith("      ") else line
-              for line in initializer.splitlines()
-          ) + "\n"
-          text = text.replace(anchor, initializer + anchor, 1)
+          anchor = "      - name: Authorize one newly added retry request"
+          anchor_index = lines.index(anchor)
+          initializer = [
+              "      - name: Initialize isolated runner paths",
+              "        shell: bash",
+              "        run: |",
+              "          set -euo pipefail",
+              "          evidence=\"${RUNNER_TEMP}/deform360-source-pilot-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\"",
+              "          runtime=\"${RUNNER_TEMP}/deform360-source-pilot-venv-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\"",
+              "          test ! -e \"${evidence}\"",
+              "          test ! -e \"${runtime}\"",
+              "          mkdir -p \"${evidence}\"",
+              "          {",
+              "            echo \"EVIDENCE_ROOT=${evidence}\"",
+              "            echo \"RUNTIME_ROOT=${runtime}\"",
+              "            echo \"RUNTIME_PYTHON=${runtime}/bin/python\"",
+              "          } >> \"${GITHUB_ENV}\"",
+              "",
+          ]
+          lines[anchor_index:anchor_index] = initializer
 
-          added_only = '          test "${changed[0]}" = $\'A\\t\'"${REQUEST_PATH}"'
-          modified_only = '          test "${changed[0]}" = $\'M\\t\'"${REQUEST_PATH}"'
-          if text.count(added_only) != 1:
+          added_only = (
+              "          test \"${changed[0]}\" = "
+              "$'A\\t'\"${REQUEST_PATH}\""
+          )
+          modified_only = (
+              "          test \"${changed[0]}\" = "
+              "$'M\\t'\"${REQUEST_PATH}\""
+          )
+          if lines.count(added_only) != 1:
               raise SystemExit("request change-mode guard changed")
-          text = text.replace(added_only, modified_only, 1)
-          path.write_text(text, encoding="utf-8")
+          lines[lines.index(added_only)] = modified_only
+
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
           python -m pip install --disable-pip-version-check pyyaml==6.0.3
           python - <<'PY'
