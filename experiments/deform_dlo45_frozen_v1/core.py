@@ -180,8 +180,7 @@ def _load_protocol(path: Path) -> dict[str, object]:
     target = _mapping(payload.get("target_evaluation"), label="target evaluation")
     custody = _mapping(payload.get("custody"), label="custody")
     if (
-        parent.get("dlo3_method_revision")
-        != "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a"
+        parent.get("dlo3_method_revision") != "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a"
         or parent.get("dlo3_protocol_sha256")
         != "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c"
         or parent.get("point_arm") != "r1_s0p25"
@@ -205,8 +204,7 @@ def _load_protocol(path: Path) -> dict[str, object]:
             "DLO5": "raw-x-raw-z-negated-raw-y",
         }
         or tuple(
-            int(v)
-            for v in cast(Sequence[Any], data.get("known_action_nodes", ()))
+            int(v) for v in cast(Sequence[Any], data.get("known_action_nodes", ()))
         )
         != (0, 1, -2, -1)
         or int(cast(Any, split.get("fit_count", -1))) != 39
@@ -217,8 +215,7 @@ def _load_protocol(path: Path) -> dict[str, object]:
         or int(cast(Any, training.get("unroll_horizon_frames", -1))) != 50
         or int(cast(Any, training.get("batch_size", -1))) != 32
         or int(cast(Any, training.get("total_updates", -1))) != 6400
-        or int(cast(Any, training.get("maximum_compute_matched_updates", -1)))
-        != 512
+        or int(cast(Any, training.get("maximum_compute_matched_updates", -1))) != 512
         or int(cast(Any, training.get("pbd_iterations", -1))) != 10
         or training.get("optimizer") != "official-sgd-parameter-groups-v1"
         or training.get("cublas_workspace_config") != ":4096:8"
@@ -245,9 +242,7 @@ def _load_protocol(path: Path) -> dict[str, object]:
     return payload
 
 
-def _protocol_part(
-    protocol: Mapping[str, object], name: str
-) -> Mapping[str, object]:
+def _protocol_part(protocol: Mapping[str, object], name: str) -> Mapping[str, object]:
     return _mapping(protocol.get(name), label=name.replace("_", " "))
 
 
