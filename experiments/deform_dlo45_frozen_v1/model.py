@@ -315,15 +315,10 @@ def _point_summary(
             "candidate_mean_l1_m": float(np.mean(candidate_free_error)),
             "baseline_mean_l1_m": float(np.mean(baseline_free_error)),
             "relative_improvement": float(
-                1.0
-                - np.mean(candidate_free_error) / np.mean(baseline_free_error)
+                1.0 - np.mean(candidate_free_error) / np.mean(baseline_free_error)
             ),
-            "wins": int(
-                np.count_nonzero(candidate_free_error < baseline_free_error)
-            ),
-            "ties": int(
-                np.count_nonzero(candidate_free_error == baseline_free_error)
-            ),
+            "wins": int(np.count_nonzero(candidate_free_error < baseline_free_error)),
+            "ties": int(np.count_nonzero(candidate_free_error == baseline_free_error)),
             "worst_candidate_to_baseline_ratio": float(np.max(free_ratios)),
             "candidate_case_l1_m": candidate_free_error.tolist(),
             "baseline_case_l1_m": baseline_free_error.tolist(),
@@ -345,8 +340,7 @@ def _source_gate(
     passed = (
         float(cast(Any, summary["relative_improvement"]))
         >= float(cast(Any, gate["minimum_relative_improvement"]))
-        and int(cast(Any, summary["wins"]))
-        >= int(cast(Any, gate["minimum_case_wins"]))
+        and int(cast(Any, summary["wins"])) >= int(cast(Any, gate["minimum_case_wins"]))
         and float(cast(Any, summary["worst_candidate_to_baseline_ratio"]))
         <= float(cast(Any, gate["maximum_case_ratio"]))
     )
