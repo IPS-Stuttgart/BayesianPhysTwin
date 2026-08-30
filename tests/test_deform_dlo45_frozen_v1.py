@@ -17,6 +17,7 @@ if str(REMOTE) not in sys.path:
 from experiments.deform_dlo45_frozen_v1 import run  # noqa: E402
 
 PROTOCOL = ROOT / "experiments" / "deform_dlo45_frozen_v1" / "protocol.json"
+WORKFLOW = ROOT / ".github" / "workflows" / "deform-dlo45-frozen-transfer.yml"
 
 
 def test_protocol_is_exact_and_target_jointly_sealed() -> None:
@@ -25,6 +26,17 @@ def test_protocol_is_exact_and_target_jointly_sealed() -> None:
     assert protocol["target_evaluation"]["joint_prediction_seal_before_scoring"]
     assert protocol["custody"]["source_gate_for_each_dlo_before_any_eval_access"]
     assert not protocol["custody"]["retry_authorized"]
+
+
+def test_pre_target_recovery_is_explicit_and_uses_ephemeral_git_trust() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert ".github/requests/deform-dlo45-evaluate-v2.json" in workflow
+    assert '"prior_failed_run_id": 33329341107' in workflow
+    assert '"prior_target_access": False' in workflow
+    assert '"retry_class": "pre-target-infrastructure-correction"' in workflow
+    assert 'git config --file "$safe_git_config" --add safe.directory' in workflow
+    assert 'echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"' in workflow
+    assert 'rm -f "$DLO45_GIT_CONFIG"' in workflow
 
 
 def test_protocol_rejects_post_selection_change(tmp_path: Path) -> None:
