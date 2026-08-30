@@ -1,0 +1,115 @@
+{
+  "artifact_kind": "Deform360RealEvaluationGpuserver4090V1",
+  "schema_version": 1,
+  "executed_at_utc": "2026-08-30T16:51:28Z",
+  "repository": "IPS-Stuttgart/BayesianPhysTwin",
+  "source_branch": "science/deform360-gpuserver4090-real-v1",
+  "source_revision": "5404860a581d799a0628e720e2e4b012a26a4268",
+  "request_branch": "run/deform360-gpuserver4090-real-v1",
+  "request_revision": "aecbf40f3fcb884c527d1d651f234de18bd78e75",
+  "protocol": {
+    "id": "deform360-gpuserver4090-real-v1",
+    "official_processing_repository": "lhy0807/deform360",
+    "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "profile": "pilot"
+  },
+  "execution": {
+    "workflow_name": "Deform360 real-data evaluation",
+    "workflow_run_id": 33323425375,
+    "self_hosted_job_id": 99289313698,
+    "artifact_id": 9735595047,
+    "artifact_name": "deform360-real-evaluation-33323425375-1",
+    "artifact_size_bytes": 46269,
+    "artifact_sha256": "8b42866d21e6c1f071e685151de352c4d6001577c57493c4d7402877b9eca4dd",
+    "runner_label": "gpuserver4090",
+    "runner_name": "workstation1",
+    "runner_os": "Linux",
+    "runner_arch": "X64",
+    "python_version": "3.12.13",
+    "gpu_names": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA GeForce RTX 4090"
+    ]
+  },
+  "dataset": {
+    "name": "Deform360",
+    "root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "candidate_carrier_counts": {
+      "pcd_clean": 0,
+      "trajectory_npz": 0,
+      "raw_tactile": 7123
+    },
+    "selected_case_count": 12,
+    "evaluated_case_count": 12,
+    "failure_count": 0,
+    "physical_object_count": 6,
+    "physical_objects": [
+      "001-rope",
+      "002-rope-silk",
+      "003-cable",
+      "072-cotton-clohesline",
+      "081-stripe-rope",
+      "087-plastic-bag-blue-cloth"
+    ],
+    "reserved_object_overlap": []
+  },
+  "result": {
+    "representation": "raw_tactile_field",
+    "primary_metric": "field_rmse",
+    "mean_primary_error": {
+      "persistence": 0.11062354815928997,
+      "last_residual": 0.20013404894766343,
+      "bayesian": 0.14118467555305173
+    },
+    "bayesian_minus_best_baseline": 0.030561127393761798,
+    "case_bootstrap_95_interval": [
+      0.02808099564415937,
+      0.032908822494171354
+    ],
+    "object_balanced_bayesian_minus_best_baseline": 0.030561127393761805,
+    "object_bootstrap_95_interval": [
+      0.027565849342712757,
+      0.033668901412194537
+    ],
+    "bayesian_case_wins_vs_persistence": 0,
+    "bayesian_case_wins_vs_best_baseline": 0,
+    "bayesian_calibration": {
+      "joint_nees_normalized": 95396.68016814615,
+      "marginal_90_coverage": 0.9872432684748428,
+      "nll_per_dimension": 47691.243223549776,
+      "mean_effective_model_count": 3.782992187932401
+    },
+    "result_content_id": "51ccb01319d6ffd3aadd97b110da77893cfccdb2f0fc40c60d364f1082f1e649"
+  },
+  "retained_component_sha256": {
+    "protocol.json": "7d98a889a1026b056ff84ea97cd674f8a1df618856941065c74d343380e4e542",
+    "evaluation_request.json": "d037aa55a4e8c7821602b0d56c4182782354d57eede3cb0db768b16292e80ddb",
+    "environment.txt": "f63b3bb2144a581a29da6a175f6cccb95e8ec1dc8b39df6f3a3733fdc7a6e859",
+    "carrier_inventory.json": "d023f981b105b85aef5aa7e9364bd5ae02ab23c1f8ff87bb1363858b6594e31f",
+    "result.json": "18992bda1481cbac97b4b966b0ae1e1a8831de05650d4202eb8c4aa27172e360",
+    "case_metrics.csv": "c151f3aabac554dbcb8f76ca17959e3f6b4e47bdc7545587e87617870f0b1a90",
+    "step_metrics.csv": "eb1be03e31ad2ab3476d1be41cc6f573dd2946b58cd6ad02a5bbc9fb398dcc07",
+    "report.md": "58fa1455daec5714f93ee139151ede3d2ea64472ceaa3a9453132acc2de24f05"
+  },
+  "decision": {
+    "status": "negative-tactile-only-development-diagnostic",
+    "generic_tactile_forecast_route_promoted": false,
+    "three_dimensional_geometry_evaluated": false,
+    "causal_intervention_evaluated": false,
+    "paper_claim_authorized": false,
+    "fresh_confirmation_authorized": false,
+    "same_cohort_retuning_authorized": false,
+    "interpretation": "The mounted tree exposed no registered cleaned point-cloud or fixed-identity trajectory carrier. On the registered raw tactile-field pilot, persistence was better than the Bayesian lag mixture in every selected case and both object- and case-balanced intervals excluded zero in the harmful direction. The covariance diagnostics are not credible for a deployment-calibration claim."
+  },
+  "next_action": "Do not tune the generic lag mixture on these twelve tactile streams. Materialize the pinned official Deform360 geometry and robot/action annotations for source episodes only, freeze a cross-action query-conditioned Prob4D-to-BayesianPhysTwin-to-Causal4D protocol, pass its source qualification, seal target forecasts, and only then open different-action target futures.",
+  "information_boundary": {
+    "public_real_measurements": true,
+    "rolling_prefix_only_prediction": true,
+    "future_used_for_scoring_only": true,
+    "reserved_objects_opened": false,
+    "raw_payload_uploaded": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "This is retrospective public real-data development evidence for normalized tactile-field prediction only. It is a retained negative result, not a 3-D or 4-D geometry result, physical-parameter transport result, causal-intervention result, calibrated-risk result, fresh confirmation, state-of-the-art comparison, or paper claim."
+}
