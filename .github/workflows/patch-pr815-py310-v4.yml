@@ -1,0 +1,62 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Patch PR 815 Python 3.10 syntax v4
+
+on:
+  push:
+    branches: [science/deform360-icra-development-v2]
+    paths:
+      - ".github/requests/patch-pr815-py310-v4.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patch-pr815-py310-v4
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out patch source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/deform360-icra-development-v2
+          path: patch-source
+          persist-credentials: false
+          clean: true
+
+      - name: Check out writable PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/deform360-gpuserver4090-real-eval-v1
+          path: target
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Apply exact patch and validate syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 patch-source/scripts/ci/patch_pr815_py310_v4.py \
+            target/scripts/science/run_deform360_action_conditioned_tactile_v2.py
+          python3 -m py_compile \
+            target/scripts/science/run_deform360_action_conditioned_tactile_v2.py
+          git -C target diff --check
+
+      - name: Publish repair to PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C target config user.name github-actions[bot]
+          git -C target config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C target add scripts/science/run_deform360_action_conditioned_tactile_v2.py
+          if git -C target diff --cached --quiet; then
+            echo "PR branch already contains the repair."
+            exit 0
+          fi
+          git -C target commit -m "Fix Python 3.10 compatibility in Deform360 evaluator"
+          git -C target push origin HEAD:science/deform360-gpuserver4090-real-eval-v1
