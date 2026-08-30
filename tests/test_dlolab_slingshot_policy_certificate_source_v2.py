@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+import numpy as np
+
+from bayesian_phystwin.policy_gain_certificate import (
+    calibrate_policy_gain_lower_bound,
+    fit_local_policy_gain_predictor,
+)
+from bayesian_phystwin_experiments.coupled_action_regret import RegretCalibration
+from bayesian_phystwin_experiments.dlolab_slingshot_belief import BASELINE
+from bayesian_phystwin_experiments.dlolab_slingshot_policy_certificate_source_v2 import (
+    ARM_NAMES,
+    BOOTSTRAP_REPLICATES,
+    COUNTS,
+    calibrate_simultaneous_guard,
+    candidate_predictions,
+    continuous_worlds,
+    future_task,
+    guarded_decisions,
+    pre_future_checks,
+    prefix_batch_count,
+    prefix_task,
+    protocol,
+    score,
+    sensor_errors,
+    validate_rosters,
+)
+
+
+def _predictor():
+    rng = np.random.default_rng(261950)
+    return fit_local_policy_gain_predictor(
+        reference_ids=tuple(f"ref-{index:02d}" for index in range(10)),
+        reference_features=rng.normal(size=(10, 161)),
+        reference_action_gains=rng.normal(0.01, 0.01, size=(10, 7)),
+        neighbor_count=7,
+    )
+
+
+def test_rosters_are_fresh_disjoint_and_tasks_are_complete() -> None:
+    validate_rosters()
+    calibration = continuous_worlds("calibration")
+    evaluation = continuous_worlds("evaluation")
+    assert len(calibration) == 128
+    assert len(evaluation) == 288
+    assert prefix_batch_count("calibration") == 16
+    assert prefix_batch_count("evaluation") == 36
+    assert prefix_task("calibration", 15)["world_indices"] == list(range(120, 128))
+    assert prefix_task("evaluation", 35)["world_indices"] == list(range(280, 288))
+    assert future_task("evaluation", 287)["world_index"] == 287
+
+
+def test_protocol_freezes_policy_level_information_order() -> None:
+    frozen = protocol()
+    assert frozen["reference"]["world_count"] == 147
+    assert frozen["calibration"]["rank"] == 117
+    assert frozen["local_predictor"]["neighbor_count"] == 7
+    assert frozen["matched_comparator_arm"] == "simultaneous_mean_regret_guard"
+    assert frozen["calibration"][
+        "same_worlds_and_all_action_futures_for_both_calibrators"
+    ]
+    assert frozen["evaluation_future_before_decision_barrier"] is False
+    assert frozen["policy_v1_unopened_evaluation_futures_used"] is False
+    assert frozen["retry_authorized"] is False
+    assert frozen["replacement_authorized"] is False
+    assert frozen["new_recordings"] is False
+    assert frozen["bootstrap_replicates"] == BOOTSTRAP_REPLICATES
+
+
+def test_sensor_draws_are_deterministic_and_role_disjoint() -> None:
+    first = sensor_errors("calibration")
+    second = sensor_errors("calibration")
+    evaluation = sensor_errors("evaluation")
+    assert first.tobytes() == second.tobytes()
+    assert first.shape == (128, 3, 4, 3)
+    assert evaluation.shape == (288, 3, 4, 3)
+    assert first[:10].tobytes() != evaluation[:10].tobytes()
+
+
+def test_candidate_predictions_preserve_fixed_posterior_policy() -> None:
+    rng = np.random.default_rng(261951)
+    truth = rng.normal(size=(COUNTS["calibration"], 3, 4, 3))
+    bank_prefix = rng.normal(size=(27, 3, 4, 3))
+    bank_reward = rng.normal(size=(27, 7))
+    candidate = candidate_predictions(
+        "calibration", truth, bank_prefix, bank_reward, _predictor()
+    )
+    assert candidate["candidate_actions"].shape == (128,)
+    assert candidate["predicted_gain"].shape == (128,)
+    assert candidate["mean_raw_upper"].shape == (128, 7)
+    assert candidate["neighbor_indices"].shape == (128, 7)
+    assert candidate["features"].shape == (128, 161)
+
+
+def test_guarded_decisions_have_exact_fallback() -> None:
+    candidate = {
+        "candidate_actions": np.full(288, 4, dtype=np.int64),
+        "predicted_gain": np.r_[np.full(30, 0.2), np.zeros(258)],
+        "expected_losses": np.tile(np.arange(7, dtype=np.float64), (288, 1)),
+        "mean_raw_upper": np.zeros((288, 7), dtype=np.float64),
+    }
+    calibration = calibrate_policy_gain_lower_bound(
+        predicted_gain=np.linspace(0.0, 0.127, 128),
+        realized_gain=np.zeros(128),
+        miscoverage=0.10,
+    )
+    simultaneous = RegretCalibration(coverage=0.9, count=128, rank=117, offset=1.0)
+    guarded = guarded_decisions(candidate, calibration, simultaneous)
+    accepted = guarded["accepted_mask"]
+    assert np.all(guarded["decisions"][~accepted, 3] == BASELINE)
+    assert np.all(guarded["decisions"][accepted, 3] == 4)
+    assert np.all(guarded["decisions"][:, 2] == BASELINE)
+    assert pre_future_checks(guarded, all_prefix_qa=True)["pre_future_gate_passed"]
+
+
+def test_score_preserves_incumbent_under_complete_fallback() -> None:
+    rng = np.random.default_rng(261952)
+    rewards = rng.normal(7.0, 0.02, size=(288, 7))
+    candidate = {
+        "candidate_actions": np.full(288, 4, dtype=np.int64),
+        "mean_raw_upper": np.zeros((288, 7), dtype=np.float64),
+    }
+    guarded = {
+        "decisions": np.column_stack(
+            (
+                np.full(288, BASELINE),
+                np.full(288, 4),
+                np.full(288, BASELINE),
+                np.full(288, BASELINE),
+            )
+        ),
+        "lower_gain_bound": np.full(288, -1.0),
+    }
+    calibration = calibrate_policy_gain_lower_bound(
+        predicted_gain=np.linspace(0.0, 0.127, 128),
+        realized_gain=np.zeros(128),
+        miscoverage=0.10,
+    )
+    result = score(
+        candidate,
+        guarded,
+        rewards,
+        calibration,
+        RegretCalibration(coverage=0.9, count=128, rank=117, offset=1.0),
+        all_native_qa=True,
+        pre_future_gate_passed=False,
+    )
+    incumbent = result["arms"]["incumbent"]
+    guard = result["arms"]["policy_gain_guard"]
+    assert set(result["arms"]) == set(ARM_NAMES)
+    assert guard["mean_native_reward"] == incumbent["mean_native_reward"]
+    assert guard["mean_gain_over_incumbent"] == 0.0
+    assert guard["updated_worlds"] == 0
+    assert result["source_gate_passed"] is False
+
+
+def test_simultaneous_comparator_uses_the_same_128_calibration_futures() -> None:
+    candidate = {"mean_raw_upper": np.zeros((128, 7), dtype=np.float64)}
+    rewards = np.zeros((128, 7), dtype=np.float64)
+    calibration = calibrate_simultaneous_guard(candidate, rewards)
+    assert (calibration.coverage, calibration.count, calibration.rank) == (
+        0.9,
+        128,
+        117,
+    )
+    assert calibration.offset == 0.0
