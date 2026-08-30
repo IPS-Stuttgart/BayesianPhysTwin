@@ -20,13 +20,14 @@ from bayesian_phystwin import hood_source_qualification_v1 as contracts
 from bayesian_phystwin._canonical_contracts import plain_json
 from bayesian_phystwin._portable_contracts import write_atomic_json
 from bayesian_phystwin.hood_source_qualification_v1 import (
+    REPLACEMENT_PLAN_SCHEMA,
     ROLLOUT_STEPS,
     HoodSourceQualificationPlanV1,
     assess_hood_source_replays_v1,
     build_hood_source_result_v1,
-    consume_hood_source_attempt_v1,
+    consume_hood_source_attempt,
     file_sha256,
-    load_hood_source_qualification_plan_v1,
+    load_hood_source_qualification_plan,
     save_hood_source_result_v1,
 )
 
@@ -88,6 +89,25 @@ def _verify_checkout(root: Path, revision: str, archive_sha256: str) -> None:
         raise ValueError(f"source archive changed: {root}")
 
 
+def _verify_parent_failure(
+    plan: HoodSourceQualificationPlanV1,
+    implementation_root: Path,
+) -> None:
+    if plan.value["schema"] != REPLACEMENT_PLAN_SCHEMA:
+        return
+    parent = plan.value["parent_failure"]
+    receipt = implementation_root / parent["terminal_receipt_relative_path"]
+    if file_sha256(receipt) != parent["terminal_receipt_file_sha256"]:
+        raise ValueError("parent terminal receipt changed")
+    for path_key, digest_key in (
+        ("attempt_ledger_path", "attempt_ledger_sha256"),
+        ("failure_path", "failure_sha256"),
+    ):
+        source = Path(parent[path_key])
+        if file_sha256(source) != parent[digest_key]:
+            raise ValueError(f"retained parent artifact changed: {path_key}")
+
+
 def _verify_environment(
     plan: HoodSourceQualificationPlanV1,
     *,
@@ -143,6 +163,7 @@ def _verify_environment(
     for relative, digest in plan.implementation_source_files.items():
         if file_sha256(implementation_root / relative) != digest:
             raise ValueError(f"implementation source changed: {relative}")
+    _verify_parent_failure(plan, implementation_root)
 
 
 def _verify_imported_versions(plan: HoodSourceQualificationPlanV1) -> None:
@@ -171,8 +192,22 @@ def _seed_everything(torch: Any, seed: int) -> None:
     torch.use_deterministic_algorithms(True)
 
 
+def _apply_registered_dataset_correction(
+    plan: HoodSourceQualificationPlanV1,
+    dataset_config: Any,
+) -> None:
+    registered = dataset_config.smpl_model
+    if registered != "smpl/SMPL_FEMALE.pkl":
+        raise ValueError("HOOD example smpl_model field changed")
+    if plan.value["schema"] == REPLACEMENT_PLAN_SCHEMA:
+        if plan.value["execution"]["smpl_model_override"] is not None:
+            raise ValueError("replacement smpl_model override changed")
+        dataset_config.smpl_model = None
+
+
 def _run_replay(
     *,
+    plan: HoodSourceQualificationPlanV1,
     seed: int,
     hood_root: Path,
     hood_data: Path,
@@ -185,6 +220,7 @@ def _run_replay(
     _seed_everything(torch, seed)
     modules, config = load_params("aux/from_any_pose")
     dataset_config = config.dataloader.dataset.from_any_pose
+    _apply_registered_dataset_correction(plan, dataset_config)
     if config.device != "cuda:0":
         raise ValueError("HOOD configuration device changed")
     if dataset_config.pose_sequence_type != "mesh":
@@ -238,7 +274,7 @@ def _write_failure(output_root: Path, plan_id: str, error: BaseException) -> Non
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    plan = load_hood_source_qualification_plan_v1(args.plan)
+    plan = load_hood_source_qualification_plan(args.plan)
     output_root = plan.output_root
     if output_root.exists():
         raise ValueError("registered output root already exists")
@@ -249,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
         hood_data=args.hood_data.resolve(strict=True),
         public_archive=args.public_archive.resolve(strict=True),
     )
-    consume_hood_source_attempt_v1(plan)
+    consume_hood_source_attempt(plan)
     start = time.monotonic()
     try:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(plan.cuda_visible_device)
@@ -260,6 +296,7 @@ def main(argv: list[str] | None = None) -> int:
         _verify_imported_versions(plan)
         replays = [
             _run_replay(
+                plan=plan,
                 seed=plan.value["execution"]["random_seed"],
                 hood_root=args.hood_root.resolve(strict=True),
                 hood_data=args.hood_data.resolve(strict=True),

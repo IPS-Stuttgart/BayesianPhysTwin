@@ -194,6 +194,16 @@ custody receipt is
 `evidence/hood_mesh_source_qualification_terminal_v1.json`; detailed records
 remain in the private paper repository.
 
+The upstream `from_any_pose` loader independently exposes a mesh-only branch
+when `smpl_model` is null. A schema-v2 replacement contract therefore binds the
+retained v1 ledger, failure, and terminal receipt and permits one distinct
+attempt whose sole correction is setting that field to null before module
+construction. The public archive, checkpoint, mesh sequence, garment, seed,
+runtime, replay count, horizon, and numerical gates remain unchanged. The v1
+attempt is not retried or overwritten, and the replacement contract forbids a
+further replacement. This authorization is still only a numerical source
+qualification; it does not open 4D-DRESS or certification outcomes.
+
 ## Manipulation-domain stress test
 
 The handed-off RGBench MatPhys protocol remains useful as a domain-shift stress

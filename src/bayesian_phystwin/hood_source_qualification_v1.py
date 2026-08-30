@@ -26,9 +26,16 @@ from ._portable_contracts import (
 )
 
 PLAN_SCHEMA: Final = "bayesian-phystwin.hood-mesh-source-qualification-plan"
+REPLACEMENT_PLAN_SCHEMA: Final = (
+    "bayesian-phystwin.hood-mesh-source-qualification-replacement-plan"
+)
 RESULT_SCHEMA: Final = "bayesian-phystwin.hood-mesh-source-qualification-result"
 ATTEMPT_SCHEMA: Final = "bayesian-phystwin.hood-mesh-source-attempt"
+REPLACEMENT_ATTEMPT_SCHEMA: Final = (
+    "bayesian-phystwin.hood-mesh-source-replacement-attempt"
+)
 SCHEMA_VERSION: Final = 1
+REPLACEMENT_SCHEMA_VERSION: Final = 2
 
 HOOD_REPOSITORY: Final = "Dolorousrtur/HOOD"
 HOOD_REVISION: Final = "9bc1076195979ac6c027fdd729c6e960cad62f2a"
@@ -60,6 +67,15 @@ CLAIM_BOUNDARY: Final = (
     "not physical accuracy, 4D-DRESS access, source competence, a selective "
     "risk certificate, deployment evidence, or state of the art."
 )
+REPLACEMENT_CLAIM_BOUNDARY: Final = (
+    "A one-shot source-only replacement of the retained pre-rollout HOOD "
+    "configuration failure. It preserves the checkpoint, public mesh sequence, "
+    "garment, seed, replay count, rollout horizon, gates, and runtime, and only "
+    "sets the upstream mesh loader's optional smpl_model field to null before "
+    "module construction. A pass is numerical and interface qualification, not "
+    "physical accuracy, source competence, a selective risk certificate, "
+    "deployment evidence, or state of the art."
+)
 
 _PLAN_FIELDS: Final = frozenset(
     {
@@ -76,6 +92,9 @@ _PLAN_FIELDS: Final = frozenset(
         "gates",
         "information_boundary",
     }
+)
+_REPLACEMENT_PLAN_FIELDS: Final = _PLAN_FIELDS | frozenset(
+    {"parent_failure", "correction"}
 )
 _IMPLEMENTATION_FIELDS: Final = frozenset(
     {
@@ -136,6 +155,9 @@ _EXECUTION_FIELDS: Final = frozenset(
         "source_execution_authorized",
     }
 )
+_REPLACEMENT_EXECUTION_FIELDS: Final = _EXECUTION_FIELDS | frozenset(
+    {"smpl_model_override"}
+)
 _GATE_FIELDS: Final = frozenset(
     {
         "maximum_repeat_rmse_m",
@@ -158,6 +180,49 @@ _BOUNDARY_FIELDS: Final = frozenset(
         "dlo4_or_dlo5_read",
         "certification_execution_authorized",
         "replacement_allowed",
+    }
+)
+_REPLACEMENT_BOUNDARY_FIELDS: Final = frozenset(
+    {
+        "public_hood_source_read",
+        "parent_failure_metadata_read",
+        "fourddress_payload_read",
+        "fourddress_participant_roster_read",
+        "physical_outcomes_read",
+        "certification_outcomes_read",
+        "held_v8_read",
+        "dlo4_or_dlo5_read",
+        "certification_execution_authorized",
+        "replacement_execution_authorized",
+        "further_replacement_allowed",
+    }
+)
+_PARENT_FAILURE_FIELDS: Final = frozenset(
+    {
+        "terminal_receipt_relative_path",
+        "terminal_receipt_file_sha256",
+        "terminal_receipt_id",
+        "parent_plan_id",
+        "parent_plan_file_sha256",
+        "attempt_ledger_path",
+        "attempt_ledger_sha256",
+        "failure_path",
+        "failure_sha256",
+        "terminal_stage",
+        "source_data_decoded",
+        "rollout_started",
+        "scientific_score_available",
+    }
+)
+_CORRECTION_FIELDS: Final = frozenset(
+    {
+        "reason",
+        "scope",
+        "upstream_null_path_supported",
+        "configuration_file_unchanged",
+        "checkpoint_unchanged",
+        "public_source_unchanged",
+        "method_and_gates_unchanged",
     }
 )
 
@@ -186,6 +251,10 @@ _EXPECTED_EXECUTION_POLICY: Final = {
     "pose_sequence_type": "mesh",
     "source_execution_authorized": True,
 }
+_EXPECTED_REPLACEMENT_EXECUTION_POLICY: Final = {
+    **_EXPECTED_EXECUTION_POLICY,
+    "smpl_model_override": None,
+}
 _EXPECTED_GATES: Final = {
     "maximum_repeat_rmse_m": 1e-7,
     "minimum_cloth_motion_m": 1e-5,
@@ -205,6 +274,63 @@ _EXPECTED_BOUNDARY: Final = {
     "dlo4_or_dlo5_read": False,
     "certification_execution_authorized": False,
     "replacement_allowed": False,
+}
+_EXPECTED_REPLACEMENT_BOUNDARY: Final = {
+    "public_hood_source_read": True,
+    "parent_failure_metadata_read": True,
+    "fourddress_payload_read": False,
+    "fourddress_participant_roster_read": False,
+    "physical_outcomes_read": False,
+    "certification_outcomes_read": False,
+    "held_v8_read": False,
+    "dlo4_or_dlo5_read": False,
+    "certification_execution_authorized": False,
+    "replacement_execution_authorized": True,
+    "further_replacement_allowed": False,
+}
+_EXPECTED_PARENT_FAILURE: Final = {
+    "terminal_receipt_relative_path": (
+        "evidence/hood_mesh_source_qualification_terminal_v1.json"
+    ),
+    "terminal_receipt_file_sha256": (
+        "e2753bca945adfa7d664eb4255068460c8d9333267979c1c3561b523ea3c8be0"
+    ),
+    "terminal_receipt_id": (
+        "c6f0a658e5bbc969e3e5f1a602ff6dc692d6807efc9701f2695f43cfb2177e85"
+    ),
+    "parent_plan_id": (
+        "fcc5419f1e6dd5196bc39b581fe8fc71f5c064d09bf48e32375f264b185b70f8"
+    ),
+    "parent_plan_file_sha256": (
+        "43b2f6cb52011833bc7f1eecd6e61c3ab6a431ea5fdafe7a8ca2ac7f35dd64a5"
+    ),
+    "attempt_ledger_path": (
+        "/home/florianpfaff/source-only/hood-query-competence-v1/"
+        "source-qualification-v1-attempt.json"
+    ),
+    "attempt_ledger_sha256": (
+        "67779503f0a0eb2da195b60d1b8f64eae6609f45db2b6dfd20943f3bfaf32981"
+    ),
+    "failure_path": (
+        "/home/florianpfaff/source-only/hood-query-competence-v1/"
+        "source-qualification-v1-4b3e80b7/failure.json"
+    ),
+    "failure_sha256": (
+        "97f3aed2f9261108b7ead948a5324a76a3e6bb1aec12de63941a9289992aa9b9"
+    ),
+    "terminal_stage": "pre-rollout-runtime-initialization",
+    "source_data_decoded": False,
+    "rollout_started": False,
+    "scientific_score_available": False,
+}
+_EXPECTED_CORRECTION: Final = {
+    "reason": "source-independent-mesh-loader-configuration-defect",
+    "scope": "set-dataloader.dataset.from_any_pose.smpl_model-null",
+    "upstream_null_path_supported": True,
+    "configuration_file_unchanged": True,
+    "checkpoint_unchanged": True,
+    "public_source_unchanged": True,
+    "method_and_gates_unchanged": True,
 }
 
 FloatArray: TypeAlias = npt.NDArray[np.floating[Any]]
@@ -274,15 +400,23 @@ class HoodSourceQualificationPlanV1:
     cuda_visible_device: int
 
 
-def load_hood_source_qualification_plan_v1(
-    path: str | Path,
+def _validate_hood_source_plan(
+    value: Mapping[str, Any],
+    *,
+    expected_fields: frozenset[str],
+    expected_schema: str,
+    expected_schema_version: int,
+    expected_claim_boundary: str,
+    expected_execution_fields: frozenset[str],
+    expected_execution_policy: Mapping[str, Any],
+    expected_boundary_fields: frozenset[str],
+    expected_boundary: Mapping[str, Any],
 ) -> HoodSourceQualificationPlanV1:
-    value = load_strict_json_object(path, label="HOOD source qualification plan")
-    require_exact_fields(value, expected=_PLAN_FIELDS, name="HOOD source plan")
+    require_exact_fields(value, expected=expected_fields, name="HOOD source plan")
     if (
-        value["schema"] != PLAN_SCHEMA
+        value["schema"] != expected_schema
         or type(value["schema_version"]) is not int
-        or value["schema_version"] != SCHEMA_VERSION
+        or value["schema_version"] != expected_schema_version
     ):
         raise ValueError("HOOD source plan schema changed")
     nonempty_string(value["protocol_label"], name="protocol_label")
@@ -291,7 +425,7 @@ def load_hood_source_qualification_plan_v1(
     descriptor.pop("plan_id")
     if content_id(descriptor) != plan_id:
         raise ValueError("HOOD source plan_id changed")
-    if value["claim_boundary"] != CLAIM_BOUNDARY:
+    if value["claim_boundary"] != expected_claim_boundary:
         raise ValueError("HOOD source claim boundary changed")
 
     implementation = _mapping(value["implementation"], name="implementation")
@@ -366,8 +500,12 @@ def load_hood_source_qualification_plan_v1(
         raise ValueError("cuda_visible_device must be 0 or 1")
 
     execution = _mapping(value["execution"], name="execution")
-    require_exact_fields(execution, expected=_EXECUTION_FIELDS, name="execution")
-    for key, expected in _EXPECTED_EXECUTION_POLICY.items():
+    require_exact_fields(
+        execution,
+        expected=expected_execution_fields,
+        name="execution",
+    )
+    for key, expected in expected_execution_policy.items():
         if type(execution[key]) is not type(expected) or execution[key] != expected:
             raise ValueError(f"execution policy changed: {key}")
     output_root = _absolute_path(execution["output_root"], name="output_root")
@@ -384,8 +522,12 @@ def load_hood_source_qualification_plan_v1(
         raise ValueError("HOOD source gates changed")
 
     boundary = _mapping(value["information_boundary"], name="boundary")
-    require_exact_fields(boundary, expected=_BOUNDARY_FIELDS, name="boundary")
-    if content_id(boundary) != content_id(_EXPECTED_BOUNDARY):
+    require_exact_fields(
+        boundary,
+        expected=expected_boundary_fields,
+        name="boundary",
+    )
+    if content_id(boundary) != content_id(expected_boundary):
         raise ValueError("HOOD source information boundary changed")
 
     return HoodSourceQualificationPlanV1(
@@ -400,11 +542,94 @@ def load_hood_source_qualification_plan_v1(
     )
 
 
+def load_hood_source_qualification_plan_v1(
+    path: str | Path,
+) -> HoodSourceQualificationPlanV1:
+    value = load_strict_json_object(path, label="HOOD source qualification plan")
+    return _validate_hood_source_plan(
+        value,
+        expected_fields=_PLAN_FIELDS,
+        expected_schema=PLAN_SCHEMA,
+        expected_schema_version=SCHEMA_VERSION,
+        expected_claim_boundary=CLAIM_BOUNDARY,
+        expected_execution_fields=_EXECUTION_FIELDS,
+        expected_execution_policy=_EXPECTED_EXECUTION_POLICY,
+        expected_boundary_fields=_BOUNDARY_FIELDS,
+        expected_boundary=_EXPECTED_BOUNDARY,
+    )
+
+
+def load_hood_source_qualification_replacement_plan_v2(
+    path: str | Path,
+) -> HoodSourceQualificationPlanV1:
+    """Load the sole source-independent replacement for the retained v1 failure."""
+
+    value = load_strict_json_object(
+        path,
+        label="HOOD source qualification replacement plan",
+    )
+    plan = _validate_hood_source_plan(
+        value,
+        expected_fields=_REPLACEMENT_PLAN_FIELDS,
+        expected_schema=REPLACEMENT_PLAN_SCHEMA,
+        expected_schema_version=REPLACEMENT_SCHEMA_VERSION,
+        expected_claim_boundary=REPLACEMENT_CLAIM_BOUNDARY,
+        expected_execution_fields=_REPLACEMENT_EXECUTION_FIELDS,
+        expected_execution_policy=_EXPECTED_REPLACEMENT_EXECUTION_POLICY,
+        expected_boundary_fields=_REPLACEMENT_BOUNDARY_FIELDS,
+        expected_boundary=_EXPECTED_REPLACEMENT_BOUNDARY,
+    )
+    parent = _mapping(value["parent_failure"], name="parent_failure")
+    require_exact_fields(
+        parent,
+        expected=_PARENT_FAILURE_FIELDS,
+        name="parent_failure",
+    )
+    if content_id(parent) != content_id(_EXPECTED_PARENT_FAILURE):
+        raise ValueError("retained parent failure changed")
+    correction = _mapping(value["correction"], name="correction")
+    require_exact_fields(
+        correction,
+        expected=_CORRECTION_FIELDS,
+        name="correction",
+    )
+    if content_id(correction) != content_id(_EXPECTED_CORRECTION):
+        raise ValueError("source-independent correction changed")
+    if (
+        plan.output_root
+        == Path(cast(str, _EXPECTED_PARENT_FAILURE["failure_path"])).parent
+    ):
+        raise ValueError("replacement output root must differ from the parent failure")
+    if plan.attempt_ledger_path == Path(
+        cast(str, _EXPECTED_PARENT_FAILURE["attempt_ledger_path"])
+    ):
+        raise ValueError(
+            "replacement attempt ledger must differ from the parent ledger"
+        )
+    return plan
+
+
+def load_hood_source_qualification_plan(
+    path: str | Path,
+) -> HoodSourceQualificationPlanV1:
+    """Load a registered v1 plan or its sole schema-v2 replacement."""
+
+    value = load_strict_json_object(path, label="HOOD source qualification plan")
+    schema = value.get("schema")
+    if schema == PLAN_SCHEMA:
+        return load_hood_source_qualification_plan_v1(path)
+    if schema == REPLACEMENT_PLAN_SCHEMA:
+        return load_hood_source_qualification_replacement_plan_v2(path)
+    raise ValueError("unrecognized HOOD source qualification plan schema")
+
+
 def consume_hood_source_attempt_v1(
     plan: HoodSourceQualificationPlanV1,
 ) -> Mapping[str, Any]:
     """Atomically consume the one allowed source attempt."""
 
+    if plan.value["schema"] != PLAN_SCHEMA:
+        raise ValueError("v1 attempt requires a schema-v1 plan")
     ledger = plan.attempt_ledger_path
     if ledger.parent.exists() and not ledger.parent.is_dir():
         raise ValueError("attempt ledger parent must be a directory")
@@ -422,6 +647,46 @@ def consume_hood_source_attempt_v1(
     return cast(
         Mapping[str, Any], frozen_finite_json_mapping(payload, name="attempt ledger")
     )
+
+
+def consume_hood_source_replacement_attempt_v2(
+    plan: HoodSourceQualificationPlanV1,
+) -> Mapping[str, Any]:
+    """Atomically consume the only registered replacement attempt."""
+
+    if plan.value["schema"] != REPLACEMENT_PLAN_SCHEMA:
+        raise ValueError("replacement attempt requires a schema-v2 plan")
+    ledger = plan.attempt_ledger_path
+    if ledger.parent.exists() and not ledger.parent.is_dir():
+        raise ValueError("attempt ledger parent must be a directory")
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": REPLACEMENT_ATTEMPT_SCHEMA,
+        "schema_version": REPLACEMENT_SCHEMA_VERSION,
+        "plan_id": plan.plan_id,
+        "parent_plan_id": _EXPECTED_PARENT_FAILURE["parent_plan_id"],
+        "terminal_receipt_id": _EXPECTED_PARENT_FAILURE["terminal_receipt_id"],
+        "attempt_index": 1,
+        "attempt_limit": 1,
+        "output_root": str(plan.output_root),
+        "information_boundary": plain_json(plan.value["information_boundary"]),
+    }
+    write_atomic_json(payload, ledger, overwrite=False)
+    return cast(
+        Mapping[str, Any], frozen_finite_json_mapping(payload, name="attempt ledger")
+    )
+
+
+def consume_hood_source_attempt(
+    plan: HoodSourceQualificationPlanV1,
+) -> Mapping[str, Any]:
+    """Consume the write-once ledger appropriate to the registered plan."""
+
+    if plan.value["schema"] == PLAN_SCHEMA:
+        return consume_hood_source_attempt_v1(plan)
+    if plan.value["schema"] == REPLACEMENT_PLAN_SCHEMA:
+        return consume_hood_source_replacement_attempt_v2(plan)
+    raise ValueError("unrecognized HOOD source qualification plan schema")
 
 
 @dataclass(frozen=True, slots=True)

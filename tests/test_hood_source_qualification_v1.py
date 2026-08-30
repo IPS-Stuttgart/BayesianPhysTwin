@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import runpy
+import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -11,12 +14,14 @@ import pytest
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.hood_source_qualification_v1 import (
     CLAIM_BOUNDARY,
+    REPLACEMENT_CLAIM_BOUNDARY,
     ROLLOUT_STEPS,
     assess_hood_source_replays_v1,
     build_hood_source_result_v1,
     consume_hood_source_attempt_v1,
-    file_sha256,
+    consume_hood_source_replacement_attempt_v2,
     load_hood_source_qualification_plan_v1,
+    load_hood_source_qualification_replacement_plan_v2,
     save_hood_source_result_v1,
 )
 
@@ -38,8 +43,12 @@ def test_registered_plan_is_bound_to_exact_local_sources() -> None:
         plan.value["information_boundary"]["certification_execution_authorized"]
         is False
     )
+    revision = plan.value["implementation"]["revision"]
     for relative, expected in plan.implementation_source_files.items():
-        assert file_sha256(root / relative) == expected
+        blob = subprocess.check_output(
+            ["git", "-C", str(root), "show", f"{revision}:{relative}"]
+        )
+        assert hashlib.sha256(blob).hexdigest() == expected
 
 
 def test_public_terminal_receipt_is_hash_bound_and_nonclaiming() -> None:
@@ -151,6 +160,77 @@ def _plan(tmp_path: Path) -> dict[str, Any]:
     return value
 
 
+def _replacement_plan(tmp_path: Path) -> dict[str, Any]:
+    value = _plan(tmp_path)
+    value["schema"] = (
+        "bayesian-phystwin.hood-mesh-source-qualification-replacement-plan"
+    )
+    value["schema_version"] = 2
+    value["protocol_label"] = "test replacement"
+    value["claim_boundary"] = REPLACEMENT_CLAIM_BOUNDARY
+    value["execution"]["smpl_model_override"] = None
+    value["information_boundary"] = {
+        "public_hood_source_read": True,
+        "parent_failure_metadata_read": True,
+        "fourddress_payload_read": False,
+        "fourddress_participant_roster_read": False,
+        "physical_outcomes_read": False,
+        "certification_outcomes_read": False,
+        "held_v8_read": False,
+        "dlo4_or_dlo5_read": False,
+        "certification_execution_authorized": False,
+        "replacement_execution_authorized": True,
+        "further_replacement_allowed": False,
+    }
+    value["parent_failure"] = {
+        "terminal_receipt_relative_path": (
+            "evidence/hood_mesh_source_qualification_terminal_v1.json"
+        ),
+        "terminal_receipt_file_sha256": (
+            "e2753bca945adfa7d664eb4255068460c8d9333267979c1c3561b523ea3c8be0"
+        ),
+        "terminal_receipt_id": (
+            "c6f0a658e5bbc969e3e5f1a602ff6dc692d6807efc9701f2695f43cfb2177e85"
+        ),
+        "parent_plan_id": (
+            "fcc5419f1e6dd5196bc39b581fe8fc71f5c064d09bf48e32375f264b185b70f8"
+        ),
+        "parent_plan_file_sha256": (
+            "43b2f6cb52011833bc7f1eecd6e61c3ab6a431ea5fdafe7a8ca2ac7f35dd64a5"
+        ),
+        "attempt_ledger_path": (
+            "/home/florianpfaff/source-only/hood-query-competence-v1/"
+            "source-qualification-v1-attempt.json"
+        ),
+        "attempt_ledger_sha256": (
+            "67779503f0a0eb2da195b60d1b8f64eae6609f45db2b6dfd20943f3bfaf32981"
+        ),
+        "failure_path": (
+            "/home/florianpfaff/source-only/hood-query-competence-v1/"
+            "source-qualification-v1-4b3e80b7/failure.json"
+        ),
+        "failure_sha256": (
+            "97f3aed2f9261108b7ead948a5324a76a3e6bb1aec12de63941a9289992aa9b9"
+        ),
+        "terminal_stage": "pre-rollout-runtime-initialization",
+        "source_data_decoded": False,
+        "rollout_started": False,
+        "scientific_score_available": False,
+    }
+    value["correction"] = {
+        "reason": "source-independent-mesh-loader-configuration-defect",
+        "scope": "set-dataloader.dataset.from_any_pose.smpl_model-null",
+        "upstream_null_path_supported": True,
+        "configuration_file_unchanged": True,
+        "checkpoint_unchanged": True,
+        "public_source_unchanged": True,
+        "method_and_gates_unchanged": True,
+    }
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    return value
+
+
 def _write(tmp_path: Path, value: dict[str, Any]) -> Path:
     path = tmp_path / "plan.json"
     path.write_text(json.dumps(value), encoding="utf-8")
@@ -177,6 +257,109 @@ def test_plan_loads_and_attempt_is_write_once(tmp_path: Path) -> None:
     assert ledger["attempt_index"] == 1
     with pytest.raises(FileExistsError):
         consume_hood_source_attempt_v1(plan)
+
+
+def test_replacement_plan_binds_parent_and_consumes_distinct_attempt(
+    tmp_path: Path,
+) -> None:
+    value = _replacement_plan(tmp_path)
+    plan = load_hood_source_qualification_replacement_plan_v2(_write(tmp_path, value))
+    assert plan.value["execution"]["smpl_model_override"] is None
+    assert plan.value["information_boundary"]["further_replacement_allowed"] is False
+    ledger = consume_hood_source_replacement_attempt_v2(plan)
+    assert ledger["schema_version"] == 2
+    assert ledger["parent_plan_id"] == value["parent_failure"]["parent_plan_id"]
+    with pytest.raises(ValueError, match="schema-v1"):
+        consume_hood_source_attempt_v1(plan)
+    with pytest.raises(FileExistsError):
+        consume_hood_source_replacement_attempt_v2(plan)
+
+
+@pytest.mark.parametrize(
+    ("section", "key", "replacement", "message"),
+    [
+        ("parent_failure", "failure_sha256", "0" * 64, "parent failure"),
+        ("correction", "method_and_gates_unchanged", False, "correction"),
+        (
+            "information_boundary",
+            "further_replacement_allowed",
+            True,
+            "information boundary",
+        ),
+    ],
+)
+def test_replacement_plan_fails_closed_on_custody_changes(
+    tmp_path: Path,
+    section: str,
+    key: str,
+    replacement: object,
+    message: str,
+) -> None:
+    value = _replacement_plan(tmp_path)
+    value[section][key] = replacement
+    value.pop("plan_id")
+    value["plan_id"] = content_id(value)
+    with pytest.raises(ValueError, match=message):
+        load_hood_source_qualification_replacement_plan_v2(_write(tmp_path, value))
+
+
+def test_runner_applies_only_registered_mesh_loader_correction(
+    tmp_path: Path,
+) -> None:
+    script = (
+        Path(__file__).parents[1]
+        / "scripts/science/run_hood_mesh_source_qualification_v1.py"
+    )
+    runner = runpy.run_path(str(script))
+    apply_correction = runner["_apply_registered_dataset_correction"]
+    replacement = load_hood_source_qualification_replacement_plan_v2(
+        _write(tmp_path, _replacement_plan(tmp_path))
+    )
+    dataset_config = SimpleNamespace(smpl_model="smpl/SMPL_FEMALE.pkl")
+    apply_correction(replacement, dataset_config)
+    assert dataset_config.smpl_model is None
+
+    v1 = load_hood_source_qualification_plan_v1(_write(tmp_path, _plan(tmp_path)))
+    dataset_config = SimpleNamespace(smpl_model="smpl/SMPL_FEMALE.pkl")
+    apply_correction(v1, dataset_config)
+    assert dataset_config.smpl_model == "smpl/SMPL_FEMALE.pkl"
+
+    changed = SimpleNamespace(smpl_model="smpl/OTHER.pkl")
+    with pytest.raises(ValueError, match="smpl_model field changed"):
+        apply_correction(replacement, changed)
+
+
+def test_runner_recomputes_parent_artifact_hashes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    script = (
+        Path(__file__).parents[1]
+        / "scripts/science/run_hood_mesh_source_qualification_v1.py"
+    )
+    runner = runpy.run_path(str(script))
+    verify_parent = runner["_verify_parent_failure"]
+    plan = load_hood_source_qualification_replacement_plan_v2(
+        _write(tmp_path, _replacement_plan(tmp_path))
+    )
+    parent = plan.value["parent_failure"]
+    expected = {
+        tmp_path / parent["terminal_receipt_relative_path"]: parent[
+            "terminal_receipt_file_sha256"
+        ],
+        Path(parent["attempt_ledger_path"]): parent["attempt_ledger_sha256"],
+        Path(parent["failure_path"]): parent["failure_sha256"],
+    }
+    observed = dict(expected)
+    monkeypatch.setitem(
+        verify_parent.__globals__,
+        "file_sha256",
+        lambda path: observed[Path(path)],
+    )
+    verify_parent(plan, tmp_path)
+    observed[Path(parent["failure_path"])] = "0" * 64
+    with pytest.raises(ValueError, match="retained parent artifact"):
+        verify_parent(plan, tmp_path)
 
 
 def test_plan_rejects_resealed_boundary_or_method_changes(tmp_path: Path) -> None:
