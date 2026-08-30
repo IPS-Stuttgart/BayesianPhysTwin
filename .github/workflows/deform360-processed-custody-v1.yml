@@ -1,0 +1,215 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 processed custody repair
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-processed-custody-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-processed-custody-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-processed-custody-v1.json
+  PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  CUSTODY_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository/cross-action-source-v1
+
+jobs:
+  repair:
+    name: Bounded processed custody / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+          fetch-depth: 2
+
+      - name: Authorize one newly added custody request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status "${GITHUB_SHA}^" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-processed-custody-request-v1",
+              "processed_root": os.environ["PROCESSED_ROOT"],
+              "custody_root": os.environ["CUSTODY_ROOT"],
+              "runner_label": "gpuserver4090",
+              "create_only_dedicated_subdirectory": True,
+              "permission_repair_authorized": True,
+              "dataset_payload_modification_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"invalid request field {key!r}")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from custody contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("expected_source_revision does not equal request parent")
+          PY
+
+      - name: Inspect and repair only the dedicated custody directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-custody-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${evidence}"
+          echo "EVIDENCE_ROOT=${evidence}" >> "${GITHUB_ENV}"
+
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "processed_root=${PROCESSED_ROOT}"
+            echo "custody_root=${CUSTODY_ROOT}"
+            id
+            stat -c 'processed mode=%A octal=%a uid=%u gid=%g owner=%U group=%G' "${PROCESSED_ROOT}"
+            namei -om "${CUSTODY_ROOT}" || true
+            if command -v getfacl >/dev/null 2>&1; then
+              getfacl -p "${PROCESSED_ROOT}" || true
+            fi
+            findmnt -T "${PROCESSED_ROOT}" || true
+          } | tee "${evidence}/before.txt"
+
+          test -d "${PROCESSED_ROOT}"
+          test -r "${PROCESSED_ROOT}"
+          test "$(readlink -f -- "${PROCESSED_ROOT}")" = "${PROCESSED_ROOT}"
+          case "${CUSTODY_ROOT}" in
+            "${PROCESSED_ROOT}"/cross-action-source-v1) ;;
+            *) echo "custody root differs from the exact registered child" >&2; exit 1 ;;
+          esac
+
+          repair_mode=none
+          if [[ ! -d "${CUSTODY_ROOT}" ]]; then
+            if [[ -w "${PROCESSED_ROOT}" ]]; then
+              install -d -m 2775 "${CUSTODY_ROOT}"
+              repair_mode=runner-created
+            else
+              sudo -n true
+              sudo install -d -o "$(id -u)" -g "$(id -g)" -m 2775 "${CUSTODY_ROOT}"
+              repair_mode=sudo-created-dedicated-child
+            fi
+          fi
+
+          if [[ ! -w "${CUSTODY_ROOT}" ]]; then
+            sudo -n true
+            sudo chown "$(id -u):$(id -g)" "${CUSTODY_ROOT}"
+            sudo chmod 2775 "${CUSTODY_ROOT}"
+            repair_mode=sudo-reowned-dedicated-child
+          fi
+
+          marker="${CUSTODY_ROOT}/.bayesian-phystwin-custody-v1.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          marker = Path(os.environ["CUSTODY_ROOT"]) / ".bayesian-phystwin-custody-v1.json"
+          value = {
+              "schema": "bayesian-phystwin/deform360-processed-custody-v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "creating_revision": os.environ["GITHUB_SHA"],
+              "runner_label": "gpuserver4090",
+              "scope": "cross-action-source-v1 source outputs only",
+              "target_future_authorized": False,
+              "dataset_payload_modification_authorized": False,
+          }
+          if marker.exists():
+              prior = json.loads(marker.read_text())
+              if prior.get("schema") != value["schema"]:
+                  raise SystemExit("existing custody marker has a different schema")
+          else:
+              marker.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+          PY
+
+          probe="${CUSTODY_ROOT}/.write-probe-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          : > "${probe}"
+          rm -f -- "${probe}"
+          test -w "${CUSTODY_ROOT}"
+
+          {
+            echo "repair_mode=${repair_mode}"
+            stat -c 'custody mode=%A octal=%a uid=%u gid=%g owner=%U group=%G' "${CUSTODY_ROOT}"
+            stat -c 'marker mode=%A octal=%a uid=%u gid=%g size=%s' "${marker}"
+            if command -v getfacl >/dev/null 2>&1; then
+              getfacl -p "${CUSTODY_ROOT}" || true
+            fi
+          } | tee "${evidence}/after.txt"
+
+          REPAIR_MODE="${repair_mode}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["CUSTODY_ROOT"])
+          marker = root / ".bayesian-phystwin-custody-v1.json"
+          result = {
+              "schema": "deform360-processed-custody-result-v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "required_runner_label": "gpuserver4090",
+              "processed_root": os.environ["PROCESSED_ROOT"],
+              "custody_root": str(root),
+              "repair_mode": os.environ["REPAIR_MODE"],
+              "custody_exists": root.is_dir(),
+              "custody_writable": os.access(root, os.W_OK),
+              "marker_sha256": hashlib.sha256(marker.read_bytes()).hexdigest(),
+              "information_boundary": {
+                  "dedicated_child_created_or_repaired": True,
+                  "other_processed_entries_modified": False,
+                  "dataset_payload_opened": False,
+                  "target_future_opened": False,
+                  "paper_claim_authorized": False,
+              },
+          }
+          Path(os.environ["EVIDENCE_ROOT"]).joinpath("result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+
+      - name: Upload compact custody evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-processed-custody-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/before.txt
+            ${{ env.EVIDENCE_ROOT }}/after.txt
+            ${{ env.EVIDENCE_ROOT }}/result.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove compact scratch
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: rm -rf -- "${EVIDENCE_ROOT}"
