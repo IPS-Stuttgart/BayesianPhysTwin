@@ -1,0 +1,322 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 gpuserver4090 download preflight
+
+on:
+  push:
+    branches:
+      - science/deform360-gpuserver4090-preflight
+    paths:
+      - ".github/workflows/deform360-gpuserver4090-preflight.yml"
+      - "protocols/deform360_metadata_preflight_v1.json"
+      - "scripts/science/build_deform360_metadata_inventory.py"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-gpuserver4090-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEFORM360_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  metadata-preflight:
+    name: Target-blind download and names inventory
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify host and mounted data root
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deform360-gpuserver4090-preflight
+          actual_host="$(hostname -s)"
+          resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
+          test -d "${resolved_root}"
+          if [[ "${actual_host}" != "gpuserver4090" ]]; then
+            echo "Expected gpuserver4090, observed ${actual_host}" >&2
+            exit 1
+          fi
+          echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "hostname=${actual_host}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "dataset_root=${resolved_root}"
+            uname -a
+            python3 --version
+            df -B1 "${resolved_root}"
+          } | tee deform360-gpuserver4090-preflight/environment.txt
+
+      - name: Take two metadata-only download snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import time
+          from collections import Counter
+          from pathlib import Path
+
+          root = Path(os.environ["DEFORM360_ROOT"]).resolve()
+          out = Path("deform360-gpuserver4090-preflight")
+          object_pattern = re.compile(r"^\d{3}[-_].+")
+          partial_suffixes = {
+              ".aria2",
+              ".crdownload",
+              ".download",
+              ".part",
+              ".partial",
+              ".tmp",
+          }
+
+          def snapshot(name: str) -> dict[str, object]:
+              suffix_counts: Counter[str] = Counter()
+              top_level = []
+              object_like_top_level = []
+              partial_files = []
+              newest = []
+              total_bytes = 0
+              total_files = 0
+              total_directories = 0
+              hasher = hashlib.sha256()
+
+              for child in sorted(root.iterdir(), key=lambda item: item.name):
+                  stat = child.stat(follow_symlinks=False)
+                  record = {
+                      "name": child.name,
+                      "kind": "directory" if child.is_dir() else "file",
+                      "size_bytes": stat.st_size,
+                      "mtime_ns": stat.st_mtime_ns,
+                  }
+                  top_level.append(record)
+                  if object_pattern.match(child.name):
+                      object_like_top_level.append(child.name)
+
+              for directory, names, files in os.walk(root, followlinks=False):
+                  names[:] = sorted(
+                      entry
+                      for entry in names
+                      if entry not in {".git", "__pycache__", "node_modules"}
+                  )
+                  total_directories += 1
+                  for filename in sorted(files):
+                      path = Path(directory) / filename
+                      try:
+                          stat = path.stat(follow_symlinks=False)
+                      except FileNotFoundError:
+                          # A downloader may atomically rename a file during this snapshot.
+                          continue
+                      relative = path.relative_to(root).as_posix()
+                      suffix = path.suffix.lower() or "<none>"
+                      suffix_counts[suffix] += 1
+                      total_files += 1
+                      total_bytes += stat.st_size
+                      hasher.update(relative.encode("utf-8"))
+                      hasher.update(b"\0")
+                      hasher.update(str(stat.st_size).encode("ascii"))
+                      hasher.update(b"\0")
+                      hasher.update(str(stat.st_mtime_ns).encode("ascii"))
+                      hasher.update(b"\n")
+                      newest.append((stat.st_mtime_ns, stat.st_size, relative))
+                      if suffix in partial_suffixes:
+                          partial_files.append(
+                              {
+                                  "path": relative,
+                                  "size_bytes": stat.st_size,
+                                  "mtime_ns": stat.st_mtime_ns,
+                              }
+                          )
+
+              newest.sort(reverse=True)
+              result: dict[str, object] = {
+                  "schema": "bayesian-phystwin/deform360-download-snapshot-v1",
+                  "schema_version": 1,
+                  "dataset_root": str(root),
+                  "captured_unix_ns": time.time_ns(),
+                  "information_boundary": {
+                      "dataset_payload_opened": False,
+                      "file_contents_hashed": False,
+                      "names_sizes_and_timestamps_only": True,
+                      "reserved_target_outcomes_opened": False,
+                  },
+                  "total_files_named": total_files,
+                  "total_directories_named": total_directories,
+                  "total_named_file_bytes": total_bytes,
+                  "extension_counts": dict(sorted(suffix_counts.items())),
+                  "top_level_entries": top_level,
+                  "object_like_top_level_names": sorted(object_like_top_level),
+                  "partial_file_count": len(partial_files),
+                  "partial_files": sorted(
+                      partial_files,
+                      key=lambda record: str(record["path"]),
+                  )[:200],
+                  "newest_named_files": [
+                      {
+                          "path": relative,
+                          "size_bytes": size,
+                          "mtime_ns": mtime,
+                      }
+                      for mtime, size, relative in newest[:100]
+                  ],
+                  "path_size_mtime_sha256": hasher.hexdigest(),
+              }
+              destination = out / f"download-{name}.json"
+              destination.write_text(
+                  json.dumps(result, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+              return result
+
+          first = snapshot("a")
+          time.sleep(20)
+          second = snapshot("b")
+          delta = {
+              "schema": "bayesian-phystwin/deform360-download-delta-v1",
+              "schema_version": 1,
+              "interval_seconds": (
+                  int(second["captured_unix_ns"])
+                  - int(first["captured_unix_ns"])
+              )
+              / 1e9,
+              "file_count_delta": (
+                  int(second["total_files_named"])
+                  - int(first["total_files_named"])
+              ),
+              "directory_count_delta": (
+                  int(second["total_directories_named"])
+                  - int(first["total_directories_named"])
+              ),
+              "named_file_bytes_delta": (
+                  int(second["total_named_file_bytes"])
+                  - int(first["total_named_file_bytes"])
+              ),
+              "metadata_changed": (
+                  first["path_size_mtime_sha256"]
+                  != second["path_size_mtime_sha256"]
+              ),
+              "partial_file_count_a": first["partial_file_count"],
+              "partial_file_count_b": second["partial_file_count"],
+              "information_boundary": second["information_boundary"],
+          }
+          (out / "download-delta.json").write_text(
+              json.dumps(delta, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(delta, indent=2, sort_keys=True))
+          PY
+
+      - name: Build existing-protocol names-only inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/science/build_deform360_metadata_inventory.py \
+            --data-root "${DEFORM360_ROOT}" \
+            --repository . \
+            --protocol protocols/deform360_metadata_preflight_v1.json \
+            --output \
+              deform360-gpuserver4090-preflight/names-only-inventory.json \
+            | tee deform360-gpuserver4090-preflight/inventory.log
+
+      - name: Publish target-blind summary
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+          out = Path("deform360-gpuserver4090-preflight")
+          print("### Deform360 gpuserver4090 metadata preflight")
+          print()
+          if (out / "download-b.json").is_file():
+              latest = json.loads(
+                  (out / "download-b.json").read_text(encoding="utf-8")
+              )
+              print(f"- Named files: `{latest['total_files_named']}`")
+              print(f"- Named directories: `{latest['total_directories_named']}`")
+              print(
+                  "- Total named file bytes: "
+                  f"`{latest['total_named_file_bytes']}`"
+              )
+              print(
+                  "- Object-like top-level names: "
+                  f"`{len(latest['object_like_top_level_names'])}`"
+              )
+              print(f"- Partial-suffix files: `{latest['partial_file_count']}`")
+          if (out / "download-delta.json").is_file():
+              delta = json.loads(
+                  (out / "download-delta.json").read_text(encoding="utf-8")
+              )
+              print(
+                  "- Metadata changed during observation: "
+                  f"`{str(delta['metadata_changed']).lower()}`"
+              )
+              print(
+                  "- Named-byte delta during observation: "
+                  f"`{delta['named_file_bytes_delta']}`"
+              )
+          if (out / "names-only-inventory.json").is_file():
+              inventory = json.loads(
+                  (out / "names-only-inventory.json").read_text(
+                      encoding="utf-8"
+                  )
+              )
+              print(
+                  "- Recognized prior-protocol objects: "
+                  f"`{inventory['recognized_object_count']}`"
+              )
+              print(
+                  "- Classification counts: "
+                  f"`{inventory['classification_counts']}`"
+              )
+              print(
+                  "- Reserved targets present by name: "
+                  f"`{inventory['reserved_target_objects_present_by_name']}`"
+              )
+              print(
+                  "- Names-only content inventory SHA-256: "
+                  f"`{inventory['content_inventory_sha256']}`"
+              )
+          print("- Dataset payloads opened: `false`")
+          print("- Reserved target outcomes opened: `false`")
+          PY
+
+      - name: Verify tracked tree remained clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Upload metadata-only preflight artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-gpuserver4090-preflight-${{ github.run_id }}
+          path: deform360-gpuserver4090-preflight
+          if-no-files-found: error
+          retention-days: 30
