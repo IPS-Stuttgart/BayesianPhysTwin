@@ -1,0 +1,47 @@
+name: DLO4/DLO5 format helper
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-frozen-transfer-v1
+    paths:
+      - experiments/deform_dlo45_frozen_v1/**
+      - tests/test_deform_dlo45_frozen_v1.py
+      - .github/workflows/dlo45-format-helper.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: science/deform-dlo45-frozen-transfer-v1
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Format and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.16.5
+          python -m ruff format \
+            experiments/deform_dlo45_frozen_v1 \
+            tests/test_deform_dlo45_frozen_v1.py
+          if git diff --quiet; then
+            echo "Already formatted."
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add experiments/deform_dlo45_frozen_v1 tests/test_deform_dlo45_frozen_v1.py
+          git commit -m "Format DLO4/DLO5 frozen transfer"
+          git push origin HEAD:science/deform-dlo45-frozen-transfer-v1
