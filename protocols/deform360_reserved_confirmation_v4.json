@@ -1,0 +1,98 @@
+{
+  "schema": "bayesian-phystwin/deform360-reserved-confirmation-protocol-v4",
+  "schema_version": 4,
+  "protocol_id": "deform360-reserved-action-kernel-confirmation-v4",
+  "status": "frozen-after-development-before-reserved-payload-access",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "development_method_binding": {
+    "protocol_path": "protocols/deform360_action_kernel_v3.json",
+    "protocol_file_sha256": "e250322028ec04bf4595db92227ac42127a7b4fcf7e89365c1d50d698846cc90",
+    "implementation_path": "scripts/science/run_deform360_action_kernel_v3.py",
+    "implementation_git_blob_sha1": "94abb4b94a84b004e3ad76bbb78fa88af5b82471",
+    "base_implementation_path": "scripts/science/run_deform360_action_conditioned_tactile_v2.py",
+    "base_implementation_git_blob_sha1": "f7d1526af647d36a652eda93a2bd4211a28f430d",
+    "development_source_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "development_run_id": 33330455808,
+    "development_artifact_id": 9737547119,
+    "development_artifact_sha256": "de41ab129d22a118a397e21b588cbfc1bc8a9792d4be3a9e504734d47f8c4167",
+    "development_result_file_sha256": "a3482c83ff3ea73353c3605a0c983920d46598505fb54882b20b2a3a12e69487",
+    "development_active_rmse_relative_to_persistence": -0.0574803610407046,
+    "development_object_wins": 14,
+    "development_object_losses": 0,
+    "development_bootstrap_95_interval": [
+      -0.047283629054324636,
+      -0.027711315454703553
+    ],
+    "method_changes_after_development_result_allowed": false
+  },
+  "readiness_binding": {
+    "run_id": 33330710592,
+    "artifact_id": 9737630207,
+    "artifact_sha256": "84e8b463f9d3092739227985319e7910e1aaff3a59998b4e366455b8a7213920",
+    "readiness_file_sha256": "6f91b0d4de6270888045c810cd1b452664c266802243c665bf4331fd95ad7a28",
+    "numeric_reserved_payloads_opened": false
+  },
+  "eligible_reserved_object_ids": [
+    "066-glove-half-black-cloth",
+    "075-leather",
+    "080-wool",
+    "091-net-cloth"
+  ],
+  "ineligible_reserved_object_ids": [
+    "112-wristband-cloth",
+    "120-bread-plush",
+    "121-croissant-plush",
+    "123-pipe-cleaner",
+    "139-rubber-ball",
+    "143-silicone-wristband",
+    "164-sheep",
+    "165-glove-yellow-cloth"
+  ],
+  "selection": {
+    "minimum_complete_episodes_per_object": 4,
+    "target_episode_rule": "highest carrier-complete episode id selected from metadata and file identities before any reserved tactile payload is loaded",
+    "source_episode_rule": "all other carrier-complete episodes of the same physical object",
+    "replacement_allowed": false,
+    "partial_eligible_roster_result_allowed": false
+  },
+  "frozen_method": {
+    "implementation": "exact deform360-action-kernel-development-v3 evaluator",
+    "forecast_horizon_frames": 32,
+    "future_robot_trajectory_is_registered_intervention_input": true,
+    "future_tactile_is_scoring_only": true,
+    "candidate_families": [
+      "action_ridge",
+      "action_kernel"
+    ],
+    "relation_breaking_control": "target future-action feature permutation",
+    "all_hyperparameters_and_guard_decisions_source_only": true
+  },
+  "confirmation_decision": {
+    "primary_unit": "physical object",
+    "primary_metric": "object-balanced active-field RMSE at 32 frames",
+    "required_object_count": 4,
+    "point_superiority_requires_mean_difference_below_zero": true,
+    "point_superiority_requires_bootstrap_upper_bound_below_zero": true,
+    "minimum_object_wins": 3,
+    "maximum_object_losses": 1,
+    "relation_breaking_requires_ensemble_better_than_shuffled_action": true,
+    "minimum_guard_acceptance_fraction": 0.25,
+    "probabilistic_claim_separate_from_point_claim": true
+  },
+  "information_boundary": {
+    "protocol_frozen_before_reserved_numeric_payload_access": true,
+    "eligible_reserved_robot_trajectories_may_open": true,
+    "eligible_reserved_tactile_source_episodes_may_open": true,
+    "eligible_reserved_target_tactile_may_open_only_after_source_fit_is_content_bound": true,
+    "ineligible_reserved_payloads_may_open": false,
+    "development_method_or_threshold_changes_allowed": false,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "new_measurements_required": false
+  },
+  "evidence_class": "experiment-internal reserved-object confirmation on released real measurements; not globally fresh",
+  "fresh_confirmation_authorized": false,
+  "paper_claim_authorized": false,
+  "strict_counterfactual_claim_authorized": false,
+  "claim_boundary": "A positive result confirms the frozen action-conditioned tactile predictor on four previously unopened objects within this experiment. It supports a real intervention-input forecasting claim, but not dense 4-D geometry, strict individual counterfactuals, global freshness, safety, state of the art, or automatic paper acceptance."
+}
