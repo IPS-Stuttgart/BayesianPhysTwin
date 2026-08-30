@@ -38,7 +38,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Verify host and mounted data root
+      - name: Verify runner label, GPU capability, and mounted data root
         shell: bash
         run: |
           set -euo pipefail
@@ -46,16 +46,19 @@ jobs:
           actual_host="$(hostname -s)"
           resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
           test -d "${resolved_root}"
-          if [[ "${actual_host}" != "gpuserver4090" ]]; then
-            echo "Expected gpuserver4090, observed ${actual_host}" >&2
+          gpu_names="$(nvidia-smi --query-gpu=name --format=csv,noheader)"
+          if ! grep -Fq "4090" <<< "${gpu_names}"; then
+            echo "The gpuserver4090 runner label resolved without an RTX 4090: ${gpu_names}" >&2
             exit 1
           fi
           echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
           {
+            echo "runner_label=gpuserver4090"
             echo "runner_name=${RUNNER_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "runner_arch=${RUNNER_ARCH}"
             echo "hostname=${actual_host}"
+            echo "gpu_names=${gpu_names//$'\n'/; }"
             echo "repository=${GITHUB_REPOSITORY}"
             echo "revision=${GITHUB_SHA}"
             echo "dataset_root=${resolved_root}"
