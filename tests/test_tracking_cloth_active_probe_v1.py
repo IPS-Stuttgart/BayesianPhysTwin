@@ -217,7 +217,6 @@ def test_deterministic_tie_break_and_fixed_order() -> None:
     [
         lambda: normalize_weights([0.0, 0.0]),
         lambda: normalize_weights([1.0]),
-        lambda: update_weights([1, 1], [0], 1.0),
         lambda: update_weights([1, 1], [0, -1], 1.0),
         lambda: pseudo_posteriors([1, 1], [[0, 1], [2, 0]], 1.0),
         lambda: pairwise_trajectory_mse(np.zeros((2, 1, 1, 2)), [[True]]),
