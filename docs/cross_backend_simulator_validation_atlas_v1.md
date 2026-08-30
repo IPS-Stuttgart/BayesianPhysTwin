@@ -110,6 +110,15 @@ unknown queries, and every failed stage return the original baseline object by
 identity. A technically impressive rollout therefore cannot become a deployed
 belief merely because later evidence was not collected.
 
+`select_prospectively_validated_portfolio` applies that rule independently to
+a finite set of query-local baseline/candidate pairs. It canonicalizes query
+order, rejects duplicate scopes, records candidate and exact-fallback counts,
+and explicitly records that heterogeneous metrics were not pooled. Adding an
+unrelated atlas entry changes the content-addressed portfolio provenance but
+cannot change an existing query's selected object or local decision reason.
+Thus a portfolio differs from its caller-owned baseline portfolio only on the
+exact subset that is both prospectively certified and inference-admissible.
+
 ## Claim Boundary
 
 This is a public-data/public-simulator evidence synthesis and an executable

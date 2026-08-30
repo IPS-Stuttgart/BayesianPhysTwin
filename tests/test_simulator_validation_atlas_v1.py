@@ -19,6 +19,10 @@ from bayesian_phystwin.simulator_validation_atlas_v1 import (
     save_simulator_validation_atlas,
     select_prospectively_validated_candidate,
 )
+from bayesian_phystwin.simulator_validation_portfolio_v1 import (
+    SimulatorValidationPortfolioItemV1,
+    select_prospectively_validated_portfolio,
+)
 
 
 def _digest(label: str) -> str:
@@ -246,6 +250,123 @@ def test_selection_requires_exact_prospective_certificate_and_preserves_identity
     )
     assert selected is baseline
     assert receipt["reason"] == "unknown-query"
+
+
+def test_portfolio_selects_locally_and_preserves_every_fallback_identity() -> None:
+    certified = _entry("portfolio-certified")
+    source_only = _entry(
+        "portfolio-source-only",
+        (
+            "passed",
+            "passed",
+            "passed",
+            "not_applicable",
+            "passed",
+            "not_evaluated",
+        ),
+    )
+    inference_rejected = _entry("portfolio-inference-rejected")
+    atlas = SimulatorValidationAtlasV1(
+        entries=(certified, source_only, inference_rejected)
+    )
+    baselines = [_Belief(_digest(f"baseline-{index}")) for index in range(4)]
+    candidates = [_Belief(_digest(f"candidate-{index}")) for index in range(4)]
+    items = (
+        SimulatorValidationPortfolioItemV1(
+            query_id=str(source_only.query_scope.query_id),
+            baseline=baselines[1],
+            candidate=candidates[1],
+            inference_admissible=True,
+        ),
+        SimulatorValidationPortfolioItemV1(
+            query_id=_digest("portfolio-unknown"),
+            baseline=baselines[2],
+            candidate=candidates[2],
+            inference_admissible=True,
+        ),
+        SimulatorValidationPortfolioItemV1(
+            query_id=str(certified.query_scope.query_id),
+            baseline=baselines[0],
+            candidate=candidates[0],
+            inference_admissible=True,
+        ),
+        SimulatorValidationPortfolioItemV1(
+            query_id=str(inference_rejected.query_scope.query_id),
+            baseline=baselines[3],
+            candidate=candidates[3],
+            inference_admissible=False,
+        ),
+    )
+
+    selected, receipt = select_prospectively_validated_portfolio(atlas, items)
+    assert selected[str(certified.query_scope.query_id)] is candidates[0]
+    assert selected[str(source_only.query_scope.query_id)] is baselines[1]
+    assert selected[_digest("portfolio-unknown")] is baselines[2]
+    assert selected[str(inference_rejected.query_scope.query_id)] is baselines[3]
+    assert receipt["query_count"] == 4
+    assert receipt["selected_candidate_count"] == 1
+    assert receipt["exact_fallback_count"] == 3
+    assert receipt["query_local_selection"] is True
+    assert receipt["heterogeneous_metrics_pooled"] is False
+
+    reordered, reordered_receipt = select_prospectively_validated_portfolio(
+        atlas, tuple(reversed(items))
+    )
+    assert reordered_receipt == receipt
+    assert all(reordered[query_id] is belief for query_id, belief in selected.items())
+
+
+def test_portfolio_rejects_duplicate_query_scopes() -> None:
+    certified = _entry("portfolio-duplicate")
+    atlas = SimulatorValidationAtlasV1(entries=(certified,))
+    item = SimulatorValidationPortfolioItemV1(
+        query_id=str(certified.query_scope.query_id),
+        baseline=_Belief(_digest("duplicate-baseline")),
+        candidate=_Belief(_digest("duplicate-candidate")),
+        inference_admissible=True,
+    )
+    with pytest.raises(ValueError, match="query scopes must be unique"):
+        select_prospectively_validated_portfolio(atlas, (item, item))
+
+
+def test_unrelated_atlas_entries_do_not_change_existing_query_selection() -> None:
+    certified = _entry("portfolio-local")
+    baseline = _Belief(_digest("local-baseline"))
+    candidate = _Belief(_digest("local-candidate"))
+    item = SimulatorValidationPortfolioItemV1(
+        query_id=str(certified.query_scope.query_id),
+        baseline=baseline,
+        candidate=candidate,
+        inference_admissible=True,
+    )
+    original_atlas = SimulatorValidationAtlasV1(entries=(certified,))
+    extended_atlas = SimulatorValidationAtlasV1(
+        entries=(certified, _entry("portfolio-unrelated"))
+    )
+
+    original, original_receipt = select_prospectively_validated_portfolio(
+        original_atlas, (item,)
+    )
+    extended, extended_receipt = select_prospectively_validated_portfolio(
+        extended_atlas, (item,)
+    )
+    query_id = str(certified.query_scope.query_id)
+    assert original[query_id] is candidate
+    assert extended[query_id] is candidate
+    assert original_receipt["artifact_id"] != extended_receipt["artifact_id"]
+    original_local = cast(list[dict[str, object]], original_receipt["selections"])[0]
+    extended_local = cast(list[dict[str, object]], extended_receipt["selections"])[0]
+    for key in (
+        "query_id",
+        "baseline_belief_id",
+        "candidate_belief_id",
+        "selected_belief_id",
+        "selected_candidate",
+        "inference_admissible",
+        "reason",
+        "validation_entry_id",
+    ):
+        assert original_local[key] == extended_local[key]
 
 
 def test_evidence_reference_rejects_noncanonical_paths() -> None:
