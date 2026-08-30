@@ -1,0 +1,19 @@
+{
+  "schema": "deform360-source-pilot-materialization-request-v1-retry1",
+  "request_id": "deform360-source-pilot-materialization-v1-retry1-20260831",
+  "expected_source_revision": "1ced60decbdf2c7c6f346c925fb0c17d282e9415",
+  "retry_of_run_id": 33326385353,
+  "retry_reason": "same-step-github-env-export-bug-before-processing",
+  "raw_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository",
+  "processed_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository",
+  "raw_object": "/mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository/raw/038-mat-cloth",
+  "output_object": "/mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository/cross-action-source-v1/038-mat-cloth",
+  "source_object": "038-mat-cloth",
+  "source_episode": 3,
+  "runner_label": "gpuserver4090",
+  "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+  "stages": ["undistort", "tactile", "robot"],
+  "source_only": true,
+  "target_future_authorized": false,
+  "persistent_processed_write_authorized": true
+}
