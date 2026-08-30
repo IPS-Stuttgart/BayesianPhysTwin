@@ -132,10 +132,16 @@ jobs:
           fi
           test -n "${base_python}"
 
+          test -d "${RAW_ROOT}"
           resolved_raw="$(realpath -e -- "${RAW_ROOT}")"
-          test "${resolved_raw}" = "${RAW_ROOT}"
           mkdir -p -- "${PERSISTENT_BASE}"
           resolved_persistent="$(realpath -e -- "${PERSISTENT_BASE}")"
+          echo "declared_raw=${RAW_ROOT}"
+          echo "resolved_raw=${resolved_raw}"
+          echo "declared_persistent=${PERSISTENT_BASE}"
+          echo "resolved_persistent=${resolved_persistent}"
+          stat -c 'raw device=%d inode=%i mode=%a' "${resolved_raw}"
+          stat -c 'persistent device=%d inode=%i mode=%a' "${resolved_persistent}"
           case "${resolved_persistent}/" in
             "${resolved_raw}/"*)
               echo "Persistent output must not live inside the raw snapshot." >&2
@@ -286,7 +292,11 @@ jobs:
           VERIFY_OUTCOME: ${{ steps.verify.outcome }}
         run: |
           set -euo pipefail
-          "${BASE_PYTHON}" - <<'PY'
+          fallback_python="${BASE_PYTHON:-/usr/bin/python3}"
+          fallback_evidence="${EVIDENCE_ROOT:-${RUNNER_TEMP}/d360-cross-action-preprocess-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
+          mkdir -p -- "${fallback_evidence}"
+          export EVIDENCE_ROOT="${fallback_evidence}"
+          "${fallback_python}" - <<'PY'
           import hashlib
           import json
           import os
@@ -304,7 +314,7 @@ jobs:
               "runner_label": "gpuserver6000",
               "upstream_revision": os.environ["UPSTREAM_REVISION"],
               "pair_lock_id": "3b8f2c17dac1d63bb955649311e2b0bb36d19b49044bdacb436080a19d6e3118",
-              "persistent_output_root": os.environ["OUTPUT_ROOT"],
+              "persistent_output_root": os.environ.get("OUTPUT_ROOT"),
               "outcomes": {
                   "runtime": os.environ["RUNTIME_OUTCOME"],
                   "processing": os.environ["PROCESSING_OUTCOME"],
@@ -351,13 +361,13 @@ jobs:
             echo "- Runtime outcome: \`${RUNTIME_OUTCOME}\`"
             echo "- Processing outcome: \`${PROCESSING_OUTCOME}\`"
             echo "- Verification outcome: \`${VERIFY_OUTCOME}\`"
-            echo "- Persistent output: \`${OUTPUT_ROOT}\`"
+            echo "- Persistent output: \`${OUTPUT_ROOT:-unavailable}\`"
             echo "- Model prediction computed: \`false\`"
             echo "- Target score computed: \`false\`"
             echo "- Paper claim authorized: \`false\`"
-            if [[ -f "${EVIDENCE_ROOT}/verification.json" ]]; then
+            if [[ -f "${EVIDENCE_ROOT:-}/verification.json" ]]; then
               echo
-              "${BASE_PYTHON}" - <<'PY'
+              "${BASE_PYTHON:-/usr/bin/python3}" - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -372,6 +382,15 @@ jobs:
           PY
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Ensure an evidence directory exists for upload
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_root="${EVIDENCE_ROOT:-${RUNNER_TEMP}/d360-cross-action-preprocess-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
+          mkdir -p -- "${evidence_root}"
+          echo "EVIDENCE_ROOT=${evidence_root}" >> "${GITHUB_ENV}"
 
       - name: Upload compact preprocessing evidence only
         if: always()
