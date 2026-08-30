@@ -1,7 +1,10 @@
 {
   "schema": "bayesian-phystwin/workflow-request-v1",
-  "request_id": "deform360-untouched-confirmation-v5-20260831",
+  "request_id": "deform360-untouched-confirmation-v5-20260831-runtime-retry1",
   "purpose": "Run the exact frozen v3 action-conditioned predictor on every one of the 92 study-relative untouched Deform360 objects fixed by readiness run 33335281293.",
+  "retry_reason": "The first launch stopped in environment validation because system Python lacked NumPy; it did not enter the numeric evaluation step. This retry changes only the isolated runtime bootstrap and retains the frozen scientific protocol and method.",
+  "predecessor_run_id": 33335694494,
+  "predecessor_entered_numeric_evaluation": false,
   "runner_labels": [
     "self-hosted",
     "Linux",
