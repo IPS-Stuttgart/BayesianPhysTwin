@@ -28,6 +28,10 @@ env:
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
   PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
 
 jobs:
   confirm:
@@ -69,6 +73,22 @@ jobs:
           test -s readiness/readiness.json
           test -s readiness/report.md
 
+      - name: Prepare isolated frozen numerical runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${RUNNER_TEMP}/deform360-untouched-v5-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/deform360-untouched-confirmation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4
+          mkdir -p -- "${output}"
+          {
+            echo "PYTHON_BIN=${venv}/bin/python"
+            echo "VENV_ROOT=${venv}"
+            echo "OUTPUT_ROOT=${output}"
+          } >> "${GITHUB_ENV}"
+
       - name: Validate exact code and execution environment
         shell: bash
         run: |
@@ -76,15 +96,11 @@ jobs:
           test -d "${DATASET_ROOT}"
           test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
           test "$(git -C "${FROZEN_ROOT}" rev-parse HEAD)" = "${FROZEN_REVISION}"
-          python3 -m py_compile \
+          "${PYTHON_BIN}" -m py_compile \
             "${RUNNER_PATH}" \
             control/scripts/science/audit_deform360_untouched_confirmation_v5.py \
             frozen/scripts/science/run_deform360_action_kernel_v3.py \
             frozen/scripts/science/run_deform360_action_conditioned_tactile_v2.py
-          output="${RUNNER_TEMP}/deform360-untouched-confirmation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf -- "${output}"
-          mkdir -p -- "${output}"
-          echo "OUTPUT_ROOT=${output}" >> "${GITHUB_ENV}"
           {
             echo "repository=${GITHUB_REPOSITORY}"
             echo "control_revision=${GITHUB_SHA}"
@@ -102,19 +118,19 @@ jobs:
             git -C "${FROZEN_ROOT}" hash-object \
               scripts/science/run_deform360_action_kernel_v3.py \
               scripts/science/run_deform360_action_conditioned_tactile_v2.py
-            python3 --version
-            python3 -c 'import numpy; print("numpy=" + numpy.__version__)'
+            "${PYTHON_BIN}" --version
+            "${PYTHON_BIN}" -c 'import numpy; print("numpy=" + numpy.__version__)'
             uname -a
-          } | tee "${output}/environment.txt"
-          cp "${PROTOCOL_PATH}" "${output}/confirmation-protocol.json"
-          cp readiness/readiness.json "${output}/bound-readiness.json"
-          cp readiness/report.md "${output}/bound-readiness-report.md"
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+          cp "${PROTOCOL_PATH}" "${OUTPUT_ROOT}/confirmation-protocol.json"
+          cp readiness/readiness.json "${OUTPUT_ROOT}/bound-readiness.json"
+          cp readiness/report.md "${OUTPUT_ROOT}/bound-readiness-report.md"
 
       - name: Run exact frozen method on complete precommitted roster
         shell: bash
         run: |
           set -euo pipefail
-          python3 "${RUNNER_PATH}" \
+          "${PYTHON_BIN}" "${RUNNER_PATH}" \
             --protocol "${PROTOCOL_PATH}" \
             --readiness-json readiness/readiness.json \
             --data-root "${DATASET_ROOT}" \
@@ -129,7 +145,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          "${PYTHON_BIN}" - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -172,3 +188,8 @@ jobs:
           path: ${{ env.OUTPUT_ROOT }}
           if-no-files-found: warn
           retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}"
