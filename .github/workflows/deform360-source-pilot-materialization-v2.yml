@@ -1,0 +1,154 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source pilot materialization v2
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-pilot-materialization-v2.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-pilot-materialization-v2
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  REQUEST_PATH: .github/requests/deform360-source-pilot-materialization-v2.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  OFFICIAL_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+
+jobs:
+  materialize:
+    name: 038-mat-cloth source episode 3 / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 720
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+          fetch-depth: 2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one newly added source-only request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status "${GITHUB_SHA}^" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-pilot-materialization-request-v2",
+              "raw_root": os.environ["RAW_ROOT"],
+              "processed_root": os.environ["PROCESSED_ROOT"],
+              "raw_object": os.environ["RAW_ROOT"] + "/raw/038-mat-cloth",
+              "output_object": (
+                  os.environ["PROCESSED_ROOT"]
+                  + "/cross-action-source-v1/038-mat-cloth"
+              ),
+              "source_object": "038-mat-cloth",
+              "source_episode": 3,
+              "runner_label": "gpuserver4090",
+              "official_processing_revision": os.environ["OFFICIAL_REVISION"],
+              "stages": ["undistort", "tactile", "robot"],
+              "source_only": True,
+              "target_future_authorized": False,
+              "persistent_processed_write_authorized": True,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"invalid request field {key!r}")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from the registered contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("expected_source_revision does not equal request parent")
+          PY
+
+      - name: Check out pinned official Deform360 implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          clean: true
+          fetch-depth: 1
+
+      - name: Execute source-only materialization driver
+        id: driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-source-pilot-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "EVIDENCE_ROOT=${evidence}" >> "${GITHUB_ENV}"
+          set +e
+          python scripts/science/run_deform360_source_pilot_materialization_v2.py \
+            --request "${REQUEST_PATH}" \
+            --raw-root "${RAW_ROOT}" \
+            --processed-root "${PROCESSED_ROOT}" \
+            --official-source "${GITHUB_WORKSPACE}/_deform360_official" \
+            --evidence-root "${evidence}"
+          code=$?
+          set -e
+          echo "exit_code=${code}" >> "${GITHUB_OUTPUT}"
+          exit "${code}"
+
+      - name: Publish compact summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/report.md" ]]; then
+            cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact source evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-pilot-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/plan.json
+            ${{ env.EVIDENCE_ROOT }}/environment.txt
+            ${{ env.EVIDENCE_ROOT }}/runtime-bootstrap.log
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+            ${{ env.EVIDENCE_ROOT }}/undistort.log
+            ${{ env.EVIDENCE_ROOT }}/tactile.log
+            ${{ env.EVIDENCE_ROOT }}/robot.log
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove compact scratch
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: rm -rf -- "${EVIDENCE_ROOT}"
