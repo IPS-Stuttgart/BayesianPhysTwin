@@ -25,14 +25,10 @@ jobs:
           from pathlib import Path
           path = Path('scripts/science/run_deform360_action_conditioned_tactile_v2.py')
           text = path.read_text(encoding='utf-8')
-          old = '''        raise EvaluationError(
-              f"episode {episode.descriptor.episode_id} has no windows for horizon {
-                  horizon
-              }"
-          )'''
-          new = '''        raise EvaluationError(
-              f"episode {episode.descriptor.episode_id} has no windows for horizon {horizon}"
-          )'''
+          old = '''f"episode {episode.descriptor.episode_id} has no windows for horizon {
+                horizon
+            }"'''
+          new = '''f"episode {episode.descriptor.episode_id} has no windows for horizon {horizon}"'''
           if old not in text:
               raise SystemExit('expected PR 815 f-string block not found')
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
