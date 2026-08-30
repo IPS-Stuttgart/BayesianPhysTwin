@@ -119,8 +119,7 @@ def test_task_utility_is_expected_target_spread_contraction() -> None:
     target = distances(0.0, 10.0)
     posteriors = pseudo_posteriors(weights, probe, 0.5)
     expected = sum(
-        weights[index] * model_spread(posteriors[index], target)
-        for index in range(3)
+        weights[index] * model_spread(posteriors[index], target) for index in range(3)
     )
     manual = 1.0 - expected / model_spread(weights, target)
     assert task_variance_reduction_utility(
