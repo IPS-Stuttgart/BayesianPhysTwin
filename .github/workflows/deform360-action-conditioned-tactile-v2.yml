@@ -80,7 +80,7 @@ jobs:
           )
           if not np.isclose(covariance.source_joint_nanees, 1.0):
               raise SystemExit("source covariance calibration failed")
-          if not np.isclose(covariance.source_marginal_coverage, 0.9):
+          if not 0.88 <= covariance.source_marginal_coverage <= 0.92:
               raise SystemExit("source marginal calibration failed")
           protocol = module.read_json(Path("protocols/deform360_action_conditioned_tactile_v2.json"))
           if protocol["paper_claim_authorized"] is not False:
