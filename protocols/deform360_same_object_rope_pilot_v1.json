@@ -1,0 +1,54 @@
+{
+  "schema": "bayesian-phystwin/deform360-same-object-rope-pilot",
+  "schema_version": 1,
+  "protocol_id": "deform360-same-object-rope-pilot-v1",
+  "status": "frozen-before-payload-decoding",
+  "dataset": "Deform360",
+  "runner_id": "gpuserver6000",
+  "root": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw",
+  "object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "081-stripe-rope"
+  ],
+  "information_boundary": {
+    "directory_and_filename_inventory_only": true,
+    "small_metadata_json_allowed": true,
+    "maximum_metadata_json_bytes": 1048576,
+    "media_payload_decoded": false,
+    "numeric_arrays_loaded": false,
+    "large_payloads_hashed": false,
+    "target_future_opened": false,
+    "score_bearing_outcomes_used": false
+  },
+  "eligibility": {
+    "minimum_camera_pairs_per_episode": 32,
+    "preferred_camera_pairs_per_episode": 37,
+    "minimum_tactile_pairs_per_episode": 2,
+    "minimum_eligible_episodes_per_object": 2,
+    "minimum_objects_for_pilot": 4,
+    "require_distinct_source_and_target_episode": true,
+    "prefer_different_action_labels": true
+  },
+  "selection": {
+    "unit": "physical_object",
+    "source_target_relation": "same-object-cross-episode",
+    "pair_order": [
+      "different_action_label",
+      "minimum_camera_pair_count_descending",
+      "minimum_tactile_pair_count_descending",
+      "source_episode_key_ascending",
+      "target_episode_key_ascending"
+    ],
+    "one_primary_pair_per_object": true
+  },
+  "next_stage_contract": {
+    "source_episode_may_be_opened_after_selection": true,
+    "target_initial_state_and_registered_action_may_be_opened_after_selection": true,
+    "target_future_requires_prediction_seal": true,
+    "raw_and_processed_only_objects_may_be_pooled": false,
+    "single_episode_objects_count_as_test_units": false
+  },
+  "claim_boundary": "This protocol can establish a deterministic four-object source-target roster and modality readiness. It cannot establish model accuracy, calibration, physical-parameter transport, unseen-object generalization, official benchmark parity, or a fresh confirmation result."
+}
