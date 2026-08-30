@@ -53,6 +53,9 @@ def test_technical_smoke_plan_has_canonical_identity_and_exact_sources() -> None
     assert isinstance(upstreams, dict)
     assert upstreams["matphys_revision"] == ("c16b858dfb79bf21024ead24b45a710600de7b4f")
     assert upstreams["rgbench_revision"] == ("5cc3d07209362b3bfdbfbc067168dea9a791690a")
+    assert upstreams["rgbench_experiment_library_relative_path"] == (
+        "configs/experiment_library.yaml"
+    )
 
 
 def test_technical_smoke_plan_is_one_attempt_and_target_closed() -> None:
