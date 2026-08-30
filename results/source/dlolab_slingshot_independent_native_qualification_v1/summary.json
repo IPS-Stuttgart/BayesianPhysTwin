@@ -1,0 +1,74 @@
+{
+  "schema": "dlolab-slingshot-independent-native-qualification-result-v1",
+  "status": "passed",
+  "source_revision": "92ea0ee155586965cbd60da2db9d3f949fec01b5",
+  "question": "Can one-world/one-action fresh-process execution remove the shared-slot native QA failure surface before a new Slingshot policy certificate is frozen?",
+  "parent_v2": {
+    "summary_artifact_id": "e00de6c8b7a82fa13ee1076e05e52ac1ea472de6a042e395a8f3490e8703c016",
+    "lock_id": "d29448148194279e739c1c5b0127f13871ac558eecab8233118058d534f7c7dc",
+    "status": "retained_evaluation_native_qa_failure",
+    "ordinary_futures": 286,
+    "technical_failures": 2,
+    "retried": false
+  },
+  "planned_processes": 64,
+  "ordinary_processes": 64,
+  "failed_processes": 0,
+  "qualified_worlds": 8,
+  "metrics": {
+    "maximum_common_prefix_error_m": 5.5941362653300075e-14,
+    "maximum_duplicate_position_error_m": 4.118790863927302e-09,
+    "maximum_duplicate_reward_error": 0.0,
+    "maximum_fixed_endpoint_error_m": 0.0,
+    "sum_native_forward_seconds": 950.2353734970093,
+    "maximum_process_wall_seconds": 72.62375492900173
+  },
+  "identities": {
+    "lock_id": "1e1b71cda562d46b6a52298503f026bf7077718bc397f8e9a7a43cf87dc0abe9",
+    "attempt_id": "f0dd3956a7b38d624511c377f12047a2c36855c041d1048c6b6934259d7b8d02",
+    "result_id": "45b370a866c9abc971893e340aa38ff7961ae134597273994aece39546a10199",
+    "world_qualification_ids": [
+      "bde51528119b451968ae1af835f50224aa59a040b39d9f05a2ac725efa058c0b",
+      "238ce71df60603e2a434704cdf28d1efc136801e645890f8f5436ae9c6138daa",
+      "478790fbdeda3177d19178c4a6b94f1c279a67595e7e827f128bd7958c8ea2f5",
+      "524ec8e2962cd3e428309a31240543d168fe08f81b1f18be49302b8be0806772",
+      "01325bc48b13ec2d6be81cbf670f81c4dfa9959f2a5970c2b0ae840397b5e793",
+      "3903fbb98911f90b7fa48ac1699245f0dd1920973e0539ccf97f224ade8df512",
+      "86cf27d31572225de2419d55449798192ab745711412767120fbb0e288147952",
+      "bb34fbd0b0b62bfea3d8b37f92335a02eced34a76b60571f45fc5fb4daf44332"
+    ]
+  },
+  "key_file_sha256": {
+    "lock.json": "2059af9de5c70855227caf863ad725e30d409f03528a79714f5539469cdf9d1f",
+    "result.json": "fa34f96610dced67635ade5d2f5e8b84e6645faae2c8ccf73a65b456d7ebb4eb",
+    "attempt.json": "f3baa1527db9540efe44267adaf415b4ced231594583b4b6d5689010d533538e"
+  },
+  "raw_tree": {
+    "root": "/home/fpfaff/source-only/dlolab-slingshot-independent-native-qualification-v1",
+    "file_count": 266,
+    "file_byte_count": 29758637,
+    "canonical_tree_sha256": "c50d0ab721796539c5010cf25563da0b2a7cd7b0baaf13f80cb4f557b47eccb7"
+  },
+  "verification": {
+    "all_claims_reloaded": 64,
+    "all_seals_reloaded": 64,
+    "all_array_digests_rechecked": true,
+    "all_native_arithmetic_rederived": true,
+    "all_world_qualifications_rederived": 8,
+    "complete_denominator": true,
+    "source_revision_and_blobs_bound": true
+  },
+  "qualification_passed": true,
+  "v3_protocol_freeze_authorized": true,
+  "v3_scientific_execution_authorized": false,
+  "scientific_policy_value_scored": false,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "real_robot_or_physical_safety_claim": false,
+  "artifact_id": "14a33a58c5f37992da517c4114eb959b6a174fc1101a992aa5ae668a9b3cd096"
+}
