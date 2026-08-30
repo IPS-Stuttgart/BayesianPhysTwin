@@ -7,7 +7,7 @@ on:
     branches:
       - science/deform360-query-validation-readiness-v1
     paths:
-      - .github/requests/deform360-query-validation-readiness-v1.json
+      - .github/requests/deform360-query-validation-readiness-retry-v1.json
 
 permissions:
   contents: read
@@ -19,7 +19,7 @@ concurrency:
 env:
   DATA_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
   PROTOCOL: protocols/deform360_query_validation_readiness_v1.json
-  REQUEST: .github/requests/deform360-query-validation-readiness-v1.json
+  REQUEST: .github/requests/deform360-query-validation-readiness-retry-v1.json
   HISTORICAL_COMMIT: 00550574fe56330062140d6042693d5a34088103
   HISTORICAL_PATH: protocols/locks/deform360_covariance_only_target_v1_exclusion.json
   HISTORICAL_FILE_SHA256: f9db0fa72305b68f6d4c6e85c4a6b4a22fb77bb01a4e2b13792c5954bb228b06
@@ -68,7 +68,7 @@ jobs:
           ).strip()
           expected = {
               "schema": "deform360-query-validation-readiness-request-v1",
-              "request_id": "deform360-query-validation-readiness-2026-08-30",
+              "request_id": "deform360-query-validation-readiness-2026-08-30-retry-1",
               "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
               "runner_label": "gpuserver4090",
               "mode": "target-blind-readiness",
