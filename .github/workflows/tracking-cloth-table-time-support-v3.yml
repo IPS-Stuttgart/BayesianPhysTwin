@@ -1,0 +1,151 @@
+# workflow-lifecycle: one-shot target-outcome-blind inventory
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth table time support v3
+
+on:
+  push:
+    branches: [science/tracking-cloth-table-query-source-v1]
+    paths:
+      - .github/requests/tracking-cloth-table-time-support-v3.json
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Read filename and timestamp columns only
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/table-time-support-v3-$GITHUB_RUN_ID"
+          mkdir "$output"
+          echo "TIME_OUT=$output" >> "$GITHUB_ENV"
+          DATASET_ROOT="$DATASET_ROOT" OUTPUT="$output" python - <<'PY'
+          import csv
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          import numpy as np
+
+          pattern = re.compile(
+              r"^(cotton|denim|polyester|wool)_A2_"
+              r"(half_lay|full_lay)_(low_friction|high_friction)\.csv$",
+              re.IGNORECASE,
+          )
+          root = Path(os.environ["DATASET_ROOT"]).resolve(strict=True)
+          records = []
+          for path in sorted(root.rglob("*.csv")):
+              match = pattern.fullmatch(path.name)
+              if not match:
+                  continue
+              times = []
+              with path.open(encoding="utf-8-sig", newline="") as stream:
+                  for row in csv.reader(stream):
+                      if len(row) < 2:
+                          continue
+                      try:
+                          times.append(float(row[1]))
+                      except ValueError:
+                          continue
+              values = np.asarray(times, dtype=float)
+              if len(values) < 2 or np.any(np.diff(values) <= 0.0):
+                  raise SystemExit(f"Invalid timestamp series in {path.name}")
+              relative = values - values[0]
+              delta = np.diff(values)
+              records.append(
+                  {
+                      "recording": path.name,
+                      "material": match.group(1).lower(),
+                      "lay": match.group(2).lower(),
+                      "friction": match.group(3).lower(),
+                      "numeric_rows": len(values),
+                      "duration_seconds": float(relative[-1]),
+                      "minimum_dt_seconds": float(np.min(delta)),
+                      "median_dt_seconds": float(np.median(delta)),
+                      "maximum_dt_seconds": float(np.max(delta)),
+                      "rows_through_0_35_seconds": int(np.sum(relative <= 0.35 + 1e-9)),
+                      "rows_through_1_second": int(np.sum(relative <= 1.0 + 1e-9)),
+                      "rows_through_2_seconds": int(np.sum(relative <= 2.0 + 1e-9)),
+                      "rows_through_3_seconds": int(np.sum(relative <= 3.0 + 1e-9)),
+                      "rows_through_5_seconds": int(np.sum(relative <= 5.0 + 1e-9)),
+                  }
+              )
+          if len(records) != 16:
+              raise SystemExit(f"Expected 16 table recordings, found {len(records)}")
+          aggregate = {
+              "schema": "tracking-cloth-table-time-support-v3",
+              "coordinate_columns_read": False,
+              "record_count": len(records),
+              "minimum_rows_through_0_35_seconds": min(
+                  item["rows_through_0_35_seconds"] for item in records
+              ),
+              "minimum_rows_through_1_second": min(
+                  item["rows_through_1_second"] for item in records
+              ),
+              "minimum_rows_through_2_seconds": min(
+                  item["rows_through_2_seconds"] for item in records
+              ),
+              "minimum_rows_through_3_seconds": min(
+                  item["rows_through_3_seconds"] for item in records
+              ),
+              "maximum_observed_dt_seconds": max(
+                  item["maximum_dt_seconds"] for item in records
+              ),
+              "records": records,
+              "paper_claim_authorized": False,
+          }
+          output = Path(os.environ["OUTPUT"])
+          (output / "time_support.json").write_text(
+              json.dumps(aggregate, indent=2, sort_keys=True) + "\n"
+          )
+          with (output / "time_support.csv").open("w", newline="") as stream:
+              writer = csv.DictWriter(stream, fieldnames=list(records[0]))
+              writer.writeheader()
+              writer.writerows(records)
+          report = [
+              "# Tracking Cloth table timestamp cadence and prefix support",
+              "",
+              "Only filenames and Frame/Time columns were read; no marker coordinate was parsed.",
+              "",
+              f"Minimum rows through 0.35/1/2/3 s: "
+              f"`{aggregate['minimum_rows_through_0_35_seconds']}/"
+              f"{aggregate['minimum_rows_through_1_second']}/"
+              f"{aggregate['minimum_rows_through_2_seconds']}/"
+              f"{aggregate['minimum_rows_through_3_seconds']}`.",
+              f"Maximum observed timestamp gap: "
+              f"`{aggregate['maximum_observed_dt_seconds']:.6f} s`.",
+              "",
+              "| Recording | median dt | max dt | rows ≤1 s | rows ≤2 s | rows ≤5 s |",
+              "| --- | ---: | ---: | ---: | ---: | ---: |",
+          ]
+          report.extend(
+              f"| {item['recording']} | {item['median_dt_seconds']:.6f} | "
+              f"{item['maximum_dt_seconds']:.6f} | "
+              f"{item['rows_through_1_second']} | "
+              f"{item['rows_through_2_seconds']} | "
+              f"{item['rows_through_5_seconds']} |"
+              for item in records
+          )
+          (output / "report.md").write_text("\n".join(report) + "\n")
+          PY
+      - name: Publish inventory summary
+        run: cat "$TIME_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-table-time-support-v3-${{ github.run_id }}
+          path: ${{ env.TIME_OUT }}
+          retention-days: 30
+          if-no-files-found: error
