@@ -26,6 +26,9 @@ CONFIRMATION_PLAN = (
     / "protocols/execution_requests/controlled_query_competence_confirmation_v1.json"
 )
 SOURCE_RECEIPT = ROOT / "evidence/controlled_query_competence_source_receipt_v1.json"
+CONFIRMATION_RECEIPT = (
+    ROOT / "evidence/controlled_query_competence_confirmation_receipt_v1.json"
+)
 
 
 def _module(path: Path, name: str) -> ModuleType:
@@ -114,6 +117,39 @@ def test_registered_source_receipt_binds_private_evidence() -> None:
     assert private["commit"] == "834426c11bc5de17b657efb6f21b500f1f741e07"
     assert private["evidence_record_id"] == (
         "879acdf40ea00ef6677bffaf33814b7837474262a9a6ca3fa0eaa817a599a7e3"
+    )
+
+
+def test_registered_confirmation_receipt_binds_private_evidence() -> None:
+    receipt = json.loads(CONFIRMATION_RECEIPT.read_text(encoding="utf-8"))
+    identity = dict(receipt)
+    receipt_id = identity.pop("receipt_id")
+
+    assert receipt_id == content_id(identity)
+    assert receipt["controlled_confirmation_gate_passed"] is True
+    assert receipt["decision"] == "controlled-query-competence-pass"
+    assert receipt["attempt_count"] == receipt["attempt_limit"] == 1
+    assert receipt["physical_confirmation_authorized"] is False
+    assert receipt["replacement_or_retry_authorized"] is False
+    assert receipt["prob4d_used"] is False
+    assert receipt["protected_artifacts_used"] is False
+    assert receipt["plan_id"] == (
+        "e5cca87174bc465467b810fdeacf0b00a800a244ba6965fe68c2ef5a17d18809"
+    )
+    assert receipt["execution_result_id"] == (
+        "9db1d7dc8cb2608f45f23c8ff39d8f1ccfb34763784e52c5e072e42b3518b20b"
+    )
+    assert receipt["confirmation_result_id"] == (
+        "5d7a48a9f7d26e50def0ca6417bb100b0b676c2adce8038a923216129873e3c7"
+    )
+    assert receipt["source_result_id"] == (
+        "96bd9816dfc4ff7d5154ce5b73c8a7ecd8261eb68bad1ea21d658469fa350c97"
+    )
+    private = receipt["private_evidence"]
+    assert private["repository"] == "FlorianPfaff/BayesianPhysTwin-Paper"
+    assert private["commit"] == "053b51629308e9179693b59bcc07cd0423f73d2a"
+    assert private["evidence_record_id"] == (
+        "bb42c0c619fee2bd4880b63e65ddc689c37af63e482ce174d7a1cfc0e19c9334"
     )
 
 

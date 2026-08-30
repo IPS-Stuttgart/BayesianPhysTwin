@@ -135,6 +135,24 @@ The source stage authorized registration of one controlled confirmation
 attempt. It did not open confirmation outcomes and did not authorize physical
 confirmation.
 
+## Confirmation disposition
+
+The one registered controlled confirmation completed without retry or
+reselection, and the preregistered full query-conditional certificate passed
+all six frozen checks. The source-qualified query-projected
+model-disagreement-only arm also passed and was descriptively stronger than the
+full score. This is an ablation result, not a post hoc replacement of the
+primary arm: it supports query-projected disagreement as the lean mechanism in
+this controlled system and does not establish that the full contextual feature
+set is necessary or superior.
+
+The confirmation episode table, quantitative outcome record, and independent
+recomputation remain in the private paper repository. The public hash-only
+receipt is
+`evidence/controlled_query_competence_confirmation_receipt_v1.json`. It binds
+the exactly-once result and private evidence record without publishing the
+episode outcomes. This stage does not authorize a physical confirmation.
+
 ## Scope boundary
 
 Development auditing found that training on two topology classes and
