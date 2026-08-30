@@ -1,0 +1,110 @@
+{
+  "schema": "bayesian-phystwin/deform360-action-forecasting-icra-evidence-v5",
+  "schema_version": 5,
+  "status": "complete",
+  "claim": "Same-object source-adapted action-conditioned tactile-response forecasting at a 32-frame horizon on released real Deform360 measurements.",
+  "primary_untouched_confirmation": {
+    "object_count": 92,
+    "selection": "Every carrier-complete object outside the 18-object v3/v4 numeric-opened roster; fixed by a metadata/file-identity-only audit before numeric access.",
+    "persistence_active_field_rmse": 0.6629744910092352,
+    "bayesian_action_ensemble_active_field_rmse": 0.6283797735320816,
+    "versus_persistence": {
+      "relative_change": -0.05218106872330874,
+      "mean_difference": -0.034594717477153536,
+      "object_bootstrap_95_interval": [-0.04001843972084402, -0.02956648538083576],
+      "object_wins_ties_losses": [91, 0, 1],
+      "exact_one_sided_sign_test_pvalue": 1.878120043150185e-26,
+      "worst_object_regret": 0.0025521255731057457
+    },
+    "versus_shuffled_action_control": {
+      "shuffled_active_field_rmse": 0.6513509957116204,
+      "relative_change": -0.03526704085934786,
+      "mean_difference": -0.02297122217953863,
+      "object_bootstrap_95_interval": [-0.02871852038145494, -0.018096499584254168],
+      "object_wins_ties_losses": [90, 0, 2],
+      "exact_one_sided_sign_test_pvalue": 8.641371682408216e-25
+    },
+    "versus_state_only_kernel": {
+      "state_kernel_active_field_rmse": 0.6474155768204857,
+      "relative_change": -0.029402757625774885,
+      "mean_difference": -0.01903580328840398,
+      "object_bootstrap_95_interval": [-0.022401958055198384, -0.01586503115273298],
+      "object_wins_ties_losses": [91, 0, 1]
+    },
+    "guarded_action_ensemble": {
+      "active_field_rmse": 0.6293827843013358,
+      "guard_acceptance_fraction": 0.8804347826086957,
+      "relative_change_to_persistence": -0.050668,
+      "object_wins_ties_losses": [90, 0, 2]
+    },
+    "action_family_mean_difference_to_persistence": {
+      "compress_n13": -0.028087422658985308,
+      "dynamic_n1": -0.024392928170723138,
+      "lift_n10": -0.033546824888887807,
+      "other_n13": -0.029407122013376846,
+      "shape_n52": -0.03680870569375672,
+      "translate_n3": -0.053790351340822086
+    },
+    "all_field": {
+      "persistence_rmse": 0.44566718993409327,
+      "ensemble_rmse": 0.4251888384913342,
+      "relative_rmse_change": -0.045950,
+      "persistence_mae": 0.14267404617024726,
+      "ensemble_mae": 0.14944932651525566,
+      "relative_mae_change": 0.04749
+    },
+    "uncertainty": {
+      "marginal_90_coverage": 0.8194239130878878,
+      "joint_90_ellipsoid_coverage": 0.31968556656681824,
+      "normalized_joint_anees": 1594.722263326967,
+      "probabilistic_confirmation_supported": false
+    },
+    "point_confirmation_supported": true
+  },
+  "descriptive_combined_confirmation": {
+    "object_count": 96,
+    "persistence_active_field_rmse": 0.6699138946680115,
+    "bayesian_action_ensemble_active_field_rmse": 0.6353401351875106,
+    "relative_change": -0.05160925867589966,
+    "mean_difference": -0.03457375948050081,
+    "object_bootstrap_95_interval": [-0.04006324977908757, -0.029468313221385007],
+    "object_wins_ties_losses": [95, 0, 1],
+    "exact_one_sided_sign_test_pvalue": 1.2243121249030103e-27,
+    "versus_shuffled_action_relative_change": -0.034872905218813414,
+    "versus_shuffled_action_wins_ties_losses": [94, 0, 2]
+  },
+  "information_order": {
+    "exact_frozen_v3_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "readiness_selected_every_eligible_object": true,
+    "protocol_frozen_before_new_numeric_access": true,
+    "metadata_and_carrier_identities_reverified_before_numeric_access": true,
+    "target_tactile_opened_after_source_fit": true,
+    "outcome_dependent_object_filtering": false,
+    "camera_pixels_opened": false,
+    "geometry_or_point_cloud_opened": false,
+    "new_measurements_collected": false
+  },
+  "run_binding": {
+    "development_run_id": 33330455808,
+    "readiness_run_id": 33335281293,
+    "readiness_artifact_id": 9738831748,
+    "readiness_artifact_sha256": "71f68d7ce3addaac12ebe0a6b928df319f1fe72ed41396a71616cc3a28562c4b",
+    "readiness_result_sha256": "729e24d5c12a76ee8fb242d36f427451e80120a7bd7feab9d44016bb09c32e80",
+    "selection_manifest_sha256": "11be5369c2a8d0a30d9db497c217ddd5446aeabdc867d8b50400dd617942a66d",
+    "confirmation_run_id": 33335779766,
+    "confirmation_artifact_id": 9738998271,
+    "confirmation_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+    "confirmation_result_sha256": "26984c5ecc59ef8b10a8efe94c86f5ea55fd88111913c4b46ae06704410c6c0e"
+  },
+  "limitations": [
+    "Released retrospective measurements, not newly collected globally fresh data.",
+    "Same-object adaptation from other episodes; not zero-shot unseen-object transfer.",
+    "Tactile-response forecasting, not dense 4-D geometry reconstruction.",
+    "Joint uncertainty calibration remains unsupported.",
+    "All-field MAE is worse than persistence despite lower active-field and all-field RMSE.",
+    "The confirmatory relation-breaking control is one frozen target-action permutation."
+  ],
+  "paper_claim_authorized": false,
+  "globally_fresh_confirmation_authorized": false,
+  "strict_counterfactual_claim_authorized": false
+}
