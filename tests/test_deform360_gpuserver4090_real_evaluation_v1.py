@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,7 @@ SCRIPT = ROOT / "scripts/science/run_deform360_gpuserver4090_real_evaluation_v1.
 SPEC = importlib.util.spec_from_file_location("deform360_real_eval_v1", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 
