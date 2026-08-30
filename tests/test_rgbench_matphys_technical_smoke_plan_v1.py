@@ -16,6 +16,7 @@ AMENDMENT = (
     ROOT / "protocols/amendments/rgbench_matphys_selective_risk_v1_preaccess.json"
 )
 RUNNER = ROOT / "scripts/remote/run_rgbench_matphys_technical_smoke_v1.py"
+RECEIPT = ROOT / "evidence/rgbench_matphys_technical_smoke_terminal_v1.json"
 
 
 def _sha256(path: Path) -> str:
@@ -100,3 +101,23 @@ def test_technical_smoke_plan_is_one_attempt_and_target_closed() -> None:
     )
     assert identity in {cell.identity for cell in amended.source_cells}
     assert identity not in {cell.identity for cell in amended.target_cells}
+
+
+def test_terminal_receipt_is_hash_bound_and_closes_advancement() -> None:
+    receipt = json.loads(RECEIPT.read_text(encoding="utf-8"))
+    receipt_id = receipt.pop("receipt_id")
+
+    assert receipt_id == (
+        "182b47e681e85d7bb4e6408240e95a15f3526cecb6fc04ef8d03b3b632ce2dd8"
+    )
+    assert content_id(receipt) == receipt_id
+    assert receipt["attempt_consumed"] is True
+    assert receipt["technical_smoke_passed"] is False
+    assert receipt["scientific_source_gate_passed"] is False
+    assert receipt["source_competence_claim_authorized"] is False
+    assert receipt["target_authorized"] is False
+    assert receipt["retry_authorized"] is False
+    assert receipt["further_replacement_allowed"] is False
+    assert receipt["source_frame_zero_decoded"] is True
+    assert receipt["source_future_payload_decoded"] is False
+    assert all(value is False for value in receipt["information_boundary"].values())

@@ -72,3 +72,19 @@ The amended 21 source cells span seven development garments, not 21
 independent physical groups. They do not establish a deployment-harm
 guarantee. Passing the source gate would permit preparation of a separate
 target authorization; it does not itself open either reserved target garment.
+
+## Terminal technical disposition
+
+The one authorized source-frame-zero technical smoke was consumed under plan
+`e4fa45411fca5523c7f3ff8ad36f584bb270cc39faff5520b610c5c8e04de7d6`.
+All exact-revision, runtime, protocol, and information-boundary checks passed,
+but the pinned MatPhys module references `warp._src.utils.warn`, which is absent
+from the registered Warp 1.15.0 runtime. The attempt stopped during module
+import after frame-zero decoding and before simulator construction.
+
+No rollout, trajectory, future-source score, or target access occurred. The
+plan permits neither retry nor replacement, so the 21-cell source gate and the
+two-garment target remain closed. This is a runtime-compatibility result, not
+evidence against MatPhys's physical accuracy. Compact custody is retained in
+`evidence/rgbench_matphys_technical_smoke_terminal_v1.json`; the byte-exact
+failure artifacts remain in the private paper repository.
