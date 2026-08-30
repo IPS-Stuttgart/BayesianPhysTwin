@@ -16,12 +16,25 @@ from bayesian_phystwin_experiments.pokeflex_query_competence_v1 import (
     evaluate_policy_v1,
     file_sha256,
     fit_risk_model_v1,
+    load_protocol_v1,
     load_take_artifact_v1,
     run_source_stage_v1,
     run_validation_stage_v1,
     score_frames_v1,
     validate_source_result_v1,
 )
+
+PROTOCOL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "protocols/pokeflex_query_competence_retrospective_v1.json"
+)
+PROTOCOL_FILE_SHA256 = (
+    "3bb5ad6bfba877acf18af4c17bb114c32209f74e5e486e520beb0ab269493e99"
+)
+PROTOCOL_SHA256 = (
+    "ef3031d25b047f1293f4d4c4b1b7dabe876e1bcd459e26e95d8eaa49ff279ea5"
+)
+IMPLEMENTATION_COMMIT = "de17ffb3ba00a9a7cf5a6f9ee8522eeae5c7aa00"
 
 
 def _update(target_frame: int, *, harmful: bool) -> dict[str, object]:
@@ -100,6 +113,18 @@ def test_deterministic_split_keeps_every_object_in_every_stage() -> None:
     for name, roster in split.items():
         assert len({take_id.rpartition("_T")[0] for take_id in roster}) == 18, name
     assert split == deterministic_split_v1(reversed(take_ids))
+
+
+def test_frozen_protocol_identity_and_rosters() -> None:
+    assert file_sha256(PROTOCOL_PATH) == PROTOCOL_FILE_SHA256
+    protocol = load_protocol_v1(PROTOCOL_PATH)
+    assert protocol["protocol_sha256"] == PROTOCOL_SHA256
+    assert protocol["implementation"]["git_commit"] == IMPLEMENTATION_COMMIT
+    split = protocol["split"]
+    assert tuple(len(split[name]) for name in split) == (18, 18, 42)
+    assert len(set().union(*(set(roster) for roster in split.values()))) == 78
+    for roster in split.values():
+        assert len({take_id.rpartition("_T")[0] for take_id in roster}) == 18
 
 
 def test_target_changes_cannot_change_preoutcome_features(tmp_path: Path) -> None:
