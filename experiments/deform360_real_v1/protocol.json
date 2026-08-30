@@ -1,0 +1,72 @@
+{
+  "schema": "bayesian-phystwin/deform360-real-evaluation-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-gpuserver4090-real-v1",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "official_processing_repository": "lhy0807/deform360",
+  "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+  "development_objects": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "081-stripe-rope",
+    "087-plastic-bag-blue-cloth",
+    "072-cotton-clohesline",
+    "102-stress-ball",
+    "053-squeezer",
+    "063-flower"
+  ],
+  "reserved_objects": [
+    "066-glove-half-black-cloth",
+    "075-leather",
+    "080-wool",
+    "091-net-cloth",
+    "112-wristband-cloth",
+    "120-bread-plush",
+    "121-croissant-plush",
+    "123-pipe-cleaner",
+    "139-rubber-ball",
+    "143-silicone-wristband",
+    "164-sheep",
+    "165-glove-yellow-cloth"
+  ],
+  "profiles": {
+    "pilot": {
+      "max_cases": 12,
+      "max_frames": 64,
+      "max_points": 512,
+      "max_tactile_channels": 256,
+      "max_candidate_archives": 384
+    },
+    "standard": {
+      "max_cases": 48,
+      "max_frames": 128,
+      "max_points": 1024,
+      "max_tactile_channels": 512,
+      "max_candidate_archives": 1536
+    }
+  },
+  "model": {
+    "velocity_lags": [1, 2, 4, 8],
+    "minimum_prefix_steps": 10,
+    "gibbs_temperature_floor_fraction": 0.05,
+    "variance_floor_fraction": 1e-06,
+    "marginal_coverage_probability": 0.9
+  },
+  "analysis": {
+    "bootstrap_repetitions": 2000,
+    "bootstrap_seed": 3604090,
+    "aggregation_unit": "selected carrier, with an object-level sensitivity summary",
+    "selection_rule": "registered development objects first, then lexicographic non-reserved objects; never select by achieved score"
+  },
+  "information_boundary": {
+    "public_real_measurements": true,
+    "rolling_prefix_only_prediction": true,
+    "future_used_for_scoring_only": true,
+    "reserved_objects_opened": false,
+    "method_parameters_fit_to_evaluated_future": false,
+    "raw_payload_uploaded": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false
+  }
+}
