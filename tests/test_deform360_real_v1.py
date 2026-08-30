@@ -9,10 +9,7 @@ import numpy as np
 import pytest
 
 MODULE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "experiments"
-    / "deform360_real_v1"
-    / "run.py"
+    Path(__file__).resolve().parents[1] / "experiments" / "deform360_real_v1" / "run.py"
 )
 SPEC = importlib.util.spec_from_file_location("deform360_real_v1_run", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
@@ -132,13 +129,7 @@ def test_fixed_identity_npz_end_to_end(tmp_path: Path) -> None:
 
 def test_pcd_clean_sequence_is_scored(tmp_path: Path) -> None:
     root = tmp_path / "deform360"
-    pcd = (
-        root
-        / "processed-repository"
-        / "001-rope"
-        / "episode_0000"
-        / "pcd_clean"
-    )
+    pcd = root / "processed-repository" / "001-rope" / "episode_0000" / "pcd_clean"
     pcd.mkdir(parents=True)
     base = moving_points(frames=1, points=20)[0]
     for frame in range(24):
@@ -162,11 +153,7 @@ def test_headerless_tactile_fallback_is_real_measurement_carrier(
 ) -> None:
     root = tmp_path / "deform360"
     tactile = (
-        root
-        / "raw-repository"
-        / "raw"
-        / "001-rope"
-        / "brics-odroid_tactilel_left"
+        root / "raw-repository" / "raw" / "001-rope" / "brics-odroid_tactilel_left"
     )
     tactile.mkdir(parents=True)
     values = np.zeros((40, 16, 32), dtype=np.float32)
@@ -191,10 +178,7 @@ def test_reserved_objects_are_not_opened(
 ) -> None:
     root = tmp_path / "deform360"
     reserved = (
-        root
-        / "processed-repository"
-        / "066-glove-half-black-cloth"
-        / "episode_0000"
+        root / "processed-repository" / "066-glove-half-black-cloth" / "episode_0000"
     )
     allowed = root / "processed-repository" / "001-rope" / "episode_0000"
     reserved.mkdir(parents=True)

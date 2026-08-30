@@ -215,7 +215,9 @@ def discover_carriers(
 
     for directory, names, files in os.walk(root):
         names[:] = sorted(
-            name for name in names if name not in {".git", "__pycache__", "node_modules"}
+            name
+            for name in names
+            if name not in {".git", "__pycache__", "node_modules"}
         )
         base = Path(directory)
         object_id = _object_id(base, root)
@@ -316,7 +318,9 @@ def _stream_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def file_identity(path: Path, *, full_hash_limit: int = 64 * 1024 * 1024) -> dict[str, Any]:
+def file_identity(
+    path: Path, *, full_hash_limit: int = 64 * 1024 * 1024
+) -> dict[str, Any]:
     stat = path.stat()
     result: dict[str, Any] = {
         "path": path.name,
@@ -331,7 +335,11 @@ def file_identity(path: Path, *, full_hash_limit: int = 64 * 1024 * 1024) -> dic
     sample.update(str(stat.st_size).encode("ascii"))
     block_size = 1024 * 1024
     with path.open("rb") as handle:
-        for offset in (0, max(0, stat.st_size // 2 - block_size // 2), max(0, stat.st_size - block_size)):
+        for offset in (
+            0,
+            max(0, stat.st_size // 2 - block_size // 2),
+            max(0, stat.st_size - block_size),
+        ):
             handle.seek(offset)
             block = handle.read(block_size)
             sample.update(offset.to_bytes(8, "little", signed=False))
@@ -365,7 +373,9 @@ def _trajectory_candidate(stored: Any) -> tuple[str, np.ndarray] | None:
     candidates: list[tuple[int, str, np.ndarray]] = []
     for key in stored.files:
         lowered = key.lower()
-        matches = [index for index, hint in enumerate(TRAJECTORY_HINTS) if hint in lowered]
+        matches = [
+            index for index, hint in enumerate(TRAJECTORY_HINTS) if hint in lowered
+        ]
         if not matches:
             continue
         value = np.asarray(stored[key])
@@ -400,7 +410,9 @@ def load_trajectory_npz(carrier: Carrier, profile: Profile, root: Path) -> Seque
         key, raw = candidate
         frame_indices = _indices(raw.shape[0], profile.max_frames)
         point_indices = _indices(raw.shape[1], profile.max_points)
-        values = np.asarray(raw[np.ix_(frame_indices, point_indices, np.arange(3))], dtype=np.float64)
+        values = np.asarray(
+            raw[np.ix_(frame_indices, point_indices, np.arange(3))], dtype=np.float64
+        )
         valid = _validity(stored, raw.shape[:2])[np.ix_(frame_indices, point_indices)]
     scale, unit_source = _scale_to_meters(key, values)
     values *= scale
@@ -450,7 +462,9 @@ def _load_cloud(path: Path, max_points: int) -> np.ndarray:
 def load_pcd_sequence(carrier: Carrier, profile: Profile, root: Path) -> SequenceData:
     frame_paths = carrier.members[: profile.max_frames]
     clouds = tuple(_load_cloud(path, profile.max_points) for path in frame_paths)
-    centroids = np.asarray([np.mean(cloud, axis=0) for cloud in clouds], dtype=np.float64)
+    centroids = np.asarray(
+        [np.mean(cloud, axis=0) for cloud in clouds], dtype=np.float64
+    )
     identities = [file_identity(path) for path in frame_paths[:8]]
     return SequenceData(
         values=centroids[:, None, :],
@@ -487,7 +501,9 @@ def _load_tactile_array(path: Path) -> np.ndarray:
     size = path.stat().st_size
     if size < 4 * frame_bytes or size % frame_bytes:
         raise ValueError("headerless tactile bytes do not form (T,16,32) float32")
-    return np.memmap(path, dtype=np.float32, mode="r", shape=(size // frame_bytes, 16, 32))
+    return np.memmap(
+        path, dtype=np.float32, mode="r", shape=(size // frame_bytes, 16, 32)
+    )
 
 
 def load_tactile(carrier: Carrier, profile: Profile, root: Path) -> SequenceData:
@@ -496,21 +512,27 @@ def load_tactile(carrier: Carrier, profile: Profile, root: Path) -> SequenceData
         raise ValueError("tactile stream is too short")
     channel_indices = _indices(16 * 32, profile.max_tactile_channels)
     probe_frames = _indices(raw.shape[0], min(raw.shape[0], 512))
-    probe = np.asarray(raw[probe_frames], dtype=np.float64).reshape(len(probe_frames), -1)[:, channel_indices]
+    probe = np.asarray(raw[probe_frames], dtype=np.float64).reshape(
+        len(probe_frames), -1
+    )[:, channel_indices]
     baseline = np.median(probe[: min(8, len(probe))], axis=0)
     activity = np.mean(np.abs(probe - baseline), axis=1)
     median = float(np.median(activity))
     mad = float(np.median(np.abs(activity - median)))
     threshold = median + 5.0 * max(mad, np.finfo(np.float64).eps)
     active = np.flatnonzero(activity > threshold)
-    start_fraction = 0.0 if not len(active) else float(active[0]) / max(len(probe) - 1, 1)
+    start_fraction = (
+        0.0 if not len(active) else float(active[0]) / max(len(probe) - 1, 1)
+    )
     start = int(round(start_fraction * max(raw.shape[0] - 1, 0)))
     start = max(0, start - 5)
     end = min(raw.shape[0], start + profile.max_frames)
     if end - start < 12:
         start = max(0, raw.shape[0] - profile.max_frames)
         end = raw.shape[0]
-    values = np.asarray(raw[start:end], dtype=np.float64).reshape(end - start, -1)[:, channel_indices]
+    values = np.asarray(raw[start:end], dtype=np.float64).reshape(end - start, -1)[
+        :, channel_indices
+    ]
     local_baseline = np.median(values[: min(8, len(values))], axis=0)
     values -= local_baseline
     scale = float(np.quantile(np.abs(values), 0.99))
@@ -546,7 +568,9 @@ def load_carrier(carrier: Carrier, profile: Profile, root: Path) -> SequenceData
     raise ValueError(f"unsupported carrier kind: {carrier.kind}")
 
 
-def _forward_fill(values: np.ndarray, valid: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _forward_fill(
+    values: np.ndarray, valid: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     if values.ndim != 3 or valid.shape != values.shape[:2]:
         raise ValueError("sequence values/valid shapes disagree")
     keep = valid[0] & np.all(np.isfinite(values[0]), axis=1)
@@ -655,10 +679,7 @@ def prediction_for_step(
     if not available_lags:
         raise ValueError("no registered lag is available")
     losses = np.asarray(
-        [
-            _loss_for_lag(values, valid, frame=frame, lag=lag)
-            for lag in available_lags
-        ],
+        [_loss_for_lag(values, valid, frame=frame, lag=lag) for lag in available_lags],
         dtype=np.float64,
     )
     weights = _softmax_negative(losses, temperature_floor_fraction)
@@ -675,9 +696,7 @@ def prediction_for_step(
         floor_fraction=floor_fraction,
     )
     deviation = candidates - mean_increment[None]
-    factors = (
-        deviation.reshape(len(available_lags), -1).T * np.sqrt(weights)[None, :]
-    )
+    factors = deviation.reshape(len(available_lags), -1).T * np.sqrt(weights)[None, :]
     return PredictionStep(
         frame=frame,
         persistence=values[frame].copy(),
@@ -694,7 +713,11 @@ def _low_rank_metrics(
     diagonal: np.ndarray,
     factors: np.ndarray,
 ) -> dict[str, float]:
-    if error.ndim != 1 or diagonal.shape != error.shape or factors.shape[0] != len(error):
+    if (
+        error.ndim != 1
+        or diagonal.shape != error.shape
+        or factors.shape[0] != len(error)
+    ):
         raise ValueError("joint covariance dimensions disagree")
     diagonal = np.maximum(diagonal, np.finfo(np.float64).eps)
     inverse = 1.0 / diagonal
@@ -734,15 +757,12 @@ def _chamfer_rmse(first: np.ndarray, second: np.ndarray) -> float:
         minimum = np.full(len(source), np.inf, dtype=np.float64)
         for start in range(0, len(target), 64):
             block = target[start : start + 64]
-            squared = np.sum(
-                np.square(source[:, None, :] - block[None, :, :]), axis=2
-            )
+            squared = np.sum(np.square(source[:, None, :] - block[None, :, :]), axis=2)
             minimum = np.minimum(minimum, np.min(squared, axis=1))
         return minimum
 
     value = 0.5 * (
-        float(np.mean(directed(left, right)))
-        + float(np.mean(directed(right, left)))
+        float(np.mean(directed(left, right))) + float(np.mean(directed(right, left)))
     )
     return float(np.sqrt(max(value, 0.0)))
 
@@ -770,9 +790,7 @@ def evaluate_sequence(
             frame=frame,
             lags=lags,
             floor_fraction=float(model["variance_floor_fraction"]),
-            temperature_floor_fraction=float(
-                model["gibbs_temperature_floor_fraction"]
-            ),
+            temperature_floor_fraction=float(model["gibbs_temperature_floor_fraction"]),
         )
         target = values[frame + 1]
         selected = np.repeat(target_mask[:, None], values.shape[2], axis=1)
@@ -878,7 +896,9 @@ def _mean(values: Iterable[float]) -> float | None:
     return None if len(array) == 0 else float(np.mean(array))
 
 
-def _bootstrap_interval(values: np.ndarray, repetitions: int, seed: int) -> list[float] | None:
+def _bootstrap_interval(
+    values: np.ndarray, repetitions: int, seed: int
+) -> list[float] | None:
     if len(values) < 2:
         return None
     rng = np.random.default_rng(seed)
@@ -1090,7 +1110,13 @@ def run(
                         **row,
                     }
                 )
-        except (OSError, ValueError, TypeError, KeyError, np.linalg.LinAlgError) as error:
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            np.linalg.LinAlgError,
+        ) as error:
             failures.append(
                 {
                     "kind": carrier.kind,
