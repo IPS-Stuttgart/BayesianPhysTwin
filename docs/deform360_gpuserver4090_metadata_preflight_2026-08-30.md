@@ -113,6 +113,17 @@ lock file was also approximately ten hours old. These observations are
 consistent with stale cache markers, but the unreadable status file prevents a
 formal assertion that the downloader itself declared completion.
 
+A later target-blind confirmation run, `33302068191` (job `99231960821`),
+completed successfully after treating the unreadable status file as an explicit
+permission boundary. It found **190 materialized raw object directories**, the
+same six zero-byte `.incomplete` markers, and no materialized processed object
+directory under the expected `processed-repository/processed`,
+`processed-repository/data`, or immediate `processed-repository` layout. This
+means the raw release is broadly available, but the geometry needed for the
+planned query-level evaluation must either be materialized from released
+processed annotations or generated under a separately frozen processing
+contract.
+
 ## Decision
 
 The retained decision is:
@@ -122,10 +133,12 @@ stable-staging-tree-completion-not-certified
 ```
 
 The tree is large, stable over the observed interval, and contains 168 objects
-recognized by prior protocol vocabularies. It is suitable for the next
+recognized by prior protocol vocabularies plus 190 materialized raw object
+directories in the current public snapshot. It is suitable for the next
 **metadata-only** preparation stage. It is not yet authorized for public-data
-scoring because completion, payload validity, and a disjoint confirmatory cohort
-have not been established under the new paper's information boundary.
+scoring because completion, payload validity, processed-annotation availability,
+and a disjoint confirmatory cohort have not been established under the new
+paper's information boundary.
 
 ## Next gate
 
@@ -138,9 +151,11 @@ Before any target-bearing payload is opened, a separate committed contract must:
    method development or reported results;
 4. bind an exact allowed path list and one representation adapter per path
    family;
-5. freeze query definitions, quotient construction, tolerances, guards,
+5. freeze whether released processed annotations are downloaded or which exact
+   official processing stages and revisions produce them;
+6. freeze query definitions, quotient construction, tolerances, guards,
    comparison arms, metrics, and object-level statistical units; and
-6. seal all source-derived predictions before opening target futures.
+7. seal all source-derived predictions before opening target futures.
 
 The 104 `candidate_name_only` objects are candidates for that exclusion-union
 analysis; they must not yet be described as fresh or confirmatory.
