@@ -1,0 +1,81 @@
+{
+  "claim_boundary": "A source-only numerical and interface qualification of the exact HOOD post-CVPR checkpoint on its public arbitrary-mesh example. A pass shows repeatable finite short-horizon execution with nontrivial motion. It is not physical accuracy, 4D-DRESS access, source competence, a selective risk certificate, deployment evidence, or state of the art.",
+  "execution": {
+    "attempt_ledger_path": "/home/florianpfaff/source-only/hood-query-competence-v1/source-qualification-v1-attempt.json",
+    "attempt_limit": 1,
+    "configuration_name": "aux/from_any_pose",
+    "output_root": "/home/florianpfaff/source-only/hood-query-competence-v1/source-qualification-v1-4b3e80b7",
+    "pose_sequence_type": "mesh",
+    "random_seed": 20260830,
+    "replay_count": 2,
+    "rollout_steps": 30,
+    "source_execution_authorized": true
+  },
+  "gates": {
+    "all_values_finite_required": true,
+    "exact_frame_count_required": true,
+    "maximum_absolute_coordinate_m": 10.0,
+    "maximum_repeat_rmse_m": 1e-07,
+    "minimum_cloth_motion_m": 1e-05,
+    "minimum_obstacle_motion_m": 1e-05,
+    "topology_identity_required": true
+  },
+  "implementation": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "revision": "4b3e80b7243b91c9a744ff9fec4e41fbf8ad99a8",
+    "source_archive_sha256": "703eae7e4bd1efa334febbc54bbd30874c048b7091e235f9a58a44a1e935443e",
+    "source_files": {
+      "scripts/science/run_hood_mesh_source_qualification_v1.py": "a5c355d72214864bc20ac8e47038c9c8fa17abd6bacfda93ba4e2df0040c4a8d",
+      "src/bayesian_phystwin/_canonical_contracts.py": "da9027ef31d5b60bffba98e94ee8322893f319c363dd172c0fd8232c4d1272f8",
+      "src/bayesian_phystwin/_portable_contracts.py": "7d4971a47224462a67b2c5ffa4c494d1f3f2ace679ec1305340019d63a0afbb3",
+      "src/bayesian_phystwin/hood_source_qualification_v1.py": "6b9eef6a2c4dbc5bd905def3f966a0b24a28ff9a969c75875285050c59558a6e"
+    }
+  },
+  "information_boundary": {
+    "certification_execution_authorized": false,
+    "certification_outcomes_read": false,
+    "dlo4_or_dlo5_read": false,
+    "fourddress_participant_roster_read": false,
+    "fourddress_payload_read": false,
+    "held_v8_read": false,
+    "physical_outcomes_read": false,
+    "public_hood_source_read": true,
+    "replacement_allowed": false
+  },
+  "plan_id": "fcc5419f1e6dd5196bc39b581fe8fc71f5c064d09bf48e32375f264b185b70f8",
+  "protocol_label": "Public HOOD arbitrary-mesh numerical qualification v1",
+  "public_source": {
+    "archive_byte_count": 604239517,
+    "archive_sha256": "3b68239bea3f298f9456680e34cf0204c90512ba1e43233febb375a90038a2a4",
+    "archive_url": "https://drive.google.com/file/d/1RdA4L6Fy50VsKZ8k7ySp5ps5YtWoHSgs/view?usp=sharing",
+    "checkpoint_relative_path": "hood_data/trained_models/postcvpr.pth",
+    "checkpoint_sha256": "155d2dd25e54756fc04b0d27996ebca3446b2a59d3a715bb1fb73407753ce5ea",
+    "garment_obj_relative_path": "hood_data/fromanypose/tshirt.obj",
+    "garment_obj_sha256": "33d82264415a0bd30faf894ef0c8dcda4ce994d2e8682147d410990f95ae93bc",
+    "garment_template_relative_path": "hood_data/fromanypose/tshirt.pkl",
+    "garment_template_sha256": "57717c231b80d5c6f9eeb26fc350aa6060eb1ad7584a1f4224cda02025d99454",
+    "mesh_sequence_relative_path": "hood_data/fromanypose/mesh_sequence.pkl",
+    "mesh_sequence_sha256": "1ad213334bf1bdb01bcc831f3c579afc063e832f0d7b99407a6f187d07b3059a"
+  },
+  "runtime": {
+    "base_freeze_sha256": "4988067597776958f95fa115681a19f2964b117aba26f780336963e776594592",
+    "base_python_path": "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+    "base_python_sha256": "7d51cd6b48b521277f5caa4610a82126e315fa2be4df069823a8b1eeb5bd4a86",
+    "cuda_visible_device": 1,
+    "python_overlay_path": "/home/florianpfaff/source-only/hood-query-competence-v1/python-overlay",
+    "python_overlay_tree_sha256": "9543cb9cb101efa2baad1825f36fb2dcd4966b48c3bf30a79ad5dd9eebb95b8a",
+    "pytorch3d_version": "0.7.4",
+    "torch_cuda_version": "11.8",
+    "torch_geometric_version": "2.4.0",
+    "torch_version": "2.0.1+cu118"
+  },
+  "schema": "bayesian-phystwin.hood-mesh-source-qualification-plan",
+  "schema_version": 1,
+  "upstream": {
+    "config_relative_path": "configs/aux/from_any_pose.yaml",
+    "config_sha256": "4c53c14201f85e21ac2f78fb4784fcd0c215738c485f9e8be02ba78b61f34cb4",
+    "git_archive_sha256": "5d3d2b277cb02d366df0ac23453ea5a1477f30029db01208377697023052de57",
+    "repository": "Dolorousrtur/HOOD",
+    "revision": "9bc1076195979ac6c027fdd729c6e960cad62f2a"
+  }
+}

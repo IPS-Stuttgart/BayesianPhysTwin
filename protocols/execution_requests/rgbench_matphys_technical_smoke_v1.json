@@ -1,0 +1,104 @@
+{
+  "schema": "bayesian-phystwin.rgbench-matphys-technical-smoke-execution",
+  "schema_version": 1,
+  "plan_id": "e4fa45411fca5523c7f3ff8ad36f584bb270cc39faff5520b610c5c8e04de7d6",
+  "protocol_label": "RGBench native MatPhys target-closed technical source smoke v1",
+  "claim_boundary": "One source-only technical execution of the native MatPhys Warp spring-mass backend from frame-zero RGBench geometry and causal robot controls. A pass establishes only finite, nontrivial, bounded execution and graph/interface compatibility. It is not a scientific source gate, physical accuracy result, competence certificate, target authorization, population safety claim, or state of the art.",
+  "authorization": {
+    "technical_source_smoke_authorized": true,
+    "scientific_source_gate_authorized": false,
+    "source_future_scoring_authorized": false,
+    "target_execution_authorized": false,
+    "attempt_limit": 1,
+    "replacement_allowed": false
+  },
+  "implementation": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "repository_path": "/home/florianpfaff/source-only/rgbench-matphys-query-competence-v1/source-99af3e58",
+    "revision": "99af3e589d75182272b4ddf696bf528377ca0661",
+    "tree_id": "e00c06f266b689175950ce25e3f1f1c8f8ca758f",
+    "runner_relative_path": "scripts/remote/run_rgbench_matphys_technical_smoke_v1.py",
+    "runner_sha256": "7ea9f8bc091b55dd310b5c79bb5d934630df5118a91776d8e2a6da4a64c6511f"
+  },
+  "upstreams": {
+    "matphys_repository": "Wenqi-Zhao-UESTC/MatPhys",
+    "matphys_repository_path": "/home/florianpfaff/matphys-official-reconstruction-control-v1/MatPhys-c16b858",
+    "matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "simulator_relative_path": "qqtt/model/diff_simulator/spring_mass_warp.py",
+    "simulator_sha256": "ee183178eea584433cc94acc6c4edcd0536c16e8d5b0996979e6669011465daf",
+    "rgbench_repository": "hwk0809/RGBench",
+    "rgbench_repository_path": "/home/florianpfaff/source-only/rgbench-matphys-query-competence-v1/RGBench-5cc3d072",
+    "rgbench_revision": "5cc3d07209362b3bfdbfbc067168dea9a791690a",
+    "rgbench_experiment_library_relative_path": "configs/experiment_library.yaml",
+    "rgbench_experiment_library_sha256": "54c8a668e4d5569c7124cd3429681e14cde483b5771624d4eed8605bd33a0b18",
+    "rgbench_dataset": "RGBench/RGBench-Cloth-Sim2Real-v1",
+    "rgbench_dataset_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9"
+  },
+  "cohort": {
+    "protocol_path": "/home/florianpfaff/source-only/rgbench-matphys-query-competence-v1/source-99af3e58/protocols/locks/rgbench_matphys_selective_risk_v1.json",
+    "protocol_sha256": "da286a12f335adb960aa97cfc0b91e60ca8a0cd761396685f8c17d5a3ac70b01",
+    "amendment_path": "/home/florianpfaff/source-only/rgbench-matphys-query-competence-v1/source-99af3e58/protocols/amendments/rgbench_matphys_selective_risk_v1_preaccess.json",
+    "amendment_sha256": "095b06168a3a84255f800dcc99629eb4fecda8cf38bc3fe7b95621bfa38130a4",
+    "dataset_root": "/home/florianpfaff/datasets/rgbbench-cloth-sim2real-v1",
+    "source_cell": {
+      "garment_id": "beige_hoodie",
+      "action": "fling",
+      "sample_id": "01",
+      "data_subfolder": "beige_hoodie/beige_hoodie_fling_2025-07-18-17-55-01"
+    },
+    "camera_delay_s": 0.06024
+  },
+  "method": {
+    "frame_count": 8,
+    "node_count": 512,
+    "total_mass_kg": 0.255,
+    "object_radius_m": 0.05,
+    "object_max_neighbours": 12,
+    "controller_radius_m": 0.05,
+    "controller_max_neighbours": 8,
+    "integration_dt_s": 0.00005,
+    "maximum_frame_interval_error_s": 0.0001,
+    "object_spring_y": 100.0,
+    "controller_spring_y": 10000.0,
+    "ground_elasticity": 0.2,
+    "ground_friction": 0.3,
+    "dashpot_damping": 100.0,
+    "drag_damping": 10.0,
+    "object_elasticity": 0.7,
+    "object_friction": 0.3,
+    "collision_distance_m": 0.02,
+    "maximum_spring_y": 1000000.0,
+    "self_collision": false,
+    "seed": 20260830,
+    "minimum_motion_m": 0.000001,
+    "maximum_motion_m": 1.0,
+    "minimum_z_m": -0.01
+  },
+  "runtime": {
+    "python_path": "/home/florianpfaff/.venvs/bpt-gpu/bin/python",
+    "device": "cuda:1",
+    "physical_gpu_index": 1,
+    "expected_versions": {
+      "python_version": "3.10.12",
+      "numpy_version": "1.26.4",
+      "torch_version": "2.4.0+cu121",
+      "torch_cuda_version": "12.1",
+      "warp_version": "1.15.0"
+    }
+  },
+  "custody": {
+    "attempt_ledger_path": "/home/florianpfaff/source-only/rgbench-matphys-query-competence-v1/technical-smoke-v1-attempt.json",
+    "output_root": "/home/florianpfaff/source-only/rgbench-matphys-query-competence-v1/technical-smoke-99af3e58",
+    "decoded_source_frame_indices": [
+      0
+    ],
+    "source_future_filename_metadata_indexed": true,
+    "source_future_payload_read": false,
+    "source_future_outcomes_scored": false,
+    "target_payload_read": false,
+    "target_outcomes_opened": false,
+    "held_v8_accessed": false,
+    "dlo4_dlo5_accessed": false,
+    "prob4d_used": false
+  }
+}
