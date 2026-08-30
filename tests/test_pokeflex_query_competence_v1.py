@@ -33,6 +33,11 @@ FAILED_PROTOCOL_PATH = (
     Path(__file__).resolve().parents[1]
     / "protocols/pokeflex_query_competence_retrospective_v1.json"
 )
+PUBLIC_SOURCE_RECEIPT_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "evidence/pokeflex-query-competence-retrospective-v1-1/"
+    "source_result_receipt.json"
+)
 PROTOCOL_FILE_SHA256 = (
     "db1941983bbb87ef4f7bc19eb1065f5661768b32e766c54d97e43c9f03c1f112"
 )
@@ -154,6 +159,33 @@ def test_replacement_changes_only_parent_and_execution_bindings() -> None:
         "from": failed["parent_public78_protocol_sha256"],
         "to": replacement["parent_public78_protocol_sha256"],
     }
+
+
+def test_public_source_receipt_is_hash_only() -> None:
+    receipt = json.loads(PUBLIC_SOURCE_RECEIPT_PATH.read_text(encoding="utf-8"))
+    assert set(receipt) == {
+        "archive_sha256",
+        "implementation_commit",
+        "outcome_evidence_location",
+        "protocol_file_sha256",
+        "protocol_sha256",
+        "schema",
+        "schema_version",
+        "source_attempt_file_sha256",
+        "source_result_canonical_sha256",
+        "source_result_file_sha256",
+        "source_stage_completed",
+        "validation_artifacts_opened",
+        "validation_attempt_present",
+        "validation_result_present",
+        "verified_at_utc",
+    }
+    assert receipt["source_stage_completed"] is True
+    assert receipt["validation_artifacts_opened"] == 0
+    assert receipt["validation_attempt_present"] is False
+    assert receipt["validation_result_present"] is False
+    assert "source_gate_passed" not in receipt
+    assert "validation_authorized" not in receipt
 
 
 def test_target_changes_cannot_change_preoutcome_features(tmp_path: Path) -> None:
