@@ -1,0 +1,277 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM DLO4/DLO5 frozen transfer
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/deform-dlo45-frozen-transfer.yml
+      - .github/quality/workflow-inventory-budget-v1.json
+      - experiments/deform_dlo45_frozen_v1/**
+      - tests/test_deform_dlo45_frozen_v1.py
+      - tests/test_workflow_inventory_budget.py
+  push:
+    branches: [main]
+    paths:
+      - .github/requests/deform-dlo45-inventory-v1.json
+      - .github/requests/deform-dlo45-evaluate-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo45-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  CUBLAS_WORKSPACE_CONFIG: ":4096:8"
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  UPSTREAM_ROOT: /home/florianpfaff/source-only/DEFORM-b73b8b8
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+  PROTOCOL: experiments/deform_dlo45_frozen_v1/protocol.json
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install contract dependencies
+        run: python -m pip install -e . pytest ruff
+      - name: Validate frozen contracts
+        run: |
+          python -m pytest -q \
+            tests/test_deform_dlo45_frozen_v1.py \
+            tests/test_workflow_inventory_budget.py
+      - name: Lint and format
+        run: |
+          python -m ruff check experiments/deform_dlo45_frozen_v1 tests/test_deform_dlo45_frozen_v1.py
+          python -m ruff format --check experiments/deform_dlo45_frozen_v1 tests/test_deform_dlo45_frozen_v1.py
+
+  authorize-request:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.request.outputs.mode }}
+      path: ${{ steps.request.outputs.path }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - id: request
+        name: Require one newly added canonical request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          case "${changed[0]}" in
+            $'A\t.github/requests/deform-dlo45-inventory-v1.json')
+              path=.github/requests/deform-dlo45-inventory-v1.json; mode=inventory ;;
+            $'A\t.github/requests/deform-dlo45-evaluate-v1.json')
+              path=.github/requests/deform-dlo45-evaluate-v1.json; mode=evaluate ;;
+            *) echo "Expected one newly added DLO4/DLO5 request" >&2; exit 2 ;;
+          esac
+          REQUEST_PATH="$path" MODE="$mode" python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          mode = os.environ["MODE"]
+          common = {
+              "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+              "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+              "runner_label": "gpuserver4090",
+              "paper_claim_authorized": False,
+          }
+          expected = dict(common)
+          if mode == "inventory":
+              expected.update({
+                  "schema": "deform-dlo45-inventory-request-v1",
+                  "mode": "inventory",
+                  "smoke": True,
+                  "evidence_class": "target-closed DLO4/DLO5 names-runtime-and-one-update source smoke",
+              })
+          else:
+              expected.update({
+                  "schema": "deform-dlo45-evaluation-request-v1",
+                  "mode": "evaluate",
+                  "devices": ["cuda:0", "cuda:1"],
+                  "authorize_target_scoring": True,
+                  "evidence_class": "fresh frozen-procedure DLO4/DLO5 replication; joint prediction seal before scoring; no retry",
+              })
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f"Invalid {key}: {request.get(key)!r}")
+          allowed = set(expected) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed or not request["request_id"]:
+              raise SystemExit("Request fields differ from the frozen schema")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("expected_source_revision is not the trigger parent")
+          PY
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: [contracts, authorize-request]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' && needs.authorize-request.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 480
+    env:
+      MODE: ${{ needs.authorize-request.outputs.mode }}
+      REQUEST_PATH: ${{ needs.authorize-request.outputs.path }}
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Bind runner, data, runtime, and one-shot custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT/DLO4/train" && test -d "$DATASET_ROOT/DLO4/eval"
+          test -d "$DATASET_ROOT/DLO5/train" && test -d "$DATASET_ROOT/DLO5/eval"
+          test -d "$UPSTREAM_ROOT/.git" && test -x "$FROZEN_PYTHON"
+          test "$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)" -ge 2
+          if test "$MODE" = evaluate; then
+            root=/home/github-runner/.cache/workflows/deform-dlo45
+            out="$root/runs/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+            claim="$root/claims/$($FROZEN_PYTHON -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$REQUEST_PATH")"
+            mkdir -p "$root/runs" "$root/claims"
+            mkdir "$claim"
+            printf '%s\n' "$GITHUB_SHA" > "$claim/github_sha"
+          else
+            out="$RUNNER_TEMP/deform-dlo45-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          fi
+          test ! -e "$out" && mkdir -p "$out/logs"
+          echo "DLO45_OUT=$out" >> "$GITHUB_ENV"
+      - name: Run target-closed inventory
+        if: env.MODE == 'inventory'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run inventory \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" \
+            --upstream-root "$UPSTREAM_ROOT" --output-root "$DLO45_OUT" \
+            --device cuda:0 --smoke | tee "$DLO45_OUT/logs/inventory.log"
+      - name: Qualify DLO4 and DLO5 sources in parallel
+        if: env.MODE == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run source \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/dlo4-source" --dlo DLO4 --device cuda:0 \
+            >"$DLO45_OUT/logs/dlo4-source.log" 2>&1 & p4=$!
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run source \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/dlo5-source" --dlo DLO5 --device cuda:1 \
+            >"$DLO45_OUT/logs/dlo5-source.log" 2>&1 & p5=$!
+          wait "$p4"; wait "$p5"
+      - name: Authorize targets only after both source gates pass
+        if: env.MODE == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run authorize \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/joint" --request "$REQUEST_PATH" \
+            --source-result-dlo4 "$DLO45_OUT/dlo4-source/source_result.json" \
+            --source-result-dlo5 "$DLO45_OUT/dlo5-source/source_result.json"
+      - name: Refit and predict both fresh DLOs in parallel
+        if: env.MODE == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth="$DLO45_OUT/joint/target_authorization.json"
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run predict \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/dlo4-target" --dlo DLO4 --device cuda:0 \
+            --source-result "$DLO45_OUT/dlo4-source/source_result.json" --authorization "$auth" \
+            >"$DLO45_OUT/logs/dlo4-target.log" 2>&1 & p4=$!
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run predict \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/dlo5-target" --dlo DLO5 --device cuda:1 \
+            --source-result "$DLO45_OUT/dlo5-source/source_result.json" --authorization "$auth" \
+            >"$DLO45_OUT/logs/dlo5-target.log" 2>&1 & p5=$!
+          wait "$p4"; wait "$p5"
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run seal \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/joint" \
+            --prediction-seal-dlo4 "$DLO45_OUT/dlo4-target/prediction_seal.json" \
+            --prediction-seal-dlo5 "$DLO45_OUT/dlo5-target/prediction_seal.json"
+      - name: Publish joint prediction seal before target scoring
+        if: env.MODE == 'evaluate'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-joint-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DLO45_OUT }}/joint/joint_prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo4-target/prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo5-target/prediction_seal.json
+          retention-days: 90
+      - name: Score both sealed target sets
+        if: env.MODE == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run score \
+            --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
+            --output-root "$DLO45_OUT/score" --joint-seal "$DLO45_OUT/joint/joint_prediction_seal.json" \
+            | tee "$DLO45_OUT/logs/score.log"
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-${{ env.MODE }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DLO45_OUT }}/inventory.json
+            ${{ env.DLO45_OUT }}/dlo4-source/source_result.json
+            ${{ env.DLO45_OUT }}/dlo5-source/source_result.json
+            ${{ env.DLO45_OUT }}/joint/target_authorization.json
+            ${{ env.DLO45_OUT }}/joint/joint_prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo4-target/method_seal.json
+            ${{ env.DLO45_OUT }}/dlo4-target/eval_manifest.json
+            ${{ env.DLO45_OUT }}/dlo4-target/prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo5-target/method_seal.json
+            ${{ env.DLO45_OUT }}/dlo5-target/eval_manifest.json
+            ${{ env.DLO45_OUT }}/dlo5-target/prediction_seal.json
+            ${{ env.DLO45_OUT }}/score/result.json
+            ${{ env.DLO45_OUT }}/**/failure_receipt.json
+            ${{ env.DLO45_OUT }}/logs
+            ${{ env.PROTOCOL }}
+            ${{ env.REQUEST_PATH }}
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Remove inventory scratch; retain evaluation originals privately
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test "$MODE" = inventory; then
+            rm -rf "$DLO45_OUT"
+          elif test -d "$DLO45_OUT"; then
+            chmod -R go-rwx "$DLO45_OUT"
+            echo "Retained original run bytes at $DLO45_OUT"
+          fi
