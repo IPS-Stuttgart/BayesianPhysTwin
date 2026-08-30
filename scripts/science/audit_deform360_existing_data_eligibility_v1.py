@@ -101,8 +101,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
     )
     runners = protocol.get("runners")
     require(
-        type(runners) is dict
-        and set(runners) == {"gpuserver4090", "gpuserver6000"},
+        type(runners) is dict and set(runners) == {"gpuserver4090", "gpuserver6000"},
         "runner roster changed",
     )
     object_ids: list[str] = []
@@ -128,8 +127,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
                 type(ids) is list
                 and ids == sorted(set(ids))
                 and all(
-                    type(value) is str and OBJECT_RE.fullmatch(value)
-                    for value in ids
+                    type(value) is str and OBJECT_RE.fullmatch(value) for value in ids
                 ),
                 "expected object IDs must be sorted, unique, and canonical",
             )
@@ -146,9 +144,7 @@ def walk(root: Path, max_depth: int) -> Iterable[tuple[Path, list[str], list[str
     base_depth = len(resolved.parts)
     for directory, names, files in os.walk(resolved, followlinks=False):
         current = Path(directory)
-        names[:] = sorted(
-            name for name in names if name not in {".git", "__pycache__"}
-        )
+        names[:] = sorted(name for name in names if name not in {".git", "__pycache__"})
         if len(current.parts) - base_depth >= max_depth:
             names[:] = []
         yield current, names, sorted(files)
@@ -202,18 +198,12 @@ def raw_episodes(object_dir: Path) -> list[dict[str, Any]]:
         for path in object_dir.iterdir()
         if path.is_dir() and TACTILE_RE.fullmatch(path.name)
     }
-    stems = sorted(
-        set().union(*camera_streams.values(), *tactile_streams.values())
-    )
+    stems = sorted(set().union(*camera_streams.values(), *tactile_streams.values()))
     return [
         {
             "episode_key": stem,
-            "camera_pairs": sum(
-                stem in values for values in camera_streams.values()
-            ),
-            "tactile_pairs": sum(
-                stem in values for values in tactile_streams.values()
-            ),
+            "camera_pairs": sum(stem in values for values in camera_streams.values()),
+            "tactile_pairs": sum(stem in values for values in tactile_streams.values()),
             "object_dir": str(object_dir),
         }
         for stem in stems
@@ -242,8 +232,7 @@ def processed_episodes(object_dir: Path) -> list[dict[str, Any]]:
                 for name in (*names, *files)
             ]
             videos += sum(
-                Path(name).suffix.lower() in {".avi", ".mov", ".mp4"}
-                for name in files
+                Path(name).suffix.lower() in {".avi", ".mov", ".mp4"} for name in files
             )
             robot = robot or any(
                 any(token in relative.lower() for token in ROBOT_HINTS)
@@ -277,8 +266,7 @@ def action_values(value: object, fragments: tuple[str, ...]) -> set[str]:
                     found.update(
                         str(item)
                         for item in child
-                        if type(item) in {str, int, float}
-                        and type(item) is not bool
+                        if type(item) in {str, int, float} and type(item) is not bool
                     )
             found.update(action_values(child, fragments))
     elif type(value) is list:
@@ -367,9 +355,7 @@ def inspect_object(
     raw_visuotactile = [
         row for row in raw_usable if row["tactile_pairs"] >= minimum_tactile
     ]
-    processed_rgb = [
-        row for row in processed if row["camera_videos"] >= minimum_video
-    ]
+    processed_rgb = [row for row in processed if row["camera_videos"] >= minimum_video]
     processed_ready = [
         row
         for row in processed_rgb
