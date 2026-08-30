@@ -205,6 +205,54 @@ def predict_local_policy_gain(
     )
 
 
+def predict_distance_weighted_local_policy_gain(
+    predictor: LocalPolicyGainPredictor,
+    *,
+    query_features: object,
+    candidate_actions: object,
+) -> LocalPolicyGainPrediction:
+    """Predict candidate-policy gain with inverse-distance local weighting.
+
+    Feature scaling and stable neighbor selection are identical to
+    :func:`predict_local_policy_gain`.  A query that exactly matches one or more
+    reference rows averages only those zero-distance rows; otherwise each
+    neighbor receives inverse Euclidean-distance weight.  The function changes
+    neither the calibrated guard nor its exact fallback semantics.
+    """
+
+    features = _finite_matrix(query_features, name="query_features")
+    actions = _integer_vector(candidate_actions, name="candidate_actions")
+    if features.shape[1:] != predictor.feature_mean.shape or len(actions) != len(features):
+        raise ValueError("query features and actions must align with the predictor")
+    action_count = predictor.reference_action_gains.shape[1]
+    if np.any((actions < 0) | (actions >= action_count)):
+        raise ValueError("candidate action is outside the reference action bank")
+
+    standardized = (features - predictor.feature_mean) / predictor.feature_scale
+    squared_distance = np.mean(
+        (standardized[:, None] - predictor.standardized_reference_features[None])
+        ** 2,
+        axis=2,
+    )
+    neighbors = np.argsort(squared_distance, axis=1, kind="stable")[
+        :, : predictor.neighbor_count
+    ]
+    row = np.arange(len(features))[:, None]
+    local_squared_distance = squared_distance[row, neighbors]
+    local_gain = predictor.reference_action_gains[neighbors, actions[:, None]]
+    zero = local_squared_distance <= np.finfo(np.float64).eps
+    has_zero = np.any(zero, axis=1)
+    weights = np.empty_like(local_squared_distance)
+    weights[has_zero] = zero[has_zero].astype(np.float64)
+    weights[~has_zero] = 1.0 / np.sqrt(local_squared_distance[~has_zero])
+    predicted = np.sum(weights * local_gain, axis=1) / np.sum(weights, axis=1)
+    return LocalPolicyGainPrediction(
+        predicted_gain=_immutable_float(predicted),
+        neighbor_indices=_immutable_int(neighbors),
+        neighbor_squared_distances=_immutable_float(local_squared_distance),
+    )
+
+
 def calibrate_policy_gain_lower_bound(
     *,
     predicted_gain: object,

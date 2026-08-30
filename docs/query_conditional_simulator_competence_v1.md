@@ -97,6 +97,32 @@ events and reduces mean downside substantially, but it misses the frozen gain,
 paired-interval, risk, retained-value, and oracle-headroom gates. It remains an
 informative negative result, not a promoted controller and not a retuning set.
 
+A later prospective policy-level follow-up tested the most direct rescue: use a
+five-neighbor predictor for only the posterior-selected action, calibrate its
+one-sided gain bound on 96 new worlds, and compare it with a simultaneous-action
+guard under the identical calibration budget. All 96 calibration futures and
+all 288 fresh evaluation prefixes passed native QA, but the frozen pre-future
+gate admitted only 12 worlds versus the required 24. The study therefore
+stopped with 276 exact fallbacks and zero evaluation futures generated. Its
+content-bound result is `f0ac1753c92630bcc738db30f466f0745ec726d7aff74b99a0198e5aca6fb25b`.
+This does not change the table above because no prospective value outcome was
+opened. It closes the exact local-five-neighbor plus global-conformal-offset
+rescue and preserves the Slingshot query as rejected.
+
+The retained negative made its 96 calibration worlds and 288 prefix-only worlds
+available for explicitly labeled development. A posterior-aware successor now
+combines causal relative geometry with joint/iid posterior weights and
+incumbent-relative action diagnostics, then predicts selected-policy gain with
+seven inverse-distance neighbors. Across 30 deterministic
+train/calibrate/evaluate rotations over 147 opened source worlds, median guarded
+gain is `+0.004774`, every rotation remains positive, median marginal coverage
+is `90.48%`, and median harmful admissions are zero. An outcome-free capacity
+check admits 44/288 prefixes while leaving every associated future unread. The
+content-bound development artifact is
+`5b8e50986f1f7dc7785389fa840a2e0993cc8bcaa5a5c3d8095567ff4c81e682`.
+This passes only the source-development advancement gate; a Slingshot
+certificate still requires entirely fresh calibration and evaluation worlds.
+
 The cross-task result is stronger than either study alone: an exact-fallback
 Bayesian guard has useful, prospectively verified decision value for one public
 deformable task, while an independently frozen task in the same simulator

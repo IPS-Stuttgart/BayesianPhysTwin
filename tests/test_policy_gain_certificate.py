@@ -7,6 +7,7 @@ from bayesian_phystwin.policy_gain_certificate import (
     apply_policy_gain_guard,
     calibrate_policy_gain_lower_bound,
     fit_local_policy_gain_predictor,
+    predict_distance_weighted_local_policy_gain,
     predict_local_policy_gain,
 )
 from bayesian_phystwin_experiments.dlolab_slingshot_policy_certificate_v1 import (
@@ -59,6 +60,38 @@ def test_reference_row_order_does_not_change_local_prediction() -> None:
     assert predict_local_policy_gain(first, **kwargs).predicted_gain.tobytes() == (
         predict_local_policy_gain(second, **kwargs).predicted_gain.tobytes()
     )
+
+
+def test_distance_weighted_prediction_uses_local_distance_and_candidate_action() -> None:
+    predictor = _predictor()
+    prediction = predict_distance_weighted_local_policy_gain(
+        predictor,
+        query_features=np.asarray([[0.25], [1.75]]),
+        candidate_actions=np.asarray([1, 0]),
+    )
+
+    # Standardization is a common scale factor, so the 1:3 distance ratio gives
+    # weights 3:1 for the nearer and farther rows.
+    assert prediction.neighbor_indices.tolist() == [[0, 1], [2, 1]]
+    assert prediction.predicted_gain == pytest.approx([0.375, 0.175])
+    assert not prediction.predicted_gain.flags.writeable
+
+
+def test_distance_weighted_prediction_averages_only_exact_matches() -> None:
+    predictor = fit_local_policy_gain_predictor(
+        reference_ids=("a", "b", "c"),
+        reference_features=np.asarray([[0.0], [0.0], [1.0]]),
+        reference_action_gains=np.asarray([[0.2, 0.0], [0.4, 0.0], [0.9, 0.0]]),
+        neighbor_count=3,
+    )
+
+    prediction = predict_distance_weighted_local_policy_gain(
+        predictor,
+        query_features=np.asarray([[0.0]]),
+        candidate_actions=np.asarray([0]),
+    )
+
+    assert prediction.predicted_gain == pytest.approx([0.3])
 
 
 def test_split_conformal_rank_and_guard_are_exact() -> None:

@@ -1,0 +1,1234 @@
+{
+  "advancement_checks": {
+    "median_coverage_at_least_0_85": true,
+    "median_gain_beats_geometry_predecessor_by_0_001": true,
+    "median_guarded_gain_at_least_0_003": true,
+    "median_harmful_accepted_at_most_1": true,
+    "minimum_guarded_gain_positive": true,
+    "prefix_capacity_at_least_24": true,
+    "selected_combined_distance_k7": true
+  },
+  "advancement_gate_passed": true,
+  "artifact_id": "5b8e50986f1f7dc7785389fa840a2e0993cc8bcaa5a5c3d8095567ff4c81e682",
+  "candidate_models": {
+    "combined_distance_k10": {
+      "accepted_count_quantiles": [
+        11.0,
+        15.0,
+        17.5,
+        18.75,
+        21.0
+      ],
+      "calibration_count_per_fold": 21,
+      "distance_weighted": true,
+      "evaluation_count_per_fold": 21,
+      "fold_count": 7,
+      "harm_margin": 0.002,
+      "harmful_accepted_count_quantiles": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        3.0
+      ],
+      "marginal_lower_bound_coverage_quantiles": [
+        0.8639455782312925,
+        0.8928571428571428,
+        0.9115646258503401,
+        0.9234693877551021,
+        0.9319727891156463
+      ],
+      "mean_guarded_gain_quantiles": [
+        0.0004547728973181069,
+        0.0040076776426665635,
+        0.004581881218216046,
+        0.005087860587502824,
+        0.005958547397535674
+      ],
+      "miscoverage": 0.1,
+      "neighbor_count": 10,
+      "prediction_correlation_quantiles": [
+        0.3057772916062703,
+        0.35347564544543386,
+        0.3741042729116787,
+        0.3974751320017825,
+        0.45367385804623006
+      ],
+      "prospective_coverage_claim": false,
+      "repetitions": [
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.004412910565227067,
+          "prediction_correlation": 0.3893658241490876,
+          "repetition": 0
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.004681583975448089,
+          "prediction_correlation": 0.37272907120569326,
+          "repetition": 1
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.004543482851819927,
+          "prediction_correlation": 0.3155823389949236,
+          "repetition": 2
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.004773791955441845,
+          "prediction_correlation": 0.3540820386605235,
+          "repetition": 3
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8639455782312925,
+          "mean_guarded_gain": 0.004919412184734733,
+          "prediction_correlation": 0.3057772916062703,
+          "repetition": 4
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.00540361923425376,
+          "prediction_correlation": 0.42523603641277913,
+          "repetition": 5
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0058113993430624206,
+          "prediction_correlation": 0.4118905332952423,
+          "repetition": 6
+        },
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.003927681721797606,
+          "prediction_correlation": 0.34393490574663893,
+          "repetition": 7
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.0038355548365586467,
+          "prediction_correlation": 0.36362387478140357,
+          "repetition": 8
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.004594189780099052,
+          "prediction_correlation": 0.404882272235683,
+          "repetition": 9
+        },
+        {
+          "accepted_count": 21,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.005958547397535674,
+          "prediction_correlation": 0.37131929116291906,
+          "repetition": 10
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.005371440835550529,
+          "prediction_correlation": 0.37657330406232636,
+          "repetition": 11
+        },
+        {
+          "accepted_count": 12,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.0004547728973181069,
+          "prediction_correlation": 0.375481209440932,
+          "repetition": 12
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.005033058374106478,
+          "prediction_correlation": 0.32418932241206583,
+          "repetition": 13
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.005106127991968272,
+          "prediction_correlation": 0.38847057285141934,
+          "repetition": 14
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.004724966425473998,
+          "prediction_correlation": 0.38249485903293784,
+          "repetition": 15
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.003937899660901958,
+          "prediction_correlation": 0.3587839807052498,
+          "repetition": 16
+        },
+        {
+          "accepted_count": 11,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.001930694190823302,
+          "prediction_correlation": 0.34858676926771803,
+          "repetition": 17
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.0047175576086757945,
+          "prediction_correlation": 0.35327351437373733,
+          "repetition": 18
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.005291932294157898,
+          "prediction_correlation": 0.3195176704071716,
+          "repetition": 19
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.005519951281904363,
+          "prediction_correlation": 0.3754794746176642,
+          "repetition": 20
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0053147328954164675,
+          "prediction_correlation": 0.4089206794674798,
+          "repetition": 21
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.0043278713615573184,
+          "prediction_correlation": 0.40812466029953787,
+          "repetition": 22
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.004550894912408322,
+          "prediction_correlation": 0.45367385804623006,
+          "repetition": 23
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.004030821274737923,
+          "prediction_correlation": 0.39755007172264645,
+          "repetition": 24
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8707482993197279,
+          "mean_guarded_gain": 0.0024947730862364477,
+          "prediction_correlation": 0.32684668610555156,
+          "repetition": 25
+        },
+        {
+          "accepted_count": 12,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.002938296519169191,
+          "prediction_correlation": 0.3660771707349035,
+          "repetition": 26
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.0041887549315991045,
+          "prediction_correlation": 0.40644369141887926,
+          "repetition": 27
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.004569572656333041,
+          "prediction_correlation": 0.39725031283919077,
+          "repetition": 28
+        },
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.003999963098642778,
+          "prediction_correlation": 0.3641649800708337,
+          "repetition": 29
+        }
+      ],
+      "rotation_count": 30,
+      "rotation_seed_first": 261945,
+      "rotation_seed_last": 261974,
+      "source_count": 147,
+      "training_count_per_fold": 105
+    },
+    "combined_distance_k5": {
+      "accepted_count_quantiles": [
+        10.0,
+        16.0,
+        20.0,
+        22.0,
+        30.0
+      ],
+      "calibration_count_per_fold": 21,
+      "distance_weighted": true,
+      "evaluation_count_per_fold": 21,
+      "fold_count": 7,
+      "harm_margin": 0.002,
+      "harmful_accepted_count_quantiles": [
+        0.0,
+        1.0,
+        1.0,
+        2.0,
+        4.0
+      ],
+      "marginal_lower_bound_coverage_quantiles": [
+        0.8775510204081632,
+        0.891156462585034,
+        0.9013605442176871,
+        0.9115646258503401,
+        0.9455782312925171
+      ],
+      "mean_guarded_gain_quantiles": [
+        0.0012411844162713913,
+        0.0038746457521607277,
+        0.004760479440494459,
+        0.005159329394904935,
+        0.007709435054234096
+      ],
+      "miscoverage": 0.1,
+      "neighbor_count": 5,
+      "prediction_correlation_quantiles": [
+        0.253285292757853,
+        0.35116971253207463,
+        0.36126313903035456,
+        0.3788205865868416,
+        0.43164636954186425
+      ],
+      "prospective_coverage_claim": false,
+      "repetitions": [
+        {
+          "accepted_count": 23,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.005070631195898769,
+          "prediction_correlation": 0.3581633572598339,
+          "repetition": 0
+        },
+        {
+          "accepted_count": 13,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9387755102040817,
+          "mean_guarded_gain": 0.0030936319000866947,
+          "prediction_correlation": 0.35462526722175,
+          "repetition": 1
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.0046054230255334555,
+          "prediction_correlation": 0.35550667902824723,
+          "repetition": 2
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0043381412013047405,
+          "prediction_correlation": 0.3747073781531755,
+          "repetition": 3
+        },
+        {
+          "accepted_count": 23,
+          "harmful_accepted_count": 4,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.003762702552639708,
+          "prediction_correlation": 0.253285292757853,
+          "repetition": 4
+        },
+        {
+          "accepted_count": 24,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8843537414965986,
+          "mean_guarded_gain": 0.005547244532578656,
+          "prediction_correlation": 0.3681811714128014,
+          "repetition": 5
+        },
+        {
+          "accepted_count": 25,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.007241641583085871,
+          "prediction_correlation": 0.3813026692444315,
+          "repetition": 6
+        },
+        {
+          "accepted_count": 22,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.004898911430722191,
+          "prediction_correlation": 0.34499936720056157,
+          "repetition": 7
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.004820700405406303,
+          "prediction_correlation": 0.34697098531040516,
+          "repetition": 8
+        },
+        {
+          "accepted_count": 21,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.00463753654843285,
+          "prediction_correlation": 0.39587132609469794,
+          "repetition": 9
+        },
+        {
+          "accepted_count": 30,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.007709435054234096,
+          "prediction_correlation": 0.3755965220111612,
+          "repetition": 10
+        },
+        {
+          "accepted_count": 28,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.0066845725182773305,
+          "prediction_correlation": 0.3217485209581881,
+          "repetition": 11
+        },
+        {
+          "accepted_count": 10,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.0012411844162713913,
+          "prediction_correlation": 0.37867359844965187,
+          "repetition": 12
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.005170510739696269,
+          "prediction_correlation": 0.40102446627464605,
+          "repetition": 13
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.005072681271300024,
+          "prediction_correlation": 0.3538783201671728,
+          "repetition": 14
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.005085812133996665,
+          "prediction_correlation": 0.3679134237699146,
+          "repetition": 15
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.003784296463946907,
+          "prediction_correlation": 0.3502668433203752,
+          "repetition": 16
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0047002584755826155,
+          "prediction_correlation": 0.3640016961392916,
+          "repetition": 17
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.005266011166734761,
+          "prediction_correlation": 0.3419631260143646,
+          "repetition": 18
+        },
+        {
+          "accepted_count": 23,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.006080562565602412,
+          "prediction_correlation": 0.3148952570328052,
+          "repetition": 19
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.0045209547289374735,
+          "prediction_correlation": 0.3555342878011474,
+          "repetition": 20
+        },
+        {
+          "accepted_count": 22,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.005028942004353011,
+          "prediction_correlation": 0.3732140465137771,
+          "repetition": 21
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.005125785360530931,
+          "prediction_correlation": 0.43164636954186425,
+          "repetition": 22
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.0029355652478276466,
+          "prediction_correlation": 0.3796432025753522,
+          "repetition": 23
+        },
+        {
+          "accepted_count": 11,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.0031004276405386375,
+          "prediction_correlation": 0.3881449322374526,
+          "repetition": 24
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.003159870095804435,
+          "prediction_correlation": 0.33294612683912117,
+          "repetition": 25
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.003563407327042145,
+          "prediction_correlation": 0.35852458192141756,
+          "repetition": 26
+        },
+        {
+          "accepted_count": 21,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.0055997452768338785,
+          "prediction_correlation": 0.3964543730572359,
+          "repetition": 27
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.00414569361680219,
+          "prediction_correlation": 0.37886958263257153,
+          "repetition": 28
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9455782312925171,
+          "mean_guarded_gain": 0.00424389936486069,
+          "prediction_correlation": 0.3539909011263671,
+          "repetition": 29
+        }
+      ],
+      "rotation_count": 30,
+      "rotation_seed_first": 261945,
+      "rotation_seed_last": 261974,
+      "source_count": 147,
+      "training_count_per_fold": 105
+    },
+    "combined_distance_k7": {
+      "accepted_count_quantiles": [
+        10.0,
+        16.0,
+        18.0,
+        19.75,
+        28.0
+      ],
+      "calibration_count_per_fold": 21,
+      "distance_weighted": true,
+      "evaluation_count_per_fold": 21,
+      "fold_count": 7,
+      "harm_margin": 0.002,
+      "harmful_accepted_count_quantiles": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        4.0
+      ],
+      "marginal_lower_bound_coverage_quantiles": [
+        0.8707482993197279,
+        0.891156462585034,
+        0.9047619047619048,
+        0.9234693877551021,
+        0.9319727891156463
+      ],
+      "mean_guarded_gain_quantiles": [
+        0.001604018568181667,
+        0.003937816944252066,
+        0.004773657338148883,
+        0.005253660435579261,
+        0.008013086254093922
+      ],
+      "miscoverage": 0.1,
+      "neighbor_count": 7,
+      "prediction_correlation_quantiles": [
+        0.32078276761357993,
+        0.3512262285436729,
+        0.37278467349011124,
+        0.3866929044936084,
+        0.42506100148022297
+      ],
+      "prospective_coverage_claim": false,
+      "repetitions": [
+        {
+          "accepted_count": 28,
+          "harmful_accepted_count": 4,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.008013086254093922,
+          "prediction_correlation": 0.37869971037918987,
+          "repetition": 0
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.003913713961231465,
+          "prediction_correlation": 0.3599562771719548,
+          "repetition": 1
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8843537414965986,
+          "mean_guarded_gain": 0.003463638072111169,
+          "prediction_correlation": 0.3454404671530419,
+          "repetition": 2
+        },
+        {
+          "accepted_count": 23,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.0053886523863085276,
+          "prediction_correlation": 0.38587668923150303,
+          "repetition": 3
+        },
+        {
+          "accepted_count": 22,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8707482993197279,
+          "mean_guarded_gain": 0.005319326102328138,
+          "prediction_correlation": 0.32078276761357993,
+          "repetition": 4
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.005709385385318678,
+          "prediction_correlation": 0.4052004613086204,
+          "repetition": 5
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.004722134596636506,
+          "prediction_correlation": 0.38901540870571477,
+          "repetition": 6
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.0038942220259685907,
+          "prediction_correlation": 0.35057743738810215,
+          "repetition": 7
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.004470452159440436,
+          "prediction_correlation": 0.33680966611573937,
+          "repetition": 8
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.0044187818254743305,
+          "prediction_correlation": 0.38696497624764353,
+          "repetition": 9
+        },
+        {
+          "accepted_count": 24,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.0062590586084897825,
+          "prediction_correlation": 0.3688302798853706,
+          "repetition": 10
+        },
+        {
+          "accepted_count": 26,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.006786953024312752,
+          "prediction_correlation": 0.3531726020103853,
+          "repetition": 11
+        },
+        {
+          "accepted_count": 12,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9115646258503401,
+          "mean_guarded_gain": 0.001604018568181667,
+          "prediction_correlation": 0.373811507352268,
+          "repetition": 12
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.004388043669616284,
+          "prediction_correlation": 0.35441663194493644,
+          "repetition": 13
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.004010125893313869,
+          "prediction_correlation": 0.37735359328288864,
+          "repetition": 14
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.005146221238739637,
+          "prediction_correlation": 0.37175783962795445,
+          "repetition": 15
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.005002871662581048,
+          "prediction_correlation": 0.34834558157675666,
+          "repetition": 16
+        },
+        {
+          "accepted_count": 10,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.0016803514389764694,
+          "prediction_correlation": 0.36653679614609963,
+          "repetition": 17
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.005318920628554156,
+          "prediction_correlation": 0.34863005107938827,
+          "repetition": 18
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.005265307264263127,
+          "prediction_correlation": 0.33287167624717084,
+          "repetition": 19
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.004375454519881683,
+          "prediction_correlation": 0.379646870276003,
+          "repetition": 20
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.005174377337604964,
+          "prediction_correlation": 0.3930951254894271,
+          "repetition": 21
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.004947204979098573,
+          "prediction_correlation": 0.42506100148022297,
+          "repetition": 22
+        },
+        {
+          "accepted_count": 22,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8775510204081632,
+          "mean_guarded_gain": 0.005218719949527662,
+          "prediction_correlation": 0.4032249332080458,
+          "repetition": 23
+        },
+        {
+          "accepted_count": 11,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.00342706433769797,
+          "prediction_correlation": 0.3897708831464407,
+          "repetition": 24
+        },
+        {
+          "accepted_count": 18,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0029685091810161563,
+          "prediction_correlation": 0.3467528062009006,
+          "repetition": 25
+        },
+        {
+          "accepted_count": 11,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.002781825811684537,
+          "prediction_correlation": 0.35701818431484433,
+          "repetition": 26
+        },
+        {
+          "accepted_count": 20,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.004816613229764562,
+          "prediction_correlation": 0.3995239776108139,
+          "repetition": 27
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9251700680272109,
+          "mean_guarded_gain": 0.005071675696340548,
+          "prediction_correlation": 0.38349325413738783,
+          "repetition": 28
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.004730701446533203,
+          "prediction_correlation": 0.38325038472974715,
+          "repetition": 29
+        }
+      ],
+      "rotation_count": 30,
+      "rotation_seed_first": 261945,
+      "rotation_seed_last": 261974,
+      "source_count": 147,
+      "training_count_per_fold": 105
+    },
+    "geometry_uniform_k5": {
+      "accepted_count_quantiles": [
+        7.0,
+        12.0,
+        14.0,
+        16.0,
+        26.0
+      ],
+      "calibration_count_per_fold": 21,
+      "distance_weighted": false,
+      "evaluation_count_per_fold": 21,
+      "fold_count": 7,
+      "harm_margin": 0.002,
+      "harmful_accepted_count_quantiles": [
+        0.0,
+        1.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "marginal_lower_bound_coverage_quantiles": [
+        0.8503401360544217,
+        0.891156462585034,
+        0.8979591836734694,
+        0.9149659863945578,
+        0.9387755102040817
+      ],
+      "mean_guarded_gain_quantiles": [
+        0.0018680533584283323,
+        0.0026239124285120543,
+        0.003368126291807006,
+        0.004274905944357113,
+        0.0062437998194272825
+      ],
+      "miscoverage": 0.1,
+      "neighbor_count": 5,
+      "prediction_correlation_quantiles": [
+        0.23932292310265615,
+        0.28025672363648324,
+        0.3036412183894704,
+        0.3243040056286794,
+        0.3607439429707673
+      ],
+      "prospective_coverage_claim": false,
+      "repetitions": [
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8843537414965986,
+          "mean_guarded_gain": 0.002268236510607661,
+          "prediction_correlation": 0.2644499517775592,
+          "repetition": 0
+        },
+        {
+          "accepted_count": 8,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.00187911792677276,
+          "prediction_correlation": 0.3014627886079761,
+          "repetition": 1
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8503401360544217,
+          "mean_guarded_gain": 0.00429529722045068,
+          "prediction_correlation": 0.275091806555626,
+          "repetition": 2
+        },
+        {
+          "accepted_count": 12,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.004312057884372011,
+          "prediction_correlation": 0.28315692417767613,
+          "repetition": 3
+        },
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.8571428571428571,
+          "mean_guarded_gain": 0.004118095449849862,
+          "prediction_correlation": 0.2529830662607064,
+          "repetition": 4
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.004213732116076411,
+          "prediction_correlation": 0.3437232136622552,
+          "repetition": 5
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.003379111387291733,
+          "prediction_correlation": 0.32499237931177527,
+          "repetition": 6
+        },
+        {
+          "accepted_count": 10,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0024120694115048365,
+          "prediction_correlation": 0.3376256952822515,
+          "repetition": 7
+        },
+        {
+          "accepted_count": 10,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0020480902016568347,
+          "prediction_correlation": 0.26465983189962383,
+          "repetition": 8
+        },
+        {
+          "accepted_count": 11,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.00258074325769126,
+          "prediction_correlation": 0.2965209586566497,
+          "repetition": 9
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.004953569295454999,
+          "prediction_correlation": 0.2780144237059069,
+          "repetition": 10
+        },
+        {
+          "accepted_count": 23,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8707482993197279,
+          "mean_guarded_gain": 0.0062437998194272825,
+          "prediction_correlation": 0.33907348222868067,
+          "repetition": 11
+        },
+        {
+          "accepted_count": 13,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.0025908606392996652,
+          "prediction_correlation": 0.27909411624534386,
+          "repetition": 12
+        },
+        {
+          "accepted_count": 8,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.0023848669869559152,
+          "prediction_correlation": 0.30820128355640103,
+          "repetition": 13
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.005147337102565636,
+          "prediction_correlation": 0.35688563667400003,
+          "repetition": 14
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.0046616508847191224,
+          "prediction_correlation": 0.3222388845793917,
+          "repetition": 15
+        },
+        {
+          "accepted_count": 19,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.9183673469387755,
+          "mean_guarded_gain": 0.005050675398638459,
+          "prediction_correlation": 0.3607439429707673,
+          "repetition": 16
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.003968268024678133,
+          "prediction_correlation": 0.3066626756560505,
+          "repetition": 17
+        },
+        {
+          "accepted_count": 7,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9387755102040817,
+          "mean_guarded_gain": 0.0018680533584283323,
+          "prediction_correlation": 0.30505475227454204,
+          "repetition": 18
+        },
+        {
+          "accepted_count": 13,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.0031582838824006166,
+          "prediction_correlation": 0.27928999012275224,
+          "repetition": 19
+        },
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.0035566278055411617,
+          "prediction_correlation": 0.33396350926620644,
+          "repetition": 20
+        },
+        {
+          "accepted_count": 26,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.8503401360544217,
+          "mean_guarded_gain": 0.005731868095138446,
+          "prediction_correlation": 0.23932292310265615,
+          "repetition": 21
+        },
+        {
+          "accepted_count": 15,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.8707482993197279,
+          "mean_guarded_gain": 0.0040629672355392355,
+          "prediction_correlation": 0.3505844327774302,
+          "repetition": 22
+        },
+        {
+          "accepted_count": 17,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8843537414965986,
+          "mean_guarded_gain": 0.0027230677961492212,
+          "prediction_correlation": 0.2841394399603145,
+          "repetition": 23
+        },
+        {
+          "accepted_count": 13,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.8979591836734694,
+          "mean_guarded_gain": 0.003112906501406715,
+          "prediction_correlation": 0.30222768450439874,
+          "repetition": 24
+        },
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 3,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.003047628467585765,
+          "prediction_correlation": 0.3139509939244807,
+          "repetition": 25
+        },
+        {
+          "accepted_count": 14,
+          "harmful_accepted_count": 2,
+          "marginal_lower_bound_coverage": 0.9047619047619048,
+          "mean_guarded_gain": 0.0034310509558437632,
+          "prediction_correlation": 0.3143684990155772,
+          "repetition": 26
+        },
+        {
+          "accepted_count": 16,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.9319727891156463,
+          "mean_guarded_gain": 0.003306995443746346,
+          "prediction_correlation": 0.28638417520543763,
+          "repetition": 27
+        },
+        {
+          "accepted_count": 12,
+          "harmful_accepted_count": 1,
+          "marginal_lower_bound_coverage": 0.891156462585034,
+          "mean_guarded_gain": 0.0033334615279217157,
+          "prediction_correlation": 0.307522977401802,
+          "repetition": 28
+        },
+        {
+          "accepted_count": 9,
+          "harmful_accepted_count": 0,
+          "marginal_lower_bound_coverage": 0.9387755102040817,
+          "mean_guarded_gain": 0.003357141196322279,
+          "prediction_correlation": 0.2870206912518929,
+          "repetition": 29
+        }
+      ],
+      "rotation_count": 30,
+      "rotation_seed_first": 261945,
+      "rotation_seed_last": 261974,
+      "source_count": 147,
+      "training_count_per_fold": 105
+    }
+  },
+  "dlo4_dlo5_read": false,
+  "feature_dimensions": {
+    "bias_invariant_geometry": 51,
+    "combined": 161,
+    "posterior_diagnostics": 110
+  },
+  "held_v8_read": false,
+  "new_recordings": false,
+  "new_simulation_executed": false,
+  "official_benchmark_or_sota_claim": false,
+  "parent_lock_id": "015e6d84aa68a2a4310552ef4880752b972890f02d3e09e333ff575c92b8df25",
+  "parent_result_id": "9b8ff0817744392e0584c9b59936dd1b0e9331d3b0fa2d021f5a361947d32ee9",
+  "policy_failure_id": "e2806339d7f83081140c74d6f9e15eb3605f6aec1798b5931cdf227353e1f76f",
+  "policy_lock_id": "9401705f7d11f2acae32b4307eeff4e044aeba3e3e2a6403a568a999ee33a550",
+  "policy_result_id": "f0ac1753c92630bcc738db30f466f0745ec726d7aff74b99a0198e5aca6fb25b",
+  "prefix_only_capacity_world_count": 288,
+  "prefix_panel_futures_generated": false,
+  "prefix_panel_outcomes_read": false,
+  "prospective_coverage_claim": false,
+  "protected_data_read": false,
+  "real_robot_or_physical_safety_claim": false,
+  "schema": "dlolab-slingshot-policy-certificate-development-v2",
+  "selected_model": "combined_distance_k7",
+  "selected_prefix_capacity": {
+    "accepted_prefix_count": 44,
+    "fallback_prefix_count": 244,
+    "neighbor_count": 7,
+    "oof_fold_count": 7,
+    "oof_offset": 0.03784298738172282,
+    "oof_rank": 134,
+    "oof_seed": 261945,
+    "prefix_count": 288,
+    "prefix_futures_read": false,
+    "prospective_coverage_claim": false,
+    "source_count": 147,
+    "status": "descriptive_oof_capacity_only"
+  },
+  "selection_rule": "among median-coverage>=0.85 and median-harm<=1 candidates, minimize median harm, then maximize median guarded gain, then lexical tie break",
+  "source_groups": {
+    "parent_opened": 51,
+    "policy_calibration_opened": 96
+  },
+  "source_outcomes_previously_opened": true,
+  "source_sha256": {
+    "scripts/audit_dlolab_slingshot_policy_certificate_development_v2.py": "54e02ccc2b42e0d6cd4943a7a9dfaeb4af1c3f69f7712b45fb10f774882b6785",
+    "scripts/verify_dlolab_slingshot_policy_certificate_development_v2.py": "cf4a327105737660199c7ad410a905a4bb24967b803ae7b14ac863a53662c64b",
+    "src/bayesian_phystwin/policy_gain_certificate.py": "f7010abe728349f6c4940319f219730fbd143908b0f6bd35d752c11ae78a3d0d",
+    "src/bayesian_phystwin_experiments/dlolab_slingshot_policy_certificate_v2.py": "df12c0e1d1c6012af275eb12f733e2a4d1ae7aac04ea3aeb90524b6ceb1e12d5"
+  },
+  "source_world_count": 147,
+  "status": "opened_source_model_selection_and_capacity_diagnostic_only"
+}
