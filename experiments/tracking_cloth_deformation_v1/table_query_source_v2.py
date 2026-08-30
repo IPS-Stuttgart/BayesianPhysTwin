@@ -47,21 +47,16 @@ def segmented_rows(
     motion_times = times[motion_indices]
     dt = np.diff(motion_times)
     expected_dt = 1.0 / float(protocol["frame_rate_hz"])
-    if (
-        len(motion) < int(protocol["minimum_motion_segment_rows"])
-        or not np.allclose(dt, expected_dt, rtol=0.05, atol=1e-4)
+    if len(motion) < int(protocol["minimum_motion_segment_rows"]) or not np.allclose(
+        dt, expected_dt, rtol=0.05, atol=1e-4
     ):
         raise ValueError(f"{path.name} lacks the frozen dense-motion support")
     duration = float(motion_times[-1] - motion_times[0])
-    if duration + 1e-9 < float(
-        protocol["minimum_motion_segment_duration_seconds"]
-    ):
+    if duration + 1e-9 < float(protocol["minimum_motion_segment_duration_seconds"]):
         raise ValueError(
             f"{path.name} motion segment is shorter than its inventory lock"
         )
-    required = float(protocol["prefix_seconds"]) + float(
-        protocol["forecast_seconds"]
-    )
+    required = float(protocol["prefix_seconds"]) + float(protocol["forecast_seconds"])
     if duration + 1e-9 < required:
         raise ValueError(
             f"{path.name} motion segment does not cover the frozen horizon"
@@ -116,9 +111,7 @@ def input_view(
     raw_corners = order[corners]
 
     motion_start = float(motion[0][0])
-    end_time = motion_start + prefix_seconds + float(
-        protocol["forecast_seconds"]
-    )
+    end_time = motion_start + prefix_seconds + float(protocol["forecast_seconds"])
     stride = int(protocol["sample_stride"])
     times: list[float] = []
     prefix: list[np.ndarray] = []
@@ -143,9 +136,7 @@ def input_view(
         if timestamp <= motion_start + prefix_seconds + 1e-8:
             all_values = base.positions(cells, order) * scale
             if last_prefix is not None:
-                all_values = np.where(
-                    np.isfinite(all_values), all_values, last_prefix
-                )
+                all_values = np.where(np.isfinite(all_values), all_values, last_prefix)
             if not np.all(np.isfinite(all_values)):
                 raise ValueError(f"nonfinite causal prefix in {case.path.name}")
             last_prefix = all_values.copy()
@@ -157,9 +148,7 @@ def input_view(
     if len(prefix_array) < 5 or len(times_array) <= len(prefix_array) + 10:
         raise ValueError(f"insufficient sampled prefix/forecast in {case.path.name}")
     expected_dt = stride / float(protocol["frame_rate_hz"])
-    if not np.allclose(
-        np.diff(times_array), expected_dt, rtol=0.05, atol=1e-4
-    ):
+    if not np.allclose(np.diff(times_array), expected_dt, rtol=0.05, atol=1e-4):
         raise ValueError(
             f"sampled cadence violates the v2 contract in {case.path.name}"
         )
@@ -319,9 +308,7 @@ def self_test() -> None:
         path = Path(directory) / "cotton_A2_full_lay_low_friction.csv"
         with path.open("w", newline="") as stream:
             writer = csv.writer(stream)
-            writer.writerow(
-                ["Frame", "Time", *(f"c{index}" for index in range(60))]
-            )
+            writer.writerow(["Frame", "Time", *(f"c{index}" for index in range(60))])
             writer.writerow(_csv_row(1, 1.2, grid))
             for index in range(601):
                 timestamp = 20.0 + index / 120.0
