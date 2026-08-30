@@ -1,0 +1,283 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 same-object rope pilot v1
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - .github/workflows/deform360-same-object-rope-pilot-v1.yml
+      - protocols/deform360_same_object_rope_pilot_v1.json
+      - scripts/science/prepare_deform360_same_object_rope_pilot_v1.py
+      - triggers/deform360_same_object_rope_pilot_v1.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-same-object-rope-pilot-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Target-blind pilot contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Validate protocol and synthetic fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python3 -m py_compile \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py
+          python3 scripts/science/prepare_deform360_same_object_rope_pilot_v1.py \
+            --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          protocol = json.loads(
+              Path("protocols/deform360_same_object_rope_pilot_v1.json")
+              .read_text(encoding="utf-8")
+          )
+          assert protocol["status"] == "frozen-before-payload-decoding"
+          assert protocol["object_ids"] == sorted(protocol["object_ids"])
+          assert len(protocol["object_ids"]) == 4
+          boundary = protocol["information_boundary"]
+          assert boundary["media_payload_decoded"] is False
+          assert boundary["numeric_arrays_loaded"] is False
+          assert boundary["target_future_opened"] is False
+          assert boundary["score_bearing_outcomes_used"] is False
+          PY
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  pilot-manifest:
+    name: Four-object source-target manifest / gpuserver6000
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 30
+    steps:
+      - name: Admit exact runner class before checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve system Python without installing dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          test -n "${base_python}"
+          echo "BASE_PYTHON=${base_python}" >> "${GITHUB_ENV}"
+
+      - name: Revalidate exact target-blind implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          "${BASE_PYTHON}" -m py_compile \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py
+          "${BASE_PYTHON}" \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py \
+            --self-test
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Build deterministic source-target manifest without opening futures
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_root="${RUNNER_TEMP}/deform360-rope-pilot-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            "${BASE_PYTHON}" --version
+            uname -a
+            if command -v nvidia-smi >/dev/null 2>&1; then
+              nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+                --format=csv,noheader
+            fi
+          } | tee "${output_root}/environment.txt"
+          "${BASE_PYTHON}" \
+            scripts/science/prepare_deform360_same_object_rope_pilot_v1.py \
+            --protocol protocols/deform360_same_object_rope_pilot_v1.json \
+            --revision "${GITHUB_SHA}" \
+            --output "${output_root}" \
+            | tee "${output_root}/preparation.log"
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          result = json.loads((root / "result.json").read_text(encoding="utf-8"))
+          summary = result["summary"]
+          github_output = Path(os.environ["GITHUB_OUTPUT"])
+          with github_output.open("a", encoding="utf-8") as stream:
+              for key, value in (
+                  ("decision", summary["decision"]),
+                  ("accessible", summary["accessible_object_count"]),
+                  ("visual", summary["visual_pairable_object_count"]),
+                  ("visuotactile", summary["visuotactile_pairable_object_count"]),
+                  ("different_action", summary["different_action_selected_pair_count"]),
+                  ("result_id", result["result_id"]),
+              ):
+                  stream.write(f"{key}={value}\n")
+          PY
+
+      - name: Publish target-blind readiness summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "### Deform360 same-object rope/cable pilot" >> "${GITHUB_STEP_SUMMARY}"
+          echo >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -f "${OUTPUT_ROOT:-}/report.md" ]]; then
+            cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "No result artifact was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload source-target manifest and provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform360-rope-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+
+      - name: Require the registered four-object visual roster
+        shell: bash
+        env:
+          ACCESSIBLE: ${{ steps.prepare.outputs.accessible }}
+          VISUAL: ${{ steps.prepare.outputs.visual }}
+        run: |
+          set -euo pipefail
+          test "${ACCESSIBLE}" -ge 4
+          test "${VISUAL}" -ge 4
+
+  processed-access-diagnostic:
+    name: Processed-only access diagnostic / gpuserver4090
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Record directory traversal state without decoding payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_root="${RUNNER_TEMP}/deform360-4090-access-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output_root}"
+          mkdir -p -- "${output_root}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          paths = [
+              Path("/home/florianpfaff/deform360-reusable-sota-v1/aligned"),
+              Path("/home/florianpfaff/deform360-reusable-sota-v1/aligned/004-rubber-band"),
+              Path("/home/florianpfaff/deform360-fresh-source-processed-v1-1a3f9b1"),
+          ]
+          records = []
+          for path in paths:
+              record = {
+                  "path": str(path),
+                  "exists": path.exists(),
+                  "readable": os.access(path, os.R_OK),
+                  "searchable": os.access(path, os.X_OK),
+                  "directory": path.is_dir(),
+                  "entry_count": None,
+                  "error": None,
+              }
+              try:
+                  record["entry_count"] = len(tuple(path.iterdir())) if path.is_dir() else None
+              except OSError as error:
+                  record["error"] = f"{type(error).__name__}: {error}"
+              records.append(record)
+          output = Path(os.environ["OUTPUT_ROOT"])
+          payload = {
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "repository_revision": os.environ.get("GITHUB_SHA"),
+              "media_payload_decoded": False,
+              "numeric_arrays_loaded": False,
+              "records": records,
+          }
+          (output / "access.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(payload, sort_keys=True))
+          PY
+          if command -v namei >/dev/null 2>&1; then
+            namei -l /home/florianpfaff/deform360-reusable-sota-v1/aligned/004-rubber-band \
+              > "${output_root}/namei.txt" 2>&1 || true
+          fi
+
+      - name: Upload non-blocking access evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform360-4090-access-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
