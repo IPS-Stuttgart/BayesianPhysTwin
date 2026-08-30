@@ -83,7 +83,9 @@ def _score_one(
     protocol_path: Path,
 ) -> dict[str, object]:
     seal = _validate_prediction_seal(seal_path, dlo=dlo, protocol_path=protocol_path)
-    predictions_path = _verified_file(seal.get("predictions"), label=f"{dlo} predictions")
+    predictions_path = _verified_file(
+        seal.get("predictions"), label=f"{dlo} predictions"
+    )
     eval_manifest_path = _verified_file(
         seal.get("eval_manifest"), label=f"{dlo} eval manifest"
     )
