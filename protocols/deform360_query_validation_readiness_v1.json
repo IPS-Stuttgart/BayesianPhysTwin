@@ -1,0 +1,88 @@
+{
+  "claim_boundary": "This target-blind readiness audit may establish only a deterministic development metadata roster and source-target episode design. It is not a fresh cohort lock, payload-integrity certificate, model evaluation, real-data accuracy result, calibration result, physical transport result, or authorization to open target futures.",
+  "dataset": {
+    "name": "Deform360",
+    "root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "raw_object_prefix": "raw-repository/raw"
+  },
+  "development_metadata_selection": {
+    "action_families": {
+      "elevation": [
+        "lift",
+        "wave"
+      ],
+      "planar_or_contact": [
+        "drag",
+        "flip",
+        "move",
+        "press",
+        "pull",
+        "push",
+        "roll",
+        "rotate",
+        "turn"
+      ],
+      "shape_change": [
+        "bend",
+        "close",
+        "curl",
+        "curve",
+        "distort",
+        "fold",
+        "open",
+        "squeeze",
+        "stretch"
+      ]
+    },
+    "allowed_classification": "candidate_name_only",
+    "metadata_path_template": "raw-repository/raw/{object_id}/metadata.json",
+    "object_ranking": "ascending-sha256(rank_seed\\0stratum\\0object_id)",
+    "objects_per_stratum": 4,
+    "pair_requirement": "source and target action families differ",
+    "pair_ranking": "ascending-sha256(rank_seed\\0object_id\\0source_episode_id\\0target_episode_id\\0source-target-pair)",
+    "purpose": "adapter-and-source-target-contract-development-only",
+    "rank_seed": "deform360-query-validation-readiness-v1",
+    "strata": {
+      "sheet": "object_id ends with -cloth",
+      "volumetric": "all other recognized object IDs"
+    }
+  },
+  "historical_exclusion_binding": {
+    "canonical_sha256": "859613611950801a6d462ddd426849eb0007b1c7406447cb00468c257a2bb476",
+    "commit": "00550574fe56330062140d6042693d5a34088103",
+    "file_sha256": "f9db0fa72305b68f6d4c6e85c4a6b4a22fb77bb01a4e2b13792c5954bb228b06",
+    "hash_namespace": "deform360-fresh-object-exclusion-v1",
+    "path": "protocols/locks/deform360_covariance_only_target_v1_exclusion.json",
+    "scope": "strongest independently audited historical union through the 2026-08-11 downloaded/touched reserve",
+    "sufficiency": "insufficient for a current fresh-confirmation claim without a post-cutoff cross-project delta"
+  },
+  "information_boundary": {
+    "camera_media_decoded": false,
+    "dataset_names_and_sizes_opened": true,
+    "geometry_or_track_annotations_opened": false,
+    "robot_or_tactile_arrays_opened": false,
+    "score_bearing_outcomes_opened": false,
+    "selected_metadata_json_opened": true,
+    "target_future_opened": false
+  },
+  "next_gate": {
+    "fresh_confirmation_requires_complete_current_exclusion_union": true,
+    "processed_annotation_or_official_processing_contract_required": true,
+    "source_only_prediction_and_guard_freeze_required": true,
+    "target_payload_access_authorized": false
+  },
+  "preflight_binding": {
+    "content_inventory_sha256": "cb37c193052baae41140d0cb48c642c16e3840a850ca104a4883555eb19f7611",
+    "evidence_path": "evidence/deform360/gpuserver4090_metadata_preflight_2026-08-30.json",
+    "inventory_sha256": "8cbbae7c0dca51f4dc019d8ceb6fc5543e9ccb5f7e94bec0859e4bdd8005f887",
+    "successful_run_id": 33300946082
+  },
+  "protocol_id": "deform360-query-validation-readiness-v1",
+  "runner": {
+    "label": "gpuserver4090",
+    "registered_runner_name_observed_in_preflight": "workstation1"
+  },
+  "schema": "bayesian-phystwin/deform360-query-validation-readiness-v1",
+  "schema_version": 1,
+  "status": "locked-before-development-metadata-access"
+}
