@@ -1,0 +1,47 @@
+{
+  "schema": "dlolab-slingshot-reward-aligned-native-qualification-v1",
+  "status": "passed_on_opened_v3_calibration_source",
+  "question": "Does the isolated native interface satisfy an outcome-aligned reward repeatability contract despite rare late state divergence?",
+  "source": {
+    "v3_summary_artifact_id": "89e7a37827fadd0e3a25d81fd67a7a1685447e2240d1f045bb20b5fc709a26d4",
+    "v3_raw_tree_sha256": "7934011891305eecb28ec6597a3b09512fc0fe4d1b18455000ca037ba5393e84",
+    "role": "opened_calibration_source_only",
+    "new_native_execution": false,
+    "v3_rescored": false
+  },
+  "denominator": {
+    "worlds": 128,
+    "ordinary_action_processes": 1024,
+    "technical_action_failures": 0,
+    "reward_aligned_qualified_worlds": 128,
+    "position_deterministic_worlds": 127
+  },
+  "registered_reward_aligned_contract": {
+    "all_eight_fresh_processes": true,
+    "exact_world_realization": true,
+    "common_prefix_at_most_m": 0.0005,
+    "duplicate_reward_error_at_most": 0.001,
+    "fixed_endpoints_at_most_m": 1e-09,
+    "sealed_prefix_replay": true,
+    "duplicate_position_is_reported_process_variability_not_admission": true,
+    "incumbent_reward_estimator": "mean_of_independent_action_slots_5_and_7"
+  },
+  "observed_source_diagnostic": {
+    "maximum_common_prefix_error_m": 9.787309851461146e-14,
+    "maximum_duplicate_reward_error": 0.0007033348083496094,
+    "reward_gate_failures": 0,
+    "maximum_duplicate_position_error_m": 0.0008642844535515504,
+    "position_determinism_failures": 1,
+    "interpretation": "registered reward is repeatable at its numerical margin while late rigid-contact state can bifurcate"
+  },
+  "v4_protocol_freeze_authorized": true,
+  "v4_scientific_execution_authorized": false,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "artifact_id": "35d06883b7f5192127e59db7c6da8693eb38ee2083af00e24158b0a079fa998b"
+}

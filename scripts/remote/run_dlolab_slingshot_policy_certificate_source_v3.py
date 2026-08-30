@@ -75,6 +75,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_ROOT = Path(
     "/home/fpfaff/source-only/dlolab-slingshot-policy-certificate-source-v3"
 )
+WORKER_RUNNER_PATH = Path(__file__).resolve()
 ATTEMPT_LEDGER = Path(
     "/home/fpfaff/source-only/dlolab-slingshot-policy-certificate-source-v3.attempt.json"
 )
@@ -92,6 +93,18 @@ V2_SPEC.loader.exec_module(V2_RUNNER)
 
 PREFIX_WORKERS = 1
 FUTURE_WORKERS = 8
+STUDY_LABEL = "Slingshot v3"
+LOCK_SCHEMA = "dlolab-slingshot-policy-certificate-lock-v3"
+ATTEMPT_SCHEMA = "dlolab-slingshot-policy-certificate-attempt-v3"
+CANDIDATE_SCHEMA = "dlolab-slingshot-policy-candidates-v3"
+CALIBRATION_SCHEMA = "dlolab-slingshot-policy-calibration-v3"
+DECISION_SCHEMA = "dlolab-slingshot-policy-decisions-v3"
+BARRIER_SCHEMA = "dlolab-slingshot-policy-barrier-v3"
+TASK_CLAIM_SCHEMA = "dlolab-slingshot-policy-task-claim-v3"
+TASK_SEAL_SCHEMA = "dlolab-slingshot-policy-task-seal-v3"
+TASK_FAILURE_SCHEMA = "dlolab-slingshot-policy-task-failure-v3"
+WORLD_QUALIFICATION_SCHEMA = "dlolab-slingshot-policy-world-qualification-v3"
+RUN_FAILURE_SCHEMA = "dlolab-slingshot-policy-run-failure-v3"
 SOURCES = (
     "src/bayesian_phystwin_experiments/dlolab_slingshot_independent_native_v3.py",
     "src/bayesian_phystwin_experiments/dlolab_slingshot_policy_certificate_source_v3.py",
@@ -172,7 +185,7 @@ def freeze(output: Path) -> dict[str, Any]:
     lock = write_record(
         output / "lock.json",
         {
-            "schema": "dlolab-slingshot-policy-certificate-lock-v3",
+            "schema": LOCK_SCHEMA,
             "source_revision": revision,
             "source_sha256": _source_hashes(),
             "protocol": protocol(),
@@ -192,7 +205,7 @@ def freeze(output: Path) -> dict[str, Any]:
     write_record(
         ATTEMPT_LEDGER,
         {
-            "schema": "dlolab-slingshot-policy-certificate-attempt-v3",
+            "schema": ATTEMPT_SCHEMA,
             "lock_id": lock["artifact_id"],
             "source_revision": revision,
             "output_root": str(output.resolve()),
@@ -213,7 +226,7 @@ def validate_lock(output: Path) -> dict[str, Any]:
     parent, _, _ = load_parent()
     qualification = load_qualification()
     if (
-        lock.get("schema") != "dlolab-slingshot-policy-certificate-lock-v3"
+        lock.get("schema") != LOCK_SCHEMA
         or lock.get("source_revision") != clean_revision(ROOT)
         or lock.get("source_sha256") != _source_hashes()
         or lock.get("protocol") != protocol()
@@ -228,7 +241,7 @@ def validate_lock(output: Path) -> dict[str, Any]:
         or lock.get("output_root") != str(output.resolve())
         or lock.get("attempt_ledger") != str(ATTEMPT_LEDGER.resolve())
         or attempt.get("schema")
-        != "dlolab-slingshot-policy-certificate-attempt-v3"
+        != ATTEMPT_SCHEMA
         or attempt.get("lock_id") != lock.get("artifact_id")
         or attempt.get("source_revision") != lock.get("source_revision")
         or attempt.get("output_root") != str(output.resolve())
@@ -358,7 +371,7 @@ def _single_action_qa(
 def _candidate_seal(output: Path, lock: dict[str, Any], role: str) -> dict[str, Any]:
     seal = read_record(output / f"{role}-candidates/seal.json")
     if (
-        seal.get("schema") != "dlolab-slingshot-policy-candidates-v3"
+        seal.get("schema") != CANDIDATE_SCHEMA
         or seal.get("lock_id") != lock["artifact_id"]
         or seal.get("role") != role
         or seal.get("future_simulated") is not False
@@ -371,7 +384,7 @@ def _candidate_seal(output: Path, lock: dict[str, Any], role: str) -> dict[str, 
 def _calibration_seal(output: Path, lock: dict[str, Any]) -> dict[str, Any]:
     seal = read_record(output / "calibration/seal.json")
     if (
-        seal.get("schema") != "dlolab-slingshot-policy-calibration-v3"
+        seal.get("schema") != CALIBRATION_SCHEMA
         or seal.get("lock_id") != lock["artifact_id"]
         or seal.get("policy_calibration", {}).get("calibration_count")
         != COUNTS["calibration"]
@@ -392,9 +405,9 @@ def _evaluation_barrier(
     decision = read_record(output / "evaluation-decisions/seal.json")
     barrier = read_record(output / "evaluation-decision-barrier.json")
     if (
-        decision.get("schema") != "dlolab-slingshot-policy-decisions-v3"
+        decision.get("schema") != DECISION_SCHEMA
         or decision.get("lock_id") != lock["artifact_id"]
-        or barrier.get("schema") != "dlolab-slingshot-policy-barrier-v3"
+        or barrier.get("schema") != BARRIER_SCHEMA
         or barrier.get("lock_id") != lock["artifact_id"]
         or barrier.get("decision_seal_id") != decision["artifact_id"]
         or barrier.get("pre_future_gate_passed") is not True
@@ -426,9 +439,9 @@ def _expected_authorization(
 
 def _spec(role: str, kind: str, index: int, action: int | None) -> dict[str, Any]:
     if kind == "prefix" and action is None:
-        return prefix_task(role, index)
+        return cast(dict[str, Any], prefix_task(role, index))
     if kind == "future" and action is not None:
-        return future_action_task(role, index, action)
+        return cast(dict[str, Any], future_action_task(role, index, action))
     raise ValueError("complete registered v3 worker coordinates required")
 
 
@@ -447,7 +460,7 @@ def worker(
     claim = write_record(
         directory / "claim.json",
         {
-            "schema": "dlolab-slingshot-policy-task-claim-v3",
+            "schema": TASK_CLAIM_SCHEMA,
             "lock_id": lock["artifact_id"],
             "task": spec,
             "authorization": authorization,
@@ -493,7 +506,7 @@ def worker(
         write_record(
             directory / "seal.json",
             {
-                "schema": "dlolab-slingshot-policy-task-seal-v3",
+                "schema": TASK_SEAL_SCHEMA,
                 "lock_id": lock["artifact_id"],
                 "claim_id": claim["artifact_id"],
                 "task": spec,
@@ -506,7 +519,7 @@ def worker(
         write_record(
             directory / "failure.json",
             {
-                "schema": "dlolab-slingshot-policy-task-failure-v3",
+                "schema": TASK_FAILURE_SCHEMA,
                 "lock_id": lock["artifact_id"],
                 "claim_id": claim["artifact_id"],
                 "task": spec,
@@ -536,8 +549,8 @@ def _task_records(
         else authorization
     )
     if (
-        claim.get("schema") != "dlolab-slingshot-policy-task-claim-v3"
-        or seal.get("schema") != "dlolab-slingshot-policy-task-seal-v3"
+        claim.get("schema") != TASK_CLAIM_SCHEMA
+        or seal.get("schema") != TASK_SEAL_SCHEMA
         or claim.get("lock_id") != lock["artifact_id"]
         or seal.get("lock_id") != lock["artifact_id"]
         or claim.get("task") != spec
@@ -604,8 +617,8 @@ def validate_task_failure(
     failure = read_record(directory / "failure.json")
     if (
         (directory / "seal.json").exists()
-        or claim.get("schema") != "dlolab-slingshot-policy-task-claim-v3"
-        or failure.get("schema") != "dlolab-slingshot-policy-task-failure-v3"
+        or claim.get("schema") != TASK_CLAIM_SCHEMA
+        or failure.get("schema") != TASK_FAILURE_SCHEMA
         or claim.get("lock_id") != lock["artifact_id"]
         or failure.get("lock_id") != lock["artifact_id"]
         or claim.get("task") != spec
@@ -634,7 +647,7 @@ def execute(
     command = [
         sys.executable,
         "-u",
-        str(Path(__file__).resolve()),
+        str(WORKER_RUNNER_PATH),
         "--output",
         str(output.resolve()),
         "--worker-role",
@@ -728,7 +741,7 @@ def _candidate_artifact(
         predictor,
     )
     metadata = {
-        "schema": "dlolab-slingshot-policy-candidates-v3",
+        "schema": CANDIDATE_SCHEMA,
         "lock_id": lock["artifact_id"],
         "role": role,
         "parent_bank_id": parent["bank_id"],
@@ -785,6 +798,17 @@ def _role_authorization(
     }
 
 
+def world_rewards(rows: list[dict[str, Array]]) -> Array:
+    """Return the deterministic-v3 seven-action reward vector."""
+
+    if len(rows) != ACTION_COUNT:
+        raise ValueError("all eight action rows are required for world rewards")
+    return np.asarray(
+        [task_metrics(row)["native_reward"] for row in rows[:7]],
+        dtype=np.float64,
+    )
+
+
 def _world_qualification(
     output: Path,
     lock: dict[str, Any],
@@ -820,12 +844,9 @@ def _world_qualification(
     )
     if not qa["qa_passed"]:
         raise ValueError("independent v3 world QA failed")
-    rewards = np.asarray(
-        [task_metrics(row)["native_reward"] for row in rows[:7]],
-        dtype=np.float64,
-    )
+    rewards = world_rewards(rows)
     metadata = {
-        "schema": "dlolab-slingshot-policy-world-qualification-v3",
+        "schema": WORLD_QUALIFICATION_SCHEMA,
         "lock_id": lock["artifact_id"],
         "role": role,
         "world": world,
@@ -881,7 +902,7 @@ def _calibration_artifact(
     calibration, realized = calibrate(candidate, rewards)
     simultaneous = calibrate_simultaneous_guard(candidate, rewards)
     metadata = {
-        "schema": "dlolab-slingshot-policy-calibration-v3",
+        "schema": CALIBRATION_SCHEMA,
         "lock_id": lock["artifact_id"],
         "candidate_seal_id": candidate_seal["artifact_id"],
         "future_action_seal_ids": action_ids,
@@ -945,7 +966,7 @@ def seal_evaluation_decisions(
     decision = write_record(
         directory / "seal.json",
         {
-            "schema": "dlolab-slingshot-policy-decisions-v3",
+            "schema": DECISION_SCHEMA,
             "lock_id": lock["artifact_id"],
             "candidate_seal_id": candidate_seal["artifact_id"],
             "calibration_seal_id": calibration_seal["artifact_id"],
@@ -959,7 +980,7 @@ def seal_evaluation_decisions(
     barrier = write_record(
         output / "evaluation-decision-barrier.json",
         {
-            "schema": "dlolab-slingshot-policy-barrier-v3",
+            "schema": BARRIER_SCHEMA,
             "lock_id": lock["artifact_id"],
             "decision_seal_id": decision["artifact_id"],
             "calibration_seal_id": calibration_seal["artifact_id"],
@@ -1123,7 +1144,7 @@ def run(output: Path) -> dict[str, Any]:
             },
         )
         print(
-            f"Slingshot v3 policy-certificate gate={result['source_gate_passed']}; "
+            f"{STUDY_LABEL} policy-certificate gate={result['source_gate_passed']}; "
             f"id={result['artifact_id']}",
             flush=True,
         )
@@ -1133,7 +1154,7 @@ def run(output: Path) -> dict[str, Any]:
             write_record(
                 output / "failure.json",
                 {
-                    "schema": "dlolab-slingshot-policy-run-failure-v3",
+                    "schema": RUN_FAILURE_SCHEMA,
                     "lock_id": None if lock is None else lock["artifact_id"],
                     "terminal_stage": stage,
                     "error_type": type(error).__name__,
@@ -1161,7 +1182,7 @@ if __name__ == "__main__":
         parser.error("verification cannot be combined with worker execution")
     if args.verify_only:
         verified = verify_result(args.output)
-        print(f"verified Slingshot v3 result {verified['artifact_id']}", flush=True)
+        print(f"verified {STUDY_LABEL} result {verified['artifact_id']}", flush=True)
     elif all(value is not None for value in worker_values):
         worker(
             args.output,
