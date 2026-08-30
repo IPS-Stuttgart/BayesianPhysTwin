@@ -34,9 +34,11 @@ jobs:
           python3 - <<'PY'
           from __future__ import annotations
 
+          import hashlib
           import json
           import os
           import re
+          import stat as stat_module
           from pathlib import Path
 
           root = Path(os.environ["DEFORM360_ROOT"]).resolve()
@@ -84,32 +86,46 @@ jobs:
           status_path = root / "download.status"
           status_text = None
           status_sha256 = None
+          status_file_readable = False
+          status_file_stat = None
+          status_file_read_error = None
           if status_path.is_file() and not status_path.is_symlink():
-              import hashlib
-
-              raw = status_path.read_bytes()
-              status_sha256 = hashlib.sha256(raw).hexdigest()
-              text = raw[:4096].decode("utf-8", errors="replace")
-              safe_lines = []
-              for line in text.splitlines():
-                  lowered = line.lower()
-                  if any(
-                      marker in lowered
-                      for marker in (
-                          "token",
-                          "authorization",
-                          "cookie",
-                          "secret",
-                          "password",
-                          "api_key",
-                          "apikey",
-                      )
-                  ):
-                      safe_lines.append("<redacted-sensitive-status-line>")
-                      continue
-                  line = re.sub(r"https?://\S+", "<redacted-url>", line)
-                  safe_lines.append(line)
-              status_text = "\n".join(safe_lines)
+              status_stat = status_path.stat(follow_symlinks=False)
+              status_file_stat = {
+                  "size_bytes": status_stat.st_size,
+                  "mtime_ns": status_stat.st_mtime_ns,
+                  "uid": status_stat.st_uid,
+                  "gid": status_stat.st_gid,
+                  "mode": stat_module.filemode(status_stat.st_mode),
+              }
+              try:
+                  raw = status_path.read_bytes()
+              except PermissionError as error:
+                  status_file_read_error = type(error).__name__
+              else:
+                  status_file_readable = True
+                  status_sha256 = hashlib.sha256(raw).hexdigest()
+                  text = raw[:4096].decode("utf-8", errors="replace")
+                  safe_lines = []
+                  for line in text.splitlines():
+                      lowered = line.lower()
+                      if any(
+                          marker in lowered
+                          for marker in (
+                              "token",
+                              "authorization",
+                              "cookie",
+                              "secret",
+                              "password",
+                              "api_key",
+                              "apikey",
+                          )
+                      ):
+                          safe_lines.append("<redacted-sensitive-status-line>")
+                          continue
+                      line = re.sub(r"https?://\S+", "<redacted-url>", line)
+                      safe_lines.append(line)
+                  status_text = "\n".join(safe_lines)
 
           raw_objects = first_level_directories(root / "raw-repository" / "raw")
           processed_candidates = []
@@ -132,6 +148,9 @@ jobs:
               "gpu_names": gpu_names,
               "dataset_root": str(root),
               "status_file_present": status_path.is_file(),
+              "status_file_readable": status_file_readable,
+              "status_file_stat": status_file_stat,
+              "status_file_read_error": status_file_read_error,
               "status_file_sha256": status_sha256,
               "sanitized_status_text": status_text,
               "incomplete_file_count": len(incomplete),
@@ -144,7 +163,7 @@ jobs:
               "processed_directory_candidates": processed_candidates,
               "information_boundary": {
                   "dataset_payload_opened": False,
-                  "only_downloader_control_file_content_opened": True,
+                  "downloader_control_file_content_opened": status_file_readable,
                   "dataset_names_sizes_and_timestamps_inspected": True,
                   "reserved_target_outcomes_opened": False,
               },
