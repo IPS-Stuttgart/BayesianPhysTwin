@@ -113,9 +113,7 @@ def paired_statistics(rows: list[dict[str, Any]], comparator: str) -> dict[str, 
         "win_fraction_excluding_ties": float(
             wins / (wins + losses) if wins + losses else 0.0
         ),
-        "exact_one_sided_sign_test_pvalue": exact_one_sided_sign_pvalue(
-            wins, losses
-        ),
+        "exact_one_sided_sign_test_pvalue": exact_one_sided_sign_pvalue(wins, losses),
         "minimum_difference": float(np.min(differences)),
         "maximum_difference": float(np.max(differences)),
     }
@@ -313,20 +311,14 @@ def confirmation_decision(
             0.80 <= float(uncertainty["marginal_90_coverage"]) <= 0.98
         ),
         "joint_coverage_near_90": (
-            0.75
-            <= float(uncertainty["joint_90_ellipsoid_coverage"])
-            <= 0.98
+            0.75 <= float(uncertainty["joint_90_ellipsoid_coverage"]) <= 0.98
         ),
-        "joint_nanees_reasonable": (
-            0.5 <= float(uncertainty["joint_nanees"]) <= 2.0
-        ),
+        "joint_nanees_reasonable": (0.5 <= float(uncertainty["joint_nanees"]) <= 2.0),
     }
     return {
         "gates": gates,
         "point_confirmation_supported": point_supported,
-        "probabilistic_confirmation_supported": all(
-            uncertainty_diagnostic.values()
-        ),
+        "probabilistic_confirmation_supported": all(uncertainty_diagnostic.values()),
         "uncertainty_diagnostic": uncertainty_diagnostic,
         "icra_evidence_materially_strengthened": point_supported,
         "paper_claim_authorized": False,
@@ -360,12 +352,8 @@ def write_object_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writeheader()
         for row in rows:
             persistence = row["metrics"]["persistence"]["active_field_rmse"]
-            ensemble = row["metrics"]["bayesian_action_ensemble"][
-                "active_field_rmse"
-            ]
-            shuffled = row["metrics"]["shuffled_action_control"][
-                "active_field_rmse"
-            ]
+            ensemble = row["metrics"]["bayesian_action_ensemble"]["active_field_rmse"]
+            shuffled = row["metrics"]["shuffled_action_control"]["active_field_rmse"]
             writer.writerow(
                 {
                     "object_id": row["object_id"],
@@ -389,9 +377,7 @@ def write_object_csv(path: Path, rows: list[dict[str, Any]]) -> None:
                     "joint_90_ellipsoid_coverage": row["uncertainty"][
                         "joint_90_ellipsoid_coverage"
                     ],
-                    "marginal_90_coverage": row["uncertainty"][
-                        "marginal_90_coverage"
-                    ],
+                    "marginal_90_coverage": row["uncertainty"]["marginal_90_coverage"],
                 }
             )
 
