@@ -75,6 +75,7 @@ def _entry(
         display_name=f"Backend {label}",
         dataset="PublicData",
         query_scope=_scope(label),
+        independent_group_count=12,
         stages={
             name: _assessment(f"{label}-{name}", status)
             for name, status in zip(STAGE_NAMES, statuses, strict=True)
@@ -92,6 +93,24 @@ def test_stage_order_rejects_pass_after_unmet_prerequisite() -> None:
         _entry(
             "invalid",
             ("passed", "failed", "passed", "not_applicable", "passed", "passed"),
+        )
+
+
+def test_entry_rejects_missing_independent_group_denominator() -> None:
+    valid = _entry("denominator")
+    with pytest.raises(ValueError, match="independent_group_count"):
+        SimulatorValidationEntryV1(
+            backend_key=valid.backend_key,
+            display_name=valid.display_name,
+            dataset=valid.dataset,
+            query_scope=valid.query_scope,
+            independent_group_count=0,
+            stages=valid.stages,
+            exact_fallback_retained=True,
+            protocol_frozen_before_outcomes=True,
+            protected_target_data_read=False,
+            new_recording_used=False,
+            terminal_reason=valid.terminal_reason,
         )
 
 
@@ -131,6 +150,7 @@ def test_failed_or_uncustodied_entries_cannot_be_promoted() -> None:
         display_name=valid.display_name,
         dataset=valid.dataset,
         query_scope=valid.query_scope,
+        independent_group_count=valid.independent_group_count,
         stages=valid.stages,
         exact_fallback_retained=False,
         protocol_frozen_before_outcomes=True,

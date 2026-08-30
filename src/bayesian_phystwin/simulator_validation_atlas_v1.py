@@ -19,6 +19,7 @@ from typing import Any, Literal, TypeVar, cast
 from ._canonical_contracts import (
     frozen_finite_json_mapping,
     genuine_boolean,
+    genuine_integer,
     plain_json,
 )
 from ._portable_contracts import (
@@ -255,6 +256,7 @@ class SimulatorValidationEntryV1:
     display_name: str
     dataset: str
     query_scope: SimulatorQueryScopeV1
+    independent_group_count: int
     stages: Mapping[str, ValidationStageAssessmentV1]
     exact_fallback_retained: bool
     protocol_frozen_before_outcomes: bool
@@ -275,6 +277,15 @@ class SimulatorValidationEntryV1:
             raise TypeError("query_scope must be a SimulatorQueryScopeV1")
         if self.query_scope.query_id is None:
             raise ValueError("query_scope must have a content identity")
+        object.__setattr__(
+            self,
+            "independent_group_count",
+            genuine_integer(
+                self.independent_group_count,
+                name="independent_group_count",
+                minimum=1,
+            ),
+        )
         if set(self.stages) != set(STAGE_NAMES):
             raise ValueError("entry must contain exactly the registered stage roster")
         stages: dict[str, ValidationStageAssessmentV1] = {}
@@ -371,6 +382,7 @@ class SimulatorValidationEntryV1:
             "display_name": self.display_name,
             "dataset": self.dataset,
             "query_scope": self.query_scope.to_record(),
+            "independent_group_count": self.independent_group_count,
             "stages": {name: self.stages[name].to_record() for name in STAGE_NAMES},
             "exact_fallback_retained": self.exact_fallback_retained,
             "protocol_frozen_before_outcomes": self.protocol_frozen_before_outcomes,
@@ -403,6 +415,7 @@ class SimulatorValidationEntryV1:
                     "display_name",
                     "dataset",
                     "query_scope",
+                    "independent_group_count",
                     "stages",
                     "exact_fallback_retained",
                     "protocol_frozen_before_outcomes",
@@ -436,6 +449,7 @@ class SimulatorValidationEntryV1:
                 cast(Mapping[str, object], value["query_scope"]),
                 name=f"{name} query scope",
             ),
+            independent_group_count=cast(int, value["independent_group_count"]),
             stages={
                 stage_name: ValidationStageAssessmentV1.from_mapping(
                     cast(Mapping[str, object], raw_stages[stage_name]),

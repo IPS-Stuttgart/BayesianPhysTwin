@@ -35,10 +35,10 @@ def test_committed_atlas_is_exact_builder_output() -> None:
     rebuilt = build_atlas()
     assert committed.to_record() == rebuilt.to_record()
     assert hashlib.sha256(ATLAS.read_bytes()).hexdigest() == (
-        "870cca4f2b60749e052189d21733e2d785aad2f5c4697791ca27295d1e9bd274"
+        "efb3c6070e76ba4f71b59025406ce7728798a540e614db6f5802e94f953f6097"
     )
     assert committed.artifact_id == (
-        "f68efd7c9279219be470464a828720830ec0275c7647ce91aea115ec62656967"
+        "a04edd702cc95ed1cd89fe05f3a209b036c6d1e22406161b130d89c6c56cded4"
     )
     assert len(committed.entries) == 9
     assert committed.to_record()["backend_count"] == 5
@@ -134,6 +134,16 @@ def test_exact_stage_roster_preserves_positive_and_negative_evidence() -> None:
             statuses
         )
     assert entries["DLO-Lab wrapping"].decision == "prospective_certified"
+    assert entries["DLO-Lab wrapping"].independent_group_count == 288
+    assert all(
+        entries[name].independent_group_count == 1
+        for name in (
+            "ARCSim Dirichlet",
+            "Codim-IPC",
+            "LibuIPC ensemble",
+            "MatPhys pinned runtime",
+        )
+    )
     assert len(atlas.prospectively_certified_query_ids) == 1
 
 

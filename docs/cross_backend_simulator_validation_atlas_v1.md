@@ -142,4 +142,4 @@ PYTHONPATH=src python3 scripts/build_cross_backend_validation_atlas_v1.py \
 
 The committed artifact is
 `results/source/cross_backend_validation_atlas_v1/atlas.json`, with artifact ID
-`f68efd7c9279219be470464a828720830ec0275c7647ce91aea115ec62656967`.
+`a04edd702cc95ed1cd89fe05f3a209b036c6d1e22406161b130d89c6c56cded4`.

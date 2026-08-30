@@ -43,7 +43,7 @@ CAPSULES = {
 
 BOUND_FILES = {
     ATLAS_IMPLEMENTATION: (
-        "2a9a17fc33c987f59a48bbe69eff5e5aa2b8acec2c83605d164d665d94f367bd"
+        "24acd0a0f753f86622b2e13340991494bffb08d346d74993455adcfca07445a5"
     ),
     DLO_ATLAS: "45890333ac292c0cd2bb5620b1e2bb572e297bddb923d5e570a4cb098adfd94b",
     CAPSULES["arcsim_full"]: (
@@ -250,6 +250,7 @@ def _dlo_entry(entry: QueryCompetenceStageV2) -> SimulatorValidationEntryV1:
         display_name=f"DLO-Lab {task}",
         dataset="DLO-Lab",
         query_scope=entry.query_scope,
+        independent_group_count=entry.independent_group_count,
         stages=stages,
         exact_fallback_retained=True,
         protocol_frozen_before_outcomes=entry.protocol_frozen_before_outcomes,
@@ -370,6 +371,7 @@ def _arcsim_entry(
             protocol_ids=[str(full["protocol_id"]), str(source["protocol_id"])],
             metric="one-sided real-to-sim L1 Chamfer against frozen comparators",
         ),
+        independent_group_count=1,
         stages=stages,
         exact_fallback_retained=True,
         protocol_frozen_before_outcomes=True,
@@ -438,6 +440,7 @@ def _codim_entry(
             protocol_ids=[str(native["protocol_id"]), str(full["protocol_id"])],
             metric="target-free numerical qualification before source accuracy",
         ),
+        independent_group_count=1,
         stages=stages,
         exact_fallback_retained=True,
         protocol_frozen_before_outcomes=True,
@@ -523,6 +526,7 @@ def _libuipc_entry(
             protocol_ids=[str(native["protocol_id"]), str(full["protocol_id"])],
             metric="target-free replay-spread and kinematic qualification",
         ),
+        independent_group_count=1,
         stages=stages,
         exact_fallback_retained=True,
         protocol_frozen_before_outcomes=True,
@@ -602,6 +606,7 @@ def _matphys_entry(
         display_name="MatPhys pinned runtime",
         dataset="RGBench",
         query_scope=scope,
+        independent_group_count=1,
         stages=stages,
         exact_fallback_retained=True,
         protocol_frozen_before_outcomes=True,
