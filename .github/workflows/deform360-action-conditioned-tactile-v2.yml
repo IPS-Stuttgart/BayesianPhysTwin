@@ -1,0 +1,200 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 action-conditioned tactile v2
+
+on:
+  push:
+    branches: [science/deform360-icra-development-v2]
+    paths:
+      - ".github/requests/deform360-action-conditioned-tactile-v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-action-conditioned-tactile-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL_PATH: protocols/deform360_action_conditioned_tactile_v2.json
+  EVALUATOR_PATH: scripts/science/run_deform360_action_conditioned_tactile_v2.py
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Action-conditioned evaluator contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install numerical contract dependency
+        run: python -m pip install numpy==1.26.4
+
+      - name: Compile and run numerical smoke contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile "${EVALUATOR_PATH}"
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          import numpy as np
+
+          path = Path("scripts/science/run_deform360_action_conditioned_tactile_v2.py")
+          spec = importlib.util.spec_from_file_location("deform360_action_v2", path)
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          rng = np.random.default_rng(7)
+          x = rng.normal(size=(128, 12))
+          beta = rng.normal(size=(12, 6))
+          y = x @ beta + 0.01 * rng.normal(size=(128, 6))
+          model = module.fit_ridge(x, y, 1.0)
+          prediction = module.predict_ridge(model, x)
+          if np.mean((prediction - y) ** 2) >= 0.01:
+              raise SystemExit("ridge smoke failed")
+          residuals = rng.normal(size=(64, 24))
+          covariance = module.fit_covariance(
+              residuals, rank=6, probability=0.9
+          )
+          if not np.isclose(covariance.source_joint_nanees, 1.0):
+              raise SystemExit("source covariance calibration failed")
+          if not np.isclose(covariance.source_marginal_coverage, 0.9):
+              raise SystemExit("source marginal calibration failed")
+          protocol = module.read_json(Path("protocols/deform360_action_conditioned_tactile_v2.json"))
+          if protocol["paper_claim_authorized"] is not False:
+              raise SystemExit("protocol self-authorized a claim")
+          if set(protocol["development_object_ids"]) & set(protocol["reserved_object_ids"]):
+              raise SystemExit("development and reserved rosters overlap")
+          PY
+
+  evaluate:
+    name: Multistep action-conditioned development / gpuserver4090
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 360
+    steps:
+      - name: Check out exact frozen evaluator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Prepare isolated NumPy runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test -r "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          venv="${RUNNER_TEMP}/deform360-action-v2-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/deform360-action-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install numpy==1.26.4
+          mkdir -p -- "${output}"
+          {
+            echo "PYTHON_BIN=${venv}/bin/python"
+            echo "VENV_ROOT=${venv}"
+            echo "OUTPUT_ROOT=${output}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Record execution identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum "${PROTOCOL_PATH}" "${EVALUATOR_PATH}"
+            "${PYTHON_BIN}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total --format=csv,noheader
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+
+      - name: Run source-frozen action-conditioned evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" "${EVALUATOR_PATH}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --data-root "${DATASET_ROOT}" \
+            --output-json "${OUTPUT_ROOT}/result.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            2>&1 | tee "${OUTPUT_ROOT}/console.log"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify result and closed reserved-object boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          result = json.loads((root / "result.json").read_text())
+          if result["status"] != "complete":
+              raise SystemExit("evaluation is incomplete")
+          if result["summary"]["object_count"] < 10:
+              raise SystemExit("too few physical objects completed")
+          boundary = result["information_boundary"]
+          for key in (
+              "camera_pixels_opened",
+              "geometry_or_point_cloud_opened",
+              "reserved_object_payloads_opened",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"information boundary changed: {key}")
+          if not all(
+              row["source_fit_frozen_before_target_tactile_open"]
+              for row in result["objects"]
+          ):
+              raise SystemExit("a target was opened before source fitting")
+          PY
+          cp "${PROTOCOL_PATH}" "${OUTPUT_ROOT}/protocol.json"
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Upload compact development evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-action-conditioned-tactile-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}"
