@@ -1,0 +1,613 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 explicit-mount source audit
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-explicit-mount-source-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-explicit-mount-source-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  REQUEST_PATH: .github/requests/deform360-explicit-mount-source-v1.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+
+jobs:
+  source-audit:
+    name: Source-only mount and geometry audit / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+          fetch-depth: 2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize the one-file request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status "${GITHUB_SHA}^" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-explicit-mount-source-request-v1",
+              "raw_root": os.environ["RAW_ROOT"],
+              "processed_root": os.environ["PROCESSED_ROOT"],
+              "runner_label": "gpuserver4090",
+              "source_only": True,
+              "target_future_authorized": False,
+              "profile": "pilot",
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"invalid request field {key!r}")
+          if set(request) != set(required) | {"request_id", "expected_source_revision"}:
+              raise SystemExit("request keys differ from the registered contract")
+          if not isinstance(request.get("request_id"), str) or not request["request_id"]:
+              raise SystemExit("request_id must be a nonempty string")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("expected_source_revision does not equal request parent")
+          PY
+
+      - name: Verify exact mount roots and install isolated dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in "${RAW_ROOT}" "${PROCESSED_ROOT}"; do
+            test -d "${root}"
+            test -r "${root}"
+            test "$(readlink -f -- "${root}")" = "${root}"
+          done
+          python -m pip install --disable-pip-version-check numpy==1.26.4
+          output="${RUNNER_TEMP}/deform360-explicit-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          mkdir -p "${output}"
+          echo "AUDIT_OUTPUT=${output}" >> "${GITHUB_ENV}"
+
+      - name: Inventory source annotations and score available source geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import platform
+          from pathlib import Path
+          from typing import Any
+
+          import numpy as np
+
+          from experiments.deform360_real_v1.run import (
+              Carrier,
+              Profile,
+              _add_pcd_chamfer,
+              aggregate,
+              evaluate_sequence,
+              load_pcd_sequence,
+          )
+
+          RAW_ROOT = Path(os.environ["RAW_ROOT"]).resolve(strict=True)
+          PROCESSED_ROOT = Path(os.environ["PROCESSED_ROOT"]).resolve(strict=True)
+          OUTPUT = Path(os.environ["AUDIT_OUTPUT"])
+          REQUEST = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+
+          ROSTER = (
+              ("038-mat-cloth", "sheet", 3, 9, "drag corner", "fold"),
+              ("038-black-bag-cloth", "sheet", 8, 5, "drag edges", "lift corners"),
+              (
+                  "087-plastic-bag-blue-cloth",
+                  "sheet",
+                  8,
+                  3,
+                  "lift opposite edges",
+                  "fold corner",
+              ),
+              (
+                  "144-jar-opener-cloth",
+                  "sheet",
+                  6,
+                  2,
+                  "lift sides opposite",
+                  "drag side",
+              ),
+              (
+                  "072-cotton-clohesline",
+                  "volumetric",
+                  2,
+                  0,
+                  "drag edge",
+                  "lift edge",
+              ),
+              ("102-stress-ball", "volumetric", 8, 6, "squeeze", "lift whole"),
+              (
+                  "053-squeezer",
+                  "volumetric",
+                  6,
+                  4,
+                  "lift middle bottom",
+                  "squeeze",
+              ),
+              (
+                  "063-flower",
+                  "volumetric",
+                  9,
+                  7,
+                  "wave flower and leaf",
+                  "drag",
+              ),
+          )
+
+          def write_json(path: Path, value: Any) -> None:
+              path.write_text(
+                  json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n",
+                  encoding="utf-8",
+              )
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for block in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(block)
+              return digest.hexdigest()
+
+          def small_file(path: Path) -> dict[str, Any] | None:
+              if not path.is_file() or path.is_symlink():
+                  return None
+              stat = path.stat()
+              result: dict[str, Any] = {
+                  "path": str(path),
+                  "size_bytes": stat.st_size,
+                  "mtime_ns": stat.st_mtime_ns,
+              }
+              if stat.st_size <= 1024 * 1024:
+                  result["sha256"] = sha256(path)
+              return result
+
+          def object_directories(root: Path, object_id: str) -> list[Path]:
+              candidates = [
+                  root / object_id,
+                  root / "raw" / object_id,
+                  root / "processed" / object_id,
+                  root / "data" / object_id,
+              ]
+              found = {
+                  candidate.resolve()
+                  for candidate in candidates
+                  if candidate.is_dir() and not candidate.is_symlink()
+              }
+              for base, names, _ in os.walk(root):
+                  base_path = Path(base)
+                  try:
+                      depth = len(base_path.relative_to(root).parts)
+                  except ValueError:
+                      continue
+                  if depth > 4:
+                      names[:] = []
+                      continue
+                  names[:] = sorted(
+                      name
+                      for name in names
+                      if name not in {".git", ".cache", "__pycache__", "node_modules"}
+                  )
+                  if object_id in names:
+                      candidate = base_path / object_id
+                      if candidate.is_dir() and not candidate.is_symlink():
+                          found.add(candidate.resolve())
+              return sorted(found, key=lambda path: (len(path.parts), str(path)))
+
+          def episode_directories(object_dirs: list[Path], episode: int) -> list[Path]:
+              names = {
+                  f"episode_{episode:04d}",
+                  f"episode_{episode:03d}",
+                  f"episode_{episode}",
+                  f"{episode:04d}",
+                  str(episode),
+              }
+              found: set[Path] = set()
+              for object_dir in object_dirs:
+                  for base, directories, _ in os.walk(object_dir):
+                      base_path = Path(base)
+                      try:
+                          depth = len(base_path.relative_to(object_dir).parts)
+                      except ValueError:
+                          continue
+                      if depth > 4:
+                          directories[:] = []
+                          continue
+                      directories[:] = sorted(
+                          name
+                          for name in directories
+                          if name not in {".git", ".cache", "__pycache__"}
+                      )
+                      for name in directories:
+                          if name in names:
+                              candidate = base_path / name
+                              if candidate.is_dir() and not candidate.is_symlink():
+                                  found.add(candidate.resolve())
+              return sorted(found, key=lambda path: (len(path.parts), str(path)))
+
+          def artifact_inventory(episode_dir: Path) -> dict[str, Any]:
+              pcd_dir = episode_dir / "pcd_clean"
+              pcd_files = tuple(
+                  sorted(
+                      path
+                      for path in pcd_dir.glob("*.npz")
+                      if path.is_file() and not path.is_symlink()
+                  )
+              )
+              camera_dirs = tuple(
+                  sorted(
+                      path
+                      for path in episode_dir.iterdir()
+                      if path.is_dir() and path.name.startswith("brics-odroid-")
+                  )
+              )
+              undistorted = tuple(
+                  path / "undistorted.mp4"
+                  for path in camera_dirs
+                  if (path / "undistorted.mp4").is_file()
+              )
+              tactile = tuple(
+                  path / "synced_tactile.npy"
+                  for path in camera_dirs
+                  if (path / "synced_tactile.npy").is_file()
+              )
+              return {
+                  "episode_dir": str(episode_dir),
+                  "alignment": small_file(episode_dir / "alignment.json"),
+                  "robot": small_file(episode_dir / "robot" / "robot.npz"),
+                  "pcd_clean_count": len(pcd_files),
+                  "pcd_clean_first": str(pcd_files[0]) if pcd_files else None,
+                  "pcd_clean_last": str(pcd_files[-1]) if pcd_files else None,
+                  "undistorted_camera_count": len(undistorted),
+                  "synced_tactile_count": len(tactile),
+                  "final_data": small_file(episode_dir / "final_data.pkl"),
+                  "control_points_meta": small_file(
+                      episode_dir / "control_points.meta.json"
+                  ),
+                  "split": small_file(episode_dir / "split.json"),
+                  "start_object_cloud": small_file(episode_dir / "start_obj_pcd.ply"),
+              }
+
+          profile = Profile(
+              max_cases=1,
+              max_frames=64,
+              max_points=512,
+              max_tactile_channels=256,
+              max_candidate_archives=1,
+          )
+          case_records: list[dict[str, Any]] = []
+          object_records: list[dict[str, Any]] = []
+          failures: list[dict[str, str]] = []
+
+          for object_id, stratum, source_episode, target_episode, source_action, target_action in ROSTER:
+              raw_dirs = object_directories(RAW_ROOT, object_id)
+              processed_dirs = object_directories(PROCESSED_ROOT, object_id)
+              source_dirs = episode_directories(processed_dirs, source_episode)
+              target_dirs = episode_directories(processed_dirs, target_episode)
+              raw_metadata = None
+              for raw_dir in raw_dirs:
+                  candidate = small_file(raw_dir / "metadata.json")
+                  if candidate is not None:
+                      raw_metadata = candidate
+                      break
+              source_inventory = (
+                  artifact_inventory(source_dirs[0]) if source_dirs else None
+              )
+              target_inventory = (
+                  artifact_inventory(target_dirs[0]) if target_dirs else None
+              )
+              record: dict[str, Any] = {
+                  "object_id": object_id,
+                  "stratum": stratum,
+                  "source_episode": source_episode,
+                  "target_episode": target_episode,
+                  "source_action": source_action,
+                  "target_action": target_action,
+                  "raw_object_directories": [str(path) for path in raw_dirs],
+                  "processed_object_directories": [str(path) for path in processed_dirs],
+                  "raw_metadata": raw_metadata,
+                  "source_episode_directories": [str(path) for path in source_dirs],
+                  "target_episode_directories": [str(path) for path in target_dirs],
+                  "source_inventory": source_inventory,
+                  "target_inventory_names_only": target_inventory,
+                  "target_numeric_payload_opened": False,
+              }
+
+              if source_dirs and source_inventory and source_inventory["pcd_clean_count"] >= 12:
+                  pcd_dir = source_dirs[0] / "pcd_clean"
+                  frame_paths = tuple(
+                      sorted(
+                          path
+                          for path in pcd_dir.glob("*.npz")
+                          if path.is_file() and not path.is_symlink()
+                      )
+                  )
+                  try:
+                      carrier = Carrier(
+                          kind="pcd_clean",
+                          object_id=object_id,
+                          path=pcd_dir,
+                          members=frame_paths,
+                      )
+                      sequence = load_pcd_sequence(
+                          carrier,
+                          profile,
+                          PROCESSED_ROOT,
+                      )
+                      metrics, steps, predictions = evaluate_sequence(
+                          sequence,
+                          {
+                              "velocity_lags": [1, 2, 4, 8],
+                              "minimum_prefix_steps": 10,
+                              "gibbs_temperature_floor_fraction": 0.05,
+                              "variance_floor_fraction": 1e-6,
+                          },
+                      )
+                      metrics.update(
+                          _add_pcd_chamfer(
+                              sequence,
+                              steps,
+                              predictions,
+                              10,
+                          )
+                      )
+                      record["source_geometry_metrics"] = metrics
+                      case_records.append(
+                          {
+                              "object_id": object_id,
+                              "representation": sequence.representation,
+                              "primary_metric": sequence.primary_metric,
+                              "metrics": metrics,
+                          }
+                      )
+                  except Exception as error:  # retained as a source-only diagnostic
+                      failures.append(
+                          {
+                              "object_id": object_id,
+                              "stage": "source_geometry_evaluation",
+                              "error": f"{type(error).__name__}: {error}",
+                          }
+                      )
+              object_records.append(record)
+
+          source_geometry_ready = sum(
+              bool(record.get("source_inventory"))
+              and int(record["source_inventory"]["pcd_clean_count"]) >= 12
+              and record["source_inventory"]["robot"] is not None
+              for record in object_records
+          )
+          source_control_points_ready = sum(
+              bool(record.get("source_inventory"))
+              and record["source_inventory"]["final_data"] is not None
+              and record["source_inventory"]["control_points_meta"] is not None
+              for record in object_records
+          )
+          source_episode_found = sum(
+              bool(record["source_episode_directories"])
+              for record in object_records
+          )
+          target_episode_found = sum(
+              bool(record["target_episode_directories"])
+              for record in object_records
+          )
+
+          summary: dict[str, Any] = {
+              "roster_size": len(ROSTER),
+              "raw_object_found": sum(
+                  bool(record["raw_object_directories"]) for record in object_records
+              ),
+              "processed_object_found": sum(
+                  bool(record["processed_object_directories"])
+                  for record in object_records
+              ),
+              "source_episode_found": source_episode_found,
+              "target_episode_found_names_only": target_episode_found,
+              "source_geometry_ready": source_geometry_ready,
+              "source_control_points_ready": source_control_points_ready,
+              "source_geometry_evaluated": len(case_records),
+              "source_geometry_failure_count": len(failures),
+              "target_numeric_payload_opened": False,
+          }
+          geometry_summary = None
+          if case_records:
+              geometry_summary = aggregate(
+                  case_records,
+                  {
+                      "bootstrap_repetitions": 2000,
+                      "bootstrap_seed": 3604091,
+                  },
+              )
+
+          if source_control_points_ready == len(ROSTER):
+              decision = "all-source-control-point-bundles-ready"
+              next_action = (
+                  "Freeze the Prob4D/BayesianPhysTwin source gate and generate "
+                  "target-closed cross-action predictions."
+              )
+          elif source_geometry_ready:
+              decision = "partial-source-geometry-ready"
+              next_action = (
+                  "Use the available source geometry for adapter validation and "
+                  "run the pinned official processing stages only for missing "
+                  "source episodes; keep every target future closed."
+              )
+          else:
+              decision = "source-official-processing-required"
+              next_action = (
+                  "Materialize aligned cameras, robot poses, pcd_clean geometry, "
+                  "and control-point bundles for the eight source episodes only "
+                  "with official Deform360 revision "
+                  "d8522a4403b766aeb387510c04e89032a56fdf35."
+              )
+
+          result = {
+              "schema": "deform360-explicit-mount-source-audit-v1",
+              "request": REQUEST,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "runner": {
+                  "name": os.environ.get("RUNNER_NAME"),
+                  "os": os.environ.get("RUNNER_OS"),
+                  "arch": os.environ.get("RUNNER_ARCH"),
+                  "required_label": "gpuserver4090",
+                  "python": platform.python_version(),
+                  "numpy": np.__version__,
+              },
+              "roots": {
+                  "raw": str(RAW_ROOT),
+                  "processed": str(PROCESSED_ROOT),
+              },
+              "official_processing_revision": (
+                  "d8522a4403b766aeb387510c04e89032a56fdf35"
+              ),
+              "summary": summary,
+              "source_geometry_summary": geometry_summary,
+              "objects": object_records,
+              "failures": failures,
+              "decision": decision,
+              "next_action": next_action,
+              "information_boundary": {
+                  "source_metadata_names_and_small_manifests_opened": True,
+                  "source_pcd_payload_opened_when_available": bool(case_records),
+                  "target_directory_and_artifact_names_inspected": True,
+                  "target_numeric_payload_opened": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+              "claim_boundary": (
+                  "Source-only public-data readiness and optional source-geometry "
+                  "diagnostic. No target future, cross-action transport, physical "
+                  "parameter, Prob4D provider, Causal4D decision, calibration, "
+                  "fresh-confirmation, safety, or state-of-the-art claim."
+              ),
+          }
+          canonical = json.dumps(
+              result,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          result["result_sha256"] = hashlib.sha256(canonical).hexdigest()
+          write_json(OUTPUT / "result.json", result)
+          write_json(OUTPUT / "objects.json", object_records)
+          write_json(OUTPUT / "failures.json", failures)
+
+          lines = [
+              "# Deform360 explicit-mount source audit",
+              "",
+              f"Decision: `{decision}`",
+              "",
+              "| Quantity | Count |",
+              "| --- | ---: |",
+          ]
+          for key, value in summary.items():
+              if isinstance(value, (int, bool)):
+                  lines.append(f"| {key} | {value} |")
+          lines.extend(
+              [
+                  "",
+                  "## Next action",
+                  "",
+                  next_action,
+                  "",
+                  "Target numerical payloads were not opened or scored.",
+                  "",
+              ]
+          )
+          (OUTPUT / "report.md").write_text("\n".join(lines), encoding="utf-8")
+          print(json.dumps({"decision": decision, "summary": summary}, indent=2))
+          PY
+
+      - name: Verify closed target boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["AUDIT_OUTPUT"]) / "result.json").read_text()
+          )
+          if result["roots"]["raw"] != os.environ["RAW_ROOT"]:
+              raise SystemExit("raw root changed")
+          if result["roots"]["processed"] != os.environ["PROCESSED_ROOT"]:
+              raise SystemExit("processed root changed")
+          if result["information_boundary"]["target_numeric_payload_opened"] is not False:
+              raise SystemExit("target numerical payload was opened")
+          if result["information_boundary"]["target_scoring_performed"] is not False:
+              raise SystemExit("target scoring was performed")
+          if result["information_boundary"]["paper_claim_authorized"] is not False:
+              raise SystemExit("result self-authorized a paper claim")
+          print(json.dumps(result["summary"], indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish summary
+        if: always() && env.AUDIT_OUTPUT != ''
+        shell: bash
+        run: |
+          if [[ -f "${AUDIT_OUTPUT}/report.md" ]]; then
+            cat "${AUDIT_OUTPUT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact source evidence
+        if: always() && env.AUDIT_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-explicit-mount-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.AUDIT_OUTPUT }}/result.json
+            ${{ env.AUDIT_OUTPUT }}/objects.json
+            ${{ env.AUDIT_OUTPUT }}/failures.json
+            ${{ env.AUDIT_OUTPUT }}/report.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove scratch evidence
+        if: always()
+        shell: bash
+        run: rm -rf -- "${AUDIT_OUTPUT:-}"
