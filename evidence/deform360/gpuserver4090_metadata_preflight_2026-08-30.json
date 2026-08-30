@@ -1,0 +1,124 @@
+{
+  "artifact_kind": "Deform360Gpuserver4090MetadataPreflightV1",
+  "schema_version": 1,
+  "snapshot_date": "2026-08-30",
+  "dataset": {
+    "name": "Deform360",
+    "root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "top_level_layout": [
+      ".download.lock",
+      "download.status",
+      "processed-repository",
+      "raw-repository"
+    ]
+  },
+  "runner": {
+    "requested_label": "gpuserver4090",
+    "registered_runner_name": "workstation1",
+    "hostname": "workstation1",
+    "os": "Linux",
+    "architecture": "X64",
+    "gpu_names": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA GeForce RTX 4090"
+    ]
+  },
+  "names_only_inventory": {
+    "repository_revision": "bf0ad34bafe6f252763f38fa19573db64ae04fe5",
+    "workflow_run_id": 33300946082,
+    "workflow_job_id": 99228862149,
+    "artifact_id": 9728916412,
+    "artifact_sha256": "475a74ef888bff4bc1709cc04cd88a9e4bc282914a7c254f13f071ad09053f17",
+    "observation_interval_seconds": 25.992593155,
+    "metadata_changed_during_interval": false,
+    "file_count_delta": 0,
+    "directory_count_delta": 0,
+    "named_file_bytes_delta": 0,
+    "total_files_named": 514121,
+    "total_directories_named": 16667,
+    "total_named_file_bytes": 216903070312,
+    "recognized_object_count": 168,
+    "objects_with_numeric_paths": 168,
+    "classification_counts": {
+      "candidate_name_only": 104,
+      "prior_calibration": 12,
+      "prior_open_or_reserved": 40,
+      "reserved_target": 12
+    },
+    "reserved_target_objects_present_by_name": [
+      "066-glove-half-black-cloth",
+      "075-leather",
+      "080-wool",
+      "091-net-cloth",
+      "112-wristband-cloth",
+      "120-bread-plush",
+      "121-croissant-plush",
+      "123-pipe-cleaner",
+      "139-rubber-ball",
+      "143-silicone-wristband",
+      "164-sheep",
+      "165-glove-yellow-cloth"
+    ],
+    "content_inventory_sha256": "cb37c193052baae41140d0cb48c642c16e3840a850ca104a4883555eb19f7611",
+    "inventory_sha256": "8cbbae7c0dca51f4dc019d8ceb6fc5543e9ccb5f7e94bec0859e4bdd8005f887"
+  },
+  "downloader_status": {
+    "repository_revision": "d302cfbf8ddef7bb00a793b2f3d7f821f3de71e0",
+    "workflow_run_id": 33301128632,
+    "workflow_job_id": 99229371011,
+    "artifact_id": 9728965070,
+    "artifact_sha256": "a759fd0c33a7b44306504157f5d578dc90aefc4e8241ecd744bf2654ac338a9d",
+    "status_file": {
+      "exists": true,
+      "size_bytes": 273,
+      "mode_octal": "0600",
+      "uid": 1002,
+      "gid": 1002,
+      "readable_by_runner": false,
+      "age_seconds_at_capture": 5526.1743133068085
+    },
+    "lock_file": {
+      "exists": true,
+      "size_bytes": 0,
+      "mode_octal": "0600",
+      "uid": 1002,
+      "gid": 1002,
+      "age_seconds_at_capture": 36611.3048286438
+    },
+    "incomplete_file_count": 6,
+    "nonzero_incomplete_file_count": 0,
+    "incomplete_parent": "raw-repository/.cache/huggingface/download/raw/001-rope/brics-odroid-028_cam0",
+    "incomplete_object": "001-rope",
+    "incomplete_size_bytes_each": 0,
+    "incomplete_age_seconds_range_at_capture": [
+      36685.00173687935,
+      36686.296761512756
+    ],
+    "privilege_escalation_attempted": false
+  },
+  "decision": {
+    "status": "stable-staging-tree-completion-not-certified",
+    "interpretation": "The mounted tree was stable over the observed interval and all six Hugging Face .incomplete markers were zero-byte and approximately ten hours old. The download.status file was not readable by the GitHub runner, so this record does not certify that the downloader declared completion or that every released payload is valid.",
+    "scoring_authorized": false,
+    "target_payload_access_authorized": false,
+    "cohort_lock_authorized": false
+  },
+  "next_stage_gate": {
+    "requires_complete_cross_project_exclusion_union": true,
+    "requires_explicit_object_and_episode_cohort": true,
+    "requires_exact_allowed_path_list": true,
+    "requires_adapter_specific_contract_tests": true,
+    "requires_reserved_target_exclusion": true,
+    "requires_object_balanced_analysis": true,
+    "requires_target_closed_prediction_sealing": true
+  },
+  "information_boundary": {
+    "dataset_payload_opened": false,
+    "dataset_file_contents_hashed": false,
+    "names_sizes_and_timestamps_only": true,
+    "reserved_target_outcomes_opened": false,
+    "model_evaluation_performed": false,
+    "accuracy_claim_authorized": false
+  },
+  "claim_boundary": "This record establishes only the presence and metadata-level stability of a mounted Deform360 staging tree and its overlap with previously registered object classes. It is not a completion checksum, payload-integrity validation, cohort lock, model evaluation, real-data accuracy result, provider-validation result, or authorization to open reserved targets."
+}
