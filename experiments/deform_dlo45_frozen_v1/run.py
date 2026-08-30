@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-from .core import (
-    DLOS as DLOS,
-    _load_protocol as _load_protocol,
-    _parse_args as _parse_args,
-    _partition_names as _partition_names,
-)
-from .model import (
-    _point_summary as _point_summary,
-    _source_gate as _source_gate,
-    _target_gate as _target_gate,
-)
+from .core import DLOS, _load_protocol, _parse_args, _partition_names
+from .model import _point_summary, _source_gate, _target_gate
 from .predict import _predict
 from .score import _failure_receipt, _score, _seal
 from .source import _authorize, _inventory, _source
+
+__all__ = [
+    "DLOS",
+    "_load_protocol",
+    "_parse_args",
+    "_partition_names",
+    "_point_summary",
+    "_source_gate",
+    "_target_gate",
+    "main",
+]
 
 
 def main() -> int:
