@@ -58,18 +58,21 @@ jobs:
               "scripts/science/run_deform360_action_conditioned_tactile_v2.py"
           )
           source = path.read_text(encoding="utf-8")
-          old = '''    except (OSError, ValueError):
-        flat = np.fromfile(path, dtype=np.float32)
-        if flat.size == 0 or flat.size % frame_size:
-            raise EvaluationError(f"unsupported tactile carrier: {path}")
-'''
-          new = '''    except (OSError, ValueError) as error:
-        flat = np.fromfile(path, dtype=np.float32)
-        if flat.size == 0 or flat.size % frame_size:
-            raise EvaluationError(
-                f"unsupported tactile carrier: {path}"
-            ) from error
-'''
+          old = (
+              "    except (OSError, ValueError):\n"
+              "        flat = np.fromfile(path, dtype=np.float32)\n"
+              "        if flat.size == 0 or flat.size % frame_size:\n"
+              "            raise EvaluationError("
+              "f\"unsupported tactile carrier: {path}\")\n"
+          )
+          new = (
+              "    except (OSError, ValueError) as error:\n"
+              "        flat = np.fromfile(path, dtype=np.float32)\n"
+              "        if flat.size == 0 or flat.size % frame_size:\n"
+              "            raise EvaluationError(\n"
+              "                f\"unsupported tactile carrier: {path}\"\n"
+              "            ) from error\n"
+          )
           if old not in source:
               raise SystemExit("expected tactile exception block was not found")
           path.write_text(source.replace(old, new, 1), encoding="utf-8")
