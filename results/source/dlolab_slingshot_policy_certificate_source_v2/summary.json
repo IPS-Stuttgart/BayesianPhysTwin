@@ -1,0 +1,108 @@
+{
+  "artifact_id": "e00de6c8b7a82fa13ee1076e05e52ac1ea472de6a042e395a8f3490e8703c016",
+  "schema": "dlolab-slingshot-policy-certificate-source-result-v2",
+  "status": "retained_evaluation_native_qa_failure",
+  "source_revision": "fe88fa40f875394a4881ce72b72fec098ac5f469",
+  "question": "Can a posterior-aware local policy-gain certificate retain useful Bayesian control value while controlling harmful accepted actions more tightly than an equal-budget simultaneous-action regret guard?",
+  "ordinary_calibration_prefix_worlds": 128,
+  "ordinary_calibration_futures": 128,
+  "ordinary_evaluation_prefix_worlds": 288,
+  "evaluation_future_claims": 288,
+  "ordinary_evaluation_futures": 286,
+  "technical_failures": 2,
+  "technical_failure_world_indices": [
+    46,
+    261
+  ],
+  "replacements": 0,
+  "policy_calibration": {
+    "calibration_count": 128,
+    "miscoverage": 0.1,
+    "offset": 0.039885809910921444,
+    "rank": 117
+  },
+  "simultaneous_calibration": {
+    "count": 128,
+    "coverage": 0.9,
+    "offset": 0.6982761874352208,
+    "rank": 117
+  },
+  "pre_future": {
+    "accepted_worlds": 34,
+    "checks": {
+      "accepted_worlds_at_least_24": true,
+      "all_prefixes_qualified": true,
+      "fallback_worlds_at_least_24": true
+    },
+    "fallback_worlds": 254,
+    "pre_future_gate_passed": true
+  },
+  "terminal": {
+    "stage": "evaluation-futures",
+    "reason": "native task QA failed",
+    "ordinary_future_seals": 286,
+    "task_failures": 2,
+    "result_json_absent": true,
+    "partial_scoring_performed": false
+  },
+  "identities": {
+    "calibration_seal_id": "333e5bfb7f46a706c981128dd73f6701ad29dae6a50361a37ef5042446d61aff",
+    "evaluation_barrier_id": "a4dccfc3adcb284fb2d8bc0e3875d8d2015696247966ea5dcaf31df63700816f",
+    "evaluation_candidate_seal_id": "502aa09c582b98b2a9c0e3873c53fd5fd620915ef73f6a80549d18038aef1999",
+    "evaluation_decision_seal_id": "accbab4eb3a387c52b3517278a73287afc2a370ce6ebde1939df98c61de92222",
+    "lock_id": "d29448148194279e739c1c5b0127f13871ac558eecab8233118058d534f7c7dc",
+    "run_failure_id": "2af462e33eb726a4a075dc15110e52b4b49e8cba694d9377b9d4864dc0f8a660",
+    "task_claim_ids": {
+      "046": "02b2425d26430540571e31bc4165dbcd7573ac6e4ba8588b5ad61aecb8ca7756",
+      "261": "509af8fd543a7e2f41c0430b03db9d6b2d7020d786a9ecfe784551b3590546d9"
+    },
+    "task_failure_ids": {
+      "046": "70c80fdb28408171656c23c7879b3fa85cda9a61a794c3878e309f9c9c393281",
+      "261": "b548be0db129a42735debcbe422af920d27ea7d6ae0bc871aff215412437ce04"
+    }
+  },
+  "key_file_sha256": {
+    "calibration/seal.json": "18ecb270b4117748653ff4cb02fcd3ca6ce3c65fdffc5fc9f30c93ba20ec68a9",
+    "evaluation-candidates/seal.json": "8f7747b3c547b70059cc2df7269be094bf5b2e86532ab482a0e1529dc73e54e5",
+    "evaluation-decision-barrier.json": "3af8bfe1bda1fc653d4d1b372ca4863b3a42b4e9c204bf583df7af31124a2d40",
+    "evaluation-decisions/seal.json": "e5938a22080904c540b1267e3162ef793ea3bc979eee5d201160e0f277f3e185",
+    "evaluation-future-046/claim.json": "adbb53d724687732143828487526758b68a48cd91460948cb7a4230122ac79c5",
+    "evaluation-future-046/failure.json": "dd900f2628c52d3ebfbaa4cac7eb186bfaef019b1fb02340679a78d7b5b46c52",
+    "evaluation-future-261/claim.json": "187c7594ad4b3971130b466537ef91289ab338aab4f13ab1a563091750349fc8",
+    "evaluation-future-261/failure.json": "bc9405b53437fec2bb83ae93ad18488740b84b8f6e54019191f1d4aa9b63c90d",
+    "failure.json": "04433a4926404f9ae40fcbb888b516a4fa18991ddf1df63d248a190f2641de87",
+    "lock.json": "65276bab350a7f7902f14a030100f69c1c5bc65a6f85fce0f4a4f13584a2e00f"
+  },
+  "raw_tree": {
+    "root": "/home/fpfaff/source-only/dlolab-slingshot-policy-certificate-source-v2",
+    "canonical_tree_sha256": "690c07d6c7cf03c2110d4283d45373f26f1e7eefa5efe7cb0f3cf7f47914dffc",
+    "file_byte_count": 971935643,
+    "file_count": 1881
+  },
+  "verification": {
+    "frozen_source_reloaded": true,
+    "lock_revalidated": true,
+    "calibration_recomputed": true,
+    "evaluation_candidates_recomputed": true,
+    "guarded_decisions_reproduced_byte_exact": true,
+    "barrier_recomputed": true,
+    "ordinary_future_seals_revalidated": 286,
+    "terminal_task_failures_verified": 2,
+    "complete_denominator_available": false,
+    "result_json_absent": true,
+    "partial_scoring_performed": false
+  },
+  "source_gate_passed": false,
+  "prospective_policy_value_claim": false,
+  "prospective_coverage_claim": false,
+  "matched_comparison_scored": false,
+  "complete_288_world_denominator_scored": false,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "real_robot_or_physical_safety_claim": false
+}
