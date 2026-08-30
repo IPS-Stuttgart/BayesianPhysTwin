@@ -12,7 +12,10 @@ from typing import Any
 
 import numpy as np
 
-from bayesian_phystwin_experiments.dlolab_benchmark import write_native_bundle
+from bayesian_phystwin_experiments.dlolab_benchmark import (
+    source_identity,
+    write_native_bundle,
+)
 from bayesian_phystwin_experiments.dlolab_native import array_digest, file_digest
 from bayesian_phystwin_experiments.dlolab_regret_artifacts import (
     clean_revision,
@@ -52,8 +55,9 @@ from bayesian_phystwin_experiments.dlolab_slingshot_process import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+ASSETS_ROOT = Path("/home/florianpfaff/source-only/dlolab-runtime-linux-v7-assets")
 OUTPUT_ROOT = Path(
-    "/home/fpfaff/source-only/dlolab-slingshot-certified-guard-source-v2"
+    "/home/florianpfaff/source-only/dlolab-slingshot-certified-guard-source-v2"
 )
 FUTURE_WORKERS = 4
 SOURCES = (
@@ -113,6 +117,13 @@ def load_parent() -> tuple[dict[str, Any], dict[str, np.ndarray]]:
     for name, digest in lock["source_sha256"].items():
         if file_digest(ROOT / name) != digest:
             raise ValueError(f"parent implementation changed: {name}")
+    native_source = source_identity(
+        ASSETS_ROOT / "upstream",
+        ASSETS_ROOT / "mushroom-rl",
+        ASSETS_ROOT / "dlo-lab.zip",
+    )
+    if native_source != lock["screen"]["source"]["controller"]["native_source"]:
+        raise ValueError("qualified public DLO-Lab source changed")
     arrays = load_native_bundle(parent / "model-bank", bank_seal["bundle"])
     if (
         set(arrays) != {"prefix", "reward"}
@@ -134,7 +145,8 @@ def load_parent() -> tuple[dict[str, Any], dict[str, np.ndarray]]:
         "calibrator_id": calibrator["artifact_id"],
         "bank_id": bank_seal["artifact_id"],
         "file_sha256": PARENT_FILE_SHA256,
-        "assets_root": lock["assets_root"],
+        "assets_root": str(ASSETS_ROOT.resolve()),
+        "native_source": native_source,
         "runtime": lock["screen"]["source"]["controller"]["runtime"],
         "controls": lock["controls"],
     }
