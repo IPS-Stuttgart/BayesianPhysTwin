@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from .core import (
-    Any,
     DEFORM_DLO_BAYESIAN_ABLATION_DISTRIBUTIONS,
     DLOS,
+    Any,
     Mapping,
     Path,
     Sequence,
@@ -21,13 +21,8 @@ from .core import (
     np,
     sha256_file,
 )
-from .model import (
-    _point_summary,
-    _target_gate,
-)
-from .predict import (
-    _validate_prediction_seal,
-)
+from .model import _point_summary, _target_gate
+from .predict import _validate_prediction_seal
 
 
 def _seal(args: argparse.Namespace, protocol: Mapping[str, object]) -> int:
