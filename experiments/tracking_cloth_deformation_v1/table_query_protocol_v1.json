@@ -1,0 +1,46 @@
+{
+  "study_id": "tracking-cloth-table-query-active-probe-source-v1",
+  "dataset_record": "14644526",
+  "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+  "csv_count": 120,
+  "materials": ["cotton", "denim", "polyester", "wool"],
+  "source_actions": [
+    "half_lay_low_friction",
+    "half_lay_high_friction"
+  ],
+  "target_queries": [
+    "full_lay_low_friction",
+    "full_lay_high_friction"
+  ],
+  "fold_rule": "leave-one-material-out",
+  "primary_budget": 1,
+  "prefix_seconds": 0.35,
+  "forecast_seconds": 4.0,
+  "frame_rate_hz": 120.0,
+  "sample_stride": 4,
+  "table_z_m": 0.0,
+  "gravity_m_s2": 9.80665,
+  "integration_substeps": 12,
+  "measurement_floor_m": 0.001,
+  "stiffness_per_mass": [80.0, 240.0, 720.0],
+  "damping_per_mass": [0.5, 2.0, 8.0],
+  "mu_low": [0.03, 0.15, 0.45],
+  "mu_high": [0.3, 0.8, 1.5],
+  "parameter_bank": "3 stiffness x 3 damping x 3 low-surface friction x 3 high-surface friction = 81 members",
+  "selection_policies": [
+    "fixed_order",
+    "parameter_information",
+    "task_directed"
+  ],
+  "selection_model": "finite-model pseudo-outcome expected contraction",
+  "target_input_contract": "0.35-second all-marker causal prefix plus future detected grasped-corner trajectories; no post-prefix full-lay free-marker numeric values",
+  "minimum_task_vs_parameter_disagreements": 2,
+  "minimum_query_switch_materials": 2,
+  "minimum_transfer_wins_vs_prior": 4,
+  "target_scoring_authorized": false,
+  "full_lay_post_prefix_free_marker_outcomes_read": false,
+  "evidence_class": "public-real-data source-only table-query active-probe feasibility; target closed",
+  "license_policy": "CC-BY-NC-SA-4.0 pending author clarification of conflicting CC-BY-SA-4.0 metadata",
+  "raw_data_upload": false,
+  "paper_claim_authorized": false
+}
