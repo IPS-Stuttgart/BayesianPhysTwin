@@ -1,0 +1,119 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 robot tactile alignment v2
+
+on:
+  push:
+    branches: [science/deform360-icra-development-v2]
+    paths:
+      - ".github/requests/deform360-robot-tactile-alignment-v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-robot-tactile-alignment-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL_PATH: protocols/deform360_gpuserver4090_real_evaluation_v1.json
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+
+jobs:
+  inspect:
+    name: Robot+tactile schema / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    steps:
+      - name: Check out exact diagnostic source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Prepare isolated NumPy runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          venv="${RUNNER_TEMP}/deform360-robot-tactile-inspect-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/deform360-robot-tactile-inspect-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install numpy==1.26.4
+          mkdir -p -- "${output}"
+          {
+            echo "PYTHON_BIN=${venv}/bin/python"
+            echo "VENV_ROOT=${venv}"
+            echo "OUTPUT_ROOT=${output}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Inspect development robot and tactile schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" -m py_compile scripts/science/inspect_deform360_robot_tactile_alignment_v2.py
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "dataset_root=${DATASET_ROOT}"
+            "${PYTHON_BIN}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total --format=csv,noheader
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+          "${PYTHON_BIN}" scripts/science/inspect_deform360_robot_tactile_alignment_v2.py \
+            --data-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output-json "${OUTPUT_ROOT}/inspection.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            | tee "${OUTPUT_ROOT}/console.log"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify boundary and upload compact inspection
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "${OUTPUT_ROOT}/inspection.json" ]]; then
+            "${PYTHON_BIN}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads((Path(os.environ["OUTPUT_ROOT"]) / "inspection.json").read_text())
+          boundary = value["information_boundary"]
+          for key in (
+              "camera_pixels_decoded",
+              "geometry_or_point_cloud_opened",
+              "target_scores_computed",
+              "reserved_object_payloads_opened",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"boundary changed: {key}")
+          if value["summary"]["supported_object_count"] < 1:
+              raise SystemExit("no action carrier is usable")
+          PY
+          fi
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Upload inspection artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-robot-tactile-alignment-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}"
