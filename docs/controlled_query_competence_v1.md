@@ -114,6 +114,27 @@ zero. Every rejected query uses model 0. A failed source gate leaves
 confirmation closed; a failed confirmation is frozen without retry or method
 change.
 
+## Source disposition
+
+The exactly-once source execution passed all registered checks. The primary
+full query-conditional arm selected threshold `0.2` before the independent
+source-gate partition. It accepted 709 of 1,152 queries (61.55% coverage), with
+50 practically harmful accepts (7.05%) and an exact one-sided 95% upper bound
+of 8.84%, below the frozen 10% limit. Mean selected regret was `-0.0041345`;
+its paired 95% interval, `[-0.0054021, -0.0029569]`, lay below zero.
+
+The context-agnostic posterior and uncertainty-only ablations could not select
+an eligible threshold. The full arm and the query-projected
+model-disagreement-only arm both passed the source gate, so this stage does not
+by itself establish that every contextual feature in the full score is
+necessary. Detailed outcome evidence and its independent verifier are retained
+in the private paper repository. The public hash-only receipt is
+`evidence/controlled_query_competence_source_receipt_v1.json`.
+
+The source stage authorized registration of one controlled confirmation
+attempt. It did not open confirmation outcomes and did not authorize physical
+confirmation.
+
 ## Scope boundary
 
 Development auditing found that training on two topology classes and

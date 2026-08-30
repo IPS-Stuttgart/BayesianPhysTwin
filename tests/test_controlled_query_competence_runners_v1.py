@@ -21,6 +21,9 @@ CONFIRMATION_RUNNER = (
 SOURCE_PLAN = (
     ROOT / "protocols/execution_requests/controlled_query_competence_source_v1.json"
 )
+SOURCE_RECEIPT = (
+    ROOT / "evidence/controlled_query_competence_source_receipt_v1.json"
+)
 
 
 def _module(path: Path, name: str) -> ModuleType:
@@ -80,6 +83,36 @@ def test_registered_source_plan_binds_immutable_implementation() -> None:
     assert plan["attempt_limit"] == 1
     assert plan["replacement_or_retry_authorized"] is False
     assert plan["protected_artifacts_authorized"] is False
+
+
+def test_registered_source_receipt_binds_private_evidence() -> None:
+    receipt = json.loads(SOURCE_RECEIPT.read_text(encoding="utf-8"))
+    identity = dict(receipt)
+    receipt_id = identity.pop("receipt_id")
+
+    assert receipt_id == content_id(identity)
+    assert receipt["source_gate_passed"] is True
+    assert receipt["controlled_confirmation_authorized"] is True
+    assert receipt["controlled_confirmation_outcomes_opened"] is False
+    assert receipt["physical_confirmation_authorized"] is False
+    assert receipt["replacement_or_retry_authorized"] is False
+    assert receipt["prob4d_used"] is False
+    assert receipt["protected_artifacts_used"] is False
+    assert receipt["plan_id"] == (
+        "17cf7c8765bbb244de77b0ea41d6b4023622f832a0db671a9b57db4c8c9b8f13"
+    )
+    assert receipt["execution_result_id"] == (
+        "1da59f6463f3b8e72badb3a177650b6a85cc2a78fc47089b94a80c16c5ccc921"
+    )
+    assert receipt["source_result_id"] == (
+        "96bd9816dfc4ff7d5154ce5b73c8a7ecd8261eb68bad1ea21d658469fa350c97"
+    )
+    private = receipt["private_evidence"]
+    assert private["repository"] == "FlorianPfaff/BayesianPhysTwin-Paper"
+    assert private["commit"] == "834426c11bc5de17b657efb6f21b500f1f741e07"
+    assert private["evidence_record_id"] == (
+        "879acdf40ea00ef6677bffaf33814b7837474262a9a6ca3fa0eaa817a599a7e3"
+    )
 
 
 def test_runner_plan_identity_and_attempt_ledger_are_fail_closed(
