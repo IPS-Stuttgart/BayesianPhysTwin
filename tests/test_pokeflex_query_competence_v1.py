@@ -30,10 +30,10 @@ PROTOCOL_PATH = (
     / "protocols/pokeflex_query_competence_retrospective_v1.json"
 )
 PROTOCOL_FILE_SHA256 = (
-    "93c040f481a7cee88fd4e0d4f290ccf3431030250acc2b4f76cf3ff308891d18"
+    "70f3f9bba296582e59e89776225e12e8bd517958a3a0845242eb9fe739574906"
 )
-PROTOCOL_SHA256 = "0dbbb67d0ab37057c8ef25ba4032c1c72320c73904ab088af9b4e62ae7b5a14c"
-IMPLEMENTATION_COMMIT = "a59414d4d416de8757502bac939ce2f8a7a07704"
+PROTOCOL_SHA256 = "853ba1017e8781ddf324b9400df5f4393f2fca390f192e2757ce67a81c3e2354"
+IMPLEMENTATION_COMMIT = "4524852c0235fc736c12ebaa82118cf81e5f19bf"
 
 
 def _update(target_frame: int, *, harmful: bool) -> dict[str, object]:
