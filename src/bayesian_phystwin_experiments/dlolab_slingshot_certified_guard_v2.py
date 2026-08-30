@@ -38,7 +38,7 @@ ARM_NAMES = (
     "mean_regret_guard",
 )
 PARENT_ROOT = (
-    "/home/florianpfaff/source-only/dlolab-slingshot-belief-control-source-v1-compact"
+    "/home/fpfaff/source-only/dlolab-benchmark-source-v1/belief-control-source-v1"
 )
 PARENT_LOCK_ID = "015e6d84aa68a2a4310552ef4880752b972890f02d3e09e333ff575c92b8df25"
 PARENT_RESULT_ID = "9b8ff0817744392e0584c9b59936dd1b0e9331d3b0fa2d021f5a361947d32ee9"
