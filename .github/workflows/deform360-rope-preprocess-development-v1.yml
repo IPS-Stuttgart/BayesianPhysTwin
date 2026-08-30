@@ -1,0 +1,622 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 001-rope preprocessing development v1
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - .github/workflows/deform360-rope-preprocess-development-v1.yml
+      - protocols/deform360_rope_preprocess_development_v1.json
+      - triggers/deform360_rope_preprocess_development_v1.txt
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-rope-preprocess-development-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: protocols/deform360_rope_preprocess_development_v1.json
+  RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2/raw
+  PERSISTENT_BASE: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-rope-preprocess-development-v1
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  RUNTIME_LOCK: requirements/locks/deform360-runner-local-science-py312.txt
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  contracts:
+    name: Frozen 001-rope preprocessing contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Validate the development boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["PROTOCOL"]).read_text())
+          assert value["schema_version"] == 1
+          assert value["status"] == (
+              "retrospective-development-frozen-before-media-decoding"
+          )
+          assert value["object_id"] == "001-rope"
+          assert value["official_processing"]["revision"] == os.environ[
+              "PROCESSING_REVISION"
+          ]
+          boundary = value["information_boundary"]
+          assert boundary["confirmatory_status"] is False
+          assert boundary["model_fitting_authorized"] is False
+          assert boundary["prediction_generation_authorized"] is False
+          assert boundary["target_scoring_authorized"] is False
+          assert boundary["paper_claim_authorized"] is False
+          PY
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  preprocess:
+    name: Official RGB-tactile-robot preprocessing / gpuserver6000
+    needs: contracts
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 480
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+          command -v nvidia-smi >/dev/null
+          nvidia-smi -L
+
+      - name: Check out exact BayesianPhysTwin revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out pinned official Deform360 processing code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.PROCESSING_REVISION }}
+          path: _deform360_processing
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Recover the latest successful robust action mapping
+        id: mapping
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          evidence_root="${RUNNER_TEMP}/deform360-rope-preprocess-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime_root="${RUNNER_TEMP}/deform360-rope-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${evidence_root}" "${runtime_root}"
+          mkdir -p -- "${evidence_root}/mapping-artifact"
+          export EVIDENCE_ROOT="${evidence_root}"
+          export RUNTIME_ROOT="${runtime_root}"
+          echo "EVIDENCE_ROOT=${evidence_root}" >> "${GITHUB_ENV}"
+          echo "RUNTIME_ROOT=${runtime_root}" >> "${GITHUB_ENV}"
+
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+
+          api = os.environ["GITHUB_API_URL"]
+          repository = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          branch = "science/deform360-rope-pilot-v1"
+          workflow = "deform360-rope-pilot-gpuserver6000-v1b.yml"
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def get_json(url: str) -> dict:
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+
+          encoded_branch = urllib.parse.quote(branch, safe="")
+          runs_url = (
+              f"{api}/repos/{repository}/actions/workflows/{workflow}/runs"
+              f"?branch={encoded_branch}&status=success&per_page=30"
+          )
+          selected_run = None
+          for _ in range(30):
+              runs = get_json(runs_url).get("workflow_runs", [])
+              selected_run = next(
+                  (
+                      run
+                      for run in runs
+                      if run.get("name") == "Deform360 rope action mapping v3"
+                      and run.get("conclusion") == "success"
+                  ),
+                  None,
+              )
+              if selected_run is not None:
+                  break
+              time.sleep(10)
+          if selected_run is None:
+              raise SystemExit("no successful action-mapping run found")
+
+          run_id = int(selected_run["id"])
+          artifacts = get_json(
+              f"{api}/repos/{repository}/actions/runs/{run_id}/artifacts"
+          ).get("artifacts", [])
+          artifact = next(
+              (
+                  item
+                  for item in artifacts
+                  if str(item.get("name", "")).startswith("d360-action-map-v3-")
+                  and not item.get("expired", False)
+              ),
+              None,
+          )
+          if artifact is None:
+              raise SystemExit("successful mapping run has no live mapping artifact")
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          archive_path = evidence / "mapping-artifact.zip"
+          request = urllib.request.Request(
+              artifact["archive_download_url"], headers=headers
+          )
+          with urllib.request.urlopen(request, timeout=120) as response:
+              archive_path.write_bytes(response.read())
+          with zipfile.ZipFile(archive_path) as archive:
+              archive.extractall(evidence / "mapping-artifact")
+
+          mapping_files = list(
+              (evidence / "mapping-artifact").rglob("action_mapping.json")
+          )
+          pair_files = list(
+              (evidence / "mapping-artifact").rglob("selected_pairs_v3.json")
+          )
+          if len(mapping_files) != 1 or len(pair_files) != 1:
+              raise SystemExit("mapping artifact file cardinality changed")
+          mapping = json.loads(mapping_files[0].read_text())
+          selected = json.loads(pair_files[0].read_text())
+          record = next(
+              item for item in mapping["objects"] if item["object_id"] == "001-rope"
+          )
+          pair = next(
+              item for item in selected["pairs"] if item["object_id"] == "001-rope"
+          )
+          if not pair["robustly_different_action"]:
+              raise SystemExit("001-rope pair is not robustly cross-action")
+          if not pair["bimanual_resolved"]:
+              raise SystemExit("001-rope bimanual state is unresolved")
+          source_values = pair["source_bimanual_values"]
+          target_values = pair["target_bimanual_values"]
+          if len(source_values) != 1 or len(target_values) != 1:
+              raise SystemExit("bimanual singleton contract changed")
+
+          receipt = {
+              "mapping_run_id": run_id,
+              "mapping_artifact_id": int(artifact["id"]),
+              "mapping_artifact_name": artifact["name"],
+              "mapping_artifact_digest": artifact.get("digest"),
+              "mapping_result_id": mapping["result_id"],
+              "mapping_decision": mapping["summary"]["decision"],
+              "object_id": "001-rope",
+              "selected_pair": pair,
+              "source_episode": int(pair["source_episode_index"]),
+              "target_episode": int(pair["target_episode_index"]),
+              "source_bimanual": bool(source_values[0]),
+              "target_bimanual": bool(target_values[0]),
+              "confirmatory_status": False,
+          }
+          (evidence / "selected-pair-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          with Path(os.environ["GITHUB_ENV"]).open("a") as stream:
+              for key, value in (
+                  ("MAPPING_RUN_ID", run_id),
+                  ("MAPPING_ARTIFACT_ID", int(artifact["id"])),
+                  ("MAPPING_RESULT_ID", mapping["result_id"]),
+                  ("SOURCE_EPISODE", receipt["source_episode"]),
+                  ("TARGET_EPISODE", receipt["target_episode"]),
+                  ("SOURCE_BIMANUAL", int(receipt["source_bimanual"])),
+                  ("TARGET_BIMANUAL", int(receipt["target_bimanual"])),
+              ):
+                  stream.write(f"{key}={value}\n")
+          PY
+
+      - name: Initialize immutable persistent output root
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C _deform360_processing rev-parse HEAD)" = \
+            "${PROCESSING_REVISION}"
+          raw_root="$(realpath -e -- "${RAW_ROOT}")"
+          test "${raw_root}" = "${RAW_ROOT}"
+          test -d "${raw_root}/001-rope"
+          mkdir -p -- "${PERSISTENT_BASE}"
+          persistent_base="$(realpath -e -- "${PERSISTENT_BASE}")"
+          case "${persistent_base}/" in
+            "${raw_root}/"*)
+              echo "Persistent output must not be inside the raw snapshot." >&2
+              exit 2
+              ;;
+          esac
+          available_bytes="$(df --output=avail -B1 "${persistent_base}" | tail -1)"
+          test "${available_bytes}" -ge 10737418240
+
+          execution_root="${persistent_base}/${MAPPING_RESULT_ID}/${GITHUB_SHA}/001-rope"
+          test ! -e "${execution_root}"
+          mkdir -p -- "${execution_root}/aligned"
+          export EXECUTION_ROOT="${execution_root}"
+          export ALIGNED_OBJECT_ROOT="${execution_root}/aligned/001-rope"
+          echo "EXECUTION_ROOT=${execution_root}" >> "${GITHUB_ENV}"
+          echo "ALIGNED_OBJECT_ROOT=${execution_root}/aligned/001-rope" \
+            >> "${GITHUB_ENV}"
+          cp --no-clobber "${PROTOCOL}" "${execution_root}/protocol.json"
+          cp --no-clobber \
+            "${EVIDENCE_ROOT}/selected-pair-receipt.json" \
+            "${execution_root}/selected-pair-receipt.json"
+          chmod 0444 \
+            "${execution_root}/protocol.json" \
+            "${execution_root}/selected-pair-receipt.json"
+
+      - name: Build minimal pinned official-processing runtime
+        id: runtime
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv --copies "${RUNTIME_ROOT}"
+          runtime_python="${RUNTIME_ROOT}/bin/python"
+          "${runtime_python}" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          "${runtime_python}" -m pip install \
+            --constraint "${RUNTIME_LOCK}" \
+            "numpy==2.2.6" \
+            "opencv-contrib-python==5.0.0.93" \
+            scipy \
+            tqdm \
+            matplotlib \
+            "huggingface_hub==1.27.0"
+          "${runtime_python}" -m pip install \
+            --constraint "${RUNTIME_LOCK}" \
+            --no-deps \
+            --no-build-isolation \
+            "${GITHUB_WORKSPACE}/_deform360_processing"
+          "${runtime_python}" -m pip check
+          "${runtime_python}" -m pip freeze --all \
+            | sort \
+            | tee "${EVIDENCE_ROOT}/python-packages.txt"
+          "${runtime_python}" - <<'PY' \
+            | tee "${EVIDENCE_ROOT}/runtime-imports.txt"
+          import cv2
+          import deform360
+          import numpy
+          import scipy
+
+          print(f"opencv={cv2.__version__}")
+          print(f"numpy={numpy.__version__}")
+          print(f"scipy={scipy.__version__}")
+          print(f"deform360={deform360.__file__}")
+          PY
+
+      - name: Process the frozen source and target episodes
+        id: processing
+        if: steps.runtime.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p -- "${ALIGNED_OBJECT_ROOT}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "repository_revision=${GITHUB_SHA}"
+            echo "processing_revision=${PROCESSING_REVISION}"
+            echo "mapping_run_id=${MAPPING_RUN_ID}"
+            echo "mapping_artifact_id=${MAPPING_ARTIFACT_ID}"
+            echo "mapping_result_id=${MAPPING_RESULT_ID}"
+            echo "source_episode=${SOURCE_EPISODE}"
+            echo "target_episode=${TARGET_EPISODE}"
+            echo "source_bimanual=${SOURCE_BIMANUAL}"
+            echo "target_bimanual=${TARGET_BIMANUAL}"
+            uname -a
+            nvidia-smi \
+              --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader
+          } | tee "${EVIDENCE_ROOT}/environment.txt"
+
+          "${RUNTIME_ROOT}/bin/deform360-undistort" \
+            --object-dir "${RAW_ROOT}/001-rope" \
+            --output-dir "${EXECUTION_ROOT}/aligned/001-rope" \
+            --episodes "${SOURCE_EPISODE}" "${TARGET_EPISODE}" \
+            2>&1 | tee "${EVIDENCE_ROOT}/undistort.log"
+
+          "${RUNTIME_ROOT}/bin/deform360-process-tactile" \
+            --object-dir "${RAW_ROOT}/001-rope" \
+            --aligned-dir "${EXECUTION_ROOT}/aligned/001-rope" \
+            --episodes "${SOURCE_EPISODE}" "${TARGET_EPISODE}" \
+            2>&1 | tee "${EVIDENCE_ROOT}/tactile.log"
+
+          "${RUNTIME_ROOT}/bin/python" - <<'PY' \
+            2>&1 | tee "${EVIDENCE_ROOT}/robot.log"
+          import os
+
+          from deform360.processing.robot_stage import process_robot_episode
+
+          root = os.environ["ALIGNED_OBJECT_ROOT"]
+          for role in ("SOURCE", "TARGET"):
+              process_robot_episode(
+                  root,
+                  int(os.environ[f"{role}_EPISODE"]),
+                  bimanual=bool(int(os.environ[f"{role}_BIMANUAL"])),
+                  seed=20260831,
+                  overwrite=True,
+                  plot=False,
+              )
+          PY
+
+      - name: Verify synchronized file contracts without loading arrays
+        id: verify
+        if: steps.processing.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          camera_re = re.compile(r"^brics-odroid-\d+_cam\d+$")
+          tactile_re = re.compile(r"^brics-odroid_tactile.+$")
+          root = Path(os.environ["ALIGNED_OBJECT_ROOT"])
+          records = []
+          for role in ("SOURCE", "TARGET"):
+              index = int(os.environ[f"{role}_EPISODE"])
+              episode = root / f"episode_{index:04d}"
+              cameras = 0
+              tactile = 0
+              hashes = {}
+              if episode.is_dir():
+                  for child in sorted(episode.iterdir()):
+                      if not child.is_dir() or child.is_symlink():
+                          continue
+                      if camera_re.fullmatch(child.name):
+                          required = (
+                              child / "undistorted.mp4",
+                              child / "aligned_timestamps.txt",
+                              child / "alignment.json",
+                              child / "metadata.json",
+                          )
+                          if all(path.is_file() and path.stat().st_size > 0 for path in required):
+                              cameras += 1
+                              for path in required[2:]:
+                                  hashes[path.relative_to(episode).as_posix()] = hashlib.sha256(
+                                      path.read_bytes()
+                                  ).hexdigest()
+                      elif tactile_re.fullmatch(child.name):
+                          required = (
+                              child / "synced_tactile.npy",
+                              child / "alignment.json",
+                              child / "metadata.json",
+                          )
+                          if all(path.is_file() and path.stat().st_size > 0 for path in required):
+                              tactile += 1
+                              for path in required[1:]:
+                                  hashes[path.relative_to(episode).as_posix()] = hashlib.sha256(
+                                      path.read_bytes()
+                                  ).hexdigest()
+              episode_required = (
+                  episode / "alignment.json",
+                  episode / "undistorted_intrinsics.npy",
+                  episode / "extrinsics.npy",
+              )
+              robot_required = (
+                  episode / "robot" / "robot.npz",
+                  episode / "robot" / "robot.meta.json",
+              )
+              for path in (episode_required[0], robot_required[1]):
+                  if path.is_file() and path.stat().st_size > 0:
+                      hashes[path.relative_to(episode).as_posix()] = hashlib.sha256(
+                          path.read_bytes()
+                      ).hexdigest()
+              ready = (
+                  all(path.is_file() and path.stat().st_size > 0 for path in episode_required)
+                  and cameras >= 12
+                  and tactile >= 2
+                  and all(path.is_file() and path.stat().st_size > 0 for path in robot_required)
+              )
+              records.append(
+                  {
+                      "role": role.lower(),
+                      "episode_index": index,
+                      "episode_dir": str(episode),
+                      "complete_camera_contract_count": cameras,
+                      "complete_tactile_contract_count": tactile,
+                      "episode_contracts_present": {
+                          path.name: path.is_file() and path.stat().st_size > 0
+                          for path in episode_required
+                      },
+                      "robot_contracts_present": {
+                          path.name: path.is_file() and path.stat().st_size > 0
+                          for path in robot_required
+                      },
+                      "small_manifest_sha256": hashes,
+                      "ready": ready,
+                  }
+              )
+          result = {
+              "schema": "bayesian-phystwin/deform360-rope-preprocess-verification",
+              "schema_version": 1,
+              "object_id": "001-rope",
+              "mapping_result_id": os.environ["MAPPING_RESULT_ID"],
+              "repository_revision": os.environ["GITHUB_SHA"],
+              "processing_revision": os.environ["PROCESSING_REVISION"],
+              "episodes": records,
+              "all_selected_episodes_ready": all(row["ready"] for row in records),
+              "information_boundary": {
+                  "model_fitting_performed": False,
+                  "prediction_generated": False,
+                  "target_scored": False,
+                  "paper_claim_authorized": False,
+              },
+          }
+          encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode()
+          result["verification_id"] = hashlib.sha256(encoded).hexdigest()
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          (evidence / "verification.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          persistent = Path(os.environ["EXECUTION_ROOT"]) / "verification.json"
+          persistent.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+          persistent.chmod(0o444)
+          if not result["all_selected_episodes_ready"]:
+              raise SystemExit("selected episode contracts are incomplete")
+          print(json.dumps({
+              "verification_id": result["verification_id"],
+              "all_selected_episodes_ready": True,
+          }, sort_keys=True))
+          PY
+
+      - name: Write compact execution receipt
+        if: always()
+        shell: bash
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          PROCESSING_OUTCOME: ${{ steps.processing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          receipt = {
+              "schema": "bayesian-phystwin/deform360-rope-preprocess-receipt",
+              "schema_version": 1,
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "runner_name": os.environ["RUNNER_NAME"],
+              "repository_revision": os.environ["GITHUB_SHA"],
+              "processing_revision": os.environ["PROCESSING_REVISION"],
+              "mapping_run_id": int(os.environ["MAPPING_RUN_ID"]),
+              "mapping_artifact_id": int(os.environ["MAPPING_ARTIFACT_ID"]),
+              "mapping_result_id": os.environ["MAPPING_RESULT_ID"],
+              "execution_root": os.environ["EXECUTION_ROOT"],
+              "outcomes": {
+                  "runtime": os.environ["RUNTIME_OUTCOME"],
+                  "processing": os.environ["PROCESSING_OUTCOME"],
+                  "verification": os.environ["VERIFY_OUTCOME"],
+              },
+              "confirmatory_status": False,
+              "model_fitting_performed": False,
+              "target_scored": False,
+              "paper_claim_authorized": False,
+          }
+          encoded = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(encoded).hexdigest()
+          (evidence / "execution-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+          find "${EVIDENCE_ROOT}" -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "${EVIDENCE_ROOT}/SHA256SUMS"
+
+      - name: Publish bounded development result
+        if: always()
+        shell: bash
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          PROCESSING_OUTCOME: ${{ steps.processing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          {
+            echo "### Deform360 001-rope official preprocessing development gate"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\`"
+            echo "- Mapping run: \`${MAPPING_RUN_ID:-unavailable}\`"
+            echo "- Mapping result: \`${MAPPING_RESULT_ID:-unavailable}\`"
+            echo "- Source episode: \`${SOURCE_EPISODE:-unavailable}\`"
+            echo "- Target episode: \`${TARGET_EPISODE:-unavailable}\`"
+            echo "- Runtime: \`${RUNTIME_OUTCOME}\`"
+            echo "- Processing: \`${PROCESSING_OUTCOME}\`"
+            echo "- Verification: \`${VERIFY_OUTCOME}\`"
+            echo "- Persistent output: \`${EXECUTION_ROOT:-unavailable}\`"
+            echo "- Confirmatory status: \`false\`"
+            echo "- Model fitting performed: \`false\`"
+            echo "- Target scored: \`false\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload compact preprocessing evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: d360-001-rope-preprocess-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 6
+
+      - name: Enforce the frozen preprocessing gate
+        if: always()
+        shell: bash
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          PROCESSING_OUTCOME: ${{ steps.processing.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          set -euo pipefail
+          test "${RUNTIME_OUTCOME}" = "success"
+          test "${PROCESSING_OUTCOME}" = "success"
+          test "${VERIFY_OUTCOME}" = "success"
