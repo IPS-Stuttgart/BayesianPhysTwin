@@ -1,0 +1,217 @@
+{
+  "artifact_kind": "Deform360QueryValidationReadinessExecutionV1",
+  "schema_version": 1,
+  "executed_at_utc": "2026-08-30T09:26:18Z",
+  "repository": "IPS-Stuttgart/BayesianPhysTwin",
+  "branch": "science/deform360-query-validation-readiness-v1",
+  "revision": "827e9d1ab42e192e6fcb43e5e60f23c4d632faf9",
+  "protocol": {
+    "id": "deform360-query-validation-readiness-v1",
+    "path": "protocols/deform360_query_validation_readiness_v1.json"
+  },
+  "execution": {
+    "workflow_name": "Deform360 query-validation readiness",
+    "workflow_run_id": 33304040922,
+    "hosted_contract_job_id": 99237299104,
+    "self_hosted_job_id": 99237322247,
+    "artifact_id": 9729872170,
+    "artifact_name": "deform360-query-readiness-33304040922-1",
+    "artifact_sha256": "91f85d95f2d379fb97dde2990110ff1a587ce267c4e68c6a12f8048bf3106d05",
+    "runner_label": "gpuserver4090",
+    "registered_runner_name": "workstation1",
+    "runner_os": "Linux",
+    "runner_arch": "X64",
+    "python_version": "3.10.12",
+    "gpus": [
+      {
+        "name": "NVIDIA GeForce RTX 4090",
+        "uuid": "GPU-050afb3b-ea5c-2dba-7cf0-c2e5a15eaf4a",
+        "driver_version": "580.159.04",
+        "memory_mib": 24564
+      },
+      {
+        "name": "NVIDIA GeForce RTX 4090",
+        "uuid": "GPU-2f726062-4a4a-97a1-0379-c33e6c5fb8ce",
+        "driver_version": "580.159.04",
+        "memory_mib": 24564
+      }
+    ]
+  },
+  "dataset": {
+    "name": "Deform360",
+    "root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "recognized_object_count": 168,
+    "names_only_content_inventory_sha256": "cb37c193052baae41140d0cb48c642c16e3840a850ca104a4883555eb19f7611",
+    "execution_inventory_sha256": "83e5cda9ff01afc50af46ff92f2e4330b93cfbcdcdc550c91709aad77b74a75b",
+    "names_only_inventory_file_sha256": "f210b393fe0af2fb16cc5186f1bd7b9029d7f9f281d3feaf35142144a1bfaf68",
+    "matches_retained_preflight": true,
+    "classification_stratum_counts": {
+      "candidate_name_only:sheet": 70,
+      "candidate_name_only:volumetric": 34,
+      "prior_calibration:sheet": 3,
+      "prior_calibration:volumetric": 9,
+      "prior_open_or_reserved:sheet": 12,
+      "prior_open_or_reserved:volumetric": 28,
+      "reserved_target:sheet": 4,
+      "reserved_target:volumetric": 8
+    }
+  },
+  "historical_exclusion": {
+    "hash_namespace": "deform360-fresh-object-exclusion-v1",
+    "source_commit": "00550574fe56330062140d6042693d5a34088103",
+    "object_hash_count": 216,
+    "canonical_sha256": "859613611950801a6d462ddd426849eb0007b1c7406447cb00468c257a2bb476",
+    "file_sha256": "f9db0fa72305b68f6d4c6e85c4a6b4a22fb77bb01a4e2b13792c5954bb228b06",
+    "provisionally_unexcluded_object_count": 47,
+    "provisionally_unexcluded_by_stratum": {
+      "sheet": 41,
+      "volumetric": 6
+    },
+    "complete_current_cross_project_union_verified": false,
+    "interpretation": "Absence from this historical union means only provisionally unexcluded. No complete post-2026-08-11 cross-project exposure delta is bound, so a fresh-confirmation claim remains unauthorized."
+  },
+  "development_metadata_design": {
+    "selection_method": "deterministic names-only object ranking followed by deterministic distinct-action-family episode pairing",
+    "selected_count": 8,
+    "metadata_ready_count": 8,
+    "unsupported_count": 0,
+    "selected": [
+      {
+        "object_id": "038-mat-cloth",
+        "object_hash": "eb00054f66ee8e36e85b679bc12955da1838db37512439e331b4c7bc3d845534",
+        "stratum": "sheet",
+        "historically_excluded": false,
+        "metadata_path": "raw-repository/raw/038-mat-cloth/metadata.json",
+        "metadata_sha256": "f3016c509c39b1f16ea7fa18c86f3575cbc681e27dd8c90fd8b91c76853a0326",
+        "source_episode_id": 3,
+        "source_action": "drag corner",
+        "source_action_family": "planar_or_contact",
+        "target_episode_id": 9,
+        "target_action": "fold",
+        "target_action_family": "shape_change"
+      },
+      {
+        "object_id": "038-black-bag-cloth",
+        "object_hash": "8ca1dad00853b3ff381b19b43e5195f9e61d78d5bdaff6155fbf1e498d06748f",
+        "stratum": "sheet",
+        "historically_excluded": false,
+        "metadata_path": "raw-repository/raw/038-black-bag-cloth/metadata.json",
+        "metadata_sha256": "9ffd0ffd4339ac020f249c5e8023f4be6cd06216114c3b45d80e2939fc1eb400",
+        "source_episode_id": 8,
+        "source_action": "drag edges",
+        "source_action_family": "planar_or_contact",
+        "target_episode_id": 5,
+        "target_action": "lift corners",
+        "target_action_family": "elevation"
+      },
+      {
+        "object_id": "087-plastic-bag-blue-cloth",
+        "object_hash": "131869bfdb051a9c4a1ba8184303db643c3c4e29bceda4a2fd5791dd90c212ea",
+        "stratum": "sheet",
+        "historically_excluded": true,
+        "metadata_path": "raw-repository/raw/087-plastic-bag-blue-cloth/metadata.json",
+        "metadata_sha256": "2fa3de738a9dc93a77b5e37e11df66e724de6b0c4c57c1874bbbc8bec9cb7f2f",
+        "source_episode_id": 8,
+        "source_action": "lift opposite edges",
+        "source_action_family": "elevation",
+        "target_episode_id": 3,
+        "target_action": "fold corner",
+        "target_action_family": "shape_change"
+      },
+      {
+        "object_id": "144-jar-opener-cloth",
+        "object_hash": "3023f20a8c86666b98793dca6447896c483e40be4ed5de07aeff2a4e543bf72a",
+        "stratum": "sheet",
+        "historically_excluded": false,
+        "metadata_path": "raw-repository/raw/144-jar-opener-cloth/metadata.json",
+        "metadata_sha256": "7c9ada68b2f39c661d0a3c6af2a09688237b406e65fc10c7c2db32d0213dfc60",
+        "source_episode_id": 6,
+        "source_action": "lift sides opposite",
+        "source_action_family": "elevation",
+        "target_episode_id": 2,
+        "target_action": "drag side",
+        "target_action_family": "planar_or_contact"
+      },
+      {
+        "object_id": "072-cotton-clohesline",
+        "object_hash": "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "stratum": "volumetric",
+        "historically_excluded": true,
+        "metadata_path": "raw-repository/raw/072-cotton-clohesline/metadata.json",
+        "metadata_sha256": "11a1b742baf9bef68879ef076bbf0496381ff5906a6f0b7cd2a9581117595053",
+        "source_episode_id": 2,
+        "source_action": "drag edge",
+        "source_action_family": "planar_or_contact",
+        "target_episode_id": 0,
+        "target_action": "lift edge",
+        "target_action_family": "elevation"
+      },
+      {
+        "object_id": "102-stress-ball",
+        "object_hash": "fb08a99eb18beb4588c6538d70ab263c263996565b0b4bb859660362361eb062",
+        "stratum": "volumetric",
+        "historically_excluded": true,
+        "metadata_path": "raw-repository/raw/102-stress-ball/metadata.json",
+        "metadata_sha256": "2a9a2913b2c361869271f99217b84184891f02c64aad39c7d352aa164a516bbd",
+        "source_episode_id": 8,
+        "source_action": "squeeze",
+        "source_action_family": "shape_change",
+        "target_episode_id": 6,
+        "target_action": "lift whole",
+        "target_action_family": "elevation"
+      },
+      {
+        "object_id": "053-squeezer",
+        "object_hash": "db42dd4170ad1c481855f297be1e6ee31fc02c227b40a31d8cecd3a654f85374",
+        "stratum": "volumetric",
+        "historically_excluded": true,
+        "metadata_path": "raw-repository/raw/053-squeezer/metadata.json",
+        "metadata_sha256": "3a902988143d6fe93b78f855fa0ff8e789c931defd32c72527090952e8fab49f",
+        "source_episode_id": 6,
+        "source_action": "lift middle bottom",
+        "source_action_family": "elevation",
+        "target_episode_id": 4,
+        "target_action": "squeeze",
+        "target_action_family": "shape_change"
+      },
+      {
+        "object_id": "063-flower",
+        "object_hash": "8a21b67feca4cc84583590418f9dc5d251b913ecc01a83efa5dfc421d6718395",
+        "stratum": "volumetric",
+        "historically_excluded": true,
+        "metadata_path": "raw-repository/raw/063-flower/metadata.json",
+        "metadata_sha256": "b503e3b7bee3d359b757b1a327954534cc8589b69a6f52dae78f4b2737a0fac9",
+        "source_episode_id": 9,
+        "source_action": "wave flower and leaf",
+        "source_action_family": "elevation",
+        "target_episode_id": 7,
+        "target_action": "drag",
+        "target_action_family": "planar_or_contact"
+      }
+    ]
+  },
+  "retained_component_hashes": {
+    "readiness_json_sha256": "6a2bfdfbc2a5cd032dec26267d12c9d5243c8bf0d7f0c89ab0f537cf4f99fec1",
+    "report_markdown_sha256": "8ed8cee2bc3b573bd48043c930138e7f7772849236b323d34baf2eb4160e024b",
+    "environment_sha256": "b3a67d821af72aa237036db43f86167bd3dd6a4d62a37ec07517ef52991b0dc7",
+    "gpus_csv_sha256": "13819fef664380f9eef81a6e6e214a330df2af4ed75e11dbf137cd7c376de584"
+  },
+  "decision": {
+    "status": "development-metadata-design-ready",
+    "development_metadata_design_ready": true,
+    "fresh_confirmation_authorized": false,
+    "target_payload_access_authorized": false,
+    "model_scoring_authorized": false,
+    "next_action": "Freeze one released-processed-annotation or official-processing adapter and a source-only prediction contract before opening any selected target future."
+  },
+  "information_boundary": {
+    "dataset_names_and_sizes_opened": true,
+    "selected_metadata_json_opened": true,
+    "camera_media_decoded": false,
+    "robot_or_tactile_arrays_opened": false,
+    "geometry_or_track_annotations_opened": false,
+    "target_future_opened": false,
+    "score_bearing_outcomes_opened": false
+  },
+  "claim_boundary": "This retained execution establishes a deterministic development metadata roster and source-target episode design on the public Deform360 staging tree. It is not a fresh cohort lock, payload-integrity certificate, model evaluation, accuracy or calibration result, physical-transport result, or authorization to open target futures."
+}

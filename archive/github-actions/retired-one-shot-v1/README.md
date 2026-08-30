@@ -1,6 +1,6 @@
 # Retired one-shot GitHub Actions v1
 
-This directory preserves the exact Git blobs of fourteen historical one-shot
+This directory preserves the exact Git blobs of fifteen historical one-shot
 GitHub Actions workflows removed from `.github/workflows` after the corresponding
 executions reached a terminal state and their evidence boundaries were recorded.
 
@@ -26,6 +26,12 @@ The visual-production failure diagnosis and its coupled reporter are preserved
 here after all of their trusted-main runs failed without a diagnosis artifact or
 published report. Their exact terminal history and later supersession are bound
 by the machine-readable retirement record under `results/diagnostics`.
+
+The Deform360 v6 frozen-upstream history locator is preserved after it completed
+its target-blind purpose: the accepted locator report identified the unique
+byte-identical historical physical-source snapshot subsequently materialized by
+the protected source workflow. Its reusable Python locator and unit tests remain
+active; only the now-completed manual GitHub Actions launcher is retired.
 
 This archive changes workflow activation only. It does not alter any historical
 run, artifact, protocol, estimator, metric, claim, target-access state, or
