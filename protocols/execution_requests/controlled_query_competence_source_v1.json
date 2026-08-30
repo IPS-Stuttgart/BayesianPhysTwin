@@ -1,0 +1,175 @@
+{
+  "attempt_ledger_path": "/mnt/c/users/emper/documents/codex/2026-07-09/files-mentioned-by-the-user-teilgespr/work/query-competence-controlled-evidence-v1/source-attempt-f9f0d72d.json",
+  "attempt_limit": 1,
+  "confirmation_outcomes_authorized": false,
+  "implementation": {
+    "module_relative_path": "src/bayesian_phystwin_experiments/controlled_query_competence_v1.py",
+    "module_sha256": "c0c021e408ed832dea5ed150ece0ff6927dd82f2137ccc82ce738ec1832c8558",
+    "repository_path": "/mnt/c/users/emper/documents/codex/2026-07-09/files-mentioned-by-the-user-teilgespr/work/Bayesian-PhysTwin-query-competence-v1",
+    "revision": "f9f0d72d050efff44559e4e000d71a73170b95d8",
+    "runner_relative_path": "scripts/science/run_controlled_query_competence_source_v1.py",
+    "runner_sha256": "18baf4f93b06c0b83006077acdc35303cf8a0b36484a03d1743f7318f7daa090"
+  },
+  "output_root": "/mnt/c/users/emper/documents/codex/2026-07-09/files-mentioned-by-the-user-teilgespr/work/query-competence-controlled-evidence-v1/source-f9f0d72d",
+  "plan_id": "17cf7c8765bbb244de77b0ea41d6b4023622f832a0db671a9b57db4c8c9b8f13",
+  "protected_artifacts_authorized": false,
+  "protocol": {
+    "actions": [
+      "passive",
+      "left_lift",
+      "right_drag",
+      "centre_pulse",
+      "dual_stretch",
+      "reverse_sweep",
+      "diagonal_hook"
+    ],
+    "bootstrap_replicates": 2000,
+    "candidate_selection": "minimum posterior expected squared query disagreement",
+    "claim_boundary": "Controlled in-population spring-graph mechanism evidence only. The independent unit is one seeded episode with one preassigned query. A passing result does not establish unseen-topology transfer, physical provider competence, universal simulator validity, deployment safety, official benchmark superiority, or state of the art.",
+    "confidence_level": 0.95,
+    "confirmation_attempt_limit": 1,
+    "confirmation_bootstrap_seed": 20261002,
+    "fallback_model_index": 0,
+    "harm_margin": 0.025,
+    "horizons": [
+      14,
+      28,
+      55
+    ],
+    "hypotheses": [
+      "nominal",
+      "shifted",
+      "compliant_slip",
+      "shifted_slip"
+    ],
+    "information_boundary": "screen observation, query context, model forecasts, candidate identity, and risk features are fixed before future truth is simulated",
+    "loss": "dimensionless root-mean-square query error",
+    "minimum_accepted_count": 100,
+    "minimum_accepted_per_query": 20,
+    "minimum_useful_coverage": 0.25,
+    "no_reselection_or_retry": true,
+    "partitions": {
+      "confirmation": {
+        "count_per_topology": 512,
+        "opened_by_source_stage": false,
+        "seed_base": 202609300
+      },
+      "risk_training": {
+        "count_per_topology": 192,
+        "seed_base": 202608400
+      },
+      "screen_calibration": {
+        "count_per_topology": 96,
+        "seed_base": 202608100
+      },
+      "source_gate": {
+        "count_per_topology": 384,
+        "seed_base": 202608950
+      },
+      "threshold_selection": {
+        "count_per_topology": 384,
+        "seed_base": 202608700
+      }
+    },
+    "prob4d_used": false,
+    "protected_artifacts_used": false,
+    "protocol_id": "a7acb36b299213ed54bff94561939b93ed1c99f70171ff264a3169fa74011d35",
+    "queries": [
+      "global_endpoint",
+      "sensor_path",
+      "centroid_endpoint",
+      "peak_edge_strain"
+    ],
+    "risk_fit": {
+      "family": "deterministic L2 logistic regression",
+      "l2_penalty": 1.0,
+      "maximum_iterations": 80,
+      "tolerance": 1e-09
+    },
+    "risk_models": {
+      "context_agnostic": [
+        "posterior_nominal",
+        "posterior_shifted",
+        "posterior_compliant_slip",
+        "posterior_shifted_slip",
+        "normalized_posterior_entropy",
+        "one_minus_maximum_posterior"
+      ],
+      "full_query_conditional": [
+        "posterior_nominal",
+        "posterior_shifted",
+        "posterior_compliant_slip",
+        "posterior_shifted_slip",
+        "predicted_query_regret",
+        "predicted_harm_probability",
+        "normalized_posterior_entropy",
+        "one_minus_maximum_posterior",
+        "candidate_fallback_disagreement",
+        "normalized_horizon",
+        "candidate_expected_squared_loss",
+        "fallback_expected_squared_loss",
+        "action_passive",
+        "action_left_lift",
+        "action_right_drag",
+        "action_centre_pulse",
+        "action_dual_stretch",
+        "action_reverse_sweep",
+        "action_diagonal_hook",
+        "query_global_endpoint",
+        "query_sensor_path",
+        "query_centroid_endpoint",
+        "query_peak_edge_strain",
+        "candidate_nominal",
+        "candidate_shifted",
+        "candidate_compliant_slip",
+        "candidate_shifted_slip",
+        "topology_rope",
+        "topology_cloth",
+        "topology_soft_block",
+        "harm_probability_times_disagreement",
+        "uncertainty_times_disagreement"
+      ],
+      "model_disagreement_only": [
+        "predicted_query_regret",
+        "predicted_harm_probability",
+        "candidate_fallback_disagreement",
+        "candidate_expected_squared_loss",
+        "fallback_expected_squared_loss"
+      ],
+      "uncertainty_only": [
+        "normalized_posterior_entropy",
+        "one_minus_maximum_posterior"
+      ]
+    },
+    "schema": "bayesian-phystwin.controlled-query-competence",
+    "schema_version": 1,
+    "source_bootstrap_seed": 20261001,
+    "source_bundle_sha256": "6e1dc500f0f982827005d216d36c30e46051d61a8a80d100042c00d0ed5aa738",
+    "source_gate_required_before_confirmation": true,
+    "statistical_unit": "one independently seeded episode with one preassigned query",
+    "target_harm_probability": 0.1,
+    "threshold_grid": [
+      0.01,
+      0.025,
+      0.05,
+      0.075,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.33,
+      0.5
+    ],
+    "topologies": [
+      "rope",
+      "cloth",
+      "soft_block"
+    ],
+    "unseen_topology_transfer_claimed": false
+  },
+  "replacement_or_retry_authorized": false,
+  "schema": "bayesian-phystwin.controlled-query-competence-source-execution",
+  "schema_version": 1,
+  "source_bundle_path": "/mnt/c/Users/emper/Downloads/active_causal_decisive_bundle.zip",
+  "source_bundle_sha256": "6e1dc500f0f982827005d216d36c30e46051d61a8a80d100042c00d0ed5aa738"
+}

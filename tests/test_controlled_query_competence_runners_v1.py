@@ -18,6 +18,9 @@ SOURCE_RUNNER = ROOT / "scripts/science/run_controlled_query_competence_source_v
 CONFIRMATION_RUNNER = (
     ROOT / "scripts/science/run_controlled_query_competence_confirmation_v1.py"
 )
+SOURCE_PLAN = (
+    ROOT / "protocols/execution_requests/controlled_query_competence_source_v1.json"
+)
 
 
 def _module(path: Path, name: str) -> ModuleType:
@@ -51,6 +54,32 @@ def test_source_runner_cannot_import_or_name_confirmation_execution() -> None:
     assert "CONFIRMATION_SEED_BASE" not in source
     assert '"confirmation_outcomes_opened": False' in source
     assert '"retry_authorized": False' in source
+
+
+def test_registered_source_plan_binds_immutable_implementation() -> None:
+    source_module = _module(SOURCE_RUNNER, "registered_controlled_source_runner")
+    digest = hashlib.sha256(SOURCE_PLAN.read_bytes()).hexdigest()
+    plan = source_module._load_plan(SOURCE_PLAN, digest)
+    implementation = plan["implementation"]
+
+    assert plan["plan_id"] == (
+        "17cf7c8765bbb244de77b0ea41d6b4023622f832a0db671a9b57db4c8c9b8f13"
+    )
+    assert implementation["revision"] == ("f9f0d72d050efff44559e4e000d71a73170b95d8")
+    assert (
+        implementation["runner_sha256"]
+        == hashlib.sha256(SOURCE_RUNNER.read_bytes()).hexdigest()
+    )
+    module_path = ROOT / implementation["module_relative_path"]
+    assert (
+        implementation["module_sha256"]
+        == hashlib.sha256(module_path.read_bytes()).hexdigest()
+    )
+    assert plan["protocol"] == experiment_protocol_v1()
+    assert plan["confirmation_outcomes_authorized"] is False
+    assert plan["attempt_limit"] == 1
+    assert plan["replacement_or_retry_authorized"] is False
+    assert plan["protected_artifacts_authorized"] is False
 
 
 def test_runner_plan_identity_and_attempt_ledger_are_fail_closed(
