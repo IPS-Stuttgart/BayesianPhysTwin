@@ -1,0 +1,114 @@
+# workflow-lifecycle: one-shot target-outcome-blind inventory
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth strict table timestamp diagnostic v5
+
+on:
+  push:
+    branches: [science/tracking-cloth-table-query-source-v2]
+    paths:
+      - .github/requests/tracking-cloth-table-strict-time-v5.json
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install NumPy-only parser environment
+        run: python -m pip install numpy==1.26.4
+      - name: Replay strict parser without converting marker coordinates
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/table-strict-time-v5-$GITHUB_RUN_ID"
+          mkdir "$output"
+          echo "STRICT_TIME_OUT=$output" >> "$GITHUB_ENV"
+          DATASET_ROOT="$DATASET_ROOT" OUTPUT="$output" python - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          import numpy as np
+
+          from experiments.tracking_cloth_deformation_v1 import (
+              table_query_source_v1 as base,
+          )
+
+          pattern = re.compile(
+              r"^(cotton|denim|polyester|wool)_A2_"
+              r"(half_lay|full_lay)_(low_friction|high_friction)\.csv$",
+              re.IGNORECASE,
+          )
+          root = Path(os.environ["DATASET_ROOT"]).resolve(strict=True)
+          records = []
+          for path in sorted(root.rglob("*.csv")):
+              if not pattern.fullmatch(path.name):
+                  continue
+              rows = list(base.numeric_rows(path))
+              times = np.asarray([row[0] for row in rows], dtype=float)
+              delta = np.diff(times)
+              cut_indices = (np.flatnonzero(delta > 0.05) + 1).tolist()
+              segments = np.split(np.arange(len(rows)), cut_indices)
+              records.append(
+                  {
+                      "recording": path.name,
+                      "strict_numeric_rows": len(rows),
+                      "cut_indices": cut_indices,
+                      "cut_gaps_seconds": [float(delta[index - 1]) for index in cut_indices],
+                      "segment_lengths": [int(len(segment)) for segment in segments],
+                      "segment_durations_seconds": [
+                          float(times[segment[-1]] - times[segment[0]])
+                          for segment in segments
+                      ],
+                      "minimum_dt_seconds": float(np.min(delta)),
+                      "median_dt_seconds": float(np.median(delta)),
+                      "maximum_dt_seconds": float(np.max(delta)),
+                  }
+              )
+          if len(records) != 16:
+              raise SystemExit(f"Expected 16 table records, found {len(records)}")
+          result = {
+              "schema": "tracking-cloth-table-strict-time-v5",
+              "marker_coordinate_values_converted": False,
+              "gap_threshold_seconds": 0.05,
+              "records": records,
+              "paper_claim_authorized": False,
+          }
+          output = Path(os.environ["OUTPUT"])
+          (output / "strict_time.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          report = [
+              "# Strict-parser table timestamp segments",
+              "",
+              "The repository parser validated row width and converted only Frame/Time; no marker coordinate value was converted.",
+              "",
+              "| Recording | rows | segment lengths | cut gaps [s] |",
+              "| --- | ---: | --- | --- |",
+          ]
+          report.extend(
+              f"| {record['recording']} | {record['strict_numeric_rows']} | "
+              f"{record['segment_lengths']} | {record['cut_gaps_seconds']} |"
+              for record in records
+          )
+          (output / "report.md").write_text("\n".join(report) + "\n")
+          PY
+      - name: Publish strict timestamp summary
+        run: cat "$STRICT_TIME_OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-table-strict-time-v5-${{ github.run_id }}
+          path: ${{ env.STRICT_TIME_OUT }}
+          retention-days: 30
+          if-no-files-found: error
