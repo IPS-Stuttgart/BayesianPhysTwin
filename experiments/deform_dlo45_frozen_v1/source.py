@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from .core import (
+    DLOS,
     Any,
     Array,
-    DLOS,
     Mapping,
     Path,
     _assert_upstream_and_initialization,
@@ -37,11 +37,7 @@ from .core import (
     source_runtime,
     sys,
 )
-from .model import (
-    _save_model,
-    _source_gate,
-    _train_physical,
-)
+from .model import _save_model, _source_gate, _train_physical
 
 
 def _inventory(args: argparse.Namespace, protocol: Mapping[str, object]) -> int:
