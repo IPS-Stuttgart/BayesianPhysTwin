@@ -57,7 +57,9 @@ def qualification_worlds() -> list[dict[str, Any]]:
     ]
 
 
-def validate_world(world: dict[str, Any]) -> None:
+def validate_world(world: dict[str, Any], *, world_count: int = WORLD_COUNT) -> None:
+    if type(world_count) is not int or world_count <= 0:
+        raise ValueError("world_count must be a positive integer")
     if set(world) != {"index", "x_offset_m", "bending_E", "stretching_K"}:
         raise ValueError("exact registered Slingshot world schema required")
     parameters = np.asarray(
@@ -66,7 +68,7 @@ def validate_world(world: dict[str, Any]) -> None:
     )
     if (
         type(world["index"]) is not int
-        or world["index"] not in range(WORLD_COUNT)
+        or world["index"] not in range(world_count)
         or not np.isfinite(parameters).all()
         or abs(parameters[0]) > 0.02
         or np.any(parameters[1:] <= 0)
@@ -147,8 +149,10 @@ def _expected_realization(world: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_world_realization(native: dict[str, Any], world: dict[str, Any]) -> None:
-    validate_world(world)
+def validate_world_realization(
+    native: dict[str, Any], world: dict[str, Any], *, world_count: int = WORLD_COUNT
+) -> None:
+    validate_world(world, world_count=world_count)
     actual = native.get("world_realization")
     expected = _expected_realization(world)
     if not isinstance(actual, dict) or set(actual) != set(expected):
@@ -170,10 +174,12 @@ def run_registered_world(
     output: Path,
     control: Array,
     world: dict[str, Any],
+    *,
+    world_count: int = WORLD_COUNT,
 ) -> tuple[dict[str, Array], dict[str, Any]]:
     """Run exactly one world/action in the current fresh interpreter."""
 
-    validate_world(world)
+    validate_world(world, world_count=world_count)
     command = np.asarray(control)
     if (
         command.shape != (1, 3, 6)
@@ -296,7 +302,7 @@ def run_registered_world(
             "world": world,
             "world_realization": captured,
         }
-        validate_world_realization(report, world)
+        validate_world_realization(report, world, world_count=world_count)
         return arrays, report
     finally:
         if getattr(gs, "_initialized", False):
@@ -342,8 +348,10 @@ def independent_world_qa(
     reports: list[dict[str, Any]],
     expected_controls: Array,
     world: dict[str, Any],
+    *,
+    world_count: int = WORLD_COUNT,
 ) -> dict[str, Any]:
-    validate_world(world)
+    validate_world(world, world_count=world_count)
     controls = np.asarray(expected_controls)
     if (
         len(reports) != ACTION_COUNT
@@ -353,7 +361,7 @@ def independent_world_qa(
     ):
         raise ValueError("complete independent-action evidence required")
     for report in reports:
-        validate_world_realization(report, world)
+        validate_world_realization(report, world, world_count=world_count)
         if (
             report.get("native_steps") != 900
             or report.get("environment_count") != 1

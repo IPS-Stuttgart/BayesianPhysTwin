@@ -24,6 +24,7 @@ from bayesian_phystwin_experiments.dlolab_slingshot_independent_native_v3 import
     task,
     validate_roster,
     validate_singleton_arrays,
+    validate_world,
     validate_world_realization,
 )
 
@@ -159,3 +160,12 @@ def test_invalid_control_is_rejected_before_native_import(tmp_path):
             np.zeros((3, 6), dtype=np.float64),
             world,
         )
+
+
+def test_scientific_rosters_must_explicitly_bind_their_larger_world_count():
+    world = {**qualification_worlds()[0], "index": 127}
+    with pytest.raises(ValueError, match="invalid registered"):
+        validate_world(world)
+    validate_world(world, world_count=128)
+    report = {"world_realization": _realization(world)}
+    validate_world_realization(report, world, world_count=128)
