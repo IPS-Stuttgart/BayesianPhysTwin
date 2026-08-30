@@ -1,0 +1,77 @@
+{
+  "artifact_id": "f0ac1753c92630bcc738db30f466f0745ec726d7aff74b99a0198e5aca6fb25b",
+  "schema": "dlolab-slingshot-policy-certificate-source-result-v1",
+  "status": "retained_pre_future_gate_failure",
+  "source_revision": "0b62ce130efd342bf23c9751ebdca599c6b28b62",
+  "question": "Can a policy-level split-conformal gain certificate retain materially more value than an equal-budget simultaneous-action regret guard while controlling harmful accepted actions?",
+  "ordinary_calibration_futures": 96,
+  "ordinary_evaluation_prefix_worlds": 288,
+  "ordinary_evaluation_futures": 0,
+  "technical_failures": 0,
+  "replacements": 0,
+  "policy_calibration": {
+    "miscoverage": 0.1,
+    "calibration_count": 96,
+    "rank": 88,
+    "offset": 0.035297203063964847
+  },
+  "simultaneous_calibration": {
+    "coverage": 0.9,
+    "count": 96,
+    "rank": 88,
+    "offset": 0.6162563288661695
+  },
+  "pre_future": {
+    "accepted_worlds": 12,
+    "fallback_worlds": 276,
+    "checks": {
+      "all_prefixes_qualified": true,
+      "accepted_worlds_at_least_24": false,
+      "fallback_worlds_at_least_24": true
+    },
+    "pre_future_gate_passed": false
+  },
+  "identities": {
+    "lock_id": "9401705f7d11f2acae32b4307eeff4e044aeba3e3e2a6403a568a999ee33a550",
+    "calibration_seal_id": "1ba8bebc54d799dc0eb11abcf940934b5d598275df272b6bf7a622fb8d35478d",
+    "evaluation_candidate_seal_id": "2da8a622482a6d0649a9d9ab7c97da29bf7ea6370c026a1d05786c2674c644f1",
+    "evaluation_decision_seal_id": "7a42cbe05115fbae3c7344899a76243e3b5fc039f77d12bceed7ccca95a38595",
+    "evaluation_barrier_id": "f60bc84e68a15215521301d9b4b6081668f849701099f0fda082cf61b10d56d2",
+    "failure_id": "e2806339d7f83081140c74d6f9e15eb3605f6aec1798b5931cdf227353e1f76f"
+  },
+  "key_file_sha256": {
+    "lock.json": "e42016a833c940e8889f5ef5d9004126f263c36db112ee418a3b9096d67164e2",
+    "calibration/seal.json": "62a0d94aca413977a5fc797b2097ce502e3779f215401a0d3f76b17eb60e8b54",
+    "evaluation-candidates/seal.json": "cf335e270d0b3e19934b2ea1ca2544050ed7700ec454c367f885ca89a410b2db",
+    "evaluation-decisions/seal.json": "9c194e3e15d8d0c3c0e8def2600b6fa0ca09e32d46869f214ccc1b08e12d069b",
+    "evaluation-decision-barrier.json": "4f9af062391647bd21bf3cc85e779ca3ecfe7afcd62c707bf4dc3c945c235989",
+    "failure.json": "270d302f99bca5588c5ac2bb3dc2b4c527e83bd1e5ed64502eb502c85937c9ea"
+  },
+  "raw_tree": {
+    "root": "/home/fpfaff/source-only/dlolab-slingshot-policy-certificate-source-v1",
+    "file_count": 587,
+    "file_byte_count": 264297374,
+    "canonical_tree_sha256": "f44ed6d3d319eb13b2cafb40a887137976fb0d2c819f87fdd80a18ccffd5d32b"
+  },
+  "verification": {
+    "frozen_source_reloaded": true,
+    "lock_revalidated": true,
+    "calibration_recomputed": true,
+    "evaluation_candidates_recomputed": true,
+    "guarded_decisions_reproduced_byte_exact": true,
+    "barrier_recomputed": true,
+    "evaluation_future_directories_absent": true
+  },
+  "source_gate_passed": false,
+  "prospective_coverage_claim": false,
+  "matched_comparison_scored": false,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "closed_288_world_panel_used": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "real_robot_or_physical_safety_claim": false
+}
