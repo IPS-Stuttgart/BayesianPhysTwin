@@ -144,6 +144,28 @@ def test_public_terminal_receipt_is_hash_bound_and_nonclaiming() -> None:
     assert receipt["retry_authorized"] is False
 
 
+def test_public_replacement_terminal_receipt_is_hash_bound_and_closed() -> None:
+    root = Path(__file__).parents[1]
+    receipt = json.loads(
+        (root / "evidence/hood_mesh_source_qualification_terminal_v2.json").read_text()
+    )
+    receipt_id = receipt.pop("receipt_id")
+    assert (
+        receipt_id == "aa62b6b671b1b1602b6c67cee63769bc8ea0b140dde108bf2991f3d266d799a3"
+    )
+    assert content_id(receipt) == receipt_id
+    assert receipt["plan_id"] == (
+        "4da860dfc8a72b3331b2b0b5338fcd26af6d221fc2011130046bde42414f4a60"
+    )
+    assert receipt["public_mesh_sequence_decoded"] is True
+    assert receipt["qualification_result_produced"] is False
+    assert receipt["replay_archive_produced"] is False
+    assert receipt["source_competence_claim_authorized"] is False
+    assert receipt["certification_execution_authorized"] is False
+    assert receipt["retry_authorized"] is False
+    assert receipt["further_replacement_allowed"] is False
+
+
 def _plan(tmp_path: Path) -> dict[str, Any]:
     value: dict[str, Any] = {
         "schema": "bayesian-phystwin.hood-mesh-source-qualification-plan",

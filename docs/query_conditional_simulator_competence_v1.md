@@ -204,6 +204,18 @@ attempt is not retried or overwritten, and the replacement contract forbids a
 further replacement. This authorization is still only a numerical source
 qualification; it does not open 4D-DRESS or certification outcomes.
 
+The sole v2 attempt passed its exact environment and parent-failure checks,
+consumed the registered replacement ledger, and decoded the public mesh
+sequence. It then stopped during garment construction because the loaded public
+garment dictionary lacks the `vertices` key required by the pinned loader. No
+sample, rollout, replay archive, qualification result, or scientific score was
+produced. The exact lane is terminal without retry or further replacement. Its
+compact custody receipt is
+`evidence/hood_mesh_source_qualification_terminal_v2.json`; the full retained
+log and content-bound terminal record remain in the private paper repository.
+This closes HOOD numerical qualification for the current study and does not
+change the access-closed 4D-DRESS boundary.
+
 ## Manipulation-domain stress test
 
 The handed-off RGBench MatPhys protocol remains useful as a domain-shift stress
