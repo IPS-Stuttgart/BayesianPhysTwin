@@ -1,0 +1,567 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source pilot materialization retry 1
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-pilot-materialization-v1-retry1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-pilot-materialization-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  REQUEST_PATH: .github/requests/deform360-source-pilot-materialization-v1-retry1.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  RAW_OBJECT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository/raw/038-mat-cloth
+  OUTPUT_OBJECT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository/cross-action-source-v1/038-mat-cloth
+  SOURCE_EPISODE: "3"
+  DEFORM360_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+
+jobs:
+  materialize:
+    name: Source episode 038-mat-cloth/3 / gpuserver4090 / retry 1
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 720
+    env:
+      EVIDENCE_ROOT: ${{ runner.temp }}/deform360-source-pilot-retry1-${{ github.run_id }}-${{ github.run_attempt }}
+      RUNTIME_ROOT: ${{ runner.temp }}/deform360-source-pilot-venv-retry1-${{ github.run_id }}-${{ github.run_attempt }}
+      RUNTIME_PYTHON: ${{ runner.temp }}/deform360-source-pilot-venv-retry1-${{ github.run_id }}-${{ github.run_attempt }}/bin/python
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+          fetch-depth: 2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one newly added retry request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status "${GITHUB_SHA}^" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-pilot-materialization-request-v1-retry1",
+              "retry_of_run_id": 33326385353,
+              "retry_reason": "same-step-github-env-export-bug-before-processing",
+              "raw_root": os.environ["RAW_ROOT"],
+              "processed_root": os.environ["PROCESSED_ROOT"],
+              "raw_object": os.environ["RAW_OBJECT"],
+              "output_object": os.environ["OUTPUT_OBJECT"],
+              "source_object": "038-mat-cloth",
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runner_label": "gpuserver4090",
+              "official_processing_revision": os.environ["DEFORM360_REVISION"],
+              "stages": ["undistort", "tactile", "robot"],
+              "source_only": True,
+              "target_future_authorized": False,
+              "persistent_processed_write_authorized": True,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"invalid request field {key!r}")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from the registered retry contract")
+          if not isinstance(request.get("request_id"), str) or not request["request_id"]:
+              raise SystemExit("request_id must be a nonempty string")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("expected_source_revision does not equal request parent")
+          PY
+
+      - name: Check out pinned official Deform360 processing code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.DEFORM360_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          clean: true
+          fetch-depth: 1
+
+      - name: Validate source, output custody, and capacity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _deform360_official rev-parse HEAD)" = "${DEFORM360_REVISION}"
+          test -d "${RAW_ROOT}"
+          test -r "${RAW_ROOT}"
+          test -d "${PROCESSED_ROOT}"
+          test -w "${PROCESSED_ROOT}"
+          test -d "${RAW_OBJECT}"
+          test -r "${RAW_OBJECT}"
+          test "$(readlink -f -- "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(readlink -f -- "${PROCESSED_ROOT}")" = "${PROCESSED_ROOT}"
+          test "$(readlink -f -- "${RAW_OBJECT}")" = "${RAW_OBJECT}"
+          case "${OUTPUT_OBJECT}" in
+            "${PROCESSED_ROOT}"/cross-action-source-v1/038-mat-cloth) ;;
+            *) echo "unexpected or escaping output path" >&2; exit 1 ;;
+          esac
+          test -f "${RAW_OBJECT}/metadata.json"
+          test ! -e "${EVIDENCE_ROOT}"
+          test ! -e "${RUNTIME_ROOT}"
+          mkdir -p "${EVIDENCE_ROOT}"
+
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          raw = Path(os.environ["RAW_OBJECT"])
+          processed = Path(os.environ["PROCESSED_ROOT"])
+          output = Path(os.environ["OUTPUT_OBJECT"])
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          episode = int(os.environ["SOURCE_EPISODE"])
+
+          metadata_path = raw / "metadata.json"
+          metadata_bytes = metadata_path.read_bytes()
+          metadata = json.loads(metadata_bytes)
+          if str(episode) not in metadata.get("sequences", {}):
+              raise SystemExit("source episode is absent from metadata.json")
+
+          camera_rows = []
+          source_video_bytes = 0
+          for camera in sorted(
+              path
+              for path in raw.iterdir()
+              if path.is_dir()
+              and path.name.startswith("brics-odroid-")
+              and "tactile" not in path.name
+          ):
+              videos = sorted(camera.glob("*.mp4"))
+              timestamps = {path.stem: path for path in camera.glob("*.txt")}
+              paired = [path for path in videos if path.stem in timestamps]
+              if episode < len(paired):
+                  video = paired[episode]
+                  stamp = timestamps[video.stem]
+                  source_video_bytes += video.stat().st_size
+                  camera_rows.append(
+                      {
+                          "camera": camera.name,
+                          "video": str(video),
+                          "video_size_bytes": video.stat().st_size,
+                          "timestamps": str(stamp),
+                          "timestamp_size_bytes": stamp.stat().st_size,
+                      }
+                  )
+          if len(camera_rows) < 8:
+              raise SystemExit(
+                  f"source episode has only {len(camera_rows)} exact camera pairs"
+              )
+
+          free_bytes = shutil.disk_usage(processed).free
+          required_bytes = max(50 * 1024**3, 2 * source_video_bytes + 10 * 1024**3)
+          if free_bytes < required_bytes:
+              raise SystemExit(
+                  f"insufficient free space: {free_bytes} < {required_bytes}"
+              )
+
+          marker_payload = {
+              "schema": "bayesian-phystwin/deform360-source-processing-marker-v1",
+              "source_object": "038-mat-cloth",
+              "source_episode": episode,
+              "raw_object": str(raw),
+              "output_object": str(output),
+              "official_processing_revision": os.environ["DEFORM360_REVISION"],
+              "raw_metadata_sha256": hashlib.sha256(metadata_bytes).hexdigest(),
+              "target_future_authorized": False,
+          }
+          marker = output / ".bpt-source-processing-v1.json"
+          if output.exists():
+              if not marker.is_file():
+                  raise SystemExit("output exists without the exact custody marker")
+              if json.loads(marker.read_text()) != marker_payload:
+                  raise SystemExit("existing output custody marker differs")
+          else:
+              output.mkdir(parents=True)
+              marker.write_text(
+                  json.dumps(marker_payload, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+
+          plan = {
+              **marker_payload,
+              "retry_of_run_id": 33326385353,
+              "camera_pair_count": len(camera_rows),
+              "source_video_bytes": source_video_bytes,
+              "processed_free_bytes_before": free_bytes,
+              "required_free_bytes": required_bytes,
+              "camera_pairs": camera_rows,
+          }
+          (evidence / "plan.json").write_text(
+              json.dumps(plan, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Bootstrap isolated official base-processing environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "${RUNTIME_ROOT}"
+          "${RUNTIME_PYTHON}" -m pip install --disable-pip-version-check \
+            --upgrade pip setuptools wheel \
+            2>&1 | tee "${EVIDENCE_ROOT}/runtime-bootstrap.log"
+          "${RUNTIME_PYTHON}" -m pip install --disable-pip-version-check \
+            -e "${GITHUB_WORKSPACE}/_deform360_official" \
+            2>&1 | tee -a "${EVIDENCE_ROOT}/runtime-bootstrap.log"
+          "${RUNTIME_PYTHON}" -m pip check \
+            2>&1 | tee -a "${EVIDENCE_ROOT}/runtime-bootstrap.log"
+          "${RUNTIME_PYTHON}" - <<'PY' \
+            2>&1 | tee -a "${EVIDENCE_ROOT}/runtime-bootstrap.log"
+          import cv2
+          import deform360
+          import numpy
+
+          if not hasattr(cv2, "aruco"):
+              raise SystemExit("OpenCV contrib ArUco support is unavailable")
+          print("deform360", deform360.__file__)
+          print("numpy", numpy.__version__)
+          print("opencv", cv2.__version__)
+          PY
+
+      - name: Record non-sensitive execution environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "retry_of_run_id=33326385353"
+            echo "official_deform360_revision=${DEFORM360_REVISION}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "raw_object=${RAW_OBJECT}"
+            echo "output_object=${OUTPUT_OBJECT}"
+            echo "source_episode=${SOURCE_EPISODE}"
+            "${RUNTIME_PYTHON}" --version
+            uname -a
+            command -v ffmpeg || true
+            command -v ffprobe || true
+            command -v nvcc || true
+            command -v ninja || true
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader || true
+            df -B1 "${PROCESSED_ROOT}"
+          } | tee "${EVIDENCE_ROOT}/environment.txt"
+
+      - name: Materialize aligned cameras, tactile, and robot state
+        id: processing
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec 9>"${OUTPUT_OBJECT}/.bpt-source-processing.lock"
+          flock -n 9
+
+          set +e
+          "${RUNTIME_ROOT}/bin/deform360-undistort" \
+            --object-dir "${RAW_OBJECT}" \
+            --output-dir "${OUTPUT_OBJECT}" \
+            --episodes "${SOURCE_EPISODE}" \
+            --no-overwrite \
+            2>&1 | tee "${EVIDENCE_ROOT}/undistort.log"
+          undistort_code=${PIPESTATUS[0]}
+          printf '%s\n' "${undistort_code}" > "${EVIDENCE_ROOT}/undistort.exit_code"
+          if [[ "${undistort_code}" -ne 0 ]]; then
+            exit "${undistort_code}"
+          fi
+
+          "${RUNTIME_ROOT}/bin/deform360-process-tactile" \
+            --object-dir "${RAW_OBJECT}" \
+            --aligned-dir "${OUTPUT_OBJECT}" \
+            --episodes "${SOURCE_EPISODE}" \
+            --no-overwrite \
+            2>&1 | tee "${EVIDENCE_ROOT}/tactile.log"
+          tactile_code=${PIPESTATUS[0]}
+          printf '%s\n' "${tactile_code}" > "${EVIDENCE_ROOT}/tactile.exit_code"
+          if [[ "${tactile_code}" -ne 0 ]]; then
+            exit "${tactile_code}"
+          fi
+
+          "${RUNTIME_PYTHON}" - <<'PY' \
+            2>&1 | tee "${EVIDENCE_ROOT}/robot.log"
+          import json
+          import os
+          from pathlib import Path
+
+          from deform360.processing.robot_stage import process_robot_episode
+
+          metadata = json.loads(
+              (Path(os.environ["RAW_OBJECT"]) / "metadata.json").read_text()
+          )
+          episode = int(os.environ["SOURCE_EPISODE"])
+          sequence = metadata.get("sequences", {}).get(str(episode), {})
+          bimanual = sequence.get("bimanual", "no") == "yes"
+          output = process_robot_episode(
+              os.environ["OUTPUT_OBJECT"],
+              episode,
+              bimanual=bimanual,
+              cameras=None,
+              seed=0,
+              overwrite=False,
+              plot=False,
+          )
+          print(output)
+          PY
+          robot_code=${PIPESTATUS[0]}
+          printf '%s\n' "${robot_code}" > "${EVIDENCE_ROOT}/robot.exit_code"
+          set -e
+          test "${robot_code}" -eq 0
+          echo "completed=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify source outputs and write compact receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          output = Path(os.environ["OUTPUT_OBJECT"])
+          episode = int(os.environ["SOURCE_EPISODE"])
+          episode_dir = output / f"episode_{episode:04d}"
+          target_output_dir = output / "episode_0009"
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+
+          def read_code(name):
+              path = evidence / f"{name}.exit_code"
+              return int(path.read_text().strip()) if path.is_file() else None
+
+          def digest(path):
+              value = hashlib.sha256()
+              with path.open("rb") as stream:
+                  for block in iter(lambda: stream.read(1024 * 1024), b""):
+                      value.update(block)
+              return value.hexdigest()
+
+          def record(path, hash_limit=64 * 1024 * 1024):
+              if not path.is_file() or path.is_symlink():
+                  return None
+              stat = path.stat()
+              result = {
+                  "path": str(path),
+                  "size_bytes": stat.st_size,
+                  "mtime_ns": stat.st_mtime_ns,
+              }
+              if stat.st_size <= hash_limit:
+                  result["sha256"] = digest(path)
+              return result
+
+          cameras = []
+          tactile = []
+          if episode_dir.is_dir():
+              for directory in sorted(
+                  path for path in episode_dir.iterdir() if path.is_dir()
+              ):
+                  video = directory / "undistorted.mp4"
+                  if video.is_file():
+                      cameras.append(
+                          {
+                              "camera": directory.name,
+                              "video_size_bytes": video.stat().st_size,
+                              "metadata": record(directory / "metadata.json"),
+                              "alignment": record(directory / "alignment.json"),
+                              "timestamps": record(
+                                  directory / "aligned_timestamps.txt"
+                              ),
+                          }
+                      )
+                  synced = directory / "synced_tactile.npy"
+                  if synced.is_file():
+                      tactile.append(
+                          {
+                              "sensor": directory.name,
+                              "size_bytes": synced.stat().st_size,
+                              "metadata": record(directory / "metadata.json"),
+                              "alignment": record(directory / "alignment.json"),
+                          }
+                      )
+
+          stage_codes = {
+              "undistort": read_code("undistort"),
+              "tactile": read_code("tactile"),
+              "robot": read_code("robot"),
+          }
+          outputs = {
+              "episode_dir_exists": episode_dir.is_dir(),
+              "episode_alignment": record(episode_dir / "alignment.json"),
+              "intrinsics": record(episode_dir / "undistorted_intrinsics.npy"),
+              "extrinsics": record(episode_dir / "extrinsics.npy"),
+              "camera_count": len(cameras),
+              "cameras": cameras,
+              "tactile_sensor_count": len(tactile),
+              "tactile": tactile,
+              "robot": record(episode_dir / "robot" / "robot.npz"),
+              "robot_metadata": record(
+                  episode_dir / "robot" / "robot.meta.json"
+              ),
+              "target_output_dir_exists": target_output_dir.exists(),
+          }
+          complete = (
+              stage_codes == {"undistort": 0, "tactile": 0, "robot": 0}
+              and outputs["camera_count"] >= 8
+              and outputs["robot"] is not None
+              and outputs["target_output_dir_exists"] is False
+          )
+          receipt = {
+              "schema": "deform360-source-pilot-materialization-result-v1-retry1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "retry_of_run_id": 33326385353,
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "required_runner_label": "gpuserver4090",
+              "official_processing_revision": os.environ["DEFORM360_REVISION"],
+              "source_object": "038-mat-cloth",
+              "source_episode": episode,
+              "raw_object": os.environ["RAW_OBJECT"],
+              "output_object": os.environ["OUTPUT_OBJECT"],
+              "stage_exit_codes": stage_codes,
+              "outputs": outputs,
+              "processed_free_bytes_after": shutil.disk_usage(
+                  Path(os.environ["PROCESSED_ROOT"])
+              ).free,
+              "decision": (
+                  "source-base-materialization-complete"
+                  if complete
+                  else "source-base-materialization-incomplete"
+              ),
+              "information_boundary": {
+                  "source_episode_payload_opened": any(
+                      code is not None for code in stage_codes.values()
+                  ),
+                  "persistent_source_outputs_written": episode_dir.exists(),
+                  "target_episode_requested_by_workflow": False,
+                  "target_output_directory_created": target_output_dir.exists(),
+                  "target_numeric_payload_opened": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+              "claim_boundary": (
+                  "Source-only preprocessing evidence for one public Deform360 "
+                  "episode. This is not geometry reconstruction, Prob4D provider "
+                  "qualification, BayesianPhysTwin benefit, cross-action transport, "
+                  "Causal4D decision value, calibration, or a paper claim."
+              ),
+          }
+          canonical = json.dumps(
+              receipt,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode()
+          receipt["result_sha256"] = hashlib.sha256(canonical).hexdigest()
+          (evidence / "result.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          (evidence / "report.md").write_text(
+              "\n".join(
+                  [
+                      "# Deform360 source pilot materialization retry 1",
+                      "",
+                      f"Decision: `{receipt['decision']}`",
+                      f"Aligned cameras: `{outputs['camera_count']}`",
+                      f"Aligned tactile sensors: `{outputs['tactile_sensor_count']}`",
+                      f"Robot state present: `{outputs['robot'] is not None}`",
+                      f"Target output directory created: `{target_output_dir.exists()}`",
+                      "",
+                      "Only source object `038-mat-cloth`, episode `3`, was requested.",
+                      "No target episode was opened or scored.",
+                      "",
+                  ]
+              ),
+              encoding="utf-8",
+          )
+          print(
+              json.dumps(
+                  {
+                      "decision": receipt["decision"],
+                      "stage_exit_codes": stage_codes,
+                      "camera_count": outputs["camera_count"],
+                      "tactile_sensor_count": outputs["tactile_sensor_count"],
+                      "robot_present": outputs["robot"] is not None,
+                      "target_output_dir_created": target_output_dir.exists(),
+                  },
+                  indent=2,
+              )
+          )
+          if not complete:
+              raise SystemExit("source base materialization did not complete")
+          PY
+
+      - name: Publish compact summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/report.md" ]]; then
+            cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact processing evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-pilot-materialization-retry1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/plan.json
+            ${{ env.EVIDENCE_ROOT }}/environment.txt
+            ${{ env.EVIDENCE_ROOT }}/runtime-bootstrap.log
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+            ${{ env.EVIDENCE_ROOT }}/undistort.log
+            ${{ env.EVIDENCE_ROOT }}/undistort.exit_code
+            ${{ env.EVIDENCE_ROOT }}/tactile.log
+            ${{ env.EVIDENCE_ROOT }}/tactile.exit_code
+            ${{ env.EVIDENCE_ROOT }}/robot.log
+            ${{ env.EVIDENCE_ROOT }}/robot.exit_code
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime and compact scratch
+        if: always()
+        shell: bash
+        run: rm -rf -- "${RUNTIME_ROOT}" "${EVIDENCE_ROOT}"
