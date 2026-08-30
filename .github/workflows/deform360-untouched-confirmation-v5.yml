@@ -1,0 +1,174 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 untouched-object confirmation v5
+
+on:
+  push:
+    branches: [science/deform360-stronger-confirmation-v5]
+    paths:
+      - ".github/requests/deform360-untouched-confirmation-v5.json"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-untouched-confirmation-v5-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  CONTROL_ROOT: control
+  FROZEN_ROOT: frozen
+  PROTOCOL_PATH: control/protocols/deform360_untouched_confirmation_v5.json
+  RUNNER_PATH: control/scripts/science/run_deform360_untouched_confirmation_v5.py
+  READINESS_ARTIFACT_ID: "9738831748"
+  READINESS_ARTIFACT_SHA256: 71f68d7ce3addaac12ebe0a6b928df319f1fe72ed41396a71616cc3a28562c4b
+  FROZEN_REVISION: 25ba91c021124569c4dcf84c66eda5ec088868e0
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  confirm:
+    name: Exact v3 on 92 untouched objects / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 240
+    steps:
+      - name: Check out confirmation control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: control
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact frozen v3 method
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 25ba91c021124569c4dcf84c66eda5ec088868e0
+          path: frozen
+          persist-credentials: false
+          clean: true
+
+      - name: Recover and verify payload-blind readiness artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf readiness readiness.zip
+          mkdir -p readiness
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${READINESS_ARTIFACT_ID}/zip" \
+            --output readiness.zip
+          printf '%s  %s\n' "${READINESS_ARTIFACT_SHA256}" readiness.zip | sha256sum --check --strict
+          unzip -q readiness.zip -d readiness
+          test -s readiness/readiness.json
+          test -s readiness/report.md
+
+      - name: Validate exact code and execution environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          test "$(git -C "${FROZEN_ROOT}" rev-parse HEAD)" = "${FROZEN_REVISION}"
+          python3 -m py_compile \
+            "${RUNNER_PATH}" \
+            control/scripts/science/audit_deform360_untouched_confirmation_v5.py \
+            frozen/scripts/science/run_deform360_action_kernel_v3.py \
+            frozen/scripts/science/run_deform360_action_conditioned_tactile_v2.py
+          output="${RUNNER_TEMP}/deform360-untouched-confirmation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output}"
+          mkdir -p -- "${output}"
+          echo "OUTPUT_ROOT=${output}" >> "${GITHUB_ENV}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "control_revision=${GITHUB_SHA}"
+            echo "frozen_revision=$(git -C "${FROZEN_ROOT}" rev-parse HEAD)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum \
+              "${PROTOCOL_PATH}" \
+              "${RUNNER_PATH}" \
+              control/scripts/science/audit_deform360_untouched_confirmation_v5.py \
+              readiness/readiness.json \
+              readiness.zip
+            git -C "${FROZEN_ROOT}" hash-object \
+              scripts/science/run_deform360_action_kernel_v3.py \
+              scripts/science/run_deform360_action_conditioned_tactile_v2.py
+            python3 --version
+            python3 -c 'import numpy; print("numpy=" + numpy.__version__)'
+            uname -a
+          } | tee "${output}/environment.txt"
+          cp "${PROTOCOL_PATH}" "${output}/confirmation-protocol.json"
+          cp readiness/readiness.json "${output}/bound-readiness.json"
+          cp readiness/report.md "${output}/bound-readiness-report.md"
+
+      - name: Run exact frozen method on complete precommitted roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "${RUNNER_PATH}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --readiness-json readiness/readiness.json \
+            --data-root "${DATASET_ROOT}" \
+            --frozen-root "${FROZEN_ROOT}" \
+            --output-json "${OUTPUT_ROOT}/result.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            --output-csv "${OUTPUT_ROOT}/object-results.csv" \
+            | tee "${OUTPUT_ROOT}/console.log"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Enforce complete evidence and unchanged claim boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          result = json.loads((root / "result.json").read_text())
+          if result["status"] != "complete":
+              raise SystemExit("confirmation result is incomplete")
+          if result["summary"]["object_count"] != 92:
+              raise SystemExit("precommitted 92-object roster was not completed")
+          boundary = result["information_boundary"]
+          if boundary["exact_frozen_v3_point_method_reused"] is not True:
+              raise SystemExit("frozen method boundary changed")
+          if boundary["outcome_dependent_object_filtering"] is not False:
+              raise SystemExit("outcome-dependent object filtering occurred")
+          decision = result["confirmation_decision"]
+          for key in (
+              "paper_claim_authorized",
+              "globally_fresh_confirmation_authorized",
+              "strict_counterfactual_claim_authorized",
+          ):
+              if decision[key] is not False:
+                  raise SystemExit(f"result self-authorized forbidden claim: {key}")
+          if result["selection_manifest_recomputed_sha256"] != (
+              result["readiness_binding"]["selection_manifest_sha256"]
+          ):
+              raise SystemExit("pre-access carrier manifest changed")
+          PY
+          sha256sum "${OUTPUT_ROOT}"/* > "${OUTPUT_ROOT}/sha256sums.txt"
+          git -C control diff --exit-code
+          test -z "$(git -C control status --porcelain --untracked-files=all)"
+          git -C frozen diff --exit-code
+          test -z "$(git -C frozen status --porcelain --untracked-files=all)"
+
+      - name: Upload full untouched confirmation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-untouched-confirmation-v5-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
