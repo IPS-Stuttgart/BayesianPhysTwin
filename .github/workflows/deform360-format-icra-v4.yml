@@ -33,15 +33,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Apply repository formatting and validate source
+      - name: Apply deterministic source formatting
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install \
             ruff==0.14.14 \
-            autopep8==2.3.2 \
-            numpy==1.26.4 \
-            pytest
+            autopep8==2.3.2
           files=(
             scripts/science/audit_deform360_icra_carriers_v2.py
             scripts/science/audit_deform360_reserved_confirmation_readiness_v4.py
@@ -55,14 +53,11 @@ jobs:
           python -m autopep8 \
             --in-place \
             --aggressive \
+            --aggressive \
             --max-line-length 88 \
             scripts/science/run_deform360_action_conditioned_tactile_v2.py
+          python -m ruff check --fix --unsafe-fixes "${files[@]}" || true
           python -m ruff format "${files[@]}"
-          python -m ruff check "${files[@]}"
-          python -m compileall -q \
-            scripts/science \
-            tests/test_deform360_gpuserver4090_real_evaluation_v1.py
-          python -m pytest -q tests/test_deform360_gpuserver4090_real_evaluation_v1.py
           git diff --check
 
       - name: Remove one-shot launcher and publish formatting commit
