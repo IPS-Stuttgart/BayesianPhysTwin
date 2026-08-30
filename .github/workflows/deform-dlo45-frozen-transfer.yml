@@ -15,6 +15,7 @@ on:
     paths:
       - .github/requests/deform-dlo45-inventory-v1.json
       - .github/requests/deform-dlo45-evaluate-v1.json
+      - .github/requests/deform-dlo45-evaluate-v2.json
 
 permissions:
   contents: read
@@ -85,6 +86,8 @@ jobs:
               path=.github/requests/deform-dlo45-inventory-v1.json; mode=inventory ;;
             $'A\t.github/requests/deform-dlo45-evaluate-v1.json')
               path=.github/requests/deform-dlo45-evaluate-v1.json; mode=evaluate ;;
+            $'A\t.github/requests/deform-dlo45-evaluate-v2.json')
+              path=.github/requests/deform-dlo45-evaluate-v2.json; mode=evaluate ;;
             *) echo "Expected one newly added DLO4/DLO5 request" >&2; exit 2 ;;
           esac
           REQUEST_PATH="$path" MODE="$mode" python - <<'PY'
@@ -115,6 +118,13 @@ jobs:
                   "authorize_target_scoring": True,
                   "evidence_class": "fresh frozen-procedure DLO4/DLO5 replication; joint prediction seal before scoring; no retry",
               })
+              if Path(os.environ["REQUEST_PATH"]).name == "deform-dlo45-evaluate-v2.json":
+                  expected.update({
+                      "prior_failed_run_id": 33329341107,
+                      "prior_failure_stage": "source-preflight-upstream-git-ownership",
+                      "prior_target_access": False,
+                      "retry_class": "pre-target-infrastructure-correction",
+                  })
           for key, value in expected.items():
               if request.get(key) != value:
                   raise SystemExit(f"Invalid {key}: {request.get(key)!r}")
@@ -154,6 +164,13 @@ jobs:
           test -d "$DATASET_ROOT/DLO5/train" && test -d "$DATASET_ROOT/DLO5/eval"
           test -d "$UPSTREAM_ROOT/.git" && test -x "$FROZEN_PYTHON"
           test "$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)" -ge 2
+          safe_git_config="$RUNNER_TEMP/deform-dlo45-gitconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          : > "$safe_git_config"
+          git config --file "$safe_git_config" --add safe.directory "$UPSTREAM_ROOT"
+          export GIT_CONFIG_GLOBAL="$safe_git_config"
+          git -C "$UPSTREAM_ROOT" rev-parse HEAD >/dev/null
+          echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"
+          echo "DLO45_GIT_CONFIG=$safe_git_config" >> "$GITHUB_ENV"
           if test "$MODE" = evaluate; then
             root=/home/github-runner/.cache/workflows/deform-dlo45
             out="$root/runs/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
@@ -274,4 +291,7 @@ jobs:
           elif test -d "$DLO45_OUT"; then
             chmod -R go-rwx "$DLO45_OUT"
             echo "Retained original run bytes at $DLO45_OUT"
+          fi
+          if test -n "${DLO45_GIT_CONFIG:-}"; then
+            rm -f "$DLO45_GIT_CONFIG"
           fi
