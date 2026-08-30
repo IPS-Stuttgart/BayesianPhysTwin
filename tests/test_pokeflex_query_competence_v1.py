@@ -27,13 +27,17 @@ from bayesian_phystwin_experiments.pokeflex_query_competence_v1 import (
 
 PROTOCOL_PATH = (
     Path(__file__).resolve().parents[1]
+    / "protocols/pokeflex_query_competence_retrospective_v1_1.json"
+)
+FAILED_PROTOCOL_PATH = (
+    Path(__file__).resolve().parents[1]
     / "protocols/pokeflex_query_competence_retrospective_v1.json"
 )
 PROTOCOL_FILE_SHA256 = (
-    "70f3f9bba296582e59e89776225e12e8bd517958a3a0845242eb9fe739574906"
+    "db1941983bbb87ef4f7bc19eb1065f5661768b32e766c54d97e43c9f03c1f112"
 )
-PROTOCOL_SHA256 = "853ba1017e8781ddf324b9400df5f4393f2fca390f192e2757ce67a81c3e2354"
-IMPLEMENTATION_COMMIT = "4524852c0235fc736c12ebaa82118cf81e5f19bf"
+PROTOCOL_SHA256 = "282172755c043381fcdf018d90879d76a165f79a7062c3481912630c3ac5ec24"
+IMPLEMENTATION_COMMIT = "177fe21e29d629f7494393853741a8b1e673f415"
 
 
 def _update(target_frame: int, *, harmful: bool) -> dict[str, object]:
@@ -126,6 +130,30 @@ def test_frozen_protocol_identity_and_rosters() -> None:
     assert len(set().union(*(set(roster) for roster in split.values()))) == 78
     for roster in split.values():
         assert len({take_id.rpartition("_T")[0] for take_id in roster}) == 18
+    replacement = protocol["replacement"]
+    assert replacement["scientific_quantities_computed"] is False
+    assert replacement["failed_validation_artifacts_opened"] == 0
+    assert replacement["correction"]["to"] == PARENT_PUBLIC78_PROTOCOL_SHA256
+
+
+def test_replacement_changes_only_parent_and_execution_bindings() -> None:
+    failed = json.loads(FAILED_PROTOCOL_PATH.read_text(encoding="utf-8"))
+    replacement = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
+    for field in (
+        "artifact_inventory",
+        "split",
+        "method",
+        "gates",
+        "forbidden",
+        "claim_boundary",
+        "source_artifact_role",
+    ):
+        assert replacement[field] == failed[field], field
+    assert replacement["replacement"]["correction"] == {
+        "field": "parent_public78_protocol_sha256",
+        "from": failed["parent_public78_protocol_sha256"],
+        "to": replacement["parent_public78_protocol_sha256"],
+    }
 
 
 def test_target_changes_cannot_change_preoutcome_features(tmp_path: Path) -> None:
@@ -302,6 +330,7 @@ def _synthetic_protocol_and_artifacts(
         }
     protocol: dict[str, object] = {
         "protocol_sha256": "1" * 64,
+        "parent_public78_protocol_sha256": PARENT_PUBLIC78_PROTOCOL_SHA256,
         "artifact_inventory": inventory,
         "split": rosters,
     }
