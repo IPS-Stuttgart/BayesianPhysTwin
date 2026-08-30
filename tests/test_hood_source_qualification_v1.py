@@ -51,6 +51,33 @@ def test_registered_plan_is_bound_to_exact_local_sources() -> None:
         assert hashlib.sha256(blob).hexdigest() == expected
 
 
+def test_registered_replacement_plan_is_bound_to_exact_local_sources() -> None:
+    root = Path(__file__).parents[1]
+    plan = load_hood_source_qualification_replacement_plan_v2(
+        root / "protocols/execution_requests/hood_mesh_source_qualification_v2.json"
+    )
+    assert (
+        plan.plan_id
+        == "4da860dfc8a72b3331b2b0b5338fcd26af6d221fc2011130046bde42414f4a60"
+    )
+    assert (
+        plan.value["implementation"]["revision"]
+        == "a4716de01c106ec028ad905634f7f915a9a2b30c"
+    )
+    assert (
+        plan.value["implementation"]["source_archive_sha256"]
+        == "3d516db38cdd3571d5ddac285f6bbcb37550e63d19598ca7f7f37d9064f37cbc"
+    )
+    assert plan.value["execution"]["smpl_model_override"] is None
+    assert plan.value["information_boundary"]["further_replacement_allowed"] is False
+    revision = plan.value["implementation"]["revision"]
+    for relative, expected in plan.implementation_source_files.items():
+        blob = subprocess.check_output(
+            ["git", "-C", str(root), "show", f"{revision}:{relative}"]
+        )
+        assert hashlib.sha256(blob).hexdigest() == expected
+
+
 def test_public_terminal_receipt_is_hash_bound_and_nonclaiming() -> None:
     root = Path(__file__).parents[1]
     receipt = json.loads(
