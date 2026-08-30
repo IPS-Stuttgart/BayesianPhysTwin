@@ -1,0 +1,135 @@
+{
+  "claim_boundary": "Fresh frozen-procedure replication of the DLO3 source-fitting and Bayesian local-residual recipe on the exact released DLO4 and DLO5 train/eval operators. This is not zero-shot arbitrary-object generalization, a Prob4D result, or a safety claim.",
+  "contract": "deform-dlo45-frozen-transfer-v1",
+  "custody": {
+    "aggregate_evidence_only": true,
+    "dlo4_and_dlo5_scored_only_after_joint_seal": true,
+    "failure_after_target_open_is_terminal": true,
+    "method_seal_before_eval_enumeration": true,
+    "paper_claim_authorized": false,
+    "raw_predictions_uploaded": false,
+    "retry_authorized": false,
+    "source_gate_for_each_dlo_before_any_eval_access": true,
+    "target_outcomes_may_not_change_any_arm": true
+  },
+  "data": {
+    "coordinate_transform_by_dlo": {
+      "DLO4": "raw-x-raw-z-negated-raw-y",
+      "DLO5": "raw-x-raw-z-negated-raw-y"
+    },
+    "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+    "dlos": [
+      "DLO4",
+      "DLO5"
+    ],
+    "equal_dlo_aggregation": true,
+    "eval_trajectory_count": 14,
+    "frame_count": 500,
+    "known_action_nodes": [
+      0,
+      1,
+      -2,
+      -1
+    ],
+    "node_count": 12,
+    "primary_statistical_unit": "trajectory",
+    "train_trajectory_count": 56
+  },
+  "local_residual": {
+    "calibration": "maximum-of-nine-source-trajectories",
+    "clamped_node_policy": "baseline-exact",
+    "coordinate_variance_floor_m2": 1e-06,
+    "covariance": "trajectory-clustered-full-coordinate-covariance-v1",
+    "fallback": "matching-physical-checkpoint-exact",
+    "future_free_node_truth": "fit-calibrate-or-score-only",
+    "operator": "per-node-trajectory-grouped-bayesian-ridge-v1",
+    "query_evidence": "two-observed-states-known-future-clamped-action-and-baseline-rollout-only",
+    "ridge": 1.0,
+    "shrinkage": 0.25,
+    "source_reselection": false,
+    "target_reselection": false
+  },
+  "parent_method": {
+    "dlo3_method_revision": "da487c26a0ef1c5c6c4629f6cc32b0964728ad2a",
+    "dlo3_protocol_sha256": "ef4533e7adcf317ccf0fbe951af2870bf86096ca7cf9bf1d777a84963506c35c",
+    "point_arm": "r1_s0p25",
+    "repository": "https://github.com/IPS-Stuttgart/BayesianPhysTwin",
+    "ridge": 1.0,
+    "selection_effect": "none",
+    "shrinkage": 0.25
+  },
+  "physical_training": {
+    "backend": "official-DEFORM-PBD",
+    "batch_size": 32,
+    "cublas_workspace_config": ":4096:8",
+    "final_fit_policy": "all-56-train",
+    "maximum_compute_matched_updates": 512,
+    "optimizer": "official-sgd-parameter-groups-v1",
+    "pbd_iterations": 10,
+    "seed": 42,
+    "source_fit_policy": "fit-39-only",
+    "target_seed_selection": false,
+    "total_updates": 6400,
+    "unroll_horizon_frames": 50
+  },
+  "prob4d_used": false,
+  "schema_version": 1,
+  "source_gate": {
+    "maximum_case_ratio": 1.1,
+    "minimum_case_wins": 6,
+    "minimum_relative_improvement": 0.01,
+    "require_all_source_test_cases": true,
+    "required_before_target": true
+  },
+  "source_split": {
+    "calibration_count": 9,
+    "domain_separator": "deform-dlo45-frozen-transfer-v1",
+    "fit_count": 39,
+    "identity_operator": "sha256-domain-dlo-basename-v1",
+    "manifest_before_payload_deserialization": true,
+    "ordering": "ascending-hex-digest-v1",
+    "source_test_count": 8
+  },
+  "target_evaluation": {
+    "all_cases_sorted_once": true,
+    "case_replacement": false,
+    "distribution_selection_from_target": false,
+    "free_node_metric": "diagnostic-only",
+    "joint_prediction_seal_before_scoring": true,
+    "maximum_case_ratio": 1.1,
+    "metrics": [
+      "mean-coordinate-l1-m",
+      "case-wins",
+      "early-middle-late-l1-m",
+      "gaussian-nll",
+      "coordinate-nees",
+      "multivariate-nees",
+      "coordinate-coverage-90",
+      "interval-width-m",
+      "energy-score"
+    ],
+    "minimum_case_wins": 8,
+    "minimum_relative_improvement": 0.01,
+    "one_shot": true,
+    "primary_comparator": "matching-update-6400-physical-checkpoint",
+    "primary_datasets": [
+      "DLO4",
+      "DLO5"
+    ],
+    "primary_distribution": "calibrated-full-coordinate-covariance-v1",
+    "primary_metric": "official-mean-coordinate-l1-all-nodes",
+    "secondary_comparators": [
+      "compute-matched-physical-continuation",
+      "action-aware-persistence"
+    ],
+    "target_calibration": false,
+    "target_retries": false,
+    "target_selection": false
+  },
+  "upstream": {
+    "code_vendored": false,
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "train_script_sha256": "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
+  }
+}
