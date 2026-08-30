@@ -1,0 +1,516 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source processing preflight
+
+on:
+  push:
+    branches:
+      - science/deform360-source-processing-preflight-v1
+    paths:
+      - ".github/requests/deform360-source-processing-preflight-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-processing-preflight-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-processing-preflight-v1.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  OFFICIAL_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  preflight:
+    name: Source processing smoke / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Check out pinned official Deform360 processor
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_REVISION }}
+          path: _deform360
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize the one-file source-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          expected = {
+              "schema": "deform360-source-processing-preflight-request-v1",
+              "raw_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository",
+              "processed_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository",
+              "runner_label": "gpuserver4090",
+              "official_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+              "source_object": "038-mat-cloth",
+              "source_episode": 3,
+              "smoke_camera_count": 4,
+              "source_payload_authorized": True,
+              "persistent_processed_write_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f"request field {key!r} changed")
+          allowed = set(expected) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit(f"unexpected request keys: {sorted(set(request) - allowed)}")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind the exact source parent")
+          if not request["request_id"]:
+              raise SystemExit("request_id must be nonempty")
+          PY
+
+      - name: Verify exact roots and prepare isolated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(realpath -e "${PROCESSED_ROOT}")" = "${PROCESSED_ROOT}"
+          test "$(git -C _deform360 rev-parse HEAD)" = "${OFFICIAL_REVISION}"
+          probe="${PROCESSED_ROOT}/.bpt-write-probe-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${probe}"
+          : > "${probe}"
+          rm -f -- "${probe}"
+          output="${RUNNER_TEMP}/deform360-source-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          scratch="${RUNNER_TEMP}/deform360-source-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="${RUNNER_TEMP}/deform360-source-preflight-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          test ! -e "${scratch}"
+          test ! -e "${venv}"
+          mkdir -p "${output}" "${scratch}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check \
+            "${GITHUB_WORKSPACE}/_deform360[all]"
+          "${venv}/bin/python" -m pip check
+          {
+            echo "EVIDENCE_ROOT=${output}"
+            echo "SMOKE_ROOT=${scratch}"
+            echo "PREFLIGHT_PYTHON=${venv}/bin/python"
+            echo "PREFLIGHT_VENV=${venv}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Run exact source processing smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PREFLIGHT_PYTHON}" - <<'PY'
+          import hashlib
+          import importlib.metadata
+          import importlib.util
+          import json
+          import os
+          import shutil
+          import subprocess
+          import traceback
+          from pathlib import Path
+
+          import numpy as np
+
+          from deform360.calibration import load_calibration
+          from deform360.processing.robot_stage import process_robot_episode
+          from deform360.tactile import process_tactile_episode
+          from deform360.undistort import list_cameras, list_episodes, undistort_episode
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          raw_root = Path(request["raw_root"]).resolve(strict=True)
+          processed_root = Path(request["processed_root"]).resolve(strict=True)
+          object_id = request["source_object"]
+          episode_index = int(request["source_episode"])
+          object_dir = raw_root / "raw" / object_id
+          evidence_root = Path(os.environ["EVIDENCE_ROOT"])
+          smoke_root = Path(os.environ["SMOKE_ROOT"])
+          aligned_root = smoke_root / object_id
+          metadata_path = object_dir / "metadata.json"
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for block in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(block)
+              return digest.hexdigest()
+
+          def command_record(command: str, *args: str) -> dict[str, object]:
+              executable = shutil.which(command)
+              result: dict[str, object] = {"available": executable is not None}
+              if executable is None:
+                  return result
+              result["path"] = executable
+              try:
+                  completed = subprocess.run(
+                      [executable, *args],
+                      text=True,
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.STDOUT,
+                      timeout=30,
+                      check=False,
+                  )
+                  result["returncode"] = completed.returncode
+                  result["first_line"] = completed.stdout.splitlines()[0] if completed.stdout else ""
+              except Exception as error:
+                  result["error"] = f"{type(error).__name__}: {error}"
+              return result
+
+          result: dict[str, object] = {
+              "schema": "deform360-source-processing-preflight-v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "official_processing_revision": request["official_processing_revision"],
+              "request": request,
+              "roots": {
+                  "raw": str(raw_root),
+                  "processed": str(processed_root),
+                  "processed_write_probe_passed": True,
+              },
+              "runner": {
+                  "name": os.environ.get("RUNNER_NAME"),
+                  "os": os.environ.get("RUNNER_OS"),
+                  "arch": os.environ.get("RUNNER_ARCH"),
+                  "python": subprocess.check_output(
+                      [os.environ["PREFLIGHT_PYTHON"], "--version"], text=True
+                  ).strip(),
+                  "numpy": np.__version__,
+                  "deform360": importlib.metadata.version("deform360"),
+              },
+              "tools": {
+                  "ffmpeg": command_record("ffmpeg", "-version"),
+                  "ffprobe": command_record("ffprobe", "-version"),
+                  "nvidia_smi": command_record("nvidia-smi", "-L"),
+                  "nvcc": command_record("nvcc", "--version"),
+                  "ninja": command_record("ninja", "--version"),
+                  "cmake": command_record("cmake", "--version"),
+              },
+              "optional_module_visibility_in_isolated_runtime": {
+                  name: importlib.util.find_spec(name) is not None
+                  for name in (
+                      "torch",
+                      "gsplat",
+                      "nerfstudio",
+                      "sam3",
+                      "cotracker",
+                      "pyrender",
+                      "trimesh",
+                      "fpsample",
+                  )
+              },
+              "stages": {},
+              "information_boundary": {
+                  "source_payload_opened": True,
+                  "persistent_processed_write_performed": False,
+                  "target_directory_inspected": False,
+                  "target_numeric_payload_opened": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+          }
+
+          usage = shutil.disk_usage(processed_root)
+          result["storage"] = {
+              "total_bytes": usage.total,
+              "used_bytes": usage.used,
+              "free_bytes": usage.free,
+              "scratch_on_same_device_as_processed": (
+                  smoke_root.stat().st_dev == processed_root.stat().st_dev
+              ),
+          }
+
+          if not metadata_path.is_file():
+              raise SystemExit(f"missing source metadata: {metadata_path}")
+          metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+          sequence = metadata.get("sequences", {}).get(str(episode_index), {})
+          result["source"] = {
+              "object_id": object_id,
+              "episode_index": episode_index,
+              "object_dir": str(object_dir),
+              "metadata_sha256": sha256(metadata_path),
+              "action": sequence.get("action"),
+              "bimanual": sequence.get("bimanual"),
+              "sam_prompt": metadata.get("sam_prompt"),
+          }
+
+          calibration = load_calibration(object_dir)
+          calibrated = [
+              camera for camera in list_cameras(object_dir) if camera in calibration
+          ]
+          requested_count = int(request["smoke_camera_count"])
+          if len(calibrated) < requested_count:
+              raise SystemExit(
+                  f"only {len(calibrated)} calibrated cameras; need {requested_count}"
+              )
+          indices = np.linspace(0, len(calibrated) - 1, requested_count, dtype=int)
+          selected_cameras = [calibrated[int(index)] for index in indices]
+          available_episodes = list_episodes(object_dir, cameras=selected_cameras)
+          result["source"]["calibrated_camera_count"] = len(calibrated)
+          result["source"]["selected_cameras"] = selected_cameras
+          result["source"]["available_episode_count_for_selected_cameras"] = len(
+              available_episodes
+          )
+          if episode_index not in available_episodes:
+              raise SystemExit(
+                  f"source episode {episode_index} missing for selected cameras"
+              )
+
+          try:
+              episode_dir = undistort_episode(
+                  object_dir=object_dir,
+                  output_dir=aligned_root,
+                  episode_index=episode_index,
+                  cameras=selected_cameras,
+                  calib=calibration,
+                  overwrite=True,
+              )
+              camera_rows = []
+              for camera in selected_cameras:
+                  video = episode_dir / camera / "undistorted.mp4"
+                  timestamps = episode_dir / camera / "aligned_timestamps.txt"
+                  camera_rows.append(
+                      {
+                          "camera": camera,
+                          "video_exists": video.is_file(),
+                          "video_size_bytes": video.stat().st_size if video.is_file() else 0,
+                          "timestamps_exists": timestamps.is_file(),
+                          "timestamp_count": len(timestamps.read_text().splitlines())
+                          if timestamps.is_file()
+                          else 0,
+                      }
+                  )
+              result["stages"]["undistort"] = {
+                  "status": "success",
+                  "episode_dir": str(episode_dir),
+                  "cameras": camera_rows,
+              }
+          except Exception as error:
+              result["stages"]["undistort"] = {
+                  "status": "failure",
+                  "error": f"{type(error).__name__}: {error}",
+                  "traceback": traceback.format_exc(limit=12),
+              }
+              episode_dir = None
+
+          if episode_dir is not None:
+              try:
+                  tactile_outputs = process_tactile_episode(
+                      object_dir=object_dir,
+                      aligned_dir=aligned_root,
+                      episode_index=episode_index,
+                      overwrite=True,
+                  )
+                  result["stages"]["tactile"] = {
+                      "status": "success",
+                      "sensor_count": len(tactile_outputs),
+                      "sensors": sorted(tactile_outputs),
+                      "total_bytes": sum(
+                          path.stat().st_size for path in tactile_outputs.values()
+                      ),
+                  }
+              except Exception as error:
+                  result["stages"]["tactile"] = {
+                      "status": "failure",
+                      "error": f"{type(error).__name__}: {error}",
+                      "traceback": traceback.format_exc(limit=12),
+                  }
+
+              try:
+                  robot_output = process_robot_episode(
+                      aligned_root,
+                      episode_index,
+                      bimanual=sequence.get("bimanual", "no") == "yes",
+                      cameras=selected_cameras,
+                      seed=0,
+                      overwrite=True,
+                      plot=False,
+                  )
+                  result["stages"]["robot"] = {
+                      "status": "success",
+                      "output_exists": robot_output.is_file(),
+                      "output_size_bytes": robot_output.stat().st_size,
+                      "output_sha256": sha256(robot_output),
+                  }
+              except Exception as error:
+                  result["stages"]["robot"] = {
+                      "status": "failure",
+                      "error": f"{type(error).__name__}: {error}",
+                      "traceback": traceback.format_exc(limit=12),
+                  }
+
+          undistort_ok = result["stages"].get("undistort", {}).get("status") == "success"
+          tactile_ok = result["stages"].get("tactile", {}).get("status") == "success"
+          robot_ok = result["stages"].get("robot", {}).get("status") == "success"
+          heavy = result["optional_module_visibility_in_isolated_runtime"]
+          heavy_ready = all(
+              bool(heavy[name])
+              for name in ("torch", "gsplat", "nerfstudio", "sam3", "cotracker")
+          )
+          if undistort_ok and tactile_ok and robot_ok and heavy_ready:
+              decision = "full-source-processing-runtime-ready"
+          elif undistort_ok and tactile_ok and robot_ok:
+              decision = "core-source-processing-ready-heavy-runtime-required"
+          elif undistort_ok and tactile_ok:
+              decision = "alignment-and-tactile-ready-robot-camera-scope-needs-expansion"
+          elif undistort_ok:
+              decision = "alignment-ready-downstream-source-processing-blocked"
+          else:
+              decision = "source-processing-smoke-failed"
+          result["decision"] = decision
+          result["next_action"] = {
+              "full-source-processing-runtime-ready": (
+                  "Persist the complete all-camera source episode pipeline, then scale to the "
+                  "remaining seven source episodes."
+              ),
+              "core-source-processing-ready-heavy-runtime-required": (
+                  "Bootstrap the pinned processing extra, SAM3, and CoTracker runtime before "
+                  "persistent all-camera source production."
+              ),
+              "alignment-and-tactile-ready-robot-camera-scope-needs-expansion": (
+                  "Run a source-only all-calibrated-camera robot-pose pilot before model-backed "
+                  "geometry stages."
+              ),
+              "alignment-ready-downstream-source-processing-blocked": (
+                  "Resolve the retained tactile or robot diagnostic before persistent source output."
+              ),
+              "source-processing-smoke-failed": (
+                  "Retain the source technical failure and repair the exact core-processing contract "
+                  "without opening a target episode."
+              ),
+          }[decision]
+          result["claim_boundary"] = (
+              "Source-only technical processing evidence on one public Deform360 episode. "
+              "No persistent processed output, target future, geometry benchmark, physical-belief "
+              "transport, Prob4D competence, Causal4D decision, calibration, safety, or state-of-the-art claim."
+          )
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False)
+          result["result_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+          (evidence_root / "result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          lines = [
+              "# Deform360 source processing preflight",
+              "",
+              f"Decision: `{decision}`",
+              "",
+              f"Source: `{object_id}` episode `{episode_index}`",
+              f"Selected cameras: `{', '.join(selected_cameras)}`",
+              "",
+              "| Stage | Status |",
+              "| --- | --- |",
+          ]
+          for stage in ("undistort", "tactile", "robot"):
+              lines.append(
+                  f"| {stage} | {result['stages'].get(stage, {}).get('status', 'not-run')} |"
+              )
+          lines.extend(
+              [
+                  "",
+                  f"Next action: {result['next_action']}",
+                  "",
+                  "Only the registered source episode was decoded. No target directory or target "
+                  "numeric payload was inspected, and all generated media stayed in runner scratch.",
+                  "",
+              ]
+          )
+          (evidence_root / "report.md").write_text("\n".join(lines), encoding="utf-8")
+          PY
+
+      - name: Verify the target-closed result
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PREFLIGHT_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          boundary = result["information_boundary"]
+          if boundary["target_directory_inspected"] is not False:
+              raise SystemExit("target directory was inspected")
+          if boundary["target_numeric_payload_opened"] is not False:
+              raise SystemExit("target numeric payload was opened")
+          if boundary["target_scoring_performed"] is not False:
+              raise SystemExit("target scoring was performed")
+          if boundary["persistent_processed_write_performed"] is not False:
+              raise SystemExit("persistent processed output was written")
+          if result["official_processing_revision"] != os.environ["OFFICIAL_REVISION"]:
+              raise SystemExit("official processing revision changed")
+          if result["roots"]["raw"] != os.environ["RAW_ROOT"]:
+              raise SystemExit("raw root changed")
+          if result["roots"]["processed"] != os.environ["PROCESSED_ROOT"]:
+              raise SystemExit("processed root changed")
+          print(json.dumps({"decision": result["decision"], "stages": result["stages"]}, indent=2))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/report.md" ]]; then
+            cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "## Source processing preflight did not produce a result" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact preflight evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-processing-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime and source scratch
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${PREFLIGHT_VENV:-}" "${SMOKE_ROOT:-}" "${EVIDENCE_ROOT:-}"
