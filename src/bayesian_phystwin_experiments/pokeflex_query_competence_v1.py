@@ -27,13 +27,34 @@ import numpy.typing as npt
 from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
 
 SCHEMA: Final = "bayesian-phystwin.pokeflex-query-competence"
-SCHEMA_VERSION: Final = 1
-PROTOCOL_ID: Final = "pokeflex-query-competence-retrospective-v1"
+SCHEMA_VERSION: Final = 2
+PROTOCOL_ID: Final = "pokeflex-query-competence-retrospective-v1-1"
 IMPLEMENTATION_MODULE_PATH: Final = (
     "src/bayesian_phystwin_experiments/pokeflex_query_competence_v1.py"
 )
 PARENT_PUBLIC78_PROTOCOL_SHA256: Final = (
+    "4dc9d5d5c45100e09e251ac042fd5fbf7f85b6d45b8dc558d5ce1bce15e9ae23"
+)
+FAILED_PARENT_PUBLIC78_PROTOCOL_SHA256: Final = (
     "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec"
+)
+FAILED_PROTOCOL_ID: Final = "pokeflex-query-competence-retrospective-v1"
+FAILED_PROTOCOL_SHA256: Final = (
+    "853ba1017e8781ddf324b9400df5f4393f2fca390f192e2757ce67a81c3e2354"
+)
+FAILED_PROTOCOL_FILE_SHA256: Final = (
+    "70f3f9bba296582e59e89776225e12e8bd517958a3a0845242eb9fe739574906"
+)
+FAILED_IMPLEMENTATION_COMMIT: Final = "4524852c0235fc736c12ebaa82118cf81e5f19bf"
+FAILED_ARCHIVE_SHA256: Final = (
+    "56342b1a8dee95dbcca9451b8db2227c3544904731a7be8045516530144d2383"
+)
+FAILED_ATTEMPT_FILE_SHA256: Final = (
+    "11d96550036a472035233d9a134566fe55aa19f1ea7a6ffc1470666120f95c05"
+)
+FAILURE_RECEIPT_PATH: Final = (
+    "evidence/pokeflex-query-competence-retrospective-v1/"
+    "source_attempt_failure_receipt.json"
 )
 SPLIT_NAMESPACE: Final = "pokeflex-query-competence-retrospective-v1"
 SOURCE_ARTIFACT_ROLE: Final = (
@@ -183,6 +204,7 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
         "method",
         "gates",
         "forbidden",
+        "replacement",
     }
     if set(protocol) != required:
         raise ValueError("PokeFlex competence protocol fields changed")
@@ -208,6 +230,44 @@ def load_protocol_v1(path: Path) -> dict[str, Any]:
         raise ValueError("PokeFlex source artifact role changed")
     if protocol["forbidden"] != list(FORBIDDEN_BOUNDARIES):
         raise ValueError("PokeFlex forbidden boundaries changed")
+    replacement = protocol["replacement"]
+    receipt_path = Path(__file__).resolve().parents[2] / FAILURE_RECEIPT_PATH
+    expected_replacement = {
+        "kind": "source-independent pre-analysis metadata correction",
+        "failed_protocol_id": FAILED_PROTOCOL_ID,
+        "failed_protocol_sha256": FAILED_PROTOCOL_SHA256,
+        "failed_protocol_file_sha256": FAILED_PROTOCOL_FILE_SHA256,
+        "failed_implementation_commit": FAILED_IMPLEMENTATION_COMMIT,
+        "failed_archive_sha256": FAILED_ARCHIVE_SHA256,
+        "failed_attempt_file_sha256": FAILED_ATTEMPT_FILE_SHA256,
+        "failed_stage": "source",
+        "failed_source_result_written": False,
+        "failed_validation_artifacts_opened": 0,
+        "scientific_quantities_computed": False,
+        "failure_receipt_path": FAILURE_RECEIPT_PATH,
+        "failure_receipt_file_sha256": file_sha256(receipt_path),
+        "correction": {
+            "field": "parent_public78_protocol_sha256",
+            "from": FAILED_PARENT_PUBLIC78_PROTOCOL_SHA256,
+            "to": PARENT_PUBLIC78_PROTOCOL_SHA256,
+        },
+        "invariants": [
+            "artifact inventory",
+            "18/18/42 take split",
+            "split namespace",
+            "candidate and exact fallback",
+            "features and risk fit",
+            "threshold grid",
+            "bootstrap and gates",
+            "claim boundary",
+        ],
+        "authorization": (
+            "exactly one replacement source attempt in a new execution root; "
+            "no further replacement or retry"
+        ),
+    }
+    if replacement != expected_replacement:
+        raise ValueError("PokeFlex replacement authorization changed")
 
     implementation = protocol["implementation"]
     if set(implementation) != {"git_commit", "module_path", "module_sha256"}:
@@ -504,6 +564,7 @@ def load_take_artifact_v1(
     take_id: str,
     expected_sha256: str,
     expected_bytes: int,
+    expected_parent_protocol_sha256: str = PARENT_PUBLIC78_PROTOCOL_SHA256,
 ) -> tuple[PokeFlexFrameV1, ...]:
     if path.name != f"{take_id}.json":
         raise ValueError("PokeFlex artifact path changed")
@@ -515,7 +576,7 @@ def load_take_artifact_v1(
     if artifact.get("retrospective_prediction_role") != SOURCE_ARTIFACT_ROLE:
         raise ValueError("PokeFlex retrospective role changed")
     if artifact.get("public_transfer_protocol_sha256") != (
-        PARENT_PUBLIC78_PROTOCOL_SHA256
+        expected_parent_protocol_sha256
     ):
         raise ValueError("PokeFlex artifact parent protocol changed")
     if artifact.get("take", {}).get("id") != take_id:
@@ -583,6 +644,9 @@ def load_partition_v1(
                 take_id=take_id,
                 expected_sha256=row["sha256"],
                 expected_bytes=int(row["bytes"]),
+                expected_parent_protocol_sha256=protocol[
+                    "parent_public78_protocol_sha256"
+                ],
             )
         )
     return tuple(frames)

@@ -11,6 +11,14 @@ from bayesian_phystwin_experiments.pokeflex_query_competence_v1 import (
     BOOTSTRAP_REPLICATES,
     CLAIM_BOUNDARY,
     CONTEXT_FEATURES,
+    FAILED_ARCHIVE_SHA256,
+    FAILED_ATTEMPT_FILE_SHA256,
+    FAILED_IMPLEMENTATION_COMMIT,
+    FAILED_PARENT_PUBLIC78_PROTOCOL_SHA256,
+    FAILED_PROTOCOL_FILE_SHA256,
+    FAILED_PROTOCOL_ID,
+    FAILED_PROTOCOL_SHA256,
+    FAILURE_RECEIPT_PATH,
     FORBIDDEN_BOUNDARIES,
     HARM_MARGIN_RELATIVE,
     IMPLEMENTATION_MODULE_PATH,
@@ -62,6 +70,17 @@ def main() -> None:
         for path in paths
     }
     split = deterministic_split_v1(inventory)
+    for take_id in split["risk_train"] + split["threshold_select"]:
+        artifact = json.loads((args.artifact_root / f"{take_id}.json").read_text())
+        if artifact.get("public_transfer_protocol_sha256") != (
+            PARENT_PUBLIC78_PROTOCOL_SHA256
+        ):
+            raise ValueError("source metadata parent protocol changed")
+        if artifact.get("retrospective_prediction_role") != SOURCE_ARTIFACT_ROLE:
+            raise ValueError("source metadata retrospective role changed")
+        if artifact.get("future_observation_used") is not False:
+            raise ValueError("source metadata future-observation boundary changed")
+    failure_receipt = repository_root / FAILURE_RECEIPT_PATH
     protocol: dict[str, object] = {
         "schema": SCHEMA,
         "schema_version": SCHEMA_VERSION,
@@ -113,6 +132,40 @@ def main() -> None:
             ),
         },
         "forbidden": list(FORBIDDEN_BOUNDARIES),
+        "replacement": {
+            "kind": "source-independent pre-analysis metadata correction",
+            "failed_protocol_id": FAILED_PROTOCOL_ID,
+            "failed_protocol_sha256": FAILED_PROTOCOL_SHA256,
+            "failed_protocol_file_sha256": FAILED_PROTOCOL_FILE_SHA256,
+            "failed_implementation_commit": FAILED_IMPLEMENTATION_COMMIT,
+            "failed_archive_sha256": FAILED_ARCHIVE_SHA256,
+            "failed_attempt_file_sha256": FAILED_ATTEMPT_FILE_SHA256,
+            "failed_stage": "source",
+            "failed_source_result_written": False,
+            "failed_validation_artifacts_opened": 0,
+            "scientific_quantities_computed": False,
+            "failure_receipt_path": FAILURE_RECEIPT_PATH,
+            "failure_receipt_file_sha256": file_sha256(failure_receipt),
+            "correction": {
+                "field": "parent_public78_protocol_sha256",
+                "from": FAILED_PARENT_PUBLIC78_PROTOCOL_SHA256,
+                "to": PARENT_PUBLIC78_PROTOCOL_SHA256,
+            },
+            "invariants": [
+                "artifact inventory",
+                "18/18/42 take split",
+                "split namespace",
+                "candidate and exact fallback",
+                "features and risk fit",
+                "threshold grid",
+                "bootstrap and gates",
+                "claim boundary",
+            ],
+            "authorization": (
+                "exactly one replacement source attempt in a new execution root; "
+                "no further replacement or retry"
+            ),
+        },
     }
     protocol["protocol_sha256"] = _canonical_json_sha256(protocol)
     rendered = json.dumps(protocol, indent=2, sort_keys=True) + "\n"

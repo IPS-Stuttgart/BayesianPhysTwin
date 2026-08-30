@@ -1,0 +1,43 @@
+{
+  "attempt_ledger_file_sha256": "11d96550036a472035233d9a134566fe55aa19f1ea7a6ffc1470666120f95c05",
+  "attempt_ledger_path": "/home/florianpfaff/source-only/pokeflex-query-competence-retrospective-v1/source-attempt-4524852c.json",
+  "attempt_started_at_utc_from_ledger_mtime": "2026-08-30T09:21:26.852636377Z",
+  "error": {
+    "callsite": "load_take_artifact_v1: public_transfer_protocol_sha256 check",
+    "exception": "ValueError",
+    "message": "PokeFlex artifact parent protocol changed"
+  },
+  "failed_archive_sha256": "56342b1a8dee95dbcca9451b8db2227c3544904731a7be8045516530144d2383",
+  "failed_implementation_commit": "4524852c0235fc736c12ebaa82118cf81e5f19bf",
+  "failed_protocol_file_sha256": "70f3f9bba296582e59e89776225e12e8bd517958a3a0845242eb9fe739574906",
+  "failed_protocol_sha256": "853ba1017e8781ddf324b9400df5f4393f2fca390f192e2757ce67a81c3e2354",
+  "failure_boundary": {
+    "risk_or_policy_model_fit_started": false,
+    "scientific_target_or_update_fields_accessed_by_runner": false,
+    "source_artifact_json_files_parsed": 1,
+    "source_result_written": false,
+    "threshold_selection_started": false,
+    "validation_artifact_files_read": 0,
+    "validation_attempt_consumed": false,
+    "validation_result_written": false
+  },
+  "metadata_diagnosis": {
+    "actual_parent_protocol_sha256": "4dc9d5d5c45100e09e251ac042fd5fbf7f85b6d45b8dc558d5ce1bce15e9ae23",
+    "diagnostic_source": "top-level metadata only from the already-public committed source artifact",
+    "expected_parent_protocol_sha256": "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec",
+    "reason": "the failed protocol bound the pre-amendment parent; retained artifacts bind the later exact-fallback parent"
+  },
+  "replacement_policy": {
+    "allowed_change": "parent_public78_protocol_sha256 only",
+    "new_execution_root_required": true,
+    "one_replacement_attempt_maximum": 1,
+    "preserve_candidate_and_fallback": true,
+    "preserve_gates": true,
+    "preserve_method": true,
+    "preserve_split": true,
+    "preserve_threshold_grid": true
+  },
+  "schema": "bayesian-phystwin.pokeflex-query-competence-source-failure-receipt",
+  "schema_version": 1,
+  "stage": "source"
+}

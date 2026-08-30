@@ -1,4 +1,19 @@
-# PokeFlex query-competence validation v1
+# PokeFlex query-competence validation v1.1
+
+## Retained pre-analysis failure
+
+The original v1 source attempt is permanently consumed and retained. It stopped
+at the first source artifact's top-level parent-protocol check, before accessing
+target/update fields, fitting either risk model, selecting a threshold, writing a
+source result, or opening any validation artifact. The protocol had bound the
+pre-amendment public78 parent (`f108...`), while the retained artifacts bind the
+later exact-fallback amendment (`4dc9...`).
+
+Version 1.1 corrects only that metadata digest. It preserves the artifact
+inventory, split namespace and exact 18/18/42 roster, candidate, fallback,
+features, estimator, threshold grid, bootstrap, gates, and claim boundary. It
+uses a new write-once execution root and authorizes exactly one replacement
+source attempt. The compact failure receipt is committed with the protocol.
 
 ## Scientific role
 
