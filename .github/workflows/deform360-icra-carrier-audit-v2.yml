@@ -1,0 +1,114 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 ICRA carrier audit v2
+
+on:
+  push:
+    branches: [science/deform360-icra-development-v2]
+    paths:
+      - ".github/requests/deform360-icra-carrier-audit-v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-icra-carrier-audit-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL_PATH: protocols/deform360_gpuserver4090_real_evaluation_v1.json
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  audit:
+    name: Target-blind carrier audit / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact audit revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Admit the requested runner and mount
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_OS}" = Linux
+          test "${RUNNER_ARCH}" = X64
+          test -d "${DATASET_ROOT}"
+          test -r "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          python3 --version
+          python3 -m py_compile scripts/science/audit_deform360_icra_carriers_v2.py
+
+      - name: Audit metadata and carrier availability without numeric decoding
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="${RUNNER_TEMP}/deform360-icra-carrier-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output}"
+          mkdir -p -- "${output}"
+          echo "OUTPUT_ROOT=${output}" >> "${GITHUB_ENV}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "dataset_root=${DATASET_ROOT}"
+            python3 --version
+            uname -a
+            if command -v nvidia-smi >/dev/null; then
+              nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total --format=csv,noheader
+            fi
+          } | tee "${output}/environment.txt"
+          python3 scripts/science/audit_deform360_icra_carriers_v2.py \
+            --data-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output-json "${output}/audit.json" \
+            --output-report "${output}/report.md" \
+            | tee "${output}/console.log"
+          cat "${output}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify closed information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["OUTPUT_ROOT"]) / "audit.json").read_text())
+          boundary = result["information_boundary"]
+          for key in (
+              "camera_media_decoded",
+              "tactile_numeric_payloads_opened",
+              "robot_numeric_payloads_opened",
+              "geometry_or_trajectory_payloads_opened",
+              "target_outcomes_scored",
+              "reserved_object_payloads_opened",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"information boundary changed: {key}")
+          if result["summary"]["present_object_count"] < 1:
+              raise SystemExit("no development object is present")
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Upload compact carrier audit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-icra-carrier-audit-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 30
