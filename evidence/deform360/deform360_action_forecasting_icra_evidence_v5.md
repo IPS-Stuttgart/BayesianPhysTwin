@@ -37,6 +37,7 @@ The earlier four-object reserved cohort and the new 92-object cohort contain 96 
 - Confirmation run: `33335779766`; artifact: `9738998271`; artifact SHA-256: `e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948`.
 - Confirmation-result SHA-256: `26984c5ecc59ef8b10a8efe94c86f5ea55fd88111913c4b46ae06704410c6c0e`.
 - The first launch, run `33335694494`, stopped in environment validation because system Python lacked NumPy; the numeric evaluation step was skipped. The successful retry changed only the isolated NumPy runtime bootstrap.
+- The retained Python wrappers are Ruff-formatted and pass `py_compile`; formatting changed no protocol, evidence value, or scientific result.
 
 ## Important boundary
 
