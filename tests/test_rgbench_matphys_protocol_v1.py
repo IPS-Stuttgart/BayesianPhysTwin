@@ -18,8 +18,7 @@ from bayesian_phystwin.rgbench_matphys_protocol_v1 import (
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "protocols/locks/rgbench_matphys_selective_risk_v1.json"
 AMENDMENT = (
-    ROOT
-    / "protocols/amendments/rgbench_matphys_selective_risk_v1_preaccess.json"
+    ROOT / "protocols/amendments/rgbench_matphys_selective_risk_v1_preaccess.json"
 )
 
 
@@ -149,7 +148,9 @@ def test_missing_action_or_cross_split_replacement_is_rejected(tmp_path: Path) -
         load_rgbench_matphys_protocol_v1(_write(tmp_path, payload))
 
 
-def test_preaccess_amendment_moves_every_previously_registered_garment_to_source() -> None:
+def test_preaccess_amendment_moves_every_previously_registered_garment_to_source() -> (
+    None
+):
     amended = load_rgbench_matphys_preaccess_amendment_v1(PROTOCOL, AMENDMENT)
 
     assert len(amended.source_cells) == 21
@@ -159,8 +160,13 @@ def test_preaccess_amendment_moves_every_previously_registered_garment_to_source
         "khaki_blazer",
     }
     assert amended.target_execution_authorized is False
-    assert amended.amendment["information_boundary"]["target_payload_read_allowed"] is False
-    assert amended.amendment["prior_exposure_audit"]["target_payload_cache_found"] is False
+    assert (
+        amended.amendment["information_boundary"]["target_payload_read_allowed"]
+        is False
+    )
+    assert (
+        amended.amendment["prior_exposure_audit"]["target_payload_cache_found"] is False
+    )
 
 
 def test_preaccess_amendment_is_content_addressed_and_fails_closed(

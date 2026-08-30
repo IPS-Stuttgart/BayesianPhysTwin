@@ -19,9 +19,7 @@ from ._portable_contracts import (
 
 PROTOCOL_SCHEMA: Final = "bayesian-phystwin.rgbench-matphys-cohort-boundary"
 PROTOCOL_VERSION: Final = 1
-AMENDMENT_SCHEMA: Final = (
-    "bayesian-phystwin.rgbench-matphys-preaccess-cohort-amendment"
-)
+AMENDMENT_SCHEMA: Final = "bayesian-phystwin.rgbench-matphys-preaccess-cohort-amendment"
 AMENDMENT_VERSION: Final = 1
 BASE_POLICY_ID: Final = (
     "13abbe99729a82d58d2a50f3a282abc1ce64b0e068916f39e6f40b2451c45697"
@@ -247,7 +245,7 @@ def _exact_string_list(value: object, *, name: str) -> tuple[str, ...]:
 
 
 def _canonical_relative_path(value: object, *, name: str) -> str:
-    text = nonempty_string(value, name=name)
+    text: str = nonempty_string(value, name=name)
     path = PurePosixPath(text)
     _require(not path.is_absolute(), f"{name} must be relative")
     _require("\\" not in text, f"{name} must use POSIX separators")
@@ -425,8 +423,7 @@ def load_rgbench_matphys_protocol_v1(
         "cell selection salt changed",
     )
     _require(
-        selection["assignment_method"]
-        == "metadata-only-stratified-manifold-status-v1",
+        selection["assignment_method"] == "metadata-only-stratified-manifold-status-v1",
         "garment assignment changed",
     )
     _require(
@@ -484,9 +481,7 @@ def load_rgbench_matphys_protocol_v1(
         }
     )
     _require(declared_roster == computed_roster, "cell roster digest does not match")
-    _require(
-        declared_roster == FROZEN_CELL_ROSTER_SHA256, "frozen cell roster changed"
-    )
+    _require(declared_roster == FROZEN_CELL_ROSTER_SHA256, "frozen cell roster changed")
 
     study = _mapping(value["study"], name="study")
     require_exact_fields(study, expected=_STUDY_FIELDS, name="study")
@@ -497,7 +492,9 @@ def load_rgbench_matphys_protocol_v1(
     _require(source_gate == _EXPECTED_SOURCE_GATE, "source gate changed")
 
     boundary = _mapping(value["information_boundary"], name="information_boundary")
-    require_exact_fields(boundary, expected=_BOUNDARY_FIELDS, name="information_boundary")
+    require_exact_fields(
+        boundary, expected=_BOUNDARY_FIELDS, name="information_boundary"
+    )
     _require(boundary == _EXPECTED_BOUNDARY, "information boundary changed")
     return RGBenchMatPhysProtocolV1(
         value=value,
@@ -568,9 +565,7 @@ def load_rgbench_matphys_preaccess_amendment_v1(
     prior_garments = _exact_string_list(
         audit["registered_garments"], name="registered_garments"
     )
-    expected_prior = tuple(
-        sorted(SOURCE_MANIFOLD_GARMENTS + TARGET_MANIFOLD_GARMENTS)
-    )
+    expected_prior = tuple(sorted(SOURCE_MANIFOLD_GARMENTS + TARGET_MANIFOLD_GARMENTS))
     _require(prior_garments == expected_prior, "prior garment roster changed")
     _require(audit["registered_case_count"] == 63, "prior case count changed")
     _require(

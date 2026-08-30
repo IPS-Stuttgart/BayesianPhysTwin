@@ -140,6 +140,13 @@ distribution regular-member ratchet from 1,370 to 1,372. This allowance only
 packages the registered inventory and prediction-barrier implementation; it is
 not source-gate, confirmation, calibration, or state-of-the-art evidence.
 
+The query-conditional competence study adds four NumPy-only policy and protocol
+modules without changing the exported public API, console command, optional
+dependency surface, or compressed-size ceiling. The wheel member ratchet is
+therefore raised narrowly from 614 to 618. These members define certificate,
+cohort, and source-custody contracts; they do not package datasets, simulator
+runtimes, physical outcomes, or a competence result.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
