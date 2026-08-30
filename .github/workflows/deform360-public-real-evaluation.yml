@@ -1,0 +1,191 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 public real evaluation
+
+on:
+  push:
+    branches:
+      - science/deform360-gpuserver4090-real-eval-v1
+    paths:
+      - .github/workflows/deform360-public-real-evaluation.yml
+      - protocols/deform360_gpuserver4090_real_evaluation_v1.json
+      - scripts/science/run_deform360_gpuserver4090_real_evaluation_v1.py
+      - tests/test_deform360_gpuserver4090_real_evaluation_v1.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deform360-public-real-evaluation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL: protocols/deform360_gpuserver4090_real_evaluation_v1.json
+
+jobs:
+  contracts:
+    name: Deform360 real-evaluation contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install isolated contract dependencies
+        run: python -m pip install numpy==1.26.4 pytest==8.4.2
+      - name: Compile and run leakage contracts
+        run: |
+          python -m py_compile scripts/science/run_deform360_gpuserver4090_real_evaluation_v1.py
+          python -m pytest -q tests/test_deform360_gpuserver4090_real_evaluation_v1.py
+      - name: Verify frozen runner and information boundary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          protocol = json.loads(Path("protocols/deform360_gpuserver4090_real_evaluation_v1.json").read_text())
+          assert protocol["dataset"]["root"] == "/mnt/seagate10tb/florianpfaff/datasets/deform360"
+          assert protocol["runner"]["required_labels"] == ["self-hosted", "Linux", "X64", "gpuserver4090"]
+          assert protocol["information_boundary"]["reserved_objects_opened"] is False
+          assert protocol["information_boundary"]["dataset_mutation_allowed"] is False
+          assert protocol["information_boundary"]["raw_data_upload"] is False
+          assert protocol["fresh_confirmation_authorized"] is False
+          assert protocol["paper_claim_authorized"] is False
+          assert protocol["replacement_allowed"] is False
+          PY
+
+  real-evaluation:
+    name: Read-only Deform360 scoring / gpuserver4090
+    needs: contracts
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact revision with result-retention credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Prepare isolated read-only evaluation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/deform360-gpuserver4090-real-eval-v1
+          test -d "$DATASET_ROOT"
+          test -r "$DATASET_ROOT"
+          echo "Runner: $RUNNER_NAME; required routing label: gpuserver4090"
+          root="$RUNNER_TEMP/deform360-real-evaluation-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          venv="$root/venv"
+          output="$root/output"
+          rm -rf "$root"
+          mkdir -p "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install numpy==1.26.4
+          {
+            echo "DEFORM360_RUN_ROOT=$root"
+            echo "DEFORM360_VENV=$venv"
+            echo "DEFORM360_PYTHON=$venv/bin/python"
+            echo "DEFORM360_OUTPUT=$output"
+          } >> "$GITHUB_ENV"
+      - name: Execute source-frozen real-data evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$DEFORM360_PYTHON" scripts/science/run_deform360_gpuserver4090_real_evaluation_v1.py \
+            --protocol "$PROTOCOL" \
+            --dataset-root "$DATASET_ROOT" \
+            --output-json "$DEFORM360_OUTPUT/result.json" \
+            --output-report "$DEFORM360_OUTPUT/report.md"
+      - name: Verify complete compact result and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$DEFORM360_PYTHON" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["DEFORM360_OUTPUT"]) / "result.json").read_text())
+          assert result["status"] == "complete"
+          assert result["dataset_root"] == "/mnt/seagate10tb/florianpfaff/datasets/deform360"
+          assert result["summary"]["primary_object_count"] >= 1
+          assert result["summary"]["completed_group_count"] >= 1
+          assert result["dataset_mutated"] is False
+          assert result["raw_data_uploaded"] is False
+          assert result["fresh_confirmation_authorized"] is False
+          assert result["paper_claim_authorized"] is False
+          print(json.dumps(result["summary"], indent=2, sort_keys=True))
+          PY
+          {
+            echo "repository=$GITHUB_REPOSITORY"
+            echo "revision=$GITHUB_SHA"
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "run_attempt=$GITHUB_RUN_ATTEMPT"
+            echo "runner_name=$RUNNER_NAME"
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            "$DEFORM360_PYTHON" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total --format=csv,noheader || true
+            sha256sum "$PROTOCOL" \
+              scripts/science/run_deform360_gpuserver4090_real_evaluation_v1.py \
+              "$DEFORM360_OUTPUT/result.json" \
+              "$DEFORM360_OUTPUT/report.md"
+          } > "$DEFORM360_OUTPUT/environment.txt"
+      - name: Publish report in the Actions summary
+        shell: bash
+        run: cat "$DEFORM360_OUTPUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload compact evidence before repository retention
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-gpuserver4090-real-evaluation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DEFORM360_OUTPUT }}/result.json
+            ${{ env.DEFORM360_OUTPUT }}/report.md
+            ${{ env.DEFORM360_OUTPUT }}/environment.txt
+          if-no-files-found: error
+          retention-days: 90
+      - name: Retain compact result and retire this branch launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/deform360 docs
+          cp "$DEFORM360_OUTPUT/result.json" \
+            evidence/deform360/deform360_gpuserver4090_real_evaluation_v1.json
+          cp "$DEFORM360_OUTPUT/environment.txt" \
+            evidence/deform360/deform360_gpuserver4090_real_evaluation_v1_environment.txt
+          cp "$DEFORM360_OUTPUT/report.md" \
+            docs/deform360_gpuserver4090_real_evaluation_v1.md
+          rm .github/workflows/deform360-public-real-evaluation.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Retain Deform360 gpuserver4090 real-data evaluation"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+      - name: Remove isolated environment
+        if: always()
+        shell: bash
+        run: |
+          if test -n "${DEFORM360_RUN_ROOT:-}"; then rm -rf "$DEFORM360_RUN_ROOT"; fi
