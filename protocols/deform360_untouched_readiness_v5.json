@@ -1,0 +1,55 @@
+{
+  "schema": "bayesian-phystwin/deform360-untouched-readiness-protocol-v5",
+  "schema_version": 5,
+  "protocol_id": "deform360-untouched-object-readiness-v5",
+  "status": "frozen-before-untouched-numeric-payload-access",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "numeric_payload_opened_object_ids": [
+    "001-rope",
+    "002-rope-silk",
+    "003-cable",
+    "008-pink-cloth",
+    "026-sock-cloth",
+    "031-cotton-cloth",
+    "036-napkin-cloth",
+    "038-black-bag-cloth",
+    "038-mat-cloth",
+    "053-squeezer",
+    "058-roll-napkin",
+    "063-flower",
+    "072-cotton-clohesline",
+    "081-stripe-rope",
+    "066-glove-half-black-cloth",
+    "075-leather",
+    "080-wool",
+    "091-net-cloth"
+  ],
+  "prior_evidence_binding": {
+    "development_run_id": 33330455808,
+    "development_artifact_id": 9737547119,
+    "development_source_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "reserved_readiness_run_id": 33330710592,
+    "reserved_confirmation_run_id": 33331368970,
+    "reserved_confirmation_artifact_id": 9737749188
+  },
+  "selection": {
+    "minimum_complete_episodes_per_object": 4,
+    "include_every_eligible_object": true,
+    "target_episode_rule": "highest carrier-complete episode id determined from metadata and file identities",
+    "source_episode_rule": "all other carrier-complete episodes of the same object",
+    "replacement_allowed": false,
+    "outcome_dependent_filtering_allowed": false
+  },
+  "information_boundary": {
+    "metadata_json_may_open": true,
+    "file_names_and_sizes_may_open": true,
+    "robot_numeric_payloads_may_open": false,
+    "tactile_numeric_payloads_may_open": false,
+    "target_outcomes_may_open": false,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false
+  },
+  "confirmation_authorized": false,
+  "paper_claim_authorized": false,
+  "claim_boundary": "This audit may identify every carrier-complete object not numerically opened by the v3/v4 experiment. It does not score outcomes or authorize a paper claim. A subsequent exact-method protocol must bind this audit before any newly eligible numeric payload is opened."
+}
