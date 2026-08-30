@@ -1,0 +1,114 @@
+{
+  "schema": "dlolab-slingshot-policy-certificate-source-v3-result",
+  "status": "retained_calibration_world_qa_failure",
+  "source_revision": "ecde87f3abb697de26307f03f150a6b2ebf00a8b",
+  "question": "Can the frozen posterior-aware Slingshot policy certificate be evaluated on a complete fresh denominator using one-world/one-action native processes?",
+  "parent_v2": {
+    "summary_artifact_id": "e00de6c8b7a82fa13ee1076e05e52ac1ea472de6a042e395a8f3490e8703c016",
+    "status": "retained_evaluation_native_qa_failure",
+    "retried": false,
+    "partial_score_used": false
+  },
+  "independent_native_qualification": {
+    "summary_artifact_id": "14a33a58c5f37992da517c4114eb959b6a174fc1101a992aa5ae668a9b3cd096",
+    "ordinary_processes": 64,
+    "qualified_worlds": 8,
+    "passed": true
+  },
+  "stage": {
+    "terminal_stage": "calibration-world-qualification",
+    "calibration_prefix_claims": 16,
+    "ordinary_calibration_prefixes": 16,
+    "calibration_future_action_claims": 1024,
+    "ordinary_calibration_future_actions": 1024,
+    "calibration_action_failures": 0,
+    "world_qualifications_published_before_failure": 99,
+    "calibration_sealed": false,
+    "evaluation_prefixes": 0,
+    "evaluation_futures": 0,
+    "policy_value_scored": false
+  },
+  "registered_failure": {
+    "world_index": 99,
+    "failed_check": "duplicate_positions",
+    "duplicate_position_error_m": 0.0008642844535515504,
+    "duplicate_position_limit_m": 0.0005,
+    "duplicate_reward_error": 0.0007033348083496094,
+    "duplicate_reward_limit": 0.001,
+    "common_prefix_error_m": 4.9970444448987905e-14,
+    "other_checks_passed": [
+      "all_eight_fresh_processes",
+      "exact_world_realization",
+      "common_prefix",
+      "duplicate_rewards",
+      "fixed_endpoints",
+      "sealed_prefix_replay"
+    ]
+  },
+  "post_terminal_read_only_diagnostic": {
+    "worlds_rederived": 128,
+    "passing_worlds": 127,
+    "failed_worlds": 1,
+    "failed_world_indices": [99],
+    "maximum_common_prefix_error_m": 9.787309851461146e-14,
+    "maximum_duplicate_position_error_m": 0.0008642844535515504,
+    "maximum_duplicate_reward_error": 0.0007033348083496094,
+    "position_error_quantiles_50_90_95_99_m": [
+      3.642040462617513e-10,
+      1.1158257353272199e-08,
+      1.615699934509606e-07,
+      1.5060050284890789e-05
+    ],
+    "reward_error_quantiles_50_90_95_99": [
+      0.0,
+      0.0,
+      0.0,
+      2.8228759765625076e-06
+    ],
+    "failure_localization": {
+      "sphere_max_error_m": 0.0008642844535515504,
+      "sphere_max_error_frame": 866,
+      "sphere_first_above_0_5mm_frame": 816,
+      "cube_max_error_m": 0.0007667280972757373,
+      "cube_max_error_frame": 843,
+      "cube_first_above_0_5mm_frame": 791,
+      "rod_max_error_m": 2.295546939166948e-09,
+      "gripper_max_error_m": 1.9326207301162412e-13,
+      "interpretation": "rare late rigid-contact bifurcation after an effectively identical prefix and command"
+    },
+    "used_to_rescore_v3": false,
+    "used_to_relax_v3_gate": false
+  },
+  "identities": {
+    "lock_id": "7358abf5c1ed4b169a53e0fbfe3409388eb168b358c382eb845922c14a73ce7d",
+    "attempt_id": "bbfb589ebe197f161c4313338e8522fb73296280f33d1e9d3acd077737905d29",
+    "calibration_candidate_seal_id": "372503061ee4700c4bdbda5b45783108f92756778ea7ad4a3b6908737e92965d",
+    "run_failure_id": "07f52278e5c24b9eb92c909e657825216617d66047853b2b6792c22b5033c85f"
+  },
+  "key_file_sha256": {
+    "lock.json": "3a77324959c2b28854130a5d97100b10c16129f4bf422489bc28e0175ac6f36e",
+    "calibration-candidates/seal.json": "1d7186ed66d28fae7838595deb32df6878bab36822844defc385364486dbae82",
+    "failure.json": "59b470d0427d234f7465257b5fc4c6a9d61e333c2605bb2366ab22840ded250d",
+    "attempt.json": "d32449daeafab791a86819ee8a07cfde83aea2aaf7ccc969a0d13899d923677e"
+  },
+  "raw_tree": {
+    "root": "/home/fpfaff/source-only/dlolab-slingshot-policy-certificate-source-v3",
+    "file_count": 4263,
+    "file_byte_count": 492570458,
+    "canonical_tree_sha256": "7934011891305eecb28ec6597a3b09512fc0fe4d1b18455000ca037ba5393e84"
+  },
+  "complete_128_world_calibration_qa": false,
+  "complete_288_world_evaluation_scored": false,
+  "source_gate_passed": false,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "partial_score_authorized": false,
+  "v3_roster_closed": true,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "real_robot_or_physical_safety_claim": false,
+  "artifact_id": "89e7a37827fadd0e3a25d81fd67a7a1685447e2240d1f045bb20b5fc709a26d4"
+}
