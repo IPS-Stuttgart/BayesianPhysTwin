@@ -10,6 +10,7 @@ import json
 import os
 import platform
 import subprocess
+import sys
 import time
 import traceback
 from pathlib import Path
@@ -255,6 +256,13 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         "PCD frame spacing exceeds the technical smoke tolerance",
     )
 
+    runtime = _mapping(plan.get("runtime"), name="runtime")
+    expected_python = Path(runtime["python_path"]).resolve(strict=True)
+    _require(
+        Path(sys.executable).resolve(strict=True) == expected_python,
+        "technical Python executable changed",
+    )
+
     import torch
     import warp as wp
 
@@ -264,7 +272,6 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
 
     runtime_identity = _runtime_identity(torch)
     _require(runtime_identity == EXPECTED_RUNTIME, "technical runtime changed")
-    runtime = _mapping(plan.get("runtime"), name="runtime")
     _require(
         runtime.get("expected_versions") == EXPECTED_RUNTIME, "plan runtime changed"
     )
