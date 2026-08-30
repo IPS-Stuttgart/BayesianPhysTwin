@@ -1,0 +1,53 @@
+# workflow-lifecycle: one-shot development maintenance
+# workflow-owner: IPS-Stuttgart maintainers
+name: Format Tracking Cloth table-query source v3
+
+on:
+  push:
+    branches: [science/tracking-cloth-table-query-source-v3]
+    paths:
+      - .github/requests/format-tracking-cloth-table-query-source-v3.json
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/tracking-cloth-table-query-source-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Apply exact Ruff formatter output
+        run: |
+          python -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt \
+            ruff
+          python -m ruff check --fix \
+            experiments/tracking_cloth_deformation_v1/table_query_source_v3.py
+          python -m ruff format \
+            experiments/tracking_cloth_deformation_v1/table_query_source_v3.py
+          python -m \
+            experiments.tracking_cloth_deformation_v1.table_query_source_v3 \
+            --self-test
+      - name: Commit exact formatter output
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          if git diff --quiet; then
+            echo "No formatter changes required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            experiments/tracking_cloth_deformation_v1/table_query_source_v3.py
+          git commit -m "Format table-query source feasibility v3"
+          git push origin HEAD:science/tracking-cloth-table-query-source-v3
