@@ -29,112 +29,99 @@ jobs:
           from pathlib import Path
 
           path = Path("scripts/science/materialize_deform360_tcn_carriers_v6.py")
-          text = path.read_text()
-          old = '''    plans: list[DownloadPlan] = []
-              tactile_counts: dict[str, int] = {}
-              for directory in tactile_directories:
-                  children = list_tree(RAW_REPOSITORY, RAW_REVISION, directory)
-                  selected = sorted(
-                      (
-                          item
-                          for item in children
-                          if item.get("type") == "file"
-                          and str(item.get("path", "")).lower().endswith(".npy")
-                      ),
-                      key=lambda item: str(item.get("path")),
-                  )
-                  nonmedian = [
+          text = path.read_text(encoding="utf-8")
+          start_marker = (
+              "    plans: list[DownloadPlan] = []\n"
+              "    tactile_counts: dict[str, int] = {}\n"
+          )
+          end_marker = "\n    for episode_id in episodes:"
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          replacement = '''    plans: list[DownloadPlan] = []
+          tactile_counts: dict[str, int] = {}
+          ignored_tactile_counts: dict[str, int] = {}
+          eligible_tactile_directories: list[str] = []
+          for directory in tactile_directories:
+              children = list_tree(RAW_REPOSITORY, RAW_REVISION, directory)
+              selected = sorted(
+                  (
                       item
-                      for item in selected
-                      if not Path(str(item.get("path"))).name.lower().startswith("median_")
-                  ]
-                  if len(nonmedian) != len(episodes):
-                      raise MaterializationError(
-                          f"tactile episode count mismatch for {object_id}:{directory}: "
-                          f"{len(nonmedian)} != {len(episodes)}"
+                      for item in children
+                      if item.get("type") == "file"
+                      and str(item.get("path", "")).lower().endswith(".npy")
+                  ),
+                  key=lambda item: str(item.get("path")),
+              )
+              nonmedian = [
+                  item
+                  for item in selected
+                  if not Path(str(item.get("path"))).name.lower().startswith("median_")
+              ]
+              directory_name = Path(directory).name
+              if len(nonmedian) != len(episodes):
+                  # Match discover_object(): directories with extra or missing
+                  # non-median tactile files are ignored rather than fatal.
+                  ignored_tactile_counts[directory_name] = len(nonmedian)
+                  continue
+              eligible_tactile_directories.append(directory)
+              tactile_counts[directory_name] = len(nonmedian)
+              for item in selected:
+                  source = str(item["path"])
+                  destination = root / "raw-repository" / source
+                  plans.append(
+                      DownloadPlan(
+                          repository=RAW_REPOSITORY,
+                          revision=RAW_REVISION,
+                          source_candidates=(source,),
+                          destination=destination,
+                          kind="tactile",
+                          expected_size=int(item.get("size") or 0) or None,
                       )
-                  tactile_counts[Path(directory).name] = len(nonmedian)
-                  for item in selected:
-                      source = str(item["path"])
-                      destination = root / "raw-repository" / source
-                      plans.append(
-                          DownloadPlan(
-                              repository=RAW_REPOSITORY,
-                              revision=RAW_REVISION,
-                              source_candidates=(source,),
-                              destination=destination,
-                              kind="tactile",
-                              expected_size=int(item.get("size") or 0) or None,
-                          )
-                      )
-          '''
-          old = "\n".join(line[14:] if line.startswith("              ") else line for line in old.splitlines()) + "\n"
-          new = '''    plans: list[DownloadPlan] = []
-              tactile_counts: dict[str, int] = {}
-              ignored_tactile_counts: dict[str, int] = {}
-              eligible_tactile_directories: list[str] = []
-              for directory in tactile_directories:
-                  children = list_tree(RAW_REPOSITORY, RAW_REVISION, directory)
-                  selected = sorted(
-                      (
-                          item
-                          for item in children
-                          if item.get("type") == "file"
-                          and str(item.get("path", "")).lower().endswith(".npy")
-                      ),
-                      key=lambda item: str(item.get("path")),
                   )
-                  nonmedian = [
-                      item
-                      for item in selected
-                      if not Path(str(item.get("path"))).name.lower().startswith("median_")
-                  ]
-                  directory_name = Path(directory).name
-                  if len(nonmedian) != len(episodes):
-                      # Match the frozen evaluator: a tactile directory is ignored unless
-                      # its non-median file count exactly equals the metadata episode count.
-                      ignored_tactile_counts[directory_name] = len(nonmedian)
-                      continue
-                  eligible_tactile_directories.append(directory)
-                  tactile_counts[directory_name] = len(nonmedian)
-                  for item in selected:
-                      source = str(item["path"])
-                      destination = root / "raw-repository" / source
-                      plans.append(
-                          DownloadPlan(
-                              repository=RAW_REPOSITORY,
-                              revision=RAW_REVISION,
-                              source_candidates=(source,),
-                              destination=destination,
-                              kind="tactile",
-                              expected_size=int(item.get("size") or 0) or None,
-                          )
-                      )
-              if len(eligible_tactile_directories) < 2:
-                  raise MaterializationError(
-                      f"too few evaluator-eligible tactile directories for {object_id}: "
-                      f"eligible={eligible_tactile_directories}, ignored={ignored_tactile_counts}"
-                  )
+          if len(eligible_tactile_directories) < 2:
+              raise MaterializationError(
+                  f"too few evaluator-eligible tactile directories for {object_id}: "
+                  f"eligible={eligible_tactile_directories}, "
+                  f"ignored={ignored_tactile_counts}"
+              )
           '''
-          new = "\n".join(line[14:] if line.startswith("              ") else line for line in new.splitlines()) + "\n"
-          if text.count(old) != 1:
-              raise SystemExit(f"expected one tactile block, found {text.count(old)}")
-          text = text.replace(old, new, 1)
-          old_inventory = '''        "tactile_directories": tactile_directories,
-          "tactile_episode_counts": tactile_counts,
-          '''
-          old_inventory = "\n".join(line[10:] if line.startswith("          ") else line for line in old_inventory.splitlines()) + "\n"
-          new_inventory = '''        "tactile_directories": tactile_directories,
-          "eligible_tactile_directories": eligible_tactile_directories,
-          "tactile_episode_counts": tactile_counts,
-          "ignored_tactile_episode_counts": ignored_tactile_counts,
-          '''
-          new_inventory = "\n".join(line[10:] if line.startswith("          ") else line for line in new_inventory.splitlines()) + "\n"
+          replacement = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in replacement.splitlines()
+          )
+          text = text[:start] + replacement + text[end:]
+
+          old_inventory = (
+              '        "tactile_directories": tactile_directories,\n'
+              '        "tactile_episode_counts": tactile_counts,\n'
+          )
+          new_inventory = (
+              '        "tactile_directories": tactile_directories,\n'
+              '        "eligible_tactile_directories": eligible_tactile_directories,\n'
+              '        "tactile_episode_counts": tactile_counts,\n'
+              '        "ignored_tactile_episode_counts": ignored_tactile_counts,\n'
+          )
           if text.count(old_inventory) != 1:
-              raise SystemExit(f"expected one inventory block, found {text.count(old_inventory)}")
-          path.write_text(text.replace(old_inventory, new_inventory, 1))
+              raise SystemExit(
+                  f"expected one inventory block, found {text.count(old_inventory)}"
+              )
+          text = text.replace(old_inventory, new_inventory, 1)
+          path.write_text(text, encoding="utf-8")
           PY
           python -m py_compile scripts/science/materialize_deform360_tcn_carriers_v6.py
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path("scripts/science/materialize_deform360_tcn_carriers_v6.py").read_text()
+          required = (
+              "ignored_tactile_counts[directory_name] = len(nonmedian)",
+              "eligible_tactile_directories.append(directory)",
+              '"ignored_tactile_episode_counts": ignored_tactile_counts',
+          )
+          missing = [token for token in required if token not in source]
+          if missing:
+              raise SystemExit(f"repair validation failed: {missing}")
+          PY
           git diff --check
 
       - name: Commit repair
