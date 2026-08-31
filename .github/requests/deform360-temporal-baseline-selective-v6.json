@@ -1,7 +1,7 @@
 {
   "schema": "bayesian-phystwin/workflow-request-v1",
-  "request_id": "deform360-temporal-baseline-selective-v6-20260831-retry1",
-  "purpose": "Complete the unresolved matched learned-temporal comparison by training state-only and future-action TCNs on the fixed 92-object Deform360 protocol using only pinned metadata, raw tactile arrays, medians, and robot action carriers on an available alternate GPU runner. The prior attempt stopped during pre-model carrier materialization and changed no scientific setting.",
+  "request_id": "deform360-temporal-baseline-selective-v6-20260831-retry2",
+  "purpose": "Complete the unresolved matched learned-temporal comparison using persistent tree-response caching, serialized carrier discovery, and Retry-After-aware throttling. The preceding attempt stopped on HTTP 429 before Torch setup, model training, or target evaluation; the scientific model, rosters, horizon, and metrics remain unchanged.",
   "runner_labels": ["self-hosted", "Linux", "X64", "nvidia-smi"],
   "raw_repository": "brownu/deform360",
   "raw_revision": "5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4",
