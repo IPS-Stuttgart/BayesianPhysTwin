@@ -1,0 +1,102 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-query-protocol-v6",
+  "schema_version": 6,
+  "protocol_id": "deform360-same-mean-dependence-query-v6",
+  "status": "frozen-before-v6-reexecution",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "parent_confirmation": {
+    "control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "protocol_path": "protocols/deform360_untouched_confirmation_v5.json",
+    "protocol_git_blob_sha1": "8180fd8506a5ad32e0ea4ce013bc83e1cd2a78d9",
+    "runner_path": "scripts/science/run_deform360_untouched_confirmation_v5.py",
+    "runner_git_blob_sha1": "3993834d389ba339d968a19aa5aa3c4daa5afc02",
+    "audit_path": "scripts/science/audit_deform360_untouched_confirmation_v5.py",
+    "audit_git_blob_sha1": "5d87d2f72f6a93a19b206a6cca636fd2b0aea818",
+    "run_id": 33335779766,
+    "artifact_id": 9738998271,
+    "artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+    "result_json_sha256": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7",
+    "result_sha256": "26984c5ecc59ef8b10a8efe94c86f5ea55fd88111913c4b46ae06704410c6c0e",
+    "readiness_json_sha256": "58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e",
+    "object_count": 92
+  },
+  "evaluation": {
+    "inferential_unit": "physical object",
+    "point_result_requirement": "exact byte-value reproduction of every registered parent point-result field",
+    "same_mean_required": true,
+    "coordinate_marginals_equal_required": true,
+    "source_only_query_calibration": true,
+    "query_calibration_reference": "full-low-rank source residuals; one shared scalar scale and radius reused unchanged by both controls",
+    "control_refitting_allowed": false,
+    "covariance_arms": [
+      "full_low_rank",
+      "diagonal_marginal_matched",
+      "scrambled_marginal_matched"
+    ],
+    "dependence_controls": {
+      "diagonal_marginal_matched": "remove every low-rank factor and transfer its row-wise variance to the diagonal",
+      "scrambled_marginal_matched": "preserve every low-rank factor-row norm while deterministically permuting row directions and signs"
+    },
+    "query_bank": [
+      {
+        "name": "total_load",
+        "event": "upper",
+        "definition": "mean normalized tactile response over every pooled sensor cell"
+      },
+      {
+        "name": "sensor_imbalance",
+        "event": "absolute",
+        "definition": "difference between the first and last pooled tactile sensor means"
+      },
+      {
+        "name": "horizontal_balance",
+        "event": "absolute",
+        "definition": "right-half minus left-half pooled tactile response"
+      },
+      {
+        "name": "vertical_balance",
+        "event": "absolute",
+        "definition": "lower-half minus upper-half pooled tactile response"
+      },
+      {
+        "name": "center_periphery",
+        "event": "upper",
+        "definition": "center-region mean minus perimeter-region mean"
+      }
+    ],
+    "coverage_probability": 0.9,
+    "event_threshold_quantile": 0.9,
+    "fallback_cost": 0.1,
+    "decision_rule": "execute when the predicted adverse-event probability is no greater than the constant fallback cost; otherwise take exact fallback",
+    "probability_clip": 1e-09,
+    "bootstrap_repetitions": 10000,
+    "random_seed": 260901,
+    "marginal_parity_tolerance": 1e-12
+  },
+  "success_gates": {
+    "minimum_query_nanees": 0.5,
+    "maximum_query_nanees": 2.0,
+    "minimum_query_coverage": 0.8,
+    "maximum_query_coverage": 0.98,
+    "full_decision_and_brier_bootstrap_upper_bound_below_zero_against_each_control": true,
+    "all_92_objects_required": true,
+    "exact_parent_point_reproduction_required": true,
+    "same_mean_and_coordinate_marginal_parity_required": true
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "point_predictor_may_change": false,
+    "target_outcomes_may_tune_protocol": false,
+    "target_outcomes_may_select_queries": false,
+    "target_outcomes_may_select_covariance_arm": false,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "new_measurements_collected": false
+  },
+  "prob4d_runtime_used": false,
+  "prob4d_semantics_tested": "dependence-preserving low-rank-plus-local covariance versus same-mean same-marginal dependence destruction",
+  "paper_claim_authorized": false,
+  "fresh_confirmation_authorized": false,
+  "strict_counterfactual_claim_authorized": false,
+  "claim_boundary": "Retrospective mechanism evidence on the previously scored 92-object Deform360 cohort. A positive result isolates value in cross-coordinate dependence for registered tactile-field queries and an execute-versus-fallback risk decision. It does not establish a fresh held-out confirmation, actual Prob4D runtime integration, dense 4-D geometry, unseen-object transfer, strict individual counterfactuals, deployment safety, or automatic paper acceptance."
+}
