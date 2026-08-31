@@ -11,11 +11,17 @@ It is deliberately carrier-adaptive because the mounted release may contain raw
 captures, released annotations, or locally materialized official annotations.
 The evaluator prioritizes, in order:
 
-1. official `pcd_clean/*.npz` point-cloud sequences;
+1. official `pcd_clean/*.npz` point-cloud sequences or official read-only
+   `pcd_clean.tar` archives containing those frames;
 2. fixed-identity `(T,N,3)` trajectory archives;
 3. official raw or aligned `(T,16,32)` tactile fields.
 
-The third path is a real-measurement dynamics diagnostic, but it is not a 4-D
+The archive path is streamed directly without extracting into or modifying the
+dataset tree. The evaluator records the archive identity and selected member
+names, verifies that the archive size and modification time remain unchanged
+during reading, and retains no point-cloud payload in the workflow artifact.
+
+The tactile path is a real-measurement dynamics diagnostic, but it is not a 4-D
 geometry or action-conditioned intervention result. The representation used by a
 run is written explicitly to `result.json` and `report.md`.
 
