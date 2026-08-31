@@ -1,7 +1,7 @@
 {
   "schema": "bayesian-phystwin/workflow-request-v1",
-  "request_id": "fix-deform360-tcn-materializer-v6-20260831",
-  "purpose": "Match the frozen evaluator rule that ignores tactile directories whose non-median file count differs from the metadata episode count; the failed first fallback attempt stopped before model training or target evaluation.",
+  "request_id": "fix-deform360-tcn-materializer-v6-20260831-retry2",
+  "purpose": "Apply the frozen evaluator rule that ignores tactile directories whose non-median file count differs from the metadata episode count. Prior fallback runs stopped before Torch setup, model training, or target evaluation.",
   "scientific_method_changed": false,
   "paper_claim_authorized": false
 }
