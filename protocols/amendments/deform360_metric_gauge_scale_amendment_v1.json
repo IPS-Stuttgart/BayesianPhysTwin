@@ -1,0 +1,152 @@
+{
+  "amendment_id": "69e8ed033b27ff38a5ce81e0cf1717845b6bacd8cc0b7027771abe250a7945b7",
+  "audit": {
+    "artifact_digest": "sha256:dbc1b4bcc0956549abeaf3add6bbb2476654a66e84f1ee2999b08defcf25e3d7",
+    "artifact_id": 9747266178,
+    "artifact_name": "deform360-gauge-support-audit-v2-33362698203",
+    "audit_id": "e0d5c3f459b08af3371c7b24a82879840157c9ccb402ca3aad0c9f515ae839a7",
+    "camera_count": 80,
+    "implementation_revision": "2d93f48e5c055f3775e606b1bfa7b42df7da8a69",
+    "information_boundary": {
+      "confirmation_payload_opened": false,
+      "confirmation_root_entered": false,
+      "future_object_observations_used": false,
+      "model_or_hyperparameter_selected": false,
+      "registered_prediction_run": false,
+      "source_prefix_arrays_opened": true,
+      "source_suffix_opened": false,
+      "target_outcome_opened": false
+    },
+    "request_sha256": "2c197f05633dfeb301aceada13ba86c7f3555afd3c48c50223a82e729d1b0bb1",
+    "run_id": 33362698203,
+    "source_plan_id": "6c55447a79200521c6781cf43fa1f1809006f43a190a7da23183a597c52b0067",
+    "source_plan_sha256": "fa59b4655e061d181bf95d2f3e9a6ad83290032bb0a54e870afb2b3cadb7bd23",
+    "source_unit_count": 10
+  },
+  "evaluated_cluster_sizes_pixels": [64, 48, 32, 24, 16, 12, 8, 4],
+  "frozen_effect": {
+    "changed": [
+      "metric-gauge spatial independence cell size: 32 -> 8 pixels"
+    ],
+    "unchanged": [
+      "source object and episode roster",
+      "camera roster",
+      "causal prefix and future ranges",
+      "robust similarity algorithm and five iterations",
+      "minimum of eight inlier independent clusters",
+      "registered point mean",
+      "covariance donor and covariance scales",
+      "source suffix gate",
+      "confirmation cohorts",
+      "target policy"
+    ]
+  },
+  "next_stage": {
+    "authorized": "regenerate and seal the 100-record source-prefix covariance barrier, then evaluate the existing source-suffix gate",
+    "confirmation_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "prior_failure": {
+    "failure": "metric gauge lacks eight independent causal clusters at the registered 32-pixel scale",
+    "prediction_record_count": 0,
+    "receipt_id": "e705d19c50273e2b1f09ff1ccd09fd4cf08b250241f2d0f4c4f0a17bcb775df3",
+    "run_id": 33012751418,
+    "target_access": false
+  },
+  "required_inlier_independent_clusters": 8,
+  "scale_summaries": {
+    "12": {
+      "all_cameras_pass": false,
+      "all_units_pass": false,
+      "camera_count": 80,
+      "camera_pass_count": 75,
+      "camera_prefit_support_count": 80,
+      "passing_fit_inlier_cluster_count": {"maximum": 48, "median": 24, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.014743780892203316, "minimum": 0.002977886962013703},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 7
+    },
+    "16": {
+      "all_cameras_pass": false,
+      "all_units_pass": false,
+      "camera_count": 80,
+      "camera_pass_count": 76,
+      "camera_prefit_support_count": 79,
+      "passing_fit_inlier_cluster_count": {"maximum": 34, "median": 17.0, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.01484085473317524, "minimum": 0.002977886962013703},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 6
+    },
+    "24": {
+      "all_cameras_pass": false,
+      "all_units_pass": false,
+      "camera_count": 80,
+      "camera_pass_count": 67,
+      "camera_prefit_support_count": 76,
+      "passing_fit_inlier_cluster_count": {"maximum": 21, "median": 11, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.014937928574147163, "minimum": 0.0030190052983140644},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 3
+    },
+    "32": {
+      "all_cameras_pass": false,
+      "all_units_pass": false,
+      "camera_count": 80,
+      "camera_pass_count": 41,
+      "camera_prefit_support_count": 59,
+      "passing_fit_inlier_cluster_count": {"maximum": 15, "median": 9, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.017718814366067398, "minimum": 0.003346357335523474},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 0
+    },
+    "4": {
+      "all_cameras_pass": true,
+      "all_units_pass": true,
+      "camera_count": 80,
+      "camera_pass_count": 80,
+      "camera_prefit_support_count": 80,
+      "passing_fit_inlier_cluster_count": {"maximum": 302, "median": 106.5, "minimum": 9},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.014047179189222497, "minimum": 0.0028431268059328006},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 10
+    },
+    "48": {
+      "all_cameras_pass": false,
+      "all_units_pass": false,
+      "camera_count": 80,
+      "camera_pass_count": 20,
+      "camera_prefit_support_count": 33,
+      "passing_fit_inlier_cluster_count": {"maximum": 10, "median": 8.0, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.01988768080845001, "minimum": 0.008989888463772844},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 0
+    },
+    "64": {
+      "all_cameras_pass": false,
+      "all_units_pass": false,
+      "camera_count": 80,
+      "camera_pass_count": 4,
+      "camera_prefit_support_count": 9,
+      "passing_fit_inlier_cluster_count": {"maximum": 8, "median": 8.0, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.07474513103764269, "median": 0.038375206782692795, "minimum": 0.011412796277363203},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 0
+    },
+    "8": {
+      "all_cameras_pass": true,
+      "all_units_pass": true,
+      "camera_count": 80,
+      "camera_pass_count": 80,
+      "camera_prefit_support_count": 80,
+      "passing_fit_inlier_cluster_count": {"maximum": 90, "median": 39.5, "minimum": 8},
+      "passing_fit_inlier_rmse_m": {"maximum": 0.059775688851118794, "median": 0.014047179189222497, "minimum": 0.002977886962013703},
+      "unit_count": 10,
+      "unit_full_panel_pass_count": 10
+    }
+  },
+  "schema": "bayesian-phystwin.deform360-metric-gauge-scale-amendment-v1",
+  "schema_version": 1,
+  "selected_metric_cluster_size_pixels": 8,
+  "selection_rationale": "8 pixels is the coarsest universally admissible tested scale; 4 pixels also passes but counts denser pixels as independent, while 12 pixels and larger fail at least one source camera",
+  "selection_rule": "largest tested cluster size whose robust first-causal-frame gauge fit passes all 80 cameras and all 10 source units"
+}
