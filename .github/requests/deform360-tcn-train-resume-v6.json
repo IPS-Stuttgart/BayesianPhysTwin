@@ -1,16 +1,12 @@
 {
   "schema": "bayesian-phystwin/workflow-request-v1",
-  "request_id": "deform360-tcn-train-resume-v6-20260901-common-tactile-layout",
-  "purpose": "Resume the registered matched TCN comparison after exposing the expected two-versus-four sensor-group dimensionality difference. The TCN now uses the already registered shared 384-dimensional four-slot tactile coordinate system, zero-filling absent named sensor slots; the frozen v3 method remains unchanged.",
-  "source_failed_run_id": 33415588265,
-  "source_failure": "global TCN concatenation encountered 192- and 384-dimensional per-object tactile carriers",
-  "common_tactile_slots": [
-    "tactilel_left",
-    "tactilel_right",
-    "tactiler_left",
-    "tactiler_right"
-  ],
-  "slot_width": 96,
+  "request_id": "deform360-tcn-train-resume-v6-20260901-frozen-episode-binding",
+  "purpose": "Resume the matched TCN comparison with the exact 14-development and 92-evaluation source/target episode rosters embedded from prior frozen evidence. This removes the sole public-snapshot discrepancy for 119-seal-cloth while preserving the common 384-coordinate tactile layout and leaving the frozen v3 method unchanged.",
+  "source_failed_run_id": 33416039081,
+  "source_failure": "the public processed snapshot exposed two later robot-complete episodes for 119-seal-cloth that were absent from the frozen confirmation mount, changing the hard-subset count from 21 to 22",
+  "episode_binding_sha256": "60f27cb3addcbd0bb7e353a6c36d9d1082baf53d1dd7b7942786157c86ffca5d",
+  "development_source_run_id": 33330455808,
+  "evaluation_source_run_id": 33335779766,
   "scientific_protocol_changed": false,
   "frozen_v3_method_changed": false,
   "target_tactile_numeric_access_authorized_after_final_model_freeze": true,
