@@ -16,6 +16,7 @@ on:
       - .github/requests/deform-dlo45-inventory-v1.json
       - .github/requests/deform-dlo45-evaluate-v1.json
       - .github/requests/deform-dlo45-evaluate-v2.json
+      - .github/requests/deform-dlo45-evaluate-v3.json
 
 permissions:
   contents: read
@@ -88,6 +89,8 @@ jobs:
               path=.github/requests/deform-dlo45-evaluate-v1.json; mode=evaluate ;;
             $'A\t.github/requests/deform-dlo45-evaluate-v2.json')
               path=.github/requests/deform-dlo45-evaluate-v2.json; mode=evaluate ;;
+            $'A\t.github/requests/deform-dlo45-evaluate-v3.json')
+              path=.github/requests/deform-dlo45-evaluate-v3.json; mode=evaluate ;;
             *) echo "Expected one newly added DLO4/DLO5 request" >&2; exit 2 ;;
           esac
           REQUEST_PATH="$path" MODE="$mode" python - <<'PY'
@@ -125,6 +128,18 @@ jobs:
                       "prior_target_access": False,
                       "retry_class": "pre-target-infrastructure-correction",
                   })
+              if Path(os.environ["REQUEST_PATH"]).name == "deform-dlo45-evaluate-v3.json":
+                  expected.update({
+                      "evidence_class": "fresh frozen-procedure DLO4/DLO5 replication; joint prediction seal before scoring; pre-target timeout recovery only",
+                      "prior_failed_run_id": 33335970581,
+                      "prior_failure_stage": "source-qualification-workflow-timeout",
+                      "prior_target_access": False,
+                      "prior_artifact_id": 9746350808,
+                      "prior_artifact_sha256": "71b856359ea50b5d263dff9737fe69a5f24f2b89fec6408b9264a9a1359122df",
+                      "prior_dlo4_completed_updates": 3250,
+                      "prior_dlo5_completed_updates": 3150,
+                      "retry_class": "pre-target-infrastructure-timeout-correction",
+                  })
           for key, value in expected.items():
               if request.get(key) != value:
                   raise SystemExit(f"Invalid {key}: {request.get(key)!r}")
@@ -147,7 +162,7 @@ jobs:
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       needs.contracts.result == 'success' && needs.authorize-request.result == 'success'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 480
+    timeout-minutes: 4320
     env:
       MODE: ${{ needs.authorize-request.outputs.mode }}
       REQUEST_PATH: ${{ needs.authorize-request.outputs.path }}
