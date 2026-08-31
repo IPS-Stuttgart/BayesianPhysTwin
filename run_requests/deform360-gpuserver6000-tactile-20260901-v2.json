@@ -1,0 +1,32 @@
+{
+  "schema": "deform360-gpuserver6000-tactile-evaluation-request-v1",
+  "request_id": "deform360-gpuserver6000-tactile-20260901-v2",
+  "runner_label": "gpuserver6000",
+  "dataset_root": "/mnt/lexar4tb/datasets/deform360/causal4d-public-expansion-v1/aligned",
+  "source_object_id": "001-rope",
+  "episode_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "sensor_count": 4,
+  "expected_case_count": 40,
+  "excluded_ambiguous_tactile_objects": [
+    "003-cable",
+    "086-cotton-scarf-cloth",
+    "171-penguin"
+  ],
+  "authorize_target_scoring": true,
+  "geometry_validation_claimed": false,
+  "causal_intervention_validation_claimed": false,
+  "uniform_deform360_benchmark_claimed": false,
+  "paper_claim_authorized": false,
+  "expected_source_revision": "7569230a4ed6aee65fb42f3daeedd5ceab2672f9"
+}
