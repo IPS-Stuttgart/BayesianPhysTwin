@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-cross-backend-coefficient-transfer-v1",
+  "status": "frozen-before-cross-backend-diagnostic-execution",
+  "scientific_question": "Do local-residual coefficients fitted against three independently seeded DEFORM physical backends improve sealed PyElastica DLO3 source predictions without any PyElastica-side coefficient refit?",
+  "source_panel": {
+    "dataset": "DEFORM-DLO3",
+    "partition": "train/source_test",
+    "trajectory_count": 8,
+    "frame_count": 500,
+    "node_count": 12,
+    "statistical_unit": "complete-trajectory",
+    "official_evaluation_read": false,
+    "source_outcomes_previously_opened": true,
+    "interpretation": "retrospective-source-only-diagnostic"
+  },
+  "artifacts": {
+    "source_manifest": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/deform-dlo3-source-manifest-bbf75a0b.json",
+      "sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+      "size_bytes": 18803
+    },
+    "pyelastica_source_predictions": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v1/pyelastica-run-7c304f79/source_predictions.npz",
+      "sha256": "c8658f04aa81af1895f7f010d03a08e945fca7b63342b341eaa889408f5b69c8",
+      "size_bytes": 5185195
+    },
+    "deform_local_residual_models": [
+      {
+        "seed": 42,
+        "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-42-run-bd5cfb14/local_residual_model.npz",
+        "sha256": "3fd149ab89769bec24b36263b9e99dcbd572610bd51a273d0d2c79ca30756e83",
+        "size_bytes": 1440868
+      },
+      {
+        "seed": 43,
+        "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-43-run-bd5cfb14/local_residual_model.npz",
+        "sha256": "9c78101f2d08a4fcd3005092f0cb0ceff9bde3efb8c01386ebbcefb10f50a548",
+        "size_bytes": 1441139
+      },
+      {
+        "seed": 44,
+        "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-44-run-da487c26/local_residual_model.npz",
+        "sha256": "738e7eb4ef5a87e3f8e7785fe16db7e915ffcfd05d19aade617f32f8ac5bc26f",
+        "size_bytes": 1441172
+      }
+    ]
+  },
+  "evaluation": {
+    "primary_arm": "equal-seed-no-refit-transfer",
+    "seed_aggregation": "arithmetic-prediction-mean",
+    "individual_seed_arms": [
+      42,
+      43,
+      44
+    ],
+    "shrinkage": 0.25,
+    "metric": "mean-coordinate-l1-m-all-nodes",
+    "comparators": [
+      "raw-pyelastica",
+      "pyelastica-specific-source-fitted-correction"
+    ],
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20260901,
+    "case_tolerance_m": 1e-12
+  },
+  "promotion_gate": {
+    "minimum_relative_improvement": 0.01,
+    "minimum_case_wins": 6,
+    "maximum_case_ratio": 1.1,
+    "minimum_improving_seed_models": 2,
+    "decision": "conjunctive-primary-and-seed-stability"
+  },
+  "execution_priority": {
+    "blocking_run_id": 33361441865,
+    "blocking_experiment": "frozen-DEFORM-DLO4-DLO5-transfer",
+    "required_blocking_run_terminal_before_dispatch": true,
+    "runner_label": "gpuserver4090",
+    "request_or_workflow_trigger_added": false
+  },
+  "information_boundary": {
+    "pyelastica_refit": false,
+    "deform_refit": false,
+    "model_or_seed_selection_from_transfer_outcomes": false,
+    "target_side_selection": false,
+    "dlo3_official_evaluation_read": false,
+    "dlo4_or_dlo5_read": false,
+    "held_v8_access": false,
+    "prob4d_used": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A positive result supports coefficient-level no-refit transfer from DEFORM-fitted local residual models to sealed PyElastica predictions on the already-open DLO3 source-test partition. It is not fresh target confirmation, arbitrary-backend transfer, zero-shot object generalization, deployment safety, or state of the art."
+}
