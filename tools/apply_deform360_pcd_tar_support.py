@@ -78,9 +78,7 @@ replace_once(
         "named_tactile_data_files": named_tactile,
         "candidate_counts": {
             "pcd_clean": sum(carrier.kind == "pcd_clean" for carrier in pcd),
-            "pcd_clean_tar": sum(
-                carrier.kind == "pcd_clean_tar" for carrier in pcd
-            ),
+            "pcd_clean_tar": sum(carrier.kind == "pcd_clean_tar" for carrier in pcd),
             "trajectory_npz": len(fixed),
             "tactile": len(tactile),
         },
