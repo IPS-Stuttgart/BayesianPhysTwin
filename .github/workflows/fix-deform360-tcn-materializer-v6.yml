@@ -29,31 +29,31 @@ jobs:
           from pathlib import Path
 
           path = Path("scripts/science/materialize_deform360_tcn_carriers_v6.py")
-          text = path.read_text(encoding="utf-8")
-          old = '''        if len(nonmedian) != len(episodes):
-              raise MaterializationError(
-                  f"tactile episode count mismatch for {object_id}:{directory}: "
-                  f"{len(nonmedian)} != {len(episodes)}"
-              )
-          tactile_counts[Path(directory).name] = len(nonmedian)
-          '''
-          old = "\n".join(
-              line[10:] if line.startswith("          ") else line
-              for line in old.splitlines()
-          ) + "\n"
-          new = '''        if len(nonmedian) != len(episodes):
-              # Match the frozen evaluator: ignore tactile directories with
-              # extra or missing non-median episode files.
-              continue
-          tactile_counts[Path(directory).name] = len(nonmedian)
-          '''
-          new = "\n".join(
-              line[10:] if line.startswith("          ") else line
-              for line in new.splitlines()
-          ) + "\n"
-          if text.count(old) != 1:
-              raise SystemExit(f"expected one mismatch block, found {text.count(old)}")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          matches = [
+              index
+              for index, line in enumerate(lines)
+              if line.strip() == "if len(nonmedian) != len(episodes):"
+          ]
+          if len(matches) != 1:
+              raise SystemExit(f"expected one mismatch branch, found {len(matches)}")
+          start = matches[0]
+          end = next(
+              index
+              for index in range(start + 1, len(lines))
+              if lines[index].strip()
+              == "tactile_counts[Path(directory).name] = len(nonmedian)"
+          )
+          indentation = lines[start][ : len(lines[start]) - len(lines[start].lstrip())]
+          replacement = [
+              indentation + "if len(nonmedian) != len(episodes):",
+              indentation
+              + "    # Match the frozen evaluator: ignore tactile directories with",
+              indentation + "    # extra or missing non-median episode files.",
+              indentation + "    continue",
+          ]
+          lines = lines[:start] + replacement + lines[end:]
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
           python -m py_compile scripts/science/materialize_deform360_tcn_carriers_v6.py
           python - <<'PY'
@@ -62,8 +62,14 @@ jobs:
           source = Path("scripts/science/materialize_deform360_tcn_carriers_v6.py").read_text()
           if "tactile episode count mismatch" in source:
               raise SystemExit("fatal mismatch behavior remains")
-          if "if len(nonmedian) != len(episodes):\n            # Match the frozen evaluator" not in source:
-              raise SystemExit("evaluator-compatible skip was not installed")
+          required = (
+              "# Match the frozen evaluator: ignore tactile directories with",
+              "if len(nonmedian) != len(episodes):\n            # Match the frozen evaluator",
+              "            continue\n        tactile_counts[Path(directory).name]",
+          )
+          missing = [token for token in required if token not in source]
+          if missing:
+              raise SystemExit(f"evaluator-compatible repair validation failed: {missing}")
           PY
           git diff --check
 
