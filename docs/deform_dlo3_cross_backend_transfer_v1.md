@@ -75,6 +75,16 @@ request file and no empirical workflow trigger. The cross-backend diagnostic
 must not be dispatched until that run and all of its authorized downstream jobs
 are terminal.
 
+## Validation before empirical dispatch
+
+The contract suite covers positive transfer, negative transfer, seed-instability
+rejection, duplicate-trajectory rejection, frozen protocol boundaries, and the
+requirement that the method seal precede source-payload loading. The six focused
+tests pass. The three changed Python files also pass the repository's exact Ruff
+check and formatting configuration. These checks establish implementation and
+information-order behavior only; they do not supply an empirical transfer
+result.
+
 ## Claim boundary
 
 A positive result supports **coefficient-level no-refit transfer on the existing
