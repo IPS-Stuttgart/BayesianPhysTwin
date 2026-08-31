@@ -1,0 +1,190 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 competitive temporal baseline v6
+
+on:
+  push:
+    branches: [science/deform360-temporal-baseline-v6]
+    paths:
+      - ".github/requests/deform360-temporal-baseline-v6.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-temporal-baseline-v6-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL_PATH: protocols/deform360_tcn_baseline_v6.json
+  EVALUATOR_PATH: scripts/science/run_deform360_tcn_baseline_v6.py
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_CACHE_DIR: "1"
+  OMP_NUM_THREADS: "12"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  evaluate:
+    name: Two-stream TCN comparison / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 360
+    steps:
+      - name: Check out exact baseline audit source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Prepare isolated CPU Torch runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test -r "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          venv="${RUNNER_TEMP}/deform360-tcn-v6-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/deform360-tcn-v6-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install numpy==1.26.4
+          "${venv}/bin/python" -m pip install \
+            "torch==2.10.0+cpu" \
+            --index-url https://download.pytorch.org/whl/cpu
+          mkdir -p -- "${output}"
+          {
+            echo "PYTHON_BIN=${venv}/bin/python"
+            echo "VENV_ROOT=${venv}"
+            echo "OUTPUT_ROOT=${output}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Validate baseline implementation and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" -m py_compile \
+            scripts/science/run_deform360_action_conditioned_tactile_v2.py \
+            scripts/science/run_deform360_action_kernel_v3.py \
+            "${EVALUATOR_PATH}"
+          "${PYTHON_BIN}" - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          import numpy as np
+          import torch
+
+          path = Path("scripts/science/run_deform360_tcn_baseline_v6.py")
+          spec = importlib.util.spec_from_file_location("deform360_tcn_smoke", path)
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          model = module.TwoStreamTCN(16, 60, 7, 24, 48, 0.05)
+          tactile = torch.zeros((3, 16, 16), dtype=torch.float32)
+          action = torch.zeros((3, 9, 60), dtype=torch.float32)
+          static = torch.zeros((3, 7), dtype=torch.float32)
+          output = model(tactile, action, static)
+          if output.shape != (3, 24) or not torch.isfinite(output).all():
+              raise SystemExit("TCN smoke contract failed")
+          values = np.asarray([-1.0, -2.0, 0.5])
+          interval = module.bootstrap_interval(values, 100, 7)
+          if len(interval) != 2 or not interval[0] <= interval[1]:
+              raise SystemExit("bootstrap smoke contract failed")
+          PY
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum \
+              "${PROTOCOL_PATH}" \
+              "${EVALUATOR_PATH}" \
+              scripts/science/run_deform360_action_kernel_v3.py \
+              scripts/science/run_deform360_action_conditioned_tactile_v2.py
+            "${PYTHON_BIN}" --version
+            "${PYTHON_BIN}" - <<'PY'
+          import numpy
+          import torch
+          print("numpy=" + numpy.__version__)
+          print("torch=" + torch.__version__)
+          print("torch_threads=" + str(torch.get_num_threads()))
+          PY
+            uname -a
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+
+      - name: Train and evaluate the competitive temporal baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" "${EVALUATOR_PATH}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --data-root "${DATASET_ROOT}" \
+            --output-json "${OUTPUT_ROOT}/result.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            --output-csv "${OUTPUT_ROOT}/object-results.csv" \
+            2>&1 | tee "${OUTPUT_ROOT}/console.log"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify the complete post-confirmation audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          result = json.loads((root / "result.json").read_text())
+          if result["status"] != "complete":
+              raise SystemExit("temporal baseline audit is incomplete")
+          if result["summary"]["object_count"] != 92:
+              raise SystemExit("fixed 92-object roster was not completed")
+          if result["summary"]["held_out_action_family"]["object_count"] != 21:
+              raise SystemExit("metadata-defined held-out action-family subset changed")
+          reproduced = result["summary"]["methods"]["v3_bayesian_action_ensemble"]
+          if not math.isclose(reproduced, 0.6283797735320816, rel_tol=0.0, abs_tol=1e-10):
+              raise SystemExit("frozen v3 aggregate did not reproduce")
+          freeze = result["final_model_freeze"]
+          if freeze["target_tactile_opened_after_freeze"] is not True:
+              raise SystemExit("target tactile opened before TCN freeze")
+          boundary = result["information_boundary"]
+          for key in (
+              "v3_method_changed",
+              "camera_pixels_opened",
+              "geometry_or_point_cloud_opened",
+              "new_measurements_collected",
+              "globally_fresh_confirmation",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          if result["paper_claim_authorized"] is not False:
+              raise SystemExit("result self-authorized a paper claim")
+          PY
+          cp "${PROTOCOL_PATH}" "${OUTPUT_ROOT}/protocol.json"
+          sha256sum "${OUTPUT_ROOT}"/* > "${OUTPUT_ROOT}/sha256sums.txt"
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - name: Upload complete temporal-baseline evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-temporal-baseline-v6-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated numerical runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}"
