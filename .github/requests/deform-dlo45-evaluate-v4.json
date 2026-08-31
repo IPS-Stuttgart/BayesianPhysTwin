@@ -1,0 +1,23 @@
+{
+  "schema": "deform-dlo45-evaluation-request-v1",
+  "mode": "evaluate",
+  "request_id": "deform-dlo45-evaluate-v4-runner-label-recovery-20260901",
+  "expected_source_revision": "2bd6c4dd8928ab7ff46747425d722fe0146c2afd",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+  "runner_label": "gpuserver4090",
+  "devices": [
+    "cuda:0",
+    "cuda:1"
+  ],
+  "authorize_target_scoring": true,
+  "paper_claim_authorized": false,
+  "evidence_class": "fresh frozen-procedure DLO4/DLO5 replication; joint prediction seal before scoring; no retry",
+  "prior_failed_run_id": 33414972339,
+  "prior_failure_stage": "source-job-queued-before-runner-assignment",
+  "prior_source_started": false,
+  "prior_target_access": false,
+  "retry_class": "pre-source-runner-label-correction",
+  "runner_admission_change": "runs-on-self-hosted-plus-gpuserver4090-only-with-runtime-os-arch-check",
+  "scientific_protocol_changed": false
+}
