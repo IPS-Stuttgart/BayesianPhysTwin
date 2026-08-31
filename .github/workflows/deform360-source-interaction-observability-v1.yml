@@ -1,0 +1,182 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source interaction observability v1
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-interaction-observability-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-interaction-observability-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-interaction-observability-v1.json
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  SOURCE_OBJECT: 038-mat-cloth
+  SOURCE_EPISODE: "3"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  audit:
+    name: Source robot-tactile excitation / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one newly added source-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-interaction-observability-request-v1",
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runner_label": "gpuserver4090",
+              "source_robot_tactile_payload_authorized": True,
+              "source_camera_pixel_access_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"request field {key!r} changed")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from observability contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind exact source parent")
+          if not request["request_id"]:
+              raise SystemExit("request_id must be nonempty")
+          PY
+
+      - name: Run source-only observability audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          source_episode="${STAGING_ROOT}/cross-action-source-v1/${SOURCE_OBJECT}/episode_0003"
+          test -d "${source_episode}"
+          output="${RUNNER_TEMP}/deform360-source-observability-v1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="${RUNNER_TEMP}/deform360-source-observability-venv-v1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          test ! -e "${venv}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4
+          "${venv}/bin/python" \
+            scripts/science/audit_deform360_source_interaction_observability_v1.py \
+            --source-episode-root "${source_episode}" \
+            --source-object "${SOURCE_OBJECT}" \
+            --source-episode "${SOURCE_EPISODE}" \
+            --output-dir "${output}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --revision "${GITHUB_SHA}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "OBSERVABILITY_OUTPUT=${output}"
+            echo "OBSERVABILITY_VENV=${venv}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify target closure and compact result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["OBSERVABILITY_OUTPUT"]) / "result.json").read_text()
+          )
+          boundary = result["information_boundary"]
+          for key in (
+              "source_camera_pixels_opened",
+              "target_directory_contents_listed",
+              "target_numeric_payload_opened",
+              "target_scoring_performed",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          print(json.dumps({
+              "decision": result["decision"],
+              "robot": result["robot"],
+              "tactile": result["tactile"],
+              "joint_source_excitation": result["joint_source_excitation"],
+          }, indent=2))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish compact summary
+        if: always() && env.OBSERVABILITY_OUTPUT != ''
+        shell: bash
+        run: |
+          if [[ -f "${OBSERVABILITY_OUTPUT}/report.md" ]]; then
+            cat "${OBSERVABILITY_OUTPUT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact source evidence
+        if: always() && env.OBSERVABILITY_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-observability-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OBSERVABILITY_OUTPUT }}/result.json
+            ${{ env.OBSERVABILITY_OUTPUT }}/report.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove isolated runtime and scratch
+        if: always()
+        shell: bash
+        run: rm -rf -- "${OBSERVABILITY_VENV:-}" "${OBSERVABILITY_OUTPUT:-}"
