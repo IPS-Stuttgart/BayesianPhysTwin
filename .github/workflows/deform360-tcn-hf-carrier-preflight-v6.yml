@@ -62,11 +62,18 @@ jobs:
 
           def list_tree(repo: str, path: str):
               encoded = urllib.parse.quote(path, safe="/")
-              url = (
-                  f"https://huggingface.co/api/datasets/{repo}/tree/main/{encoded}"
-                  "?recursive=true&expand=true&limit=1000"
-              )
+              suffix = f"/{encoded}" if encoded else ""
+              url = f"https://huggingface.co/api/datasets/{repo}/tree/main{suffix}?expand=true"
               return get_json(url)
+
+          def first_existing(repo: str, paths):
+              for path in paths:
+                  try:
+                      return path, list_tree(repo, path)
+                  except urllib.error.HTTPError as error:
+                      if error.code != 404:
+                          raise
+              return None, None
 
           for repo in ("brownu/deform360", "brownu/deform360_processed"):
               print(f"## repo={repo}")
@@ -75,53 +82,71 @@ jobs:
                   print(f"revision={info.get('sha')}")
                   print(f"private={info.get('private')}")
                   for object_id in probes:
-                      candidate_paths = (
-                          f"raw/{object_id}",
-                          f"processed/{object_id}",
-                          object_id,
+                      root_path, entries = first_existing(
+                          repo,
+                          (
+                              f"raw/{object_id}",
+                              f"processed/{object_id}",
+                              object_id,
+                          ),
                       )
-                      entries = None
-                      selected_path = None
-                      for candidate in candidate_paths:
-                          try:
-                              entries = list_tree(repo, candidate)
-                              selected_path = candidate
-                              break
-                          except urllib.error.HTTPError as error:
-                              if error.code != 404:
-                                  raise
                       if entries is None:
                           print(f"object={object_id} path=unavailable")
                           continue
-                      selected = []
+                      print(f"object={object_id} path={root_path} entries={len(entries)}")
                       for item in entries:
-                          path = str(item.get("path", ""))
-                          lowered = path.lower()
-                          if any(
-                              token in lowered
-                              for token in (
-                                  "metadata.json",
-                                  "tactile",
-                                  "median_",
-                                  "robot.npy",
-                                  "robot.npz",
-                                  ".tar",
-                              )
-                          ):
-                              selected.append(item)
-                      print(
-                          f"object={object_id} path={selected_path} "
-                          f"entries={len(entries)} selected={len(selected)}"
-                      )
-                      for item in selected[:80]:
                           print(
-                              "  "
+                              "  ROOT\t"
                               + str(item.get("path"))
                               + "\t"
                               + str(item.get("size"))
                               + "\t"
                               + str(item.get("type"))
                           )
+                      for item in entries:
+                          path = str(item.get("path", ""))
+                          lowered = path.lower()
+                          kind = item.get("type")
+                          if kind == "directory" and "tactile" in lowered:
+                              children = list_tree(repo, path)
+                              for child in children:
+                                  child_path = str(child.get("path", ""))
+                                  child_lower = child_path.lower()
+                                  if child_lower.endswith(".npy") or child_lower.endswith(".txt"):
+                                      print(
+                                          "  TACTILE\t"
+                                          + child_path
+                                          + "\t"
+                                          + str(child.get("size"))
+                                          + "\t"
+                                          + str(child.get("type"))
+                                      )
+                          if kind == "directory" and "episode" in lowered:
+                              episode_children = list_tree(repo, path)
+                              for child in episode_children:
+                                  child_path = str(child.get("path", ""))
+                                  child_lower = child_path.lower()
+                                  if "robot" in child_lower or "tactile" in child_lower or child_lower.endswith(".tar"):
+                                      print(
+                                          "  EPISODE\t"
+                                          + child_path
+                                          + "\t"
+                                          + str(child.get("size"))
+                                          + "\t"
+                                          + str(child.get("type"))
+                                      )
+                                  if child.get("type") == "directory" and child_lower.endswith("/robot"):
+                                      for grandchild in list_tree(repo, child_path):
+                                          grand_path = str(grandchild.get("path", ""))
+                                          if grand_path.lower().endswith(("robot.npy", "robot.npz")):
+                                              print(
+                                                  "  ROBOT\t"
+                                                  + grand_path
+                                                  + "\t"
+                                                  + str(grandchild.get("size"))
+                                                  + "\t"
+                                                  + str(grandchild.get("type"))
+                                              )
               except Exception as exc:
                   print(f"repo_error={type(exc).__name__}: {exc}")
           PY
