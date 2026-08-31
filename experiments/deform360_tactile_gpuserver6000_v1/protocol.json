@@ -1,0 +1,79 @@
+{
+  "schema": "bayesian-phystwin/deform360-real-evaluation-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-gpuserver6000-tactile-dynamics-v1",
+  "dataset_root": "/mnt/lexar4tb/datasets/deform360/causal4d-public-expansion-v1/aligned",
+  "official_processing_repository": "lhy0807/deform360",
+  "official_processing_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+  "development_objects": [
+    "001-rope"
+  ],
+  "reserved_objects": [
+    "003-cable",
+    "086-cotton-scarf-cloth",
+    "171-penguin"
+  ],
+  "exact_tactile_roster": {
+    "source_object_id": "001-rope",
+    "episode_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sensor_names": [
+      "brics-odroid_tactilel_left",
+      "brics-odroid_tactilel_right",
+      "brics-odroid_tactiler_left",
+      "brics-odroid_tactiler_right"
+    ],
+    "relative_path_template": "001-rope/episode_{episode_id:04d}/{sensor_name}/synced_tactile.npy",
+    "expected_case_count": 40
+  },
+  "profiles": {
+    "pilot": {
+      "max_cases": 40,
+      "max_frames": 64,
+      "max_points": 64,
+      "max_tactile_channels": 128,
+      "max_candidate_archives": 40
+    }
+  },
+  "model": {
+    "velocity_lags": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "minimum_prefix_steps": 10,
+    "gibbs_temperature_floor_fraction": 0.05,
+    "variance_floor_fraction": 1e-06,
+    "marginal_coverage_probability": 0.9
+  },
+  "analysis": {
+    "bootstrap_repetitions": 2000,
+    "bootstrap_seed": 3606001,
+    "aggregation_unit": "sensor case with episode-balanced sensitivity",
+    "selection_rule": "exact pre-registered 10 episodes by four synchronized tactile sensors; no outcome-dependent selection"
+  },
+  "information_boundary": {
+    "public_real_measurements": true,
+    "rolling_prefix_only_prediction": true,
+    "future_used_for_scoring_only": true,
+    "reserved_objects_opened": false,
+    "method_parameters_fit_to_evaluated_future": false,
+    "raw_payload_uploaded": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false,
+    "geometry_validation_claimed": false,
+    "causal_intervention_validation_claimed": false,
+    "uniform_deform360_benchmark_claimed": false
+  }
+}
