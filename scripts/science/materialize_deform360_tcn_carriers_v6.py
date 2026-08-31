@@ -2,8 +2,8 @@
 """Compatibility wrapper for selective Deform360 TCN carrier materialization.
 
 The pinned processed release is incomplete for a small number of metadata
-episodes.  The original evaluator defines an episode as usable only when both
-its tactile carriers and processed robot carrier exist.  This wrapper preserves
+episodes. The original evaluator defines an episode as usable only when both
+its tactile carriers and processed robot carrier exist. This wrapper preserves
 that rule during remote materialization instead of treating every metadata
 entry as a mandatory robot download.
 """
@@ -15,6 +15,11 @@ import sys
 import urllib.error
 from pathlib import Path
 from typing import Any
+
+# Explicitly retained for the workflow's closed payload/revision contract.
+RAW_REVISION = "5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4"
+PROCESSED_REVISION = "e92deaf7e437e7e51ad464706ae647f522a279d9"
+FORBIDDEN_PAYLOAD_TOKENS = ("camera", "pcd", "splat")
 
 HERE = Path(__file__).resolve().parent
 BASE_PATH = HERE / "materialize_deform360_tcn_carriers_v6_base.py"
@@ -28,15 +33,22 @@ base = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = base
 SPEC.loader.exec_module(base)
 
+if base.RAW_REVISION != RAW_REVISION:
+    raise RuntimeError("raw release revision differs from wrapper contract")
+if base.PROCESSED_REVISION != PROCESSED_REVISION:
+    raise RuntimeError("processed release revision differs from wrapper contract")
+if not set(FORBIDDEN_PAYLOAD_TOKENS).issubset(set(base.FORBIDDEN_TOKENS)):
+    raise RuntimeError("forbidden payload boundary differs from wrapper contract")
+
 _original_discover_object_plans = base.discover_object_plans
 
 
 def _processed_episode_directories(object_id: str) -> dict[str, str]:
-    root = f"processed/{object_id}"
+    object_root = f"processed/{object_id}"
     entries = base.list_tree(
         base.PROCESSED_REPOSITORY,
         base.PROCESSED_REVISION,
-        root,
+        object_root,
     )
     return {
         Path(str(item.get("path", ""))).name: str(item.get("path"))

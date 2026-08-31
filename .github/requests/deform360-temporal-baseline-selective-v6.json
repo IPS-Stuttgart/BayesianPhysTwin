@@ -1,7 +1,7 @@
 {
   "schema": "bayesian-phystwin/workflow-request-v1",
-  "request_id": "deform360-temporal-baseline-selective-v6-20260901-robot-complete-retry",
-  "purpose": "Complete the unresolved matched learned-temporal comparison using the pinned public Deform360 carriers and the frozen evaluator's exact robot-complete episode admission rule. Prior failures occurred before Torch setup or target scoring because the transport layer incorrectly required robot files for every metadata episode.",
+  "request_id": "deform360-temporal-baseline-selective-v6-20260901-robot-complete-retry2",
+  "purpose": "Complete the unresolved matched learned-temporal comparison using the pinned public Deform360 carriers and the frozen evaluator's exact robot-complete episode admission rule. This retry only restores the explicit closed payload/revision contract required by CI; no model, roster, horizon, target, or metric changes.",
   "runner_labels": ["self-hosted", "Linux", "X64", "nvidia-smi"],
   "raw_repository": "brownu/deform360",
   "raw_revision": "5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4",
