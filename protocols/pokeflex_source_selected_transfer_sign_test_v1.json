@@ -1,0 +1,47 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-source-selected-transfer-sign-test-v1",
+  "schema_version": 1,
+  "protocol_id": "pokeflex-source-selected-transfer-sign-test-v1",
+  "status": "retrospective-post-outcome-diagnostic",
+  "input": {
+    "target_result": "results/sota/pokeflex_action_robust_official13_public_v1/target_result.json",
+    "target_result_sha256": "619c46726aab0f7e81d2e943bd44820e521c9fe6285906add28af87203c15ebd",
+    "target_result_barrier_sha256": "f855ba6fd08931d5c0bf039ee49194a1046284f65101f2c920cb32b6c1be1da2"
+  },
+  "source_selected_multiplier": {
+    "MemoryFoam_T2": 1.0,
+    "PlushVolleyball_T4": 1.0,
+    "FoamHalfSphere_T3": 2.0,
+    "3dPrintedBunny_T1": 1.0,
+    "3dPrintedPyramid_T6": 1.0,
+    "FoamDice_T3": 1.0,
+    "PlushMoon_T1": 4.0,
+    "PlushOctopus_T6": 1.0,
+    "PlushDice_T8": 4.0,
+    "PlushTurtle_T3": 4.0,
+    "Beanbag_T6": 4.0,
+    "FoamCylinder_T1": 3.0,
+    "ToiletPaperRoll_T1": 1.0
+  },
+  "test": {
+    "conditioning": "only the six physical objects for which the frozen source-only rule selected a multiplier different from the global multiplier 1.0",
+    "unit": "physical target take",
+    "contrast": "global-candidate mean CD_UL1_mm minus same-object source-selected candidate mean CD_UL1_mm",
+    "null": "conditional sign symmetry of the six held-out incremental gains",
+    "statistic": "sum of held-out incremental gains; larger is better",
+    "enumeration": "all 2^6 sign assignments",
+    "expected_assignment_count": 64,
+    "tail": "assignments with statistic at least the observed statistic",
+    "alpha": 0.05
+  },
+  "information_boundary": {
+    "fresh_confirmation": false,
+    "all_thirteen_target_outcomes_previously_opened": true,
+    "source_selection_used_target_outcomes": false,
+    "new_model_prediction": false,
+    "target_data_reopened": false,
+    "checked_in_result_only": true,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "This exact conditional sign-flip analysis quantifies retrospective held-out transfer among the six objects whose frozen source-only procedure selected a non-global correction. It does not test wrong-object reassignment, does not replace the five unavailable official validation takes, does not provide fresh confirmation, and does not establish unique causal or material-parameter identification."
+}
