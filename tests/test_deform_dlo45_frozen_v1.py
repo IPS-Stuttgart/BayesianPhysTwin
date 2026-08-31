@@ -39,8 +39,7 @@ def test_pre_target_recovery_is_explicit_and_progress_is_observable() -> None:
     assert '"prior_failure_stage": "source-qualification-job-timeout"' in workflow
     assert '"prior_target_access": False' in workflow
     assert (
-        '"retry_class": "pre-target-timeout-and-observability-correction"'
-        in workflow
+        '"retry_class": "pre-target-timeout-and-observability-correction"' in workflow
     )
 
     assert workflow.count("timeout-minutes: 7200") == 3
