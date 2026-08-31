@@ -1,0 +1,247 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM DLO4 DLO5 existing adapter v1
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - ".github/workflows/deform-dlo45-existing-adapter-v1.yml"
+      - "scripts/science/audit_deform_dlo45_realdata_v1.py"
+      - "scripts/science/invoke_deform_dlo_source_adapter_v1.py"
+      - "triggers/deform_dlo45_existing_adapter_v1.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo45-existing-adapter-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  ADAPTER_REVISION: phystwin-deform-dlo-source-v1
+  AUDITOR: scripts/science/audit_deform_dlo45_realdata_v1.py
+  INVOKER: scripts/science/invoke_deform_dlo_source_adapter_v1.py
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONNOUSERSITE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  invoke:
+    name: Existing DLO source adapter / gpuserver4090
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 120
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+
+      - name: Check out exact experiment revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out existing DEFORM source adapter branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          ref: ${{ env.ADAPTER_REVISION }}
+          path: _deform_adapter
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve isolated runtime and evidence roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          adapter_sha="$(git -C _deform_adapter rev-parse HEAD)"
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          test -n "${base_python}"
+          test -d "${DATASET_ROOT}"
+          resolved_dataset="$(realpath -e -- "${DATASET_ROOT}")"
+          runtime_site="${RUNNER_TEMP}/deform-dlo45-adapter-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          evidence_root="${RUNNER_TEMP}/deform-dlo45-adapter-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${runtime_site}" "${evidence_root}"
+          mkdir -p -- "${runtime_site}" "${evidence_root}"
+          {
+            echo "BASE_PYTHON=${base_python}"
+            echo "ADAPTER_SHA=${adapter_sha}"
+            echo "RUNTIME_SITE=${runtime_site}"
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "RESOLVED_DATASET_ROOT=${resolved_dataset}"
+            echo "PYTHONPATH=${runtime_site}"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "experiment_revision=${GITHUB_SHA}"
+            echo "adapter_revision=${adapter_sha}"
+            echo "adapter_ref=${ADAPTER_REVISION}"
+            echo "dataset=${resolved_dataset}"
+            echo "runner=${RUNNER_NAME}"
+            "${base_python}" --version
+            uname -a
+            df -h "${resolved_dataset}"
+          } | tee "${evidence_root}/environment.txt"
+
+      - name: Validate fail-closed invocation contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" -m py_compile "${AUDITOR}" "${INVOKER}"
+          "${BASE_PYTHON}" "${AUDITOR}" --self-test
+          "${BASE_PYTHON}" "${INVOKER}" --self-test
+
+      - name: Build isolated existing-adapter runtime
+        id: runtime
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" -m pip --version
+          "${BASE_PYTHON}" -m pip install \
+            --target "${RUNTIME_SITE}" \
+            "numpy==2.2.6" \
+            "scipy==1.15.3" \
+            "pandas==2.2.3" \
+            "matplotlib==3.10.1" \
+            "h5py==3.13.0"
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" -m pip install \
+            --target "${RUNTIME_SITE}" \
+            --no-deps \
+            --no-build-isolation \
+            "${GITHUB_WORKSPACE}/_deform_adapter"
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" - <<'PY' \
+            | tee "${EVIDENCE_ROOT}/runtime.txt"
+          import importlib.metadata
+          import numpy
+          import scipy
+
+          print(f"numpy={numpy.__version__}")
+          print(f"scipy={scipy.__version__}")
+          for name in ("bayesian-phystwin", "BayesianPhysTwin"):
+              try:
+                  print(f"{name}={importlib.metadata.version(name)}")
+              except importlib.metadata.PackageNotFoundError:
+                  pass
+          PY
+
+      - name: Reconfirm the complete DLO4/DLO5 data contract
+        id: audit
+        if: steps.runtime.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" "${AUDITOR}" \
+            --dataset-root "${RESOLVED_DATASET_ROOT}" \
+            --repository-root "${GITHUB_WORKSPACE}/_deform_adapter" \
+            --repository-revision "${ADAPTER_SHA}" \
+            --output "${EVIDENCE_ROOT}/audit" \
+            2>&1 | tee "${EVIDENCE_ROOT}/audit.log"
+
+      - name: Invoke the existing adapter on DLO4 and DLO5
+        id: invocation
+        if: >-
+          steps.runtime.outcome == 'success' &&
+          steps.audit.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" "${INVOKER}" \
+            --adapter-root "${GITHUB_WORKSPACE}/_deform_adapter" \
+            --adapter-revision "${ADAPTER_SHA}" \
+            --dataset-root "${RESOLVED_DATASET_ROOT}" \
+            --output "${EVIDENCE_ROOT}/invocation" \
+            --python "${BASE_PYTHON}" \
+            2>&1 | tee "${EVIDENCE_ROOT}/invocation.log"
+
+      - name: Retain checksums and bounded summary
+        if: always()
+        shell: bash
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+          INVOCATION_OUTCOME: ${{ steps.invocation.outcome }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### DEFORM DLO4/DLO5 existing adapter"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\` / \`gpuserver4090\`"
+            echo "- Experiment revision: \`${GITHUB_SHA}\`"
+            echo "- Adapter revision: \`${ADAPTER_SHA}\`"
+            echo "- Runtime outcome: \`${RUNTIME_OUTCOME}\`"
+            echo "- Audit outcome: \`${AUDIT_OUTCOME}\`"
+            echo "- Invocation outcome: \`${INVOCATION_OUTCOME}\`"
+            echo "- Paper claim authorized: \`false\`"
+            if [[ -f "${EVIDENCE_ROOT}/invocation/invocation.json" ]]; then
+              PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          value=json.loads((Path(os.environ["EVIDENCE_ROOT"])/"invocation"/"invocation.json").read_text())
+          print(f"- Decision: `{value['summary']['decision']}`")
+          print(f"- Invocation ID: `{value['invocation_id']}`")
+          print(f"- Successful executions: `{value['summary']['successful_execution_count']}`")
+          print(f"- Unresolved executions: `{value['summary']['unresolved_execution_count']}`")
+          PY
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+          cp --no-clobber \
+            "triggers/deform_dlo45_existing_adapter_v1.txt" \
+            "${EVIDENCE_ROOT}/trigger.txt"
+          find "${EVIDENCE_ROOT}" -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "${EVIDENCE_ROOT}/SHA256SUMS"
+
+      - name: Upload retained adapter evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform-dlo45-existing-adapter-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce real-data adapter execution
+        if: always()
+        shell: bash
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+          INVOCATION_OUTCOME: ${{ steps.invocation.outcome }}
+        run: |
+          set -euo pipefail
+          test "${RUNTIME_OUTCOME}" = "success"
+          test "${AUDIT_OUTCOME}" = "success"
+          test "${INVOCATION_OUTCOME}" = "success"
