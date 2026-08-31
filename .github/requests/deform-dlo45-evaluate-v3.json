@@ -1,0 +1,20 @@
+{
+  "schema": "deform-dlo45-evaluation-request-v1",
+  "request_id": "deform-dlo45-evaluate-20260901-v3",
+  "mode": "evaluate",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+  "runner_label": "gpuserver4090",
+  "devices": [
+    "cuda:0",
+    "cuda:1"
+  ],
+  "authorize_target_scoring": true,
+  "evidence_class": "fresh frozen-procedure DLO4/DLO5 replication; joint prediction seal before scoring; no retry",
+  "paper_claim_authorized": false,
+  "prior_failed_run_id": 33335970581,
+  "prior_failure_stage": "source-qualification-job-timeout",
+  "prior_target_access": false,
+  "retry_class": "pre-target-timeout-and-observability-correction",
+  "expected_source_revision": "d8ba9480cb6ce7309ffd4920043fe97968817df5"
+}
