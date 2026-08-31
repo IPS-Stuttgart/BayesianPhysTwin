@@ -1,0 +1,285 @@
+name: DEFORM DLO4/DLO5 decision identifiability
+
+on:
+  push:
+    paths:
+      - ".github/requests/deform-dlo45-decision-identifiability-v1.json"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: deform-dlo45-decision-identifiability-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/protocol.json
+  REQUEST: .github/requests/deform-dlo45-decision-identifiability-v1.json
+
+jobs:
+  contracts:
+    name: Contracts and semantic target barrier
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate experiment and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            experiments/deform_dlo45_decision_identifiability_v1/evaluate.py
+            tests/test_deform_dlo45_decision_identifiability_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_decision_identifiability_v1.py \
+            tests/test_query_quotient_belief_v1.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          protocol = json.loads(Path("${{ env.PROTOCOL }}").read_text())
+          request = json.loads(Path("${{ env.REQUEST }}").read_text())
+          assert protocol["contract"] == \
+              "deform-dlo45-decision-identifiability-v1"
+          assert request["contract"] == \
+              "deform-dlo45-decision-identifiability-request-v1"
+          assert request["status"] == "authorized"
+          assert request["target_tuning"] is False
+          assert request["target_retries"] is False
+          assert request["dlos"] == ["DLO4", "DLO5"]
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  source:
+    name: Source-only quotient and decision freeze
+    needs: contracts
+    runs-on: [self-hosted, linux, x64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Locate and validate official DLO4/DLO5 data
+        id: dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidates=(
+            /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+            /home/florianpfaff/datasets/deform/data_set
+            /home/florianpfaff/datasets/deform
+          )
+          root=""
+          for candidate in "${candidates[@]}"; do
+            if [[ -d "${candidate}/DLO4/train" \
+               && -d "${candidate}/DLO4/eval" \
+               && -d "${candidate}/DLO5/train" \
+               && -d "${candidate}/DLO5/eval" ]]; then
+              root="${candidate}"
+              break
+            fi
+          done
+          test -n "${root}"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/train" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 56
+            test "$(find "${root}/${dlo}/eval" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 14
+          done
+          echo "root=${root}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify local numerical runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import numpy
+          print(numpy.__version__)
+          PY
+
+      - name: Freeze source-only model and certificate settings
+        shell: bash
+        env:
+          DATASET_ROOT: ${{ steps.dataset.outputs.root }}
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/dlo45-decision-source"
+          rm -rf "${out}"
+          mkdir -p "${out}"
+          PYTHONPATH="${GITHUB_WORKSPACE}/src:${GITHUB_WORKSPACE}" \
+            python3 -m \
+            experiments.deform_dlo45_decision_identifiability_v1.evaluate \
+            source \
+            --protocol "${PROTOCOL}" \
+            --dataset-root "${DATASET_ROOT}" \
+            --output-root "${out}"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) /
+               "dlo45-decision-source/source_result.json").read_text()
+          )
+          assert result["target_data_read"] is False
+          assert set(result["dlos"]) == {"DLO4", "DLO5"}
+          print(json.dumps({
+              "all_source_gates_passed": result["all_source_gates_passed"],
+              "DLO4": result["dlos"]["DLO4"]["selected_settings"],
+              "DLO5": result["dlos"]["DLO5"]["selected_settings"],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload source seal and model
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: dlo45-decision-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/dlo45-decision-source
+          if-no-files-found: error
+          retention-days: 90
+
+  target:
+    name: One-shot held-trajectory evaluation
+    needs: source
+    runs-on: [self-hosted, linux, x64, gpuserver4090]
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Download exact source artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: dlo45-decision-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/dlo45-decision-source
+
+      - name: Locate official target data
+        id: dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidates=(
+            /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+            /home/florianpfaff/datasets/deform/data_set
+            /home/florianpfaff/datasets/deform
+          )
+          root=""
+          for candidate in "${candidates[@]}"; do
+            if [[ -d "${candidate}/DLO4/eval" \
+               && -d "${candidate}/DLO5/eval" ]]; then
+              root="${candidate}"
+              break
+            fi
+          done
+          test -n "${root}"
+          echo "root=${root}" >> "${GITHUB_OUTPUT}"
+
+      - name: Evaluate the sealed policy once
+        shell: bash
+        env:
+          DATASET_ROOT: ${{ steps.dataset.outputs.root }}
+        run: |
+          set -euo pipefail
+          source_root="${RUNNER_TEMP}/dlo45-decision-source"
+          out="${RUNNER_TEMP}/dlo45-decision-target"
+          rm -rf "${out}"
+          mkdir -p "${out}"
+          PYTHONPATH="${GITHUB_WORKSPACE}/src:${GITHUB_WORKSPACE}" \
+            python3 -m \
+            experiments.deform_dlo45_decision_identifiability_v1.evaluate \
+            target \
+            --protocol "${PROTOCOL}" \
+            --dataset-root "${DATASET_ROOT}" \
+            --output-root "${out}" \
+            --model "${source_root}/source_model.npz" \
+            --source-seal "${source_root}/source_seal.json" \
+            --request "${REQUEST}"
+          cat "${out}/summary.md"
+
+      - name: Upload complete compact evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: dlo45-decision-result-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/dlo45-decision-source/source_result.json
+            ${{ runner.temp }}/dlo45-decision-source/source_seal.json
+            ${{ runner.temp }}/dlo45-decision-target/target_result.json
+            ${{ runner.temp }}/dlo45-decision-target/summary.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit compact result to the triggering branch
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_key="$(python3 - <<'PY'
+          import json
+          import os
+
+          with open(os.environ["REQUEST"], encoding="utf-8") as handle:
+              print(json.load(handle)["run_key"])
+          PY
+          )"
+          destination="results/science/deform_dlo45_decision_identifiability_v1/${run_key}"
+          test ! -e "${destination}"
+          mkdir -p "${destination}"
+          cp "${RUNNER_TEMP}/dlo45-decision-source/source_result.json" \
+            "${destination}/source_result.json"
+          cp "${RUNNER_TEMP}/dlo45-decision-source/source_seal.json" \
+            "${destination}/source_seal.json"
+          cp "${RUNNER_TEMP}/dlo45-decision-target/target_result.json" \
+            "${destination}/target_result.json"
+          cp "${RUNNER_TEMP}/dlo45-decision-target/summary.md" \
+            "${destination}/README.md"
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${destination}"
+          git commit -m \
+            "Record DLO4/DLO5 decision-identifiability result ${run_key}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
