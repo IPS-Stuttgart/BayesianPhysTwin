@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from itertools import product
+
 import numpy as np
 import pytest
 
+from bayesian_phystwin.query_decision_certificate_v1 import (
+    QUERY_DECISION_CERTIFICATE_CLAIM_BOUNDARY,
+    query_decision_certificate,
+)
 from bayesian_phystwin.query_quotient_belief_v1 import (
     QUERY_QUOTIENT_BELIEF_CLAIM_BOUNDARY,
     aggregate_to_query_quotient,
@@ -201,4 +207,295 @@ def test_ambiguity_envelope_rejects_misaligned_or_nonfinite_values() -> None:
             [0, 1],
             [1.0, 2.0],
             identifiability_tolerance=-1.0,
+        )
+
+
+def _enumerated_worst_case_regret(
+    prior: np.ndarray,
+    quotient: np.ndarray,
+    classes: np.ndarray,
+    losses: np.ndarray,
+) -> np.ndarray:
+    members = [
+        np.flatnonzero((classes == class_id) & (prior > 0.0))
+        for class_id in range(quotient.size)
+    ]
+    positive_classes = np.flatnonzero(quotient > 0.0)
+    selected_rosters = [members[class_id] for class_id in positive_classes]
+    regrets: list[np.ndarray] = []
+    for selected in product(*selected_rosters):
+        expected_loss = np.zeros(losses.shape[1], dtype=np.float64)
+        for roster_index, hypothesis_id in enumerate(selected):
+            class_id = int(positive_classes[roster_index])
+            expected_loss += quotient[class_id] * losses[hypothesis_id]
+        regrets.append(expected_loss - np.min(expected_loss))
+    return np.max(np.stack(regrets, axis=0), axis=0)
+
+
+def test_decision_certificate_matches_exhaustive_supported_lifts() -> None:
+    prior = np.array([0.1, 0.2, 0.3, 0.4])
+    quotient = np.array([0.6, 0.4])
+    classes = np.array([0, 0, 1, 1])
+    losses = np.array(
+        [
+            [0.0, 2.0, 3.0],
+            [1.0, 0.5, 2.0],
+            [0.2, 1.0, 0.0],
+            [2.0, 0.1, 0.4],
+        ]
+    )
+
+    result = query_decision_certificate(prior, quotient, classes, losses)
+    expected = _enumerated_worst_case_regret(prior, quotient, classes, losses)
+
+    np.testing.assert_allclose(result.worst_case_regret, expected, atol=1e-12)
+    assert result.minimax_action_index == int(np.argmin(expected))
+    summary = result.summary()
+    assert summary["hypothesis_count"] == 4
+    assert summary["prior_support_count"] == 4
+    assert summary["quotient_class_count"] == 2
+    assert summary["action_count"] == 3
+    assert summary["claim_boundary"] == QUERY_DECISION_CERTIFICATE_CLAIM_BOUNDARY
+
+
+def test_decision_can_be_robust_when_latent_state_is_ambiguous() -> None:
+    result = query_decision_certificate(
+        np.array([0.2, 0.3, 0.1, 0.4]),
+        np.array([0.45, 0.55]),
+        np.array([0, 0, 1, 1]),
+        np.array(
+            [
+                [0.0, 2.0],
+                [0.1, 1.5],
+                [0.2, 2.5],
+                [0.0, 1.8],
+            ]
+        ),
+    )
+
+    assert result.minimax_action_index == 0
+    assert result.minimax_worst_case_regret == pytest.approx(0.0)
+    np.testing.assert_array_equal(
+        result.robustly_optimal_action_mask,
+        np.array([True, False]),
+    )
+    assert result.has_robustly_optimal_action
+    assert result.uniquely_robustly_optimal
+    assert result.has_tolerance_admissible_action
+    assert result.uniquely_tolerance_identified
+
+
+def test_decision_certificate_uses_prior_support_not_positive_magnitudes() -> None:
+    quotient = np.array([0.6, 0.4])
+    classes = np.array([0, 0, 1, 1])
+    losses = np.array(
+        [
+            [0.0, 2.0, 3.0],
+            [1.0, 0.5, 2.0],
+            [0.2, 1.0, 0.0],
+            [2.0, 0.1, 0.4],
+        ]
+    )
+    result_a = query_decision_certificate(
+        np.array([0.1, 0.2, 0.3, 0.4]), quotient, classes, losses
+    )
+    result_b = query_decision_certificate(
+        np.array([0.2, 0.1, 0.6, 0.1]), quotient, classes, losses
+    )
+
+    np.testing.assert_allclose(
+        result_a.pairwise_worst_case_loss_gap,
+        result_b.pairwise_worst_case_loss_gap,
+    )
+    np.testing.assert_allclose(result_a.worst_case_regret, result_b.worst_case_regret)
+
+
+def test_decision_certificate_excludes_zero_prior_and_zero_mass_classes() -> None:
+    result = query_decision_certificate(
+        np.array([1.0, 0.0, 0.0]),
+        np.array([1.0, 0.0]),
+        np.array([0, 0, 1]),
+        np.array(
+            [
+                [0.0, 1.0],
+                [1000.0, -1000.0],
+                [-1000.0, 1000.0],
+            ]
+        ),
+    )
+
+    assert result.minimax_action_index == 0
+    assert result.minimax_worst_case_regret == pytest.approx(0.0)
+    np.testing.assert_array_equal(
+        result.prior_support_mask,
+        np.array([True, False, False]),
+    )
+    np.testing.assert_allclose(result.class_pairwise_max_loss_gap[1], 0.0)
+
+
+def test_decision_regret_tolerance_preserves_nonunique_action_set() -> None:
+    result = query_decision_certificate(
+        np.array([0.5, 0.5]),
+        np.array([1.0]),
+        np.array([0, 0]),
+        np.array([[0.0, 0.2], [0.2, 0.0]]),
+        regret_tolerance=0.2,
+    )
+
+    np.testing.assert_allclose(result.worst_case_regret, np.array([0.2, 0.2]))
+    np.testing.assert_array_equal(
+        result.tolerance_admissible_action_mask,
+        np.array([True, True]),
+    )
+    assert result.has_tolerance_admissible_action
+    assert not result.uniquely_tolerance_identified
+    assert not result.has_robustly_optimal_action
+    assert not result.uniquely_robustly_optimal
+
+
+def test_decision_certificate_arrays_are_immutable() -> None:
+    result = query_decision_certificate(
+        np.array([0.5, 0.5]),
+        np.array([1.0]),
+        np.array([0, 0]),
+        np.array([[0.0, 1.0], [0.5, 2.0]]),
+    )
+    with pytest.raises(ValueError):
+        result.worst_case_regret[0] = 1.0
+    with pytest.raises(ValueError):
+        result.pairwise_worst_case_loss_gap[0, 1] = 1.0
+    with pytest.raises(ValueError):
+        result.prior_support_mask[0] = False
+
+
+@pytest.mark.parametrize(
+    ("prior", "quotient", "classes", "losses", "message"),
+    [
+        (
+            ["bad", "prior"],
+            [1.0],
+            [0, 0],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "real numeric",
+        ),
+        (
+            [[0.5, 0.5]],
+            [1.0],
+            [0, 0],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "one-dimensional",
+        ),
+        (
+            [0.5, np.inf],
+            [1.0],
+            [0, 0],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "finite",
+        ),
+        (
+            [1.1, -0.1],
+            [1.0],
+            [0, 0],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "nonnegative",
+        ),
+        (
+            [0.5, 0.5],
+            [0.5, 0.4],
+            [0, 1],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "sum to one",
+        ),
+        (
+            [0.5, 0.5],
+            [0.5, 0.5],
+            [0.0, 1.0],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "integer",
+        ),
+        (
+            [0.5, 0.5],
+            [0.5, 0.5],
+            [[0, 1]],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "one-dimensional",
+        ),
+        (
+            [0.5, 0.5],
+            [0.5, 0.5],
+            [0, -1],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "nonnegative",
+        ),
+        (
+            [0.5, 0.5],
+            [0.5, 0.5],
+            [0, 2],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "contiguous",
+        ),
+        (
+            [0.5, 0.5],
+            [1.0],
+            [0, 0, 0],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "exactly 2",
+        ),
+        (
+            [0.5, 0.5],
+            [1.0],
+            [0, 0],
+            [["bad", "loss"], [1.0, 0.0]],
+            "real numeric",
+        ),
+        (
+            [0.5, 0.5],
+            [1.0],
+            [0, 0],
+            [0.0, 1.0],
+            "shape",
+        ),
+        (
+            [0.5, 0.5],
+            [1.0],
+            [0, 0],
+            [[0.0], [1.0]],
+            "at least two",
+        ),
+        (
+            [0.5, 0.5],
+            [1.0],
+            [0, 0],
+            [[0.0, np.nan], [1.0, 0.0]],
+            "finite",
+        ),
+        (
+            [1.0, 0.0],
+            [0.5, 0.5],
+            [0, 1],
+            [[0.0, 1.0], [1.0, 0.0]],
+            "zero prior support",
+        ),
+    ],
+)
+def test_decision_certificate_rejects_invalid_contracts(
+    prior: object,
+    quotient: object,
+    classes: object,
+    losses: object,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        query_decision_certificate(prior, quotient, classes, losses)
+
+
+@pytest.mark.parametrize("tolerance", [-1.0, np.inf, True, "bad"])
+def test_decision_certificate_rejects_invalid_tolerance(tolerance: object) -> None:
+    with pytest.raises(ValueError, match="regret_tolerance"):
+        query_decision_certificate(
+            np.array([0.5, 0.5]),
+            np.array([1.0]),
+            np.array([0, 0]),
+            np.array([[0.0, 1.0], [1.0, 0.0]]),
+            regret_tolerance=tolerance,
         )
