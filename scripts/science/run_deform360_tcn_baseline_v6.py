@@ -343,9 +343,7 @@ def standardized_arrays(
     else:
         action = np.zeros_like(samples.action)
         static = np.zeros_like(samples.static)
-    target = (
-        samples.target - scaler.target_mean[None, :]
-    ) / scaler.target_std[None, :]
+    target = (samples.target - scaler.target_mean[None, :]) / scaler.target_std[None, :]
     return (
         np.asarray(tactile, dtype=np.float32),
         np.asarray(action, dtype=np.float32),
@@ -760,9 +758,7 @@ def comparison(
 
 
 def held_out_action_family(row: Mapping[str, Any]) -> bool:
-    source_families = {
-        base.action_family(action) for action in row["source_actions"]
-    }
+    source_families = {base.action_family(action) for action in row["source_actions"]}
     return str(row["target_action_family"]) not in source_families
 
 
@@ -788,9 +784,7 @@ def validate_protocol(
         v5_protocol["eligible_object_ids"]
     ):
         raise base.EvaluationError("92-object evaluation roster changed")
-    if set(protocol["development_object_ids"]) & set(
-        protocol["evaluation_object_ids"]
-    ):
+    if set(protocol["development_object_ids"]) & set(protocol["evaluation_object_ids"]):
         raise base.EvaluationError("development and evaluation rosters overlap")
     if protocol.get("changes_to_frozen_v3_method_allowed") is not False:
         raise base.EvaluationError("protocol permits changes to frozen v3 method")
@@ -819,9 +813,7 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         v5_protocol["selection"]["minimum_complete_episodes_per_object"]
     )
     seed = int(protocol["statistics"]["random_seed"])
-    bootstrap_repetitions = int(
-        protocol["statistics"]["bootstrap_repetitions"]
-    )
+    bootstrap_repetitions = int(protocol["statistics"]["bootstrap_repetitions"])
     torch.set_num_threads(int(training["torch_threads"]))
     torch.set_num_interop_threads(1)
     seed_everything(seed)
@@ -924,8 +916,7 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
             ],
             "evaluation_source_episode_ids": {
                 item.object_id: [
-                    descriptor.episode_id
-                    for descriptor in item.source_descriptors
+                    descriptor.episode_id for descriptor in item.source_descriptors
                 ]
                 for item in evaluation_sources
             },
@@ -988,8 +979,7 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
                     for descriptor in source_object.source_descriptors
                 ],
                 "source_actions": [
-                    descriptor.action
-                    for descriptor in source_object.source_descriptors
+                    descriptor.action for descriptor in source_object.source_descriptors
                 ],
                 "target_episode_id": source_object.target_descriptor.episode_id,
                 "target_action": source_object.target_descriptor.action,
@@ -1004,18 +994,12 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
                     v3_row["metrics"]["state_kernel"]["active_field_rmse"]
                 ),
                 "v3_shuffled_action": float(
-                    v3_row["metrics"]["shuffled_action_control"][
-                        "active_field_rmse"
-                    ]
+                    v3_row["metrics"]["shuffled_action_control"]["active_field_rmse"]
                 ),
                 "v3_bayesian_action_ensemble": float(
-                    v3_row["metrics"]["bayesian_action_ensemble"][
-                        "active_field_rmse"
-                    ]
+                    v3_row["metrics"]["bayesian_action_ensemble"]["active_field_rmse"]
                 ),
-                "state_only_tcn": float(
-                    tcn_metrics["state_only_tcn"][object_id]
-                ),
+                "state_only_tcn": float(tcn_metrics["state_only_tcn"][object_id]),
                 "action_conditioned_tcn": float(
                     tcn_metrics["action_conditioned_tcn"][object_id]
                 ),
@@ -1031,8 +1015,7 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         "action_conditioned_tcn",
     )
     aggregate = {
-        method: float(np.mean([row[method] for row in rows]))
-        for method in methods
+        method: float(np.mean([row[method] for row in rows])) for method in methods
     }
     comparisons = {
         "v3_ensemble_vs_persistence": comparison(
@@ -1251,9 +1234,7 @@ def write_csv(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
         writer.writeheader()
         for row in materialized:
             encoded = dict(row)
-            encoded["source_episode_ids"] = json.dumps(
-                encoded["source_episode_ids"]
-            )
+            encoded["source_episode_ids"] = json.dumps(encoded["source_episode_ids"])
             encoded["source_actions"] = json.dumps(encoded["source_actions"])
             writer.writerow(encoded)
 
