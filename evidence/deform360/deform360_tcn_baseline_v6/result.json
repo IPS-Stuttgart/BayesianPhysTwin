@@ -1,0 +1,175 @@
+{
+  "artifact_id": 9767812227,
+  "artifact_sha256": "68ff5fb8e2274f3e71a20ef79a7450d0baa0cf57985e88064b31e4c1edc2bca2",
+  "claim_boundary": "Post-confirmation same-object tactile forecasting audit. Not fresh confirmation, zero-shot unseen-object transfer, dense 4-D geometry validation, calibrated joint uncertainty, strict counterfactual identification, or an overall state-of-the-art claim.",
+  "comparisons": {
+    "action_tcn_vs_persistence": {
+      "exact_one_sided_sign_test_pvalue": 8.641371682408216e-25,
+      "first": "action_conditioned_tcn",
+      "mean_difference": -0.04661832890849276,
+      "object_bootstrap_95_interval": [-0.05223869649442677, -0.040951336665177016],
+      "object_wins_ties_losses": [90, 0, 2],
+      "relative_change": -0.07031692703217954,
+      "second": "persistence",
+      "worst_object_regret": 0.030484639004812575
+    },
+    "action_tcn_vs_state_tcn": {
+      "exact_one_sided_sign_test_pvalue": 1.878120043150185e-26,
+      "first": "action_conditioned_tcn",
+      "mean_difference": -0.02611920575219748,
+      "object_bootstrap_95_interval": [-0.0297341447647168, -0.022643832329763608],
+      "object_wins_ties_losses": [91, 0, 1],
+      "relative_change": -0.040654018907345976,
+      "second": "state_only_tcn",
+      "worst_object_regret": 0.0024166951074158227
+    },
+    "v3_ensemble_vs_action_conditioned_tcn": {
+      "exact_one_sided_sign_test_pvalue": 0.999981649770381,
+      "first": "v3_bayesian_action_ensemble",
+      "mean_difference": 0.012023611431339237,
+      "object_bootstrap_95_interval": [0.006808583560607045, 0.016890492303963514],
+      "object_wins_ties_losses": [27, 0, 65],
+      "relative_change": 0.01950757073695646,
+      "second": "action_conditioned_tcn",
+      "worst_object_regret": 0.0832313677197265
+    },
+    "v3_ensemble_vs_persistence": {
+      "exact_one_sided_sign_test_pvalue": 1.878120043150185e-26,
+      "first": "v3_bayesian_action_ensemble",
+      "mean_difference": -0.034594717477153536,
+      "object_bootstrap_95_interval": [-0.04025713207045193, -0.029540299181246017],
+      "object_wins_ties_losses": [91, 0, 1],
+      "relative_change": -0.05218106872330874,
+      "second": "persistence",
+      "worst_object_regret": 0.0025521255731057457
+    },
+    "v3_ensemble_vs_state_only_tcn": {
+      "exact_one_sided_sign_test_pvalue": 2.674071585520934e-07,
+      "first": "v3_bayesian_action_ensemble",
+      "mean_difference": -0.01409559432085824,
+      "object_bootstrap_95_interval": [-0.019952193174462448, -0.00865494196659454],
+      "object_wins_ties_losses": [70, 0, 22],
+      "relative_change": -0.021939509319966126,
+      "second": "state_only_tcn",
+      "worst_object_regret": 0.05316374747812347
+    }
+  },
+  "development_epoch_selection": {
+    "action_conditioned_tcn": {
+      "best_object_balanced_active_field_rmse": 0.6267006327498343,
+      "selected_epoch": 14
+    },
+    "state_only_tcn": {
+      "best_object_balanced_active_field_rmse": 0.6410574203747205,
+      "selected_epoch": 17
+    }
+  },
+  "final_model_freeze": {
+    "freeze_sha256": "abf9cfbd8c40d31f9895365eddf2719236e544bd48917329d5fc337545573fad",
+    "models": {
+      "action_conditioned_tcn": {
+        "parameter_count": 50824,
+        "scaler_sha256": "d9eac4e48071306bf7b3f5b6e20a774f10aa5dba10629a2a96aa7a7eeedb0474",
+        "selected_epoch": 14,
+        "state_dict_sha256": "ea7aa074677d0093744e4400e5743eadc145a53f0513e1156aca53176dc7b047"
+      },
+      "state_only_tcn": {
+        "parameter_count": 50824,
+        "scaler_sha256": "d9eac4e48071306bf7b3f5b6e20a774f10aa5dba10629a2a96aa7a7eeedb0474",
+        "selected_epoch": 17,
+        "state_dict_sha256": "cee53920626907be8b377243407771e6996a223f1bbffce2fe0cce8383ba7f33"
+      }
+    },
+    "target_tactile_opened_after_freeze": true
+  },
+  "forecast_horizon_frames": 32,
+  "held_out_action_family": {
+    "action_tcn_vs_state_tcn": {
+      "exact_one_sided_sign_test_pvalue": 1.049041748046875e-05,
+      "first": "action_conditioned_tcn",
+      "mean_difference": -0.02759263595342819,
+      "object_bootstrap_95_interval": [-0.033848246852490396, -0.021151056577755418],
+      "object_wins_ties_losses": [20, 0, 1],
+      "relative_change": -0.03911113749875061,
+      "second": "state_only_tcn",
+      "worst_object_regret": 0.0024166951074158227
+    },
+    "methods": {
+      "action_conditioned_tcn": 0.6779004209618716,
+      "persistence": 0.728204170577764,
+      "state_only_tcn": 0.7054930569153001,
+      "v3_bayesian_action_ensemble": 0.6918231379230703,
+      "v3_shuffled_action": 0.7116616261046678,
+      "v3_state_kernel": 0.7113423776063985
+    },
+    "object_count": 21,
+    "v3_ensemble_vs_action_conditioned_tcn": {
+      "exact_one_sided_sign_test_pvalue": 0.996401309967041,
+      "first": "v3_bayesian_action_ensemble",
+      "mean_difference": 0.013922716961198517,
+      "object_bootstrap_95_interval": [0.00590761854515742, 0.021636092630435245],
+      "object_wins_ties_losses": [5, 0, 16],
+      "relative_change": 0.02053799722006899,
+      "second": "action_conditioned_tcn",
+      "worst_object_regret": 0.04133463703334783
+    },
+    "v3_ensemble_vs_persistence": {
+      "exact_one_sided_sign_test_pvalue": 1.049041748046875e-05,
+      "first": "v3_bayesian_action_ensemble",
+      "mean_difference": -0.03638103265469376,
+      "object_bootstrap_95_interval": [-0.047823053563878906, -0.026280863780557138],
+      "object_wins_ties_losses": [20, 0, 1],
+      "relative_change": -0.04995993448627012,
+      "second": "persistence",
+      "worst_object_regret": 0.0025521255731057457
+    },
+    "v3_ensemble_vs_state_kernel": {
+      "exact_one_sided_sign_test_pvalue": 1.049041748046875e-05,
+      "first": "v3_bayesian_action_ensemble",
+      "mean_difference": -0.019519239683328225,
+      "object_bootstrap_95_interval": [-0.026474542477643047, -0.013171231579664756],
+      "object_wins_ties_losses": [20, 0, 1],
+      "relative_change": -0.02744000680657979,
+      "second": "v3_state_kernel",
+      "worst_object_regret": 0.003532161155300917
+    }
+  },
+  "history_frames": 8,
+  "information_boundary": {
+    "camera_pixels_opened": false,
+    "evaluation_target_robot_trajectory_used_as_known_input": true,
+    "evaluation_target_tactile_used_for_scoring_only": true,
+    "geometry_or_point_cloud_opened": false,
+    "globally_fresh_confirmation": false,
+    "new_measurements_collected": false,
+    "post_confirmation_competitive_baseline_audit": true,
+    "tcn_architecture_selected_on_original_14_object_development_roster": true,
+    "tcn_final_models_content_hashed_before_92_target_tactile_open": true,
+    "tcn_final_models_trained_on_92_object_source_episodes_only": true,
+    "v3_method_changed": false
+  },
+  "interpretation": {
+    "action_conditioning_supported_within_tcn": true,
+    "bayesian_ensemble_beats_action_conditioned_tcn": false,
+    "bayesian_ensemble_beats_state_only_tcn": true,
+    "competitive_baseline_winner": "action_conditioned_tcn",
+    "guarded_state_discrepancy_paper_still_supported": true,
+    "raw_predictive_superiority_claim_supported": false
+  },
+  "methods": {
+    "action_conditioned_tcn": 0.6163561621007425,
+    "persistence": 0.6629744910092352,
+    "state_only_tcn": 0.6424753678529399,
+    "v3_bayesian_action_ensemble": 0.6283797735320816,
+    "v3_shuffled_action": 0.6513509957116204,
+    "v3_state_kernel": 0.6474155768204857
+  },
+  "object_count": 92,
+  "paper_claim_authorized": false,
+  "primary_metric": "object-balanced active-field RMSE",
+  "schema": "bayesian-phystwin/deform360-competitive-tcn-baseline-v6-compact",
+  "source_revision": "a32948698fe43e4e52a443a93c9c1604012a21cf",
+  "status": "complete",
+  "workflow_job_id": 99572873900,
+  "workflow_run_id": 33417883597
+}
