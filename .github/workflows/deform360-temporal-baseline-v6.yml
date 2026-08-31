@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: deform360-temporal-baseline-v6-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
@@ -54,7 +54,7 @@ jobs:
           python3 -m venv "${venv}"
           "${venv}/bin/python" -m pip install numpy==1.26.4
           "${venv}/bin/python" -m pip install \
-            "torch==2.10.0+cpu" \
+            "torch==2.8.0+cpu" \
             --index-url https://download.pytorch.org/whl/cpu
           mkdir -p -- "${output}"
           {
@@ -84,12 +84,12 @@ jobs:
           module = importlib.util.module_from_spec(spec)
           sys.modules[spec.name] = module
           spec.loader.exec_module(module)
-          model = module.TwoStreamTCN(16, 60, 7, 24, 48, 0.05)
-          tactile = torch.zeros((3, 16, 16), dtype=torch.float32)
+          model = module.TwoStreamTCN(384, 60, 7, 384, 32, 24, 0.05)
+          tactile = torch.zeros((3, 8, 384), dtype=torch.float32)
           action = torch.zeros((3, 9, 60), dtype=torch.float32)
           static = torch.zeros((3, 7), dtype=torch.float32)
           output = model(tactile, action, static)
-          if output.shape != (3, 24) or not torch.isfinite(output).all():
+          if output.shape != (3, 384) or not torch.isfinite(output).all():
               raise SystemExit("TCN smoke contract failed")
           values = np.asarray([-1.0, -2.0, 0.5])
           interval = module.bootstrap_interval(values, 100, 7)
