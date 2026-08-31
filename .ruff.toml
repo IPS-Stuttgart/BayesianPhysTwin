@@ -1,0 +1,4 @@
+extend = "pyproject.toml"
+
+[lint.per-file-ignores]
+"scripts/science/run_deform360_dependence_query_v6.py" = ["UP012"]
