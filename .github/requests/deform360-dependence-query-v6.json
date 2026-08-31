@@ -1,0 +1,20 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-query-workflow-request-v6",
+  "request_id": "deform360-dependence-query-v6-20260901",
+  "purpose": "Rerun the exact frozen v3 point predictor on the completed 92-object Deform360 roster and compare same-mean, coordinate-marginal-matched covariance dependence arms on source-calibrated tactile queries and execute-versus-fallback risk.",
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "gpuserver4090"
+  ],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "protocol_path": "protocols/deform360_dependence_query_v6.json",
+  "parent_confirmation_run_id": 33335779766,
+  "parent_confirmation_artifact_id": 9738998271,
+  "parent_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+  "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+  "retrospective_target_reuse": true,
+  "paper_claim_authorized": false,
+  "expected_source_revision": "395fb5aa2dbf6ed135f5b78676e97170b28b4aa8"
+}
