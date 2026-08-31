@@ -28,12 +28,37 @@ def test_protocol_is_exact_and_target_jointly_sealed() -> None:
     assert not protocol["custody"]["retry_authorized"]
 
 
-def test_pre_target_recovery_is_explicit_and_uses_ephemeral_git_trust() -> None:
+def test_pre_target_recovery_is_explicit_and_progress_is_observable() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert ".github/requests/deform-dlo45-evaluate-v2.json" in workflow
+    assert ".github/requests/deform-dlo45-evaluate-v3.json" in workflow
+
     assert '"prior_failed_run_id": 33329341107' in workflow
-    assert '"prior_target_access": False' in workflow
     assert '"retry_class": "pre-target-infrastructure-correction"' in workflow
+    assert '"prior_failed_run_id": 33335970581' in workflow
+    assert '"prior_failure_stage": "source-qualification-job-timeout"' in workflow
+    assert '"prior_target_access": False' in workflow
+    assert (
+        '"retry_class": "pre-target-timeout-and-observability-correction"' in workflow
+    )
+
+    assert workflow.count("timeout-minutes: 7200") == 3
+    assert "\n  source:\n" in workflow
+    assert "\n  target:\n" in workflow
+    assert "needs.source.result == 'success'" in workflow
+    assert "DLO4-source" in workflow
+    assert "DLO5-source" in workflow
+    assert "DLO4-target" in workflow
+    assert "DLO5-target" in workflow
+    assert "source-heartbeat.jsonl" in workflow
+    assert "target-heartbeat.jsonl" in workflow
+    assert 'print("[progress] " + json.dumps(payload' in workflow
+    assert "dlo4-source/physical/progress.json" in workflow
+    assert "dlo5-source/physical/progress.json" in workflow
+    assert "dlo4-target/alltrain/progress.json" in workflow
+    assert "dlo5-target/alltrain/progress.json" in workflow
+    assert "deform-dlo45-source-${{ github.run_id }}" in workflow
+
     assert 'git config --file "$safe_git_config" --add safe.directory' in workflow
     assert 'echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"' in workflow
     assert 'rm -f "$DLO45_GIT_CONFIG"' in workflow
