@@ -16,6 +16,7 @@ on:
       - .github/requests/deform-dlo45-inventory-v1.json
       - .github/requests/deform-dlo45-evaluate-v1.json
       - .github/requests/deform-dlo45-evaluate-v2.json
+      - .github/requests/deform-dlo45-evaluate-v3.json
 
 permissions:
   contents: read
@@ -88,13 +89,16 @@ jobs:
               path=.github/requests/deform-dlo45-evaluate-v1.json; mode=evaluate ;;
             $'A\t.github/requests/deform-dlo45-evaluate-v2.json')
               path=.github/requests/deform-dlo45-evaluate-v2.json; mode=evaluate ;;
+            $'A\t.github/requests/deform-dlo45-evaluate-v3.json')
+              path=.github/requests/deform-dlo45-evaluate-v3.json; mode=evaluate ;;
             *) echo "Expected one newly added DLO4/DLO5 request" >&2; exit 2 ;;
           esac
           REQUEST_PATH="$path" MODE="$mode" python - <<'PY'
           import json, os, subprocess
           from pathlib import Path
 
-          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          request_path = Path(os.environ["REQUEST_PATH"])
+          request = json.loads(request_path.read_text())
           mode = os.environ["MODE"]
           common = {
               "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
@@ -118,12 +122,19 @@ jobs:
                   "authorize_target_scoring": True,
                   "evidence_class": "fresh frozen-procedure DLO4/DLO5 replication; joint prediction seal before scoring; no retry",
               })
-              if Path(os.environ["REQUEST_PATH"]).name == "deform-dlo45-evaluate-v2.json":
+              if request_path.name == "deform-dlo45-evaluate-v2.json":
                   expected.update({
                       "prior_failed_run_id": 33329341107,
                       "prior_failure_stage": "source-preflight-upstream-git-ownership",
                       "prior_target_access": False,
                       "retry_class": "pre-target-infrastructure-correction",
+                  })
+              elif request_path.name == "deform-dlo45-evaluate-v3.json":
+                  expected.update({
+                      "prior_failed_run_id": 33335970581,
+                      "prior_failure_stage": "source-qualification-job-timeout",
+                      "prior_target_access": False,
+                      "retry_class": "pre-target-timeout-and-observability-correction",
                   })
           for key, value in expected.items():
               if request.get(key) != value:
@@ -140,23 +151,25 @@ jobs:
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "path=$path" >> "$GITHUB_OUTPUT"
 
-  run:
+  inventory:
     needs: [contracts, authorize-request]
     if: >-
       always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      needs.contracts.result == 'success' && needs.authorize-request.result == 'success'
+      needs.contracts.result == 'success' && needs.authorize-request.result == 'success' &&
+      needs.authorize-request.outputs.mode == 'inventory'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 480
+    timeout-minutes: 7200
     env:
       MODE: ${{ needs.authorize-request.outputs.mode }}
       REQUEST_PATH: ${{ needs.authorize-request.outputs.path }}
+      DLO45_OUT: /home/github-runner/.cache/workflows/deform-dlo45/inventory/${{ github.run_id }}-${{ github.run_attempt }}
       PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Bind runner, data, runtime, and one-shot custody
+      - name: Bind inventory runner, data, and runtime
         shell: bash
         run: |
           set -euo pipefail
@@ -164,27 +177,16 @@ jobs:
           test -d "$DATASET_ROOT/DLO5/train" && test -d "$DATASET_ROOT/DLO5/eval"
           test -d "$UPSTREAM_ROOT/.git" && test -x "$FROZEN_PYTHON"
           test "$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)" -ge 2
-          safe_git_config="$RUNNER_TEMP/deform-dlo45-gitconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          safe_git_config="$RUNNER_TEMP/deform-dlo45-inventory-gitconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           : > "$safe_git_config"
           git config --file "$safe_git_config" --add safe.directory "$UPSTREAM_ROOT"
           export GIT_CONFIG_GLOBAL="$safe_git_config"
           git -C "$UPSTREAM_ROOT" rev-parse HEAD >/dev/null
           echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"
           echo "DLO45_GIT_CONFIG=$safe_git_config" >> "$GITHUB_ENV"
-          if test "$MODE" = evaluate; then
-            root=/home/github-runner/.cache/workflows/deform-dlo45
-            out="$root/runs/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-            claim="$root/claims/$($FROZEN_PYTHON -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$REQUEST_PATH")"
-            mkdir -p "$root/runs" "$root/claims"
-            mkdir "$claim"
-            printf '%s\n' "$GITHUB_SHA" > "$claim/github_sha"
-          else
-            out="$RUNNER_TEMP/deform-dlo45-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          fi
-          test ! -e "$out" && mkdir -p "$out/logs"
-          echo "DLO45_OUT=$out" >> "$GITHUB_ENV"
+          test ! -e "$DLO45_OUT"
+          mkdir -p "$DLO45_OUT/logs"
       - name: Run target-closed inventory
-        if: env.MODE == 'inventory'
         shell: bash
         run: |
           set -euo pipefail
@@ -192,22 +194,256 @@ jobs:
             --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" \
             --upstream-root "$UPSTREAM_ROOT" --output-root "$DLO45_OUT" \
             --device cuda:0 --smoke | tee "$DLO45_OUT/logs/inventory.log"
-      - name: Qualify DLO4 and DLO5 sources in parallel
-        if: env.MODE == 'evaluate'
+      - name: Upload inventory evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DLO45_OUT }}/inventory.json
+            ${{ env.DLO45_OUT }}/**/progress.json
+            ${{ env.DLO45_OUT }}/**/failure_receipt.json
+            ${{ env.DLO45_OUT }}/logs
+            ${{ env.PROTOCOL }}
+            ${{ env.REQUEST_PATH }}
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Remove inventory scratch
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
-          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run source \
+          rm -rf "$DLO45_OUT"
+          if test -n "${DLO45_GIT_CONFIG:-}"; then
+            rm -f "$DLO45_GIT_CONFIG"
+          fi
+
+  source:
+    needs: [contracts, authorize-request]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' && needs.authorize-request.result == 'success' &&
+      needs.authorize-request.outputs.mode == 'evaluate'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 7200
+    env:
+      MODE: ${{ needs.authorize-request.outputs.mode }}
+      REQUEST_PATH: ${{ needs.authorize-request.outputs.path }}
+      DLO45_OUT: /home/github-runner/.cache/workflows/deform-dlo45/runs/${{ github.run_id }}-${{ github.run_attempt }}
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Bind source runner, data, runtime, and one-shot custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT/DLO4/train" && test -d "$DATASET_ROOT/DLO4/eval"
+          test -d "$DATASET_ROOT/DLO5/train" && test -d "$DATASET_ROOT/DLO5/eval"
+          test -d "$UPSTREAM_ROOT/.git" && test -x "$FROZEN_PYTHON"
+          test "$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)" -ge 2
+          safe_git_config="$RUNNER_TEMP/deform-dlo45-source-gitconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          : > "$safe_git_config"
+          git config --file "$safe_git_config" --add safe.directory "$UPSTREAM_ROOT"
+          export GIT_CONFIG_GLOBAL="$safe_git_config"
+          git -C "$UPSTREAM_ROOT" rev-parse HEAD >/dev/null
+          echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"
+          echo "DLO45_GIT_CONFIG=$safe_git_config" >> "$GITHUB_ENV"
+
+          root=/home/github-runner/.cache/workflows/deform-dlo45
+          claim="$root/claims/$($FROZEN_PYTHON -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$REQUEST_PATH")"
+          mkdir -p "$root/runs" "$root/claims"
+          mkdir "$claim"
+          printf '%s\n' "$GITHUB_SHA" > "$claim/github_sha"
+          test ! -e "$DLO45_OUT"
+          mkdir -p "$DLO45_OUT/logs"
+      - name: Qualify DLO4 and DLO5 sources with live progress
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          run_streamed() {
+            local label="$1"
+            local logfile="$2"
+            shift 2
+            stdbuf -oL -eL "$@" 2>&1 | tee "$logfile" | sed -u "s/^/[$label] /"
+          }
+
+          monitor_pair() {
+            local stage="$1"
+            local pid4="$2"
+            local pid5="$3"
+            local progress4="$4"
+            local progress5="$5"
+            local heartbeat_log="$6"
+            local started
+            started="$(date +%s)"
+            while kill -0 "$pid4" 2>/dev/null || kill -0 "$pid5" 2>/dev/null; do
+              STAGE="$stage" PID4="$pid4" PID5="$pid5" STARTED="$started" \
+              PROGRESS4="$progress4" PROGRESS5="$progress5" \
+              "$FROZEN_PYTHON" - <<'PY' | tee -a "$heartbeat_log"
+          import json
+          import os
+          import subprocess
+          import time
+          from pathlib import Path
+
+          def alive(pid: int) -> bool:
+              try:
+                  os.kill(pid, 0)
+              except OSError:
+                  return False
+              return True
+
+          def load_progress(raw: str) -> dict[str, object]:
+              path = Path(raw)
+              if not path.is_file():
+                  return {"available": False}
+              try:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+              except (OSError, json.JSONDecodeError) as error:
+                  return {"available": False, "read_error": type(error).__name__}
+              return {"available": True, **value}
+
+          gpu = subprocess.run(
+              [
+                  "nvidia-smi",
+                  "--query-gpu=index,name,utilization.gpu,memory.used,memory.total",
+                  "--format=csv,noheader,nounits",
+              ],
+              check=False,
+              capture_output=True,
+              text=True,
+          )
+          payload = {
+              "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+              "stage": os.environ["STAGE"],
+              "elapsed_seconds": int(time.time()) - int(os.environ["STARTED"]),
+              "process_alive": {
+                  "DLO4": alive(int(os.environ["PID4"])),
+                  "DLO5": alive(int(os.environ["PID5"])),
+              },
+              "progress": {
+                  "DLO4": load_progress(os.environ["PROGRESS4"]),
+                  "DLO5": load_progress(os.environ["PROGRESS5"]),
+              },
+              "gpu": gpu.stdout.strip().splitlines() if gpu.returncode == 0 else [],
+          }
+          print("[progress] " + json.dumps(payload, sort_keys=True), flush=True)
+          PY
+              sleep 300
+            done
+          }
+
+          run_streamed DLO4-source "$DLO45_OUT/logs/dlo4-source.log" \
+            "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run source \
             --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
-            --output-root "$DLO45_OUT/dlo4-source" --dlo DLO4 --device cuda:0 \
-            >"$DLO45_OUT/logs/dlo4-source.log" 2>&1 & p4=$!
-          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run source \
+            --output-root "$DLO45_OUT/dlo4-source" --dlo DLO4 --device cuda:0 &
+          p4=$!
+          run_streamed DLO5-source "$DLO45_OUT/logs/dlo5-source.log" \
+            "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run source \
             --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
-            --output-root "$DLO45_OUT/dlo5-source" --dlo DLO5 --device cuda:1 \
-            >"$DLO45_OUT/logs/dlo5-source.log" 2>&1 & p5=$!
-          wait "$p4"; wait "$p5"
+            --output-root "$DLO45_OUT/dlo5-source" --dlo DLO5 --device cuda:1 &
+          p5=$!
+
+          monitor_pair source "$p4" "$p5" \
+            "$DLO45_OUT/dlo4-source/physical/progress.json" \
+            "$DLO45_OUT/dlo5-source/physical/progress.json" \
+            "$DLO45_OUT/logs/source-heartbeat.jsonl" &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+
+          set +e
+          wait "$p4"
+          status4=$?
+          wait "$p5"
+          status5=$?
+          set -e
+          kill "$monitor" 2>/dev/null || true
+          wait "$monitor" 2>/dev/null || true
+          trap - EXIT
+
+          echo "DLO4 source exit status: $status4"
+          echo "DLO5 source exit status: $status5"
+          if (( status4 != 0 || status5 != 0 )); then
+            echo "At least one source process failed." >&2
+            exit 1
+          fi
+          cat "$DLO45_OUT/dlo4-source/physical/progress.json"
+          cat "$DLO45_OUT/dlo5-source/physical/progress.json"
+      - name: Upload source-stage evidence and progress
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DLO45_OUT }}/dlo4-source/source_result.json
+            ${{ env.DLO45_OUT }}/dlo4-source/source_manifest.json
+            ${{ env.DLO45_OUT }}/dlo4-source/method_seal.json
+            ${{ env.DLO45_OUT }}/dlo4-source/prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo4-source/physical/progress.json
+            ${{ env.DLO45_OUT }}/dlo5-source/source_result.json
+            ${{ env.DLO45_OUT }}/dlo5-source/source_manifest.json
+            ${{ env.DLO45_OUT }}/dlo5-source/method_seal.json
+            ${{ env.DLO45_OUT }}/dlo5-source/prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo5-source/physical/progress.json
+            ${{ env.DLO45_OUT }}/**/failure_receipt.json
+            ${{ env.DLO45_OUT }}/logs
+            ${{ env.PROTOCOL }}
+            ${{ env.REQUEST_PATH }}
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Retain source originals privately
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -d "$DLO45_OUT"; then
+            chmod -R go-rwx "$DLO45_OUT"
+            echo "Retained source-stage bytes at $DLO45_OUT"
+          fi
+          if test -n "${DLO45_GIT_CONFIG:-}"; then
+            rm -f "$DLO45_GIT_CONFIG"
+          fi
+
+  target:
+    needs: [contracts, authorize-request, source]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' && needs.authorize-request.result == 'success' &&
+      needs.authorize-request.outputs.mode == 'evaluate' && needs.source.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 7200
+    env:
+      MODE: ${{ needs.authorize-request.outputs.mode }}
+      REQUEST_PATH: ${{ needs.authorize-request.outputs.path }}
+      DLO45_OUT: /home/github-runner/.cache/workflows/deform-dlo45/runs/${{ github.run_id }}-${{ github.run_attempt }}
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Rebind target runner without opening target payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT/DLO4/train" && test -d "$DATASET_ROOT/DLO4/eval"
+          test -d "$DATASET_ROOT/DLO5/train" && test -d "$DATASET_ROOT/DLO5/eval"
+          test -d "$UPSTREAM_ROOT/.git" && test -x "$FROZEN_PYTHON"
+          test "$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)" -ge 2
+          test -s "$DLO45_OUT/dlo4-source/source_result.json"
+          test -s "$DLO45_OUT/dlo5-source/source_result.json"
+          safe_git_config="$RUNNER_TEMP/deform-dlo45-target-gitconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          : > "$safe_git_config"
+          git config --file "$safe_git_config" --add safe.directory "$UPSTREAM_ROOT"
+          export GIT_CONFIG_GLOBAL="$safe_git_config"
+          git -C "$UPSTREAM_ROOT" rev-parse HEAD >/dev/null
+          echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"
+          echo "DLO45_GIT_CONFIG=$safe_git_config" >> "$GITHUB_ENV"
       - name: Authorize targets only after both source gates pass
-        if: env.MODE == 'evaluate'
         shell: bash
         run: |
           set -euo pipefail
@@ -216,30 +452,130 @@ jobs:
             --output-root "$DLO45_OUT/joint" --request "$REQUEST_PATH" \
             --source-result-dlo4 "$DLO45_OUT/dlo4-source/source_result.json" \
             --source-result-dlo5 "$DLO45_OUT/dlo5-source/source_result.json"
-      - name: Refit and predict both fresh DLOs in parallel
-        if: env.MODE == 'evaluate'
+      - name: Refit and predict both fresh DLOs with live progress
         shell: bash
         run: |
           set -euo pipefail
+
+          run_streamed() {
+            local label="$1"
+            local logfile="$2"
+            shift 2
+            stdbuf -oL -eL "$@" 2>&1 | tee "$logfile" | sed -u "s/^/[$label] /"
+          }
+
+          monitor_pair() {
+            local stage="$1"
+            local pid4="$2"
+            local pid5="$3"
+            local progress4="$4"
+            local progress5="$5"
+            local heartbeat_log="$6"
+            local started
+            started="$(date +%s)"
+            while kill -0 "$pid4" 2>/dev/null || kill -0 "$pid5" 2>/dev/null; do
+              STAGE="$stage" PID4="$pid4" PID5="$pid5" STARTED="$started" \
+              PROGRESS4="$progress4" PROGRESS5="$progress5" \
+              "$FROZEN_PYTHON" - <<'PY' | tee -a "$heartbeat_log"
+          import json
+          import os
+          import subprocess
+          import time
+          from pathlib import Path
+
+          def alive(pid: int) -> bool:
+              try:
+                  os.kill(pid, 0)
+              except OSError:
+                  return False
+              return True
+
+          def load_progress(raw: str) -> dict[str, object]:
+              path = Path(raw)
+              if not path.is_file():
+                  return {"available": False}
+              try:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+              except (OSError, json.JSONDecodeError) as error:
+                  return {"available": False, "read_error": type(error).__name__}
+              return {"available": True, **value}
+
+          gpu = subprocess.run(
+              [
+                  "nvidia-smi",
+                  "--query-gpu=index,name,utilization.gpu,memory.used,memory.total",
+                  "--format=csv,noheader,nounits",
+              ],
+              check=False,
+              capture_output=True,
+              text=True,
+          )
+          payload = {
+              "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+              "stage": os.environ["STAGE"],
+              "elapsed_seconds": int(time.time()) - int(os.environ["STARTED"]),
+              "process_alive": {
+                  "DLO4": alive(int(os.environ["PID4"])),
+                  "DLO5": alive(int(os.environ["PID5"])),
+              },
+              "progress": {
+                  "DLO4": load_progress(os.environ["PROGRESS4"]),
+                  "DLO5": load_progress(os.environ["PROGRESS5"]),
+              },
+              "gpu": gpu.stdout.strip().splitlines() if gpu.returncode == 0 else [],
+          }
+          print("[progress] " + json.dumps(payload, sort_keys=True), flush=True)
+          PY
+              sleep 300
+            done
+          }
+
           auth="$DLO45_OUT/joint/target_authorization.json"
-          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run predict \
+          run_streamed DLO4-target "$DLO45_OUT/logs/dlo4-target.log" \
+            "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run predict \
             --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
             --output-root "$DLO45_OUT/dlo4-target" --dlo DLO4 --device cuda:0 \
-            --source-result "$DLO45_OUT/dlo4-source/source_result.json" --authorization "$auth" \
-            >"$DLO45_OUT/logs/dlo4-target.log" 2>&1 & p4=$!
-          "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run predict \
+            --source-result "$DLO45_OUT/dlo4-source/source_result.json" --authorization "$auth" &
+          p4=$!
+          run_streamed DLO5-target "$DLO45_OUT/logs/dlo5-target.log" \
+            "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run predict \
             --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
             --output-root "$DLO45_OUT/dlo5-target" --dlo DLO5 --device cuda:1 \
-            --source-result "$DLO45_OUT/dlo5-source/source_result.json" --authorization "$auth" \
-            >"$DLO45_OUT/logs/dlo5-target.log" 2>&1 & p5=$!
-          wait "$p4"; wait "$p5"
+            --source-result "$DLO45_OUT/dlo5-source/source_result.json" --authorization "$auth" &
+          p5=$!
+
+          monitor_pair target "$p4" "$p5" \
+            "$DLO45_OUT/dlo4-target/alltrain/progress.json" \
+            "$DLO45_OUT/dlo5-target/alltrain/progress.json" \
+            "$DLO45_OUT/logs/target-heartbeat.jsonl" &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+
+          set +e
+          wait "$p4"
+          status4=$?
+          wait "$p5"
+          status5=$?
+          set -e
+          kill "$monitor" 2>/dev/null || true
+          wait "$monitor" 2>/dev/null || true
+          trap - EXIT
+
+          echo "DLO4 target exit status: $status4"
+          echo "DLO5 target exit status: $status5"
+          if (( status4 != 0 || status5 != 0 )); then
+            echo "At least one target process failed." >&2
+            exit 1
+          fi
+          cat "$DLO45_OUT/dlo4-target/alltrain/progress.json"
+          cat "$DLO45_OUT/dlo5-target/alltrain/progress.json"
+
           "$FROZEN_PYTHON" -m experiments.deform_dlo45_frozen_v1.run seal \
             --protocol "$PROTOCOL" --dataset-root "$DATASET_ROOT" --upstream-root "$UPSTREAM_ROOT" \
             --output-root "$DLO45_OUT/joint" \
             --prediction-seal-dlo4 "$DLO45_OUT/dlo4-target/prediction_seal.json" \
             --prediction-seal-dlo5 "$DLO45_OUT/dlo5-target/prediction_seal.json"
       - name: Publish joint prediction seal before target scoring
-        if: env.MODE == 'evaluate'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
           name: deform-dlo45-joint-seal-${{ github.run_id }}-${{ github.run_attempt }}
@@ -249,7 +585,6 @@ jobs:
             ${{ env.DLO45_OUT }}/dlo5-target/prediction_seal.json
           retention-days: 90
       - name: Score both sealed target sets
-        if: env.MODE == 'evaluate'
         shell: bash
         run: |
           set -euo pipefail
@@ -261,9 +596,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: deform-dlo45-${{ env.MODE }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform-dlo45-evaluate-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ env.DLO45_OUT }}/inventory.json
             ${{ env.DLO45_OUT }}/dlo4-source/source_result.json
             ${{ env.DLO45_OUT }}/dlo5-source/source_result.json
             ${{ env.DLO45_OUT }}/joint/target_authorization.json
@@ -271,9 +605,11 @@ jobs:
             ${{ env.DLO45_OUT }}/dlo4-target/method_seal.json
             ${{ env.DLO45_OUT }}/dlo4-target/eval_manifest.json
             ${{ env.DLO45_OUT }}/dlo4-target/prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo4-target/alltrain/progress.json
             ${{ env.DLO45_OUT }}/dlo5-target/method_seal.json
             ${{ env.DLO45_OUT }}/dlo5-target/eval_manifest.json
             ${{ env.DLO45_OUT }}/dlo5-target/prediction_seal.json
+            ${{ env.DLO45_OUT }}/dlo5-target/alltrain/progress.json
             ${{ env.DLO45_OUT }}/score/result.json
             ${{ env.DLO45_OUT }}/**/failure_receipt.json
             ${{ env.DLO45_OUT }}/logs
@@ -281,16 +617,14 @@ jobs:
             ${{ env.REQUEST_PATH }}
           retention-days: 90
           if-no-files-found: warn
-      - name: Remove inventory scratch; retain evaluation originals privately
+      - name: Retain evaluation originals privately
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          if test "$MODE" = inventory; then
-            rm -rf "$DLO45_OUT"
-          elif test -d "$DLO45_OUT"; then
+          if test -d "$DLO45_OUT"; then
             chmod -R go-rwx "$DLO45_OUT"
-            echo "Retained original run bytes at $DLO45_OUT"
+            echo "Retained evaluation bytes at $DLO45_OUT"
           fi
           if test -n "${DLO45_GIT_CONFIG:-}"; then
             rm -f "$DLO45_GIT_CONFIG"
