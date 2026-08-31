@@ -227,10 +227,11 @@ replace_once(
             member.size = len(payload)
             archive.addfile(member, BytesIO(payload))
 
+    output = tmp_path / "output"
     result = module.run(
         data_root=root,
         protocol_path=save_protocol(tmp_path, root),
-        output_dir=tmp_path / "output",
+        output_dir=output,
         profile_name="pilot",
         revision=None,
     )
@@ -240,7 +241,7 @@ replace_once(
     assert case["representation"] == "pcd_clean_centroid_3d"
     assert case["metrics"]["last_residual_chamfer_mm"] < 1e-8
     assert case["metrics"]["bayesian_chamfer_mm"] < 1e-8
-    inventory = result["selection"]["inventory"]
+    inventory = json.loads((output / "carrier_inventory.json").read_text())
     assert inventory["named_pcd_clean_archives"] == 1
     assert inventory["candidate_counts"]["pcd_clean_tar"] == 1
 
