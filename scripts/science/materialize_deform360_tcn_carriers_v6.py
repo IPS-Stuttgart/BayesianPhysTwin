@@ -373,10 +373,9 @@ def discover_object_plans(
             if not Path(str(item.get("path"))).name.lower().startswith("median_")
         ]
         if len(nonmedian) != len(episodes):
-            raise MaterializationError(
-                f"tactile episode count mismatch for {object_id}:{directory}: "
-                f"{len(nonmedian)} != {len(episodes)}"
-            )
+            # Match the frozen evaluator: ignore tactile directories with
+            # extra or missing non-median episode files.
+            continue
         tactile_counts[Path(directory).name] = len(nonmedian)
         for item in selected:
             source = str(item["path"])
