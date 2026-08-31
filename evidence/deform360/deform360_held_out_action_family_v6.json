@@ -1,0 +1,45 @@
+{
+  "schema": "bayesian-phystwin/deform360-held-out-action-family-analysis-v6",
+  "schema_version": 6,
+  "status": "complete",
+  "source_confirmation_run_id": 33335779766,
+  "source_artifact_id": 9738998271,
+  "source_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+  "selection_rule": "target action family is absent from all same-object source episode action families; metadata-only and outcome-independent",
+  "object_count": 21,
+  "target_action_family_counts": {
+    "compress": 3,
+    "other": 4,
+    "shape": 14
+  },
+  "bayesian_action_ensemble_active_field_rmse": 0.6918231379230703,
+  "comparisons": {
+    "persistence": {
+      "comparator_active_field_rmse": 0.728204170577764,
+      "mean_difference": -0.03638103265469376,
+      "relative_change": -0.04995993448627012,
+      "object_bootstrap_95_interval": [-0.04765612, -0.02640160],
+      "object_wins_ties_losses": [20, 0, 1],
+      "exact_one_sided_sign_test_pvalue": 0.00001049041748046875
+    },
+    "state_kernel": {
+      "comparator_active_field_rmse": 0.7113423776063985,
+      "mean_difference": -0.019519239683328225,
+      "relative_change": -0.02744000680657979,
+      "object_bootstrap_95_interval": [-0.02649641, -0.01313996],
+      "object_wins_ties_losses": [20, 0, 1],
+      "exact_one_sided_sign_test_pvalue": 0.00001049041748046875
+    },
+    "shuffled_action_control": {
+      "comparator_active_field_rmse": 0.7116616261046678,
+      "mean_difference": -0.019838488181597544,
+      "relative_change": -0.027876293246532017,
+      "object_bootstrap_95_interval": [-0.02818648, -0.01279920],
+      "object_wins_ties_losses": [20, 0, 1],
+      "exact_one_sided_sign_test_pvalue": 0.00001049041748046875
+    }
+  },
+  "claim_boundary": "Harder action-family transfer within known objects; not zero-shot object transfer, dense 4-D geometry, globally fresh confirmation, or strict counterfactual evidence.",
+  "paper_claim_authorized": false,
+  "strict_counterfactual_claim_authorized": false
+}
