@@ -1,0 +1,216 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: PokeFlex object-identity placebo v1
+
+on:
+  push:
+    branches:
+      - science/pokeflex-object-identity-placebo-v1
+    paths:
+      - triggers/pokeflex-object-identity-placebo-v1.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-object-identity-placebo-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: protocols/pokeflex_object_identity_placebo_v1.json
+  SCRIPT: scripts/science/run_pokeflex_object_identity_placebo_v1.py
+  OUTPUT_BASE: /home/github-runner/.cache/workflows/pokeflex-object-identity-placebo-v1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Exact placebo contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Require the one-file execution request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/pokeflex-object-identity-placebo-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-object-identity-placebo-v1.txt'
+
+      - name: Validate implementation and exact allocation oracle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e . pytest ruff scipy trimesh
+          python -m py_compile "$SCRIPT"
+          python -m ruff check "$SCRIPT"
+          python "$SCRIPT" self-test
+          python -m json.tool "$PROTOCOL" >/dev/null
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  evidence:
+    name: Exact 51,480-allocation real-data diagnostic / gpuserver6000
+    needs: contracts
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 360
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve the retained scoring runtime and inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d /home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2-scoring
+          test -d /mnt/lexar4tb/pokeflex
+          science_python=""
+          for candidate in \
+            /home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2-scoring/venv/bin/python \
+            /home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2-scoring/.venv/bin/python \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "$candidate" ]] && \
+               "$candidate" -c 'import numpy, scipy, trimesh' >/dev/null 2>&1; then
+              science_python="$candidate"
+              break
+            fi
+          done
+          test -n "$science_python"
+          output="$OUTPUT_BASE/$GITHUB_SHA/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$output"
+          mkdir -p "$(dirname "$output")"
+          {
+            echo "SCIENCE_PYTHON=$science_python"
+            echo "EVIDENCE_OUTPUT=$output"
+          } >> "$GITHUB_ENV"
+          {
+            echo "runner_name=$RUNNER_NAME"
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            echo "github_sha=$GITHUB_SHA"
+            echo "science_python=$science_python"
+            "$science_python" --version
+            "$science_python" - <<'PY'
+          import numpy
+          import scipy
+          import trimesh
+
+          print(f"numpy={numpy.__version__}")
+          print(f"scipy={scipy.__version__}")
+          print(f"trimesh={trimesh.__version__}")
+          PY
+            df -h /mnt/lexar4tb /home/github-runner/.cache
+          } | tee "$RUNNER_TEMP/pokeflex-object-identity-environment.txt"
+
+      - name: Score multiplier bank and enumerate every reassignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SCIENCE_PYTHON" -m py_compile "$SCRIPT"
+          "$SCIENCE_PYTHON" "$SCRIPT" self-test
+          "$SCIENCE_PYTHON" "$SCRIPT" run \
+            --protocol "$PROTOCOL" \
+            --output "$EVIDENCE_OUTPUT" \
+            --repository-revision "$GITHUB_SHA" \
+            2>&1 | tee "$RUNNER_TEMP/pokeflex-object-identity-placebo.log"
+          cp --no-clobber \
+            "$RUNNER_TEMP/pokeflex-object-identity-environment.txt" \
+            "$EVIDENCE_OUTPUT/environment.txt"
+          cp --no-clobber \
+            "$RUNNER_TEMP/pokeflex-object-identity-placebo.log" \
+            "$EVIDENCE_OUTPUT/execution.log"
+          sha256sum "$EVIDENCE_OUTPUT"/* > "$EVIDENCE_OUTPUT/ALL_FILES_SHA256SUMS"
+
+      - name: Publish bounded real-data result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### PokeFlex object-identity placebo"
+            echo
+            echo "- Runner: \`$RUNNER_NAME\` / \`gpuserver6000\`"
+            echo "- Revision: \`$GITHUB_SHA\`"
+            echo "- Persistent output: \`${EVIDENCE_OUTPUT:-unavailable}\`"
+            echo "- Fresh confirmation: \`false\`"
+            echo "- New model prediction: \`false\`"
+            echo "- Target rescoring: \`retrospective\`"
+            if [[ -f "${EVIDENCE_OUTPUT:-}/result.json" ]]; then
+              "$SCIENCE_PYTHON" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_OUTPUT"]) / "result.json").read_text())
+          primary = result["primary"]
+          secondary = result["secondary"]
+          print(f"- Result ID: `{result['result_id']}`")
+          print(f"- Same-object mean CD: `{primary['observed_object_balanced_CD_UL1_mm']:.9f} mm`")
+          print(f"- Global mean CD: `{primary['global_multiplier_1_object_balanced_CD_UL1_mm']:.9f} mm`")
+          print(f"- Exact p-value: `{primary['exact_lower_tail_p_value']:.8f}`")
+          print(f"- Exact rank: `{primary['observed_rank_lower_is_better']}/{primary['allocation_count']}`")
+          print(f"- Adjusted-object wins: `{secondary['adjusted_take_win_count_vs_global']}/{secondary['adjusted_take_count']}`")
+          print(f"- Relation-specificity diagnostic: `{primary['relation_specificity_supported_at_0_05']}`")
+          PY
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pokeflex-object-identity-placebo-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_OUTPUT }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Enforce execution completeness, not a favorable outcome
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$EVIDENCE_OUTPUT/result.json"
+          test -s "$EVIDENCE_OUTPUT/report.md"
+          test -s "$EVIDENCE_OUTPUT/score_matrix.csv"
+          test -s "$EVIDENCE_OUTPUT/SHA256SUMS"
