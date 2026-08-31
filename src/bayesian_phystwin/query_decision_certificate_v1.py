@@ -127,8 +127,7 @@ def _loss_matrix(value: object, *, hypothesis_count: int) -> FloatArray:
     losses = np.ascontiguousarray(raw, dtype=np.float64)
     if losses.ndim != 2 or losses.shape[0] != hypothesis_count:
         raise ValueError(
-            "loss_by_hypothesis_action must have shape "
-            "(hypothesis_count, action_count)"
+            "loss_by_hypothesis_action must have shape (hypothesis_count, action_count)"
         )
     if losses.shape[1] < 2:
         raise ValueError("at least two candidate actions are required")
@@ -277,9 +276,7 @@ def query_decision_certificate(
         dtype=np.float64,
     )
     for class_id in range(class_count):
-        members = pairwise_loss_difference[
-            (classes == class_id) & prior_support
-        ]
+        members = pairwise_loss_difference[(classes == class_id) & prior_support]
         if members.shape[0] == 0:
             # Necessarily a zero-posterior class due to the support check above.
             continue
