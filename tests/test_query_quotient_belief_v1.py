@@ -310,7 +310,7 @@ def test_decision_certificate_uses_prior_support_not_positive_magnitudes() -> No
     np.testing.assert_allclose(result_a.worst_case_regret, result_b.worst_case_regret)
 
 
-def test_decision_certificate_excludes_zero_prior_hypotheses_and_zero_mass_classes() -> None:
+def test_decision_certificate_excludes_zero_prior_and_zero_mass_classes() -> None:
     result = query_decision_certificate(
         np.array([1.0, 0.0, 0.0]),
         np.array([1.0, 0.0]),
