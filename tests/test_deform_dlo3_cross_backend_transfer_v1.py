@@ -11,11 +11,7 @@ from bayesian_phystwin_experiments.deform_dlo_cross_backend_transfer_v1 import (
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = (
-    REPOSITORY_ROOT
-    / "protocols"
-    / "deform_dlo3_cross_backend_transfer_v1.json"
-)
+PROTOCOL = REPOSITORY_ROOT / "protocols" / "deform_dlo3_cross_backend_transfer_v1.json"
 RUNNER = (
     REPOSITORY_ROOT
     / "scripts"
@@ -40,9 +36,7 @@ def test_protocol_freezes_no_refit_three_seed_transfer(tmp_path: Path) -> None:
     assert protocol["evaluation"]["shrinkage"] == 0.25
     assert protocol["source_panel"]["official_evaluation_read"] is False
     assert (
-        protocol["execution_priority"][
-            "required_blocking_run_terminal_before_dispatch"
-        ]
+        protocol["execution_priority"]["required_blocking_run_terminal_before_dispatch"]
         is True
     )
     assert protocol["execution_priority"]["request_or_workflow_trigger_added"] is False
@@ -111,9 +105,7 @@ def test_transfer_requires_seed_stability() -> None:
 def test_negative_transfer_fails_primary_gate() -> None:
     protocol = load_cross_backend_transfer_protocol(PROTOCOL)
     names, truth, baseline, backend_specific = _problem()
-    transferred = {
-        seed: np.full_like(truth, 0.12) for seed in (42, 43, 44)
-    }
+    transferred = {seed: np.full_like(truth, 0.12) for seed in (42, 43, 44)}
 
     result = evaluate_cross_backend_transfer(
         names=names,

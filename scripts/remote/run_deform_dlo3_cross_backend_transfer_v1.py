@@ -178,12 +178,8 @@ def _write_csv(
             writer.writerow(
                 {
                     "name": name,
-                    "raw_pyelastica_l1_m": direct_cases[index][
-                        "baseline_l1_m"
-                    ],
-                    "pyelastica_specific_l1_m": specific_cases[index][
-                        "candidate_l1_m"
-                    ],
+                    "raw_pyelastica_l1_m": direct_cases[index]["baseline_l1_m"],
+                    "pyelastica_specific_l1_m": specific_cases[index]["candidate_l1_m"],
                     "deform_no_refit_seed_42_l1_m": seed_cases["42"][index][
                         "candidate_l1_m"
                     ],
@@ -211,9 +207,7 @@ def _write_report(path: Path, result: Mapping[str, object]) -> None:
         result["pyelastica_specific_vs_raw_pyelastica"],
         label="specific comparison",
     )
-    specific_improvement = 100.0 * float(
-        cast(Any, specific["relative_improvement"])
-    )
+    specific_improvement = 100.0 * float(cast(Any, specific["relative_improvement"]))
     interval = cast(Sequence[float], primary["object_bootstrap_95_interval_m"])
     lines = [
         "# DLO3 no-refit cross-backend coefficient transfer",

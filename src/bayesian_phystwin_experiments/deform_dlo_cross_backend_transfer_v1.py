@@ -312,9 +312,7 @@ def evaluate_cross_backend_transfer(
     specific_mean = float(cast(Any, backend_specific_summary["candidate_mean_l1_m"]))
     specific_gain = baseline_mean - specific_mean
     retention = (
-        (baseline_mean - direct_mean) / specific_gain
-        if specific_gain > 0.0
-        else None
+        (baseline_mean - direct_mean) / specific_gain if specific_gain > 0.0 else None
     )
     supported = bool(primary_gate["passed"]) and seed_stability_passed
     return {
