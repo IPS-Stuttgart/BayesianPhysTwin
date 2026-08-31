@@ -60,6 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--request", type=Path)
     return parser.parse_args()
 
+
 def source_command(args: argparse.Namespace) -> int:
     protocol = load_protocol(args.protocol)
     dataset_root = args.dataset_root.resolve()
@@ -202,9 +203,7 @@ def target_command(args: argparse.Namespace) -> int:
         assert isinstance(certificate, dict)
         count = int(result["decision_count"])
         total_baseline_sse += count * (float(fallback["rmse_mm"]) / 1000.0) ** 2
-        total_certificate_sse += count * (
-            float(certificate["rmse_mm"]) / 1000.0
-        ) ** 2
+        total_certificate_sse += count * (float(certificate["rmse_mm"]) / 1000.0) ** 2
         certificate_actions = certificate["action_counts"]
         assert isinstance(certificate_actions, list)
         nonfallback_count += count - int(certificate_actions[0])
@@ -258,9 +257,7 @@ def target_command(args: argparse.Namespace) -> int:
     }
     output_root = args.output_root.resolve()
     write_json(output_root / "target_result.json", result)
-    (output_root / "summary.md").write_text(
-        render_summary(result), encoding="utf-8"
-    )
+    (output_root / "summary.md").write_text(render_summary(result), encoding="utf-8")
     return 0
 
 

@@ -38,8 +38,7 @@ def evaluate_paths(
     squared_error: dict[str, list[float]] = {name: [] for name in methods}
     normalized_regret: dict[str, list[float]] = {name: [] for name in methods}
     action_counts = {
-        name: np.zeros(len(model.action_scales), dtype=np.int64)
-        for name in methods
+        name: np.zeros(len(model.action_scales), dtype=np.int64) for name in methods
     }
     per_trajectory: list[dict[str, object]] = []
     ambiguity: list[float] = []
@@ -61,9 +60,9 @@ def evaluate_paths(
                 INTERNAL,
                 :,
             ].copy()
-            actual_residual = (
-                truth - observation.baseline
-            ).reshape(-1) / observation.length_scale
+            actual_residual = (truth - observation.baseline).reshape(
+                -1
+            ) / observation.length_scale
             actions = model.action_scales[:, None] * decision.correction[None, :]
             normalized_mse = np.mean(
                 np.square(actual_residual[None, :] - actions), axis=1
@@ -92,9 +91,7 @@ def evaluate_paths(
             specificity.append(decision.unsupported_specificity_nats)
             minimax_regret.append(decision.minimax_regret)
             exact_unique += int(np.count_nonzero(decision.robust_mask) == 1)
-            tolerance_unique += int(
-                np.count_nonzero(decision.tolerance_mask) == 1
-            )
+            tolerance_unique += int(np.count_nonzero(decision.tolerance_mask) == 1)
             decisions += 1
         baseline_rmse = math.sqrt(float(np.mean(local_error["fallback"])))
         trajectory_record: dict[str, object] = {
@@ -105,9 +102,7 @@ def evaluate_paths(
         for method in methods[1:]:
             rmse = math.sqrt(float(np.mean(local_error[method])))
             trajectory_record[f"{method}_rmse_mm"] = 1000.0 * rmse
-            trajectory_record[f"{method}_ratio"] = rmse / max(
-                baseline_rmse, 1e-12
-            )
+            trajectory_record[f"{method}_ratio"] = rmse / max(baseline_rmse, 1e-12)
         per_trajectory.append(trajectory_record)
     aggregate: dict[str, object] = {}
     fallback_rmse = math.sqrt(float(np.mean(squared_error["fallback"])))
@@ -138,14 +133,11 @@ def evaluate_paths(
             1.0 - action_counts["certificate"][0] / max(decisions, 1)
         ),
         "certificate_exact_unique_fraction": exact_unique / max(decisions, 1),
-        "certificate_tolerance_unique_fraction": tolerance_unique
-        / max(decisions, 1),
+        "certificate_tolerance_unique_fraction": tolerance_unique / max(decisions, 1),
         "maximum_certificate_trajectory_ratio": max(certificate_ratios),
         "mean_ambiguity_width_normalized": float(np.mean(ambiguity)),
         "positive_ambiguity_fraction": float(np.mean(np.asarray(ambiguity) > ATOL)),
-        "mean_kernel_unsupported_specificity_nats": float(
-            np.mean(specificity)
-        ),
+        "mean_kernel_unsupported_specificity_nats": float(np.mean(specificity)),
         "mean_minimax_worst_case_regret": float(np.mean(minimax_regret)),
     }
 
@@ -308,9 +300,7 @@ def load_models(path: Path) -> dict[str, Model]:
             scalars = np.asarray(archive[f"{prefix}_scalars"], dtype=np.float64)
             models[dlo] = Model(
                 features=np.asarray(archive[f"{prefix}_features"], dtype=np.float64),
-                residuals=np.asarray(
-                    archive[f"{prefix}_residuals"], dtype=np.float64
-                ),
+                residuals=np.asarray(archive[f"{prefix}_residuals"], dtype=np.float64),
                 class_labels=np.asarray(
                     archive[f"{prefix}_class_labels"], dtype=np.int64
                 ),
@@ -341,6 +331,4 @@ def bootstrap_interval(
     for index in range(replicates):
         sample = rng.integers(0, len(values), size=len(values))
         estimates[index] = float(np.mean(values[sample]))
-    return float(np.quantile(estimates, 0.025)), float(
-        np.quantile(estimates, 0.975)
-    )
+    return float(np.quantile(estimates, 0.025)), float(np.quantile(estimates, 0.975))

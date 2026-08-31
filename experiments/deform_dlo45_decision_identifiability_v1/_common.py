@@ -166,9 +166,7 @@ def load_protocol(path: Path) -> Protocol:
         neighbor_grid=tuple_of(decision["neighbor_grid"], int),
         cluster_grid=tuple_of(decision["cluster_grid"], int),
         temperature_grid=tuple_of(decision["temperature_scale_grid"], float),
-        regret_tolerance_grid=tuple_of(
-            decision["regret_tolerance_grid"], float
-        ),
+        regret_tolerance_grid=tuple_of(decision["regret_tolerance_grid"], float),
         kmeans_iterations=int(decision["kmeans_iterations"]),
         source_fit_count=int(split["fit_count"]),
         source_calibration_count=int(split["calibration_count"]),
@@ -322,27 +320,23 @@ def observation_from_parts(
         dtype=np.float64,
     )
     blend_weights = weights[None, :, None]
-    current_line = (
-        (1.0 - blend_weights[0]) * current_left
-        + blend_weights[0] * current_right
-    )
+    current_line = (1.0 - blend_weights[0]) * current_left + blend_weights[
+        0
+    ] * current_right
     current_internal = current[INTERNAL]
     previous_internal = previous[INTERNAL]
-    previous_line = (
-        (1.0 - blend_weights[0]) * previous_left
-        + blend_weights[0] * previous_right
-    )
+    previous_line = (1.0 - blend_weights[0]) * previous_left + blend_weights[
+        0
+    ] * previous_right
     shape = (current_internal - current_line) / length_scale
     shape_velocity = (
-        (current_internal - current_line)
-        - (previous_internal - previous_line)
+        (current_internal - current_line) - (previous_internal - previous_line)
     ) / length_scale
     left_displacement = future_left - current_left
     right_displacement = future_right - current_right
-    anchor_displacement = (
-        (1.0 - blend_weights) * left_displacement[:, None, :]
-        + blend_weights * right_displacement[:, None, :]
-    )
+    anchor_displacement = (1.0 - blend_weights) * left_displacement[
+        :, None, :
+    ] + blend_weights * right_displacement[:, None, :]
     decay = 0.85
     steps = np.arange(1, protocol.horizon_frames + 1, dtype=np.float64)
     if math.isclose(decay, 1.0):
@@ -360,18 +354,19 @@ def observation_from_parts(
         5,
         dtype=np.int64,
     )
-    action_feature = np.concatenate(
-        (
-            left_displacement[sample_indices],
-            right_displacement[sample_indices],
-        ),
-        axis=1,
-    ) / length_scale
+    action_feature = (
+        np.concatenate(
+            (
+                left_displacement[sample_indices],
+                right_displacement[sample_indices],
+            ),
+            axis=1,
+        )
+        / length_scale
+    )
     prefix_line_left, prefix_line_right = anchor_means(prefix)
     prefix_midpoint = 0.5 * (prefix_line_left + prefix_line_right)
-    midpoint_velocity = (
-        prefix_midpoint[-1] - prefix_midpoint[-2]
-    ) / length_scale
+    midpoint_velocity = (prefix_midpoint[-1] - prefix_midpoint[-2]) / length_scale
     feature = np.concatenate(
         (
             shape.reshape(-1),
@@ -388,12 +383,8 @@ def extract_observation(
     current: int,
     protocol: Protocol,
 ) -> Observation:
-    prefix = trajectory[
-        current - protocol.prefix_frames + 1 : current + 1
-    ].copy()
-    future = trajectory[
-        current + 1 : current + 1 + protocol.horizon_frames
-    ]
+    prefix = trajectory[current - protocol.prefix_frames + 1 : current + 1].copy()
+    future = trajectory[current + 1 : current + 1 + protocol.horizon_frames]
     future_action = np.concatenate(
         (future[:, :2, :], future[:, -2:, :]),
         axis=1,
@@ -414,5 +405,3 @@ def source_window(
     ]
     residual = (truth - observation.baseline) / observation.length_scale
     return observation.feature, residual.reshape(-1)
-
-

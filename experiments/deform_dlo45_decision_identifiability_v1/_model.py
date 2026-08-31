@@ -12,7 +12,6 @@ from bayesian_phystwin.query_decision_certificate_v1 import (
 
 from ._common import (
     ATOL,
-    INTERNAL,
     NODE_COUNT,
     Decision,
     FloatArray,
@@ -80,15 +79,11 @@ def deterministic_kmeans(
     standardized = (values - mean) / scale
     first = int(np.argmax(np.sum(np.square(standardized), axis=1)))
     centers = [standardized[first]]
-    minimum_distance = np.sum(
-        np.square(standardized - centers[0][None, :]), axis=1
-    )
+    minimum_distance = np.sum(np.square(standardized - centers[0][None, :]), axis=1)
     for _ in range(1, cluster_count):
         index = int(np.argmax(minimum_distance))
         centers.append(standardized[index])
-        distance = np.sum(
-            np.square(standardized - centers[-1][None, :]), axis=1
-        )
+        distance = np.sum(np.square(standardized - centers[-1][None, :]), axis=1)
         minimum_distance = np.minimum(minimum_distance, distance)
     center_array = np.asarray(centers)
     labels = np.zeros(len(values), dtype=np.int64)
@@ -160,9 +155,7 @@ def class_ambiguity(
     for class_id, weight in enumerate(quotient):
         members = endpoint[class_index == class_id]
         if len(members):
-            width = np.linalg.norm(
-                np.max(members, axis=0) - np.min(members, axis=0)
-            )
+            width = np.linalg.norm(np.max(members, axis=0) - np.min(members, axis=0))
             total += float(weight) * float(width)
     return total
 
@@ -239,8 +232,7 @@ def decide(feature: FloatArray, model: Model, protocol: Protocol) -> Decision:
     )
     certificate_action = (
         certificate.minimax_action_index
-        if certificate.minimax_worst_case_regret
-        <= model.regret_tolerance + ATOL
+        if certificate.minimax_worst_case_regret <= model.regret_tolerance + ATOL
         else 0
     )
     jeffrey_action = int(
