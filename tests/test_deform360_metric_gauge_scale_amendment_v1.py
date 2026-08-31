@@ -15,10 +15,7 @@ from bayesian_phystwin.deform360_fresh_object_session_public_inputs_v6_1 import 
 
 ROOT = Path(__file__).resolve().parents[1]
 AMENDMENT = (
-    ROOT
-    / "protocols"
-    / "amendments"
-    / "deform360_metric_gauge_scale_amendment_v1.json"
+    ROOT / "protocols" / "amendments" / "deform360_metric_gauge_scale_amendment_v1.json"
 )
 
 
