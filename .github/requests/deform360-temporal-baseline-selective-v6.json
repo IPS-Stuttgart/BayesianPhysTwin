@@ -1,12 +1,13 @@
 {
   "schema": "bayesian-phystwin/workflow-request-v1",
-  "request_id": "deform360-temporal-baseline-selective-v6-20260831-retry2",
-  "purpose": "Complete the unresolved matched learned-temporal comparison using persistent tree-response caching, serialized carrier discovery, and Retry-After-aware throttling. The preceding attempt stopped on HTTP 429 before Torch setup, model training, or target evaluation; the scientific model, rosters, horizon, and metrics remain unchanged.",
+  "request_id": "deform360-temporal-baseline-selective-v6-20260901-robot-complete-retry",
+  "purpose": "Complete the unresolved matched learned-temporal comparison using the pinned public Deform360 carriers and the frozen evaluator's exact robot-complete episode admission rule. Prior failures occurred before Torch setup or target scoring because the transport layer incorrectly required robot files for every metadata episode.",
   "runner_labels": ["self-hosted", "Linux", "X64", "nvidia-smi"],
   "raw_repository": "brownu/deform360",
   "raw_revision": "5ea8c5d3fc7b4a7b4f9f921f2ceb1de24610f6a4",
   "processed_repository": "brownu/deform360_processed",
   "processed_revision": "e92deaf7e437e7e51ad464706ae647f522a279d9",
+  "episode_admission_rule": "metadata episode plus valid tactile sensor groups plus an existing processed robot carrier",
   "camera_or_geometry_download_authorized": false,
   "target_tactile_numeric_access_authorized_after_final_model_freeze": true,
   "paper_claim_authorized": false
