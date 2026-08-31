@@ -1,0 +1,63 @@
+name: Apply Deform360 tactile launch fixes
+
+on:
+  push:
+    branches:
+      - run/deform360-gpuserver6000-tactile-20260901-v1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact launch branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: run/deform360-gpuserver6000-tactile-20260901-v1
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply, format, and validate launch files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/apply_deform360_tactile_launch_fixes.py
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check --fix \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py
+          python -m ruff format \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py
+          python -m ruff check \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py \
+            experiments/deform360_real_v1/run.py \
+            tests/test_deform360_real_v1.py
+          python -m ruff format --check \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py
+          python -m py_compile \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py
+          python -m pytest -q tests/test_deform360_real_v1.py
+          git diff --check
+
+      - name: Commit validated launch corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py \
+            .github/workflows/run-deform360-gpuserver6000-tactile-20260901-v1.yml
+          git diff --cached --check
+          git commit -m "Validate Deform360 tactile launch files"
+          git push origin HEAD:run/deform360-gpuserver6000-tactile-20260901-v1
