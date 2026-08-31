@@ -1,0 +1,93 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-object-identity-placebo-v1",
+  "schema_version": 1,
+  "protocol_id": "pokeflex-object-identity-placebo-v1",
+  "status": "retrospective-real-data-relation-specificity-diagnostic",
+  "runner_label": "gpuserver6000",
+  "input_contract": {
+    "scoring_root": "/home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2-scoring",
+    "dataset_search_roots": [
+      "/home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2-scoring",
+      "/mnt/lexar4tb/pokeflex"
+    ],
+    "prediction_barrier": "results/sota/pokeflex_action_robust_official13_public_v1/prediction_barrier.json",
+    "prediction_barrier_file_sha256": "666ffe0df7f485ee48864598337e5671fcc43169a97a223f12ef6442208cd3e5",
+    "target_result": "results/sota/pokeflex_action_robust_official13_public_v1/target_result.json",
+    "target_result_file_sha256": "619c46726aab0f7e81d2e943bd44820e521c9fe6285906add28af87203c15ebd",
+    "source_scale_calibration": "configs/sota/pokeflex_action_robust_scale_v3.json",
+    "source_scale_calibration_file_sha256": "96fe0046d15dfdd150b3f2f695b678a5b2b8a6acd790978624b120f6fa6408b0",
+    "registered_target_protocol": "configs/sota/pokeflex_action_robust_official13_public_v1.json",
+    "registered_target_protocol_file_sha256": "194d1d15c04660110e21d9c802b48d321cbc1b6025921e5c4de59aa0d442dcba"
+  },
+  "target_take_order": [
+    "MemoryFoam_T2",
+    "PlushVolleyball_T4",
+    "FoamHalfSphere_T3",
+    "3dPrintedBunny_T1",
+    "3dPrintedPyramid_T6",
+    "FoamDice_T3",
+    "PlushMoon_T1",
+    "PlushOctopus_T6",
+    "PlushDice_T8",
+    "PlushTurtle_T3",
+    "Beanbag_T6",
+    "FoamCylinder_T1",
+    "ToiletPaperRoll_T1"
+  ],
+  "same_object_multiplier": {
+    "MemoryFoam_T2": 1.0,
+    "PlushVolleyball_T4": 1.0,
+    "FoamHalfSphere_T3": 2.0,
+    "3dPrintedBunny_T1": 1.0,
+    "3dPrintedPyramid_T6": 1.0,
+    "FoamDice_T3": 1.0,
+    "PlushMoon_T1": 4.0,
+    "PlushOctopus_T6": 1.0,
+    "PlushDice_T8": 4.0,
+    "PlushTurtle_T3": 4.0,
+    "Beanbag_T6": 4.0,
+    "FoamCylinder_T1": 3.0,
+    "ToiletPaperRoll_T1": 1.0
+  },
+  "multiplier_multiset": {
+    "1.0": 7,
+    "2.0": 1,
+    "3.0": 1,
+    "4.0": 4
+  },
+  "scoring": {
+    "metric": "official one-sided nearest-neighbor L1 surface distance in millimetres",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720,
+    "aggregation": "equal-weight physical target takes",
+    "candidate_reconstruction": "baseline_vertices_m + multiplier * (global_candidate_vertices_m - baseline_vertices_m)",
+    "stored_candidate_reproduction_absolute_tolerance_mm": 1e-9,
+    "stored_global_reproduction_absolute_tolerance_mm": 1e-9
+  },
+  "randomization_test": {
+    "null": "the multiset of source-selected multipliers is exchangeable across target physical-object identities",
+    "enumeration": "all unique allocations of seven 1.0, one 2.0, one 3.0, and four 4.0 multipliers to thirteen ordered targets",
+    "expected_allocation_count": 51480,
+    "primary_statistic": "object-balanced mean CD_UL1_mm; lower is better",
+    "tail": "number of allocations no worse than the relation-preserving allocation divided by all allocations",
+    "identity_allocation_included": true
+  },
+  "secondary_diagnostics": [
+    "same-object versus global multiplier 1.0",
+    "same-object rank among all exact allocations",
+    "median and 95-percent central interval of exchangeable allocations",
+    "oracle per-object multiplier over the registered multiset support",
+    "six adjusted-object wins versus global",
+    "source minimum-improvement versus held-out incremental-gain Spearman correlation"
+  ],
+  "information_boundary": {
+    "fresh_confirmation": false,
+    "all_thirteen_target_outcomes_previously_opened": true,
+    "new_model_prediction": false,
+    "sealed_prediction_bytes_modified": false,
+    "target_mesh_rescoring": true,
+    "post_outcome_relation_diagnostic": true,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "This experiment is a retrospective relation-specificity diagnostic on the thirteen publicly materializable PokeFlex official-validation takes. It asks whether the same-object source-selected correction magnitude outperforms exact reassignment placebos while preserving the multiplier multiset. It does not create fresh confirmation, does not identify a unique causal material parameter, does not replace the five unavailable official takes, and does not authorize a direct comparison with the published eighteen-object aggregate."
+}
