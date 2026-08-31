@@ -1,8 +1,8 @@
 {
   "schema": "bayesian-phystwin/deform360-tcn-baseline-protocol-v6",
   "schema_version": 6,
-  "protocol_id": "deform360-two-stream-tcn-competitive-baseline-v6",
-  "status": "frozen-before-v6-baseline-execution",
+  "protocol_id": "deform360-two-stream-raw-tactile-tcn-competitive-baseline-v6",
+  "status": "frozen-before-v6-raw-coordinate-baseline-execution",
   "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
   "v3_protocol_path": "protocols/deform360_action_kernel_v3.json",
   "v5_protocol_path": "protocols/deform360_untouched_confirmation_v5.json",
@@ -117,10 +117,13 @@
     "119-seal-cloth"
   ],
   "training": {
-    "architecture": "two-stream temporal convolutional network with matched state-only arm",
-    "history_frames": 16,
+    "architecture": "matched two-stream depthwise-separable temporal convolutional network",
+    "input_coordinate_system": "globally aligned 384-dimensional pooled tactile sensor coordinates after the same per-object source-only normalization used by the v3 stack",
+    "target_coordinate_system": "full 384-dimensional normalized tactile displacement without object-specific PCA",
+    "history_frames": 8,
     "future_action_samples": 9,
-    "hidden_width": 48,
+    "hidden_width": 32,
+    "action_hidden_width": 24,
     "dropout": 0.05,
     "batch_size": 512,
     "evaluation_batch_size": 1024,
@@ -128,22 +131,25 @@
     "minimum_learning_rate": 0.0001,
     "weight_decay": 0.0001,
     "smooth_l1_beta": 1.0,
+    "active_coordinate_weight": 3.0,
     "gradient_clip_norm": 1.0,
-    "maximum_development_epochs": 30,
-    "minimum_development_epochs": 8,
-    "early_stopping_patience": 6,
+    "maximum_development_epochs": 20,
+    "minimum_development_epochs": 5,
+    "early_stopping_patience": 4,
     "minimum_improvement": 0.0001,
     "torch_threads": 12,
     "device": "cpu",
     "epoch_selection": "object-balanced active-field RMSE on the original 14-object development targets",
     "final_fit": "selected epoch count, refit from scratch on all source episodes of the fixed 92-object roster",
-    "output_representation": "the same source-fitted 24-dimensional tactile-delta basis used by the v3 evaluation stack"
+    "matched_control": "state-only TCN has the identical architecture and parameter count but receives zero future-action and action-label inputs"
   },
   "statistics": {
     "unit": "physical object",
     "primary_metric": "object-balanced active-field RMSE at 32 frames",
     "bootstrap_repetitions": 10000,
-    "random_seed": 93117
+    "random_seed": 93117,
+    "expected_held_out_count": 21,
+    "held_out_action_family_rule": "the target coarse action family is absent from all same-object source episode action families"
   },
   "information_boundary": {
     "development_targets_may_open_for_training_budget_selection": true,
