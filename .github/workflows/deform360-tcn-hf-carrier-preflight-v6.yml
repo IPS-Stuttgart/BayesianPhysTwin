@@ -1,0 +1,98 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 selective carrier preflight v6
+
+on:
+  push:
+    branches: [science/deform360-tcn-fallback-runner-v6]
+    paths:
+      - ".github/requests/deform360-tcn-hf-carrier-preflight-v6.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-tcn-hf-carrier-preflight-v6
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Inspect official selective carrier availability
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Create isolated inspection runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${RUNNER_TEMP}/deform360-hf-preflight-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          out="${RUNNER_TEMP}/deform360-hf-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check 'huggingface_hub>=0.34,<1'
+          mkdir -p "${out}"
+          echo "PYTHON_BIN=${venv}/bin/python" >> "${GITHUB_ENV}"
+          echo "VENV_ROOT=${venv}" >> "${GITHUB_ENV}"
+          echo "OUTPUT_ROOT=${out}" >> "${GITHUB_ENV}"
+
+      - name: Inspect raw and processed repository carriers
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY' | tee "${OUTPUT_ROOT}/carrier_inventory.txt"
+          from huggingface_hub import HfApi
+
+          api = HfApi()
+          probes = (
+              "004-rubber-band",
+              "021-bag-cloth",
+              "068-nylon-rope",
+          )
+          for repo in ("brownu/deform360", "brownu/deform360_processed"):
+              print(f"## repo={repo}")
+              try:
+                  info = api.repo_info(repo_id=repo, repo_type="dataset", files_metadata=True)
+                  print(f"revision={info.sha}")
+                  print(f"siblings={len(info.siblings or [])}")
+                  for object_id in probes:
+                      selected = [
+                          item
+                          for item in (info.siblings or [])
+                          if object_id in item.rfilename
+                          and any(
+                              token in item.rfilename.lower()
+                              for token in (
+                                  "metadata.json",
+                                  "tactile",
+                                  "median_",
+                                  "robot.npy",
+                                  "robot.npz",
+                                  ".tar",
+                              )
+                          )
+                      ]
+                      print(f"object={object_id} selected={len(selected)}")
+                      for item in selected[:40]:
+                          size = getattr(item, "size", None)
+                          print(f"  {item.rfilename}\t{size}")
+              except Exception as exc:
+                  print(f"repo_error={type(exc).__name__}: {exc}")
+          PY
+
+      - name: Upload inventory
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-tcn-hf-carrier-preflight-v6-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}"
