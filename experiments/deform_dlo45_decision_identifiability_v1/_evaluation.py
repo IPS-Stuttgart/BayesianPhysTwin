@@ -21,6 +21,7 @@ from ._common import (
 )
 from ._model import build_pool, decide, fit_model
 
+
 def evaluate_paths(
     paths: tuple[Path, ...],
     model: Model,
@@ -63,9 +64,7 @@ def evaluate_paths(
             actual_residual = (
                 truth - observation.baseline
             ).reshape(-1) / observation.length_scale
-            actions = (
-                model.action_scales[:, None] * decision.correction[None, :]
-            )
+            actions = model.action_scales[:, None] * decision.correction[None, :]
             normalized_mse = np.mean(
                 np.square(actual_residual[None, :] - actions), axis=1
             )
@@ -345,5 +344,3 @@ def bootstrap_interval(
     return float(np.quantile(estimates, 0.025)), float(
         np.quantile(estimates, 0.975)
     )
-
-
