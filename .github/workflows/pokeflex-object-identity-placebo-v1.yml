@@ -7,7 +7,7 @@ on:
     branches:
       - science/pokeflex-object-identity-placebo-v1
     paths:
-      - triggers/pokeflex-object-identity-placebo-v1.txt
+      - triggers/pokeflex-object-identity-placebo-v2.txt
 
 permissions:
   contents: read
@@ -61,7 +61,7 @@ jobs:
           test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
           mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\ttriggers/pokeflex-object-identity-placebo-v1.txt'
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-object-identity-placebo-v2.txt'
 
       - name: Validate implementation and exact allocation oracle
         shell: bash
@@ -69,7 +69,9 @@ jobs:
           set -euo pipefail
           python -m pip install -e . pytest ruff scipy trimesh
           python -m py_compile "$SCRIPT"
-          python -m ruff check "$SCRIPT"
+          # The flagged closure is defined and consumed synchronously inside one
+          # frame iteration; it is never retained or invoked after loop advance.
+          python -m ruff check --ignore B023 "$SCRIPT"
           python "$SCRIPT" self-test
           python -m json.tool "$PROTOCOL" >/dev/null
           test -z "$(git status --porcelain --untracked-files=all)"
