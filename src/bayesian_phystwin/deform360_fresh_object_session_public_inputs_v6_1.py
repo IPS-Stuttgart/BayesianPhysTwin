@@ -4,12 +4,19 @@ The frozen v5 public-input implementation is reused for its numerical path.
 This module changes only typed provenance: the sealed input is the disjoint
 MotionCrafter baseline, not Prob4D decoded-uniform overlap fusion. It exposes no
 endpoint, suffix, target, or outcome interface.
+
+The default metric-gauge independence cell is eight pixels under target-free
+amendment ``69e8ed033b27ff38a5ce81e0cf1717845b6bacd8cc0b7027771abe250a7945b7``.
+A causal-prefix audit found this to be the coarsest tested cell size whose robust
+gauge fit passed all 80 source cameras; the original 32-pixel default passed
+only 41 cameras and no complete source object panel.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Final
 
 from ._portable_contracts import nonempty_string
 from .deform360_joint_sparse_materializer_v5 import (
@@ -20,6 +27,11 @@ from .deform360_joint_sparse_materializer_v5 import (
 from .deform360_joint_sparse_public_inputs_v5 import (
     Deform360JointSparseMetricGaugeFitV5,
     prepare_deform360_joint_sparse_visual_window_v5,
+)
+
+METRIC_GAUGE_CLUSTER_SIZE_PIXELS_V6_1: Final = 8
+METRIC_GAUGE_SCALE_AMENDMENT_ID_V6_1: Final = (
+    "69e8ed033b27ff38a5ce81e0cf1717845b6bacd8cc0b7027771abe250a7945b7"
 )
 
 
@@ -47,7 +59,7 @@ def prepare_deform360_disjoint_visual_window_v6_1(
     fit: Deform360JointSparsePrefixFitV5,
     source_artifact_ids: Mapping[str, str],
     extraction_config: Deform360JointSparseExtractionConfigV5 | None = None,
-    metric_cluster_size_pixels: int = 32,
+    metric_cluster_size_pixels: int = METRIC_GAUGE_CLUSTER_SIZE_PIXELS_V6_1,
 ) -> tuple[
     Deform360JointSparseVisualWindowRowsV5,
     Deform360JointSparseMetricGaugeFitV5,
@@ -96,4 +108,8 @@ def prepare_deform360_disjoint_visual_window_v6_1(
     return disjoint_rows, disjoint_gauge
 
 
-__all__ = ["prepare_deform360_disjoint_visual_window_v6_1"]
+__all__ = [
+    "METRIC_GAUGE_CLUSTER_SIZE_PIXELS_V6_1",
+    "METRIC_GAUGE_SCALE_AMENDMENT_ID_V6_1",
+    "prepare_deform360_disjoint_visual_window_v6_1",
+]
