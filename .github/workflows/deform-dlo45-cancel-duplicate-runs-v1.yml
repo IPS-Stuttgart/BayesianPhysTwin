@@ -1,0 +1,108 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Cancel duplicate queued DLO4/DLO5 runs
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-runner-label-recovery-v4
+    paths:
+      - triggers/deform-dlo45-cancel-duplicate-runs-v1.txt
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: deform-dlo45-duplicate-run-cleanup-v1
+  cancel-in-progress: false
+
+jobs:
+  cancel-duplicates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact cleanup request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Require one add-only cleanup trigger
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/deform-dlo45-runner-label-recovery-v4
+          test "$PUSH_FORCED" = false
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/deform-dlo45-cancel-duplicate-runs-v1.txt'
+
+      - name: Cancel only the two pre-source duplicate runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTIVE_RUN_ID: "33361441865"
+          STALLED_MAIN_RUN_ID: "33414972339"
+          PENDING_RECOVERY_RUN_ID: "33433742183"
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+
+          active_status="$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID" --jq .status)"
+          active_conclusion="$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID" --jq '.conclusion // ""')"
+          test "$active_status" = in_progress
+          test -z "$active_conclusion"
+
+          active_source_status="$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID/jobs" \
+            --jq '.jobs[] | select(.name == "source") | .status')"
+          test "$active_source_status" = in_progress
+
+          stalled_source="$(gh api "repos/$repo/actions/runs/$STALLED_MAIN_RUN_ID/jobs" \
+            --jq '.jobs[] | select(.name == "source") | [.status, (.started_at // "")] | @tsv')"
+          test "$stalled_source" = $'queued\t'
+
+          pending_status="$(gh api "repos/$repo/actions/runs/$PENDING_RECOVERY_RUN_ID" --jq .status)"
+          test "$pending_status" = pending
+          pending_jobs="$(gh api "repos/$repo/actions/runs/$PENDING_RECOVERY_RUN_ID/jobs" --jq '.total_count')"
+          test "$pending_jobs" = 0
+
+          for run_id in "$STALLED_MAIN_RUN_ID" "$PENDING_RECOVERY_RUN_ID"; do
+            gh api --method POST "repos/$repo/actions/runs/$run_id/cancel"
+          done
+
+          for attempt in $(seq 1 30); do
+            stalled_status="$(gh api "repos/$repo/actions/runs/$STALLED_MAIN_RUN_ID" --jq .status)"
+            pending_status="$(gh api "repos/$repo/actions/runs/$PENDING_RECOVERY_RUN_ID" --jq .status)"
+            echo "attempt=$attempt stalled=$stalled_status pending=$pending_status"
+            if [[ "$stalled_status" = completed && "$pending_status" = completed ]]; then
+              break
+            fi
+            sleep 5
+          done
+
+          test "$(gh api "repos/$repo/actions/runs/$STALLED_MAIN_RUN_ID" --jq .status)" = completed
+          test "$(gh api "repos/$repo/actions/runs/$PENDING_RECOVERY_RUN_ID" --jq .status)" = completed
+          test "$(gh api "repos/$repo/actions/runs/$STALLED_MAIN_RUN_ID" --jq .conclusion)" = cancelled
+          test "$(gh api "repos/$repo/actions/runs/$PENDING_RECOVERY_RUN_ID" --jq .conclusion)" = cancelled
+
+          test "$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID" --jq .status)" = in_progress
+          test "$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID/jobs" \
+            --jq '.jobs[] | select(.name == "source") | .status')" = in_progress
+
+      - name: Record cleanup result
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ### DLO4/DLO5 duplicate-run cleanup
+
+          - Active one-shot recovery retained: `33361441865`
+          - Stalled main-branch duplicate cancelled: `33414972339`
+          - Pending tag-only duplicate cancelled: `33433742183`
+          - Active stage after cleanup: `source`
+          - Target access caused by cleanup: `false`
+          - Scientific protocol changed: `false`
+          EOF
