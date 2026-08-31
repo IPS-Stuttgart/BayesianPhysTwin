@@ -1,0 +1,329 @@
+name: Deform360 covariance gauge8 source barrier v1
+
+on:
+  push:
+    branches:
+      - science/deform360-covariance-gauge8-source-v1
+    paths:
+      - .github/requests/deform360-covariance-gauge8-source-v1.json
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-covariance-gauge8-source-v1
+  cancel-in-progress: false
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+  REQUEST_PATH: .github/requests/deform360-covariance-gauge8-source-v1.json
+  AMENDMENT: protocols/amendments/deform360_metric_gauge_scale_amendment_v1.json
+  AMENDMENT_ID: 69e8ed033b27ff38a5ce81e0cf1717845b6bacd8cc0b7027771abe250a7945b7
+  PROTOCOL: protocols/locks/deform360_covariance_only_independent_validation_v1.json
+  PROTOCOL_ID: 0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc
+  SELECTION: protocols/locks/deform360_official_hub_visuotactile_v1_selection.json
+  CROSSREPO_BINDING: protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json
+  SOURCE_EXECUTION_LOCK: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
+  SOURCE_ROOT: /mnt/lexar4tb/datasets/deform360-official-hub-visuotactile-v1/calibration-source
+  PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360-official-hub-visuotactile-v1/calibration-processed
+  FORBIDDEN_CONFIRMATION_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  UPSTREAM_RUN_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-v6-source-prediction/f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f/6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+  BASE_RUN_ID: "31585420194"
+  BASE_RUN_ATTEMPT: "1"
+  BASE_HEAD_SHA: 6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+  BASE_WORKFLOW_NAME: Deform360 v6 source prediction evidence — dual CUDA runtimes
+  BASE_WORKFLOW_PATH: .github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml
+  BASE_ARTIFACT_ID: "9137481740"
+  BASE_ARTIFACT_NAME: deform360-v6-source-prediction-dual-runtime-31585420194-1
+  BASE_ARTIFACT_DIGEST: sha256:d811ff1ea4d6ad22a6e7476d2911602af1ee71f81339c0737e1cc60fd5883f9d
+  BASE_ARTIFACT_BYTES: "722235"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Authorize one add-only target-free amendment request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/deform360-covariance-gauge8-source-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/deform360-covariance-gauge8-source-v1.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text(encoding="utf-8"))
+          expected = {
+              "schema": "deform360-covariance-gauge8-source-request-v1",
+              "request_id": "deform360-covariance-gauge8-source-20260831-v1",
+              "runner_label": "gpuserver6000",
+              "source_only": True,
+              "metric_cluster_size_pixels": 8,
+              "amendment_id": os.environ["AMENDMENT_ID"],
+              "audit_run_id": 33362698203,
+              "audit_artifact_id": 9747266178,
+              "audit_artifact_digest": "sha256:dbc1b4bcc0956549abeaf3add6bbb2476654a66e84f1ee2999b08defcf25e3d7",
+              "prior_failed_source_run_id": 33012751418,
+              "prior_failed_source_receipt_id": "e705d19c50273e2b1f09ff1ccd09fd4cf08b250241f2d0f4c4f0a17bcb775df3",
+              "prior_prediction_record_count": 0,
+              "prior_target_access": False,
+              "source_suffix_access_authorized": False,
+              "confirmation_access_authorized": False,
+              "paper_claim_authorized": False,
+              "selection_rule": "coarsest-tested-universal-causal-prefix-support",
+          }
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f"invalid {key}: {request.get(key)!r}")
+          if set(request) != set(expected) | {"expected_source_revision"}:
+              raise SystemExit("request fields differ from the frozen schema")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("expected_source_revision is not the trigger parent")
+          PY
+
+      - name: Validate amendment and changed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_metric_gauge_scale_amendment_v1.py \
+            tests/test_deform360_covariance_source_producer_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py \
+            tests/test_deform360_metric_gauge_scale_amendment_v1.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py \
+            tests/test_deform360_metric_gauge_scale_amendment_v1.py
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path(os.environ["AMENDMENT"]).read_text(encoding="utf-8"))
+          declared = payload.pop("amendment_id")
+          observed = hashlib.sha256(
+              json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+          ).hexdigest()
+          if declared != observed or declared != os.environ["AMENDMENT_ID"]:
+              raise SystemExit("metric-gauge amendment identity changed")
+          PY
+          git diff --check
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  produce:
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 240
+    steps:
+      - name: Check out exact reviewed implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install exact source-only implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "numpy==2.2.6"
+          python -m pip install --no-deps -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Bind source roots and consume a fresh prefix-only ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_root="$(realpath -e "$SOURCE_ROOT")"
+          processed_root="$(realpath -e "$PROCESSED_ROOT")"
+          forbidden_root="$(realpath -e "$FORBIDDEN_CONFIRMATION_ROOT")"
+          results_root="$(realpath -e "$RESULTS_ROOT")"
+          upstream_root="$(realpath -e "$UPSTREAM_RUN_ROOT")"
+          test "$source_root" = "$SOURCE_ROOT"
+          test "$processed_root" = "$PROCESSED_ROOT"
+          test "$forbidden_root" = "$FORBIDDEN_CONFIRMATION_ROOT"
+          test "$results_root" = "$RESULTS_ROOT"
+          test "$upstream_root" = "$UPSTREAM_RUN_ROOT"
+          case "$upstream_root/" in "$results_root/"*) ;; *) exit 2 ;; esac
+          for admitted in "$source_root" "$processed_root" "$results_root"; do
+            test "$admitted" != "$forbidden_root"
+            case "$admitted/" in "$forbidden_root/"*) exit 2 ;; esac
+            case "$forbidden_root/" in "$admitted/"*) exit 2 ;; esac
+          done
+          output="$results_root/bayesian-phystwin/deform360-covariance-source-panel-gauge8-v1/$PROTOCOL_ID/$GITHUB_SHA"
+          claim="${output}.attempt"
+          mkdir -p "$(dirname "$output")"
+          test ! -e "$output"
+          test ! -e "$claim"
+          umask 077
+          mkdir "$claim"
+          jq -n \
+            --arg revision "$GITHUB_SHA" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg amendment_id "$AMENDMENT_ID" \
+            '{implementation_revision:$revision,run_id:$run_id,run_attempt:$run_attempt,amendment_id:$amendment_id,source_only:true,consumed:true}' \
+            > "$claim/attempt.json"
+          {
+            echo "RESOLVED_SOURCE_ROOT=$source_root"
+            echo "RESOLVED_PROCESSED_ROOT=$processed_root"
+            echo "RESOLVED_FORBIDDEN_ROOT=$forbidden_root"
+            echo "RESOLVED_RESULTS_ROOT=$results_root"
+            echo "RESOLVED_UPSTREAM_ROOT=$upstream_root"
+            echo "RUN_OUTPUT=$output"
+            echo "RUN_CLAIM=$claim"
+            echo "INVENTORY_JSON=$RUNNER_TEMP/covariance-source-gauge8-inventory.json"
+            echo "TECHNICAL_RECEIPT=$RUNNER_TEMP/covariance-source-gauge8-technical-receipt.json"
+            echo "PRODUCER_LOG=$RUNNER_TEMP/covariance-source-gauge8-producer.log"
+            echo "COMPACT_ROOT=$RUNNER_TEMP/deform360-v6-base-source"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify immutable public source execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${BASE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"$run")" = "$BASE_WORKFLOW_NAME"
+          test "$(jq -r '.path' <<<"$run")" = "$BASE_WORKFLOW_PATH"
+          test "$(jq -r '.head_sha' <<<"$run")" = "$BASE_HEAD_SHA"
+          test "$(jq -r '.status' <<<"$run")" = completed
+          test "$(jq -r '.conclusion' <<<"$run")" = success
+          test "$(jq -r '.run_attempt' <<<"$run")" = "$BASE_RUN_ATTEMPT"
+          artifact="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${BASE_ARTIFACT_ID}")"
+          test "$(jq -r '.name' <<<"$artifact")" = "$BASE_ARTIFACT_NAME"
+          test "$(jq -r '.digest' <<<"$artifact")" = "$BASE_ARTIFACT_DIGEST"
+          test "$(jq -r '.size_in_bytes' <<<"$artifact")" = "$BASE_ARTIFACT_BYTES"
+          test "$(jq -r '.expired' <<<"$artifact")" = false
+
+      - name: Download exact compact source evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: ${{ env.BASE_ARTIFACT_NAME }}
+          path: ${{ env.COMPACT_ROOT }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.BASE_RUN_ID }}
+
+      - name: Build and seal the 100-record gauge8 source panel
+        id: produce
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          python scripts/science/run_deform360_covariance_source_producer_v1.py \
+            execute \
+            --protocol "$PROTOCOL" \
+            --selection "$SELECTION" \
+            --crossrepo-binding "$CROSSREPO_BINDING" \
+            --implementation-revision "$GITHUB_SHA" \
+            --source-root "$RESOLVED_SOURCE_ROOT" \
+            --processed-root "$RESOLVED_PROCESSED_ROOT" \
+            --forbidden-confirmation-root "$RESOLVED_FORBIDDEN_ROOT" \
+            --inventory-output "$INVENTORY_JSON" \
+            --source-execution-lock "$SOURCE_EXECUTION_LOCK" \
+            --upstream-source-plan "$COMPACT_ROOT/source-plan.json" \
+            --upstream-prediction-batch "$COMPACT_ROOT/source-prediction-batch.json" \
+            --upstream-prediction-receipt "$COMPACT_ROOT/source-prediction-receipt.json" \
+            --upstream-execution-receipt "$COMPACT_ROOT/execution-receipt.json" \
+            --upstream-run-root "$RESOLVED_UPSTREAM_ROOT" \
+            --input-root "$RESOLVED_RESULTS_ROOT" \
+            --repository-root "$GITHUB_WORKSPACE" \
+            --output-root "$RUN_OUTPUT" \
+            --technical-receipt "$TECHNICAL_RECEIPT" \
+            > "$PRODUCER_LOG" 2>&1
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Rehash complete prefix-only barrier
+        if: steps.produce.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/run_deform360_covariance_source_producer_v1.py validate-panel "$RUN_OUTPUT"
+          test "$(jq -r '.prediction_record_count' "$RUN_OUTPUT/source-panel-receipt.json")" = 100
+          test "$(jq -r '.source_suffix_scoring_authorized' "$RUN_OUTPUT/source-panel-receipt.json")" = false
+          test "$(jq -r '.confirmation_prediction_authorized' "$RUN_OUTPUT/source-panel-receipt.json")" = false
+          test "$(jq -r '.information_boundary.source_suffix_used' "$RUN_OUTPUT/source-panel-receipt.json")" = false
+          test "$(jq -r '.information_boundary.confirmation_payloads_opened' "$RUN_OUTPUT/source-panel-receipt.json")" = false
+
+      - name: Upload complete gauge8 source barrier
+        if: steps.produce.outputs.exit_code == '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-covariance-gauge8-source-barrier-v1-${{ github.run_id }}
+          path: |
+            ${{ env.RUN_OUTPUT }}
+            ${{ env.INVENTORY_JSON }}
+            ${{ env.RUN_CLAIM }}/attempt.json
+            ${{ env.PRODUCER_LOG }}
+            ${{ env.AMENDMENT }}
+            ${{ env.REQUEST_PATH }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload bounded technical receipt
+        if: steps.produce.outputs.exit_code != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-covariance-gauge8-source-technical-v1-${{ github.run_id }}
+          path: |
+            ${{ env.TECHNICAL_RECEIPT }}
+            ${{ env.RUN_CLAIM }}/attempt.json
+            ${{ env.PRODUCER_LOG }}
+            ${{ env.AMENDMENT }}
+            ${{ env.REQUEST_PATH }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve technical failure as failed run
+        if: steps.produce.outputs.exit_code != '0'
+        shell: bash
+        run: exit 1
