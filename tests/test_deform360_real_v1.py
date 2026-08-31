@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import tarfile
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
@@ -146,6 +148,41 @@ def test_pcd_clean_sequence_is_scored(tmp_path: Path) -> None:
     assert case["representation"] == "pcd_clean_centroid_3d"
     assert case["metrics"]["last_residual_chamfer_mm"] < 1e-8
     assert case["metrics"]["bayesian_chamfer_mm"] < 1e-8
+
+
+def test_official_pcd_clean_tar_sequence_is_scored(tmp_path: Path) -> None:
+    root = tmp_path / "deform360"
+    episode = root / "processed-repository" / "001-rope" / "episode_0000"
+    episode.mkdir(parents=True)
+    archive_path = episode / "pcd_clean.tar"
+    base = moving_points(frames=1, points=20)[0]
+    with tarfile.open(archive_path, mode="w") as archive:
+        for frame in range(24):
+            points = base + np.array([frame * 0.001, 0.0, 0.0])
+            buffer = BytesIO()
+            np.savez_compressed(buffer, pts=points)
+            payload = buffer.getvalue()
+            member = tarfile.TarInfo(name=f"pcd_clean/{frame:06d}.npz")
+            member.size = len(payload)
+            archive.addfile(member, BytesIO(payload))
+
+    output = tmp_path / "output"
+    result = module.run(
+        data_root=root,
+        protocol_path=save_protocol(tmp_path, root),
+        output_dir=output,
+        profile_name="pilot",
+        revision=None,
+    )
+
+    case = result["cases"][0]
+    assert case["kind"] == "pcd_clean_tar"
+    assert case["representation"] == "pcd_clean_centroid_3d"
+    assert case["metrics"]["last_residual_chamfer_mm"] < 1e-8
+    assert case["metrics"]["bayesian_chamfer_mm"] < 1e-8
+    inventory = json.loads((output / "carrier_inventory.json").read_text())
+    assert inventory["named_pcd_clean_archives"] == 1
+    assert inventory["candidate_counts"]["pcd_clean_tar"] == 1
 
 
 def test_headerless_tactile_fallback_is_real_measurement_carrier(
