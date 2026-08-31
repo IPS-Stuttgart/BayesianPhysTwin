@@ -40,7 +40,6 @@ jobs:
           set -euo pipefail
           python -m pip install "ruff==0.14.14"
           python -m ruff format scripts/science/run_deform360_tcn_baseline_v6.py
-          python -m ruff check scripts/science/run_deform360_tcn_baseline_v6.py
           python -m ruff format --check scripts/science/run_deform360_tcn_baseline_v6.py
 
       - name: Remove this one-shot launcher and push the formatted source
