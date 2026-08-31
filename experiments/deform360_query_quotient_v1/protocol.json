@@ -1,0 +1,63 @@
+{
+  "schema": "bayesian-phystwin/deform360-query-quotient-real-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-002-rope-silk-query-quotient-source-v1",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "processed_root_suffix": "processed-repository/processed",
+  "object_id": "002-rope-silk",
+  "source_episode_ids": [0, 2, 5, 6, 7, 9],
+  "source_episode_actions": {
+    "0": "lift side",
+    "2": "drag side",
+    "5": "lift sides",
+    "6": "lift middle and side",
+    "7": "drag sides",
+    "9": "fold"
+  },
+  "forbidden_episode_ids": [1, 3, 4, 8],
+  "horizon_frames": 6,
+  "reset_count": 5,
+  "minimum_prefix_frames": 10,
+  "maximum_frames": 96,
+  "maximum_points": 256,
+  "rho_grid": {
+    "minimum": -0.5,
+    "maximum": 1.25,
+    "count": 71
+  },
+  "prior_variance_floor": 0.0025,
+  "likelihood_information_cap": 20,
+  "query": {
+    "name": "six-frame displacement-continuation class",
+    "transport_factor_thresholds": [2.0, 4.0],
+    "class_labels": [
+      "strongly_damped",
+      "moderate_continuation",
+      "persistent_continuation"
+    ],
+    "observed_factor_definition": "least-squares scalar mapping the current persistent-point velocity to the held-out six-frame displacement"
+  },
+  "latent_rho_decision_threshold": 0.75,
+  "minimum_velocity_energy_m2": 1e-12,
+  "analysis": {
+    "bootstrap_repetitions": 5000,
+    "bootstrap_seed": 3607901,
+    "statistical_unit": "source episode",
+    "resets_are_nested": true,
+    "primary_score": "multiclass Brier score",
+    "secondary_score": "multiclass logarithmic score"
+  },
+  "information_boundary": {
+    "public_real_measurements": true,
+    "source_only": true,
+    "leave_one_source_episode_out": true,
+    "held_episode_prefix_used_for_adaptation": true,
+    "held_episode_future_used_for_query_scoring_only": true,
+    "forbidden_episode_payloads_opened": false,
+    "official_velocity_arrays_used": false,
+    "dataset_modified": false,
+    "raw_payload_uploaded": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false
+  }
+}
