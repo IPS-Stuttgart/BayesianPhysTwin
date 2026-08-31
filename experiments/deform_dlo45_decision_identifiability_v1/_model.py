@@ -24,6 +24,7 @@ from ._common import (
     window_starts,
 )
 
+
 def build_pool(
     paths: tuple[Path, ...],
     names: tuple[str, ...],
@@ -159,7 +160,9 @@ def class_ambiguity(
     for class_id, weight in enumerate(quotient):
         members = endpoint[class_index == class_id]
         if len(members):
-            width = np.linalg.norm(np.max(members, axis=0) - np.min(members, axis=0))
+            width = np.linalg.norm(
+                np.max(members, axis=0) - np.min(members, axis=0)
+            )
             total += float(weight) * float(width)
     return total
 
@@ -192,9 +195,7 @@ def decide(feature: FloatArray, model: Model, protocol: Protocol) -> Decision:
     distance = np.mean(np.square(pool - query[None, :]), axis=1)
     neighbor_count = min(model.neighbors, len(distance))
     selected = np.argpartition(distance, neighbor_count - 1)[:neighbor_count]
-    selected = selected[
-        np.lexsort((selected, distance[selected]))
-    ]
+    selected = selected[np.lexsort((selected, distance[selected]))]
     selected_distance = distance[selected]
     positive = selected_distance[selected_distance > 0.0]
     base_bandwidth = (
@@ -215,28 +216,61 @@ def decide(feature: FloatArray, model: Model, protocol: Protocol) -> Decision:
     class_count = len(unique_classes)
     quotient = np.bincount(
         classes,
-        weiYÚÏZÙ\›™[ÝÙZYÚËˆZ[›[™ÝXÛ\Ü×ØÛÝ[ˆ
-K˜\Ý\Jœ™›Ø]
-BˆÛ\Ü×ÜÚ^™\ÈHœ˜š[˜ÛÝ[
-Û\ÜÙ\ËZ[›[™ÝXÛ\Ü×ØÛÝ[
-K˜\Ý\Jœ™›Ø]
-Bˆ™Y™œ™^WÝÙZYÚÈH][ÝY[ØÛ\ÜÙ\×HÈÛ\Ü×ÜÚ^™\ÖØÛ\ÜÙ\×BˆÙ[XÝYÜ™\ÚYX[ÈH[Ù[œ™\ÚYX[ÖÜÙ[XÝYBˆÛÜœ™XÝ[ÛˆHœ™Z[œÝ[JšKYO™‹™Y™œ™^WÝÙZYÚËÙ[XÝYÜ™\ÚYX[ÊBˆXÝ[ÛœÈH[Ù[˜XÝ[Û—ÜØØ[\ÖÎ‹›Û™WH
-ˆÛÜœ™XÝ[Û–Ó›Û™K—Bˆ˜]×ÛÜÜÙ\ÈHœ›YX[ŠˆœœÜ]X\™JÙ[XÝYÜ™\ÚYX[ÖÎ‹›Û™K—HHXÝ[ÛœÖÓ›Û™K‹—JKˆ^\ÏL‹ˆ
-Bˆ™[]]™WÛÜÜÙ\ÈH˜]×ÛÜÜÙ\ÈÈ
-ˆ˜]×ÛÜÜÙ\ÖÎ‹ŒWH
-È[Ù[›ÜÜ×Ù›ÛÜ‚ˆ
-Bˆš[ÜˆHœ™[
-™ZYÚ›Ü—ØÛÝ[KŒÈ™ZYÚ›Ü—ØÛÝ[
-BˆÙ\YšXØ]HH]Y\žWÙXÚ\Ú[Û—ØÙ\YšXØ]Jˆš[Ü‹ˆ][ÝY[ˆÛ\ÜÙ\Ëˆ™[]]™WÛÜÜÙ\Ëˆ™YÜ™]ÝÛ\˜[˜ÙO[[Ù[œ™YÜ™]ÝÛ\˜[˜ÙKˆ
-BˆÙ\YšXØ]WØXÝ[ÛˆH
-ˆÙ\YšXØ]K›Z[š[X^ØXÝ[Û—Ú[™^ˆYˆÙ\YšXØ]K›Z[š[X^ÝÛÜœÝØØ\ÙWÜ™YÜ™]ˆH[Ù[œ™YÜ™]ÝÛ\˜[˜ÙH
-ÈUÓˆ[ÙHˆ
-Bˆ™Y™œ™^WØXÝ[ÛˆH[
-ˆœ˜\™ÛZ[Šœ™Z[œÝ[JšKXKO˜H‹™Y™œ™^WÝÙZYÚË™[]]™WÛÜÜÙ\ÊJBˆ
-BˆÙ\›™[ØXÝ[ÛˆH[
-ˆœ˜\™ÛZ[Šœ™Z[œÝ[JšKXKO˜H‹Ù\›™[ÝÙZYÚË™[]]™WÛÜÜÙ\ÊJBˆ
-BˆX\ØXÝ[ÛˆH[
-œ˜\™ÛZ[Š™[]]™WÛÜÜÙ\ÖÌJJBˆ™]\›ˆXÚ\Ú[ÛŠˆÙ\YšXØ]WØXÝ[ÛXÙ\YšXØ]WØXÝ[Û‹ˆ™Y™œ™^WØXÝ[ÛZ™Y™œ™^WØXÝ[Û‹ˆÙ\›™[ØXÝ[ÛZÙ\›™[ØXÝ[Û‹ˆX\ØXÝ[Û[X\ØXÝ[Û‹ˆÛÜœ™XÝ[ÛXÛÜœ™XÝ[Û‹ˆÛÜœÝØØ\ÙWÜ™YÜ™]XÙ\YšXØ]KÛÜœÝØØ\ÙWÜ™YÜ™]ˆZ[š[X^Ü™YÜ™]XÙ\YšXØ]K›Z[š[X^ÝÛÜœÝØØ\ÙWÜ™YÜ™]ˆ›Ø\ÝÛX\ÚÏXÙ\YšXØ]Kœ›Ø\ÝWÛÜ[X[ØXÝ[Û—ÛX\ÚËˆÛ\˜[˜ÙWÛX\ÚÏXÙ\YšXØ]KÛ\˜[˜ÙWØYZ\ÜÚX›WØXÝ[Û—ÛX\ÚËˆ[XšYÝZ]WÝÚYXÛ\Ü×Ø[XšYÝZ]JˆÙ[XÝYÜ™\ÚYX[ËˆÛ\ÜÙ\Ëˆ][ÝY[ˆ›ÝØÛÛˆ
-Kˆ[œÝ\ÜYÜÜXÚYšXÚ]WÛ˜]Ï][œÝ\ÜYÜÜXÚYšXÚ]JˆÙ\›™[ÝÙZYÚËˆÛ\ÜÙ\Ëˆ][ÝY[ˆ
-Kˆ™ZYÚ›Ü—ØÛÝ[[™ZYÚ›Ü—ØÛÝ[ˆ][ÝY[ØÛ\Ü×ØÛÝ[XÛ\Ü×ØÛÝ[ˆ
-B‚‚
+        weights=kernel_weights,
+        minlength=class_count,
+    ).astype(np.float64)
+    class_sizes = np.bincount(classes, minlength=class_count).astype(np.float64)
+    jeffrey_weights = quotient[classes] / class_sizes[classes]
+    selected_residuals = model.residuals[selected]
+    correction = np.einsum("i,id->d", jeffrey_weights, selected_residuals)
+    actions = model.action_scales[:, None] * correction[None, :]
+    raw_losses = np.mean(
+        np.square(selected_residuals[:, None, :] - actions[None, :, :]),
+        axis=2,
+    )
+    relative_losses = raw_losses / (raw_losses[:, :1] + model.loss_floor)
+    prior = np.full(neighbor_count, 1.0 / neighbor_count)
+    certificate = query_decision_certificate(
+        prior,
+        quotient,
+        classes,
+        relative_losses,
+        regret_tolerance=model.regret_tolerance,
+    )
+    certificate_action = (
+        certificate.minimax_action_index
+        if certificate.minimax_worst_case_regret
+        <= model.regret_tolerance + ATOL
+        else 0
+    )
+    jeffrey_action = int(
+        np.argmin(np.einsum("i,ia->a", jeffrey_weights, relative_losses))
+    )
+    kernel_action = int(
+        np.argmin(np.einsum("i,ia->a", kernel_weights, relative_losses))
+    )
+    map_action = int(np.argmin(relative_losses[0]))
+    return Decision(
+        certificate_action=certificate_action,
+        jeffrey_action=jeffrey_action,
+        kernel_action=kernel_action,
+        map_action=map_action,
+        correction=correction,
+        worst_case_regret=certificate.worst_case_regret,
+        minimax_regret=certificate.minimax_worst_case_regret,
+        robust_mask=certificate.robustly_optimal_action_mask,
+        tolerance_mask=certificate.tolerance_admissible_action_mask,
+        ambiguity_width=class_ambiguity(
+            selected_residuals,
+            classes,
+            quotient,
+            protocol,
+        ),
+        unsupported_specificity_nats=unsupported_specificity(
+            kernel_weights,
+            classes,
+            quotient,
+        ),
+        neighbor_count=neighbor_count,
+        quotient_class_count=class_count,
+    )
