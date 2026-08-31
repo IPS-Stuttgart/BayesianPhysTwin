@@ -1,0 +1,76 @@
+name: Cancel duplicate main DLO4 DLO5 queue 20260901 v1
+
+on:
+  push:
+    branches:
+      - ops/cancel-duplicate-dlo45-main-queue-20260901-v1
+    paths:
+      - run_requests/cancel-duplicate-dlo45-main-queue-20260901-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo45-push-refs/heads/main
+  cancel-in-progress: true
+
+jobs:
+  cancel-duplicate:
+    name: Release gpuserver4090 queue behind active staged DLO recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out request revision with parent
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Validate one add-only queue-management request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          request=run_requests/cancel-duplicate-dlo45-main-queue-20260901-v1.json
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${request}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path("run_requests/cancel-duplicate-dlo45-main-queue-20260901-v1.json")
+          request = json.loads(path.read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          expected = {
+              "schema": "bayesian-phystwin.queue-management-request-v1",
+              "request_id": "cancel-duplicate-dlo45-main-queue-20260901-v1",
+              "cancelled_concurrency_group": "deform-dlo45-push-refs/heads/main",
+              "preserved_active_run_id": 33361441865,
+              "preserved_active_group": "deform-dlo45-time-budget-recovery-v3",
+              "duplicate_queued_run_id": 33414972339,
+              "reason": (
+                  "preserve the active staged DLO4/DLO5 source recovery and "
+                  "release gpuserver4090 for queued complete DOT and Tracking Cloth runs"
+              ),
+              "scientific_payload_access": False,
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+          }
+          if request != expected:
+              raise SystemExit(
+                  "queue-management request differs:\n"
+                  + json.dumps({"actual": request, "expected": expected}, indent=2)
+              )
+          print(json.dumps(request, indent=2, sort_keys=True))
+          PY
