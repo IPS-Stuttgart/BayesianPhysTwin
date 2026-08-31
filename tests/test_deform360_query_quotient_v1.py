@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
-import pytest
-
 from experiments.deform360_query_quotient_v1.run import (
     EpisodeData,
     analyze_sequences,
@@ -13,6 +10,8 @@ from experiments.deform360_query_quotient_v1.run import (
     query_class_index,
     validate_result,
 )
+import numpy as np
+import pytest
 
 
 PROTOCOL_PATH = (
@@ -55,7 +54,9 @@ def _sequences(protocol: dict[str, object]) -> list[EpisodeData]:
             str(protocol["source_episode_actions"][str(episode_id)]),  # type: ignore[index]
             rho,
         )
-        for episode_id, rho in zip(protocol["source_episode_ids"], rhos, strict=True)  # type: ignore[arg-type]
+        for episode_id, rho in zip(
+            protocol["source_episode_ids"], rhos, strict=True  # type: ignore[arg-type]
+        )
     ]
 
 
@@ -67,7 +68,9 @@ def test_protocol_and_query_partition_are_frozen() -> None:
     np.testing.assert_array_equal(np.unique(classes), np.array([0, 1, 2]))
     assert tuple(protocol["source_episode_ids"]) == (0, 2, 5, 6, 7, 9)
     assert tuple(protocol["forbidden_episode_ids"]) == (1, 3, 4, 8)
-    assert not set(protocol["source_episode_ids"]) & set(protocol["forbidden_episode_ids"])
+    assert not set(protocol["source_episode_ids"]) & set(
+        protocol["forbidden_episode_ids"]
+    )
     assert protocol["information_boundary"]["paper_claim_authorized"] is False
 
 
