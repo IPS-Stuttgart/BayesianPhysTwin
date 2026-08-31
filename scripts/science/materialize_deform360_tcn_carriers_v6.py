@@ -40,6 +40,9 @@ FORBIDDEN_TOKENS = (
 )
 
 
+TREE_CACHE_DIRECTORY: Path | None = None
+
+
 class MaterializationError(RuntimeError):
     """Raised when a pinned selective materialization cannot be completed."""
 
@@ -103,9 +106,10 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def request_bytes(url: str, *, attempts: int = 8) -> bytes:
+def request_bytes(url: str, *, attempts: int = 20) -> bytes:
     for attempt in range(attempts):
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        wait_seconds: float | None = None
         try:
             with urllib.request.urlopen(request, timeout=180) as response:
                 return response.read()
@@ -113,10 +117,23 @@ def request_bytes(url: str, *, attempts: int = 8) -> bytes:
             retryable = error.code in {408, 425, 429, 500, 502, 503, 504}
             if not retryable or attempt + 1 == attempts:
                 raise
+            if error.code == 429:
+                retry_after = error.headers.get("Retry-After")
+                try:
+                    wait_seconds = float(retry_after) if retry_after else 60.0
+                except ValueError:
+                    wait_seconds = 60.0
+                wait_seconds = max(wait_seconds, 60.0)
         except (TimeoutError, urllib.error.URLError):
             if attempt + 1 == attempts:
                 raise
-        time.sleep(min(2**attempt + random.random(), 30.0))
+        if wait_seconds is None:
+            wait_seconds = min(2**attempt + random.random(), 30.0)
+        print(
+            f"http_retry={attempt + 1}/{attempts} wait={wait_seconds:.1f}s url={url}" ,
+            flush=True,
+        )
+        time.sleep(wait_seconds)
     raise AssertionError("unreachable")
 
 
@@ -135,12 +152,27 @@ def tree_url(repository: str, revision: str, path: str) -> str:
 
 
 def list_tree(repository: str, revision: str, path: str) -> list[dict[str, Any]]:
+    cache_path: Path | None = None
+    if TREE_CACHE_DIRECTORY is not None:
+        cache_key = hashlib.sha256(
+            f"{repository}\0{revision}\0{path}".encode("utf-8")
+        ).hexdigest()
+        cache_path = TREE_CACHE_DIRECTORY / f"{cache_key}.json"
+        if cache_path.is_file():
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            if not isinstance(cached, list):
+                raise MaterializationError(f"invalid tree cache entry: {cache_path}")
+            return [dict(item) for item in cached if isinstance(item, Mapping)]
     value = request_json(tree_url(repository, revision, path))
     if not isinstance(value, list):
         raise MaterializationError(
             f"unexpected tree response for {repository}@{revision}:{path}"
         )
-    return [dict(item) for item in value if isinstance(item, Mapping)]
+    normalized = [dict(item) for item in value if isinstance(item, Mapping)]
+    if cache_path is not None:
+        write_json(cache_path, normalized)
+    time.sleep(0.05)
+    return normalized
 
 
 def resolve_url(repository: str, revision: str, path: str) -> str:
@@ -462,6 +494,7 @@ def execute_downloads(
 
 
 def main() -> None:
+    global TREE_CACHE_DIRECTORY
     parser = argparse.ArgumentParser()
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
@@ -476,13 +509,15 @@ def main() -> None:
     if args.reset and root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True, exist_ok=True)
+    TREE_CACHE_DIRECTORY = root / ".tree-cache"
+    TREE_CACHE_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
     metadata_records: list[DownloadRecord] = []
     plans: list[DownloadPlan] = []
     inventories: list[dict[str, Any]] = []
     print(f"discovering_objects={len(objects)}", flush=True)
     with concurrent.futures.ThreadPoolExecutor(
-        max_workers=min(max(args.workers, 1), 12)
+        max_workers=1
     ) as executor:
         futures = {
             executor.submit(discover_object_plans, root, object_id): object_id
