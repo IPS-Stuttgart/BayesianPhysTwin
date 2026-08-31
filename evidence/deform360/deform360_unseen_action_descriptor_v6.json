@@ -1,0 +1,40 @@
+{
+  "schema": "bayesian-phystwin/deform360-unseen-action-descriptor-analysis-v6",
+  "schema_version": 6,
+  "status": "complete",
+  "source_confirmation_run_id": 33335779766,
+  "source_artifact_id": 9738998271,
+  "source_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+  "selection_rule": "lowercase alphanumeric-normalized target action description is absent from every same-object source episode description; metadata-only and outcome-independent",
+  "object_count": 62,
+  "bayesian_action_ensemble_active_field_rmse": 0.6065570793928905,
+  "comparisons": {
+    "persistence": {
+      "comparator_active_field_rmse": 0.6403445426763607,
+      "mean_difference": -0.033787463283469946,
+      "relative_change": -0.0527645057178954,
+      "object_bootstrap_95_interval": [-0.04037625, -0.02790011],
+      "object_wins_ties_losses": [61, 0, 1],
+      "exact_one_sided_sign_test_pvalue": 1.3660947373317356e-17
+    },
+    "state_kernel": {
+      "comparator_active_field_rmse": 0.6241248998272333,
+      "mean_difference": -0.01756782043434258,
+      "relative_change": -0.02814792430041744,
+      "object_bootstrap_95_interval": [-0.02177154, -0.01376745],
+      "object_wins_ties_losses": [61, 0, 1],
+      "exact_one_sided_sign_test_pvalue": 1.3660947373317356e-17
+    },
+    "shuffled_action_control": {
+      "comparator_active_field_rmse": 0.6274677018172895,
+      "mean_difference": -0.020910622424398995,
+      "relative_change": -0.03332541637416088,
+      "object_bootstrap_95_interval": [-0.02774566, -0.01539213],
+      "object_wins_ties_losses": [60, 0, 2],
+      "exact_one_sided_sign_test_pvalue": 4.2370620900733513e-16
+    }
+  },
+  "claim_boundary": "Transfer to an unseen metadata action description within known objects; not semantic action novelty, zero-shot object transfer, globally fresh confirmation, dense 4-D geometry, or strict counterfactual evidence.",
+  "paper_claim_authorized": false,
+  "strict_counterfactual_claim_authorized": false
+}

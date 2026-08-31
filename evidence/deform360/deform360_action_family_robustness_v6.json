@@ -1,0 +1,52 @@
+{
+  "schema": "bayesian-phystwin/deform360-action-family-robustness-v6",
+  "schema_version": 6,
+  "status": "complete",
+  "source_confirmation_run_id": 33335779766,
+  "source_artifact_id": 9738998271,
+  "source_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+  "method": "Equal-weight macro average over the six populated target action families plus a two-stage family/object bootstrap with 10000 repetitions.",
+  "comparisons": {
+    "persistence": {
+      "family_mean_differences": {
+        "compress": -0.028087422658985308,
+        "dynamic": -0.024392928170723138,
+        "lift": -0.033546824888887807,
+        "other": -0.029407122013376846,
+        "shape": -0.03680870569375672,
+        "translate": -0.053790351340822086
+      },
+      "action_family_macro_mean_difference": -0.03433889246109199,
+      "hierarchical_family_object_bootstrap_95_interval": [-0.04546578, -0.02608386],
+      "maximum_leave_one_family_out_mean_difference": -0.03171653279556939
+    },
+    "state_kernel": {
+      "family_mean_differences": {
+        "compress": -0.015719396303566203,
+        "dynamic": -0.03701171171953471,
+        "lift": -0.021576790211850404,
+        "other": -0.014946618508696953,
+        "shape": -0.01956464750188073,
+        "translate": -0.02749814201263619
+      },
+      "action_family_macro_mean_difference": -0.02271955104302753,
+      "hierarchical_family_object_bootstrap_95_interval": [-0.02987739, -0.01632190],
+      "maximum_leave_one_family_out_mean_difference": -0.01834830581088421
+    },
+    "shuffled_action_control": {
+      "family_mean_differences": {
+        "compress": -0.01642605522259539,
+        "dynamic": -0.03689519828444554,
+        "lift": -0.01872318138519973,
+        "other": -0.01687094478394194,
+        "shape": -0.026386776074665476,
+        "translate": -0.028084024137840297
+      },
+      "action_family_macro_mean_difference": -0.023897696648114728,
+      "hierarchical_family_object_bootstrap_95_interval": [-0.03248988, -0.01593407],
+      "maximum_leave_one_family_out_mean_difference": -0.018531002115873725
+    }
+  },
+  "interpretation": "Every family-specific mean is favorable, every hierarchical interval is below zero, and removing any single family leaves a favorable aggregate. The point gain is therefore not explained by action-family imbalance.",
+  "paper_claim_authorized": false
+}
