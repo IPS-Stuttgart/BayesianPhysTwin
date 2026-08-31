@@ -75,6 +75,12 @@ producer, runtime, source evidence, method, partitions, object/action domains,
 query functional, horizon, loss, feature schema, risk model, threshold source,
 threshold, and fallback policy.
 
+Local predictive competence is necessary but not always sufficient for action
+selection. `docs/query_conditional_trust_v1.md` composes this certificate with
+an exact finite-action regret certificate over every prior-supported physical
+belief compatible with a registered query posterior. Either certificate may
+veto simulator-backed planning; rejection still returns the exact fallback.
+
 ## Primary hypotheses
 
 - **H1, selective harm:** On independent certification groups, the frozen full

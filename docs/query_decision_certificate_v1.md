@@ -136,3 +136,9 @@ support, registered quotient masses, action set, and loss matrix. It does not:
 
 Every returned array is immutable. Inputs fail closed when probabilities,
 support, class labels, losses, dimensions, or tolerance are malformed.
+
+The composed query-conditional trust router wraps the certificate together
+with its registered loss matrix, content-addresses that complete finite
+problem, and recomputes every gap, regret, and mask before admission. This
+preserves the established certificate API while preventing substitution of an
+unregistered solution. See `docs/query_conditional_trust_v1.md`.
