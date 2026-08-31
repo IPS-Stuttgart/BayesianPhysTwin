@@ -1,0 +1,113 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: PokeFlex source-selected held-out transfer sign test v1
+
+on:
+  push:
+    branches:
+      - science/pokeflex-object-identity-placebo-v1
+    paths:
+      - triggers/pokeflex-source-selected-transfer-sign-test-v1.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-source-selected-transfer-sign-test-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: protocols/pokeflex_source_selected_transfer_sign_test_v1.json
+  SCRIPT: scripts/science/run_pokeflex_source_selected_transfer_sign_test_v2.py
+  OUTPUT: ${{ github.workspace }}/_evidence/pokeflex-source-selected-transfer-sign-test-v1
+  PYTHONHASHSEED: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  exact-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Require one add-only analysis request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/pokeflex-object-identity-placebo-v1
+          test "$PUSH_FORCED" = false
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-source-selected-transfer-sign-test-v1.txt'
+
+      - name: Validate and execute exact checked-in-result analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff==0.16.5"
+          python -m py_compile "$SCRIPT"
+          python -m ruff check "$SCRIPT"
+          python "$SCRIPT" self-test
+          python -m json.tool "$PROTOCOL" >/dev/null
+          python "$SCRIPT" run \
+            --protocol "$PROTOCOL" \
+            --output "$OUTPUT" \
+            --repository-revision "$GITHUB_SHA" \
+            | tee "$RUNNER_TEMP/pokeflex-transfer-sign-test.log"
+          cp "$RUNNER_TEMP/pokeflex-transfer-sign-test.log" "$OUTPUT/execution.log"
+          sha256sum "$OUTPUT"/* > "$OUTPUT/ALL_FILES_SHA256SUMS"
+
+      - name: Publish result summary
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["OUTPUT"]) / "result.json").read_text())
+          primary = result["primary"]
+          secondary = result["secondary"]
+          print("### PokeFlex source-selected held-out transfer")
+          print()
+          print(f"- Result ID: `{result['result_id']}`")
+          print(f"- Adjusted objects: `{result['source_selected_non_global_take_count']}`")
+          print(f"- Held-out wins/losses: `{primary['win_count']}/{primary['loss_count']}`")
+          print(f"- Exact sign-flip p-value: `{primary['exact_one_sided_sign_flip_p_value']:.8f}`")
+          print(f"- Exact rank: `{primary['exact_rank_larger_is_better']}/{primary['sign_flip_assignment_count']}`")
+          print(f"- All-13 improvement over global: `{100.0 * secondary['all_13_relative_improvement_over_global']:.6f}%`")
+          print("- Fresh confirmation: `false`")
+          print("- Target data reopened: `false`")
+          PY
+
+      - name: Upload exact analysis evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pokeflex-source-selected-transfer-sign-test-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT }}
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Enforce evidence completeness, not a favorable result
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$OUTPUT/result.json"
+          test -s "$OUTPUT/report.md"
+          test -s "$OUTPUT/SHA256SUMS"
+          test -s "$OUTPUT/ALL_FILES_SHA256SUMS"
+          test -z "$(git status --porcelain --untracked-files=all -- . ':!_evidence')"
