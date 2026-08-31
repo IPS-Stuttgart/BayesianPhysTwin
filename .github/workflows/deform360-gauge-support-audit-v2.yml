@@ -1,0 +1,188 @@
+name: Deform360 metric-gauge source support audit v2
+
+on:
+  push:
+    branches:
+      - science/deform360-gauge-support-audit-v1
+    paths:
+      - .github/requests/deform360-gauge-support-audit-v2.json
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-gauge-support-audit-v2
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  REQUEST_PATH: .github/requests/deform360-gauge-support-audit-v2.json
+  SOURCE_EXECUTION_LOCK: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
+  FORBIDDEN_CONFIRMATION_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  UPSTREAM_RUN_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-v6-source-prediction/f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f/6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+  BASE_RUN_ID: "31585420194"
+  BASE_ARTIFACT_ID: "9137481740"
+  BASE_ARTIFACT_NAME: deform360-v6-source-prediction-dual-runtime-31585420194-1
+  BASE_ARTIFACT_DIGEST: sha256:d811ff1ea4d6ad22a6e7476d2911602af1ee71f81339c0737e1cc60fd5883f9d
+  BASE_HEAD_SHA: 6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+
+jobs:
+  audit:
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact audit revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12 before request parsing
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Authorize one add-only pre-data recovery request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/deform360-gauge-support-audit-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/deform360-gauge-support-audit-v2.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text(encoding="utf-8"))
+          expected = {
+              "schema": "deform360-metric-gauge-support-audit-request-v2",
+              "request_id": "deform360-gauge-support-audit-20260831-v2",
+              "runner_label": "gpuserver6000",
+              "source_only": True,
+              "cluster_sizes_pixels": [64, 48, 32, 24, 16, 12, 8, 4],
+              "minimum_independent_clusters": 8,
+              "prior_failed_run_id": 33012751418,
+              "prior_failure_receipt_id": "e705d19c50273e2b1f09ff1ccd09fd4cf08b250241f2d0f4c4f0a17bcb775df3",
+              "prior_prediction_record_count": 0,
+              "prior_target_access": False,
+              "prior_launch_run_id": 33362385019,
+              "prior_launch_failure_stage": "authorization-interpreter-unavailable",
+              "prior_launch_data_access": False,
+              "retry_class": "pre-data-interpreter-availability-correction",
+              "confirmation_access_authorized": False,
+              "purpose": "diagnose prefix-only metric-gauge support without changing the registered predictor",
+          }
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f"invalid {key}: {request.get(key)!r}")
+          if set(request) != set(expected) | {"expected_source_revision"}:
+              raise SystemExit("audit request fields differ")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("expected_source_revision is not the trigger parent")
+          PY
+
+      - name: Install exact source-only runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "numpy==2.2.6"
+          python -m pip install --no-deps -e .
+          python -m pip check
+          python -m py_compile scripts/science/audit_deform360_metric_gauge_support_v1.py
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Bind source roots and exclude confirmation data
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden_root="$(realpath -e "$FORBIDDEN_CONFIRMATION_ROOT")"
+          results_root="$(realpath -e "$RESULTS_ROOT")"
+          upstream_root="$(realpath -e "$UPSTREAM_RUN_ROOT")"
+          test "$forbidden_root" = "$FORBIDDEN_CONFIRMATION_ROOT"
+          test "$results_root" = "$RESULTS_ROOT"
+          test "$upstream_root" = "$UPSTREAM_RUN_ROOT"
+          for admitted in "$results_root" "$upstream_root"; do
+            test "$admitted" != "$forbidden_root"
+            case "$admitted/" in "$forbidden_root/"*) exit 2 ;; esac
+            case "$forbidden_root/" in "$admitted/"*) exit 2 ;; esac
+          done
+          mkdir -p "$RUNNER_TEMP/deform360-gauge-audit-v2"
+          {
+            echo "AUDIT_OUTPUT=$RUNNER_TEMP/deform360-gauge-audit-v2/audit.json"
+            echo "AUDIT_LOG=$RUNNER_TEMP/deform360-gauge-audit-v2/audit.log"
+            echo "COMPACT_ROOT=$RUNNER_TEMP/deform360-v6-base-source"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify immutable public source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${BASE_RUN_ID}")"
+          test "$(jq -r '.head_sha' <<<"$run")" = "$BASE_HEAD_SHA"
+          test "$(jq -r '.status' <<<"$run")" = completed
+          test "$(jq -r '.conclusion' <<<"$run")" = success
+          artifact="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${BASE_ARTIFACT_ID}")"
+          test "$(jq -r '.name' <<<"$artifact")" = "$BASE_ARTIFACT_NAME"
+          test "$(jq -r '.digest' <<<"$artifact")" = "$BASE_ARTIFACT_DIGEST"
+          test "$(jq -r '.expired' <<<"$artifact")" = false
+
+      - name: Download exact compact source evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: ${{ env.BASE_ARTIFACT_NAME }}
+          path: ${{ env.COMPACT_ROOT }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.BASE_RUN_ID }}
+
+      - name: Audit causal gauge support
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/audit_deform360_metric_gauge_support_v1.py \
+            --request "$REQUEST_PATH" \
+            --source-execution-lock "$SOURCE_EXECUTION_LOCK" \
+            --compact-root "$COMPACT_ROOT" \
+            --results-root "$RESULTS_ROOT" \
+            --upstream-run-root "$UPSTREAM_RUN_ROOT" \
+            --forbidden-confirmation-root "$FORBIDDEN_CONFIRMATION_ROOT" \
+            --implementation-revision "$GITHUB_SHA" \
+            --output "$AUDIT_OUTPUT" \
+            | tee "$AUDIT_LOG"
+
+      - name: Verify target boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(jq -r '.information_boundary.source_suffix_opened' "$AUDIT_OUTPUT")" = false
+          test "$(jq -r '.information_boundary.confirmation_payload_opened' "$AUDIT_OUTPUT")" = false
+          test "$(jq -r '.information_boundary.target_outcome_opened' "$AUDIT_OUTPUT")" = false
+          test "$(jq -r '.claim_authorized' "$AUDIT_OUTPUT")" = false
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Upload bounded source-only gauge audit
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-gauge-support-audit-v2-${{ github.run_id }}
+          path: ${{ runner.temp }}/deform360-gauge-audit-v2
+          if-no-files-found: error
+          retention-days: 90
