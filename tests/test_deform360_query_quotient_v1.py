@@ -3,6 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 from experiments.deform360_query_quotient_v1.run import (
     EpisodeData,
     analyze_sequences,
@@ -10,8 +13,6 @@ from experiments.deform360_query_quotient_v1.run import (
     query_class_index,
     validate_result,
 )
-import numpy as np
-import pytest
 
 
 PROTOCOL_PATH = (
