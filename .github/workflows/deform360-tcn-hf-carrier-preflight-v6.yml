@@ -26,45 +26,79 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Create isolated inspection runtime
+      - name: Prepare isolated report directory
         shell: bash
         run: |
           set -euo pipefail
-          venv="${RUNNER_TEMP}/deform360-hf-preflight-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           out="${RUNNER_TEMP}/deform360-hf-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          python3 -m venv "${venv}"
-          "${venv}/bin/python" -m pip install --disable-pip-version-check 'huggingface_hub>=0.34,<1'
+          rm -rf -- "${out}"
           mkdir -p "${out}"
-          echo "PYTHON_BIN=${venv}/bin/python" >> "${GITHUB_ENV}"
-          echo "VENV_ROOT=${venv}" >> "${GITHUB_ENV}"
           echo "OUTPUT_ROOT=${out}" >> "${GITHUB_ENV}"
 
       - name: Inspect raw and processed repository carriers
         shell: bash
         run: |
           set -euo pipefail
-          "${PYTHON_BIN}" - <<'PY' | tee "${OUTPUT_ROOT}/carrier_inventory.txt"
-          from huggingface_hub import HfApi
+          python3 - <<'PY' | tee "${OUTPUT_ROOT}/carrier_inventory.txt"
+          import json
+          import urllib.error
+          import urllib.parse
+          import urllib.request
 
-          api = HfApi()
+          USER_AGENT = "BayesianPhysTwin-Deform360-carrier-audit-v6"
           probes = (
               "004-rubber-band",
               "021-bag-cloth",
               "068-nylon-rope",
           )
+
+          def get_json(url: str):
+              request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+              with urllib.request.urlopen(request, timeout=120) as response:
+                  return json.load(response)
+
+          def repo_info(repo: str):
+              return get_json(f"https://huggingface.co/api/datasets/{repo}")
+
+          def list_tree(repo: str, path: str):
+              encoded = urllib.parse.quote(path, safe="/")
+              url = (
+                  f"https://huggingface.co/api/datasets/{repo}/tree/main/{encoded}"
+                  "?recursive=true&expand=true&limit=1000"
+              )
+              return get_json(url)
+
           for repo in ("brownu/deform360", "brownu/deform360_processed"):
               print(f"## repo={repo}")
               try:
-                  info = api.repo_info(repo_id=repo, repo_type="dataset", files_metadata=True)
-                  print(f"revision={info.sha}")
-                  print(f"siblings={len(info.siblings or [])}")
+                  info = repo_info(repo)
+                  print(f"revision={info.get('sha')}")
+                  print(f"private={info.get('private')}")
                   for object_id in probes:
-                      selected = [
-                          item
-                          for item in (info.siblings or [])
-                          if object_id in item.rfilename
-                          and any(
-                              token in item.rfilename.lower()
+                      candidate_paths = (
+                          f"raw/{object_id}",
+                          f"processed/{object_id}",
+                          object_id,
+                      )
+                      entries = None
+                      selected_path = None
+                      for candidate in candidate_paths:
+                          try:
+                              entries = list_tree(repo, candidate)
+                              selected_path = candidate
+                              break
+                          except urllib.error.HTTPError as error:
+                              if error.code != 404:
+                                  raise
+                      if entries is None:
+                          print(f"object={object_id} path=unavailable")
+                          continue
+                      selected = []
+                      for item in entries:
+                          path = str(item.get("path", ""))
+                          lowered = path.lower()
+                          if any(
+                              token in lowered
                               for token in (
                                   "metadata.json",
                                   "tactile",
@@ -73,12 +107,21 @@ jobs:
                                   "robot.npz",
                                   ".tar",
                               )
+                          ):
+                              selected.append(item)
+                      print(
+                          f"object={object_id} path={selected_path} "
+                          f"entries={len(entries)} selected={len(selected)}"
+                      )
+                      for item in selected[:80]:
+                          print(
+                              "  "
+                              + str(item.get("path"))
+                              + "\t"
+                              + str(item.get("size"))
+                              + "\t"
+                              + str(item.get("type"))
                           )
-                      ]
-                      print(f"object={object_id} selected={len(selected)}")
-                      for item in selected[:40]:
-                          size = getattr(item, "size", None)
-                          print(f"  {item.rfilename}\t{size}")
               except Exception as exc:
                   print(f"repo_error={type(exc).__name__}: {exc}")
           PY
@@ -91,8 +134,3 @@ jobs:
           path: ${{ env.OUTPUT_ROOT }}
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Remove runtime
-        if: always()
-        shell: bash
-        run: rm -rf -- "${VENV_ROOT:-}"
