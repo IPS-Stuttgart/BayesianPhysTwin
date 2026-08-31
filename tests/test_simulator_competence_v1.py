@@ -22,6 +22,13 @@ from bayesian_phystwin.material_backend_evidence_v1 import (
 from bayesian_phystwin.material_backend_qualification_v1 import (
     MaterialBackendQualificationV1,
 )
+from bayesian_phystwin.query_conditional_trust_v1 import (
+    RegisteredQueryDecisionCertificateV1,
+    route_query_conditional_plan_v1,
+)
+from bayesian_phystwin.query_decision_certificate_v1 import (
+    query_decision_certificate,
+)
 from bayesian_phystwin.repository_provenance import RepositoryState
 from bayesian_phystwin.simulator_competence_v1 import (
     QueryConditionalCompetenceCertificateV1,
@@ -282,6 +289,87 @@ def _route(
     return decision, selected, candidate, fallback
 
 
+def _registered_decision(
+    *,
+    candidate_admissible: bool = True,
+    query_functional_id: str = EIGHT,
+    action_domain_id: str = SEVEN,
+    quotient_posterior_artifact_id: str = THREE,
+) -> RegisteredQueryDecisionCertificateV1:
+    losses = (
+        np.array(
+            [
+                [0.0, 1.0],
+                [0.1, 1.0],
+                [0.0, 1.0],
+                [0.1, 1.0],
+            ]
+        )
+        if candidate_admissible
+        else np.array(
+            [
+                [1.0, 0.0],
+                [1.0, 0.1],
+                [1.0, 0.0],
+                [1.0, 0.1],
+            ]
+        )
+    )
+    certificate = query_decision_certificate(
+        np.full(4, 0.25),
+        np.array([0.5, 0.5]),
+        np.array([0, 0, 1, 1]),
+        losses,
+        regret_tolerance=0.1,
+    )
+    return RegisteredQueryDecisionCertificateV1(
+        certificate=certificate,
+        loss_by_hypothesis_action=losses,
+        action_ids=(TWO, THREE),
+        action_domain_id=action_domain_id,
+        query_functional_id=query_functional_id,
+        loss_metric="endpoint-rmse-m",
+        hypothesis_set_artifact_id=FOUR,
+        quotient_registration_id=FIVE,
+        quotient_posterior_artifact_id=quotient_posterior_artifact_id,
+        loss_model_artifact_id=NINE,
+        certificate_frozen_before_target_outcomes=True,
+        target_outcomes_used=False,
+    )
+
+
+def _trust_route(
+    competence_certificate: QueryConditionalCompetenceCertificateV1,
+    *,
+    registered_decision: RegisteredQueryDecisionCertificateV1 | None = None,
+    query: SimulatorQueryContextV1 | None = None,
+    risk_score: object = 0.20,
+    candidate_action_id: str = TWO,
+    fallback_action_id: str = THREE,
+) -> tuple[Any, Any, object, object, object]:
+    candidate = object()
+    fallback = object()
+    decision, competence_decision, selected = route_query_conditional_plan_v1(
+        competence_certificate=competence_certificate,
+        query=query or _query(),
+        risk_score=risk_score,
+        canonical_profile_id="jax-fem-quasistatic-v1",
+        producer_profile_id="jax-fem-quasistatic-v1",
+        runtime_id=A,
+        risk_feature_schema_id=NINE,
+        risk_model_id=B,
+        fallback_policy_id=D,
+        registered_decision=registered_decision or _registered_decision(),
+        candidate_action_id=candidate_action_id,
+        fallback_action_id=fallback_action_id,
+        candidate_plan_id=FOUR,
+        fallback_plan_id=FIVE,
+        candidate_plan=candidate,
+        fallback_plan=fallback,
+    )
+    return decision, competence_decision, selected, candidate, fallback
+
+
 def test_certified_in_scope_low_risk_query_selects_candidate() -> None:
     *_, certificate = _bundle()
 
@@ -307,6 +395,177 @@ def test_high_risk_query_returns_exact_fallback_object() -> None:
     assert "risk-score-exceeds-threshold" in decision.reasons
     assert selected is fallback
     assert selected is not candidate
+
+
+def test_query_conditional_trust_requires_both_certificates() -> None:
+    *_, certificate = _bundle()
+
+    decision, competence, selected, candidate, fallback = _trust_route(certificate)
+
+    assert competence.authorized
+    assert decision.simulator_authorized
+    assert decision.decision_authorized
+    assert decision.authorized
+    assert not decision.exact_fallback
+    assert decision.reasons == ("query-conditional-plan-authorized",)
+    assert selected is candidate
+    assert selected is not fallback
+
+
+def test_query_conditional_trust_preserves_fallback_when_simulator_rejects() -> None:
+    *_, certificate = _bundle()
+
+    decision, competence, selected, candidate, fallback = _trust_route(
+        certificate,
+        risk_score=0.2500001,
+    )
+
+    assert not competence.authorized
+    assert not decision.simulator_authorized
+    assert decision.decision_authorized
+    assert not decision.authorized
+    assert decision.exact_fallback
+    assert "simulator-risk-score-exceeds-threshold" in decision.reasons
+    assert selected is fallback
+    assert selected is not candidate
+
+
+def test_query_conditional_trust_preserves_fallback_when_regret_is_too_high() -> None:
+    *_, certificate = _bundle()
+
+    decision, competence, selected, candidate, fallback = _trust_route(
+        certificate,
+        registered_decision=_registered_decision(candidate_admissible=False),
+    )
+
+    assert competence.authorized
+    assert decision.simulator_authorized
+    assert not decision.decision_authorized
+    assert not decision.authorized
+    assert decision.candidate_worst_case_regret == pytest.approx(1.0)
+    assert "candidate-action-regret-exceeds-tolerance" in decision.reasons
+    assert selected is fallback
+    assert selected is not candidate
+
+
+@pytest.mark.parametrize(
+    ("registered_changes", "query_changes", "reason"),
+    [
+        (
+            {"query_functional_id": A},
+            {},
+            "decision-query-functional-mismatch",
+        ),
+        (
+            {"action_domain_id": A},
+            {},
+            "decision-action-domain-mismatch",
+        ),
+        (
+            {},
+            {"action_context_id": THREE},
+            "query-candidate-action-mismatch",
+        ),
+    ],
+)
+def test_query_conditional_trust_rejects_cross_context_substitution(
+    registered_changes: dict[str, str],
+    query_changes: dict[str, str],
+    reason: str,
+) -> None:
+    *_, certificate = _bundle()
+
+    decision, _, selected, _, fallback = _trust_route(
+        certificate,
+        registered_decision=_registered_decision(**registered_changes),
+        query=_query(**query_changes),
+    )
+
+    assert not decision.authorized
+    assert reason in decision.reasons
+    assert selected is fallback
+
+
+def test_query_conditional_trust_rejects_unregistered_action() -> None:
+    *_, certificate = _bundle()
+
+    decision, _, selected, _, fallback = _trust_route(
+        certificate,
+        candidate_action_id=FOUR,
+    )
+
+    assert not decision.decision_authorized
+    assert "candidate-action-outside-registered-set" in decision.reasons
+    assert selected is fallback
+
+
+def test_registered_decision_recomputes_and_content_binds_exact_solution() -> None:
+    registered = _registered_decision()
+    same = _registered_decision()
+
+    assert registered.artifact_id == same.artifact_id
+    assert registered.to_record()["artifact_id"] == registered.artifact_id
+    assert "loss_by_hypothesis_action" not in registered.certificate._fields
+    with pytest.raises(ValueError):
+        registered.loss_by_hypothesis_action.setflags(write=True)
+    tampered = registered.certificate._replace(
+        worst_case_regret=np.array([0.0, 0.0])
+    )
+    with pytest.raises(ValueError, match="does not match recomputation"):
+        RegisteredQueryDecisionCertificateV1(
+            certificate=tampered,
+            loss_by_hypothesis_action=np.array(
+                [
+                    [0.0, 1.0],
+                    [0.1, 1.0],
+                    [0.0, 1.0],
+                    [0.1, 1.0],
+                ]
+            ),
+            action_ids=(TWO, THREE),
+            action_domain_id=SEVEN,
+            query_functional_id=EIGHT,
+            loss_metric="endpoint-rmse-m",
+            hypothesis_set_artifact_id=FOUR,
+            quotient_registration_id=FIVE,
+            quotient_posterior_artifact_id=THREE,
+            loss_model_artifact_id=NINE,
+        )
+
+
+def test_query_conditional_trust_rejects_posterior_substitution_and_plan_alias() -> None:
+    *_, certificate = _bundle()
+    mismatched = _registered_decision(quotient_posterior_artifact_id=SIX)
+
+    decision, _, selected, _, fallback = _trust_route(
+        certificate,
+        registered_decision=mismatched,
+    )
+
+    assert not decision.decision_authorized
+    assert "decision-preoutcome-posterior-mismatch" in decision.reasons
+    assert selected is fallback
+
+    plan = object()
+    with pytest.raises(ValueError, match="distinct objects"):
+        route_query_conditional_plan_v1(
+            competence_certificate=certificate,
+            query=_query(),
+            risk_score=0.20,
+            canonical_profile_id="jax-fem-quasistatic-v1",
+            producer_profile_id="jax-fem-quasistatic-v1",
+            runtime_id=A,
+            risk_feature_schema_id=NINE,
+            risk_model_id=B,
+            fallback_policy_id=D,
+            registered_decision=_registered_decision(),
+            candidate_action_id=TWO,
+            fallback_action_id=THREE,
+            candidate_plan_id=FOUR,
+            fallback_plan_id=FIVE,
+            candidate_plan=plan,
+            fallback_plan=plan,
+        )
 
 
 @pytest.mark.parametrize(
