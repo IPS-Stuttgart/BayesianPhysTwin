@@ -1,0 +1,11 @@
+{
+  "schema": "bayesian-phystwin/workflow-request-v1",
+  "request_id": "deform360-temporal-baseline-v6-20260831",
+  "runner_labels": ["self-hosted", "Linux", "X64", "gpuserver4090"],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "protocol_path": "protocols/deform360_tcn_baseline_v6.json",
+  "purpose": "Compare the frozen v3 Bayesian action ensemble with matched state-only and action-conditioned two-stream temporal convolutional networks on the fixed 92-object Deform360 roster.",
+  "evaluation_target_tactile_access_authorized_after_tcn_freeze": true,
+  "camera_or_geometry_access_authorized": false,
+  "paper_claim_authorized": false
+}
