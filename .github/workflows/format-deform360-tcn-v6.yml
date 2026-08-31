@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install -e ".[dev]"
+          python -m pip install "ruff==0.14.14"
           python -m ruff format \
             scripts/science/run_deform360_tcn_baseline_v6.py \
             tests/test_deform360_tcn_baseline_v6.py
