@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from bayesian_phystwin.query_decision_certificate_v1 import (
@@ -213,65 +215,28 @@ def decide(feature: FloatArray, model: Model, protocol: Protocol) -> Decision:
     class_count = len(unique_classes)
     quotient = np.bincount(
         classes,
-        weights=kernel_weights,
-        minlength=class_count,
-    ).astype(np.float64)
-    class_sizes = np.bincount(classes, minlength=class_count).astype(np.float64)
-    jeffrey_weights = quotient[classes] / class_sizes[classes]
-    selected_residuals = model.residuals[selected]
-    correction = np.einsum("i,id->d", jeffrey_weights, selected_residuals)
-    actions = model.action_scales[:, None] * correction[None, :]
-    raw_losses = np.mean(
-        np.square(selected_residuals[:, None, :] - actions[None, :, :]),
-        axis=2,
-    )
-    relative_losses = raw_losses / (
-        raw_losses[:, :1] + model.loss_floor
-    )
-    prior = np.full(neighbor_count, 1.0 / neighbor_count)
-    certificate = query_decision_certificate(
-        prior,
-        quotient,
-        classes,
-        relative_losses,
-        regret_tolerance=model.regret_tolerance,
-    )
-    certificate_action = (
-        certificate.minimax_action_index
-        if certificate.minimax_worst_case_regret
-        <= model.regret_tolerance + ATOL
-        else 0
-    )
-    jeffrey_action = int(
-        np.argmin(np.einsum("i,ia->a", jeffrey_weights, relative_losses))
-    )
-    kernel_action = int(
-        np.argmin(np.einsum("i,ia->a", kernel_weights, relative_losses))
-    )
-    map_action = int(np.argmin(relative_losses[0]))
-    return Decision(
-        certificate_action=certificate_action,
-        jeffrey_action=jeffrey_action,
-        kernel_action=kernel_action,
-        map_action=map_action,
-        correction=correction,
-        worst_case_regret=certificate.worst_case_regret,
-        minimax_regret=certificate.minimax_worst_case_regret,
-        robust_mask=certificate.robustly_optimal_action_mask,
-        tolerance_mask=certificate.tolerance_admissible_action_mask,
-        ambiguity_width=class_ambiguity(
-            selected_residuals,
-            classes,
-            quotient,
-            protocol,
-        ),
-        unsupported_specificity_nats=unsupported_specificity(
-            kernel_weights,
-            classes,
-            quotient,
-        ),
-        neighbor_count=neighbor_count,
-        quotient_class_count=class_count,
-    )
-
-
+        weiYÚÏZÙ\›™[İÙZYÚËˆZ[›[™İXÛ\Ü×ØÛİ[ˆ
+K˜\İ\Jœ™›Ø]
+BˆÛ\Ü×ÜÚ^™\ÈHœ˜š[˜Ûİ[
+Û\ÜÙ\ËZ[›[™İXÛ\Ü×ØÛİ[
+K˜\İ\Jœ™›Ø]
+Bˆ™Y™œ™^WİÙZYÚÈH][İY[ØÛ\ÜÙ\×HÈÛ\Ü×ÜÚ^™\ÖØÛ\ÜÙ\×BˆÙ[XİYÜ™\ÚYX[ÈH[Ù[œ™\ÚYX[ÖÜÙ[XİYBˆÛÜœ™Xİ[ÛˆHœ™Z[œİ[JšKYO™‹™Y™œ™^WİÙZYÚËÙ[XİYÜ™\ÚYX[ÊBˆXİ[ÛœÈH[Ù[˜Xİ[Û—ÜØØ[\ÖÎ‹›Û™WH
+ˆÛÜœ™Xİ[Û–Ó›Û™K—Bˆ˜]×ÛÜÜÙ\ÈHœ›YX[ŠˆœœÜ]X\™JÙ[XİYÜ™\ÚYX[ÖÎ‹›Û™K—HHXİ[ÛœÖÓ›Û™K‹—JKˆ^\ÏL‹ˆ
+Bˆ™[]]™WÛÜÜÙ\ÈH˜]×ÛÜÜÙ\ÈÈ
+ˆ˜]×ÛÜÜÙ\ÖÎ‹ŒWH
+È[Ù[›ÜÜ×Ù›ÛÜ‚ˆ
+Bˆš[ÜˆHœ™[
+™ZYÚ›Ü—ØÛİ[KŒÈ™ZYÚ›Ü—ØÛİ[
+BˆÙ\YšXØ]HH]Y\WÙXÚ\Ú[Û—ØÙ\YšXØ]Jˆš[Ü‹ˆ][İY[ˆÛ\ÜÙ\Ëˆ™[]]™WÛÜÜÙ\Ëˆ™YÜ™]İÛ\˜[˜ÙO[[Ù[œ™YÜ™]İÛ\˜[˜ÙKˆ
+BˆÙ\YšXØ]WØXİ[ÛˆH
+ˆÙ\YšXØ]K›Z[š[X^ØXİ[Û—Ú[™^ˆYˆÙ\YšXØ]K›Z[š[X^İÛÜœİØØ\ÙWÜ™YÜ™]ˆH[Ù[œ™YÜ™]İÛ\˜[˜ÙH
+ÈUÓˆ[ÙHˆ
+Bˆ™Y™œ™^WØXİ[ÛˆH[
+ˆœ˜\™ÛZ[Šœ™Z[œİ[JšKXKO˜H‹™Y™œ™^WİÙZYÚË™[]]™WÛÜÜÙ\ÊJBˆ
+BˆÙ\›™[ØXİ[ÛˆH[
+ˆœ˜\™ÛZ[Šœ™Z[œİ[JšKXKO˜H‹Ù\›™[İÙZYÚË™[]]™WÛÜÜÙ\ÊJBˆ
+BˆX\ØXİ[ÛˆH[
+œ˜\™ÛZ[Š™[]]™WÛÜÜÙ\ÖÌJJBˆ™]\›ˆXÚ\Ú[ÛŠˆÙ\YšXØ]WØXİ[ÛXÙ\YšXØ]WØXİ[Û‹ˆ™Y™œ™^WØXİ[ÛZ™Y™œ™^WØXİ[Û‹ˆÙ\›™[ØXİ[ÛZÙ\›™[ØXİ[Û‹ˆX\ØXİ[Û[X\ØXİ[Û‹ˆÛÜœ™Xİ[ÛXÛÜœ™Xİ[Û‹ˆÛÜœİØØ\ÙWÜ™YÜ™]XÙ\YšXØ]KÛÜœİØØ\ÙWÜ™YÜ™]ˆZ[š[X^Ü™YÜ™]XÙ\YšXØ]K›Z[š[X^İÛÜœİØØ\ÙWÜ™YÜ™]ˆ›Ø\İÛX\ÚÏXÙ\YšXØ]Kœ›Ø\İWÛÜ[X[ØXİ[Û—ÛX\ÚËˆÛ\˜[˜ÙWÛX\ÚÏXÙ\YšXØ]KÛ\˜[˜ÙWØYZ\ÜÚX›WØXİ[Û—ÛX\ÚËˆ[XšYİZ]WİÚYXÛ\Ü×Ø[XšYİZ]JˆÙ[XİYÜ™\ÚYX[ËˆÛ\ÜÙ\Ëˆ][İY[ˆ›İØÛÛˆ
+Kˆ[œİ\ÜYÜÜXÚYšXÚ]WÛ˜]Ï][œİ\ÜYÜÜXÚYšXÚ]JˆÙ\›™[İÙZYÚËˆÛ\ÜÙ\Ëˆ][İY[ˆ
+Kˆ™ZYÚ›Ü—ØÛİ[[™ZYÚ›Ü—ØÛİ[ˆ][İY[ØÛ\Ü×ØÛİ[XÛ\Ü×ØÛİ[ˆ
+B‚‚

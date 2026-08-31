@@ -35,6 +35,19 @@ from ._evaluation import (
 )
 from ._model import decide, deterministic_kmeans, fit_model
 
+__all__ = [
+    "FRAME_COUNT",
+    "NODE_COUNT",
+    "Model",
+    "Protocol",
+    "decide",
+    "deterministic_kmeans",
+    "extract_observation",
+    "fit_model",
+    "main",
+    "partition_names",
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -138,8 +151,8 @@ def render_summary(result: dict[str, object]) -> str:
             f"- Mean paired trajectory improvement: "
             f"`{100.0 * float(aggregate['mean_trajectory_improvement']):.2f}%`",
             f"- 95% trajectory-bootstrap interval: "
-            f"`[{100.0 * float(aggregate['improvement_ci95'][0]):.2f}%, "
-            f"{100.0 * float(aggregate['improvement_ci95'][1]):.2f}%]`",
+            f"`[{100.0 * float(aggregate['improvent_ci95'][0]):.2f}%, "
+            f"{float(aggregate['improvement_ci95'][1]):.2f}%]`",
             f"- Nonfallback decisions: "
             f"`{int(aggregate['certificate_nonfallback_count'])}` / "
             f"`{int(aggregate['decision_count'])}`",
