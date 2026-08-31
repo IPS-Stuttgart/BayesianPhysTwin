@@ -1,0 +1,219 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source gripper-mask smoke v1
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-gripper-mask-smoke-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-gripper-mask-smoke-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-gripper-mask-smoke-v1.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  SOURCE_OBJECT: 038-mat-cloth
+  SOURCE_EPISODE: "3"
+  OFFICIAL_DEFORM360_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PYRENDER_VERSION: "0.1.45"
+  YOURDFPY_VERSION: "0.0.56"
+  PYOPENGL_PLATFORM: egl
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  smoke:
+    name: Source UMI silhouette / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Check out pinned official Deform360 implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_DEFORM360_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one newly added source-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-gripper-mask-smoke-request-v1",
+              "raw_root": os.environ["RAW_ROOT"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runner_label": "gpuserver4090",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "pyrender_version": os.environ["PYRENDER_VERSION"],
+              "yourdfpy_version": os.environ["YOURDFPY_VERSION"],
+              "camera_selection": "lexicographically-first-aligned-camera",
+              "source_gripper_mask_smoke_authorized": True,
+              "persistent_source_gripper_mask_write_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"request field {key!r} changed")
+          allowed = set(required) | {"request_id", "expected_source_revision"}
+          if set(request) != allowed:
+              raise SystemExit("request keys differ from the gripper-mask contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind the exact source parent")
+          if not request["request_id"]:
+              raise SystemExit("request_id must be nonempty")
+          PY
+
+      - name: Verify source state and provision isolated renderer runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test -w "${STAGING_ROOT}"
+          test "$(git -C _deform360_official rev-parse HEAD)" = "${OFFICIAL_DEFORM360_REVISION}"
+          source_episode="${STAGING_ROOT}/cross-action-source-v1/${SOURCE_OBJECT}/episode_0003"
+          test -d "${source_episode}"
+          test -f "${source_episode}/robot/robot.npz"
+          test -f "${source_episode}/undistorted_intrinsics.npy"
+          test -f "${source_episode}/extrinsics.npy"
+          evidence="${RUNNER_TEMP}/deform360-gripper-mask-v1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          smoke="${RUNNER_TEMP}/deform360-gripper-mask-tree-v1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="${RUNNER_TEMP}/deform360-gripper-mask-venv-v1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${evidence}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check \
+            "${GITHUB_WORKSPACE}/_deform360_official[annotations]" \
+            "pyrender==${PYRENDER_VERSION}" \
+            "yourdfpy==${YOURDFPY_VERSION}" \
+            > "${evidence}/runtime-install.log" 2>&1
+          "${venv}/bin/python" -m pip check >> "${evidence}/runtime-install.log" 2>&1
+          "${venv}/bin/python" -m pip freeze > "${evidence}/runtime-freeze.txt"
+          {
+            echo "SOURCE_EPISODE_ROOT=${source_episode}"
+            echo "EVIDENCE_ROOT=${evidence}"
+            echo "SMOKE_ROOT=${smoke}"
+            echo "GRIPPER_VENV=${venv}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Render one source-camera gripper mask
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${GRIPPER_VENV}/bin/python" \
+            scripts/science/run_deform360_gripper_mask_smoke_v1.py \
+            --source-episode-root "${SOURCE_EPISODE_ROOT}" \
+            --source-object "${SOURCE_OBJECT}" \
+            --source-episode "${SOURCE_EPISODE}" \
+            --smoke-root "${SMOKE_ROOT}" \
+            --evidence-root "${EVIDENCE_ROOT}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --revision "${GITHUB_SHA}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+            --official-deform360-revision "${OFFICIAL_DEFORM360_REVISION}"
+
+      - name: Verify closed target and compact result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          boundary = result["information_boundary"]
+          for key in (
+              "persistent_gripper_mask_written",
+              "requested_processed_tree_modified",
+              "target_directory_contents_listed",
+              "target_numeric_payload_opened",
+              "target_scoring_performed",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          print(json.dumps({"decision": result["decision"], "mask": result["mask"]}, indent=2))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish compact summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/report.md" ]]; then
+            cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact source evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-gripper-mask-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/runtime-install.log
+            ${{ env.EVIDENCE_ROOT }}/runtime-freeze.txt
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated renderer runtime and scratch
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- \
+            "${GRIPPER_VENV:-}" \
+            "${SMOKE_ROOT:-}" \
+            "${EVIDENCE_ROOT:-}"
