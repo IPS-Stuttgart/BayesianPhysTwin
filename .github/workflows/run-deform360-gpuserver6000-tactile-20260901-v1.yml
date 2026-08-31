@@ -1,0 +1,327 @@
+name: Run Deform360 tactile dynamics on gpuserver6000 20260901 v1
+
+on:
+  push:
+    branches:
+      - run/deform360-gpuserver6000-tactile-20260901-v1
+    paths:
+      - run_requests/deform360-gpuserver6000-tactile-20260901-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-gpuserver6000-tactile-20260901-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/lexar4tb/datasets/deform360/causal4d-public-expansion-v1/aligned
+  PROTOCOL_PATH: experiments/deform360_tactile_gpuserver6000_v1/protocol.json
+  REQUEST_PATH: run_requests/deform360-gpuserver6000-tactile-20260901-v1.json
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Validate exact synchronized-tactile request and implementation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out request revision with parent
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Require one newly added frozen request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          expected = {
+              "schema": "deform360-gpuserver6000-tactile-evaluation-request-v1",
+              "request_id": "deform360-gpuserver6000-tactile-20260901-v1",
+              "runner_label": "gpuserver6000",
+              "dataset_root": (
+                  "/mnt/lexar4tb/datasets/deform360/"
+                  "causal4d-public-expansion-v1/aligned"
+              ),
+              "source_object_id": "001-rope",
+              "episode_ids": list(range(10)),
+              "sensor_count": 4,
+              "expected_case_count": 40,
+              "excluded_ambiguous_tactile_objects": [
+                  "003-cable",
+                  "086-cotton-scarf-cloth",
+                  "171-penguin",
+              ],
+              "authorize_target_scoring": True,
+              "geometry_validation_claimed": False,
+              "causal_intervention_validation_claimed": False,
+              "uniform_deform360_benchmark_claimed": False,
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+          }
+          if request != expected:
+              raise SystemExit(
+                  "request differs from the frozen synchronized-tactile contract:\n"
+                  + json.dumps({"actual": request, "expected": expected}, indent=2)
+              )
+          PY
+
+      - name: Validate protocol and focused implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          protocol = json.loads(Path(
+              "experiments/deform360_tactile_gpuserver6000_v1/protocol.json"
+          ).read_text())
+          exact = protocol["exact_tactile_roster"]
+          assert protocol["dataset_root"] == (
+              "/mnt/lexar4tb/datasets/deform360/"
+              "causal4d-public-expansion-v1/aligned"
+          )
+          assert exact["source_object_id"] == "001-rope"
+          assert exact["episode_ids"] == list(range(10))
+          assert len(exact["sensor_names"]) == 4
+          assert exact["expected_case_count"] == 40
+          assert protocol["reserved_objects"] == [
+              "003-cable",
+              "086-cotton-scarf-cloth",
+              "171-penguin",
+          ]
+          boundary = protocol["information_boundary"]
+          assert boundary["geometry_validation_claimed"] is False
+          assert boundary["causal_intervention_validation_claimed"] is False
+          assert boundary["uniform_deform360_benchmark_claimed"] is False
+          assert boundary["paper_claim_authorized"] is False
+          PY
+          python -m py_compile \
+            experiments/deform360_tactile_gpuserver6000_v1/run.py
+          python -m pytest -q tests/test_deform360_real_v1.py
+          python -m ruff check \
+            experiments/deform360_tactile_gpuser6000_v1/run.py \
+            experiments/deform360_real_v1/run.py \
+            tests/test_deform360_real_v1.py
+
+  evaluate:
+    name: Exact 40-case tactile dynamics diagnostic / gpuserver6000
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 180
+    steps:
+      - name: Initialize isolated workspace
+        id: workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/deform360-tactile-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${root}"
+          mkdir -p "${root}"
+          echo "root=${root}" >> "${GITHUB_OUTPUT}"
+          echo "result=${root}/result" >> "${GITHUB_OUTPUT}"
+          echo "venv=${root}/venv" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out exact validated revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Bind exact synchronized tactile roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          DATASET_ROOT="${DATASET_ROOT}" PROTOCOL_PATH="${PROTOCOL_PATH}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["DATASET_ROOT"])
+          protocol = json.loads(Path(os.environ["PROTOCOL_PATH"]).read_text())
+          exact = protocol["exact_tactile_roster"]
+          paths = [
+              root / exact["relative_path_template"].format(
+                  episode_id=episode_id,
+                  sensor_name=sensor_name,
+              )
+              for episode_id in exact["episode_ids"]
+              for sensor_name in exact["sensor_names"]
+          ]
+          missing = [str(path) for path in paths if not path.is_file() or path.is_symlink()]
+          if missing:
+              raise SystemExit("exact synchronized tactile file is missing: " + ", ".join(missing))
+          if len(paths) != 40:
+              raise SystemExit("exact tactile roster does not contain 40 cases")
+          print(json.dumps({
+              "source_object_id": exact["source_object_id"],
+              "episode_count": len(exact["episode_ids"]),
+              "sensor_count": len(exact["sensor_names"]),
+              "case_count": len(paths),
+              "excluded_ambiguous_tactile_objects": protocol["reserved_objects"],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Prepare isolated numerical runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${{ steps.workspace.outputs.venv }}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install numpy==1.26.4
+          cp "${REQUEST_PATH}" "${{ steps.workspace.outputs.root }}/evaluation_request.json"
+
+      - name: Run exact 40-case synchronized-tactile evaluation
+        id: experiment
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${{ steps.workspace.outputs.root }}"
+          result="${{ steps.workspace.outputs.result }}"
+          python_bin="${{ steps.workspace.outputs.venv }}/bin/python"
+          set +e
+          "${python_bin}" -m experiments.deform360_tactile_gpuserver6000_v1.run \
+            --data-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output-dir "${result}" \
+            --profile pilot \
+            > "${root}/stdout.txt" 2> "${root}/stderr.txt"
+          status=$?
+          set -e
+          printf '%s\n' "${status}" > "${root}/process-exit-code.txt"
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Record runner provenance
+        if: always()
+        shell: bash
+        run: |
+          root="${{ steps.workspace.outputs.root }}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver6000"
+            echo "dataset_root=${DATASET_ROOT}"
+            "${{ steps.workspace.outputs.venv }}/bin/python" --version || true
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader || true
+          } > "${root}/environment.txt"
+
+      - name: Upload compact tactile-dynamics evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform360-tactile-gpuserver6000-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.workspace.outputs.root }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish result summary
+        if: always()
+        shell: bash
+        run: |
+          report="${{ steps.workspace.outputs.result }}/report.md"
+          if test -f "${report}"; then
+            cat "${report}" >> "${GITHUB_STEP_SUMMARY}"
+          elif test -f "${{ steps.workspace.outputs.root }}/stderr.txt"; then
+            printf '```text\n' >> "${GITHUB_STEP_SUMMARY}"
+            tail -n 100 "${{ steps.workspace.outputs.root }}/stderr.txt" >> "${GITHUB_STEP_SUMMARY}"
+            printf '\n```\n' >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Enforce complete bounded diagnostic and closed claims
+        shell: bash
+        env:
+          PROCESS_EXIT: ${{ steps.experiment.outputs.exit_code }}
+          RESULT_PATH: ${{ steps.workspace.outputs.result }}/result.json
+        run: |
+          set -euo pipefail
+          test "${PROCESS_EXIT}" = "0"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text())
+          if result["selection"] != {
+              "selected_count": 40,
+              "evaluated_count": 40,
+              "failure_count": 0,
+              "reserved_object_overlap": [],
+          }:
+              raise SystemExit("exact 40-case selection contract failed")
+          if result["source_object_id"] != "001-rope":
+              raise SystemExit("source object changed")
+          if result["episode_ids"] != list(range(10)):
+              raise SystemExit("episode roster changed")
+          boundary = result["information_boundary"]
+          for key in (
+              "geometry_validation_claimed",
+              "causal_intervention_validation_claimed",
+              "uniform_deform360_benchmark_claimed",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed claim boundary widened: {key}")
+          if result["claim_authorized"] is not False:
+              raise SystemExit("result self-authorized a claim")
+          print(json.dumps(result["summary"], indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Remove isolated workspace
+        if: always()
+        shell: bash
+        run: rm -rf -- "${{ steps.workspace.outputs.root }}"
