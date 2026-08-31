@@ -1,0 +1,52 @@
+{
+  "contract": "deform-dlo45-decision-identifiability-v1",
+  "schema_version": 1,
+  "data": {
+    "dataset": "DEFORM",
+    "dlos": ["DLO4", "DLO5"],
+    "frame_count": 500,
+    "node_count": 12,
+    "known_action_nodes": [0, 1, -2, -1],
+    "train_trajectory_count": 56,
+    "eval_trajectory_count": 14,
+    "evaluation_scope": "within-dlo-held-trajectory"
+  },
+  "windows": {
+    "prefix_frames": 5,
+    "horizon_frames": 25,
+    "stride_frames": 25,
+    "future_endpoint_action_is_registered_input": true,
+    "future_internal_nodes_are_target_outcomes": true
+  },
+  "source_split": {
+    "fit_count": 39,
+    "calibration_count": 9,
+    "source_test_count": 8,
+    "domain_separator": "bayesian-phystwin/deform-dlo45-decision-identifiability-v1/source-split"
+  },
+  "decision": {
+    "actions": ["fallback", "half_jeffrey_correction", "full_jeffrey_correction"],
+    "action_scales": [0.0, 0.5, 1.0],
+    "fallback_action_index": 0,
+    "loss": "fallback-normalized-trajectory-mse",
+    "neighbor_grid": [16, 32, 64],
+    "cluster_grid": [8, 16],
+    "temperature_scale_grid": [0.5, 1.0],
+    "regret_tolerance_grid": [0.0, 0.02, 0.05],
+    "kmeans_iterations": 50,
+    "target_tuning": false,
+    "target_retries": false
+  },
+  "source_gate": {
+    "maximum_mean_rmse_ratio": 1.02,
+    "maximum_worst_trajectory_rmse_ratio": 1.15,
+    "minimum_nonfallback_fraction": 0.02,
+    "gate_is_reported_not_used_for_target_selection": true
+  },
+  "bootstrap": {
+    "unit": "trajectory",
+    "replicates": 2000,
+    "seed": 20260901
+  },
+  "claim_boundary": "The exact certificate is conditional on the finite source-window support, registered quotient partition, and loss matrix. The experiment is within-DLO held-trajectory validation, not unseen-object generalization, unique physical-state identification, calibrated uncertainty, or deployment authorization."
+}
