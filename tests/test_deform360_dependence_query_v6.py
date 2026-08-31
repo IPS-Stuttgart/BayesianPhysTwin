@@ -166,8 +166,9 @@ def synthetic_arm(
     }
 
 
-def test_superior_target_gate_requires_same_mean_dependence_value_and_calibration(
-) -> None:
+def test_superior_target_gate_requires_same_mean_dependence_value_and_calibration() -> (
+    None
+):
     rows: list[dict[str, Any]] = []
     for index in range(92):
         arm_summary = {

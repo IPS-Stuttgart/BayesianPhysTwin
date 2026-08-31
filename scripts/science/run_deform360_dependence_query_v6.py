@@ -153,9 +153,7 @@ def validate_protocol(
         "control_revision"
     ):
         raise ValueError("parent confirmation control revision changed")
-    relative = parent_protocol_path.resolve().relative_to(
-        parent_control_root.resolve()
-    )
+    relative = parent_protocol_path.resolve().relative_to(parent_control_root.resolve())
     if str(relative) != parent.get("protocol_path"):
         raise ValueError("parent protocol path changed")
     if git_output(parent_control_root, "hash-object", str(relative)) != parent.get(
@@ -422,12 +420,8 @@ def source_query_calibration(
         "reference_raw_query_variance": reference_variance,
         "shared_variance_scale": scale,
         "shared_radius_multiplier": radius_multiplier,
-        "source_reference_nanees": float(
-            source_mse / (reference_variance * scale)
-        ),
-        "source_reference_coverage": float(
-            np.mean(standardized <= radius_multiplier)
-        ),
+        "source_reference_nanees": float(source_mse / (reference_variance * scale)),
+        "source_reference_coverage": float(np.mean(standardized <= radius_multiplier)),
         "event_threshold": threshold,
         "source_event_rate": source_event_rate,
     }
@@ -519,13 +513,7 @@ def query_metrics(
         "target_90_coverage": float(np.mean(np.abs(target_error) <= radius)),
         "mean_90_interval_width": float(2.0 * radius),
         "query_nll": float(
-            np.mean(
-                0.5
-                * (
-                    math.log(2.0 * math.pi * variance)
-                    + standardized_square
-                )
-            )
+            np.mean(0.5 * (math.log(2.0 * math.pi * variance) + standardized_square))
         ),
         "event_brier": float(np.mean(np.square(predicted - labels_float))),
         "event_log_loss": float(
@@ -554,11 +542,7 @@ def joint_metrics(
     normal = _NORMAL.inv_cdf(0.5 + probability / 2.0)
     chi_square = (
         dimension
-        * (
-            1.0
-            - 2.0 / (9.0 * dimension)
-            + normal * math.sqrt(2.0 / (9.0 * dimension))
-        )
+        * (1.0 - 2.0 / (9.0 * dimension) + normal * math.sqrt(2.0 / (9.0 * dimension)))
         ** 3
     )
     quadratics = np.asarray(
@@ -568,9 +552,7 @@ def joint_metrics(
     marginal = marginal_variance(model)
     radius = float(model.marginal_z) * np.sqrt(marginal)
     logdet = base.covariance_logdet(model)
-    nll = 0.5 * (
-        dimension * math.log(2.0 * math.pi) + logdet + quadratics
-    ) / dimension
+    nll = 0.5 * (dimension * math.log(2.0 * math.pi) + logdet + quadratics) / dimension
     return {
         "joint_nanees": float(np.mean(quadratics) / dimension),
         "joint_90_ellipsoid_coverage": float(np.mean(quadratics <= chi_square)),
@@ -807,9 +789,7 @@ def aggregate(
             for arm in COVARIANCE_ARMS
         }
 
-    marginal_max = float(
-        max(row["coordinate_marginal_parity_max_abs"] for row in rows)
-    )
+    marginal_max = float(max(row["coordinate_marginal_parity_max_abs"] for row in rows))
     point_parity = all(bool(row["parent_point_result_exact"]) for row in rows)
     full = arm_summary["full_low_rank"]
     diagonal = comparisons["diagonal_marginal_matched"]
@@ -1135,8 +1115,7 @@ def run(
         arm_summary: dict[str, dict[str, float]] = {}
         for arm_name in COVARIANCE_ARMS:
             values = [
-                queries[query_name]["arms"][arm_name]
-                for query_name, _ in QUERY_SPECS
+                queries[query_name]["arms"][arm_name] for query_name, _ in QUERY_SPECS
             ]
             arm_summary[arm_name] = {
                 metric: float(np.mean([value[metric] for value in values]))
@@ -1210,9 +1189,10 @@ def run(
         rows.append(result_row)
 
     recomputed_manifest_sha = canonical_digest(recomputed_manifest)
-    if recomputed_manifest_sha != parent_protocol["readiness_binding"][
-        "selection_manifest_sha256"
-    ]:
+    if (
+        recomputed_manifest_sha
+        != parent_protocol["readiness_binding"]["selection_manifest_sha256"]
+    ):
         raise RuntimeError("recomputed manifest digest changed")
     summary, decision = aggregate(rows, protocol)
     result: dict[str, Any] = {
