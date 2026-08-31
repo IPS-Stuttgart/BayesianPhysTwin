@@ -46,7 +46,10 @@ def load_module(path: Path, name: str) -> Any:
 
 
 HERE = Path(__file__).resolve().parent
-v3 = load_module(HERE / "run_deform360_action_kernel_v3.py", "deform360_action_kernel_v3_v6")
+v3 = load_module(
+    HERE / "run_deform360_action_kernel_v3.py",
+    "deform360_action_kernel_v3_v6",
+)
 base = v3.base
 
 
@@ -59,7 +62,10 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def canonical_digest(value: Any) -> str:
     encoded = json.dumps(
-        value, sort_keys=True, separators=(",", ":"), allow_nan=False
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -79,7 +85,11 @@ def exact_one_sided_sign_pvalue(wins: int, losses: int) -> float:
     return float(sum(math.comb(count, k) for k in range(wins, count + 1)) / 2**count)
 
 
-def bootstrap_interval(values: np.ndarray, repetitions: int, seed: int) -> list[float]:
+def bootstrap_interval(
+    values: np.ndarray,
+    repetitions: int,
+    seed: int,
+) -> list[float]:
     if values.ndim != 1 or len(values) == 0:
         raise ValueError("bootstrap values must be a nonempty vector")
     if len(values) == 1:
@@ -118,7 +128,7 @@ class ObjectSource:
     source_descriptors: tuple[Any, ...]
     target_descriptor: Any
     source: tuple[Any, ...]
-    transform: Any
+    feature_scale: np.ndarray
     source_samples: TemporalSamples
 
 
@@ -145,6 +155,10 @@ class Scaler:
 def concatenate_samples(samples: Sequence[TemporalSamples]) -> TemporalSamples:
     if not samples:
         raise base.EvaluationError("cannot concatenate an empty sample collection")
+    feature_dimensions = {item.tactile.shape[-1] for item in samples}
+    target_dimensions = {item.target.shape[-1] for item in samples}
+    if len(feature_dimensions) != 1 or len(target_dimensions) != 1:
+        raise base.EvaluationError("TCN carrier dimensions differ between objects")
     return TemporalSamples(
         tactile=np.concatenate([item.tactile for item in samples]),
         action=np.concatenate([item.action for item in samples]),
@@ -171,7 +185,10 @@ def action_sequence(
         increments = np.diff(segment, axis=0, prepend=segment[:1])
         rows.append(
             np.concatenate(
-                (relative.reshape(sample_count, -1), increments.reshape(sample_count, -1)),
+                (
+                    relative.reshape(sample_count, -1),
+                    increments.reshape(sample_count, -1),
+                ),
                 axis=1,
             )
         )
@@ -180,7 +197,7 @@ def action_sequence(
 
 def temporal_samples(
     episode: Any,
-    transform: Any,
+    feature_scale: np.ndarray,
     base_protocol: Mapping[str, Any],
     horizon: int,
     history_frames: int,
@@ -191,7 +208,7 @@ def temporal_samples(
     lag = int(model["trend_lag_frames"])
     stride = int(model["window_stride_frames"])
     threshold = float(model["active_threshold"])
-    values = base.normalize_tactile(episode.tactile, transform.feature_scale, clip)
+    values = base.normalize_tactile(episode.tactile, feature_scale, clip)
     first = max(history_frames - 1, lag)
     starts = np.arange(first, len(values) - horizon, stride, dtype=int)
     if len(starts) == 0:
@@ -200,12 +217,15 @@ def temporal_samples(
         )
     history_offsets = np.arange(history_frames - 1, -1, -1, dtype=int)
     histories = values[starts[:, None] - history_offsets[None, :]]
-    tactile = (histories - transform.state_mean[None, None, :]) @ transform.state_basis.T
     current = values[starts]
     truth = values[starts + horizon]
-    delta = truth - current
-    target = (delta - transform.delta_mean) @ transform.delta_basis.T
-    action = action_sequence(episode.robot_actions, starts, horizon, action_samples)
+    target = truth - current
+    action = action_sequence(
+        episode.robot_actions,
+        starts,
+        horizon,
+        action_samples,
+    )
     static_row = np.concatenate(
         (
             base.action_one_hot(episode.descriptor.action),
@@ -215,7 +235,7 @@ def temporal_samples(
     static = np.repeat(static_row[None, :], len(starts), axis=0)
     active = (truth > threshold) | (current > threshold)
     return TemporalSamples(
-        tactile=np.asarray(tactile, dtype=np.float32),
+        tactile=np.asarray(histories, dtype=np.float32),
         action=np.asarray(action, dtype=np.float32),
         static=np.asarray(static, dtype=np.float32),
         target=np.asarray(target, dtype=np.float32),
@@ -242,12 +262,16 @@ def discover_source_object(
         descriptor for descriptor in descriptors if descriptor is not target_descriptor
     )
     source = tuple(base.load_episode(descriptor) for descriptor in source_descriptors)
-    transform = base.build_transform(source, base_protocol, horizon)
+    model = base_protocol["model"]
+    feature_scale = base.feature_scale(
+        source,
+        float(model["source_feature_scale_quantile"]),
+    )
     source_samples = concatenate_samples(
         [
             temporal_samples(
                 episode,
-                transform,
+                feature_scale,
                 base_protocol,
                 horizon,
                 history_frames,
@@ -262,7 +286,7 @@ def discover_source_object(
         source_descriptors=source_descriptors,
         target_descriptor=target_descriptor,
         source=source,
-        transform=transform,
+        feature_scale=feature_scale,
         source_samples=source_samples,
     )
 
@@ -277,7 +301,7 @@ def load_target_samples(
     target = base.load_episode(source_object.target_descriptor)
     return temporal_samples(
         target,
-        source_object.transform,
+        source_object.feature_scale,
         base_protocol,
         horizon,
         history_frames,
@@ -286,8 +310,12 @@ def load_target_samples(
 
 
 def fit_scaler(samples: TemporalSamples) -> Scaler:
-    tactile_flat = samples.tactile.reshape(-1, samples.tactile.shape[-1]).astype(np.float64)
-    action_flat = samples.action.reshape(-1, samples.action.shape[-1]).astype(np.float64)
+    tactile_flat = samples.tactile.reshape(-1, samples.tactile.shape[-1]).astype(
+        np.float64
+    )
+    action_flat = samples.action.reshape(-1, samples.action.shape[-1]).astype(
+        np.float64
+    )
     target = samples.target.astype(np.float64)
     return Scaler(
         tactile_mean=tactile_flat.mean(axis=0),
@@ -303,25 +331,52 @@ def standardized_arrays(
     samples: TemporalSamples,
     scaler: Scaler,
     use_action: bool,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    tactile = (samples.tactile - scaler.tactile_mean[None, None, :]) / scaler.tactile_std[
-        None, None, :
-    ]
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    tactile = (
+        samples.tactile - scaler.tactile_mean[None, None, :]
+    ) / scaler.tactile_std[None, None, :]
     if use_action:
-        action = (samples.action - scaler.action_mean[None, None, :]) / scaler.action_std[
-            None, None, :
-        ]
+        action = (
+            samples.action - scaler.action_mean[None, None, :]
+        ) / scaler.action_std[None, None, :]
         static = samples.static
     else:
         action = np.zeros_like(samples.action)
         static = np.zeros_like(samples.static)
-    target = (samples.target - scaler.target_mean[None, :]) / scaler.target_std[None, :]
+    target = (
+        samples.target - scaler.target_mean[None, :]
+    ) / scaler.target_std[None, :]
     return (
         np.asarray(tactile, dtype=np.float32),
         np.asarray(action, dtype=np.float32),
         np.asarray(static, dtype=np.float32),
         np.asarray(target, dtype=np.float32),
+        np.asarray(samples.active, dtype=np.float32),
     )
+
+
+class TemporalBlock(nn.Module):
+    def __init__(self, width: int, dilation: int, dropout: float) -> None:
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Conv1d(
+                width,
+                width,
+                kernel_size=3,
+                padding=dilation,
+                dilation=dilation,
+                groups=width,
+            ),
+            nn.GELU(),
+            nn.Conv1d(width, width, kernel_size=1),
+            nn.GELU(),
+            nn.Dropout(dropout),
+        )
+        self.normalization = nn.LayerNorm(width)
+
+    def forward(self, values: torch.Tensor) -> torch.Tensor:
+        updated = values + self.network(values)
+        return self.normalization(updated.transpose(1, 2)).transpose(1, 2)
 
 
 class TwoStreamTCN(nn.Module):
@@ -332,32 +387,36 @@ class TwoStreamTCN(nn.Module):
         static_width: int,
         target_width: int,
         hidden_width: int,
+        action_hidden_width: int,
         dropout: float,
     ) -> None:
         super().__init__()
-        self.tactile_encoder = nn.Sequential(
-            nn.Conv1d(tactile_width, hidden_width, kernel_size=3, padding=1),
-            nn.GELU(),
-            nn.Conv1d(hidden_width, hidden_width, kernel_size=3, padding=1),
-            nn.GELU(),
+        self.tactile_projection = nn.Linear(tactile_width, hidden_width)
+        self.tactile_blocks = nn.Sequential(
+            TemporalBlock(hidden_width, dilation=1, dropout=dropout),
+            TemporalBlock(hidden_width, dilation=2, dropout=dropout),
         )
-        self.action_encoder = nn.Sequential(
-            nn.Conv1d(action_width, hidden_width, kernel_size=3, padding=1),
-            nn.GELU(),
-            nn.Conv1d(hidden_width, hidden_width, kernel_size=3, padding=1),
-            nn.GELU(),
+        self.action_projection = nn.Linear(action_width, action_hidden_width)
+        self.action_blocks = nn.Sequential(
+            TemporalBlock(action_hidden_width, dilation=1, dropout=dropout),
+            TemporalBlock(action_hidden_width, dilation=2, dropout=dropout),
         )
+        static_hidden = max(action_hidden_width // 2, 8)
         self.static_encoder = nn.Sequential(
-            nn.Linear(static_width, max(hidden_width // 2, 8)),
+            nn.Linear(static_width, static_hidden),
             nn.GELU(),
         )
-        static_hidden = max(hidden_width // 2, 8)
+        combined = 2 * hidden_width + 2 * action_hidden_width + static_hidden
         self.head = nn.Sequential(
-            nn.Linear(4 * hidden_width + static_hidden, 2 * hidden_width),
+            nn.Linear(combined, 2 * hidden_width),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(2 * hidden_width, target_width),
         )
+
+    @staticmethod
+    def summarize(encoded: torch.Tensor) -> torch.Tensor:
+        return torch.cat((encoded[:, :, -1], encoded.mean(dim=2)), dim=1)
 
     def forward(
         self,
@@ -365,16 +424,20 @@ class TwoStreamTCN(nn.Module):
         action: torch.Tensor,
         static: torch.Tensor,
     ) -> torch.Tensor:
-        tactile_encoded = self.tactile_encoder(tactile.transpose(1, 2))
-        action_encoded = self.action_encoder(action.transpose(1, 2))
-        tactile_summary = torch.cat(
-            (tactile_encoded[:, :, -1], tactile_encoded.mean(dim=2)), dim=1
+        tactile_encoded = self.tactile_projection(tactile).transpose(1, 2)
+        tactile_encoded = self.tactile_blocks(tactile_encoded)
+        action_encoded = self.action_projection(action).transpose(1, 2)
+        action_encoded = self.action_blocks(action_encoded)
+        return self.head(
+            torch.cat(
+                (
+                    self.summarize(tactile_encoded),
+                    self.summarize(action_encoded),
+                    self.static_encoder(static),
+                ),
+                dim=1,
+            )
         )
-        action_summary = torch.cat(
-            (action_encoded[:, :, -1], action_encoded.mean(dim=2)), dim=1
-        )
-        static_summary = self.static_encoder(static)
-        return self.head(torch.cat((tactile_summary, action_summary, static_summary), dim=1))
 
 
 def make_model(samples: TemporalSamples, config: Mapping[str, Any]) -> TwoStreamTCN:
@@ -384,6 +447,7 @@ def make_model(samples: TemporalSamples, config: Mapping[str, Any]) -> TwoStream
         static_width=int(samples.static.shape[-1]),
         target_width=int(samples.target.shape[-1]),
         hidden_width=int(config["hidden_width"]),
+        action_hidden_width=int(config["action_hidden_width"]),
         dropout=float(config["dropout"]),
     )
 
@@ -406,12 +470,17 @@ def make_loader(
     batch_size: int,
     seed: int,
 ) -> DataLoader:
-    tactile, action, static, target = standardized_arrays(samples, scaler, use_action)
+    tactile, action, static, target, active = standardized_arrays(
+        samples,
+        scaler,
+        use_action,
+    )
     dataset = TensorDataset(
         torch.from_numpy(tactile),
         torch.from_numpy(action),
         torch.from_numpy(static),
         torch.from_numpy(target),
+        torch.from_numpy(active),
     )
     generator = torch.Generator()
     generator.manual_seed(seed)
@@ -423,6 +492,22 @@ def make_loader(
         num_workers=0,
         drop_last=False,
     )
+
+
+def weighted_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    active: torch.Tensor,
+    config: Mapping[str, Any],
+) -> torch.Tensor:
+    elementwise = nn.functional.smooth_l1_loss(
+        prediction,
+        target,
+        beta=float(config["smooth_l1_beta"]),
+        reduction="none",
+    )
+    weights = 1.0 + float(config["active_coordinate_weight"]) * active
+    return torch.sum(elementwise * weights) / torch.sum(weights)
 
 
 def train_epochs(
@@ -450,27 +535,32 @@ def train_epochs(
         weight_decay=float(config["weight_decay"]),
     )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=max(epochs, 1), eta_min=float(config["minimum_learning_rate"])
+        optimizer,
+        T_max=max(epochs, 1),
+        eta_min=float(config["minimum_learning_rate"]),
     )
-    loss_fn = nn.SmoothL1Loss(beta=float(config["smooth_l1_beta"]))
     for _ in range(epochs):
-        for tactile, action, static, target in loader:
+        for tactile, action, static, target, active in loader:
             tactile = tactile.to(device)
             action = action.to(device)
             static = static.to(device)
             target = target.to(device)
+            active = active.to(device)
             optimizer.zero_grad(set_to_none=True)
             prediction = model(tactile, action, static)
-            loss = loss_fn(prediction, target)
+            loss = weighted_loss(prediction, target, active, config)
             if not torch.isfinite(loss):
                 raise base.EvaluationError("TCN training produced nonfinite loss")
             loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), float(config["gradient_clip_norm"]))
+            nn.utils.clip_grad_norm_(
+                model.parameters(),
+                float(config["gradient_clip_norm"]),
+            )
             optimizer.step()
         scheduler.step()
 
 
-def predict_latent(
+def predict_delta(
     model: TwoStreamTCN,
     samples: TemporalSamples,
     scaler: Scaler,
@@ -478,13 +568,22 @@ def predict_latent(
     batch_size: int,
     device: torch.device,
 ) -> np.ndarray:
-    tactile, action, static, _ = standardized_arrays(samples, scaler, use_action)
+    tactile, action, static, _, _ = standardized_arrays(
+        samples,
+        scaler,
+        use_action,
+    )
     dataset = TensorDataset(
         torch.from_numpy(tactile),
         torch.from_numpy(action),
         torch.from_numpy(static),
     )
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=0,
+    )
     rows: list[np.ndarray] = []
     model.eval()
     with torch.no_grad():
@@ -499,16 +598,6 @@ def predict_latent(
     return scaler.target_mean[None, :] + standardized * scaler.target_std[None, :]
 
 
-def decode_prediction(
-    latent: np.ndarray,
-    samples: TemporalSamples,
-    transform: Any,
-    clip: float,
-) -> np.ndarray:
-    delta = transform.delta_mean + latent @ transform.delta_basis
-    return np.clip(samples.current + delta, 0.0, clip)
-
-
 def evaluate_model(
     model: TwoStreamTCN,
     evaluation: Sequence[tuple[ObjectSource, TemporalSamples]],
@@ -516,12 +605,11 @@ def evaluate_model(
     use_action: bool,
     config: Mapping[str, Any],
     device: torch.device,
-) -> tuple[float, dict[str, float], dict[str, np.ndarray]]:
+) -> tuple[float, dict[str, float]]:
     object_metrics: dict[str, float] = {}
-    predictions: dict[str, np.ndarray] = {}
     clip = float(config["normalized_feature_clip"])
     for source_object, samples in evaluation:
-        latent = predict_latent(
+        delta = predict_delta(
             model,
             samples,
             scaler,
@@ -529,12 +617,13 @@ def evaluate_model(
             int(config["evaluation_batch_size"]),
             device,
         )
-        prediction = decode_prediction(latent, samples, source_object.transform, clip)
+        prediction = np.clip(samples.current + delta, 0.0, clip)
         object_metrics[source_object.object_id] = base.rmse(
-            prediction, samples.truth, samples.active
+            prediction,
+            samples.truth,
+            samples.active,
         )[1]
-        predictions[source_object.object_id] = prediction
-    return float(np.mean(list(object_metrics.values()))), object_metrics, predictions
+    return float(np.mean(list(object_metrics.values()))), object_metrics
 
 
 def select_epoch_on_development(
@@ -546,6 +635,7 @@ def select_epoch_on_development(
     device: torch.device,
 ) -> tuple[int, float, list[float]]:
     scaler = fit_scaler(source_samples)
+    seed_everything(seed)
     model = make_model(source_samples, config).to(device)
     loader = make_loader(
         source_samples,
@@ -565,7 +655,6 @@ def select_epoch_on_development(
         T_max=max(maximum_epochs, 1),
         eta_min=float(config["minimum_learning_rate"]),
     )
-    loss_fn = nn.SmoothL1Loss(beta=float(config["smooth_l1_beta"]))
     best_metric = math.inf
     best_epoch = 1
     metrics: list[float] = []
@@ -574,21 +663,25 @@ def select_epoch_on_development(
     stale = 0
     for epoch in range(1, maximum_epochs + 1):
         model.train()
-        for tactile, action, static, target in loader:
+        for tactile, action, static, target, active in loader:
             tactile = tactile.to(device)
             action = action.to(device)
             static = static.to(device)
             target = target.to(device)
+            active = active.to(device)
             optimizer.zero_grad(set_to_none=True)
             prediction = model(tactile, action, static)
-            loss = loss_fn(prediction, target)
+            loss = weighted_loss(prediction, target, active, config)
             if not torch.isfinite(loss):
                 raise base.EvaluationError("development TCN produced nonfinite loss")
             loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), float(config["gradient_clip_norm"]))
+            nn.utils.clip_grad_norm_(
+                model.parameters(),
+                float(config["gradient_clip_norm"]),
+            )
             optimizer.step()
         scheduler.step()
-        metric, _, _ = evaluate_model(
+        metric, _ = evaluate_model(
             model,
             evaluation,
             scaler,
@@ -639,7 +732,10 @@ def comparison(
     repetitions: int,
     seed: int,
 ) -> dict[str, Any]:
-    differences = np.asarray([row[first] - row[second] for row in rows], dtype=np.float64)
+    differences = np.asarray(
+        [row[first] - row[second] for row in rows],
+        dtype=np.float64,
+    )
     wins = int(np.sum(differences < 0.0))
     ties = int(np.sum(differences == 0.0))
     losses = int(np.sum(differences > 0.0))
@@ -649,15 +745,24 @@ def comparison(
         "second": second,
         "mean_difference": float(np.mean(differences)),
         "relative_change": float(np.mean(differences) / denominator),
-        "object_bootstrap_95_interval": bootstrap_interval(differences, repetitions, seed),
+        "object_bootstrap_95_interval": bootstrap_interval(
+            differences,
+            repetitions,
+            seed,
+        ),
         "object_wins_ties_losses": [wins, ties, losses],
-        "exact_one_sided_sign_test_pvalue": exact_one_sided_sign_pvalue(wins, losses),
+        "exact_one_sided_sign_test_pvalue": exact_one_sided_sign_pvalue(
+            wins,
+            losses,
+        ),
         "worst_object_regret": float(np.max(differences)),
     }
 
 
 def held_out_action_family(row: Mapping[str, Any]) -> bool:
-    source_families = {base.action_family(action) for action in row["source_actions"]}
+    source_families = {
+        base.action_family(action) for action in row["source_actions"]
+    }
     return str(row["target_action_family"]) not in source_families
 
 
@@ -667,15 +772,25 @@ def validate_protocol(
     v3_protocol: Mapping[str, Any],
     v5_protocol: Mapping[str, Any],
 ) -> None:
-    if protocol.get("schema") != "bayesian-phystwin/deform360-tcn-baseline-protocol-v6":
+    if protocol.get("schema") != (
+        "bayesian-phystwin/deform360-tcn-baseline-protocol-v6"
+    ):
         raise base.EvaluationError("unexpected temporal-baseline protocol schema")
     if Path(str(protocol["dataset_root"])) != root:
         raise base.EvaluationError("temporal-baseline dataset root changed")
-    if list(protocol["development_object_ids"]) != list(v3_protocol["development_object_ids"]):
-        raise base.EvaluationError("development roster does not match frozen v3 protocol")
-    if list(protocol["evaluation_object_ids"]) != list(v5_protocol["eligible_object_ids"]):
+    if list(protocol["development_object_ids"]) != list(
+        v3_protocol["development_object_ids"]
+    ):
+        raise base.EvaluationError(
+            "development roster does not match frozen v3 protocol"
+        )
+    if list(protocol["evaluation_object_ids"]) != list(
+        v5_protocol["eligible_object_ids"]
+    ):
         raise base.EvaluationError("92-object evaluation roster changed")
-    if set(protocol["development_object_ids"]) & set(protocol["evaluation_object_ids"]):
+    if set(protocol["development_object_ids"]) & set(
+        protocol["evaluation_object_ids"]
+    ):
         raise base.EvaluationError("development and evaluation rosters overlap")
     if protocol.get("changes_to_frozen_v3_method_allowed") is not False:
         raise base.EvaluationError("protocol permits changes to frozen v3 method")
@@ -687,7 +802,9 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
     protocol = read_json(protocol_path)
     v3_protocol = read_json(Path(str(protocol["v3_protocol_path"])))
     v5_protocol = read_json(Path(str(protocol["v5_protocol_path"])))
-    base_protocol = read_json(Path(str(v3_protocol["shared_preprocessing"]["base_protocol_path"])))
+    base_protocol = read_json(
+        Path(str(v3_protocol["shared_preprocessing"]["base_protocol_path"]))
+    )
     root = root.resolve(strict=True)
     validate_protocol(protocol, root, v3_protocol, v5_protocol)
 
@@ -698,9 +815,13 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
     horizon = int(v3_protocol["shared_preprocessing"]["forecast_horizon_frames"])
     history_frames = int(training["history_frames"])
     action_samples = int(training["future_action_samples"])
-    minimum_episodes = int(v5_protocol["selection"]["minimum_complete_episodes_per_object"])
+    minimum_episodes = int(
+        v5_protocol["selection"]["minimum_complete_episodes_per_object"]
+    )
     seed = int(protocol["statistics"]["random_seed"])
-    bootstrap_repetitions = int(protocol["statistics"]["bootstrap_repetitions"])
+    bootstrap_repetitions = int(
+        protocol["statistics"]["bootstrap_repetitions"]
+    )
     torch.set_num_threads(int(training["torch_threads"]))
     torch.set_num_interop_threads(1)
     seed_everything(seed)
@@ -740,7 +861,6 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
     for index, (name, use_action) in enumerate(
         (("state_only_tcn", False), ("action_conditioned_tcn", True))
     ):
-        seed_everything(seed + 101 * index)
         selected_epoch, best_metric, trace = select_epoch_on_development(
             development_source_samples,
             development_targets,
@@ -790,20 +910,28 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
             "selected_epoch": selected_epochs[name],
             "state_dict_sha256": state_dict_sha256(model),
             "scaler_sha256": canonical_digest(scaler.as_dict()),
-            "parameter_count": int(sum(parameter.numel() for parameter in model.parameters())),
+            "parameter_count": int(
+                sum(parameter.numel() for parameter in model.parameters())
+            ),
         }
     final_model_freeze_sha256 = canonical_digest(
         {
             "training_config": training,
             "selected_epochs": selected_epochs,
             "models": freeze_records,
-            "evaluation_source_object_ids": [item.object_id for item in evaluation_sources],
+            "evaluation_source_object_ids": [
+                item.object_id for item in evaluation_sources
+            ],
             "evaluation_source_episode_ids": {
-                item.object_id: [descriptor.episode_id for descriptor in item.source_descriptors]
+                item.object_id: [
+                    descriptor.episode_id
+                    for descriptor in item.source_descriptors
+                ]
                 for item in evaluation_sources
             },
             "evaluation_target_episode_ids": {
-                item.object_id: item.target_descriptor.episode_id for item in evaluation_sources
+                item.object_id: item.target_descriptor.episode_id
+                for item in evaluation_sources
             },
         }
     )
@@ -827,7 +955,7 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         ("action_conditioned_tcn", True),
     ):
         model, scaler = trained[name]
-        _, per_object, _ = evaluate_model(
+        _, per_object = evaluate_model(
             model,
             evaluation_targets,
             scaler,
@@ -837,11 +965,14 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         )
         tcn_metrics[name] = per_object
 
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(int(v3_protocol["statistics"]["random_seed"]))
     v3_rows: dict[str, dict[str, Any]] = {}
     for source_object in evaluation_sources:
         row = v3.evaluate_object(
-            list(source_object.descriptors), v3_protocol, base_protocol, rng
+            list(source_object.descriptors),
+            v3_protocol,
+            base_protocol,
+            rng,
         )
         v3_rows[source_object.object_id] = row
 
@@ -849,36 +980,47 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
     for source_object in evaluation_sources:
         object_id = source_object.object_id
         v3_row = v3_rows[object_id]
-        row = {
-            "object_id": object_id,
-            "source_episode_ids": [
-                descriptor.episode_id for descriptor in source_object.source_descriptors
-            ],
-            "source_actions": [
-                descriptor.action for descriptor in source_object.source_descriptors
-            ],
-            "target_episode_id": source_object.target_descriptor.episode_id,
-            "target_action": source_object.target_descriptor.action,
-            "target_action_family": base.action_family(source_object.target_descriptor.action),
-            "held_out_action_family": held_out_action_family(v3_row),
-            "persistence": float(
-                v3_row["metrics"]["persistence"]["active_field_rmse"]
-            ),
-            "v3_state_kernel": float(
-                v3_row["metrics"]["state_kernel"]["active_field_rmse"]
-            ),
-            "v3_shuffled_action": float(
-                v3_row["metrics"]["shuffled_action_control"]["active_field_rmse"]
-            ),
-            "v3_bayesian_action_ensemble": float(
-                v3_row["metrics"]["bayesian_action_ensemble"]["active_field_rmse"]
-            ),
-            "state_only_tcn": float(tcn_metrics["state_only_tcn"][object_id]),
-            "action_conditioned_tcn": float(
-                tcn_metrics["action_conditioned_tcn"][object_id]
-            ),
-        }
-        rows.append(row)
+        rows.append(
+            {
+                "object_id": object_id,
+                "source_episode_ids": [
+                    descriptor.episode_id
+                    for descriptor in source_object.source_descriptors
+                ],
+                "source_actions": [
+                    descriptor.action
+                    for descriptor in source_object.source_descriptors
+                ],
+                "target_episode_id": source_object.target_descriptor.episode_id,
+                "target_action": source_object.target_descriptor.action,
+                "target_action_family": base.action_family(
+                    source_object.target_descriptor.action
+                ),
+                "held_out_action_family": held_out_action_family(v3_row),
+                "persistence": float(
+                    v3_row["metrics"]["persistence"]["active_field_rmse"]
+                ),
+                "v3_state_kernel": float(
+                    v3_row["metrics"]["state_kernel"]["active_field_rmse"]
+                ),
+                "v3_shuffled_action": float(
+                    v3_row["metrics"]["shuffled_action_control"][
+                        "active_field_rmse"
+                    ]
+                ),
+                "v3_bayesian_action_ensemble": float(
+                    v3_row["metrics"]["bayesian_action_ensemble"][
+                        "active_field_rmse"
+                    ]
+                ),
+                "state_only_tcn": float(
+                    tcn_metrics["state_only_tcn"][object_id]
+                ),
+                "action_conditioned_tcn": float(
+                    tcn_metrics["action_conditioned_tcn"][object_id]
+                ),
+            }
+        )
 
     methods = (
         "persistence",
@@ -889,7 +1031,8 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         "action_conditioned_tcn",
     )
     aggregate = {
-        method: float(np.mean([row[method] for row in rows])) for method in methods
+        method: float(np.mean([row[method] for row in rows]))
+        for method in methods
     }
     comparisons = {
         "v3_ensemble_vs_persistence": comparison(
@@ -929,6 +1072,10 @@ def run(protocol_path: Path, root: Path) -> dict[str, Any]:
         ),
     }
     held_out_rows = [row for row in rows if row["held_out_action_family"]]
+    if len(held_out_rows) != int(protocol["statistics"]["expected_held_out_count"]):
+        raise base.EvaluationError(
+            f"held-out action-family subset changed: {len(held_out_rows)}"
+        )
     held_out = {
         "object_count": len(held_out_rows),
         "methods": {
@@ -1104,7 +1251,9 @@ def write_csv(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
         writer.writeheader()
         for row in materialized:
             encoded = dict(row)
-            encoded["source_episode_ids"] = json.dumps(encoded["source_episode_ids"])
+            encoded["source_episode_ids"] = json.dumps(
+                encoded["source_episode_ids"]
+            )
             encoded["source_actions"] = json.dumps(encoded["source_actions"])
             writer.writerow(encoded)
 
