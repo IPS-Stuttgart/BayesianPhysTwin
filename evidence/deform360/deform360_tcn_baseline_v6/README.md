@@ -31,6 +31,8 @@ The competitive learned baseline is the best point predictor. This rules out a r
 - Artifact: `9767812227`
 - Artifact SHA-256: `68ff5fb8e2274f3e71a20ef79a7450d0baa0cf57985e88064b31e4c1edc2bca2`
 - Execution revision: `a32948698fe43e4e52a443a93c9c1604012a21cf`
+- Retained Ruff-formatted source revision: `22c0886dc0138c19f62d4f13c87cf6d73f570f3b`
+- Formatting changed no scientific configuration, model weight, prediction, metric, or result value.
 
 ## Claim boundary
 
