@@ -7,14 +7,14 @@ on:
     branches:
       - science/deform-dlo45-runner-label-recovery-v4
     paths:
-      - triggers/deform-dlo45-cancel-duplicate-runs-v2.txt
+      - triggers/deform-dlo45-cancel-duplicate-runs-v3.txt
 
 permissions:
   actions: write
   contents: read
 
 concurrency:
-  group: deform-dlo45-duplicate-run-cleanup-v2
+  group: deform-dlo45-duplicate-run-cleanup-v3
   cancel-in-progress: false
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           test "$PUSH_FORCED" = false
           mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\ttriggers/deform-dlo45-cancel-duplicate-runs-v2.txt'
+          test "${changed[0]}" = $'A\ttriggers/deform-dlo45-cancel-duplicate-runs-v3.txt'
 
       - name: Cancel only the two pre-source duplicate runs
         shell: bash
@@ -58,11 +58,14 @@ jobs:
           test -z "$active_conclusion"
 
           active_source="$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID/jobs" \
-            --jq '.jobs[] | select(.name == "source") | [.status, .runner_id, (.steps | length)] | @tsv')"
-          case "$active_source" in
-            $'in_progress\t'*$'\t4') ;;
-            *) echo "Unexpected active source job: $active_source" >&2; exit 2 ;;
-          esac
+            --jq '.jobs[] | select(.name == "source") | [.status, .runner_id, .runner_name] | @tsv')"
+          active_source_status="${active_source%%$'\t'*}"
+          active_source_rest="${active_source#*$'\t'}"
+          active_source_runner_id="${active_source_rest%%$'\t'*}"
+          active_source_runner_name="${active_source_rest#*$'\t'}"
+          test "$active_source_status" = in_progress
+          test "$active_source_runner_id" -gt 0
+          test -n "$active_source_runner_name"
 
           stalled_source="$(gh api "repos/$repo/actions/runs/$STALLED_MAIN_RUN_ID/jobs" \
             --jq '.jobs[] | select(.name == "source") | [.status, .runner_id, (.steps | length)] | @tsv')"
