@@ -1,0 +1,262 @@
+name: Run complete Tracking Cloth evaluation 20260901 v1
+
+on:
+  push:
+    branches:
+      - run/tracking-cloth-complete-20260901-v1
+    paths:
+      - run_requests/tracking-cloth-complete-20260901-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-complete-20260901-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  REQUEST_PATH: run_requests/tracking-cloth-complete-20260901-v1.json
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Validate frozen complete-data request and cloth contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out request revision with its parent
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: experiments/tracking_cloth_deformation_v1/requirements.txt
+
+      - name: Require one newly added frozen request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          expected = {
+              "schema": "tracking-cloth-complete-evaluation-request-v1",
+              "request_id": "tracking-cloth-complete-20260901-v1",
+              "mode": "evaluate",
+              "dataset_root": (
+                  "/home/github-runner/.cache/datasets/"
+                  "tracking-cloth-deformation-v1-zenodo-14644526"
+              ),
+              "runner_label": "gpuserver4090",
+              "workers": 4,
+              "authorize_target_scoring": True,
+              "paper_claim_authorized": False,
+              "evidence_class": (
+                  "public-real-data-pilot; complete verified archive and "
+                  "120 extracted recordings; sealed predictions before scoring; "
+                  "no fresh-confirmation claim"
+              ),
+              "expected_source_revision": parent,
+          }
+          if request != expected:
+              raise SystemExit(
+                  "request differs from the frozen complete-data contract:\n"
+                  + json.dumps({"actual": request, "expected": expected}, indent=2)
+              )
+          PY
+
+      - name: Install and validate focused implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt \
+            pytest ruff
+          python -m pytest -q \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_deformation_v1 \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_deformation_v1 \
+            tests/test_tracking_cloth_deformation_v1.py \
+            tests/test_tracking_cloth_active_probe_run_v1.py \
+            tests/test_tracking_cloth_active_probe_cli_v1.py
+
+  evaluate:
+    name: Sealed complete Tracking Cloth evaluation / gpuserver4090
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact validated revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Bind complete read-only dataset and isolated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test -r "${DATASET_ROOT}"
+          output="${RUNNER_TEMP}/tracking-cloth-complete-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="${RUNNER_TEMP}/tracking-cloth-complete-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          test ! -e "${venv}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          mkdir -p "${output}"
+          cp "${REQUEST_PATH}" "${output}/evaluation_request.json"
+          {
+            echo "CLOTH_OUT=${output}"
+            echo "CLOTH_VENV=${venv}"
+            echo "CLOTH_PY=${venv}/bin/python"
+          } >> "${GITHUB_ENV}"
+
+      - name: Fit sources and seal all twisting predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLOTH_PY}" -m experiments.tracking_cloth_deformation_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${CLOTH_OUT}" \
+            --stage predict \
+            --workers 4
+          test -f "${CLOTH_OUT}/prediction_seal.json"
+          test -f "${CLOTH_OUT}/source_fit.json"
+          test -f "${CLOTH_OUT}/dataset_manifest.json"
+
+      - name: Publish prediction seal before target scoring
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: tracking-cloth-complete-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.CLOTH_OUT }}/protocol.json
+            ${{ env.CLOTH_OUT }}/source_fit.json
+            ${{ env.CLOTH_OUT }}/dataset_manifest.json
+            ${{ env.CLOTH_OUT }}/prediction_seal.json
+            ${{ env.CLOTH_OUT }}/run_manifest.json
+            ${{ env.CLOTH_OUT }}/evaluation_request.json
+            ${{ env.CLOTH_OUT }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Score only the sealed twisting forecasts
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLOTH_PY}" -m experiments.tracking_cloth_deformation_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${CLOTH_OUT}" \
+            --stage score
+          test -f "${CLOTH_OUT}/metrics.json"
+          test -f "${CLOTH_OUT}/report.md"
+
+      - name: Verify completion and record runner provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLOTH_PY}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["CLOTH_OUT"])
+          manifest = json.loads((root / "dataset_manifest.json").read_text())
+          metrics = json.loads((root / "metrics.json").read_text())
+          seal = json.loads((root / "prediction_seal.json").read_text())
+          if (root / "failure.json").exists():
+              raise SystemExit((root / "failure.json").read_text())
+          print(json.dumps({
+              "dataset_manifest_keys": sorted(manifest),
+              "metric_keys": sorted(metrics),
+              "prediction_seal_keys": sorted(seal),
+          }, indent=2, sort_keys=True))
+          PY
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "dataset_root=${DATASET_ROOT}"
+            "${CLOTH_PY}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader || true
+          } > "${CLOTH_OUT}/environment.txt"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish operator summary
+        if: always() && env.CLOTH_OUT != ''
+        shell: bash
+        run: |
+          if test -f "${CLOTH_OUT}/report.md"; then
+            cat "${CLOTH_OUT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if test -f "${CLOTH_OUT}/failure.json"; then
+            echo '## Incomplete run: no scientific conclusion' >> "${GITHUB_STEP_SUMMARY}"
+            cat "${CLOTH_OUT}/failure.json" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload aggregate complete-data evidence
+        if: always() && env.CLOTH_OUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: tracking-cloth-complete-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.CLOTH_OUT }}/*.json
+            ${{ env.CLOTH_OUT }}/*.csv
+            ${{ env.CLOTH_OUT }}/report.md
+            ${{ env.CLOTH_OUT }}/DATA_LICENSE.txt
+            ${{ env.CLOTH_OUT }}/environment.txt
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Remove private predictions and isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${CLOTH_OUT:-}/private_predictions" "${CLOTH_VENV:-}" "${CLOTH_OUT:-}"
