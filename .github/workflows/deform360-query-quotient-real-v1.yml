@@ -1,0 +1,235 @@
+name: Deform360 source-only query-quotient pilot
+
+on:
+  push:
+    branches:
+      - experiment/deform360-query-quotient-real-v1
+    paths:
+      - ".github/workflows/deform360-query-quotient-real-v1.yml"
+      - "experiments/deform360_query_quotient_v1/**"
+      - "experiments/deform360_real_v1/**"
+      - "src/bayesian_phystwin/query_quotient_belief_v1.py"
+      - "tests/test_deform360_query_quotient_v1.py"
+      - "tests/test_deform360_real_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-query-quotient-real-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  PROTOCOL: experiments/deform360_query_quotient_v1/protocol.json
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Query-quotient source-only contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact experiment revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate source-only implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            experiments/deform360_query_quotient_v1/run.py
+            tests/test_deform360_query_quotient_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy --no-site-packages \
+            experiments/deform360_query_quotient_v1/run.py
+          python -m pytest -q \
+            tests/test_deform360_query_quotient_v1.py \
+            tests/test_deform360_real_v1.py
+          python -m compileall -q experiments/deform360_query_quotient_v1
+          git diff --check
+
+  evaluate:
+    name: Public query quotient / gpuserver4090
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact validated revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Verify mounted source-only archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          protocol = json.loads(Path(os.environ["PROTOCOL"]).read_text())
+          root = Path(os.environ["DATASET_ROOT"])
+          object_root = (
+              root
+              / protocol["processed_root_suffix"]
+              / protocol["object_id"]
+          )
+          source = [
+              object_root / f"episode_{episode_id}" / "pcd_clean.tar"
+              for episode_id in protocol["source_episode_ids"]
+          ]
+          missing = [str(path) for path in source if not path.is_file()]
+          if missing:
+              raise SystemExit("registered source archive is missing: " + ", ".join(missing))
+          forbidden = [
+              object_root / f"episode_{episode_id}" / "pcd_clean.tar"
+              for episode_id in protocol["forbidden_episode_ids"]
+          ]
+          print(json.dumps({
+              "source_archives": [str(path) for path in source],
+              "forbidden_archive_paths_not_opened": [str(path) for path in forbidden],
+              "forbidden_episode_payloads_opened": False,
+              "dataset_modified": False,
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Prepare isolated evaluation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="${RUNNER_TEMP}/deform360-query-quotient-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="${RUNNER_TEMP}/deform360-query-quotient-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          test ! -e "${venv}"
+          python -m venv "${venv}"
+          "${venv}/bin/python" -m pip install numpy==1.26.4
+          "${venv}/bin/python" -m pip install --no-deps -e .
+          {
+            echo "EVAL_OUTPUT=${output}"
+            echo "EVAL_VENV=${venv}"
+            echo "EVAL_PYTHON=${venv}/bin/python"
+          } >> "${GITHUB_ENV}"
+
+      - name: Run the public source-only quotient diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${EVAL_PYTHON}" -m experiments.deform360_query_quotient_v1.run \
+            --data-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL}" \
+            --output-dir "${EVAL_OUTPUT}" \
+            --revision "${GITHUB_SHA}" \
+            | tee "${RUNNER_TEMP}/deform360-query-quotient-summary.json"
+
+      - name: Verify compact result and closed boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${EVAL_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["EVAL_OUTPUT"])
+          result = json.loads((root / "result.json").read_text())
+          boundary = result["information_boundary"]
+          required_false = (
+              "forbidden_episode_payloads_opened",
+              "official_velocity_arrays_used",
+              "dataset_modified",
+              "raw_payload_uploaded",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          )
+          if any(boundary[key] is not False for key in required_false):
+              raise SystemExit("a closed information boundary was widened")
+          if boundary["source_only"] is not True:
+              raise SystemExit("result is not source-only")
+          if result["source_episode_ids"] != [0, 2, 5, 6, 7, 9]:
+              raise SystemExit("source episode roster changed")
+          if result["forbidden_episode_ids"] != [1, 3, 4, 8]:
+              raise SystemExit("forbidden episode roster changed")
+          if abs(result["summary"]["jeffrey_unsupported_specificity_nats"]) > 1e-10:
+              raise SystemExit("Jeffrey lift added unsupported specificity")
+          print(json.dumps(result["summary"], indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Record runner provenance
+        if: always() && env.EVAL_OUTPUT != ''
+        shell: bash
+        run: |
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver4090"
+            echo "dataset_root=${DATASET_ROOT}"
+            "${EVAL_PYTHON}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader || true
+          } > "${EVAL_OUTPUT}/environment.txt"
+
+      - name: Publish source-only query summary
+        if: always() && env.EVAL_OUTPUT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVAL_OUTPUT}/report.md" ]]; then
+            cat "${EVAL_OUTPUT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "## Query-quotient diagnostic did not complete" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact public-data evidence
+        if: always() && env.EVAL_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform360-query-quotient-real-v1-${{ github.sha }}
+          path: |
+            ${{ env.EVAL_OUTPUT }}/protocol.json
+            ${{ env.EVAL_OUTPUT }}/result.json
+            ${{ env.EVAL_OUTPUT }}/reset_metrics.csv
+            ${{ env.EVAL_OUTPUT }}/report.md
+            ${{ env.EVAL_OUTPUT }}/environment.txt
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime and output
+        if: always()
+        shell: bash
+        run: rm -rf -- "${EVAL_VENV:-}" "${EVAL_OUTPUT:-}"
