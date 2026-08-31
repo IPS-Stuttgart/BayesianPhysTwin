@@ -1,0 +1,78 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 TCN alternate-runner preflight v6
+
+on:
+  push:
+    branches: [science/deform360-tcn-fallback-runner-v6]
+    paths:
+      - ".github/requests/deform360-tcn-alternate-runner-preflight-v6.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-tcn-alternate-runner-preflight-v6
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Probe Deform360 mount on available GPU runner
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact probe revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Probe mount and numerical runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/deform360-tcn-alt-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${out}"
+          echo "OUTPUT_ROOT=${out}" >> "${GITHUB_ENV}"
+          dataset=/mnt/seagate10tb/florianpfaff/datasets/deform360
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "dataset_root=${dataset}"
+            echo "dataset_exists=$(test -d "${dataset}" && echo true || echo false)"
+            echo "dataset_readable=$(test -r "${dataset}" && echo true || echo false)"
+            echo "dataset_canonical=$(readlink -f -- "${dataset}" 2>/dev/null || true)"
+            nvidia-smi --query-gpu=index,name,driver_version,memory.total --format=csv,noheader || true
+            for py in /opt/conda/bin/python /opt/miniconda3/bin/python /home/github-runner/miniconda3/bin/python /home/florianpfaff/miniconda3/bin/python /usr/bin/python3; do
+              if test -x "${py}"; then
+                echo "python=${py}"
+                "${py}" --version || true
+                "${py}" - <<'PY' || true
+          import importlib.util
+          for name in ("numpy", "torch"):
+              print(f"{name}={importlib.util.find_spec(name)}")
+          try:
+              import torch
+              print("torch_version=" + torch.__version__)
+              print("cuda_available=" + str(torch.cuda.is_available()))
+          except Exception as exc:
+              print("torch_error=" + repr(exc))
+          PY
+              fi
+            done
+          } | tee "${out}/preflight.txt"
+          if ! test -d "${dataset}" || ! test -r "${dataset}"; then
+            echo "alternate_runner_dataset_available=false" | tee "${out}/decision.txt"
+            exit 1
+          fi
+          echo "alternate_runner_dataset_available=true" | tee "${out}/decision.txt"
+
+      - name: Upload preflight evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-tcn-alternate-runner-preflight-v6-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 7
