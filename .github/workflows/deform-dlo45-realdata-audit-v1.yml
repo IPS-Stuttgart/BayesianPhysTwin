@@ -1,0 +1,184 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM DLO4 DLO5 real-data audit v1
+
+on:
+  push:
+    branches:
+      - science/deform360-rope-pilot-v1
+    paths:
+      - ".github/workflows/deform-dlo45-realdata-audit-v1.yml"
+      - "scripts/science/audit_deform_dlo45_realdata_v1.py"
+      - "triggers/deform_dlo45_format_audit_v1.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo45-realdata-audit-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  AUDITOR: scripts/science/audit_deform_dlo45_realdata_v1.py
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONNOUSERSITE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  audit:
+    name: Complete release and adapter audit / gpuserver4090
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_ARCH}" = "X64"
+
+      - name: Check out exact branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve isolated Python runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          test -n "${base_python}"
+          test -d "${DATASET_ROOT}"
+          resolved_dataset="$(realpath -e -- "${DATASET_ROOT}")"
+          runtime_site="${RUNNER_TEMP}/deform-dlo45-audit-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          evidence_root="${RUNNER_TEMP}/deform-dlo45-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${runtime_site}" "${evidence_root}"
+          mkdir -p -- "${runtime_site}" "${evidence_root}"
+          {
+            echo "BASE_PYTHON=${base_python}"
+            echo "RUNTIME_SITE=${runtime_site}"
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "RESOLVED_DATASET_ROOT=${resolved_dataset}"
+            echo "PYTHONPATH=${runtime_site}"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner=${RUNNER_NAME}"
+            echo "dataset_declared=${DATASET_ROOT}"
+            echo "dataset_resolved=${resolved_dataset}"
+            stat -c 'dataset device=%d inode=%i mode=%a' "${resolved_dataset}"
+            "${base_python}" --version
+            uname -a
+            df -h "${resolved_dataset}"
+          } | tee "${evidence_root}/environment.txt"
+
+      - name: Install pinned safe format readers
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" -m pip --version
+          "${BASE_PYTHON}" -m pip install \
+            --target "${RUNTIME_SITE}" \
+            "numpy==2.2.6" \
+            "scipy==1.15.3" \
+            "h5py==3.13.0"
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" - <<'PY' \
+            | tee "${EVIDENCE_ROOT}/runtime.txt"
+          import h5py
+          import numpy
+          import scipy
+
+          print(f"numpy={numpy.__version__}")
+          print(f"scipy={scipy.__version__}")
+          print(f"h5py={h5py.__version__}")
+          PY
+
+      - name: Validate and run the frozen audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" -m py_compile "${AUDITOR}"
+          "${BASE_PYTHON}" "${AUDITOR}" --self-test
+          PYTHONPATH="${RUNTIME_SITE}" "${BASE_PYTHON}" "${AUDITOR}" \
+            --dataset-root "${RESOLVED_DATASET_ROOT}" \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --repository-revision "${GITHUB_SHA}" \
+            --output "${EVIDENCE_ROOT}/result" \
+            2>&1 | tee "${EVIDENCE_ROOT}/audit.log"
+          cp --no-clobber \
+            "triggers/deform_dlo45_format_audit_v1.txt" \
+            "${EVIDENCE_ROOT}/trigger.txt"
+          find "${EVIDENCE_ROOT}" -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "${EVIDENCE_ROOT}/SHA256SUMS"
+
+      - name: Publish bounded result
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### DEFORM DLO4/DLO5 real-data audit"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\` / \`gpuserver4090\`"
+            echo "- Repository revision: \`${GITHUB_SHA}\`"
+            echo "- Dataset root: \`${RESOLVED_DATASET_ROOT:-unavailable}\`"
+            if [[ -f "${EVIDENCE_ROOT:-}/result/audit.json" ]]; then
+              PYTHONPATH="${RUNTIME_SITE:-}" "${BASE_PYTHON:-/usr/bin/python3}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(
+              (Path(os.environ["EVIDENCE_ROOT"]) / "result" / "audit.json").read_text()
+          )
+          summary = value["summary"]
+          print(f"- Decision: `{summary['decision']}`")
+          print(f"- Audit ID: `{value['audit_id']}`")
+          print(f"- DLO4 files: `{summary['DLO4_file_count']}`")
+          print(f"- DLO5 files: `{summary['DLO5_file_count']}`")
+          print(f"- Total bytes: `{summary['total_bytes']}`")
+          print(
+              "- Readable numeric files: "
+              f"`{value['numeric_summary']['readable_numeric_file_count']}`"
+          )
+          print(f"- Existing adapter files: `{len(value['adapter_interfaces'])}`")
+          print("- Model fitted: `false`")
+          print("- Score computed: `false`")
+          PY
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload retained audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform-dlo45-realdata-audit-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
