@@ -1,0 +1,73 @@
+name: Format DEFORM DLO4/DLO5 decision experiment
+
+on:
+  push:
+    paths:
+      - ".github/requests/format-deform-dlo45-decision-identifiability.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform-dlo45-decision-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply repository formatter
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          files=(
+            experiments/deform_dlo45_decision_identifiability_v1/_common.py
+            experiments/deform_dlo45_decision_identifiability_v1/_evaluation.py
+            experiments/deform_dlo45_decision_identifiability_v1/_model.py
+            experiments/deform_dlo45_decision_identifiability_v1/evaluate.py
+            tests/test_deform_dlo45_decision_identifiability_v1.py
+          )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+          git diff --check
+
+      - name: Commit exact formatter output
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            experiments/deform_dlo45_decision_identifiability_v1 \
+            tests/test_deform_dlo45_decision_identifiability_v1.py
+          git commit -m "Format DLO4/DLO5 decision experiment"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
