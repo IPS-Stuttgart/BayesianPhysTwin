@@ -1,0 +1,177 @@
+{
+  "schema": "dlolab-slingshot-policy-certificate-source-result-v4",
+  "status": "source_gate_passed",
+  "source_revision": "e446285660991e4f2b83422c64788f4c410e0c97",
+  "question": "Can a query-local Bayesian policy-gain certificate improve expected native reward on fresh public-simulator worlds while controlling harmful accepted actions under reward-aligned stochastic execution?",
+  "denominator": {
+    "calibration_worlds": 128,
+    "evaluation_worlds": 288,
+    "actions_per_world": 8,
+    "ordinary_calibration_action_processes": 1024,
+    "ordinary_evaluation_action_processes": 2304,
+    "ordinary_action_processes_total": 3328,
+    "technical_failures": 0,
+    "retries": 0,
+    "replacements": 0
+  },
+  "execution_contract": {
+    "statistical_unit": "one_fresh_continuous_world_one_sensor_draw_and_native_process_draw",
+    "duplicate_reward_error_at_most": 0.001,
+    "duplicate_position": "reported_not_admission",
+    "incumbent_reward_estimator": "mean_of_action_slots_5_and_7",
+    "complete_world_requires_all_eight_actions": true,
+    "partial_scoring_performed": false
+  },
+  "pre_future": {
+    "accepted_worlds": 36,
+    "fallback_worlds": 252,
+    "pre_future_gate_passed": true,
+    "future_simulated_before_barrier": false,
+    "future_read_before_barrier": false
+  },
+  "calibration": {
+    "calibration_count": 128,
+    "miscoverage": 0.1,
+    "offset": 0.037697610662030964,
+    "rank": 117
+  },
+  "simultaneous_calibration": {
+    "count": 128,
+    "coverage": 0.9,
+    "offset": 0.7471358676204296,
+    "rank": 117
+  },
+  "arms": {
+    "incumbent": {
+      "updated_worlds": 0,
+      "mean_native_reward": 6.9820654475026664,
+      "mean_gain_over_incumbent": 0.0,
+      "mean_gain_ci95": [0.0, 0.0],
+      "harmful_worlds_beyond_numeric_margin": 0,
+      "harm_probability_upper95": 0.01034793603989076,
+      "mean_downside_below_incumbent": 0.0
+    },
+    "posterior_predictive_mean": {
+      "updated_worlds": 288,
+      "mean_native_reward": 6.996189037958781,
+      "mean_gain_over_incumbent": 0.014123590456114875,
+      "mean_gain_ci95": [0.010033982309202353, 0.018264710075325433],
+      "harmful_worlds_beyond_numeric_margin": 69,
+      "harm_probability_upper95": 0.28459700468055105,
+      "mean_downside_below_incumbent": 0.006292070779535506
+    },
+    "policy_gain_guard": {
+      "updated_worlds": 36,
+      "mean_native_reward": 6.9855222213599415,
+      "mean_gain_over_incumbent": 0.003456773857275645,
+      "mean_gain_ci95": [0.001514428709116247, 0.005711325878898301],
+      "harmful_worlds_beyond_numeric_margin": 6,
+      "harm_probability_upper95": 0.04070323881205934,
+      "mean_downside_below_incumbent": 0.0005296559797392951
+    },
+    "simultaneous_mean_regret_guard": {
+      "updated_worlds": 30,
+      "mean_native_reward": 6.981184177928501,
+      "mean_gain_over_incumbent": -0.0008812695741653442,
+      "mean_gain_ci95": [-0.00249996083892054, 0.0006180550282200176],
+      "harmful_worlds_beyond_numeric_margin": 12,
+      "harm_probability_upper95": 0.0666357838965057,
+      "mean_downside_below_incumbent": 0.0020500852002037894
+    }
+  },
+  "comparisons": {
+    "policy_guard_gain_over_simultaneous_guard": 0.004338043431440989,
+    "policy_guard_paired_gain_vs_simultaneous_guard_ci95": [0.0019350160741143758, 0.0069734464502996816],
+    "guard_fraction_of_posterior_gain": 0.24475177668289144,
+    "guard_fraction_of_oracle_headroom": 0.13801584858843258,
+    "oracle_gain_over_incumbent": 0.025046209494272276,
+    "harm_reduction_vs_posterior": 63
+  },
+  "coverage": {
+    "marginal_policy_gain": 0.8958333333333334,
+    "simultaneous_action": 0.8923611111111112
+  },
+  "process_variability": {
+    "calibration": {
+      "worlds": 128,
+      "reward_aligned_qa_passed": 128,
+      "position_deterministic_worlds": 127,
+      "position_nondeterministic_worlds": 1,
+      "maximum_duplicate_position_error_m": 0.0005371634444080453,
+      "maximum_duplicate_reward_error": 0.00003337860107421875
+    },
+    "evaluation": {
+      "worlds": 288,
+      "reward_aligned_qa_passed": 288,
+      "position_deterministic_worlds": 288,
+      "position_nondeterministic_worlds": 0,
+      "maximum_duplicate_position_error_m": 0.00014085476545439013,
+      "maximum_duplicate_reward_error": 0.0001125335693359375
+    }
+  },
+  "checks": {
+    "all_native_qa": true,
+    "complete_denominator": true,
+    "gain_over_simultaneous_guard_at_least_0_001": true,
+    "guard_captures_at_least_5pct_oracle_headroom": true,
+    "guard_gain_at_least_0_002": true,
+    "guard_harm_upper_at_most_0_05": true,
+    "guard_removes_at_least_5_harmed_worlds": true,
+    "guard_retains_at_least_10pct_posterior_gain": true,
+    "policy_gain_coverage_at_least_0_85": true,
+    "positive_paired_ci95_vs_incumbent": true,
+    "positive_paired_ci95_vs_simultaneous_guard": true,
+    "posterior_harmed_worlds_at_least_10": true,
+    "pre_future_gate_passed": true,
+    "simultaneous_action_coverage_at_least_0_85": true
+  },
+  "identities": {
+    "attempt_id": "8d75a3ae034bef2775df0ed4caf919f3c20176c74169d6edb9902d82661b53b8",
+    "lock_id": "93bfde8b517a307086b080921f7bb41cbebfd1d64e1a42fb3e2654436c61f002",
+    "calibration_seal_id": "53b806dc625f8bd002b4f834baa375aae364bb40b1352ddfed8445540895e5ec",
+    "evaluation_candidate_seal_id": "2c75a822c017006ea00565af1819f681ee74ef25bc21149b758b4ea3d96a0275",
+    "evaluation_decision_seal_id": "a4e6906a696bc04439764051c2577aa48a6de81597601e4ff2b8aed6db2d2d5b",
+    "evaluation_barrier_id": "16b6a19a9a811453492b27417c93d73dbe4f90027f214504147b8ec374b49e21",
+    "result_id": "4c4cea8632a7fbc00eafc909519d6decb5b63ff270a81778ab64192a3bbae942"
+  },
+  "key_file_sha256": {
+    "attempt.json": "2b9b19fe03b33f1c69c5021c01bd20403bc70d36ab0d22b21fb9518c7fd2c62d",
+    "lock.json": "5cfadec7f81dbd9a509236f4e778f40b375942467b264b7bac5ccab62cc8b469",
+    "calibration/seal.json": "334116466709f0256cbc6a5f13949f1ebd4419c980f66b273a1d00b5bdafc775",
+    "evaluation-candidates/seal.json": "9b9779c5b04ac0dd5aed420c48d9d422707283815884e2e6ed51110cf1d265f0",
+    "evaluation-decisions/seal.json": "ade06c81212531c62f05fe51959aca8a044423bf903f2145980fcd96f8d48fc5",
+    "evaluation-decision-barrier.json": "e10a2909aa3c58be3b43419d45d523ba2edac8b94948bbca1290b36341585b6e",
+    "result.json": "6d9d3fcc5a46fe723d1aca72fb7a6f9ae07c6cc22e13e9404f8abe617cda9073"
+  },
+  "raw_tree": {
+    "root": "/home/fpfaff/source-only/dlolab-slingshot-policy-certificate-source-v4",
+    "canonical_tree_sha256": "1172e89dc795952ed1358c86974569ea5b8744bbe0d1810b66470803b587ed85",
+    "file_byte_count": 1602017001,
+    "file_count": 13947
+  },
+  "verification": {
+    "frozen_source_reloaded": true,
+    "lock_revalidated": true,
+    "calibration_recomputed": true,
+    "evaluation_candidates_recomputed": true,
+    "guarded_decisions_reproduced_byte_exact": true,
+    "barrier_recomputed": true,
+    "ordinary_future_seals_revalidated": 3328,
+    "world_qualifications_revalidated": 416,
+    "complete_score_recomputed": true
+  },
+  "source_gate_passed": true,
+  "prospective_policy_value_claim": true,
+  "prospective_coverage_claim": true,
+  "matched_comparison_scored": true,
+  "complete_288_world_denominator_scored": true,
+  "retry_authorized": false,
+  "replacement_authorized": false,
+  "protected_data_read": false,
+  "held_v8_read": false,
+  "dlo4_dlo5_read": false,
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "real_robot_or_physical_safety_claim": false,
+  "artifact_id": "2882809b7265714a93be2d3f1455eeac527adbe681cc990cde762777fcaf3a85"
+}
