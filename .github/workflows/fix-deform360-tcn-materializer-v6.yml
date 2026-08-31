@@ -1,0 +1,148 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Repair Deform360 selective materializer v6
+
+on:
+  push:
+    branches: [science/deform360-tcn-fallback-runner-v6]
+    paths:
+      - ".github/requests/fix-deform360-tcn-materializer-v6.json"
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/deform360-tcn-fallback-runner-v6
+          fetch-depth: 0
+
+      - name: Match frozen evaluator handling of irregular tactile directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/science/materialize_deform360_tcn_carriers_v6.py")
+          text = path.read_text()
+          old = '''    plans: list[DownloadPlan] = []
+              tactile_counts: dict[str, int] = {}
+              for directory in tactile_directories:
+                  children = list_tree(RAW_REPOSITORY, RAW_REVISION, directory)
+                  selected = sorted(
+                      (
+                          item
+                          for item in children
+                          if item.get("type") == "file"
+                          and str(item.get("path", "")).lower().endswith(".npy")
+                      ),
+                      key=lambda item: str(item.get("path")),
+                  )
+                  nonmedian = [
+                      item
+                      for item in selected
+                      if not Path(str(item.get("path"))).name.lower().startswith("median_")
+                  ]
+                  if len(nonmedian) != len(episodes):
+                      raise MaterializationError(
+                          f"tactile episode count mismatch for {object_id}:{directory}: "
+                          f"{len(nonmedian)} != {len(episodes)}"
+                      )
+                  tactile_counts[Path(directory).name] = len(nonmedian)
+                  for item in selected:
+                      source = str(item["path"])
+                      destination = root / "raw-repository" / source
+                      plans.append(
+                          DownloadPlan(
+                              repository=RAW_REPOSITORY,
+                              revision=RAW_REVISION,
+                              source_candidates=(source,),
+                              destination=destination,
+                              kind="tactile",
+                              expected_size=int(item.get("size") or 0) or None,
+                          )
+                      )
+          '''
+          old = "\n".join(line[14:] if line.startswith("              ") else line for line in old.splitlines()) + "\n"
+          new = '''    plans: list[DownloadPlan] = []
+              tactile_counts: dict[str, int] = {}
+              ignored_tactile_counts: dict[str, int] = {}
+              eligible_tactile_directories: list[str] = []
+              for directory in tactile_directories:
+                  children = list_tree(RAW_REPOSITORY, RAW_REVISION, directory)
+                  selected = sorted(
+                      (
+                          item
+                          for item in children
+                          if item.get("type") == "file"
+                          and str(item.get("path", "")).lower().endswith(".npy")
+                      ),
+                      key=lambda item: str(item.get("path")),
+                  )
+                  nonmedian = [
+                      item
+                      for item in selected
+                      if not Path(str(item.get("path"))).name.lower().startswith("median_")
+                  ]
+                  directory_name = Path(directory).name
+                  if len(nonmedian) != len(episodes):
+                      # Match the frozen evaluator: a tactile directory is ignored unless
+                      # its non-median file count exactly equals the metadata episode count.
+                      ignored_tactile_counts[directory_name] = len(nonmedian)
+                      continue
+                  eligible_tactile_directories.append(directory)
+                  tactile_counts[directory_name] = len(nonmedian)
+                  for item in selected:
+                      source = str(item["path"])
+                      destination = root / "raw-repository" / source
+                      plans.append(
+                          DownloadPlan(
+                              repository=RAW_REPOSITORY,
+                              revision=RAW_REVISION,
+                              source_candidates=(source,),
+                              destination=destination,
+                              kind="tactile",
+                              expected_size=int(item.get("size") or 0) or None,
+                          )
+                      )
+              if len(eligible_tactile_directories) < 2:
+                  raise MaterializationError(
+                      f"too few evaluator-eligible tactile directories for {object_id}: "
+                      f"eligible={eligible_tactile_directories}, ignored={ignored_tactile_counts}"
+                  )
+          '''
+          new = "\n".join(line[14:] if line.startswith("              ") else line for line in new.splitlines()) + "\n"
+          if text.count(old) != 1:
+              raise SystemExit(f"expected one tactile block, found {text.count(old)}")
+          text = text.replace(old, new, 1)
+          old_inventory = '''        "tactile_directories": tactile_directories,
+          "tactile_episode_counts": tactile_counts,
+          '''
+          old_inventory = "\n".join(line[10:] if line.startswith("          ") else line for line in old_inventory.splitlines()) + "\n"
+          new_inventory = '''        "tactile_directories": tactile_directories,
+          "eligible_tactile_directories": eligible_tactile_directories,
+          "tactile_episode_counts": tactile_counts,
+          "ignored_tactile_episode_counts": ignored_tactile_counts,
+          '''
+          new_inventory = "\n".join(line[10:] if line.startswith("          ") else line for line in new_inventory.splitlines()) + "\n"
+          if text.count(old_inventory) != 1:
+              raise SystemExit(f"expected one inventory block, found {text.count(old_inventory)}")
+          path.write_text(text.replace(old_inventory, new_inventory, 1))
+          PY
+          python -m py_compile scripts/science/materialize_deform360_tcn_carriers_v6.py
+          git diff --check
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/science/materialize_deform360_tcn_carriers_v6.py
+          git commit -m "Match evaluator handling of irregular tactile groups"
+          git push origin HEAD:science/deform360-tcn-fallback-runner-v6
