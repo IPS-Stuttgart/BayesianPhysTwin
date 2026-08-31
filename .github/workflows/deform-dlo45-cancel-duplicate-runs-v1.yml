@@ -7,14 +7,14 @@ on:
     branches:
       - science/deform-dlo45-runner-label-recovery-v4
     paths:
-      - triggers/deform-dlo45-cancel-duplicate-runs-v1.txt
+      - triggers/deform-dlo45-cancel-duplicate-runs-v2.txt
 
 permissions:
   actions: write
   contents: read
 
 concurrency:
-  group: deform-dlo45-duplicate-run-cleanup-v1
+  group: deform-dlo45-duplicate-run-cleanup-v2
   cancel-in-progress: false
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           test "$PUSH_FORCED" = false
           mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\ttriggers/deform-dlo45-cancel-duplicate-runs-v1.txt'
+          test "${changed[0]}" = $'A\ttriggers/deform-dlo45-cancel-duplicate-runs-v2.txt'
 
       - name: Cancel only the two pre-source duplicate runs
         shell: bash
@@ -57,13 +57,16 @@ jobs:
           test "$active_status" = in_progress
           test -z "$active_conclusion"
 
-          active_source_status="$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID/jobs" \
-            --jq '.jobs[] | select(.name == "source") | .status')"
-          test "$active_source_status" = in_progress
+          active_source="$(gh api "repos/$repo/actions/runs/$ACTIVE_RUN_ID/jobs" \
+            --jq '.jobs[] | select(.name == "source") | [.status, .runner_id, (.steps | length)] | @tsv')"
+          case "$active_source" in
+            $'in_progress\t'*$'\t4') ;;
+            *) echo "Unexpected active source job: $active_source" >&2; exit 2 ;;
+          esac
 
           stalled_source="$(gh api "repos/$repo/actions/runs/$STALLED_MAIN_RUN_ID/jobs" \
-            --jq '.jobs[] | select(.name == "source") | [.status, (.started_at // "")] | @tsv')"
-          test "$stalled_source" = $'queued\t'
+            --jq '.jobs[] | select(.name == "source") | [.status, .runner_id, (.steps | length)] | @tsv')"
+          test "$stalled_source" = $'queued\t0\t0'
 
           pending_status="$(gh api "repos/$repo/actions/runs/$PENDING_RECOVERY_RUN_ID" --jq .status)"
           test "$pending_status" = pending
