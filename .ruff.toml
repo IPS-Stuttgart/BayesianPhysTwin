@@ -1,4 +1,5 @@
 extend = "pyproject.toml"
 
 [lint.per-file-ignores]
+# UP012 would rewrite the frozen NUL-byte domain separator used for stable seeds.
 "scripts/science/run_deform360_dependence_query_v6.py" = ["UP012"]
