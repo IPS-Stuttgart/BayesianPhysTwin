@@ -7,7 +7,7 @@ on:
     branches:
       - science/deform360-same-mean-query-covariance-v6
     paths:
-      - .github/requests/deform360-exact-same-mean-query-covariance-v7.json
+      - .github/requests/deform360-exact-same-mean-query-covariance-v7-r2.json
 
 permissions:
   actions: read
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  REQUEST_PATH: .github/requests/deform360-exact-same-mean-query-covariance-v7.json
+  REQUEST_PATH: .github/requests/deform360-exact-same-mean-query-covariance-v7-r2.json
   DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
   CONFIRMATION_RUN_ID: "33335779766"
   CONFIRMATION_ARTIFACT_ID: "9738998271"
