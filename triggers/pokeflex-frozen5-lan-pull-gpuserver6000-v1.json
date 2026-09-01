@@ -1,0 +1,24 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-frozen5-lan-pull-request-v1",
+  "request_id": "pokeflex-frozen5-lan-pull-gpuserver6000-20260901-v1",
+  "source_server": "gpuserver4090",
+  "destination_runner_label": "gpuserver6000",
+  "source_roots": [
+    "/mnt/seagate10tb/florianpfaff/datasets/pokeflex",
+    "/home/github-runner/.cache/datasets/pokeflex",
+    "/home/florianpfaff/datasets/pokeflex"
+  ],
+  "target_take_ids": [
+    "Pillow_T8",
+    "3dPrintedCylinder_T7",
+    "3dPrintedHeart_T14",
+    "Sponge_T10",
+    "3dPrintedPizza_T13"
+  ],
+  "transfer_scope": "exact five registered ZIP archives only",
+  "decode_member_payload_during_transfer": false,
+  "execute_frozen_v5_v6_after_hash_verified_transfer": true,
+  "scientific_protocol_change": false,
+  "target_adaptation": false,
+  "replacement_allowed": false
+}
