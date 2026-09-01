@@ -1,0 +1,468 @@
+# workflow-lifecycle: temporary-experiment
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth query-quotient staging and evaluation on gpuserver6000 v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/tracking-cloth-query-quotient-gpuserver6000-v1.yml"
+      - "experiments/tracking_cloth_query_quotient_v1/**"
+      - "tests/test_tracking_cloth_query_quotient_v1.py"
+      - "run_requests/tracking-cloth-query-quotient-gpuserver6000-v1.json"
+  push:
+    branches:
+      - experiment/tracking-cloth-query-quotient-real-v1
+    paths:
+      - "run_requests/tracking-cloth-query-quotient-gpuserver6000-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-query-quotient-gpuserver6000-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  ARCHIVE_URL: https://fcoltraro.github.io/projects/dataset/tracking_dataset.zip
+  ARCHIVE_MD5: b4868b702f8a42b2ea1069d0f1a3b8f6
+  REQUEST_PATH: run_requests/tracking-cloth-query-quotient-gpuserver6000-v1.json
+  PROTOCOL_PATH: experiments/tracking_cloth_query_quotient_v1/protocol.json
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Validate alternate-runner contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            experiments/tracking_cloth_deformation_v1/requirements.txt
+
+      - name: Run unchanged scientific contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          python -m pip check
+          python -m ruff format \
+            experiments/tracking_cloth_query_quotient_v1 \
+            tests/test_tracking_cloth_query_quotient_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_query_quotient_v1 \
+            tests/test_tracking_cloth_query_quotient_v1.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_query_quotient_v1 \
+            tests/test_tracking_cloth_query_quotient_v1.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_query_quotient_v1.py
+          python -m compileall -q \
+            experiments/tracking_cloth_query_quotient_v1
+          git diff --check
+
+  authorize:
+    name: Authorize one add-only staging request
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out request revision and parent
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Validate exact request and closed claims
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(
+            git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}"
+          )
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(
+              Path(os.environ["REQUEST_PATH"]).read_text(encoding="utf-8")
+          )
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"],
+              text=True,
+          ).strip()
+          expected = {
+              "schema": (
+                  "bayesian-phystwin/"
+                  "tracking-cloth-query-quotient-staging-request-v1"
+              ),
+              "request_id": (
+                  "tracking-cloth-query-quotient-gpuserver6000-20260901-v1"
+              ),
+              "mode": "stage-verify-evaluate",
+              "dataset_root": (
+                  "/home/github-runner/.cache/datasets/"
+                  "tracking-cloth-deformation-v1-zenodo-14644526"
+              ),
+              "archive_url": (
+                  "https://fcoltraro.github.io/projects/dataset/"
+                  "tracking_dataset.zip"
+              ),
+              "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+              "runner_label": "gpuserver6000",
+              "workers": 4,
+              "authorize_public_download": True,
+              "authorize_target_scoring_after_seal": True,
+              "paper_claim_authorized": False,
+              "fresh_confirmation_authorized": False,
+              "evidence_class": (
+                  "retrospective public-real-data query-quotient validation; "
+                  "publisher-linked archive staged on alternate runner; "
+                  "no fresh-confirmation claim"
+              ),
+              "expected_source_revision": parent,
+          }
+          if request != expected:
+              raise SystemExit(
+                  "request differs from frozen contract:\n"
+                  + json.dumps(
+                      {"actual": request, "expected": expected},
+                      indent=2,
+                      sort_keys=True,
+                  )
+              )
+          PY
+
+  evaluation:
+    name: Stage, seal, and score / gpuserver6000
+    needs: [contracts, authorize]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 360
+    steps:
+      - name: Check out exact authorized revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Prepare isolated runtime and custody paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent="$(dirname "${DATASET_ROOT}")"
+          mkdir -p "${parent}"
+          output="$RUNNER_TEMP/tracking-cloth-query-quotient-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          work="$RUNNER_TEMP/tracking-cloth-query-quotient-work-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="$RUNNER_TEMP/tracking-cloth-query-quotient-venv-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          test ! -e "${work}"
+          test ! -e "${venv}"
+          mkdir -p "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install -e .
+          "${venv}/bin/python" -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          "${venv}/bin/python" -m pip check
+          {
+            echo "EVAL_OUTPUT=${output}"
+            echo "EVAL_WORK=${work}"
+            echo "EVAL_VENV=${venv}"
+            echo "EVAL_PYTHON=${venv}/bin/python"
+            echo "CACHE_PARENT=${parent}"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "required_runner_label=gpuserver6000"
+            echo "dataset_root=${DATASET_ROOT}"
+            echo "archive_url=${ARCHIVE_URL}"
+            echo "archive_md5=${ARCHIVE_MD5}"
+            "${venv}/bin/python" --version
+            uname -a
+            df -h "${parent}"
+          } > "${output}/environment.txt"
+
+      - name: Stage and verify the publisher-linked archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock="${CACHE_PARENT}/.tracking-cloth-deformation-v1-zenodo-14644526.lock"
+          exec 9>"${lock}"
+          flock -w 30 9
+          download_root="${CACHE_PARENT}/.tracking-cloth-deformation-v1-zenodo-14644526-download"
+          archive="${download_root}/tracking_dataset.zip"
+          staging="${CACHE_PARENT}/.tracking-cloth-deformation-v1-zenodo-14644526-staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${download_root}"
+
+          valid=0
+          if [[ -d "${DATASET_ROOT}" ]]; then
+            if "${EVAL_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from experiments.tracking_cloth_deformation_v1.data import audit_dataset
+
+          protocol = json.loads(
+              Path(
+                  "experiments/tracking_cloth_deformation_v1/protocol.json"
+              ).read_text(encoding="utf-8")
+          )
+          audit_dataset(Path(os.environ["DATASET_ROOT"]), protocol)
+          PY
+            then
+              valid=1
+            elif [[ -n "$(find "${DATASET_ROOT}" -mindepth 1 -print -quit)" ]]; then
+              echo "Existing alternate-runner cache is nonempty but invalid; refusing to replace it." >&2
+              exit 2
+            else
+              rmdir "${DATASET_ROOT}"
+            fi
+          fi
+
+          if [[ "${valid}" -eq 0 ]]; then
+            if [[ -f "${archive}" ]]; then
+              actual="$(md5sum "${archive}" | awk '{print $1}')"
+              if [[ "${actual}" != "${ARCHIVE_MD5}" ]]; then
+                mv "${archive}" "${archive}.invalid-${GITHUB_RUN_ID}"
+              fi
+            fi
+            if [[ ! -f "${archive}" ]]; then
+              partial="${archive}.partial"
+              if [[ -s "${partial}" ]]; then
+                if ! curl \
+                  --fail --location --show-error \
+                  --retry 8 --retry-all-errors --retry-delay 5 \
+                  --connect-timeout 30 \
+                  --continue-at - \
+                  --output "${partial}" \
+                  "${ARCHIVE_URL}"; then
+                  rm -f "${partial}"
+                  curl \
+                    --fail --location --show-error \
+                    --retry 8 --retry-all-errors --retry-delay 5 \
+                    --connect-timeout 30 \
+                    --output "${partial}" \
+                    "${ARCHIVE_URL}"
+                fi
+              else
+                curl \
+                  --fail --location --show-error \
+                  --retry 8 --retry-all-errors --retry-delay 5 \
+                  --connect-timeout 30 \
+                  --output "${partial}" \
+                  "${ARCHIVE_URL}"
+              fi
+              mv "${partial}" "${archive}"
+            fi
+            echo "${ARCHIVE_MD5}  ${archive}" | md5sum --check --strict
+            unzip -t "${archive}"
+            rm -rf "${staging}"
+            mkdir "${staging}"
+            unzip -q "${archive}" -d "${staging}"
+            cp --reflink=auto "${archive}" "${staging}/tracking_dataset.zip"
+            "${EVAL_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from experiments.tracking_cloth_deformation_v1.data import audit_dataset
+
+          protocol = json.loads(
+              Path(
+                  "experiments/tracking_cloth_deformation_v1/protocol.json"
+              ).read_text(encoding="utf-8")
+          )
+          staging = next(
+              Path(os.environ["CACHE_PARENT"]).glob(
+                  ".tracking-cloth-deformation-v1-zenodo-14644526-staging-*"
+              )
+          )
+          _, inventory = audit_dataset(staging, protocol)
+          print(json.dumps(inventory, indent=2, sort_keys=True))
+          PY
+            test ! -e "${DATASET_ROOT}"
+            mv "${staging}" "${DATASET_ROOT}"
+          fi
+
+          "${EVAL_PYTHON}" - <<'PY' \
+            > "${EVAL_OUTPUT}/dataset_verification.json"
+          import json
+          import os
+          from pathlib import Path
+
+          from experiments.tracking_cloth_deformation_v1.data import audit_dataset
+
+          protocol = json.loads(
+              Path(
+                  "experiments/tracking_cloth_deformation_v1/protocol.json"
+              ).read_text(encoding="utf-8")
+          )
+          _, inventory = audit_dataset(Path(os.environ["DATASET_ROOT"]), protocol)
+          print(json.dumps(inventory, indent=2, sort_keys=True))
+          PY
+
+      - name: Fit shake beliefs and seal all twist predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=0
+          "${EVAL_PYTHON}" \
+            -m experiments.tracking_cloth_query_quotient_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${EVAL_WORK}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --stage prepare \
+            --workers 4 || status=$?
+          if [[ -d "${EVAL_WORK}" ]]; then
+            cp -a "${EVAL_WORK}/." "${EVAL_OUTPUT}/"
+          fi
+          test "${status}" -eq 0
+          "${EVAL_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["EVAL_OUTPUT"])
+          seal = json.loads(
+              (root / "prediction_seal.json").read_text(encoding="utf-8")
+          )
+          if seal["target_count"] != 32:
+              raise SystemExit("incomplete target prediction seal")
+          if seal["future_free_marker_outcomes_read"] is not False:
+              raise SystemExit("target outcome boundary crossed before seal")
+          if seal["paper_claim_authorized"] is not False:
+              raise SystemExit("prediction seal self-authorized a claim")
+          PY
+
+      - name: Publish pre-target prediction seal
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-query-quotient-6000-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVAL_OUTPUT }}/protocol.json
+            ${{ env.EVAL_OUTPUT }}/base_protocol.json
+            ${{ env.EVAL_OUTPUT }}/dataset_manifest.json
+            ${{ env.EVAL_OUTPUT }}/dataset_verification.json
+            ${{ env.EVAL_OUTPUT }}/source_fit.json
+            ${{ env.EVAL_OUTPUT }}/prediction_seal.json
+            ${{ env.EVAL_OUTPUT }}/run_manifest.json
+            ${{ env.EVAL_OUTPUT }}/report.md
+            ${{ env.EVAL_OUTPUT }}/DATA_LICENSE.txt
+            ${{ env.EVAL_OUTPUT }}/environment.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Open held-out twist free-marker outcomes and score
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${EVAL_PYTHON}" \
+            -m experiments.tracking_cloth_query_quotient_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${EVAL_OUTPUT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --stage score \
+            --workers 4
+          "${EVAL_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from experiments.tracking_cloth_query_quotient_v1.run import (
+              validate_result,
+          )
+
+          root = Path(os.environ["EVAL_OUTPUT"])
+          result = json.loads(
+              (root / "result.json").read_text(encoding="utf-8")
+          )
+          validate_result(result)
+          print(json.dumps(result["metrics"]["decision"], indent=2))
+          print(json.dumps(result["metrics"]["contract"], indent=2))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish scientific summary
+        if: always() && env.EVAL_OUTPUT != ''
+        shell: bash
+        run: |
+          if [[ -f "${EVAL_OUTPUT}/report.md" ]]; then
+            cat "${EVAL_OUTPUT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "No complete report was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload compact public-data evidence
+        if: always() && env.EVAL_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-query-quotient-6000-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVAL_OUTPUT }}/protocol.json
+            ${{ env.EVAL_OUTPUT }}/base_protocol.json
+            ${{ env.EVAL_OUTPUT }}/dataset_manifest.json
+            ${{ env.EVAL_OUTPUT }}/dataset_verification.json
+            ${{ env.EVAL_OUTPUT }}/source_fit.json
+            ${{ env.EVAL_OUTPUT }}/prediction_seal.json
+            ${{ env.EVAL_OUTPUT }}/target_access.json
+            ${{ env.EVAL_OUTPUT }}/result.json
+            ${{ env.EVAL_OUTPUT }}/metrics.json
+            ${{ env.EVAL_OUTPUT }}/case_summaries.json
+            ${{ env.EVAL_OUTPUT }}/case_arm_scores.csv
+            ${{ env.EVAL_OUTPUT }}/specimen_arm_scores.csv
+            ${{ env.EVAL_OUTPUT }}/run_manifest.json
+            ${{ env.EVAL_OUTPUT }}/report.md
+            ${{ env.EVAL_OUTPUT }}/failure.json
+            ${{ env.EVAL_OUTPUT }}/DATA_LICENSE.txt
+            ${{ env.EVAL_OUTPUT }}/environment.txt
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove private predictions and isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${EVAL_WORK:-}" "${EVAL_OUTPUT:-}" "${EVAL_VENV:-}"
