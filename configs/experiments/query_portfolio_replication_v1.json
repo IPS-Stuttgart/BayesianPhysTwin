@@ -6,6 +6,10 @@
     "harm_family_alpha": 0.04,
     "harm_per_query_alpha": 0.02
   },
+  "calibration_worlds": {
+    "dlolab_slingshot_v4": 128,
+    "dlolab_wrapping_v9": 0
+  },
   "cross_task_reward_pooling": false,
   "design_diagnostics": {
     "diagnostic_only": true,
@@ -15,10 +19,12 @@
   "fresh_worlds": true,
   "frozen_component_policies": {
     "dlolab_slingshot_v4": {
+      "calibration": "registered_independent_128_world_calibration_partition",
       "policy": "policy_gain_guard",
       "source_evidence_id": "2882809b7265714a93be2d3f1455eeac527adbe681cc990cde762777fcaf3a85"
     },
     "dlolab_wrapping_v9": {
+      "calibration": "frozen_v9_source_certificate",
       "policy": "posterior_975_guard",
       "source_evidence_id": "d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9"
     }
@@ -39,7 +45,7 @@
   "joint_claim_confidence": 0.95,
   "outcomes_opened": false,
   "overall_alpha": 0.05,
-  "protocol_id": "e3bdcc3cc9b837d29704fa2144b86e0e5d1363cfaeb4ea9f1a13b3e8efcf0e9e",
+  "protocol_id": "7a741884b779d080f1e041a2824686cced29e33616481c74e1ca47d71957969e",
   "queries": [
     "dlolab_wrapping_v9",
     "dlolab_slingshot_v4"

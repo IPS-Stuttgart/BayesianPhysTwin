@@ -81,6 +81,10 @@ def protocol() -> dict[str, Any]:
         "role": "prospective_two_query_public_simulator_replication",
         "queries": list(QUERY_IDS),
         "worlds_per_query": WORLD_COUNT,
+        "calibration_worlds": {
+            "dlolab_wrapping_v9": 0,
+            "dlolab_slingshot_v4": 128,
+        },
         "fresh_worlds": True,
         "frozen_component_policies": {
             "dlolab_wrapping_v9": {
@@ -88,12 +92,16 @@ def protocol() -> dict[str, Any]:
                     "d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9"
                 ),
                 "policy": "posterior_975_guard",
+                "calibration": "frozen_v9_source_certificate",
             },
             "dlolab_slingshot_v4": {
                 "source_evidence_id": (
                     "2882809b7265714a93be2d3f1455eeac527adbe681cc990cde762777fcaf3a85"
                 ),
                 "policy": "policy_gain_guard",
+                "calibration": (
+                    "registered_independent_128_world_calibration_partition"
+                ),
             },
         },
         "world_seeds": WORLD_SEEDS,

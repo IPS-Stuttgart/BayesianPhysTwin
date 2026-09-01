@@ -13,7 +13,11 @@ are controlled jointly at 95% rather than reported as separate 95% families.
 - Queries: DLO-Lab Wrapping with the frozen v9 guard and DLO-Lab Slingshot with
   the frozen reward-aligned v4 guard.
 - Evaluation: 320 fresh worlds per query; no world replacement.
-- Mean: the existing frozen query policy. No refitting or threshold changes.
+- Method: the existing frozen query algorithms. Wrapping reuses its frozen v9
+  calibration certificate. Slingshot preserves its registered independent
+  128-world calibration stage, using a fresh calibration partition disjoint
+  from the 320 claim-bearing evaluation worlds. No evaluation-world refitting
+  or threshold changes are permitted.
 - Fallback: the exact registered incumbent action.
 - Harm: reward gain below `-0.002` in one world.
 - Overall error budget: 0.05.
