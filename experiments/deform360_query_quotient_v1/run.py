@@ -68,8 +68,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
 
     value = json.loads(path.read_text(encoding="utf-8"))
     _require(
-        value.get("schema")
-        == "bayesian-phystwin/deform360-query-quotient-real-v1",
+        value.get("schema") == "bayesian-phystwin/deform360-query-quotient-real-v1",
         "unexpected protocol schema",
     )
     _require(value.get("schema_version") == 1, "unexpected protocol version")
@@ -96,7 +95,9 @@ def load_protocol(path: Path) -> dict[str, Any]:
     )
     query = value.get("query")
     _require(isinstance(query, dict), "query contract is missing")
-    thresholds = tuple(float(item) for item in query.get("transport_factor_thresholds", ()))
+    thresholds = tuple(
+        float(item) for item in query.get("transport_factor_thresholds", ())
+    )
     labels = tuple(query.get("class_labels", ()))
     _require(
         thresholds
@@ -158,12 +159,12 @@ def load_protocol(path: Path) -> dict[str, Any]:
     ):
         item = value.get(key)
         _require(
-            type(item) in {int, float}
-            and type(item) is not bool
-            and np.isfinite(item),
+            type(item) in {int, float} and type(item) is not bool and np.isfinite(item),
             f"protocol field must be finite: {key}",
         )
-    _require(value["prior_variance_floor"] > 0.0, "prior variance floor must be positive")
+    _require(
+        value["prior_variance_floor"] > 0.0, "prior variance floor must be positive"
+    )
     _require(
         value["minimum_velocity_energy_m2"] > 0.0,
         "minimum velocity energy must be positive",
@@ -240,7 +241,9 @@ def load_episode(
         / f"episode_{episode_id}"
         / "pcd_clean.tar"
     )
-    _require(archive.is_file() and not archive.is_symlink(), f"archive is missing: {archive}")
+    _require(
+        archive.is_file() and not archive.is_symlink(), f"archive is missing: {archive}"
+    )
     carrier = Carrier(
         kind="pcd_clean_tar",
         object_id=str(protocol["object_id"]),
@@ -272,8 +275,10 @@ def _episode_rho_and_residual(sequence: EpisodeData) -> tuple[float, float]:
     previous = velocity[:-1]
     following = velocity[1:]
     denominator = float(np.sum(previous * previous))
-    rho = 0.0 if denominator <= np.finfo(np.float64).tiny else float(
-        np.sum(previous * following) / denominator
+    rho = (
+        0.0
+        if denominator <= np.finfo(np.float64).tiny
+        else float(np.sum(previous * following) / denominator)
     )
     residual = following - rho * previous
     return rho, float(np.mean(residual * residual))
@@ -358,7 +363,10 @@ def query_class_index(
     )
     classes = np.searchsorted(thresholds, factors, side="right").astype(np.int64)
     expected = np.arange(len(thresholds) + 1, dtype=np.int64)
-    _require(np.array_equal(np.unique(classes), expected), "query classes are not all represented")
+    _require(
+        np.array_equal(np.unique(classes), expected),
+        "query classes are not all represented",
+    )
     return classes
 
 
@@ -371,8 +379,7 @@ def _reset_positions(
     count = int(protocol["reset_count"])
     _require(latest >= earliest + count - 1, "episode cannot support the reset roster")
     positions = tuple(
-        int(item)
-        for item in np.linspace(earliest, latest, count, dtype=np.int64)
+        int(item) for item in np.linspace(earliest, latest, count, dtype=np.int64)
     )
     _require(len(set(positions)) == count, "reset positions are not unique")
     return positions
@@ -696,9 +703,7 @@ def analyze_sequences(
             np.mean([item["latent_decision_ambiguous"] for item in reset_rows])
         ),
         "complete_lift_decision_disagreement_fraction": float(
-            np.mean(
-                [item["complete_lift_decisions_disagree"] for item in reset_rows]
-            )
+            np.mean([item["complete_lift_decisions_disagree"] for item in reset_rows])
         ),
         "episode_records": episode_rows,
         "reset_records": reset_rows,
@@ -708,7 +713,10 @@ def analyze_sequences(
 def validate_result(result: Mapping[str, Any]) -> None:
     """Fail closed if a retained result violates its registered boundary."""
 
-    _require(result.get("artifact_kind") == "Deform360QueryQuotientRealPilotV1", "result kind changed")
+    _require(
+        result.get("artifact_kind") == "Deform360QueryQuotientRealPilotV1",
+        "result kind changed",
+    )
     _require(result.get("schema_version") == 1, "result schema changed")
     boundary = result.get("information_boundary")
     _require(isinstance(boundary, Mapping), "result boundary is missing")
@@ -731,8 +739,13 @@ def validate_result(result: Mapping[str, Any]) -> None:
         <= 1e-10,
         "Jeffrey lift added unsupported specificity",
     )
-    _require(result.get("paper_claim_authorized") is False, "result self-authorized a paper claim")
-    _require(result.get("result_sha256") == _content_id(result), "result digest mismatch")
+    _require(
+        result.get("paper_claim_authorized") is False,
+        "result self-authorized a paper claim",
+    )
+    _require(
+        result.get("result_sha256") == _content_id(result), "result digest mismatch"
+    )
 
 
 def _write_reset_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:

@@ -55,7 +55,9 @@ def _sequences(protocol: dict[str, object]) -> list[EpisodeData]:
             rho,
         )
         for episode_id, rho in zip(
-            protocol["source_episode_ids"], rhos, strict=True  # type: ignore[arg-type]
+            protocol["source_episode_ids"],
+            rhos,
+            strict=True,  # type: ignore[arg-type]
         )
     ]
 
@@ -96,9 +98,7 @@ def test_synthetic_source_episodes_preserve_quotient_and_expose_specificity() ->
             np.testing.assert_allclose(lift["quotient_weights"], quotient, atol=1e-12)
         jeffrey = reset["lifts"][0]
         assert jeffrey["name"] == "jeffrey_i_projection"
-        assert jeffrey["unsupported_specificity_nats"] == pytest.approx(
-            0.0, abs=1e-10
-        )
+        assert jeffrey["unsupported_specificity_nats"] == pytest.approx(0.0, abs=1e-10)
 
 
 def test_protocol_rejects_any_opened_forbidden_episode(tmp_path: Path) -> None:
