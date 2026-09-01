@@ -1,0 +1,286 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Build stronger paper claim bundle v1
+
+on:
+  push:
+    branches:
+      - science/stronger-paper-claim-bundle-v1
+    paths:
+      - .github/requests/build-stronger-paper-claim-bundle-v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-stronger-paper-claim-bundle-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/build-stronger-paper-claim-bundle-v1.json
+  COMPOSER: scripts/science/build_stronger_paper_claim_bundle_v1.py
+  DIRECT_BRANCH: science/deform-dlo3-cross-backend-transfer-v1
+  SCALAR_BRANCH: science/deform-dlo3-cross-backend-scalar-v1
+  DLO45_BRANCH: evidence/deform-dlo45-run-33361441865
+  DIRECT_RESULT: results/sota/deform_dlo3_cross_backend_transfer_v1/result.json
+  SCALAR_RESULT: results/sota/deform_dlo3_cross_backend_scalar_v1/result.json
+  DLO45_COLLECTION: results/sota/deform_dlo45_frozen_v1/run-33361441865/collection.json
+  DLO45_RETAINED: results/sota/deform_dlo45_frozen_v1/run-33361441865/retained
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact claim revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate conservative claim composer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.16.5
+          python "$COMPOSER" --self-test
+          ruff check "$COMPOSER"
+          ruff format --check "$COMPOSER"
+
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Check out exact claim revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Authorize exactly one add-only claim-bundle request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/stronger-paper-claim-bundle-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/build-stronger-paper-claim-bundle-v1.json'
+          REQUEST_PATH="$REQUEST_PATH" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text(encoding="utf-8"))
+          expected = {
+              "schema": "stronger-paper-claim-bundle-request-v1",
+              "request_id": "stronger-paper-claim-bundle-20260901-v1",
+              "direct_branch": "science/deform-dlo3-cross-backend-transfer-v1",
+              "scalar_branch": "science/deform-dlo3-cross-backend-scalar-v1",
+              "dlo45_branch": "evidence/deform-dlo45-run-33361441865",
+              "require_all_three_results": True,
+              "self_hosted_runner_used": False,
+              "paper_claim_authorized": False,
+          }
+          if request != expected:
+              raise SystemExit(f"claim-bundle request differs: {request!r}")
+          PY
+
+      - name: Wait for all three content-addressed result streams
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 20700 ))
+          while true; do
+            GH_TOKEN="$GH_TOKEN" \
+            GITHUB_API_URL="$GITHUB_API_URL" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            DIRECT_BRANCH="$DIRECT_BRANCH" \
+            SCALAR_BRANCH="$SCALAR_BRANCH" \
+            DLO45_BRANCH="$DLO45_BRANCH" \
+            DIRECT_RESULT="$DIRECT_RESULT" \
+            SCALAR_RESULT="$SCALAR_RESULT" \
+            DLO45_COLLECTION="$DLO45_COLLECTION" \
+            python - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          checks = [
+              (os.environ["DIRECT_BRANCH"], os.environ["DIRECT_RESULT"]),
+              (os.environ["SCALAR_BRANCH"], os.environ["SCALAR_RESULT"]),
+              (os.environ["DLO45_BRANCH"], os.environ["DLO45_COLLECTION"]),
+          ]
+          available = []
+          for branch, path in checks:
+              encoded_path = urllib.parse.quote(path, safe="/")
+              query = urllib.parse.urlencode({"ref": branch})
+              url = (
+                  f"{os.environ['GITHUB_API_URL']}/repos/"
+                  f"{os.environ['GITHUB_REPOSITORY']}/contents/{encoded_path}?{query}"
+              )
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "stronger-paper-claim-bundle-v1",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      value = json.loads(response.read().decode("utf-8"))
+                  available.append(
+                      {
+                          "branch": branch,
+                          "path": path,
+                          "available": True,
+                          "sha": value.get("sha"),
+                      }
+                  )
+              except urllib.error.HTTPError as error:
+                  if error.code != 404:
+                      raise
+                  available.append(
+                      {"branch": branch, "path": path, "available": False}
+                  )
+          print(json.dumps(available, sort_keys=True))
+          if not all(item["available"] for item in available):
+              raise SystemExit(75)
+          PY
+            status=$?
+            if test "$status" -eq 0; then
+              break
+            fi
+            if test "$status" -ne 75; then
+              exit "$status"
+            fi
+            if test "$(date +%s)" -ge "$deadline"; then
+              echo "Not all stronger-claim result streams became available" >&2
+              exit 75
+            fi
+            sleep 300
+          done
+
+  build:
+    needs: [contracts, authorize]
+    if: always() && needs.contracts.result == 'success' && needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact claim revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Check out exact-transfer evidence branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          ref: science/deform-dlo3-cross-backend-transfer-v1
+          path: _direct
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out scalar-transfer evidence branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          ref: science/deform-dlo3-cross-backend-scalar-v1
+          path: _scalar
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out DLO4/DLO5 collected-evidence branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          ref: evidence/deform-dlo45-run-33361441865
+          path: _dlo45
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build the conservative claim ladder and paper text
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination=results/sota/stronger_paper_claim_bundle_v1
+          test ! -e "$destination"
+          python "$COMPOSER" \
+            --direct-result "_direct/$DIRECT_RESULT" \
+            --scalar-result "_scalar/$SCALAR_RESULT" \
+            --dlo45-collection "_dlo45/$DLO45_COLLECTION" \
+            --dlo45-retained-root "_dlo45/$DLO45_RETAINED" \
+            --output-root "$destination"
+          DIRECT_REVISION="$(git -C _direct rev-parse HEAD)" \
+          SCALAR_REVISION="$(git -C _scalar rev-parse HEAD)" \
+          DLO45_REVISION="$(git -C _dlo45 rev-parse HEAD)" \
+          GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+          GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+          GITHUB_SHA="$GITHUB_SHA" \
+          python - <<'PY' > "$destination/execution.json"
+          import json
+          import os
+
+          print(json.dumps({
+              "schema_version": 1,
+              "contract": "stronger-paper-claim-bundle-execution-v1",
+              "github_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "github_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "claim_source_revision": os.environ["GITHUB_SHA"],
+              "direct_evidence_revision": os.environ["DIRECT_REVISION"],
+              "scalar_evidence_revision": os.environ["SCALAR_REVISION"],
+              "dlo45_evidence_revision": os.environ["DLO45_REVISION"],
+              "self_hosted_runner_used": False,
+              "paper_claim_authorized": False,
+          }, indent=2, sort_keys=True))
+          PY
+          find "$destination" -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "$destination/SHA256SUMS"
+
+      - name: Upload stronger-claim bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: stronger-paper-claim-bundle-v1
+          path: results/sota/stronger_paper_claim_bundle_v1
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Publish claim bundle to the review branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add results/sota/stronger_paper_claim_bundle_v1
+          git diff --cached --check
+          git commit -m 'Record stronger BayesianPhysTwin claim bundle'
+          git push origin HEAD:science/stronger-paper-claim-bundle-v1
