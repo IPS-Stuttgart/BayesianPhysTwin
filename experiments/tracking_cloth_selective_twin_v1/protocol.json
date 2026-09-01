@@ -1,0 +1,75 @@
+{
+  "base_experiment": {
+    "interpretation": "The 32 twisting outcomes were opened previously; this study is retrospective feasibility evidence.",
+    "module": "experiments.tracking_cloth_deformation_v1",
+    "prior_target_run_id": "33302686759",
+    "protocol_path": "experiments/tracking_cloth_deformation_v1/protocol.json"
+  },
+  "bootstrap_repetitions": 20000,
+  "bootstrap_seed": 14644527,
+  "claim_boundary": "Retrospective cross-material feasibility evidence on the already-open public Tracking Cloth free-hanging factorial. It can show whether action/query/horizon context identifies useful reduced-physics predictions, but cannot establish fresh physical confirmation, deployment safety, calibrated joint uncertainty, unseen-action transfer, or state of the art.",
+  "comparators": [
+    "persistence",
+    "map_physics",
+    "last_residual",
+    "nominal_physics"
+  ],
+  "dataset_record": "14644526",
+  "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+  "horizons_seconds": [
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    5.0
+  ],
+  "information_boundary": {
+    "fresh_confirmation": false,
+    "future_driven_corner_trajectories_used_by_simulator": true,
+    "future_free_marker_outcomes_used_as_gate_features": false,
+    "heldout_material_outcomes_used_to_fit_its_gate": false,
+    "paper_claim_authorized": false,
+    "raw_trajectory_upload": false,
+    "same_specimen_shaking_outcomes_used_to_fit_twist_simulator_weights": true
+  },
+  "materials": [
+    "cotton",
+    "denim",
+    "polyester",
+    "wool"
+  ],
+  "motions": [
+    "shake",
+    "twist"
+  ],
+  "outer_split": "leave-one-material-out",
+  "positive_feasibility_gate": {
+    "minimum_selected_coverage": 0.2,
+    "require_all_heldout_material_mean_regrets_nonpositive": true,
+    "require_lower_practical_harm_rate_than_always_candidate": true,
+    "require_negative_equal_material_regret": true,
+    "require_negative_material_bootstrap_upper_95": true,
+    "require_zero_exact_fallback_violations": true
+  },
+  "practical_harm_fraction_of_initial_diameter": 0.025,
+  "primary_candidate": "bayesian_physics",
+  "primary_gate": {
+    "context": [
+      "motion",
+      "query",
+      "horizon_seconds"
+    ],
+    "maximum_training_practical_harm_fraction": 0.1,
+    "minimum_relative_gain": 0.01,
+    "require_nonpositive_mean_regret_in_every_training_material": true
+  },
+  "queries": [
+    "free_marker_shape",
+    "free_marker_centroid",
+    "bottom_edge_centroid",
+    "shape_radius"
+  ],
+  "schema": "bayesian-phystwin.tracking-cloth-selective-twin.v1",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-selective-digital-twin-retrospective-v1"
+}
