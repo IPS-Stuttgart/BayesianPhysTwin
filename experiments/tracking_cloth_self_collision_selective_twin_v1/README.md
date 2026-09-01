@@ -18,11 +18,14 @@ information order is fixed:
    predictions are jointly sealed; and
 4. the scoring stage opens `rep3` future cloth outcomes once.
 
-The simulator predicts the rod from its causal prefix. It receives no future
-rod or cloth coordinates. The physical model is a transparent equal-marker-mass
-spring mesh with a cylindrical rod contact projection, friction, and optional
-non-neighbor cloth repulsion. It is a competence probe, not a reproduction of
-the dataset authors' simulator.
+The publisher describes the self-collision rod as static and stores its two
+markers before the cloth markers. The parser accepts the documented
+`four/two` and `normal/parallel` filename factors, and the reduced simulator
+holds a robust prefix estimate of the rod pose fixed after initialization. It
+receives no future rod or cloth coordinates. The physical model is a
+transparent equal-marker-mass spring mesh with cylindrical rod contact,
+friction, and optional non-neighbor cloth repulsion. It is a competence probe,
+not a reproduction of the dataset authors' simulator.
 
 ## Primary comparison
 
