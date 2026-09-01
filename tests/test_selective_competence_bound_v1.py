@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from bayesian_phystwin.selective_competence_bound_v1 import (
+from experiments.tracking_cloth_self_collision_selective_twin_v1.bounds import (
     SelectiveCompetenceCertificateV1,
     clopper_pearson_upper,
     hoeffding_upper,
