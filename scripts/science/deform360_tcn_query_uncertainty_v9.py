@@ -5,12 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping
 from statistics import NormalDist
 from typing import Any
 
 import numpy as np
-
 
 SCHEMA = "bayesian-phystwin/deform360-tcn-query-uncertainty-v9"
 FOLD_SALT = "deform360-tcn-query-uncertainty-v9"
@@ -64,9 +63,7 @@ def equal_object_mean(values: np.ndarray, groups: np.ndarray) -> np.ndarray:
     )
 
 
-def homoscedastic_variance(
-    residuals: np.ndarray, groups: np.ndarray
-) -> np.ndarray:
+def homoscedastic_variance(residuals: np.ndarray, groups: np.ndarray) -> np.ndarray:
     value = equal_object_mean(residuals**2, groups)
     scale = max(float(np.max(value)), 1.0)
     return np.maximum(value, 1e-10 * scale)
@@ -94,7 +91,9 @@ def global_scale(
     groups: np.ndarray,
 ) -> float:
     scores = np.mean(residuals**2 / np.maximum(variances, 1e-12), axis=1)
-    object_scores = [float(np.mean(scores[groups == group])) for group in _groups(groups)]
+    object_scores = [
+        float(np.mean(scores[groups == group])) for group in _groups(groups)
+    ]
     return float(np.clip(np.mean(object_scores), 1e-4, 1e4))
 
 
@@ -120,8 +119,7 @@ def metrics(
         * (
             1.0
             - 2.0 / (9.0 * dimension)
-            + NormalDist().inv_cdf(probability)
-            * math.sqrt(2.0 / (9.0 * dimension))
+            + NormalDist().inv_cdf(probability) * math.sqrt(2.0 / (9.0 * dimension))
         )
         ** 3
     )
@@ -146,10 +144,7 @@ def metrics(
         "n_groups": len(rows),
         "query_dimension": dimension,
         "weighting": "equal-object-after-within-object-average",
-        **{
-            key: float(np.mean([row[key] for row in rows]))
-            for key in rows[0]
-        },
+        **{key: float(np.mean([row[key] for row in rows])) for key in rows[0]},
     }
 
 
@@ -159,9 +154,7 @@ def object_nll(
     groups: np.ndarray,
 ) -> dict[str, float]:
     values = gaussian_nll_per_dimension(residuals, variances)
-    return {
-        group: float(np.mean(values[groups == group])) for group in _groups(groups)
-    }
+    return {group: float(np.mean(values[groups == group])) for group in _groups(groups)}
 
 
 def paired_bootstrap(
@@ -218,10 +211,13 @@ def causal_online_scale(
             matured_position = position - maturity_lag_windows
             if matured_position >= 0:
                 matured_location = order[matured_position]
-                if window_indices[matured_location] + maturity_lag_windows > window_indices[
-                    location
-                ]:
-                    raise ValueError("online calibration attempted to use an immature outcome")
+                if (
+                    window_indices[matured_location] + maturity_lag_windows
+                    > window_indices[location]
+                ):
+                    raise ValueError(
+                        "online calibration attempted to use an immature outcome"
+                    )
                 score = float(
                     np.mean(
                         residuals[matured_location] ** 2
@@ -234,9 +230,7 @@ def causal_online_scale(
                     maximum_source_index, int(window_indices[matured_location])
                 )
                 update_count += 1
-            factor = (prior_strength + matured_sum) / (
-                prior_strength + matured_count
-            )
+            factor = (prior_strength + matured_sum) / (prior_strength + matured_count)
             factor = float(np.clip(factor, *ONLINE_SCALE_CLIP))
             result[location] = static_variances[location] * factor
     return result, {
@@ -341,9 +335,7 @@ def apply_candidate(
 ) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
     selected = fit_result["selected"]
     homo = np.asarray(fit_result["homoscedastic_variance"], dtype=np.float64)
-    normalization = np.asarray(
-        fit_result["dropout_normalization"], dtype=np.float64
-    )
+    normalization = np.asarray(fit_result["dropout_normalization"], dtype=np.float64)
     normalized_dropout = dropout_variance * normalization[None, :]
     raw = blend_variance(
         homo, normalized_dropout, float(selected["dropout_blend_weight"])
@@ -529,7 +521,9 @@ def study(
     if online_positive and dropout_attributed:
         classification = "positive-online-and-dropout-attributed-query-uncertainty"
     elif online_positive:
-        classification = "positive-causal-online-query-calibration-without-dropout-attribution"
+        classification = (
+            "positive-causal-online-query-calibration-without-dropout-attribution"
+        )
     else:
         classification = "mixed-or-negative-query-calibration"
     result: dict[str, Any] = {
@@ -570,15 +564,13 @@ def self_test() -> None:
     windows = np.tile(np.arange(20), 10)
     latent_scale = np.repeat(np.linspace(0.5, 2.0, 10), 20)
     residuals = rng.normal(size=(200, 4)) * np.sqrt(latent_scale[:, None])
-    dropout = np.stack(
-        [np.eye(4) * scale for scale in latent_scale], axis=0
-    )
+    dropout = np.stack([np.eye(4) * scale for scale in latent_scale], axis=0)
     result = study(
         residuals,
         dropout,
         groups,
         windows,
-        fold_count=5,
+        fold_count=4,
         maturity_lag_windows=4,
         bootstrap_repetitions=500,
     )

@@ -21,7 +21,6 @@ from typing import Any
 
 import numpy as np
 
-
 SCHEMA = "bayesian-phystwin/deform360-exact-action-tcn-query-capture-v9"
 TCN_RESULT_SCHEMA = "bayesian-phystwin/deform360-tcn-baseline-audit-v6"
 TCN_EXECUTION_REVISION = "a32948698fe43e4e52a443a93c9c1604012a21cf"
@@ -153,7 +152,10 @@ def validate_tcn_artifact(
     stored_digest = unsigned.pop("result_sha256", None)
     if result.get("schema") != TCN_RESULT_SCHEMA or result.get("status") != "complete":
         raise ValueError("immutable TCN result is not complete v6 evidence")
-    if stored_digest != TCN_RESULT_SHA256 or canonical_digest(unsigned) != stored_digest:
+    if (
+        stored_digest != TCN_RESULT_SHA256
+        or canonical_digest(unsigned) != stored_digest
+    ):
         raise ValueError("immutable TCN result digest changed")
     if result.get("github_sha") != TCN_EXECUTION_REVISION:
         raise ValueError("immutable TCN execution revision changed")
@@ -177,7 +179,9 @@ def validate_tcn_artifact(
     return result, protocol, manifest
 
 
-def verify_carrier_cache(data_root: Path, manifest: Mapping[str, Any]) -> dict[str, Any]:
+def verify_carrier_cache(
+    data_root: Path, manifest: Mapping[str, Any]
+) -> dict[str, Any]:
     total_size = 0
     checked = 0
     for record in manifest["files"]:
@@ -221,9 +225,7 @@ def _dropout_query_covariance(
     import torch
     from torch.utils.data import DataLoader, TensorDataset
 
-    tactile, action, static, _, _ = core.standardized_arrays(
-        samples, scaler, True
-    )
+    tactile, action, static, _, _ = core.standardized_arrays(samples, scaler, True)
     dataset = TensorDataset(
         torch.from_numpy(tactile),
         torch.from_numpy(action),
@@ -244,11 +246,15 @@ def _dropout_query_covariance(
                 torch.cuda.manual_seed_all(seed + draw)
             rows: list[np.ndarray] = []
             for tactile_batch, action_batch, static_batch in loader:
-                standardized = model(
-                    tactile_batch.to(device),
-                    action_batch.to(device),
-                    static_batch.to(device),
-                ).cpu().numpy()
+                standardized = (
+                    model(
+                        tactile_batch.to(device),
+                        action_batch.to(device),
+                        static_batch.to(device),
+                    )
+                    .cpu()
+                    .numpy()
+                )
                 delta = (
                     scaler.target_mean[None, :]
                     + standardized * scaler.target_std[None, :]
@@ -364,29 +370,20 @@ def reproduce_and_capture(
         raise ValueError("action-TCN capture object roster changed")
     ordered = [capture_by_object[object_id] for object_id in reference_ids]
     arrays = {
-        "query_residuals": np.concatenate(
-            [row["query_residuals"] for row in ordered]
-        ),
+        "query_residuals": np.concatenate([row["query_residuals"] for row in ordered]),
         "dropout_query_covariances": np.concatenate(
             [row["dropout_query_covariances"] for row in ordered]
         ),
         "object_ids": np.concatenate(
-            [
-                np.repeat(row["object_id"], len(row["window_indices"]))
-                for row in ordered
-            ]
+            [np.repeat(row["object_id"], len(row["window_indices"])) for row in ordered]
         ),
         "target_episode_ids": np.concatenate(
             [
-                np.repeat(
-                    row["target_episode_id"], len(row["window_indices"])
-                )
+                np.repeat(row["target_episode_id"], len(row["window_indices"]))
                 for row in ordered
             ]
         ).astype(np.int32),
-        "window_indices": np.concatenate(
-            [row["window_indices"] for row in ordered]
-        ),
+        "window_indices": np.concatenate([row["window_indices"] for row in ordered]),
         "query_matrix": np.asarray(query_matrix, dtype=np.float64),
     }
     capture_manifest: dict[str, Any] = {
@@ -404,9 +401,9 @@ def reproduce_and_capture(
         "dropout_draw_count": draw_count,
         "carrier_audit": carrier_audit,
         "final_model_freeze": reference["final_model_freeze"],
-        "action_conditioned_tcn_active_field_rmse": reference["summary"][
-            "methods"
-        ]["action_conditioned_tcn"],
+        "action_conditioned_tcn_active_field_rmse": reference["summary"]["methods"][
+            "action_conditioned_tcn"
+        ],
         "paper_claim_authorized": False,
     }
     capture_manifest["result_sha256"] = canonical_digest(capture_manifest)
@@ -415,8 +412,6 @@ def reproduce_and_capture(
 
 def self_test() -> None:
     compare_values({"x": [1.0, True]}, {"x": [1.0 + 1e-13, True]})
-    if canonical_digest({"b": 2, "a": 1}) != canonical_digest(
-        {"a": 1, "b": 2}
-    ):
+    if canonical_digest({"b": 2, "a": 1}) != canonical_digest({"a": 1, "b": 2}):
         raise AssertionError("canonical digest is order dependent")
     print("exact Deform360 action-TCN query capture v9 self-test passed")

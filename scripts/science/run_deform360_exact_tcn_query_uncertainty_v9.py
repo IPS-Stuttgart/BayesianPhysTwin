@@ -6,13 +6,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import deform360_exact_tcn_capture_v9 as capture
 import deform360_tcn_query_uncertainty_v9 as uncertainty
 import numpy as np
-
 
 SCHEMA = "bayesian-phystwin/deform360-exact-tcn-query-uncertainty-result-v9"
 
@@ -119,9 +119,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "status": "completed",
         "classification": study["classification"],
         "exact_tcn_reproduction": {
-            "passed": capture_manifest[
-                "exact_scientific_result_reproduction"
-            ],
+            "passed": capture_manifest["exact_scientific_result_reproduction"],
             "maximum_absolute_numeric_difference": capture_manifest[
                 "maximum_absolute_numeric_difference"
             ],
@@ -197,7 +195,9 @@ def main() -> int:
         args.output_root,
     )
     if any(value is None for value in required):
-        parser.error("all data and output arguments are required unless --self-test is used")
+        parser.error(
+            "all data and output arguments are required unless --self-test is used"
+        )
     result = run(args)
     print(
         json.dumps(
