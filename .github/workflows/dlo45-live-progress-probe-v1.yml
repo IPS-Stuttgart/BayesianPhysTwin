@@ -1,6 +1,6 @@
 # workflow-lifecycle: temporary
 # workflow-owner: IPS-Stuttgart maintainers
-name: Read-only DLO45 live progress probe
+name: Promote completed Deform360 TCN evidence PR
 
 on:
   push:
@@ -11,102 +11,52 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
-  probe:
-    runs-on: [self-hosted, Linux, X64, gpuserver6000]
-    timeout-minutes: 10
+  ready:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Query active workstation1 DLO45 custody state read-only
+      - name: Mark validated PR 828 ready for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL_REQUEST_NODE_ID: PR_kwDOTTwils8AAAABBj4lhA
         shell: bash
         run: |
           set -euo pipefail
-          root=/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          payload="$(python - <<'PY'
+          import json
+          import os
 
-          report_root() {
-            local prefix="$1"
-            local observed_root="$2"
-            echo "remote_host=$prefix"
-            echo "remote_time_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            for dlo in dlo4 dlo5; do
-              progress="$observed_root/${dlo}-target/alltrain/progress.json"
-              echo "--- ${dlo^^} target training progress ---"
-              if test -f "$progress"; then
-                cat "$progress"
-              else
-                echo '{"available":false}'
-              fi
-            done
-            echo "--- stage files ---"
-            for relative in \
-              joint/target_authorization.json \
-              dlo4-target/method_seal.json \
-              dlo5-target/method_seal.json \
-              dlo4-target/prediction_seal.json \
-              dlo5-target/prediction_seal.json \
-              joint/joint_prediction_seal.json \
-              score/result.json; do
-              if test -f "$observed_root/$relative"; then
-                printf 'present %s bytes=%s mtime=%s\n' \
-                  "$relative" \
-                  "$(stat -c %s "$observed_root/$relative")" \
-                  "$(stat -c %y "$observed_root/$relative")"
-              else
-                printf 'missing %s\n' "$relative"
-              fi
-            done
-          }
+          print(json.dumps({
+              "query": (
+                  "mutation($pullRequestId: ID!) { "
+                  "markPullRequestReadyForReview(input: {pullRequestId: $pullRequestId}) { "
+                  "pullRequest { number isDraft headRefOid } } }"
+              ),
+              "variables": {"pullRequestId": os.environ["PULL_REQUEST_NODE_ID"]},
+          }))
+          PY
+          )"
+          response="$(curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-Github-Next-Global-ID: 1" \
+            https://api.github.com/graphql \
+            --data "$payload")"
+          printf '%s\n' "$response"
+          RESPONSE="$response" python - <<'PY'
+          import json
+          import os
 
-          echo "probe_started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          echo "local_host=$(hostname)"
-          echo "--- local/shared custody path ---"
-          if test -e "$root"; then
-            report_root "$(hostname)-shared-view" "$root"
-            exit 0
-          fi
-          echo "local_root_available=false"
-          findmnt -rn -t nfs,nfs4,cifs -o TARGET,SOURCE,FSTYPE,OPTIONS || true
-          findmnt -T /home/github-runner -o TARGET,SOURCE,FSTYPE,OPTIONS || true
-          if command -v showmount >/dev/null 2>&1; then
-            echo "--- workstation1 NFS exports ---"
-            timeout 8 showmount -e workstation1.local || true
-          fi
-
-          echo "--- candidate resolution ---"
-          for host in workstation1 workstation1.local gpuserver4090; do
-            getent hosts "$host" || true
-          done
-
-          remote_script=$(declare -f report_root; cat <<'REMOTE'
-          set -euo pipefail
-          root=/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
-          report_root "$(hostname)" "$root"
-          echo "--- active evaluator processes ---"
-          ps -eo pid=,etimes=,cmd= | grep 'experiments.deform_dlo45_frozen_v1.run predict' | grep -v grep || true
-          echo "--- GPUs ---"
-          nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits || true
-          REMOTE
-          )
-
-          ssh_options=(
-            -o BatchMode=yes
-            -o ConnectTimeout=8
-            -o ConnectionAttempts=1
-            -o StrictHostKeyChecking=accept-new
-            -o LogLevel=ERROR
-          )
-          hosts=(workstation1.local 129.69.102.139 workstation1 gpuserver4090)
-          users=("" github-runner florianpfaff)
-          for host in "${hosts[@]}"; do
-            for user in "${users[@]}"; do
-              endpoint="$host"
-              test -z "$user" || endpoint="$user@$host"
-              echo "trying_endpoint=$endpoint"
-              if ssh "${ssh_options[@]}" "$endpoint" bash -s <<<"$remote_script"; then
-                echo "probe_endpoint=$endpoint"
-                exit 0
-              fi
-            done
-          done
-          echo "No read-only shared path or noninteractive SSH route to workstation1." >&2
-          exit 1
+          response = json.loads(os.environ["RESPONSE"])
+          if response.get("errors"):
+              raise SystemExit(response["errors"])
+          pull = response["data"]["markPullRequestReadyForReview"]["pullRequest"]
+          if pull["number"] != 828 or pull["isDraft"]:
+              raise SystemExit(f"PR was not promoted: {pull}")
+          if pull["headRefOid"] != "abf046c90985226abf405f46feda6d21da1895a9":
+              raise SystemExit(f"PR head changed unexpectedly: {pull['headRefOid']}")
+          PY
