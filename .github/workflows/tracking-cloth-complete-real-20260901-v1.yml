@@ -1,0 +1,272 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth complete real-data evaluation 20260901 v1
+
+on:
+  push:
+    branches:
+      - run/tracking-cloth-complete-real-20260901-v1
+    paths:
+      - .github/requests/tracking-cloth-complete-real-20260901-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-complete-real-20260901-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  REQUEST_PATH: .github/requests/tracking-cloth-complete-real-20260901-v1.json
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  evaluate:
+    name: Baseline and query-directed replay / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Validate add-only request and frozen scientific code
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          expected = {
+              "schema": "tracking-cloth-complete-real-evaluation-request-v1",
+              "request_id": "tracking-cloth-complete-real-20260901-v1",
+              "dataset_root": (
+                  "/home/github-runner/.cache/datasets/"
+                  "tracking-cloth-deformation-v1-zenodo-14644526"
+              ),
+              "runner_label": "gpuserver4090",
+              "workers": 4,
+              "modes": ["evaluate", "active_evaluate"],
+              "authorize_target_scoring": True,
+              "evidence_class": (
+                  "public-real-data retrospective replay on all verified recordings; "
+                  "prediction seals published before scoring; no fresh-confirmation claim"
+              ),
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+              "frozen_selection_git_blobs": {
+                  "active_probe.py": "bb641789f8387ea7d659ac3f098e5371c1ae1b3f",
+                  "active_probe_protocol.json": "8ee3f9b47b0faf0c228c738afd3ae6b1905329c4",
+                  "active_probe_run.py": "ab0bc3c23b2f4d35f0c708d88bb3cf153b5091d9"
+              }
+          }
+          if request != expected:
+              raise SystemExit(
+                  "request differs from frozen contract:\n"
+                  + json.dumps({"actual": request, "expected": expected}, indent=2)
+              )
+          paths = {
+              "active_probe.py": "experiments/tracking_cloth_deformation_v1/active_probe.py",
+              "active_probe_protocol.json": (
+                  "experiments/tracking_cloth_deformation_v1/active_probe_protocol.json"
+              ),
+              "active_probe_run.py": (
+                  "experiments/tracking_cloth_deformation_v1/active_probe_run.py"
+              ),
+          }
+          for name, expected_blob in request["frozen_selection_git_blobs"].items():
+              actual = subprocess.check_output(
+                  ["git", "rev-parse", f"{parent}:{paths[name]}"], text=True
+              ).strip()
+              if actual != expected_blob:
+                  raise SystemExit(f"frozen selection blob changed for {name}: {actual}")
+          PY
+
+      - name: Verify complete mounted dataset and prepare isolated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test -r "${DATASET_ROOT}"
+          csv_count="$(find "${DATASET_ROOT}" -type f -name '*.csv' -print | wc -l)"
+          test "${csv_count}" -eq 120
+          venv="${RUNNER_TEMP}/tracking-cloth-complete-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-venv"
+          baseline="${RUNNER_TEMP}/tracking-cloth-complete-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-baseline"
+          active="${RUNNER_TEMP}/tracking-cloth-complete-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-active"
+          test ! -e "${venv}" && test ! -e "${baseline}" && test ! -e "${active}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          {
+            echo "CLOTH_PY=${venv}/bin/python"
+            echo "CLOTH_VENV=${venv}"
+            echo "BASELINE_OUT=${baseline}"
+            echo "ACTIVE_OUT=${active}"
+            echo "CSV_COUNT=${csv_count}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Fit sources and seal baseline target predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLOTH_PY}" -m experiments.tracking_cloth_deformation_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${BASELINE_OUT}" \
+            --stage predict \
+            --workers 4
+          test -f "${BASELINE_OUT}/prediction_seal.json"
+          test -f "${BASELINE_OUT}/source_fit.json"
+
+      - name: Publish baseline prediction seal before target scoring
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-complete-baseline-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.BASELINE_OUT }}/protocol.json
+            ${{ env.BASELINE_OUT }}/source_fit.json
+            ${{ env.BASELINE_OUT }}/dataset_manifest.json
+            ${{ env.BASELINE_OUT }}/prediction_seal.json
+            ${{ env.BASELINE_OUT }}/run_manifest.json
+            ${{ env.BASELINE_OUT }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Fit sources, select probes, and seal query-directed predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLOTH_PY}" -m experiments.tracking_cloth_deformation_v1.active_probe_cli \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${ACTIVE_OUT}" \
+            --stage predict \
+            --workers 4
+          test -f "${ACTIVE_OUT}/prediction_seal.json"
+          test -f "${ACTIVE_OUT}/source_fit.json"
+
+      - name: Publish query-directed prediction seal before target scoring
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-complete-active-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.ACTIVE_OUT }}/protocol.json
+            ${{ env.ACTIVE_OUT }}/source_fit.json
+            ${{ env.ACTIVE_OUT }}/dataset_manifest.json
+            ${{ env.ACTIVE_OUT }}/prediction_seal.json
+            ${{ env.ACTIVE_OUT }}/run_manifest.json
+            ${{ env.ACTIVE_OUT }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Score only the two sealed target forecast sets
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLOTH_PY}" -m experiments.tracking_cloth_deformation_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${BASELINE_OUT}" \
+            --stage score
+          "${CLOTH_PY}" -m experiments.tracking_cloth_deformation_v1.active_probe_cli \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${ACTIVE_OUT}" \
+            --stage score
+
+      - name: Create compact execution receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="${RUNNER_TEMP}/tracking-cloth-complete-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-receipt"
+          mkdir -p "${receipt}"
+          REQUEST_PATH="${REQUEST_PATH}" RECEIPT="${receipt}" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          receipt = Path(os.environ["RECEIPT"])
+          outputs = {
+              "baseline": Path(os.environ.get("BASELINE_OUT", "")),
+              "active": Path(os.environ.get("ACTIVE_OUT", "")),
+          }
+          files = []
+          for arm, root in outputs.items():
+              if not root.is_dir():
+                  continue
+              for path in sorted(root.iterdir()):
+                  if path.is_file() and path.suffix in {".json", ".csv", ".md", ".txt"}:
+                      files.append({
+                          "arm": arm,
+                          "name": path.name,
+                          "size_bytes": path.stat().st_size,
+                          "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                      })
+          record = {
+              "schema_version": 1,
+              "artifact_kind": "TrackingClothCompleteRealEvaluationReceiptV1",
+              "github_sha": os.environ["GITHUB_SHA"],
+              "github_run_id": os.environ["GITHUB_RUN_ID"],
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "runner_label": "gpuserver4090",
+              "dataset_root": os.environ["DATASET_ROOT"],
+              "csv_count": int(os.environ.get("CSV_COUNT", "0")),
+              "prediction_seals_published_before_scoring": True,
+              "paper_claim_authorized": False,
+              "files": files,
+          }
+          (receipt / "receipt.json").write_text(
+              json.dumps(record, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          echo "RECEIPT_OUT=${receipt}" >> "${GITHUB_ENV}"
+
+      - name: Publish aggregate real-data evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-complete-real-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.BASELINE_OUT }}/*.json
+            ${{ env.BASELINE_OUT }}/*.csv
+            ${{ env.BASELINE_OUT }}/report.md
+            ${{ env.BASELINE_OUT }}/DATA_LICENSE.txt
+            ${{ env.ACTIVE_OUT }}/*.json
+            ${{ env.ACTIVE_OUT }}/*.csv
+            ${{ env.ACTIVE_OUT }}/report.md
+            ${{ env.ACTIVE_OUT }}/DATA_LICENSE.txt
+            ${{ env.RECEIPT_OUT }}/receipt.json
+            ${{ env.REQUEST_PATH }}
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Remove private predictions and isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "${BASELINE_OUT:-}" "${ACTIVE_OUT:-}" "${CLOTH_VENV:-}" "${RECEIPT_OUT:-}"
