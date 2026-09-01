@@ -1,0 +1,124 @@
+name: Prioritize frozen PokeFlex five-target execution v1
+
+on:
+  push:
+    branches:
+      - ops/pokeflex-gpuserver6000-access-recovery-v2
+    paths:
+      - triggers/pokeflex-runner-queue-priority-v1.json
+
+permissions:
+  contents: read
+
+jobs:
+  authorize:
+    name: Authorize supersession of two unopened lower-priority runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      authorized: ${{ steps.request.outputs.authorized }}
+    steps:
+      - name: Check out exact queue-priority revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only priority request
+        id: request
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ops/pokeflex-gpuserver6000-access-recovery-v2
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-runner-queue-priority-v1.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-runner-queue-priority-v1.json").read_text())
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-runner-queue-priority-request-v1",
+              "request_id": "pokeflex-runner-queue-priority-20260901-v1",
+              "preserve_run_id": 33475220422,
+              "preserve_purpose": "frozen prospective five-target V5/V6 execution",
+              "supersede": [
+                  {
+                      "run_id": 33473538051,
+                      "concurrency_group": "pokeflex-object-identity-placebo-gpuserver4090-v1",
+                      "purpose": "retrospective object-identity placebo",
+                      "target_payload_opened": False,
+                  },
+                  {
+                      "run_id": 33473949713,
+                      "concurrency_group": "pokeflex-missing5-archive-readiness-v1",
+                      "purpose": "metadata-only readiness audit already superseded by completed audits",
+                      "target_payload_opened": False,
+                  },
+              ],
+              "cancel_current_dlo_run": False,
+              "scientific_protocol_change": False,
+              "delete_evidence": False,
+          }
+          if request != expected:
+              raise SystemExit(f"queue-priority request changed: {request!r}")
+          PY
+          echo 'authorized=true' >> "$GITHUB_OUTPUT"
+
+  supersede:
+    name: Supersede queued ${{ matrix.label }}
+    needs: authorize
+    if: needs.authorize.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: retrospective placebo
+            group: pokeflex-object-identity-placebo-gpuserver4090-v1
+            old_run_id: 33473538051
+          - label: obsolete readiness audit
+            group: pokeflex-missing5-archive-readiness-v1
+            old_run_id: 33473949713
+    concurrency:
+      group: ${{ matrix.group }}
+      cancel-in-progress: true
+    steps:
+      - name: Hold concurrency group until supersession is registered
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Superseding unopened lower-priority run ${{ matrix.old_run_id }}"
+          echo "Concurrency group: ${{ matrix.group }}"
+          sleep 20
+
+  record:
+    name: Record preserved frozen-run priority
+    needs: [authorize, supersede]
+    if: always() && needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Publish queue decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo '### gpuserver4090 queue priority'
+            echo
+            echo '- Preserved current DLO target fit: `33361441865`'
+            echo '- Preserved frozen PokeFlex run: `33475220422`'
+            echo '- Superseded retrospective placebo: `33473538051`'
+            echo '- Superseded obsolete readiness audit: `33473949713`'
+            echo '- Scientific protocol changed: `false`'
+            echo '- Existing evidence deleted: `false`'
+          } >> "$GITHUB_STEP_SUMMARY"
