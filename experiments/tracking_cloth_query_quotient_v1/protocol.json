@@ -1,0 +1,84 @@
+{
+  "analysis": {
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 14644526,
+    "conditions_per_specimen": 4,
+    "inferential_unit": "material-size specimen",
+    "primary_query_metrics": [
+      "categorical_nll",
+      "categorical_brier",
+      "categorical_accuracy"
+    ],
+    "secondary_metrics": [
+      "continuous_endpoint_absolute_error",
+      "unsupported_specificity",
+      "ambiguity_envelope_width",
+      "ambiguity_envelope_coverage",
+      "latent_decision_disagreement"
+    ],
+    "specimen_count": 8,
+    "target_recording_count": 32
+  },
+  "base_protocol": {
+    "git_blob_sha": "8ee3f9b47b0faf0c228c738afd3ae6b1905329c4",
+    "path": "experiments/tracking_cloth_deformation_v1/active_probe_protocol.json",
+    "source_posterior": "leave-one-material-out task_directed policy after one selected logged shake probe",
+    "target_conditioning": "one-second target prefix plus recorded driven-corner boundary"
+  },
+  "claim_boundary": "The experiment can test whether source-derived quotient probabilities predict held-out twisting response classes and whether same-quotient complete beliefs expose different latent specificity and decisions. It cannot establish exact material identity, global physical identifiability, online intervention value, safety, fresh confirmation, or state of the art.",
+  "comparison_lifts": [
+    "full_source_posterior",
+    "jeffrey_i_projection",
+    "uniform_within_class",
+    "prior_map_concentration",
+    "reverse_prior_concentration"
+  ],
+  "dataset": {
+    "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+    "complete_factorial_recording_count": 64,
+    "csv_count": 120,
+    "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+    "record": "14644526",
+    "source_motion": "shake",
+    "target_motion": "twist"
+  },
+  "endpoints": {
+    "physical_parameters": [
+      "stiffness_per_mass",
+      "damping_per_mass"
+    ],
+    "trajectory": [
+      "final_rms_displacement_m",
+      "mid_rms_displacement_m",
+      "peak_rms_displacement_m"
+    ]
+  },
+  "evidence_class": "retrospective public-real-data shake-to-twist query-quotient validation; source and selection protocol predate first target scoring, wrapper added after prior target exposure; no fresh-confirmation claim",
+  "information_boundary": {
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false,
+    "prior_target_outcome_exposure": true,
+    "public_real_measurements": true,
+    "query_partition_fit_to_twist_outcomes": false,
+    "raw_data_uploaded": false,
+    "future_driven_corner_coordinates_used_as_conditioning": true,
+    "twist_free_marker_outcomes_used_for_prediction": false,
+    "twist_outcomes_used_for_scoring_only": true
+  },
+  "latent_decisions": {
+    "damping_at_least": 2.0,
+    "probability_threshold": 0.5,
+    "stiffness_at_least": 400.0
+  },
+  "query": {
+    "class_count": 3,
+    "exact_equivalence_claim": false,
+    "identifiability_tolerance": 0.0,
+    "observation_assignment": "nearest sealed class-center final RMS displacement",
+    "partition_rule": "stable sort of model-predicted final free-marker RMS displacement; three contiguous equal-count finite-diameter classes",
+    "reference_state": "sealed causal target state at prefix cutoff"
+  },
+  "schema": "bayesian-phystwin/tracking-cloth-query-quotient-v1",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-shake-to-twist-query-quotient-v1"
+}
