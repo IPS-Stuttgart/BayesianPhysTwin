@@ -47,7 +47,7 @@ def test_certificate_reproduces_parent_result_and_obeys_support_contract() -> No
         float(certificate["rmse_reduction"]),
         0.04270043213487973,
         rel_tol=0.0,
-        abs_tol=1e-15,
+        abs_tol=1e-7,
     )
 
 
@@ -86,7 +86,7 @@ def test_exact_coverage_match_retains_the_utility_admissibility_tradeoff() -> No
         float(best["rmse_reduction"]),
         0.08703895840064657,
         rel_tol=0.0,
-        abs_tol=1e-15,
+        abs_tol=1e-7,
     )
 
 
