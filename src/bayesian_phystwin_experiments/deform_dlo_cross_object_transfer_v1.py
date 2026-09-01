@@ -74,16 +74,14 @@ def load_cross_object_transfer_protocol(path: str | Path) -> dict[str, object]:
         label="registration boundary",
     )
     if (
-        int(cast(Any, registration.get("blocking_workflow_run_id", -1)))
-        != 33361441865
+        int(cast(Any, registration.get("blocking_workflow_run_id", -1))) != 33361441865
         or registration.get("blocking_workflow_name")
         != "DEFORM DLO4/DLO5 staged timeout recovery v3"
         or registration.get("blocking_head_sha")
         != "0376ece871d7c3d9355788f812a3c4cc1c9165b0"
         or registration.get("blocking_head_branch")
         != "science/deform-dlo45-time-budget-recovery-v3"
-        or registration.get("observed_parent_stage")
-        != "target-prediction-in-progress"
+        or registration.get("observed_parent_stage") != "target-prediction-in-progress"
         or registration.get("source_outcomes_previously_opened") is not True
         or registration.get("target_scores_opened") is not False
         or registration.get("target_predictions_used_for_design") is not False
@@ -100,10 +98,8 @@ def load_cross_object_transfer_protocol(path: str | Path) -> dict[str, object]:
             "deform-dlo45-time-budget-recovery-v3/runs/33361441865-1"
         )
         or parent.get("require_workflow_success") is not True
-        or parent.get("result_contract")
-        != "deform-dlo45-frozen-transfer-result-v1"
-        or parent.get("joint_seal_contract")
-        != "deform-dlo45-joint-prediction-seal-v1"
+        or parent.get("result_contract") != "deform-dlo45-frozen-transfer-result-v1"
+        or parent.get("joint_seal_contract") != "deform-dlo45-joint-prediction-seal-v1"
         or parent.get("prediction_seal_contract")
         != "deform-dlo45-target-prediction-seal-v1"
     ):
@@ -113,9 +109,7 @@ def load_cross_object_transfer_protocol(path: str | Path) -> dict[str, object]:
     models = payload.get("dlo3_local_residual_models")
     if not isinstance(models, Sequence) or isinstance(models, (str, bytes)):
         raise ValueError("DLO3 residual models must be a sequence")
-    model_records = [
-        _mapping(value, label="DLO3 residual model") for value in models
-    ]
+    model_records = [_mapping(value, label="DLO3 residual model") for value in models]
     if [int(cast(Any, value.get("seed", -1))) for value in model_records] != list(
         SEEDS
     ):
@@ -132,15 +126,13 @@ def load_cross_object_transfer_protocol(path: str | Path) -> dict[str, object]:
         or int(cast(Any, data.get("node_count", -1))) != 12
         or int(cast(Any, data.get("prediction_horizon", -1))) != 498
         or data.get("statistical_unit") != "complete-trajectory"
-        or data.get("physical_backbone")
-        != "matching-object-alltrain-update-6400"
+        or data.get("physical_backbone") != "matching-object-alltrain-update-6400"
     ):
         raise ValueError("cross-object data contract changed")
 
     evaluation = _mapping(payload.get("evaluation"), label="evaluation")
     if (
-        evaluation.get("primary_arm")
-        != "equal-seed-dlo3-residual-no-refit-to-dlo45"
+        evaluation.get("primary_arm") != "equal-seed-dlo3-residual-no-refit-to-dlo45"
         or evaluation.get("seed_aggregation") != "arithmetic-prediction-mean"
         or tuple(
             int(value)
@@ -158,8 +150,7 @@ def load_cross_object_transfer_protocol(path: str | Path) -> dict[str, object]:
 
     gate = _mapping(payload.get("promotion_gate"), label="promotion gate")
     if (
-        float(cast(Any, gate.get("minimum_relative_improvement", math.nan)))
-        != 0.01
+        float(cast(Any, gate.get("minimum_relative_improvement", math.nan))) != 0.01
         or int(cast(Any, gate.get("minimum_case_wins", -1))) != 8
         or float(cast(Any, gate.get("maximum_case_ratio", math.nan))) != 1.10
         or int(cast(Any, gate.get("minimum_improving_seed_models", -1))) != 2
@@ -268,20 +259,10 @@ def _equal_dlo_summary(
         for dlo in DLOS
     }
     candidate = float(
-        np.mean(
-            [
-                float(cast(Any, primary[dlo]["candidate_mean_l1_m"]))
-                for dlo in DLOS
-            ]
-        )
+        np.mean([float(cast(Any, primary[dlo]["candidate_mean_l1_m"])) for dlo in DLOS])
     )
     baseline = float(
-        np.mean(
-            [
-                float(cast(Any, primary[dlo]["baseline_mean_l1_m"]))
-                for dlo in DLOS
-            ]
-        )
+        np.mean([float(cast(Any, primary[dlo]["baseline_mean_l1_m"])) for dlo in DLOS])
     )
     rng = np.random.default_rng(seed)
     dlo_draws = []
@@ -437,9 +418,7 @@ def evaluate_cross_object_transfer(
 
         baseline_mean = float(cast(Any, primary["baseline_mean_l1_m"]))
         transfer_mean = float(cast(Any, primary["candidate_mean_l1_m"]))
-        specific_mean = float(
-            cast(Any, object_specific_summary["candidate_mean_l1_m"])
-        )
+        specific_mean = float(cast(Any, object_specific_summary["candidate_mean_l1_m"]))
         specific_gain = baseline_mean - specific_mean
         retained = (
             (baseline_mean - transfer_mean) / specific_gain

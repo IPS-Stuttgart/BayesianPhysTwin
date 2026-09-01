@@ -17,10 +17,7 @@ from bayesian_phystwin_experiments.deform_dlo_local_residual import (
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = REPOSITORY_ROOT / "protocols" / "deform_dlo3_to_dlo45_no_refit_v1.json"
 RUNNER = (
-    REPOSITORY_ROOT
-    / "scripts"
-    / "remote"
-    / "run_deform_dlo3_to_dlo45_no_refit_v1.py"
+    REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo3_to_dlo45_no_refit_v1.py"
 )
 
 
@@ -55,12 +52,10 @@ def _problem(
     dict[str, np.ndarray],
 ]:
     names = {
-        dlo: [f"{dlo.lower()}-{index}" for index in range(case_count)]
-        for dlo in DLOS
+        dlo: [f"{dlo.lower()}-{index}" for index in range(case_count)] for dlo in DLOS
     }
     truth = {
-        dlo: np.zeros((case_count, horizon, 12, 3), dtype=np.float64)
-        for dlo in DLOS
+        dlo: np.zeros((case_count, horizon, 12, 3), dtype=np.float64) for dlo in DLOS
     }
     physical = {dlo: np.full_like(truth[dlo], 0.10) for dlo in DLOS}
     object_specific = {dlo: np.full_like(truth[dlo], 0.04) for dlo in DLOS}
@@ -76,9 +71,11 @@ def test_frozen_protocol_binds_pre_score_secondary_transfer(tmp_path: Path) -> N
     )
     assert protocol["information_boundary"]["dlo4_or_dlo5_residual_refit"] is False
     assert protocol["promotion_gate"]["require_each_dlo"] is True
-    assert [
-        record["seed"] for record in protocol["dlo3_local_residual_models"]
-    ] == [42, 43, 44]
+    assert [record["seed"] for record in protocol["dlo3_local_residual_models"]] == [
+        42,
+        43,
+        44,
+    ]
 
     changed_payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     changed_payload["registration_boundary"]["target_scores_opened"] = True
@@ -115,12 +112,8 @@ def test_equal_seed_dlo3_transfer_passes_both_dlos() -> None:
     assert result["equal_dlo_summary"]["relative_improvement"] == pytest.approx(0.30)
     for dlo in DLOS:
         assert result["results"][dlo]["promotion_gate"]["supported"] is True
-        assert result["results"][dlo]["promotion_gate"][
-            "improving_seed_models"
-        ] == 3
-        assert result["results"][dlo]["primary_vs_matching_physical"][
-            "wins"
-        ] == 4
+        assert result["results"][dlo]["promotion_gate"]["improving_seed_models"] == 3
+        assert result["results"][dlo]["primary_vs_matching_physical"]["wins"] == 4
         assert result["results"][dlo][
             "matching_object_gain_retained_fraction"
         ] == pytest.approx(0.5)
@@ -129,12 +122,8 @@ def test_equal_seed_dlo3_transfer_passes_both_dlos() -> None:
 def test_one_dlo_failure_cannot_be_overridden_by_pooled_gain() -> None:
     names, truth, physical, object_specific = _problem()
     transferred = {
-        "DLO4": {
-            seed: np.full_like(truth["DLO4"], 0.01) for seed in (42, 43, 44)
-        },
-        "DLO5": {
-            seed: np.full_like(truth["DLO5"], 0.105) for seed in (42, 43, 44)
-        },
+        "DLO4": {seed: np.full_like(truth["DLO4"], 0.01) for seed in (42, 43, 44)},
+        "DLO5": {seed: np.full_like(truth["DLO5"], 0.105) for seed in (42, 43, 44)},
     }
 
     result = evaluate_cross_object_transfer(

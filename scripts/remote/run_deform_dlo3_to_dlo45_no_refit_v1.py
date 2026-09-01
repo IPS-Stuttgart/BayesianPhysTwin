@@ -72,10 +72,9 @@ def _verified_file(value: object, *, label: str) -> Path:
     identity = _mapping(value, label=label)
     raw_path = identity.get("path", identity.get("repository_path", ""))
     path = Path(str(raw_path)).resolve(strict=True)
-    if (
-        path.stat().st_size != int(cast(Any, identity.get("size_bytes", -1)))
-        or sha256_file(path) != identity.get("sha256")
-    ):
+    if path.stat().st_size != int(
+        cast(Any, identity.get("size_bytes", -1))
+    ) or sha256_file(path) != identity.get("sha256"):
         raise ValueError(f"{label} identity differs")
     return path
 
@@ -115,9 +114,7 @@ def _validate_parent_result(
         or int(cast(Any, result.get("target_case_count", -1))) != 28
     ):
         raise ValueError("parent DLO4/DLO5 result differs")
-    if set(_mapping(result.get("results"), label="parent DLO results")) != set(
-        DLOS
-    ):
+    if set(_mapping(result.get("results"), label="parent DLO results")) != set(DLOS):
         raise ValueError("parent DLO result set differs")
     return result
 
@@ -134,8 +131,7 @@ def _validate_joint_seal(
         or _mapping(seal.get("protocol"), label="joint protocol").get("sha256")
         != protocol_sha256
         or tuple(
-            str(value)
-            for value in cast(Sequence[object], seal.get("datasets", ()))
+            str(value) for value in cast(Sequence[object], seal.get("datasets", ()))
         )
         != DLOS
         or int(cast(Any, seal.get("total_target_cases", -1))) != 28
@@ -265,11 +261,11 @@ def _verify_parent_point_summary(
         str(case["name"])
         for case in cast(Sequence[Mapping[str, object]], observed["cases"])
     ]
-    if (
-        int(cast(Any, observed["wins"])) != int(cast(Any, parent["wins"]))
-        or observed_names
-        != [str(value) for value in cast(Sequence[object], parent["case_names"])]
-    ):
+    if int(cast(Any, observed["wins"])) != int(
+        cast(Any, parent["wins"])
+    ) or observed_names != [
+        str(value) for value in cast(Sequence[object], parent["case_names"])
+    ]:
         raise ValueError(f"{dlo} parent point summary does not reproduce")
 
 
@@ -373,14 +369,12 @@ def _write_report(path: Path, result: Mapping[str, object]) -> None:
             "| {dlo} | {physical:.4f} | {specific:.4f} | {transfer:.4f} | "
             "{improvement:.2f}% | {wins}/14 | {seeds}/3 | {supported} |".format(
                 dlo=dlo,
-                physical=1000.0
-                * float(cast(Any, methods["matching_object_physical"])),
+                physical=1000.0 * float(cast(Any, methods["matching_object_physical"])),
                 specific=1000.0
                 * float(cast(Any, methods["matching_object_fitted_residual"])),
                 transfer=1000.0
                 * float(cast(Any, methods["dlo3_equal_seed_no_refit_residual"])),
-                improvement=100.0
-                * float(cast(Any, primary["relative_improvement"])),
+                improvement=100.0 * float(cast(Any, primary["relative_improvement"])),
                 wins=primary["wins"],
                 seeds=gate["improving_seed_models"],
                 supported="yes" if gate["supported"] else "no",
@@ -468,16 +462,16 @@ def main() -> int:
     )
     parent_protocol_sha256 = sha256_file(parent_protocol_path)
     score_result_path = (parent_root / "score" / "result.json").resolve(strict=True)
-    joint_seal_path = (
-        parent_root / "joint" / "joint_prediction_seal.json"
-    ).resolve(strict=True)
+    joint_seal_path = (parent_root / "joint" / "joint_prediction_seal.json").resolve(
+        strict=True
+    )
     prediction_seal_paths = {
-        "DLO4": (
-            parent_root / "dlo4-target" / "prediction_seal.json"
-        ).resolve(strict=True),
-        "DLO5": (
-            parent_root / "dlo5-target" / "prediction_seal.json"
-        ).resolve(strict=True),
+        "DLO4": (parent_root / "dlo4-target" / "prediction_seal.json").resolve(
+            strict=True
+        ),
+        "DLO5": (parent_root / "dlo5-target" / "prediction_seal.json").resolve(
+            strict=True
+        ),
     }
     raw_models = cast(
         Sequence[Mapping[str, object]],
@@ -538,9 +532,7 @@ def main() -> int:
         "seed_aggregation": evaluation["seed_aggregation"],
         "shrinkage": evaluation["shrinkage"],
         "promotion_gate": dict(gate),
-        "registration_classification": (
-            "outcome-blind-pre-score-secondary-diagnostic"
-        ),
+        "registration_classification": ("outcome-blind-pre-score-secondary-diagnostic"),
         "parent_target_scores_semantically_read": False,
         "target_prediction_arrays_loaded": False,
         "target_trajectory_payload_deserialized": False,
@@ -570,11 +562,9 @@ def main() -> int:
             joint_prediction_seals[dlo],
             label=f"joint {dlo} prediction seal",
         )
-        if (
-            Path(str(expected_identity["path"])).resolve() != prediction_seal_paths[dlo]
-            or expected_identity.get("sha256")
-            != sha256_file(prediction_seal_paths[dlo])
-        ):
+        if Path(str(expected_identity["path"])).resolve() != prediction_seal_paths[
+            dlo
+        ] or expected_identity.get("sha256") != sha256_file(prediction_seal_paths[dlo]):
             raise ValueError(f"joint {dlo} prediction-seal identity differs")
         prediction_seals[dlo] = _validate_prediction_seal(
             prediction_seal_paths[dlo],
@@ -684,9 +674,7 @@ def main() -> int:
             "parent_dlo45_result": {
                 "identity": _identity(score_result_path),
                 "decision": parent_result["decision"],
-                "both_primary_gates_passed": parent_result[
-                    "both_primary_gates_passed"
-                ],
+                "both_primary_gates_passed": parent_result["both_primary_gates_passed"],
                 "equal_dlo_relative_improvement": parent_result[
                     "equal_dlo_relative_improvement"
                 ],
