@@ -1,0 +1,154 @@
+name: Patch Deform360 query-quotient typing v1
+
+on:
+  push:
+    branches:
+      - experiment/deform360-query-quotient-real-v1
+    paths:
+      - run_requests/patch-deform360-query-quotient-mypy-v1.json
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: patch-deform360-query-quotient-mypy-v1
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: true
+          clean: true
+
+      - name: Validate one add-only repair request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          request=run_requests/patch-deform360-query-quotient-mypy-v1.json
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${request}"
+
+      - name: Apply type-safe fail-closed validation patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("experiments/deform360_query_quotient_v1/run.py")
+          text = path.read_text(encoding="utf-8")
+          old_threshold = '''    _require(
+              thresholds
+              and tuple(sorted(set(thresholds))) == thresholds
+              and all(np.isfinite(item) for item in thresholds),
+              "query thresholds must be finite, sorted, and unique",
+          )'''
+          new_threshold = '''    _require(
+              bool(thresholds)
+              and tuple(sorted(set(thresholds))) == thresholds
+              and all(np.isfinite(item) for item in thresholds),
+              "query thresholds must be finite, sorted, and unique",
+          )'''
+          old_validation = '''    boundary = result.get("information_boundary")
+          _require(isinstance(boundary, Mapping), "result boundary is missing")
+          _require(boundary.get("source_only") is True, "result is not source-only")
+          for key in (
+              "forbidden_episode_payloads_opened",
+              "official_velocity_arrays_used",
+              "dataset_modified",
+              "raw_payload_uploaded",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              _require(boundary.get(key) is False, f"closed result boundary widened: {key}")
+          summary = result.get("summary")
+          _require(isinstance(summary, Mapping), "result summary is missing")
+          _require(summary.get("episode_count") >= 3, "too few source episodes")
+          _require(summary.get("reset_count") >= summary["episode_count"], "too few resets")
+          _require(
+              abs(float(summary.get("jeffrey_unsupported_specificity_nats", math.nan)))
+              <= 1e-10,
+              "Jeffrey lift added unsupported specificity",
+          )'''
+          new_validation = '''    boundary_value = result.get("information_boundary")
+          if not isinstance(boundary_value, Mapping):
+              raise ValueError("result boundary is missing")
+          boundary = boundary_value
+          _require(boundary.get("source_only") is True, "result is not source-only")
+          for key in (
+              "forbidden_episode_payloads_opened",
+              "official_velocity_arrays_used",
+              "dataset_modified",
+              "raw_payload_uploaded",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              _require(boundary.get(key) is False, f"closed result boundary widened: {key}")
+          summary_value = result.get("summary")
+          if not isinstance(summary_value, Mapping):
+              raise ValueError("result summary is missing")
+          summary = summary_value
+          episode_count = summary.get("episode_count")
+          reset_count = summary.get("reset_count")
+          if not isinstance(episode_count, int) or isinstance(episode_count, bool):
+              raise ValueError("source episode count is invalid")
+          if not isinstance(reset_count, int) or isinstance(reset_count, bool):
+              raise ValueError("reset count is invalid")
+          _require(episode_count >= 3, "too few source episodes")
+          _require(reset_count >= episode_count, "too few resets")
+          _require(
+              abs(float(summary.get("jeffrey_unsupported_specificity_nats", math.nan)))
+              <= 1e-10,
+              "Jeffrey lift added unsupported specificity",
+          )'''
+          if old_threshold not in text:
+              raise SystemExit("threshold validation block not found")
+          if old_validation not in text:
+              raise SystemExit("result validation block not found")
+          path.write_text(
+              text.replace(old_threshold, new_threshold).replace(
+                  old_validation, new_validation
+              ),
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Validate, commit, and dispatch the repaired pilot
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          files=(
+            experiments/deform360_query_quotient_v1/run.py
+            tests/test_deform360_query_quotient_v1.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy --no-site-packages experiments/deform360_query_quotient_v1/run.py
+          python -m pytest -q tests/test_deform360_query_quotient_v1.py tests/test_deform360_real_v1.py
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "${files[@]}"
+          git commit -m "Fix Deform360 query-quotient result validation typing"
+          git push origin HEAD:experiment/deform360-query-quotient-real-v1
+          gh workflow run deform360-query-quotient-real-v1.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref experiment/deform360-query-quotient-real-v1
