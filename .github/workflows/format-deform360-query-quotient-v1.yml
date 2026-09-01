@@ -1,0 +1,85 @@
+name: Format Deform360 query-quotient branch
+
+on:
+  push:
+    branches:
+      - experiment/deform360-query-quotient-real-v1
+    paths:
+      - run_requests/format-deform360-query-quotient-v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform360-query-quotient-v1
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: true
+          clean: true
+
+      - name: Validate one add-only format request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          request=run_requests/format-deform360-query-quotient-v1.json
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${request}"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(
+              Path("run_requests/format-deform360-query-quotient-v1.json")
+              .read_text(encoding="utf-8")
+          )
+          expected = {
+              "schema_version": 1,
+              "request_id": "format-deform360-query-quotient-v1",
+              "formatter": "ruff",
+              "paths": [
+                  "experiments/deform360_query_quotient_v1/run.py",
+                  "tests/test_deform360_query_quotient_v1.py",
+              ],
+          }
+          if request != expected:
+              raise SystemExit("format request differs from frozen value")
+          PY
+
+      - name: Apply pinned formatter and push exact changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-input ruff==0.16.5
+          files=(
+            experiments/deform360_query_quotient_v1/run.py
+            tests/test_deform360_query_quotient_v1.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          git diff --check
+          if git diff --quiet -- "${files[@]}"; then
+            echo "Files already formatted"
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "${files[@]}"
+          git commit -m "Format Deform360 query-quotient implementation"
+          git push origin HEAD:experiment/deform360-query-quotient-real-v1
