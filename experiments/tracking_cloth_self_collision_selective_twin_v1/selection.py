@@ -206,9 +206,7 @@ def fit_fold_policy(
                 )
                 for material in materials
             ]
-            harm = float(
-                np.mean([bool(row["practical_harm"][arm]) for row in subset])
-            )
+            harm = float(np.mean([bool(row["practical_harm"][arm]) for row in subset]))
             accepted = bool(
                 arm != "persistence"
                 and mean_loss <= (1.0 - minimum_gain) * fallback_mean
@@ -425,8 +423,7 @@ def incremental_summary(
         paired.append(
             {
                 "material": p_row["material"],
-                "difference_mm": p_row["selected_loss_mm"]
-                - r_row["selected_loss_mm"],
+                "difference_mm": p_row["selected_loss_mm"] - r_row["selected_loss_mm"],
                 "physics_selected": p_row["physics_selected"],
             }
         )

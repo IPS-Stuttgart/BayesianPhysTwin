@@ -89,9 +89,7 @@ def test_contact_and_kinematic_predictions_are_finite(tmp_path: Path) -> None:
     path = tmp_path / "cotton_a2_four_corners_normal_rep1.csv"
     _write_case(path, future_numeric=True)
     protocol = _small_protocol()
-    inputs = prediction_input(
-        Case(path, "cotton", "four_corners_normal", 1), protocol
-    )
+    inputs = prediction_input(Case(path, "cotton", "four_corners_normal", 1), protocol)
     parameters = parameter_bank(protocol)
     fit = PhysicsFit(
         parameters=parameters,
@@ -161,8 +159,7 @@ def _selection_protocol() -> dict:
 def test_matched_selector_is_identical_except_for_physics_arm() -> None:
     protocol = _selection_protocol()
     rows = [
-        _row(material, physics=7.0, residual=8.0)
-        for material in protocol["materials"]
+        _row(material, physics=7.0, residual=8.0) for material in protocol["materials"]
     ]
     policy = fit_cross_material_policies(rows, protocol)
     selected = apply_policy(rows, policy)
