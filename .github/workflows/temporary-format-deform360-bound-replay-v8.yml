@@ -46,6 +46,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/science/deform360_tcn_query_uncertainty_v9.py')
+          text = path.read_text()
+          old = (
+              '        fold_count=5,\n'
+              '        maturity_lag_windows=4,\n'
+              '        bootstrap_repetitions=500,\n'
+          )
+          new = (
+              '        fold_count=4,\n'
+              '        maturity_lag_windows=4,\n'
+              '        bootstrap_repetitions=500,\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit('synthetic fold fixture marker changed')
+          path.write_text(text.replace(old, new))
+          PY
           python -m pip install numpy==1.26.4 ruff==0.14.14
           files=(
             scripts/science/deform360_bound_replay_v8.py
