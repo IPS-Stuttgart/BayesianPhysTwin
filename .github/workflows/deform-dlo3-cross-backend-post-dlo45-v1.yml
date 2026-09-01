@@ -1,6 +1,6 @@
 # workflow-lifecycle: permanent
 # workflow-owner: IPS-Stuttgart maintainers
-name: DLO3 no-refit cross-backend transfer after DLO45 v1
+name: DLO3 no-refit transfers after DLO45 v1
 
 on:
   workflow_run:
@@ -13,18 +13,19 @@ permissions:
   contents: read
 
 concurrency:
-  group: deform-dlo3-cross-backend-post-dlo45-v1
+  group: deform-dlo3-no-refit-transfers-post-dlo45-v1
   cancel-in-progress: false
 
 env:
-  IMPLEMENTATION_SHA: d8c144ddeff2b75a1fa600d44e9991444e98646c
+  IMPLEMENTATION_SHA: 21ae414e28b7d7c167ff76c078ee318e0da9f419
   BLOCKING_RUN_ID: "33361441865"
   BLOCKING_HEAD_SHA: 0376ece871d7c3d9355788f812a3c4cc1c9165b0
   BLOCKING_HEAD_BRANCH: science/deform-dlo45-time-budget-recovery-v3
   BLOCKING_RUN_ROOT: /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
   FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
-  CROSS_BACKEND_ROOT: /home/github-runner/.cache/workflows/deform-dlo3-cross-backend-transfer-v1
-  PROTOCOL: protocols/deform_dlo3_cross_backend_transfer_v1.json
+  TRANSFER_ROOT: /home/github-runner/.cache/workflows/deform-dlo3-no-refit-transfers-v1
+  CROSS_BACKEND_PROTOCOL: protocols/deform_dlo3_cross_backend_transfer_v1.json
+  CROSS_OBJECT_PROTOCOL: protocols/deform_dlo3_to_dlo45_no_refit_v1.json
   PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
   PYTHONUNBUFFERED: "1"
   PYTHONDONTWRITEBYTECODE: "1"
@@ -52,30 +53,34 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Revalidate frozen transfer contracts
+      - name: Revalidate both frozen no-refit transfer contracts
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install -e . pytest ruff
-          python -m pytest -q tests/test_deform_dlo3_cross_backend_transfer_v1.py
-          python -m ruff check \
-            scripts/remote/run_deform_dlo3_cross_backend_transfer_v1.py \
-            src/bayesian_phystwin_experiments/deform_dlo_cross_backend_transfer_v1.py \
+          python -m pytest -q \
+            tests/test_deform_dlo3_cross_backend_transfer_v1.py \
+            tests/test_deform_dlo3_to_dlo45_no_refit_v1.py
+          files=(
+            scripts/remote/run_deform_dlo3_cross_backend_transfer_v1.py
+            scripts/remote/run_deform_dlo3_to_dlo45_no_refit_v1.py
+            src/bayesian_phystwin_experiments/deform_dlo_cross_backend_transfer_v1.py
+            src/bayesian_phystwin_experiments/deform_dlo_cross_object_transfer_v1.py
             tests/test_deform_dlo3_cross_backend_transfer_v1.py
-          python -m ruff format --check \
-            scripts/remote/run_deform_dlo3_cross_backend_transfer_v1.py \
-            src/bayesian_phystwin_experiments/deform_dlo_cross_backend_transfer_v1.py \
-            tests/test_deform_dlo3_cross_backend_transfer_v1.py
+            tests/test_deform_dlo3_to_dlo45_no_refit_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
 
   evaluate:
     needs: contracts
     if: needs.contracts.result == 'success'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       BLOCKING_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
       BLOCKING_EVENT_URL: ${{ github.event.workflow_run.html_url }}
-      CROSS_BACKEND_OUT: /home/github-runner/.cache/workflows/deform-dlo3-cross-backend-transfer-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
+      TRANSFER_OUT: /home/github-runner/.cache/workflows/deform-dlo3-no-refit-transfers-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out exact validated implementation
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -95,16 +100,18 @@ jobs:
           test "$BLOCKING_CONCLUSION" = success
           test -x "$FROZEN_PYTHON"
           test -f "$BLOCKING_RUN_ROOT/score/result.json"
-          test -f "$PROTOCOL"
-          test ! -e "$CROSS_BACKEND_OUT"
-          mkdir -p "$CROSS_BACKEND_ROOT/runs" "$CROSS_BACKEND_ROOT/claims"
-          claim="$CROSS_BACKEND_ROOT/claims/$BLOCKING_RUN_ID-$IMPLEMENTATION_SHA"
+          test -f "$BLOCKING_RUN_ROOT/joint/joint_prediction_seal.json"
+          test -f "$CROSS_BACKEND_PROTOCOL"
+          test -f "$CROSS_OBJECT_PROTOCOL"
+          test ! -e "$TRANSFER_OUT"
+          mkdir -p "$TRANSFER_ROOT/runs" "$TRANSFER_ROOT/claims"
+          claim="$TRANSFER_ROOT/claims/$BLOCKING_RUN_ID-$IMPLEMENTATION_SHA"
           mkdir "$claim"
           printf '%s\n' "$GITHUB_SHA" > "$claim/orchestrator_sha"
           printf '%s\n' "$GITHUB_RUN_ID" > "$claim/evaluation_run_id"
-          mkdir -p "$CROSS_BACKEND_OUT/evaluation"
+          mkdir -p "$TRANSFER_OUT"
           cp --no-clobber "$BLOCKING_RUN_ROOT/score/result.json" \
-            "$CROSS_BACKEND_OUT/deform_dlo45_result.json"
+            "$TRANSFER_OUT/deform_dlo45_result.json"
           BLOCKING_CONCLUSION="$BLOCKING_CONCLUSION" \
           BLOCKING_EVENT_URL="$BLOCKING_EVENT_URL" \
           "$FROZEN_PYTHON" - <<'PY'
@@ -112,10 +119,10 @@ jobs:
           import os
           from pathlib import Path
 
-          output = Path(os.environ["CROSS_BACKEND_OUT"])
+          output = Path(os.environ["TRANSFER_OUT"])
           record = {
               "schema_version": 1,
-              "contract": "deform-dlo3-cross-backend-blocking-run-binding-v1",
+              "contract": "deform-dlo3-no-refit-transfers-blocking-run-binding-v1",
               "blocking_run_id": int(os.environ["BLOCKING_RUN_ID"]),
               "blocking_head_sha": os.environ["BLOCKING_HEAD_SHA"],
               "blocking_head_branch": os.environ["BLOCKING_HEAD_BRANCH"],
@@ -134,18 +141,30 @@ jobs:
           )
           PY
 
-      - name: Execute sealed no-refit coefficient transfer
+      - name: Execute sealed DEFORM-to-PyElastica coefficient transfer
         shell: bash
         run: |
           set -euo pipefail
           "$FROZEN_PYTHON" \
             scripts/remote/run_deform_dlo3_cross_backend_transfer_v1.py \
-            --protocol "$PROTOCOL" \
-            --output-root "$CROSS_BACKEND_OUT/evaluation" \
+            --protocol "$CROSS_BACKEND_PROTOCOL" \
+            --output-root "$TRANSFER_OUT/cross-backend" \
             --mode run \
-            | tee "$CROSS_BACKEND_OUT/evaluation.log"
+            | tee "$TRANSFER_OUT/cross-backend.log"
 
-      - name: Validate and summarize combined evidence
+      - name: Execute sealed DLO3-to-DLO4/DLO5 coefficient transfer
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" \
+            scripts/remote/run_deform_dlo3_to_dlo45_no_refit_v1.py \
+            --protocol "$CROSS_OBJECT_PROTOCOL" \
+            --dlo45-root "$BLOCKING_RUN_ROOT" \
+            --output-root "$TRANSFER_OUT/cross-object" \
+            --mode run \
+            | tee "$TRANSFER_OUT/cross-object.log"
+
+      - name: Validate and summarize the hierarchical evidence
         shell: bash
         run: |
           set -euo pipefail
@@ -155,36 +174,110 @@ jobs:
           import os
           from pathlib import Path
 
-          root = Path(os.environ["CROSS_BACKEND_OUT"])
-          transfer = json.loads(
-              (root / "evaluation" / "result.json").read_text(encoding="utf-8")
-          )
+          root = Path(os.environ["TRANSFER_OUT"])
           dlo45 = json.loads(
               (root / "deform_dlo45_result.json").read_text(encoding="utf-8")
           )
-          if transfer["information_boundary"]["dlo3_official_evaluation_read"]:
+          backend = json.loads(
+              (root / "cross-backend" / "result.json").read_text(encoding="utf-8")
+          )
+          cross_object = json.loads(
+              (root / "cross-object" / "result.json").read_text(encoding="utf-8")
+          )
+
+          if backend["information_boundary"]["dlo3_official_evaluation_read"]:
               raise SystemExit("DLO3 official evaluation boundary was crossed")
-          if transfer["information_boundary"]["dlo4_or_dlo5_read"]:
+          if backend["information_boundary"]["dlo4_or_dlo5_read"]:
               raise SystemExit("cross-backend evaluator read DLO4 or DLO5 payloads")
+          object_boundary = cross_object["information_boundary"]
+          if object_boundary["dlo3_residual_refit"]:
+              raise SystemExit("cross-object evaluator refit the DLO3 residual")
+          if object_boundary["dlo4_or_dlo5_residual_refit"]:
+              raise SystemExit("cross-object evaluator refit a target residual")
+          if object_boundary["seed_or_weight_selection_from_target"]:
+              raise SystemExit("cross-object evaluator selected target weights")
+
+          procedure_supported = bool(dlo45["both_primary_gates_passed"])
+          backend_coefficients_supported = bool(
+              backend["promotion_gate"]["supported"]
+          )
+          object_coefficients_supported = bool(cross_object["both_dlos_supported"])
+          strongest = (
+              procedure_supported
+              and backend_coefficients_supported
+              and object_coefficients_supported
+          )
+          if strongest:
+              level = "procedure-and-coefficients-transfer-across-objects-and-backends"
+          elif procedure_supported and (
+              backend_coefficients_supported or object_coefficients_supported
+          ):
+              level = "procedure-replication-plus-one-coefficient-transfer-axis"
+          elif procedure_supported:
+              level = "frozen-procedure-replication-across-fresh-dlos"
+          else:
+              level = "source-qualified-method-without-two-dlo-target-replication"
+
           summary = {
               "schema_version": 1,
-              "contract": "deform-dlo3-cross-backend-plus-dlo45-summary-v1",
-              "cross_backend_decision": transfer["decision"],
-              "cross_backend_relative_improvement": transfer[
-                  "primary_vs_raw_pyelastica"
-              ]["relative_improvement"],
-              "cross_backend_wins": transfer["primary_vs_raw_pyelastica"]["wins"],
-              "cross_backend_losses": transfer["primary_vs_raw_pyelastica"]["losses"],
-              "improving_deform_seed_models": transfer["promotion_gate"][
-                  "improving_seed_models"
-              ],
-              "backend_specific_gain_retained_fraction": transfer[
-                  "backend_specific_gain_retained_fraction"
-              ],
-              "dlo45_contract": dlo45.get("contract"),
-              "dlo45_decision": dlo45.get("decision"),
-              "dlo45_result": dlo45,
+              "contract": "deform-dlo3-hierarchical-transfer-evidence-v1",
+              "implementation_sha": os.environ["IMPLEMENTATION_SHA"],
+              "blocking_run_id": int(os.environ["BLOCKING_RUN_ID"]),
+              "prospective_dlo45": {
+                  "decision": dlo45["decision"],
+                  "both_primary_gates_passed": procedure_supported,
+                  "equal_dlo_relative_improvement": dlo45[
+                      "equal_dlo_relative_improvement"
+                  ],
+                  "total_candidate_wins": dlo45["total_candidate_wins"],
+                  "target_case_count": dlo45["target_case_count"],
+              },
+              "dlo3_to_pyelastica_no_refit": {
+                  "decision": backend["decision"],
+                  "supported": backend_coefficients_supported,
+                  "relative_improvement": backend[
+                      "primary_vs_raw_pyelastica"
+                  ]["relative_improvement"],
+                  "wins": backend["primary_vs_raw_pyelastica"]["wins"],
+                  "losses": backend["primary_vs_raw_pyelastica"]["losses"],
+                  "improving_seed_models": backend["promotion_gate"][
+                      "improving_seed_models"
+                  ],
+                  "backend_specific_gain_retained_fraction": backend[
+                      "backend_specific_gain_retained_fraction"
+                  ],
+              },
+              "dlo3_to_dlo45_no_refit": {
+                  "decision": cross_object["decision"],
+                  "both_dlos_supported": object_coefficients_supported,
+                  "equal_dlo_summary": cross_object["equal_dlo_summary"],
+                  "per_dlo": {
+                      dlo: {
+                          "decision": cross_object["results"][dlo]["decision"],
+                          "promotion_gate": cross_object["results"][dlo][
+                              "promotion_gate"
+                          ],
+                          "primary_vs_matching_physical": cross_object["results"][
+                              dlo
+                          ]["primary_vs_matching_physical"],
+                          "matching_object_gain_retained_fraction": cross_object[
+                              "results"
+                          ][dlo]["matching_object_gain_retained_fraction"],
+                      }
+                      for dlo in ("DLO4", "DLO5")
+                  },
+              },
+              "strongest_supported_claim_level": level,
+              "strongest_bounded_claim_supported": strongest,
               "paper_claim_authorized": False,
+              "claim_boundary": (
+                  "Evidence synthesis only. A positive strongest flag supports a "
+                  "component of DLO3-fitted missing dynamics transferring unchanged "
+                  "across the exact DLO4/DLO5 operators and PyElastica while the "
+                  "frozen matching-object procedure replicates prospectively. It is "
+                  "not complete-twin zero-shot transfer, arbitrary-object or "
+                  "arbitrary-backend generalization, safety, or universal SOTA."
+              ),
           }
           (root / "combined_summary.json").write_text(
               json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n",
@@ -202,25 +295,34 @@ jobs:
           )
           print(json.dumps(summary, indent=2, sort_keys=True))
           PY
-          cat "$CROSS_BACKEND_OUT/evaluation/report.md" >> "$GITHUB_STEP_SUMMARY"
+          cat "$TRANSFER_OUT/cross-backend/report.md" >> "$GITHUB_STEP_SUMMARY"
+          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
+          cat "$TRANSFER_OUT/cross-object/report.md" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload combined DLO4/DLO5 and cross-backend evidence
+      - name: Upload hierarchical DLO4/DLO5 and no-refit transfer evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: deform-dlo3-cross-backend-post-dlo45-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform-dlo3-hierarchical-transfer-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ env.CROSS_BACKEND_OUT }}/blocking_run_binding.json
-            ${{ env.CROSS_BACKEND_OUT }}/deform_dlo45_result.json
-            ${{ env.CROSS_BACKEND_OUT }}/combined_summary.json
-            ${{ env.CROSS_BACKEND_OUT }}/SHA256SUMS
-            ${{ env.CROSS_BACKEND_OUT }}/evaluation.log
-            ${{ env.CROSS_BACKEND_OUT }}/evaluation/preflight.json
-            ${{ env.CROSS_BACKEND_OUT }}/evaluation/method_seal.json
-            ${{ env.CROSS_BACKEND_OUT }}/evaluation/result.json
-            ${{ env.CROSS_BACKEND_OUT }}/evaluation/report.md
-            ${{ env.CROSS_BACKEND_OUT }}/evaluation/trajectory-results.csv
-            ${{ env.PROTOCOL }}
+            ${{ env.TRANSFER_OUT }}/blocking_run_binding.json
+            ${{ env.TRANSFER_OUT }}/deform_dlo45_result.json
+            ${{ env.TRANSFER_OUT }}/combined_summary.json
+            ${{ env.TRANSFER_OUT }}/SHA256SUMS
+            ${{ env.TRANSFER_OUT }}/cross-backend.log
+            ${{ env.TRANSFER_OUT }}/cross-backend/preflight.json
+            ${{ env.TRANSFER_OUT }}/cross-backend/method_seal.json
+            ${{ env.TRANSFER_OUT }}/cross-backend/result.json
+            ${{ env.TRANSFER_OUT }}/cross-backend/report.md
+            ${{ env.TRANSFER_OUT }}/cross-backend/trajectory-results.csv
+            ${{ env.TRANSFER_OUT }}/cross-object.log
+            ${{ env.TRANSFER_OUT }}/cross-object/preflight.json
+            ${{ env.TRANSFER_OUT }}/cross-object/method_seal.json
+            ${{ env.TRANSFER_OUT }}/cross-object/result.json
+            ${{ env.TRANSFER_OUT }}/cross-object/report.md
+            ${{ env.TRANSFER_OUT }}/cross-object/trajectory-results.csv
+            ${{ env.CROSS_BACKEND_PROTOCOL }}
+            ${{ env.CROSS_OBJECT_PROTOCOL }}
           retention-days: 90
           if-no-files-found: warn
 
@@ -229,4 +331,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -z "${CROSS_BACKEND_OUT:-}" || chmod -R u+rwX,go-rwx "$CROSS_BACKEND_OUT"
+          test -z "${TRANSFER_OUT:-}" || chmod -R u+rwX,go-rwx "$TRANSFER_OUT"
