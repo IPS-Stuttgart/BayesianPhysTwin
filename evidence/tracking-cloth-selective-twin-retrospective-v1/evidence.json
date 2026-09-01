@@ -1,0 +1,153 @@
+{
+  "accepted_contexts": [
+    {
+      "accepted_practical_harm_fraction": 0.0625,
+      "always_candidate_minus_fallback_mm": -23.42946174497751,
+      "horizon_seconds": 2.0,
+      "motion": "shake",
+      "query": "free_marker_centroid",
+      "selected_coverage": 1.0,
+      "selected_minus_fallback_mm": -23.42946174497751
+    },
+    {
+      "accepted_practical_harm_fraction": 0.0,
+      "always_candidate_minus_fallback_mm": -27.970399803336683,
+      "horizon_seconds": 5.0,
+      "motion": "shake",
+      "query": "free_marker_centroid",
+      "selected_coverage": 1.0,
+      "selected_minus_fallback_mm": -27.970399803336683
+    },
+    {
+      "accepted_practical_harm_fraction": 0.0625,
+      "always_candidate_minus_fallback_mm": -20.645046266692272,
+      "horizon_seconds": 2.0,
+      "motion": "shake",
+      "query": "free_marker_shape",
+      "selected_coverage": 1.0,
+      "selected_minus_fallback_mm": -20.645046266692272
+    },
+    {
+      "accepted_practical_harm_fraction": 0.0,
+      "always_candidate_minus_fallback_mm": -23.764336849219895,
+      "horizon_seconds": 5.0,
+      "motion": "shake",
+      "query": "free_marker_shape",
+      "selected_coverage": 1.0,
+      "selected_minus_fallback_mm": -23.764336849219895
+    }
+  ],
+  "always_candidate": {
+    "accepted_practical_harm_fraction": 0.56171875,
+    "accepted_strict_regression_fraction": 0.85234375,
+    "equal_material_selected_minus_fallback_mm": 26.01420678924082,
+    "heldout_materials_negative": 0,
+    "material_bootstrap_95_interval_mm": [
+      24.241491626187482,
+      28.295983331553977
+    ],
+    "selected_coverage": 1.0,
+    "selected_minus_fallback_mm": 26.014206789240813
+  },
+  "claim_boundary": "Retrospective cross-material feasibility evidence on the already-open public Tracking Cloth free-hanging factorial. It can show whether action/query/horizon context identifies useful reduced-physics predictions, but cannot establish fresh physical confirmation, deployment safety, calibrated joint uncertainty, unseen-action transfer, or state of the art.",
+  "classification": "bounded-positive-selectivity-with-preregistered-coverage-shortfall",
+  "criteria": {
+    "all_heldout_material_mean_regrets_nonpositive": true,
+    "lower_practical_harm_rate_than_always_candidate": true,
+    "minimum_selected_coverage": false,
+    "negative_equal_material_regret": true,
+    "negative_material_bootstrap_upper_95": true,
+    "zero_exact_fallback_violations": true
+  },
+  "dataset": {
+    "archive_byte_count": 27377271,
+    "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+    "archive_sha256": "14916efa89a26d991c024024cc9449397d3a6f654311e621bb91e9602e231e1a",
+    "free_hanging_recordings": 64,
+    "inventory_id": "b80986ea8af92b47bc8d3737eff5f2c796f292853746836e04ae1f8727feca91",
+    "record": "14644526",
+    "source_shake_recordings": 32,
+    "target_twist_recordings": 32,
+    "unused_interaction_recordings": 56
+  },
+  "information_boundary": {
+    "fresh_confirmation": false,
+    "future_driven_corner_trajectories_used_by_simulator": true,
+    "future_free_marker_outcomes_used_as_gate_features": false,
+    "heldout_material_outcomes_used_to_fit_its_gate": false,
+    "paper_claim_authorized": false,
+    "raw_trajectory_upload": false,
+    "same_specimen_shaking_outcomes_used_to_fit_twist_simulator_weights": true
+  },
+  "oracle": {
+    "accepted_query_cases": 189,
+    "heldout_materials_negative": 4,
+    "material_bootstrap_95_interval_mm": [
+      -4.619854767730805,
+      -2.6321172277888834
+    ],
+    "selected_coverage": 0.14765625,
+    "selected_minus_fallback_mm": -3.6259859977598436
+  },
+  "primary_policy": {
+    "accepted_practical_harm_fraction": 0.03125,
+    "accepted_query_cases": 128,
+    "accepted_strict_regression_fraction": 0.0859375,
+    "beneficial_case_recall": 0.6190476190476191,
+    "beneficial_precision_among_accepted": 0.9140625,
+    "candidate_minus_last_residual_on_accepted_mm": 1.1862319892980557,
+    "candidate_minus_map_on_accepted_mm": -2.625155078083762,
+    "equal_material_fallback_loss_mm": 29.66246287741667,
+    "equal_material_selected_loss_mm": 27.26723176081101,
+    "equal_material_selected_minus_fallback_mm": -2.395231116605659,
+    "exact_fallback_violations": 0,
+    "heldout_materials_negative": 4,
+    "heldout_materials_nonpositive": 4,
+    "material_bootstrap_95_interval_mm": [
+      -3.1056280393950626,
+      -1.6848341938162554
+    ],
+    "material_results": [
+      {
+        "coverage": 0.1,
+        "material": "cotton",
+        "selected_minus_fallback_mm": -1.8801330767173643
+      },
+      {
+        "coverage": 0.1,
+        "material": "denim",
+        "selected_minus_fallback_mm": -3.064673926844588
+      },
+      {
+        "coverage": 0.1,
+        "material": "polyester",
+        "selected_minus_fallback_mm": -3.1465821519455375
+      },
+      {
+        "coverage": 0.1,
+        "material": "wool",
+        "selected_minus_fallback_mm": -1.4895353109151468
+      }
+    ],
+    "oracle_accepted_case_capture": 0.6772486772486772,
+    "oracle_value_capture": 0.6605737358294951,
+    "query_cases": 1280,
+    "relative_loss_reduction_vs_fallback": 0.08074956980154381,
+    "selected_coverage": 0.1,
+    "selected_minus_fallback_mm": -2.3952311166056592
+  },
+  "registered_decision": "retrospective-mixed-or-negative",
+  "result_id": "25ab847afd8e4a90eef19c2a48cd4c257fe6bf88f6159f617ed5119fec7fa26f",
+  "result_json_sha256": "4964ce1818046db979dc844d767038a07741306c99dfe2011b5508091e53a380",
+  "schema": "bayesian-phystwin.tracking-cloth-selective-twin-evidence.v1",
+  "schema_version": 1,
+  "workflow": {
+    "artifact_id": "9804820476",
+    "artifact_name": "tracking-cloth-selective-twin-hosted-zenodo-v1-33518742754-1",
+    "artifact_sha256": "347d113c03768bbab6de3ca13cf1ee6a09e1cb2d1829e05c89d2a2f2faa90881",
+    "head_sha": "46c67d78ce98de3a67bc0751c22dc0c36a83b658",
+    "job_id": "99892372651",
+    "run_id": "33518742754",
+    "scientific_source_revision": "e9fd0fc35c534db867831c124b46e495e5eb3e57"
+  }
+}
