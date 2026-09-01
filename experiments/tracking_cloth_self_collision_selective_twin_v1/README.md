@@ -57,3 +57,7 @@ The workflow uses `[self-hosted, Linux, X64, gpuserver4090]`, uploads the source
 artifact, publishes the complete prediction seal before scoring, and never
 uploads the private prediction arrays or raw trajectories. A failed source gate
 prevents `rep3` numerical outcome access.
+
+The reviewed branch contains no temporary formatter or write-enabled workflow;
+formatting was applied in a separate self-removing branch operation before the
+final repository-wide validation run.
