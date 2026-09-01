@@ -15,10 +15,11 @@ import math
 import os
 import platform
 import sys
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 
