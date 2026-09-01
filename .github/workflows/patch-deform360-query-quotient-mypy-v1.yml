@@ -1,18 +1,18 @@
-name: Patch Deform360 query-quotient typing v1
+name: Patch Deform360 query-quotient typing v2
 
 on:
   push:
     branches:
       - experiment/deform360-query-quotient-real-v1
     paths:
-      - run_requests/patch-deform360-query-quotient-mypy-v1.json
+      - run_requests/patch-deform360-query-quotient-mypy-v2.json
 
 permissions:
   contents: write
   actions: write
 
 concurrency:
-  group: patch-deform360-query-quotient-mypy-v1
+  group: patch-deform360-query-quotient-mypy-v2
   cancel-in-progress: false
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
           PUSH_FORCED: ${{ github.event.forced }}
         run: |
           set -euo pipefail
-          request=run_requests/patch-deform360-query-quotient-mypy-v1.json
+          request=run_requests/patch-deform360-query-quotient-mypy-v2.json
           test "${PUSH_FORCED}" = false
           test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
           mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
@@ -51,40 +51,28 @@ jobs:
 
           path = Path("experiments/deform360_query_quotient_v1/run.py")
           text = path.read_text(encoding="utf-8")
-          old_threshold = '''    _require(
-              thresholds
-              and tuple(sorted(set(thresholds))) == thresholds
-              and all(np.isfinite(item) for item in thresholds),
-              "query thresholds must be finite, sorted, and unique",
-          )'''
-          new_threshold = '''    _require(
-              bool(thresholds)
-              and tuple(sorted(set(thresholds))) == thresholds
-              and all(np.isfinite(item) for item in thresholds),
-              "query thresholds must be finite, sorted, and unique",
-          )'''
-          old_validation = '''    boundary = result.get("information_boundary")
-          _require(isinstance(boundary, Mapping), "result boundary is missing")
-          _require(boundary.get("source_only") is True, "result is not source-only")
-          for key in (
-              "forbidden_episode_payloads_opened",
-              "official_velocity_arrays_used",
-              "dataset_modified",
-              "raw_payload_uploaded",
-              "fresh_confirmation_authorized",
-              "paper_claim_authorized",
-          ):
-              _require(boundary.get(key) is False, f"closed result boundary widened: {key}")
-          summary = result.get("summary")
-          _require(isinstance(summary, Mapping), "result summary is missing")
-          _require(summary.get("episode_count") >= 3, "too few source episodes")
-          _require(summary.get("reset_count") >= summary["episode_count"], "too few resets")
-          _require(
-              abs(float(summary.get("jeffrey_unsupported_specificity_nats", math.nan)))
-              <= 1e-10,
-              "Jeffrey lift added unsupported specificity",
-          )'''
-          new_validation = '''    boundary_value = result.get("information_boundary")
+          threshold_old = (
+              '        thresholds\n'
+              '        and tuple(sorted(set(thresholds))) == thresholds\n'
+          )
+          threshold_new = (
+              '        bool(thresholds)\n'
+              '        and tuple(sorted(set(thresholds))) == thresholds\n'
+          )
+          if threshold_old not in text:
+              raise SystemExit("threshold expression not found")
+          text = text.replace(threshold_old, threshold_new, 1)
+
+          function_start = text.index("def validate_result(")
+          start = text.index(
+              '    boundary = result.get("information_boundary")', function_start
+          )
+          end = text.index(
+              '    _require(\n'
+              '        result.get("paper_claim_authorized") is False,',
+              start,
+          )
+          replacement = '''    boundary_value = result.get("information_boundary")
           if not isinstance(boundary_value, Mapping):
               raise ValueError("result boundary is missing")
           boundary = boundary_value
@@ -114,17 +102,10 @@ jobs:
               abs(float(summary.get("jeffrey_unsupported_specificity_nats", math.nan)))
               <= 1e-10,
               "Jeffrey lift added unsupported specificity",
-          )'''
-          if old_threshold not in text:
-              raise SystemExit("threshold validation block not found")
-          if old_validation not in text:
-              raise SystemExit("result validation block not found")
-          path.write_text(
-              text.replace(old_threshold, new_threshold).replace(
-                  old_validation, new_validation
-              ),
-              encoding="utf-8",
           )
+'''
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding="utf-8")
           PY
 
       - name: Validate, commit, and dispatch the repaired pilot
