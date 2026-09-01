@@ -7,7 +7,7 @@ on:
     branches:
       - science/deform360-same-mean-query-covariance-v6
     paths:
-      - .github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json
+      - .github/requests/deform360-same-mean-query-covariance-v6-repair-v3.json
 
 permissions:
   contents: write
@@ -41,7 +41,7 @@ jobs:
           test "${{ github.event.before }}" != 0000000000000000000000000000000000000000
           mapfile -t changed < <(git diff --name-status "${{ github.event.before }}" "$GITHUB_SHA")
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\t.github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json'
+          test "${changed[0]}" = $'A\t.github/requests/deform360-same-mean-query-covariance-v6-repair-v3.json'
           python - <<'PY'
           import json
           import subprocess
@@ -49,30 +49,31 @@ jobs:
 
           request = json.loads(
               Path(
-                  ".github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json"
+                  ".github/requests/deform360-same-mean-query-covariance-v6-repair-v3.json"
               ).read_text()
           )
           parent = subprocess.check_output(
               ["git", "rev-parse", "HEAD^"], text=True
           ).strip()
           expected = {
-              "schema": "deform360-same-mean-query-covariance-repair-v2",
+              "schema": "deform360-same-mean-query-covariance-repair-v3",
               "target_branch": "science/deform360-same-mean-query-covariance-v6",
-              "failed_run_id": 33497676295,
-              "repair": "ruff-fix-imports-and-launch",
+              "failed_run_id": 33497800711,
+              "repair": "ruff-fix-format-and-launch",
               "expected_source_revision": parent,
           }
           if request != expected:
               raise SystemExit("repair request differs from its frozen parent-bound schema")
           PY
 
-      - name: Apply exact Ruff import repair and validate
+      - name: Apply exact Ruff repair and validate
         shell: bash
         run: |
           set -euo pipefail
           script=scripts/science/run_deform360_same_mean_query_covariance_v6.py
           python -m pip install numpy==1.26.4 ruff==0.14.14
           python -m ruff check --fix "$script"
+          python -m ruff format "$script"
           python -m ruff check "$script"
           python -m ruff format --check "$script"
           python "$script" --self-test
@@ -98,14 +99,16 @@ jobs:
           rm -f \
             .github/workflows/deform360-same-mean-query-covariance-v6-repair.yml \
             .github/requests/deform360-same-mean-query-covariance-v6-repair.json \
-            .github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json
+            .github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json \
+            .github/requests/deform360-same-mean-query-covariance-v6-repair-v3.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             scripts/science/run_deform360_same_mean_query_covariance_v6.py \
             .github/workflows/deform360-same-mean-query-covariance-v6-repair.yml \
             .github/requests/deform360-same-mean-query-covariance-v6-repair.json \
-            .github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json
+            .github/requests/deform360-same-mean-query-covariance-v6-repair-v2.json \
+            .github/requests/deform360-same-mean-query-covariance-v6-repair-v3.json
           git commit -m "Fix same-mean covariance contract gate"
           git push origin HEAD:science/deform360-same-mean-query-covariance-v6
           echo "source_revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
