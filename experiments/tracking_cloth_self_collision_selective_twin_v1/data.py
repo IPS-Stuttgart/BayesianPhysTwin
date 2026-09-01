@@ -8,9 +8,10 @@ import itertools
 import json
 import re
 import zipfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 
@@ -261,14 +262,10 @@ def _positions(cells: list[str], indices: np.ndarray) -> np.ndarray:
 
 
 def _scale_for_a2(points: np.ndarray) -> float:
-    diameter = float(
-        np.max(np.linalg.norm(points[:, None] - points[None, :], axis=2))
-    )
+    diameter = float(np.max(np.linalg.norm(points[:, None] - points[None, :], axis=2)))
     nominal = float(np.hypot(0.42, 0.594))
     candidates = [
-        scale
-        for scale in (1.0, 0.01, 0.001)
-        if 0.35 < diameter * scale / nominal < 1.8
+        scale for scale in (1.0, 0.01, 0.001) if 0.35 < diameter * scale / nominal < 1.8
     ]
     if len(candidates) != 1:
         raise ValueError("ambiguous A2 coordinate scale")
@@ -448,9 +445,7 @@ def prediction_input(case: Case, protocol: dict[str, Any]) -> InputView:
         raise ValueError("rod endpoint pair is not length-stable in the prefix")
     initial_diameter = float(
         np.max(
-            np.linalg.norm(
-                cloth_array[0, :, None] - cloth_array[0, None, :], axis=2
-            )
+            np.linalg.norm(cloth_array[0, :, None] - cloth_array[0, None, :], axis=2)
         )
     )
     return InputView(

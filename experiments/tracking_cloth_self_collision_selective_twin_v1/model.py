@@ -32,7 +32,7 @@ class PhysicsFit:
         }
 
     @classmethod
-    def from_record(cls, value: dict[str, Any]) -> "PhysicsFit":
+    def from_record(cls, value: dict[str, Any]) -> PhysicsFit:
         parameters = tuple(tuple(float(x) for x in row) for row in value["parameters"])
         weights = np.asarray(value["weights"], dtype=float)
         losses = np.asarray(value["losses_m2"], dtype=float)
@@ -160,11 +160,13 @@ def rod_forecast(inputs: InputView, protocol: dict[str, Any]) -> np.ndarray:
         if np.dot(directions[index], directions[index - 1]) < 0:
             directions[index] *= -1
     window = _window(prefix_times, float(protocol["rod_velocity_window_seconds"]))
-    center_velocity = _linear_velocity(prefix_times[window], centers[window, None, :])[0]
+    center_velocity = _linear_velocity(prefix_times[window], centers[window, None, :])[
+        0
+    ]
     centered_t = prefix_times[window] - prefix_times[window].mean()
-    direction_velocity = np.einsum(
-        "t,td->d", centered_t, directions[window]
-    ) / np.dot(centered_t, centered_t)
+    direction_velocity = np.einsum("t,td->d", centered_t, directions[window]) / np.dot(
+        centered_t, centered_t
+    )
     center0 = centers[-1]
     direction0 = directions[-1]
     length = float(np.median(lengths))
