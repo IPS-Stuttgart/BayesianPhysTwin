@@ -17,13 +17,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMPLEMENTATION_SHA: f0c0a76d744925d566969c7a416aa9248db61ac6
+  IMPLEMENTATION_SHA: 0cf91271366fc7588ad5e29fb1cdaa3f4b17fc7b
   BLOCKING_RUN_ID: "33361441865"
   BLOCKING_HEAD_SHA: 0376ece871d7c3d9355788f812a3c4cc1c9165b0
   BLOCKING_HEAD_BRANCH: science/deform-dlo45-time-budget-recovery-v3
   BLOCKING_RUN_ROOT: /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
   FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
   TRANSFER_ROOT: /home/github-runner/.cache/workflows/deform-dlo3-hierarchical-transfers-v1
+  SOURCE_META_PROTOCOL: protocols/deform_dlo45_source_meta_v1.json
   CROSS_BACKEND_PROTOCOL: protocols/deform_dlo3_cross_backend_transfer_v1.json
   CROSS_BACKEND_SCALAR_PROTOCOL: protocols/deform_dlo3_cross_backend_scalar_v1.json
   CROSS_OBJECT_PROTOCOL: protocols/deform_dlo3_to_dlo45_no_refit_v1.json
@@ -54,22 +55,26 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Revalidate all frozen transfer contracts
+      - name: Revalidate all frozen source and transfer contracts
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install -e . pytest ruff
           python -m pytest -q \
+            tests/test_deform_dlo45_source_meta_v1.py \
             tests/test_deform_dlo3_cross_backend_transfer_v1.py \
             tests/test_deform_dlo3_cross_backend_scalar_v1.py \
             tests/test_deform_dlo3_to_dlo45_no_refit_v1.py
           files=(
+            scripts/science/summarize_deform_dlo45_source_meta_v1.py
             scripts/remote/run_deform_dlo3_cross_backend_transfer_v1.py
             scripts/remote/run_deform_dlo3_cross_backend_scalar_v1.py
             scripts/remote/run_deform_dlo3_to_dlo45_no_refit_v1.py
+            src/bayesian_phystwin_experiments/deform_dlo45_source_meta_v1.py
             src/bayesian_phystwin_experiments/deform_dlo_cross_backend_transfer_v1.py
             src/bayesian_phystwin_experiments/deform_dlo_cross_backend_scalar_v1.py
             src/bayesian_phystwin_experiments/deform_dlo_cross_object_transfer_v1.py
+            tests/test_deform_dlo45_source_meta_v1.py
             tests/test_deform_dlo3_cross_backend_transfer_v1.py
             tests/test_deform_dlo3_cross_backend_scalar_v1.py
             tests/test_deform_dlo3_to_dlo45_no_refit_v1.py
@@ -104,8 +109,11 @@ jobs:
           test "${{ github.event.workflow_run.head_branch }}" = "$BLOCKING_HEAD_BRANCH"
           test "$BLOCKING_CONCLUSION" = success
           test -x "$FROZEN_PYTHON"
+          test -f "$BLOCKING_RUN_ROOT/dlo4-source/source_result.json"
+          test -f "$BLOCKING_RUN_ROOT/dlo5-source/source_result.json"
           test -f "$BLOCKING_RUN_ROOT/score/result.json"
           test -f "$BLOCKING_RUN_ROOT/joint/joint_prediction_seal.json"
+          test -f "$SOURCE_META_PROTOCOL"
           test -f "$CROSS_BACKEND_PROTOCOL"
           test -f "$CROSS_BACKEND_SCALAR_PROTOCOL"
           test -f "$CROSS_OBJECT_PROTOCOL"
@@ -146,6 +154,18 @@ jobs:
               encoding="utf-8",
           )
           PY
+
+      - name: Synthesize joint pre-target DLO4/DLO5 source replication
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" \
+            scripts/science/summarize_deform_dlo45_source_meta_v1.py \
+            --protocol "$SOURCE_META_PROTOCOL" \
+            --dlo4-source-result "$BLOCKING_RUN_ROOT/dlo4-source/source_result.json" \
+            --dlo5-source-result "$BLOCKING_RUN_ROOT/dlo5-source/source_result.json" \
+            --output-root "$TRANSFER_OUT/source-meta" \
+            | tee "$TRANSFER_OUT/source-meta.log"
 
       - name: Execute exact DEFORM-to-PyElastica coefficient transfer
         shell: bash
@@ -192,6 +212,9 @@ jobs:
           from pathlib import Path
 
           root = Path(os.environ["TRANSFER_OUT"])
+          source_meta = json.loads(
+              (root / "source-meta" / "result.json").read_text(encoding="utf-8")
+          )
           dlo45 = json.loads(
               (root / "deform_dlo45_result.json").read_text(encoding="utf-8")
           )
@@ -206,6 +229,18 @@ jobs:
           cross_object = json.loads(
               (root / "cross-object" / "result.json").read_text(encoding="utf-8")
           )
+
+          if source_meta["contract"] != "deform-dlo45-source-meta-analysis-result-v1":
+              raise SystemExit("source meta-analysis contract changed")
+          source_boundary = source_meta["information_boundary"]
+          if source_boundary["target_scores_used"]:
+              raise SystemExit("source meta-analysis used a target score")
+          if not source_boundary["meta_analysis_frozen_before_target_outcome"]:
+              raise SystemExit("source meta-analysis was not frozen before target outcome")
+          if source_meta["pooled_equal_trajectory"]["case_count"] != 16:
+              raise SystemExit("source meta-analysis did not retain all 16 trajectories")
+          if not source_meta["both_original_source_gates_passed"]:
+              raise SystemExit("source meta-analysis contradicts target authorization")
 
           backend_boundary = backend["information_boundary"]
           if backend_boundary["dlo3_official_evaluation_read"]:
@@ -272,11 +307,84 @@ jobs:
           else:
               level = "source-qualified-method-without-two-dlo-target-replication"
 
+          source_point = source_meta["pooled_equal_trajectory"]
+          source_interval = source_meta["dlo_stratified_bootstrap"][
+              "relative_improvement_95_interval"
+          ]
+          source_sentence = (
+              "Before target access, the frozen procedure improved "
+              f"{source_point['wins']}/{source_point['case_count']} complete "
+              "source-test trajectories across DLO4 and DLO5, reducing mean "
+              f"coordinate L1 by {100.0 * source_point['relative_improvement']:.2f}% "
+              "(DLO-stratified 95% bootstrap "
+              f"{100.0 * source_interval[0]:.2f}-"
+              f"{100.0 * source_interval[1]:.2f}%)."
+          )
+          if strongest:
+              target_sentence = (
+                  "On the prospectively sealed targets, the matching-object "
+                  "procedure replicated on both DLO4 and DLO5, and unchanged "
+                  "DLO3 residual coefficients transferred across both fresh DLO "
+                  "operators and PyElastica without target-side coefficient refitting."
+              )
+          elif geometry_tier:
+              target_sentence = (
+                  "On the prospectively sealed targets, the matching-object "
+                  "procedure replicated on both DLO4 and DLO5 and unchanged DLO3 "
+                  "coefficients transferred to both operators; across PyElastica, "
+                  "the correction retained shared residual direction after only one "
+                  "leave-one-trajectory-out source scalar."
+              )
+          elif procedure_supported and object_exact_supported:
+              target_sentence = (
+                  "On the prospectively sealed targets, the matching-object "
+                  "procedure replicated and unchanged DLO3 coefficients transferred "
+                  "to both DLO4 and DLO5, but exact PyElastica transfer was not established."
+              )
+          elif procedure_supported and backend_exact_supported:
+              target_sentence = (
+                  "The matching-object procedure replicated on both prospective DLO "
+                  "targets and exact DLO3 coefficients transferred to PyElastica, but "
+                  "the two fresh DLO operators did not jointly pass the no-refit "
+                  "coefficient-transfer gate."
+              )
+          elif procedure_supported and backend_geometry_supported:
+              target_sentence = (
+                  "The matching-object procedure replicated on both prospective DLO "
+                  "targets and the DLO3 correction retained shared direction across "
+                  "PyElastica, but exact transfer to both fresh DLO operators was not established."
+              )
+          elif procedure_supported:
+              target_sentence = (
+                  "The frozen matching-object procedure replicated on both prospective "
+                  "DLO targets; no coefficient-transfer tier was established."
+              )
+          else:
+              target_sentence = (
+                  "The prospective two-DLO target replication gate did not pass, so "
+                  "only the bounded source-side statement is supported."
+              )
+          bounded_claim_text = f"{source_sentence} {target_sentence}"
+
           summary = {
-              "schema_version": 2,
-              "contract": "deform-dlo3-hierarchical-transfer-evidence-v2",
+              "schema_version": 3,
+              "contract": "deform-dlo3-hierarchical-transfer-evidence-v3",
               "implementation_sha": os.environ["IMPLEMENTATION_SHA"],
               "blocking_run_id": int(os.environ["BLOCKING_RUN_ID"]),
+              "pre_target_source_replication": {
+                  "decision": source_meta["decision"],
+                  "both_original_source_gates_passed": source_meta[
+                      "both_original_source_gates_passed"
+                  ],
+                  "pooled_equal_trajectory": source_point,
+                  "dlo_stratified_bootstrap": source_meta[
+                      "dlo_stratified_bootstrap"
+                  ],
+                  "pooled_free_node": source_meta["pooled_free_node"],
+                  "source_uncertainty_diagnostic": source_meta[
+                      "source_uncertainty_diagnostic"
+                  ],
+              },
               "prospective_dlo45": {
                   "decision": dlo45["decision"],
                   "both_primary_gates_passed": procedure_supported,
@@ -343,11 +451,15 @@ jobs:
               "strongest_supported_claim_level": level,
               "strongest_exact_bounded_claim_supported": strongest,
               "shared_geometry_fallback_claim_supported": geometry_tier,
+              "bounded_claim_text": bounded_claim_text,
+              "claim_ready_for_manual_authorization": procedure_supported,
               "paper_claim_authorized": False,
               "claim_boundary": (
-                  "Evidence synthesis only. Exact support requires prospective "
-                  "matching-object procedure replication plus unchanged DLO3 "
-                  "coefficient transfer across both fresh DLO operators and "
+                  "Evidence synthesis only. The 16-trajectory source aggregation "
+                  "was frozen after source outcomes but before target outcomes and "
+                  "does not increase target independence. Exact support requires "
+                  "prospective matching-object procedure replication plus unchanged "
+                  "DLO3 coefficient transfer across both fresh DLO operators and "
                   "PyElastica. The scalar fallback supports only shared residual "
                   "geometry with one-dimensional source-fold amplitude calibration. "
                   "Neither result is complete-twin zero-shot transfer, arbitrary-"
@@ -371,6 +483,8 @@ jobs:
           )
           print(json.dumps(summary, indent=2, sort_keys=True))
           PY
+          cat "$TRANSFER_OUT/source-meta/report.md" >> "$GITHUB_STEP_SUMMARY"
+          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
           cat "$TRANSFER_OUT/cross-backend/report.md" >> "$GITHUB_STEP_SUMMARY"
           printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
           cat "$TRANSFER_OUT/cross-backend-scalar/report.md" >> "$GITHUB_STEP_SUMMARY"
@@ -387,6 +501,11 @@ jobs:
             ${{ env.TRANSFER_OUT }}/deform_dlo45_result.json
             ${{ env.TRANSFER_OUT }}/combined_summary.json
             ${{ env.TRANSFER_OUT }}/SHA256SUMS
+            ${{ env.TRANSFER_OUT }}/source-meta.log
+            ${{ env.TRANSFER_OUT }}/source-meta/method_seal.json
+            ${{ env.TRANSFER_OUT }}/source-meta/result.json
+            ${{ env.TRANSFER_OUT }}/source-meta/report.md
+            ${{ env.TRANSFER_OUT }}/source-meta/trajectory-results.csv
             ${{ env.TRANSFER_OUT }}/cross-backend.log
             ${{ env.TRANSFER_OUT }}/cross-backend/preflight.json
             ${{ env.TRANSFER_OUT }}/cross-backend/method_seal.json
@@ -405,6 +524,7 @@ jobs:
             ${{ env.TRANSFER_OUT }}/cross-object/result.json
             ${{ env.TRANSFER_OUT }}/cross-object/report.md
             ${{ env.TRANSFER_OUT }}/cross-object/trajectory-results.csv
+            ${{ env.SOURCE_META_PROTOCOL }}
             ${{ env.CROSS_BACKEND_PROTOCOL }}
             ${{ env.CROSS_BACKEND_SCALAR_PROTOCOL }}
             ${{ env.CROSS_OBJECT_PROTOCOL }}
