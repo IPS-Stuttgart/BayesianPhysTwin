@@ -31,6 +31,14 @@ ATTEMPT = Path(
     "/home/florianpfaff/source-only/dlolab-query-portfolio-replication-v1/"
     "slingshot.attempt.json"
 )
+PARENT_ROOT = Path(
+    "/home/florianpfaff/source-only/dlolab-query-portfolio-replication-v1/"
+    "frozen-parent"
+)
+POLICY_V1_ROOT = Path(
+    "/home/florianpfaff/source-only/dlolab-query-portfolio-replication-v1/"
+    "frozen-policy-v1"
+)
 
 
 def _configure_methods() -> None:
@@ -56,6 +64,8 @@ def _load_runner() -> Any:
     wrapper.runner.OUTPUT_ROOT = OUTPUT
     wrapper.runner.ATTEMPT_LEDGER = ATTEMPT
     wrapper.runner.WORKER_RUNNER_PATH = Path(__file__).resolve()
+    wrapper.runner.V2_RUNNER.PARENT_ROOT = PARENT_ROOT
+    wrapper.runner.V2_RUNNER.POLICY_V1_ROOT = POLICY_V1_ROOT
     extra = (
         "src/bayesian_phystwin/query_portfolio_replication_v1.py",
         "scripts/remote/run_dlolab_slingshot_portfolio_replication_v1.py",

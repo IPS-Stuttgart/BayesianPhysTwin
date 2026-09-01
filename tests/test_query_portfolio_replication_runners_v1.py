@@ -38,3 +38,5 @@ def test_slingshot_wrapper_keeps_disjoint_calibration_and_self_workers() -> None
     assert wrapper.method.COUNTS == {"calibration": 128, "evaluation": WORLD_COUNT}
     assert wrapper.runner.WORKER_RUNNER_PATH == Path(module.__file__).resolve()
     assert wrapper.runner.OUTPUT_ROOT == module.OUTPUT
+    assert wrapper.runner.V2_RUNNER.PARENT_ROOT == module.PARENT_ROOT
+    assert wrapper.runner.V2_RUNNER.POLICY_V1_ROOT == module.POLICY_V1_ROOT
