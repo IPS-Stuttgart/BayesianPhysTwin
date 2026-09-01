@@ -60,4 +60,5 @@ prevents `rep3` numerical outcome access.
 
 The reviewed branch contains no temporary formatter or write-enabled workflow;
 formatting was applied in a separate self-removing branch operation before the
-final repository-wide validation run.
+final repository-wide validation run. The confirmation request is intentionally
+absent from this method-review branch.
