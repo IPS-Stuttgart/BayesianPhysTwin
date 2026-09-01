@@ -1,0 +1,32 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-query-bound-carrier-recovery-request-v1",
+  "request_id": "deform360-dependence-query-v6-bound-carrier-recovery-20260901",
+  "failed_run_id": 33442211234,
+  "failed_job_id": 99652963980,
+  "failure_stage": "post-91-object-live-carrier-manifest-check",
+  "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+  "original_v6_runner_sha256": "06c22fc3fe667c4f2f11eddee3dcb1b78b5465b6312136efb010611e1ebab91c",
+  "parent_confirmation_run_id": 33335779766,
+  "parent_confirmation_artifact_id": 9738998271,
+  "parent_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+  "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "gpuserver4090"
+  ],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "repair_scope": "reconstruct exact descriptors from parent-bound per-episode sampled fingerprints and ignore only unbound live-tree additions",
+  "scientific_protocol_changed": false,
+  "point_predictor_changed": false,
+  "query_bank_or_covariance_arms_changed": false,
+  "calibration_decision_bootstrap_or_gates_changed": false,
+  "bound_files_must_match_parent_fingerprints": true,
+  "bound_actions_must_match_current_metadata": true,
+  "exact_parent_point_result_must_reproduce": true,
+  "unbound_numeric_payloads_may_open": false,
+  "retrospective_target_reuse": true,
+  "paper_claim_authorized": false,
+  "expected_source_revision": "9021ea35b97728b1fc094f6af538d3751c331cd9"
+}
