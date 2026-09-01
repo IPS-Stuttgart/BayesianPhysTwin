@@ -1,0 +1,100 @@
+{
+  "schema": "bayesian-phystwin.tracking-cloth-self-collision-selective-twin.v1",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-self-collision-selective-twin-fresh-rep3-v1",
+  "dataset_record": "14644526",
+  "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+  "archive_sha256": "14916efa89a26d991c024024cc9449397d3a6f654311e621bb91e9602e231e1a",
+  "expected_csv_count": 120,
+  "expected_self_collision_count": 36,
+  "materials": [
+    "cotton",
+    "denim",
+    "polyester",
+    "wool"
+  ],
+  "interactions": [
+    "four_corners_normal",
+    "four_corners_parallel",
+    "two_corners_normal"
+  ],
+  "fit_repetition": 1,
+  "selection_repetition": 2,
+  "confirmation_repetition": 3,
+  "outer_split": "leave-one-material-out",
+  "prefix_seconds": 0.5,
+  "forecast_seconds": 3.0,
+  "sample_stride": 4,
+  "initial_complete_frame_deadline_seconds": 0.25,
+  "short_velocity_window_seconds": 0.2,
+  "long_velocity_window_seconds": 0.5,
+  "residual_velocity_decay_seconds": 0.5,
+  "rod_velocity_window_seconds": 0.25,
+  "stiffness_per_mass": [
+    100.0,
+    400.0,
+    1600.0
+  ],
+  "damping_per_mass": [
+    0.5,
+    2.0,
+    8.0
+  ],
+  "self_collision_stiffness_per_mass": [
+    0.0,
+    200.0
+  ],
+  "nominal_parameters": [
+    400.0,
+    2.0,
+    200.0
+  ],
+  "integration_substeps": 8,
+  "gravity_m_s2": 9.80665,
+  "contact_radius_m": 0.008,
+  "rod_friction_rate": 2.0,
+  "self_collision_distance_m": 0.035,
+  "measurement_floor_m": 0.001,
+  "queries": [
+    "cloth_shape",
+    "cloth_centroid",
+    "central_patch_centroid",
+    "shape_radius"
+  ],
+  "horizons_seconds": [
+    0.5,
+    1.0,
+    2.0,
+    3.0
+  ],
+  "primary_gate": {
+    "minimum_relative_gain": 0.01,
+    "maximum_training_practical_harm_fraction": 0.1,
+    "minimum_source_incremental_relative_gain": 0.005
+  },
+  "practical_harm_fraction_of_initial_diameter": 0.025,
+  "source_gate": {
+    "minimum_physics_coverage": 0.05,
+    "minimum_incremental_relative_gain": 0.005,
+    "maximum_physics_practical_harm_fraction": 0.1
+  },
+  "confirmation_gate": {
+    "minimum_physics_coverage": 0.05,
+    "minimum_incremental_relative_gain": 0.005,
+    "maximum_physics_practical_harm_fraction": 0.1
+  },
+  "bootstrap_repetitions": 20000,
+  "bootstrap_seed": 14644529,
+  "information_boundary": {
+    "rep1_numeric_outcomes_may_fit_model": true,
+    "rep2_numeric_outcomes_may_select_policy": true,
+    "rep3_numeric_outcomes_may_not_be_read_before_joint_prediction_seal": true,
+    "rep3_future_timestamps_may_define_prediction_grid": true,
+    "rep3_future_cloth_or_rod_coordinates_used_for_prediction": false,
+    "raw_trajectory_upload": false,
+    "fresh_confirmation": true,
+    "paper_claim_authorized": false,
+    "public_rep3_human_prior_exposure_cannot_be_excluded": true
+  },
+  "claim_boundary": "Fresh-within-process public real-data repetition-level confirmation on the twelve Tracking Cloth self-collision rep3 recordings. Rep1 fits one exact reduced contact simulator bank, rep2 freezes a leave-one-material-out query/interaction/horizon handoff, and all rep3 predictions are jointly sealed before any rep3 future cloth outcome is numerically read. The public availability of the data means prior human inspection outside this registered process cannot be excluded. The result does not establish online robot execution, high-fidelity cloth contact, unseen-material or unseen-interaction transfer, universal simulator validity, deployment safety, calibrated joint trajectory uncertainty, or state of the art."
+}
