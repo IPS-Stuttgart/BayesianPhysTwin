@@ -5,15 +5,18 @@ from pathlib import Path
 
 import numpy as np
 
-from experiments.tracking_cloth_selective_router_v2 import run
+from experiments.tracking_cloth_selective_router_v2.ridge import (
+    fit_ridge,
+    predict_ridge,
+)
+from experiments.tracking_cloth_selective_router_v2.selection import (
+    apply_fold_choices,
+    nested_policy,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = (
-    ROOT / "experiments/tracking_cloth_selective_router_v2/protocol.json"
-)
-WORKFLOW = (
-    ROOT / ".github/workflows/tracking-cloth-selective-router-v2.yml"
-)
+PROTOCOL = ROOT / "experiments/tracking_cloth_selective_router_v2/protocol.json"
+WORKFLOW = ROOT / ".github/workflows/tracking-cloth-selective-router-v2.yml"
 
 
 def _row(
@@ -99,8 +102,8 @@ def _protocol() -> dict[str, object]:
 
 def test_numpy_ridge_predicts_context_regret_signs() -> None:
     rows = _rows()
-    state = run.fit_ridge(rows, alpha=0.1)
-    prediction = run.predict_ridge(state, rows)
+    state = fit_ridge(rows, alpha=0.1)
+    prediction = predict_ridge(state, rows)
 
     beneficial = np.asarray(
         [row["motion_query_horizon"].endswith("|5") for row in rows]
@@ -111,7 +114,7 @@ def test_numpy_ridge_predicts_context_regret_signs() -> None:
 
 def test_nested_router_uses_exact_outer_material_exclusion() -> None:
     rows = _rows()
-    routed, choices = run.nested_policy(
+    routed, choices = nested_policy(
         rows,
         ("bayesian_physics", "last_residual"),
         _protocol(),
@@ -120,9 +123,7 @@ def test_nested_router_uses_exact_outer_material_exclusion() -> None:
 
     assert len(choices) == 4
     assert all(choice.inner_feasible for choice in choices)
-    assert all(
-        row["outer_heldout_material"] == row["material"] for row in routed
-    )
+    assert all(row["outer_heldout_material"] == row["material"] for row in routed)
     assert all(
         row["selected_arm"] != "persistence"
         for row in routed
@@ -138,13 +139,13 @@ def test_nested_router_uses_exact_outer_material_exclusion() -> None:
 
 def test_drop_one_expert_reuses_primary_fold_choices() -> None:
     rows = _rows()
-    primary, choices = run.nested_policy(
+    primary, choices = nested_policy(
         rows,
         ("bayesian_physics", "last_residual"),
         _protocol(),
         policy="nested_triage",
     )
-    dropped = run.apply_fold_choices(
+    dropped = apply_fold_choices(
         rows,
         choices,
         ("bayesian_physics",),
@@ -181,10 +182,7 @@ def test_protocol_preserves_retrospective_boundary() -> None:
         "last_residual",
     ]
     assert protocol["information_boundary"]["fresh_confirmation"] is False
-    assert (
-        protocol["information_boundary"]["retrospective_model_development"]
-        is True
-    )
+    assert protocol["information_boundary"]["retrospective_model_development"] is True
     assert protocol["information_boundary"]["paper_claim_authorized"] is False
 
 
@@ -195,9 +193,6 @@ def test_workflow_is_hash_bound_hosted_execution() -> None:
     assert "tracking-cloth-selective-router-v2.json" in text
     assert "zenodo.org/records/14644526/files/tracking_dataset.zip" in text
     assert "b4868b702f8a42b2ea1069d0f1a3b8f6" in text
-    assert (
-        "14916efa89a26d991c024024cc9449397"
-        "d3a6f654311e621bb91e9602e231e1a"
-    ) in text
+    assert ("14916efa89a26d991c024024cc9449397d3a6f654311e621bb91e9602e231e1a") in text
     assert "gpuserver4090" not in text
     assert "workflow_dispatch" not in text
