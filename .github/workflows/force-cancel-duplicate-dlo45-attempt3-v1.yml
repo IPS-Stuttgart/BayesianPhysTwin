@@ -1,0 +1,169 @@
+name: Force-cancel duplicate DLO45 attempt 3
+
+on:
+  push:
+    branches:
+      - ops/cancel-duplicate-dlo45-main-queue-20260901-v1
+    paths:
+      - run_requests/force-cancel-duplicate-dlo45-attempt3-v1.json
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  force-cancel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REQUEST_PATH: run_requests/force-cancel-duplicate-dlo45-attempt3-v1.json
+      DUPLICATE_RUN_ID: "33414972339"
+      PROTECTED_RUN_ID: "33361441865"
+      EXPECTED_DUPLICATE_SHA: 34fa4654b9f65a749afafb8330cfc084c6de790e
+    steps:
+      - name: Check out audited request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Validate exact one-file force-cancel request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"$REQUEST_PATH"
+          REQUEST_PATH="$REQUEST_PATH" python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path(os.environ["REQUEST_PATH"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          expected = {
+              "schema": "bayesian-phystwin.force-cancel-request-v1",
+              "request_id": "force-cancel-duplicate-dlo45-attempt3-20260901-v1",
+              "duplicate_run_id": 33414972339,
+              "duplicate_run_attempt": 3,
+              "duplicate_head_sha": "34fa4654b9f65a749afafb8330cfc084c6de790e",
+              "protected_run_id": 33361441865,
+              "reason": "release gpuserver4090 for the protected jointly sealed DLO45 score job",
+              "scientific_payload_access": False,
+              "target_rerun": False,
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+          }
+          if value != expected:
+              raise SystemExit(
+                  "force-cancel request differs:\n"
+                  + json.dumps({"actual": value, "expected": expected}, indent=2)
+              )
+          PY
+
+      - name: Verify duplicate identity and preserve protected run
+        id: verify
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          duplicate="$(curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$DUPLICATE_RUN_ID")"
+          protected="$(curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$PROTECTED_RUN_ID")"
+          DUPLICATE="$duplicate" PROTECTED="$protected" python - <<'PY'
+          import json
+          import os
+
+          duplicate = json.loads(os.environ["DUPLICATE"])
+          protected = json.loads(os.environ["PROTECTED"])
+          expected = {
+              "id": 33414972339,
+              "name": "DEFORM DLO4/DLO5 frozen transfer",
+              "head_sha": "34fa4654b9f65a749afafb8330cfc084c6de790e",
+              "run_attempt": 3,
+          }
+          for key, value in expected.items():
+              if duplicate.get(key) != value:
+                  raise SystemExit(f"duplicate identity differs at {key}")
+          if duplicate.get("status") == "completed":
+              print("duplicate already terminal; no cancellation needed")
+          elif duplicate.get("status") not in {"queued", "in_progress", "pending", "waiting"}:
+              raise SystemExit(f"unexpected duplicate status: {duplicate.get('status')}")
+          if protected.get("id") != 33361441865:
+              raise SystemExit("protected run identity changed")
+          if protected.get("status") == "completed":
+              print("protected run is already terminal")
+          elif protected.get("status") not in {"queued", "in_progress", "pending", "waiting"}:
+              raise SystemExit(f"unexpected protected status: {protected.get('status')}")
+          PY
+          status="$(python -c 'import json,sys; print(json.load(sys.stdin)["status"])' <<<"$duplicate")"
+          echo "duplicate_status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Force-cancel only the verified duplicate
+        if: steps.verify.outputs.duplicate_status != 'completed'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -X POST \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$DUPLICATE_RUN_ID/force-cancel"
+
+      - name: Confirm duplicate terminal and protected run untouched
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            record="$(curl -fsSL \
+              -H 'Accept: application/vnd.github+json' \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$DUPLICATE_RUN_ID")"
+            status="$(python -c 'import json,sys; print(json.load(sys.stdin)["status"])' <<<"$record")"
+            conclusion="$(python -c 'import json,sys; print(json.load(sys.stdin).get("conclusion") or "")' <<<"$record")"
+            if test "$status" = completed; then
+              test "$conclusion" = cancelled
+              break
+            fi
+            sleep 5
+          done
+          test "$status" = completed
+          protected="$(curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$PROTECTED_RUN_ID")"
+          PROTECTED="$protected" python - <<'PY'
+          import json
+          import os
+
+          value = json.loads(os.environ["PROTECTED"])
+          if value.get("id") != 33361441865:
+              raise SystemExit("protected run identity changed")
+          if value.get("conclusion") == "cancelled":
+              raise SystemExit("protected run was cancelled")
+          PY
