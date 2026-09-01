@@ -1,0 +1,109 @@
+{
+  "schema": "bayesian-phystwin/deform360-source-response-innovation-protocol-v2",
+  "source_object": "038-mat-cloth",
+  "source_episode": 3,
+  "information_boundary": {
+    "source_only": true,
+    "source_robot_tactile_payload_authorized": true,
+    "source_camera_pixel_access_authorized": false,
+    "persistent_dataset_write_authorized": false,
+    "target_directory_listing_authorized": false,
+    "target_numeric_access_authorized": false,
+    "target_scoring_authorized": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "tactile_preprocessing": {
+    "sensors": [
+      "brics-odroid_tactilel_left",
+      "brics-odroid_tactilel_right",
+      "brics-odroid_tactiler_left",
+      "brics-odroid_tactiler_right"
+    ],
+    "baseline_estimator": "per-taxel median on an initial train-only prefix",
+    "noise_estimator": "1.482602218505602 times per-taxel median absolute deviation on the same prefix",
+    "baseline_prefix_fraction_of_train": 0.2,
+    "minimum_baseline_frames": 24,
+    "mad_threshold": 3.0,
+    "minimum_noise_scale": 0.001,
+    "maximum_standardized_residual": 25.0,
+    "per_sensor_features": [
+      "log_dynamic_energy",
+      "dynamic_active_taxel_fraction",
+      "dynamic_centroid_x",
+      "dynamic_centroid_y"
+    ],
+    "minimum_increment_train_std": 0.00001,
+    "prediction_target": "baseline-corrected tactile feature increment over the selected horizon"
+  },
+  "design": {
+    "train_fraction": 0.6,
+    "calibration_fraction": 0.2,
+    "prediction_horizon_grid_frames": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "horizon_selection_rule": "minimum state-gated full-covariance calibration NLL per dimension; lower horizon breaks exact ties",
+    "history_windows": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "action_exposure": "sum of executed robot transition primitives from state frame through prediction horizon",
+    "causal_history": "mean robot transition primitives in windows ending immediately before the state frame",
+    "state_gate": "train-normalized current log dynamic tactile activity multiplied with horizon action exposure",
+    "ridge_grid": [
+      0.0001,
+      0.01,
+      1.0,
+      100.0,
+      10000.0
+    ],
+    "covariance_scale_grid": [
+      0.25,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0,
+      16.0,
+      32.0,
+      64.0
+    ],
+    "covariance_eigenvalue_floor": 0.000001,
+    "standardization_minimum_scale": 0.00000001,
+    "permutation_block_frames": 8,
+    "permutation_seed": 20260902
+  },
+  "comparisons": [
+    "zero_innovation",
+    "last_increment_extrapolation",
+    "state_only_innovation_bayesian_full_covariance",
+    "ungated_action_history_bayesian_full_covariance",
+    "state_gated_action_history_bayesian_diagonal_covariance",
+    "state_gated_action_history_bayesian_full_covariance",
+    "state_gated_block_permuted_action_bayesian_full_covariance"
+  ],
+  "qualification_gates": {
+    "minimum_selected_output_dimension": 6,
+    "minimum_dynamic_frame_fraction": 0.05,
+    "maximum_dynamic_frame_fraction": 1.0,
+    "minimum_train_transitions": 130,
+    "minimum_calibration_transitions": 40,
+    "minimum_test_transitions": 40,
+    "minimum_gated_action_vs_state_nll_gain_per_dimension": 0.0,
+    "minimum_gated_vs_ungated_nll_gain_per_dimension": 0.0,
+    "minimum_full_vs_diagonal_nll_gain_per_dimension": 0.0,
+    "minimum_true_vs_permuted_action_nll_gain_per_dimension": 0.0,
+    "maximum_gated_rmse_ratio_to_zero_innovation": 1.05,
+    "minimum_normalized_joint_nees": 0.5,
+    "maximum_normalized_joint_nees": 2.0,
+    "minimum_marginal_coverage": 0.8,
+    "maximum_marginal_coverage": 0.98
+  },
+  "statistical_scope": "Single-episode source competence diagnostic only. Frames are temporally dependent observations nested within one episode and are not independent experimental units. Horizon and hyperparameters are selected on the chronological calibration block; the final test block remains untouched until one evaluation.",
+  "claim_boundary": "This protocol may qualify baseline-corrected source tactile-innovation prediction and dependence-preserving uncertainty. It cannot establish physical-parameter identifiability, metric geometry, cross-action transport, target benefit, independent-object generalization, Causal4D decision value, safety, or an ICRA paper claim."
+}
