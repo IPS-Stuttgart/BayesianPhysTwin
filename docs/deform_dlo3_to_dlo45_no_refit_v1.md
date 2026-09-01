@@ -77,6 +77,14 @@ It then:
 6. retains trajectory-level results, feature-support diagnostics, reports, and
    SHA-256 identities.
 
+## Implementation provenance
+
+The three Python implementation files were rewritten by the repository's exact
+Ruff 0.16.5 check-and-format configuration. The self-deleting formatting helper
+was removed in the same commit, so this experiment adds no formatter workflow or
+additional persistent execution surface. Numerical validation remains separate
+from formatting and is performed by the ordinary pull-request test matrix.
+
 ## Claim boundary
 
 A positive decision supports unchanged **DLO3 local-residual coefficient**
