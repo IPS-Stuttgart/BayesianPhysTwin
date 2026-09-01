@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from experiments.deform360_query_quotient_v1.run import (
-    EpisodeData,
     analyze_sequences,
+    EpisodeData,
     load_protocol,
     query_class_index,
     validate_result,
