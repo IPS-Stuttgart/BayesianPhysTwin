@@ -17,9 +17,10 @@ import itertools
 import json
 import math
 import tempfile
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from statistics import NormalDist
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -82,8 +83,10 @@ def candidate_roles(names: Sequence[str]) -> dict[str, str]:
 
 
 def is_candidate(roles: dict[str, str]) -> bool:
-    return "truth" in roles and "mean" in roles and any(
-        role in roles for role in ("covariance", "variance", "samples")
+    return (
+        "truth" in roles
+        and "mean" in roles
+        and any(role in roles for role in ("covariance", "variance", "samples"))
     )
 
 
@@ -103,9 +106,7 @@ def eligible(path: Path) -> bool:
     )
 
 
-def audit_roots(
-    roots: Sequence[Path], maximum_files_per_root: int
-) -> dict[str, Any]:
+def audit_roots(roots: Sequence[Path], maximum_files_per_root: int) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
     for root in roots:
@@ -247,23 +248,19 @@ def correlation_shrinkage(covariance: np.ndarray, weight: float) -> np.ndarray:
     diagonal = np.diag(covariance).copy()
     inverse = 1.0 / np.sqrt(diagonal)
     correlation = covariance * inverse[:, None] * inverse[None, :]
-    correlation = weight * correlation + (1.0 - weight) * np.eye(
-        covariance.shape[0]
-    )
+    correlation = weight * correlation + (1.0 - weight) * np.eye(covariance.shape[0])
     standard = np.sqrt(diagonal)
     result = correlation * standard[:, None] * standard[None, :]
     np.fill_diagonal(result, diagonal)
     return nearest_psd(result)
 
 
-def permuted_correlation(
-    covariance: np.ndarray, order: Sequence[int]
-) -> np.ndarray:
+def permuted_correlation(covariance: np.ndarray, order: Sequence[int]) -> np.ndarray:
     covariance = nearest_psd(covariance)
     order_array = np.asarray(order, dtype=np.int64)
-    if order_array.shape != (covariance.shape[0],) or set(
-        order_array.tolist()
-    ) != set(range(covariance.shape[0])):
+    if order_array.shape != (covariance.shape[0],) or set(order_array.tolist()) != set(
+        range(covariance.shape[0])
+    ):
         raise ValueError("invalid dependence permutation")
     diagonal = np.diag(covariance).copy()
     inverse = 1.0 / np.sqrt(diagonal)
@@ -275,9 +272,7 @@ def permuted_correlation(
     return nearest_psd(result)
 
 
-def basis_indices(
-    shape: tuple[int, ...], maximum: int
-) -> list[tuple[int, ...]]:
+def basis_indices(shape: tuple[int, ...], maximum: int) -> list[tuple[int, ...]]:
     limits = [min(axis, 4) for axis in shape]
     values = list(itertools.product(*(range(limit) for limit in limits)))
     values.sort(key=lambda item: (sum(item), max(item), item))
@@ -292,9 +287,7 @@ def cosine_query_matrix(shape: tuple[int, ...], maximum: int) -> np.ndarray:
         for axis, (coordinate, frequency) in enumerate(
             zip(coordinates, frequencies, strict=True)
         ):
-            factor = np.cos(
-                np.pi * frequency * (coordinate + 0.5) / shape[axis]
-            )
+            factor = np.cos(np.pi * frequency * (coordinate + 0.5) / shape[axis])
             reshape = [1] * len(shape)
             reshape[axis] = shape[axis]
             component *= factor.reshape(reshape)
@@ -342,17 +335,13 @@ def load_bundle(
         query_mean = flat_mean @ query.T
         residuals = query_truth - query_mean
         if "covariance" in roles:
-            covariance = np.asarray(
-                archive[roles["covariance"]], dtype=np.float64
-            )
+            covariance = np.asarray(archive[roles["covariance"]], dtype=np.float64)
             if covariance.shape == (
                 case_count,
                 flat_truth.shape[1],
                 flat_truth.shape[1],
             ):
-                query_covariance = np.einsum(
-                    "qd,ndk,pk->nqp", query, covariance, query
-                )
+                query_covariance = np.einsum("qd,ndk,pk->nqp", query, covariance, query)
             elif covariance.shape == (
                 case_count,
                 query.shape[0],
@@ -388,16 +377,20 @@ def load_bundle(
             if groups.shape != (case_count,):
                 raise ValueError("group identifiers do not align")
         else:
-            groups = np.asarray(
-                [f"case-{index:06d}" for index in range(case_count)]
-            )
-    return residuals, query_mean, query_covariance, groups, {
-        "roles": roles,
-        "field_shape": list(field_shape),
-        "query_dimension": int(query.shape[0]),
-        "query_matrix_sha256": array_digest(query),
-        "mean_sha256": array_digest(query_mean),
-    }
+            groups = np.asarray([f"case-{index:06d}" for index in range(case_count)])
+    return (
+        residuals,
+        query_mean,
+        query_covariance,
+        groups,
+        {
+            "roles": roles,
+            "field_shape": list(field_shape),
+            "query_dimension": int(query.shape[0]),
+            "query_matrix_sha256": array_digest(query),
+            "mean_sha256": array_digest(query_mean),
+        },
+    )
 
 
 def gaussian_terms(
@@ -408,9 +401,7 @@ def gaussian_terms(
     if sign <= 0:
         raise RuntimeError("nonpositive determinant")
     distance = float(residual @ np.linalg.solve(covariance, residual))
-    nll = 0.5 * (
-        residual.size * math.log(2.0 * math.pi) + logdet + distance
-    )
+    nll = 0.5 * (residual.size * math.log(2.0 * math.pi) + logdet + distance)
     return nll, distance, float(logdet)
 
 
@@ -421,12 +412,15 @@ def metrics(
 ) -> dict[str, Any]:
     dimension = residuals.shape[1]
     z = NormalDist().inv_cdf(0.5 + probability / 2.0)
-    chi = dimension * (
-        1.0
-        - 2.0 / (9.0 * dimension)
-        + NormalDist().inv_cdf(probability)
-        * math.sqrt(2.0 / (9.0 * dimension))
-    ) ** 3
+    chi = (
+        dimension
+        * (
+            1.0
+            - 2.0 / (9.0 * dimension)
+            + NormalDist().inv_cdf(probability) * math.sqrt(2.0 / (9.0 * dimension))
+        )
+        ** 3
+    )
     nlls: list[float] = []
     distances: list[float] = []
     logdets: list[float] = []
@@ -454,9 +448,7 @@ def metrics(
     }
 
 
-def transform(
-    covariances: np.ndarray, weight: float, scale: float
-) -> np.ndarray:
+def transform(covariances: np.ndarray, weight: float, scale: float) -> np.ndarray:
     return np.stack(
         [
             scale * correlation_shrinkage(covariance, weight)
@@ -479,9 +471,9 @@ def fit(
             for error, covariance in zip(residuals, base, strict=True)
         ]
         scale = float(np.clip(np.mean(distances) / dimension, 1e-4, 1e4))
-        score = metrics(
-            residuals, transform(covariances, float(weight), scale)
-        )["nll_per_dimension"]
+        score = metrics(residuals, transform(covariances, float(weight), scale))[
+            "nll_per_dimension"
+        ]
         candidate = {
             "correlation_weight": float(weight),
             "scale": scale,
@@ -539,9 +531,7 @@ def study(
             [permuted_correlation(value, order) for value in target_cov]
         )
         fits = {
-            "hybrid": fit(
-                source_residuals, source_cov, np.linspace(0.0, 1.0, 11)
-            ),
+            "hybrid": fit(source_residuals, source_cov, np.linspace(0.0, 1.0, 11)),
             "full": fit(source_residuals, source_cov, (1.0,)),
             "diagonal": fit(source_residuals, source_cov, (0.0,)),
             "permuted": fit(source_residuals, source_perm, (1.0,)),
@@ -553,12 +543,8 @@ def study(
                 fits["hybrid"]["scale"],
             ),
             "full": transform(target_cov, 1.0, fits["full"]["scale"]),
-            "diagonal": transform(
-                target_cov, 0.0, fits["diagonal"]["scale"]
-            ),
-            "permuted": transform(
-                target_perm, 1.0, fits["permuted"]["scale"]
-            ),
+            "diagonal": transform(target_cov, 0.0, fits["diagonal"]["scale"]),
+            "permuted": transform(target_perm, 1.0, fits["permuted"]["scale"]),
             "uncalibrated": target_cov,
         }
         for name, covariance in transformed.items():
@@ -602,13 +588,9 @@ def study(
         "folds": folds,
         "metrics": arm_metrics,
         "contrasts": {
-            "hybrid_minus_diagonal_nll_per_dimension": primary[
-                "nll_per_dimension"
-            ]
+            "hybrid_minus_diagonal_nll_per_dimension": primary["nll_per_dimension"]
             - diagonal["nll_per_dimension"],
-            "hybrid_minus_permuted_nll_per_dimension": primary[
-                "nll_per_dimension"
-            ]
+            "hybrid_minus_permuted_nll_per_dimension": primary["nll_per_dimension"]
             - permuted["nll_per_dimension"],
         },
         "gates": gates,
@@ -620,16 +602,12 @@ def self_test() -> None:
     rng = np.random.default_rng(73029)
     cases, dimension = 500, 16
     direction = np.ones(dimension) / math.sqrt(dimension)
-    covariance = 0.08 * np.eye(dimension) + 1.2 * np.outer(
-        direction, direction
-    )
+    covariance = 0.08 * np.eye(dimension) + 1.2 * np.outer(direction, direction)
     truth = rng.multivariate_normal(
         np.zeros(dimension), covariance, size=cases
     ).reshape(cases, 4, 4)
     mean = np.zeros_like(truth)
-    covariances = np.broadcast_to(
-        covariance, (cases, dimension, dimension)
-    ).copy()
+    covariances = np.broadcast_to(covariance, (cases, dimension, dimension)).copy()
     groups = np.asarray([f"object-{index % 50:02d}" for index in range(cases)])
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "deform360-sufficient-statistics.npz"
@@ -640,24 +618,17 @@ def self_test() -> None:
             covariance=covariances,
             object_ids=groups,
         )
-        residuals, query_mean, query_cov, loaded_groups, metadata = load_bundle(
-            path, 8
-        )
+        residuals, query_mean, query_cov, loaded_groups, metadata = load_bundle(path, 8)
         result = study(residuals, query_cov, loaded_groups, 5)
         assert metadata["mean_sha256"] == array_digest(query_mean)
-        assert result["metrics"]["hybrid"]["nll_per_dimension"] < result[
-            "metrics"
-        ]["diagonal"]["nll_per_dimension"]
         assert (
-            0.8
-            <= result["metrics"]["hybrid"]["normalized_anees"]
-            <= 1.2
+            result["metrics"]["hybrid"]["nll_per_dimension"]
+            < result["metrics"]["diagonal"]["nll_per_dimension"]
         )
+        assert 0.8 <= result["metrics"]["hybrid"]["normalized_anees"] <= 1.2
         audit = audit_roots([Path(directory)], 100)
         assert audit["candidate_count"] == 1
-    covariance3 = np.array(
-        [[4.0, 1.2, -0.6], [1.2, 2.0, 0.4], [-0.6, 0.4, 3.0]]
-    )
+    covariance3 = np.array([[4.0, 1.2, -0.6], [1.2, 2.0, 0.4], [-0.6, 0.4, 3.0]])
     assert np.allclose(
         np.diag(correlation_shrinkage(covariance3, 0.0)),
         np.diag(covariance3),
@@ -682,9 +653,7 @@ def main() -> None:
         self_test()
         return
     if not args.root or args.output_root is None:
-        parser.error(
-            "--root and --output-root are required unless --self-test is used"
-        )
+        parser.error("--root and --output-root are required unless --self-test is used")
     args.output_root.mkdir(parents=True, exist_ok=True)
     audit = audit_roots(args.root, args.maximum_files_per_root)
     (args.output_root / "audit.json").write_text(
@@ -722,9 +691,7 @@ def main() -> None:
             "only_covariance_changes": True,
         },
         "metadata": metadata,
-        "study": study(
-            residuals, query_covariance, groups, args.fold_count
-        ),
+        "study": study(residuals, query_covariance, groups, args.fold_count),
         "classification": "retrospective cross-fitted real-output development",
         "paper_claim_authorized": False,
     }
@@ -735,9 +702,7 @@ def main() -> None:
         json.dumps(
             {
                 "status": result["status"],
-                "superior_target_passed": result["study"][
-                    "superior_target_passed"
-                ],
+                "superior_target_passed": result["study"]["superior_target_passed"],
             },
             sort_keys=True,
         )
