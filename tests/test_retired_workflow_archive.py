@@ -142,8 +142,8 @@ def test_changed_archived_contract_test_is_rejected(tmp_path: Path) -> None:
 def test_checked_in_archive_is_exact_and_inactive() -> None:
     report = tool.validate_repository(ROOT, MANIFEST_PATH)
 
-    assert report["retired_workflow_count"] == 15
-    assert report["retired_workflow_bytes"] == 126_762
+    assert report["retired_workflow_count"] == 17
+    assert report["retired_workflow_bytes"] == 167_487
     assert report["archived_contract_test_count"] == 10
     assert report["active_original_path_count"] == 0
     assert report["status"] == "exact-inactive-archive"
