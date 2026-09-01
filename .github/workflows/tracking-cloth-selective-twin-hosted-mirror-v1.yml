@@ -1,0 +1,259 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth selective digital twin hosted mirror v1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/tracking-cloth-selective-twin-hosted-mirror-v1.yml"
+      - ".github/quality/workflow-inventory-budget-v1.json"
+      - ".github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json"
+      - "tests/test_workflow_inventory_budget.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-selective-twin-hosted-mirror-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json
+  ARCHIVE_URL: https://fcoltraro.github.io/projects/dataset/tracking_dataset.zip
+  ARCHIVE_MD5: b4868b702f8a42b2ea1069d0f1a3b8f6
+  SCIENTIFIC_SOURCE_REVISION: e9fd0fc35c534db867831c124b46e495e5eb3e57
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Hosted-mirror contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate frozen scientific source and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/run.py")" = 601f4f5f689ed2289e3851415fd2755ce2486396
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/protocol.json")" = 90f81611fd226bfd61dd6dce2a0a0b9b4eec477b
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_deformation_v1/model.py")" = 21b33e36d15ee62863cb8ea5d7b87eb15843a03c
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_deformation_v1/data.py")" = 0ac4ab4de7e768a23f30522b7a7846fab560dc5d
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_deformation_v1/protocol.json")" = 49dd4a15d9e0c42c8c8fd88f2ef37df29356b5e9
+          if test ! -f "$REQUEST_PATH"; then
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          expected = {
+              "schema": "tracking-cloth-selective-twin-hosted-mirror-request-v1",
+              "mode": "hosted_runtime_mirror",
+              "archive_url": os.environ["ARCHIVE_URL"],
+              "archive_md5": os.environ["ARCHIVE_MD5"],
+              "scientific_source_revision": os.environ["SCIENTIFIC_SOURCE_REVISION"],
+              "original_self_hosted_run_id": "33511626637",
+              "prior_target_run_id": "33302686759",
+              "paper_claim_authorized": False,
+              "fresh_confirmation": False,
+          }
+          for key, value in expected.items():
+              assert request.get(key) == value, (key, request.get(key), value)
+          assert set(request) == set(expected) | {
+              "request_id",
+              "expected_trigger_parent_revision",
+          }
+          assert request["request_id"]
+          revision = request["expected_trigger_parent_revision"]
+          assert len(revision) == 40
+          assert set(revision) <= set("0123456789abcdef")
+          PY
+
+  authorize:
+    name: Authorize hosted mirror request
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      request_id: ${{ steps.request.outputs.request_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Require one newly added request file
+        id: request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path(os.environ["REQUEST_PATH"])
+          request = json.loads(path.read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"],
+              text=True,
+          ).strip()
+          if request["expected_trigger_parent_revision"] != parent:
+              raise SystemExit("Hosted request is not bound to its trigger parent")
+          if request["scientific_source_revision"] != os.environ[
+              "SCIENTIFIC_SOURCE_REVISION"
+          ]:
+              raise SystemExit("Scientific source revision changed")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as stream:
+              stream.write(f"request_id={request['request_id']}\n")
+          PY
+
+  evaluate:
+    name: Cross-material physical competence / hosted mirror
+    needs: [contracts, authorize]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Materialize publisher-verified public archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          dataset="$root/dataset"
+          output="$root/output"
+          mkdir -p "$dataset"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --connect-timeout 30 "$ARCHIVE_URL" \
+            --output "$dataset/tracking_dataset.zip"
+          printf '%s  %s\n' "$ARCHIVE_MD5" "$dataset/tracking_dataset.zip" \
+            | md5sum --check --strict
+          python - <<'PY'
+          import os
+          import zipfile
+          from pathlib import Path
+
+          archive = Path(os.environ["DATASET_PATH"]) / "tracking_dataset.zip"
+          with zipfile.ZipFile(archive) as zipped:
+              bad = zipped.testzip()
+              if bad is not None:
+                  raise SystemExit(f"ZIP integrity failure: {bad}")
+              for entry in zipped.infolist():
+                  destination = (archive.parent / entry.filename).resolve()
+                  if not destination.is_relative_to(archive.parent.resolve()):
+                      raise SystemExit(f"Unsafe ZIP member: {entry.filename}")
+              zipped.extractall(archive.parent)
+          PY
+        env:
+          DATASET_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/dataset
+      - name: Install frozen evaluation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            -r experiments/tracking_cloth_deformation_v1/requirements.txt
+      - name: Verify and run exact scientific source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/run.py")" = "$(git rev-parse "HEAD:experiments/tracking_cloth_selective_twin_v1/run.py")"
+          test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/protocol.json")" = "$(git rev-parse "HEAD:experiments/tracking_cloth_selective_twin_v1/protocol.json")"
+          root="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          python -m experiments.tracking_cloth_selective_twin_v1.run \
+            --dataset-root "$root/dataset" \
+            --output "$root/output"
+          REQUEST_PATH="$GITHUB_WORKSPACE/$REQUEST_PATH" \
+          OUTPUT_PATH="$root/output/evaluation_request.json" \
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          raw = Path(os.environ["REQUEST_PATH"]).read_bytes()
+          request = json.loads(raw)
+          request["request_sha256"] = hashlib.sha256(raw).hexdigest()
+          request["github_run_id"] = os.environ["GITHUB_RUN_ID"]
+          request["github_run_attempt"] = os.environ["GITHUB_RUN_ATTEMPT"]
+          Path(os.environ["OUTPUT_PATH"]).write_text(
+              json.dumps(request, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+      - name: Reject raw trajectory payloads
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/output"
+          if test -d "$output" && \
+              find "$output" -type f \( -iname '*.npz' -o -iname '*.pkl' \) \
+              -print -quit | grep -q .; then
+            echo "Raw prediction or trajectory payload found" >&2
+            exit 3
+          fi
+      - name: Publish summary
+        if: always()
+        shell: bash
+        run: |
+          output="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/output"
+          if test -f "$output/report.md"; then
+            cat "$output/report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f "$output/failure.json"; then
+            echo "## Incomplete run: no scientific conclusion" >> "$GITHUB_STEP_SUMMARY"
+            cat "$output/failure.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-selective-twin-hosted-mirror-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/*.json
+            ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/*.csv
+            ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/report.md
+            ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Remove hosted execution
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
