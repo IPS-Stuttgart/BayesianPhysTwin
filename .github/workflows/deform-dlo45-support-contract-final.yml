@@ -1,0 +1,296 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expiry: 2026-09-15
+name: DEFORM DLO4/DLO5 support-contract audit final
+
+on:
+  push:
+    paths:
+      - ".github/workflows/deform-dlo45-support-contract-final.yml"
+      - ".github/requests/deform-dlo45-decision-gate-audit-v1.json"
+      - "experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py"
+      - "experiments/deform_dlo45_decision_identifiability_v1/gate_audit_protocol.json"
+      - "tests/test_deform_dlo45_decision_gate_audit_v1.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: deform-dlo45-support-contract-final-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PARENT_RUN_ID: "33473378340"
+  PARENT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/protocol.json
+  AUDIT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/gate_audit_protocol.json
+  REQUEST: .github/requests/deform-dlo45-decision-gate-audit-v1.json
+  DEFORM_COMMIT: b73b8b8ecc033caefa693fab7898741d4e6dbeff
+  RUN_KEY: official-dlo45-gate-risk-audit-20260902-v2-support-contract
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact audit revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Set up pinned Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install and test exact audit revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py \
+            tests/test_deform_dlo45_decision_gate_audit_v1.py
+          python -m ruff format --check \
+            experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py \
+            tests/test_deform_dlo45_decision_gate_audit_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_decision_gate_audit_v1.py \
+            tests/test_deform_dlo45_decision_identifiability_v1.py \
+            tests/test_query_quotient_belief_v1.py
+
+      - name: Download exact parent artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          run-id: ${{ env.PARENT_RUN_ID }}
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: ${{ runner.temp }}/parent
+
+      - name: Resolve and validate parent artifact members
+        id: parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/parent"
+          source_model="$(find "${root}" -type f -name source_model.npz -print -quit)"
+          source_result="$(find "${root}" -type f -name source_result.json -print -quit)"
+          source_seal="$(find "${root}" -type f -name source_seal.json -print -quit)"
+          target_result="$(find "${root}" -type f -name target_result.json -print -quit)"
+          for path in "${source_model}" "${source_result}" "${source_seal}" "${target_result}"; do
+            test -n "${path}"
+            test -s "${path}"
+          done
+          TARGET_RESULT="${target_result}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["TARGET_RESULT"]).read_text())
+          assert value["contract"] == "deform-dlo45-decision-identifiability-v1"
+          assert value["aggregate"]["decision_count"] == 532
+          assert value["aggregate"]["certificate_nonfallback_count"] == 82
+          PY
+          echo "source_model=${source_model}" >> "${GITHUB_OUTPUT}"
+          echo "source_result=${source_result}" >> "${GITHUB_OUTPUT}"
+          echo "source_seal=${source_seal}" >> "${GITHUB_OUTPUT}"
+          echo "target_result=${target_result}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out source-only DEFORM partitions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: roahmlab/DEFORM
+          ref: ${{ env.DEFORM_COMMIT }}
+          path: upstream-source
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/train
+            data_set/DLO5/train
+          sparse-checkout-cone-mode: false
+
+      - name: Freeze all heuristic thresholds on source partitions
+        shell: bash
+        env:
+          SOURCE_MODEL: ${{ steps.parent.outputs.source_model }}
+          SOURCE_RESULT: ${{ steps.parent.outputs.source_result }}
+          SOURCE_SEAL: ${{ steps.parent.outputs.source_seal }}
+        run: |
+          set -euo pipefail
+          root="${GITHUB_WORKSPACE}/upstream-source/data_set"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/train" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 56
+            test ! -e "${root}/${dlo}/eval"
+          done
+          mkdir -p "${RUNNER_TEMP}/audit-source"
+          python -m experiments.deform_dlo45_decision_identifiability_v1.gate_audit source \
+            --protocol "${PARENT_PROTOCOL}" \
+            --audit-protocol "${AUDIT_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${root}" \
+            --output-root "${RUNNER_TEMP}/audit-source" \
+            --parent-source-model "${SOURCE_MODEL}" \
+            --parent-source-result "${SOURCE_RESULT}" \
+            --parent-source-seal "${SOURCE_SEAL}"
+          test -s "${RUNNER_TEMP}/audit-source/source_seal.json"
+          rm -rf upstream-source
+          test ! -e upstream-source
+
+      - name: Check out held DEFORM partitions after source sealing
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: roahmlab/DEFORM
+          ref: ${{ env.DEFORM_COMMIT }}
+          path: upstream-target
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/eval
+            data_set/DLO5/eval
+          sparse-checkout-cone-mode: false
+
+      - name: Apply frozen gates and compute support-contract metrics
+        shell: bash
+        env:
+          SOURCE_MODEL: ${{ steps.parent.outputs.source_model }}
+          SOURCE_SEAL: ${{ steps.parent.outputs.source_seal }}
+          PARENT_TARGET: ${{ steps.parent.outputs.target_result }}
+        run: |
+          set -euo pipefail
+          root="${GITHUB_WORKSPACE}/upstream-target/data_set"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/eval" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 14
+            test ! -e "${root}/${dlo}/train"
+          done
+          mkdir -p "${RUNNER_TEMP}/audit-target"
+          python -m experiments.deform_dlo45_decision_identifiability_v1.gate_audit target \
+            --protocol "${PARENT_PROTOCOL}" \
+            --audit-protocol "${AUDIT_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${root}" \
+            --output-root "${RUNNER_TEMP}/audit-target" \
+            --parent-source-model "${SOURCE_MODEL}" \
+            --parent-source-seal "${SOURCE_SEAL}" \
+            --thresholds "${RUNNER_TEMP}/audit-source/thresholds.json" \
+            --threshold-seal "${RUNNER_TEMP}/audit-source/source_seal.json"
+          AUDIT_TARGET="${RUNNER_TEMP}/audit-target/target_audit.json" python - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          parent = json.loads(Path(os.environ["PARENT_TARGET"]).read_text())
+          path = Path(os.environ["AUDIT_TARGET"])
+          audit = json.loads(path.read_text())
+          certificate = audit["combined"]["certificate"]
+          assert certificate["decision_count"] == parent["aggregate"]["decision_count"] == 532
+          assert certificate["nonfallback_count"] == parent["aggregate"]["certificate_nonfallback_count"] == 82
+          assert math.isclose(
+              certificate["rmse_ratio_to_fallback"],
+              parent["aggregate"]["certificate_rmse_ratio"],
+              rel_tol=0.0,
+              abs_tol=1e-12,
+          )
+          assert certificate["registered_support_violation_count_nonfallback"] == 0
+          gates = audit["combined"]["source_calibrated_gates"]
+          best_name, best = min(
+              gates.items(), key=lambda item: item[1]["rmse_ratio_to_fallback"]
+          )
+          compact = {
+              "contract": "deform-dlo45-support-contract-audit-summary-v1",
+              "schema_version": 1,
+              "status": "complete",
+              "run_key": audit["run_key"],
+              "certificate": certificate,
+              "best_source_calibrated_gate_name": best_name,
+              "best_source_calibrated_gate": best,
+              "source_calibrated_gates": gates,
+              "target_covariate_matched_gates": audit["combined"]["target_covariate_matched_gates"],
+              "support_mismatch_audit": audit["support_mismatch_audit"],
+              "comparative_conclusion": (
+                  "The exact certificate is the only policy constrained by the registered "
+                  "finite-support regret contract. Empirical held-data utility is reported "
+                  "separately and may favor a heuristic gate."
+              ),
+              "claim_boundary": audit["claim_boundary"],
+          }
+          Path(os.environ["RUNNER_TEMP"], "audit-target", "compact_result.json").write_text(
+              json.dumps(compact, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps({
+              "certificate_rmse_reduction": certificate["rmse_reduction"],
+              "certificate_support_violations": certificate["registered_support_violation_count_nonfallback"],
+              "best_gate": best_name,
+              "best_gate_rmse_reduction": best["rmse_reduction"],
+              "best_gate_support_violations": best["registered_support_violation_count_nonfallback"],
+          }, indent=2, sort_keys=True))
+          PY
+          rm -rf upstream-target
+
+      - name: Upload complete evidence bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dlo45-support-contract-audit-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/audit-source/thresholds.json
+            ${{ runner.temp }}/audit-source/source_audit.json
+            ${{ runner.temp }}/audit-source/source_seal.json
+            ${{ runner.temp }}/audit-target/target_audit.json
+            ${{ runner.temp }}/audit-target/per_decision.jsonl
+            ${{ runner.temp }}/audit-target/summary.md
+            ${{ runner.temp }}/audit-target/compact_result.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit compact and full audit evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="results/science/deform_dlo45_decision_gate_audit_v1/${RUN_KEY}"
+          test ! -e "${destination}"
+          mkdir -p "${destination}"
+          cp "${RUNNER_TEMP}/audit-source/thresholds.json" "${destination}/thresholds.json"
+          cp "${RUNNER_TEMP}/audit-source/source_audit.json" "${destination}/source_audit.json"
+          cp "${RUNNER_TEMP}/audit-source/source_seal.json" "${destination}/source_seal.json"
+          cp "${RUNNER_TEMP}/audit-target/target_audit.json" "${destination}/target_audit.json"
+          cp "${RUNNER_TEMP}/audit-target/per_decision.jsonl" "${destination}/per_decision.jsonl"
+          cp "${RUNNER_TEMP}/audit-target/compact_result.json" "${destination}/compact_result.json"
+          cp "${RUNNER_TEMP}/audit-target/summary.md" "${destination}/README.md"
+          sed -i 's/[[:space:]]\+$//' "${destination}/README.md"
+          cat > "${destination}/provenance.json" <<EOF
+          {
+            "audit_revision": "${GITHUB_SHA}",
+            "workflow_run_id": ${GITHUB_RUN_ID},
+            "parent_workflow_run_id": ${PARENT_RUN_ID},
+            "dataset_repository": "roahmlab/DEFORM",
+            "dataset_commit": "${DEFORM_COMMIT}",
+            "target_tuning": false,
+            "target_outcomes_used_for_thresholds": false,
+            "target_retries": false
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${destination}"
+          git diff --cached --check
+          git commit -m "Record DEFORM support-contract gate audit"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
