@@ -42,9 +42,7 @@ def correlation_shrinkage(covariance: np.ndarray, weight: float) -> np.ndarray:
     diagonal = np.diag(covariance).copy()
     inverse = 1.0 / np.sqrt(diagonal)
     correlation = covariance * inverse[:, None] * inverse[None, :]
-    correlation = weight * correlation + (1.0 - weight) * np.eye(
-        covariance.shape[0]
-    )
+    correlation = weight * correlation + (1.0 - weight) * np.eye(covariance.shape[0])
     standard = np.sqrt(diagonal)
     result = correlation * standard[:, None] * standard[None, :]
     np.fill_diagonal(result, diagonal)
@@ -75,9 +73,7 @@ def cosine_query_matrix(dimension: int, maximum: int) -> np.ndarray:
     coordinate = np.arange(dimension, dtype=np.float64)
     vectors = []
     for frequency in range(count):
-        vector = np.cos(
-            np.pi * frequency * (coordinate + 0.5) / float(dimension)
-        )
+        vector = np.cos(np.pi * frequency * (coordinate + 0.5) / float(dimension))
         vector /= np.linalg.norm(vector)
         vectors.append(vector)
     return np.stack(vectors)
@@ -134,8 +130,7 @@ def metrics(
         * (
             1.0
             - 2.0 / (9.0 * dimension)
-            + NormalDist().inv_cdf(probability)
-            * math.sqrt(2.0 / (9.0 * dimension))
+            + NormalDist().inv_cdf(probability) * math.sqrt(2.0 / (9.0 * dimension))
         )
         ** 3
     )
@@ -151,9 +146,7 @@ def metrics(
             "ellipsoid_hits": 0,
             "case_count": 0,
         }
-    for residual, covariance, group in zip(
-        residuals, covariances, groups, strict=True
-    ):
+    for residual, covariance, group in zip(residuals, covariances, groups, strict=True):
         nll, distance, logdet = gaussian_terms(residual, covariance)
         standard = np.sqrt(np.diag(nearest_psd(covariance)))
         record = rows[str(group)]
@@ -175,9 +168,7 @@ def metrics(
             {
                 "nll_per_dimension": float(np.mean(record["nll"])),
                 "normalized_anees": float(np.mean(record["distance"])),
-                "ellipsoid_coverage": float(
-                    int(record["ellipsoid_hits"]) / case_count
-                ),
+                "ellipsoid_coverage": float(int(record["ellipsoid_hits"]) / case_count),
                 "marginal_coverage": float(
                     int(record["marginal_hits"]) / marginal_total
                 ),
@@ -299,15 +290,9 @@ def study(
                 source_groups,
                 np.linspace(0.0, 1.0, 11),
             ),
-            "full": fit(
-                source_residuals, source_covariance, source_groups, (1.0,)
-            ),
-            "diagonal": fit(
-                source_residuals, source_covariance, source_groups, (0.0,)
-            ),
-            "permuted": fit(
-                source_residuals, source_permuted, source_groups, (1.0,)
-            ),
+            "full": fit(source_residuals, source_covariance, source_groups, (1.0,)),
+            "diagonal": fit(source_residuals, source_covariance, source_groups, (0.0,)),
+            "permuted": fit(source_residuals, source_permuted, source_groups, (1.0,)),
         }
         transformed = {
             "hybrid": transform(
@@ -316,12 +301,8 @@ def study(
                 fits["hybrid"]["scale"],
             ),
             "full": transform(target_covariance, 1.0, fits["full"]["scale"]),
-            "diagonal": transform(
-                target_covariance, 0.0, fits["diagonal"]["scale"]
-            ),
-            "permuted": transform(
-                target_permuted, 1.0, fits["permuted"]["scale"]
-            ),
+            "diagonal": transform(target_covariance, 0.0, fits["diagonal"]["scale"]),
+            "permuted": transform(target_permuted, 1.0, fits["permuted"]["scale"]),
             "uncalibrated": target_covariance,
         }
         for name, covariance in transformed.items():
@@ -369,13 +350,9 @@ def study(
         "folds": folds,
         "metrics": arm_metrics,
         "contrasts": {
-            "hybrid_minus_diagonal_nll_per_dimension": primary[
-                "nll_per_dimension"
-            ]
+            "hybrid_minus_diagonal_nll_per_dimension": primary["nll_per_dimension"]
             - diagonal["nll_per_dimension"],
-            "hybrid_minus_permuted_nll_per_dimension": primary[
-                "nll_per_dimension"
-            ]
+            "hybrid_minus_permuted_nll_per_dimension": primary["nll_per_dimension"]
             - permuted["nll_per_dimension"],
         },
         "gates": gates,
