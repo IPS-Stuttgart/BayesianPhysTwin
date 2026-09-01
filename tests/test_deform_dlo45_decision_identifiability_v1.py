@@ -12,6 +12,7 @@ from experiments.deform_dlo45_decision_identifiability_v1.evaluate import (
     extract_observation,
     fit_model,
     partition_names,
+    render_summary,
 )
 
 
@@ -127,3 +128,32 @@ def test_decision_outputs_registered_action_and_finite_certificate() -> None:
     assert np.all(np.isfinite(result.worst_case_regret))
     assert result.ambiguity_width >= 0.0
     assert result.unsupported_specificity_nats >= 0.0
+
+
+def test_render_summary_uses_bootstrap_interval_and_percent_units() -> None:
+    dlo_result = {
+        "aggregate": {
+            "fallback": {"rmse_mm": 10.0},
+            "certificate": {
+                "rmse_mm": 9.0,
+                "rmse_ratio_to_fallback": 0.9,
+                "mean_normalized_regret": 0.01,
+            },
+        },
+        "certificate_nonfallback_fraction": 0.5,
+    }
+    result = {
+        "dlos": {"DLO4": dlo_result, "DLO5": dlo_result},
+        "aggregate": {
+            "certificate_rmse_ratio": 0.9,
+            "mean_trajectory_improvement": 0.1,
+            "improvement_ci95": [-0.02, 0.15],
+            "certificate_nonfallback_count": 10,
+            "decision_count": 20,
+        },
+        "claim_boundary": "bounded test claim",
+    }
+
+    summary = render_summary(result)
+
+    assert "`[-2.00%, 15.00%]`" in summary
