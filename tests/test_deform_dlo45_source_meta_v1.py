@@ -51,14 +51,10 @@ def _source_result(dlo: str, *, scale: float) -> dict[str, object]:
             "candidate_case_l1_m": candidate.tolist(),
             "baseline_mean_l1_m": float(np.mean(baseline)),
             "candidate_mean_l1_m": float(np.mean(candidate)),
-            "relative_improvement": float(
-                1.0 - np.mean(candidate) / np.mean(baseline)
-            ),
+            "relative_improvement": float(1.0 - np.mean(candidate) / np.mean(baseline)),
             "wins": int(np.sum(difference > 1e-15)),
             "ties": int(np.sum(np.abs(difference) <= 1e-15)),
-            "worst_candidate_to_baseline_ratio": float(
-                np.max(candidate / baseline)
-            ),
+            "worst_candidate_to_baseline_ratio": float(np.max(candidate / baseline)),
             "passed": True,
             "free_node_diagnostic": {
                 "baseline_case_l1_m": free_baseline.tolist(),
@@ -74,7 +70,9 @@ def test_protocol_freezes_post_source_pre_target_analysis() -> None:
 
     assert protocol["blocking_run"]["run_id"] == 33361441865
     assert protocol["evaluation"]["bootstrap_repetitions"] == 10000
-    assert protocol["evaluation"]["decision_rule"] == "both-original-source-gates-passed"
+    assert (
+        protocol["evaluation"]["decision_rule"] == "both-original-source-gates-passed"
+    )
     assert protocol["information_boundary"]["target_scores_used"] is False
 
 
@@ -96,8 +94,7 @@ def test_joint_source_meta_analysis_reports_complete_directional_consistency() -
         "exact_upper_sign_probability"
     ] == pytest.approx(2.0**-16)
     assert (
-        result["dlo_stratified_bootstrap"]["relative_improvement_95_interval"][0]
-        > 0.0
+        result["dlo_stratified_bootstrap"]["relative_improvement_95_interval"][0] > 0.0
     )
     assert result["information_boundary"]["target_scores_used"] is False
 
