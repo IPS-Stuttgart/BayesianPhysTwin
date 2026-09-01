@@ -1,0 +1,341 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: PokeFlex missing-five archive readiness v1
+
+on:
+  push:
+    branches:
+      - science/pokeflex-missing5-archive-readiness-v1
+    paths:
+      - triggers/pokeflex-missing5-archive-readiness-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-missing5-archive-readiness-v1
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    name: Verify frozen target roster and metadata-only boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only audit request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/pokeflex-missing5-archive-readiness-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-missing5-archive-readiness-v1.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-missing5-archive-readiness-v1.json").read_text())
+          expected_targets = [
+              "Pillow_T8",
+              "3dPrintedCylinder_T7",
+              "3dPrintedHeart_T14",
+              "Sponge_T10",
+              "3dPrintedPizza_T13",
+          ]
+          assert request == {
+              "schema": "bayesian-phystwin/pokeflex-missing5-archive-readiness-request-v1",
+              "request_id": "pokeflex-missing5-archive-readiness-20260901-v1",
+              "frozen_protocol": "configs/sota/pokeflex_missing5_execution_v6.json",
+              "frozen_target_take_ids": expected_targets,
+              "audit_mode": "zip-path-and-central-directory-metadata-only",
+              "payload_bytes_read": False,
+              "target_mesh_geometry_decoded": False,
+              "scientific_protocol_changed": False,
+              "paper_claim_authorized": False,
+          }
+          protocol = json.loads(Path(request["frozen_protocol"]).read_text())
+          assert protocol["target_take_ids"] == expected_targets
+          assert protocol["official_target_outcomes_used_to_build_protocol"] is False
+          assert protocol["held_v8_accessed"] is False
+          PY
+
+  audit:
+    name: Metadata-only ZIP audit / ${{ matrix.server }}
+    needs: contract
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - server: gpuserver6000
+            runner_label: gpuserver6000
+            dataset_root: /mnt/lexar4tb/pokeflex
+          - server: gpuserver4090
+            runner_label: gpuserver4090
+            dataset_root: /mnt/seagate10tb/florianpfaff/datasets/pokeflex
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - ${{ matrix.runner_label }}
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Bind the mirror without opening payloads
+        shell: bash
+        env:
+          DATASET_ROOT: ${{ matrix.dataset_root }}
+          SERVER: ${{ matrix.server }}
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test -d "$DATASET_ROOT"
+          output="$RUNNER_TEMP/pokeflex-missing5-readiness-$SERVER"
+          mkdir -p "$output"
+          echo "AUDIT_OUTPUT=$output" >> "$GITHUB_ENV"
+          echo "DATASET_ROOT=$DATASET_ROOT" >> "$GITHUB_ENV"
+          echo "SERVER=$SERVER" >> "$GITHUB_ENV"
+
+      - name: Inspect ZIP paths and central-directory records only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          root = Path(os.environ["DATASET_ROOT"]).resolve()
+          output = Path(os.environ["AUDIT_OUTPUT"])
+          targets = [
+              ("Pillow_T8", "Pillow", 8),
+              ("3dPrintedCylinder_T7", "3dPrintedCylinder", 7),
+              ("3dPrintedHeart_T14", "3dPrintedHeart", 14),
+              ("Sponge_T10", "Sponge", 10),
+              ("3dPrintedPizza_T13", "3dPrintedPizza", 13),
+          ]
+
+          def compact(value: str) -> str:
+              return re.sub(r"[^a-z0-9]", "", value.lower())
+
+          def metadata_digest(infos: list[zipfile.ZipInfo]) -> str:
+              rows = [
+                  [
+                      info.filename.replace("\\", "/"),
+                      int(info.file_size),
+                      int(info.compress_size),
+                      int(info.CRC),
+                  ]
+                  for info in infos
+              ]
+              payload = json.dumps(rows, sort_keys=False, separators=(",", ":"))
+              return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+          zip_paths = sorted(path for path in root.rglob("*") if path.is_file() and path.suffix.lower() == ".zip")
+          result = {
+              "schema": "bayesian-phystwin/pokeflex-missing5-archive-readiness-v1",
+              "schema_version": 1,
+              "server": os.environ["SERVER"],
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "dataset_root": str(root),
+              "zip_count": len(zip_paths),
+              "audit_mode": "zip-path-and-central-directory-metadata-only",
+              "payload_bytes_read": False,
+              "target_mesh_geometry_decoded": False,
+              "targets": {},
+          }
+          candidates: dict[str, list[dict[str, object]]] = {take: [] for take, _obj, _number in targets}
+          object_only: dict[str, list[str]] = {take: [] for take, _obj, _number in targets}
+          unreadable: list[dict[str, str]] = []
+
+          for index, archive_path in enumerate(zip_paths, start=1):
+              relative = archive_path.relative_to(root).as_posix()
+              try:
+                  with zipfile.ZipFile(archive_path) as archive:
+                      infos = archive.infolist()
+              except Exception as error:
+                  unreadable.append({"path": relative, "error": f"{type(error).__name__}: {error}"})
+                  continue
+              raw_names = [relative] + [info.filename.replace("\\", "/") for info in infos]
+              compact_names = [compact(name) for name in raw_names]
+              for take_id, object_name, take_number in targets:
+                  take_key = compact(take_id)
+                  object_key = compact(object_name)
+                  exact_paths = [raw for raw, normalized in zip(raw_names, compact_names, strict=True) if take_key in normalized]
+                  object_paths = [raw for raw, normalized in zip(raw_names, compact_names, strict=True) if object_key in normalized]
+                  if object_paths and relative not in object_only[take_id]:
+                      object_only[take_id].append(relative)
+                  if not exact_paths:
+                      continue
+                  scoped = [
+                      info
+                      for info in infos
+                      if take_key in compact(info.filename)
+                      or take_key in compact(relative)
+                  ]
+                  if not scoped:
+                      scoped = infos
+                  member_names = [info.filename.replace("\\", "/") for info in scoped]
+                  lowered = [name.lower() for name in member_names]
+                  robot_count = sum(PurePosixPath(name).name.lower() == "robot_data.json" for name in member_names)
+                  camera_json_count = sum(
+                      PurePosixPath(name).suffix.lower() == ".json"
+                      and "camera" in PurePosixPath(name).name.lower()
+                      for name in member_names
+                  )
+                  depth_count = sum("depth" in name for name in lowered)
+                  mesh_obj_count = sum(
+                      PurePosixPath(name).suffix.lower() == ".obj"
+                      and "mesh" in PurePosixPath(name).name.lower()
+                      for name in member_names
+                  )
+                  candidates[take_id].append(
+                      {
+                          "archive_path": relative,
+                          "archive_byte_size": archive_path.stat().st_size,
+                          "central_directory_record_count": len(infos),
+                          "central_directory_sha256": metadata_digest(infos),
+                          "exact_identity_path_count": len(exact_paths),
+                          "scoped_member_count": len(scoped),
+                          "robot_data_json_count": robot_count,
+                          "camera_json_count": camera_json_count,
+                          "depth_member_count": depth_count,
+                          "mesh_obj_count": mesh_obj_count,
+                          "sample_identity_paths": sorted(set(exact_paths))[:12],
+                      }
+                  )
+              if index % 20 == 0:
+                  print(f"[{os.environ['SERVER']}] scanned {index}/{len(zip_paths)} archives", flush=True)
+
+          ready_count = 0
+          present_count = 0
+          for take_id, _object_name, _take_number in targets:
+              rows = sorted(candidates[take_id], key=lambda row: str(row["archive_path"]))
+              present = bool(rows)
+              ready_rows = [
+                  row
+                  for row in rows
+                  if int(row["robot_data_json_count"]) >= 1
+                  and int(row["camera_json_count"]) >= 2
+                  and int(row["depth_member_count"]) >= 1
+                  and int(row["mesh_obj_count"]) >= 1
+              ]
+              ready = len(ready_rows) == 1
+              present_count += int(present)
+              ready_count += int(ready)
+              result["targets"][take_id] = {
+                  "present": present,
+                  "execution_input_ready": ready,
+                  "candidate_archive_count": len(rows),
+                  "ready_archive_count": len(ready_rows),
+                  "candidate_archives": rows,
+                  "object_only_archive_paths": sorted(set(object_only[take_id]))[:30],
+              }
+
+          result["unreadable_archive_count"] = len(unreadable)
+          result["unreadable_archives"] = unreadable
+          result["present_target_count"] = present_count
+          result["ready_target_count"] = ready_count
+          result["complete_five_target_execution_ready"] = ready_count == 5 and len(unreadable) == 0
+          encoded = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+          result["result_id"] = hashlib.sha256(encoded).hexdigest()
+          (output / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          summary = {
+              "server": result["server"],
+              "zip_count": result["zip_count"],
+              "present_target_count": present_count,
+              "ready_target_count": ready_count,
+              "complete_five_target_execution_ready": result["complete_five_target_execution_ready"],
+              "unreadable_archive_count": len(unreadable),
+              "targets": {
+                  take: {
+                      "present": row["present"],
+                      "execution_input_ready": row["execution_input_ready"],
+                      "candidate_archive_count": row["candidate_archive_count"],
+                  }
+                  for take, row in result["targets"].items()
+              },
+          }
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+
+      - name: Publish the readiness outcome
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "${AUDIT_OUTPUT:-}/result.json" ]]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads((Path(os.environ["AUDIT_OUTPUT"]) / "result.json").read_text())
+          print(f"### PokeFlex missing-five readiness: {value['server']}")
+          print()
+          print(f"- ZIPs: `{value['zip_count']}`")
+          print(f"- Registered targets present: `{value['present_target_count']}/5`")
+          print(f"- Execution inputs ready: `{value['ready_target_count']}/5`")
+          print(f"- Complete frozen-five execution ready: `{value['complete_five_target_execution_ready']}`")
+          print(f"- Payload bytes read: `{value['payload_bytes_read']}`")
+          print(f"- Target geometry decoded: `{value['target_mesh_geometry_decoded']}`")
+          for take, row in value["targets"].items():
+              print(f"- {take}: present={row['present']}, ready={row['execution_input_ready']}, archives={row['candidate_archive_count']}")
+          PY
+          fi
+
+      - name: Upload immutable metadata audit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pokeflex-missing5-archive-readiness-v1-${{ matrix.server }}-${{ github.run_id }}
+          path: ${{ env.AUDIT_OUTPUT }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce audit completeness, not target availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$AUDIT_OUTPUT/result.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads((Path(os.environ["AUDIT_OUTPUT"]) / "result.json").read_text())
+          assert value["zip_count"] == 170
+          assert value["payload_bytes_read"] is False
+          assert value["target_mesh_geometry_decoded"] is False
+          assert set(value["targets"]) == {
+              "Pillow_T8",
+              "3dPrintedCylinder_T7",
+              "3dPrintedHeart_T14",
+              "Sponge_T10",
+              "3dPrintedPizza_T13",
+          }
+          PY
