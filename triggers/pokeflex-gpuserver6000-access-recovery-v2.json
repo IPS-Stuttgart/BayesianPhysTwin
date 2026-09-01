@@ -1,0 +1,19 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-gpuserver6000-access-recovery-request-v2",
+  "request_id": "pokeflex-gpuserver6000-access-recovery-20260901-v2",
+  "runner_label": "gpuserver6000",
+  "dataset_root": "/mnt/lexar4tb/pokeflex",
+  "expected_zip_count": 170,
+  "target_take_ids": [
+    "Pillow_T8",
+    "3dPrintedCylinder_T7",
+    "3dPrintedHeart_T14",
+    "Sponge_T10",
+    "3dPrintedPizza_T13"
+  ],
+  "allowed_filesystem_mutation": "add runner-only read and directory-traverse access to the existing dataset tree; do not modify archive bytes",
+  "execute_frozen_v5_v6_if_ready": true,
+  "scientific_protocol_change": false,
+  "target_adaptation": false,
+  "replacement_allowed": false
+}
