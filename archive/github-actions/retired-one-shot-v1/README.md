@@ -1,6 +1,6 @@
 # Retired one-shot GitHub Actions v1
 
-This directory preserves the exact Git blobs of seventeen historical one-shot
+This directory preserves the exact Git blobs of eighteen historical one-shot
 GitHub Actions workflows removed from `.github/workflows` after the corresponding
 executions reached a terminal state and their evidence boundaries were recorded.
 
@@ -32,6 +32,13 @@ The DLO4/DLO5 decision-identifiability launcher is preserved after one-shot run
 compact result under `results/science/deform_dlo45_decision_identifiability_v1`.
 The request, protocol, implementation, tests, provenance, seals, and result stay
 active or committed; only the consumed launcher is retired.
+
+The Tracking Cloth hosted Zenodo mirror launcher is preserved after run
+`33518742754` completed successfully and uploaded checksum-bound compact evidence
+as artifact `9804820476`. The evaluated source, request, protocol, result, and
+historical run remain unchanged; only the consumed transport/execution entry
+point is retired to make room for the permanent DLO4/DLO5 terminal-evidence
+router.
 
 The visual-production failure diagnosis and its coupled reporter are preserved
 here after all of their trusted-main runs failed without a diagnosis artifact or
