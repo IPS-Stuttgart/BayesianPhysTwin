@@ -94,23 +94,17 @@ def compare_values(
         )
     if isinstance(expected, bool) or expected is None or isinstance(expected, str):
         if observed != expected:
-            raise ValueError(
-                f"value changed at {path}: {observed!r} != {expected!r}"
-            )
+            raise ValueError(f"value changed at {path}: {observed!r} != {expected!r}")
         return 0.0
     if isinstance(expected, int) and not isinstance(expected, bool):
         if observed != expected:
-            raise ValueError(
-                f"integer changed at {path}: {observed!r} != {expected!r}"
-            )
+            raise ValueError(f"integer changed at {path}: {observed!r} != {expected!r}")
         return 0.0
     if isinstance(expected, float):
         left = float(observed)
         right = float(expected)
         if not math.isclose(left, right, rel_tol=rtol, abs_tol=atol):
-            raise ValueError(
-                f"numeric value changed at {path}: {left} != {right}"
-            )
+            raise ValueError(f"numeric value changed at {path}: {left} != {right}")
         return abs(left - right)
     if observed != expected:
         raise ValueError(f"unsupported value changed at {path}")
@@ -147,13 +141,12 @@ def validate_artifact(root: Path) -> tuple[dict[str, Any], Path, Path]:
         raise ValueError("bound readiness bytes changed")
     if stored_readiness_digest != binding["readiness_result_sha256"]:
         raise ValueError("bound readiness digest changed")
-    if readiness["selection_manifest_sha256"] != binding[
-        "selection_manifest_sha256"
-    ]:
+    if readiness["selection_manifest_sha256"] != binding["selection_manifest_sha256"]:
         raise ValueError("selection manifest binding changed")
-    if query_cov.canonical_digest(readiness["selection_manifest"]) != readiness[
-        "selection_manifest_sha256"
-    ]:
+    if (
+        query_cov.canonical_digest(readiness["selection_manifest"])
+        != readiness["selection_manifest_sha256"]
+    ):
         raise ValueError("selection manifest digest is invalid")
     object_ids = [str(row["object_id"]) for row in result["objects"]]
     if object_ids != list(map(str, protocol["eligible_object_ids"])):
@@ -211,24 +204,18 @@ def reproduce_exact_confirmation(
                     "diagonal": np.asarray(
                         covariance.diagonal, dtype=np.float64
                     ).copy(),
-                    "factor": np.asarray(
-                        covariance.factor, dtype=np.float64
-                    ).copy(),
+                    "factor": np.asarray(covariance.factor, dtype=np.float64).copy(),
                     "multiplier": float(covariance.multiplier),
                     "marginal_z": float(covariance.marginal_z),
                 }
             )
-            return original_metrics(
-                errors, covariance, probability, rng, sample_count
-            )
+            return original_metrics(errors, covariance, probability, rng, sample_count)
 
         v3.base.probabilistic_metrics = capture_metrics
         return v3, development, base_protocol
 
     confirmation.validate_frozen_method = validate_and_intercept
-    reproduced = confirmation.run(
-        protocol_path, readiness_path, data_root, frozen_root
-    )
+    reproduced = confirmation.run(protocol_path, readiness_path, data_root, frozen_root)
     if len(captures) != len(reproduced["objects"]):
         raise ValueError(
             "expected exactly one final probabilistic scoring call per object"
