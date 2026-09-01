@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  DATASET_ROOT: /mnt/lexar4tb/datasets/deform360
   PROTOCOL: experiments/deform360_query_quotient_v1/protocol.json
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -71,9 +71,9 @@ jobs:
           git diff --check
 
   evaluate:
-    name: Public query quotient / gpuserver4090
+    name: Public query quotient / gpuserver6000
     needs: contracts
-    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
     timeout-minutes: 180
     steps:
       - name: Check out exact validated revision
@@ -111,7 +111,9 @@ jobs:
           ]
           missing = [str(path) for path in source if not path.is_file()]
           if missing:
-              raise SystemExit("registered source archive is missing: " + ", ".join(missing))
+              raise SystemExit(
+                  "registered source archive is missing: " + ", ".join(missing)
+              )
           forbidden = [
               object_root / f"episode_{episode_id}" / "pcd_clean.tar"
               for episode_id in protocol["forbidden_episode_ids"]
@@ -197,7 +199,7 @@ jobs:
             echo "runner_name=${RUNNER_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "runner_arch=${RUNNER_ARCH}"
-            echo "required_runner_label=gpuserver4090"
+            echo "required_runner_label=gpuserver6000"
             echo "dataset_root=${DATASET_ROOT}"
             "${EVAL_PYTHON}" --version
             uname -a
