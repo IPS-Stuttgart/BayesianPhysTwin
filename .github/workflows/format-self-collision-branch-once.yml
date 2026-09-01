@@ -1,0 +1,47 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Format self-collision branch once
+
+on:
+  push:
+    branches:
+      - science/tracking-cloth-self-collision-selective-twin-v1
+    paths:
+      - ".github/workflows/format-self-collision-branch-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/tracking-cloth-self-collision-selective-twin-v1
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Apply the two deterministic Ruff fixes and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.16.5
+          python -m ruff check --fix \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/data.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py
+          python -m ruff format \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/data.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py
+          rm .github/workflows/format-self-collision-branch-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/data.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py \
+            .github/workflows/format-self-collision-branch-once.yml
+          git commit -m "Apply Ruff fixes to self-collision confirmation"
+          git push origin HEAD:science/tracking-cloth-self-collision-selective-twin-v1
