@@ -1,0 +1,95 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Move selective bound to experimental boundary once
+
+on:
+  push:
+    branches:
+      - science/tracking-cloth-self-collision-selective-twin-v1
+    paths:
+      - ".github/workflows/move-selective-bound-experimental-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  move:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/tracking-cloth-self-collision-selective-twin-v1
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Move bounds beside experiment and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          source=src/bayesian_phystwin/selective_competence_bound_v1.py
+          target=experiments/tracking_cloth_self_collision_selective_twin_v1/bounds.py
+          test -f "$source"
+          test ! -e "$target"
+          mv "$source" "$target"
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path("experiments/tracking_cloth_self_collision_selective_twin_v1/selection.py"): (
+                  "from bayesian_phystwin.selective_competence_bound_v1 import clopper_pearson_upper",
+                  "from .bounds import clopper_pearson_upper",
+              ),
+              Path("tests/test_selective_competence_bound_v1.py"): (
+                  "from bayesian_phystwin.selective_competence_bound_v1 import (",
+                  "from experiments.tracking_cloth_self_collision_selective_twin_v1.bounds import (",
+              ),
+              Path(".github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml"): (
+                  '      - "src/bayesian_phystwin/selective_competence_bound_v1.py"',
+                  '      - "experiments/tracking_cloth_self_collision_selective_twin_v1/**"',
+              ),
+          }
+          for path, (old, new) in replacements.items():
+              text = path.read_text()
+              if old not in text:
+                  raise SystemExit(f"expected source text absent from {path}")
+              path.write_text(text.replace(old, new))
+
+          workflow = Path(
+              ".github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml"
+          )
+          text = workflow.read_text()
+          duplicate = (
+              '      - "experiments/tracking_cloth_self_collision_selective_twin_v1/**"\n'
+              '      - "experiments/tracking_cloth_self_collision_selective_twin_v1/**"\n'
+          )
+          workflow.write_text(
+              text.replace(
+                  duplicate,
+                  '      - "experiments/tracking_cloth_self_collision_selective_twin_v1/**"\n',
+              )
+          )
+          PY
+          python -m pip install ruff==0.16.5
+          python -m ruff format \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/bounds.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/selection.py \
+            tests/test_selective_competence_bound_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/bounds.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/selection.py \
+            tests/test_selective_competence_bound_v1.py
+          rm .github/workflows/move-selective-bound-experimental-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/selective_competence_bound_v1.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/bounds.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/selection.py \
+            tests/test_selective_competence_bound_v1.py \
+            .github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml \
+            .github/workflows/move-selective-bound-experimental-once.yml
+          git commit -m "Keep selective competence bounds experimental"
+          git push origin HEAD:science/tracking-cloth-self-collision-selective-twin-v1
