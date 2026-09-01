@@ -57,9 +57,7 @@ def window_records(count: int = 10) -> list[gate_audit.WindowRecord]:
     frozen = protocol()
     records: list[gate_audit.WindowRecord] = []
     for index in range(count):
-        diagnostic = gate_audit.diagnose(
-            fitted.features[index] + 0.01, fitted, frozen
-        )
+        diagnostic = gate_audit.diagnose(fitted.features[index] + 0.01, fitted, frozen)
         scores = dict(diagnostic.scores)
         scores["deterministic_random"] = gate_audit.deterministic_score(
             f"DLO4/test/{index}", "deterministic_random"
@@ -118,9 +116,7 @@ def test_rank_threshold_matches_source_count_exactly() -> None:
         records, "maximum_kernel_weight", selected_count=4
     )
 
-    actions = gate_audit.threshold_actions(
-        records, "maximum_kernel_weight", threshold
-    )
+    actions = gate_audit.threshold_actions(records, "maximum_kernel_weight", threshold)
 
     assert np.count_nonzero(actions) == 4
 

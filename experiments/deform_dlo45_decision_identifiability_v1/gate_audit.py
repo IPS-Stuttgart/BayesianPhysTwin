@@ -13,9 +13,10 @@ import argparse
 import hashlib
 import json
 import math
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping, NamedTuple, Sequence
+from typing import NamedTuple
 
 import numpy as np
 import numpy.typing as npt
@@ -43,7 +44,7 @@ from ._common import (
     window_starts,
     write_json,
 )
-from ._evaluation import bootstrap_interval, load_models
+from ._evaluation import load_models
 from ._model import (
     build_pool,
     class_ambiguity,
@@ -127,8 +128,7 @@ def load_audit_protocol(path: Path) -> AuditProtocol:
         value.get("contract") != AUDIT_CONTRACT
         or value.get("schema_version") != 1
         or value.get("parent_contract") != PARENT_CONTRACT
-        or value.get("candidate_action")
-        != "jeffrey_expected_loss_minimizer"
+        or value.get("candidate_action") != "jeffrey_expected_loss_minimizer"
         or value.get("primary_threshold_rule")
         != "source_test_match_certificate_nonfallback_count"
         or value.get("primary_target_use")
@@ -143,9 +143,7 @@ def load_audit_protocol(path: Path) -> AuditProtocol:
         or not isinstance(support, dict)
         or support.get("nearest_selected_residual") is not True
         or support.get("nearest_global_residual") is not True
-        or support.get(
-            "realized_regret_excess_over_registered_support_bound"
-        )
+        or support.get("realized_regret_excess_over_registered_support_bound")
         is not True
     ):
         raise ValueError("invalid gate-audit protocol")
@@ -172,8 +170,7 @@ def validate_audit_request(path: Path, audit: AuditProtocol) -> dict[str, object
         value.get("contract") != AUDIT_REQUEST_CONTRACT
         or value.get("schema_version") != 1
         or value.get("status") != "authorized"
-        or value.get("parent_workflow_run_id")
-        != audit.parent_workflow_run_id
+        or value.get("parent_workflow_run_id") != audit.parent_workflow_run_id
         or value.get("source_only_threshold_selection") is not True
         or value.get("target_tuning") is not False
         or value.get("target_retries") is not False
@@ -187,9 +184,8 @@ def validate_audit_request(path: Path, audit: AuditProtocol) -> dict[str, object
 
 def deterministic_score(stable_id: str, heuristic: str) -> float:
     payload = (
-        "bayesian-phystwin/deform-dlo45-gate-audit-v1\0"
-        f"{heuristic}\0{stable_id}"
-    ).encode("utf-8")
+        f"bayesian-phystwin/deform-dlo45-gate-audit-v1\0{heuristic}\0{stable_id}"
+    ).encode()
     integer = int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
     return integer / float(2**64)
 
@@ -203,7 +199,9 @@ def quotient_concentration(quotient: FloatArray) -> float:
     return 1.0 - entropy / maximum
 
 
-def diagnose(feature: FloatArray, model: Model, protocol: Protocol) -> DiagnosticDecision:
+def diagnose(
+    feature: FloatArray, model: Model, protocol: Protocol
+) -> DiagnosticDecision:
     """Recompute the registered decision and expose outcome-free gate scores."""
 
     query = (feature - model.feature_mean) / model.feature_scale
@@ -256,15 +254,12 @@ def diagnose(feature: FloatArray, model: Model, protocol: Protocol) -> Diagnosti
     )
     certificate_action = (
         certificate.minimax_action_index
-        if certificate.minimax_worst_case_regret
-        <= model.regret_tolerance + ATOL
+        if certificate.minimax_worst_case_regret <= model.regret_tolerance + ATOL
         else 0
     )
     expected_losses = np.einsum("i,ia->a", jeffrey_weights, relative_losses)
     jeffrey_action = int(np.argmin(expected_losses))
-    kernel_expected_losses = np.einsum(
-        "i,ia->a", kernel_weights, relative_losses
-    )
+    kernel_expected_losses = np.einsum("i,ia->a", kernel_weights, relative_losses)
     kernel_action = int(np.argmin(kernel_expected_losses))
     map_action = int(np.argmin(relative_losses[0]))
     specificity = unsupported_specificity(kernel_weights, classes, quotient)
@@ -295,13 +290,9 @@ def diagnose(feature: FloatArray, model: Model, protocol: Protocol) -> Diagnosti
         or registered.kernel_action != reference.kernel_action
         or registered.map_action != reference.map_action
         or not np.allclose(registered.correction, reference.correction)
-        or not np.allclose(
-            registered.worst_case_regret, reference.worst_case_regret
-        )
+        or not np.allclose(registered.worst_case_regret, reference.worst_case_regret)
         or not np.array_equal(registered.robust_mask, reference.robust_mask)
-        or not np.array_equal(
-            registered.tolerance_mask, reference.tolerance_mask
-        )
+        or not np.array_equal(registered.tolerance_mask, reference.tolerance_mask)
     ):
         raise RuntimeError("gate diagnostics diverged from registered decision")
 
@@ -312,9 +303,7 @@ def diagnose(feature: FloatArray, model: Model, protocol: Protocol) -> Diagnosti
         else float(expected_losses[0])
     )
     per_hypothesis_action = np.argmin(relative_losses, axis=1)
-    agreement = float(
-        np.sum(kernel_weights[per_hypothesis_action == jeffrey_action])
-    )
+    agreement = float(np.sum(kernel_weights[per_hypothesis_action == jeffrey_action]))
     kernel_mean = np.einsum("i,id->d", kernel_weights, selected_residuals)
     disagreement = math.sqrt(
         float(
@@ -331,9 +320,7 @@ def diagnose(feature: FloatArray, model: Model, protocol: Protocol) -> Diagnosti
         "quotient_concentration": quotient_concentration(quotient),
         "maximum_quotient_mass": float(np.max(quotient)),
         "maximum_kernel_weight": float(np.max(kernel_weights)),
-        "expected_fallback_advantage": float(
-            expected_losses[0] - nonfallback_best
-        ),
+        "expected_fallback_advantage": float(expected_losses[0] - nonfallback_best),
         "expected_action_gap": float(sorted_expected[1] - sorted_expected[0]),
         "hypothesis_action_agreement": agreement,
         "negative_residual_disagreement": -disagreement,
@@ -381,8 +368,7 @@ def _window_records(
                 -1
             ) / observation.length_scale
             actions = (
-                model.action_scales[:, None]
-                * diagnostic.decision.correction[None, :]
+                model.action_scales[:, None] * diagnostic.decision.correction[None, :]
             )
             normalized_mse = np.mean(
                 np.square(actual_residual[None, :] - actions), axis=1
@@ -398,9 +384,7 @@ def _window_records(
             )
             global_difference = model.residuals - actual_residual[None, :]
             nearest_selected = math.sqrt(
-                float(
-                    np.min(np.mean(np.square(selected_difference), axis=1))
-                )
+                float(np.min(np.mean(np.square(selected_difference), axis=1)))
             )
             nearest_global = math.sqrt(
                 float(np.min(np.mean(np.square(global_difference), axis=1)))
@@ -429,8 +413,7 @@ def _window_records(
                     certificate_realized_regret=realized_regret,
                     certificate_regret_excess=realized_regret - source_bound,
                     certificate_harmful_vs_fallback=bool(
-                        physical_mse[certificate_action]
-                        > fallback_mse + ATOL
+                        physical_mse[certificate_action] > fallback_mse + ATOL
                     ),
                 )
             )
@@ -494,9 +477,7 @@ def threshold_passes(
     score, tie = _rank_key(record, heuristic)
     boundary_score = float(threshold["score"])
     boundary_tie = float(threshold["tie_break"])
-    return score > boundary_score or (
-        score == boundary_score and tie >= boundary_tie
-    )
+    return score > boundary_score or (score == boundary_score and tie >= boundary_tie)
 
 
 def exact_covariate_matched_actions(
@@ -522,9 +503,7 @@ def threshold_actions(
     threshold: Mapping[str, object],
 ) -> list[int]:
     return [
-        record.candidate_action
-        if threshold_passes(record, heuristic, threshold)
-        else 0
+        record.candidate_action if threshold_passes(record, heuristic, threshold) else 0
         for record in records
     ]
 
@@ -554,10 +533,11 @@ def _wilson_interval(successes: int, total: int) -> tuple[float, float]:
     proportion = successes / total
     denominator = 1.0 + z**2 / total
     center = (proportion + z**2 / (2.0 * total)) / denominator
-    radius = z * math.sqrt(
-        proportion * (1.0 - proportion) / total
-        + z**2 / (4.0 * total**2)
-    ) / denominator
+    radius = (
+        z
+        * math.sqrt(proportion * (1.0 - proportion) / total + z**2 / (4.0 * total**2))
+        / denominator
+    )
     return max(0.0, center - radius), min(1.0, center + radius)
 
 
@@ -575,10 +555,7 @@ def _trajectory_summary(
         selected = math.sqrt(
             float(
                 np.mean(
-                    [
-                        records[index].physical_mse[actions[index]]
-                        for index in indices
-                    ]
+                    [records[index].physical_mse[actions[index]] for index in indices]
                 )
             )
         )
@@ -602,14 +579,20 @@ def summarize_method(
     if len(records) != len(actions):
         raise ValueError("action roster length mismatch")
     selected_mse = np.asarray(
-        [record.physical_mse[action] for record, action in zip(records, actions)],
+        [
+            record.physical_mse[action]
+            for record, action in zip(records, actions, strict=False)
+        ],
         dtype=np.float64,
     )
     fallback_mse = np.asarray(
         [record.fallback_mse for record in records], dtype=np.float64
     )
     regrets = np.asarray(
-        [record.normalized_regret[action] for record, action in zip(records, actions)],
+        [
+            record.normalized_regret[action]
+            for record, action in zip(records, actions, strict=False)
+        ],
         dtype=np.float64,
     )
     action_array = np.asarray(actions, dtype=np.int64)
@@ -636,9 +619,7 @@ def summarize_method(
         "harmful_fraction_all": float(np.mean(harmful)),
         "harmful_nonfallback_count": harmful_nonfallback,
         "harmful_fraction_nonfallback": (
-            harmful_nonfallback / nonfallback_count
-            if nonfallback_count
-            else 0.0
+            harmful_nonfallback / nonfallback_count if nonfallback_count else 0.0
         ),
         "harmful_nonfallback_wilson95": list(interval),
         "action_counts": np.bincount(
@@ -670,9 +651,7 @@ def _stratified_bootstrap(
         values: list[float] = []
         for dlo in DLOS:
             array = np.asarray(grouped[dlo], dtype=np.float64)
-            values.extend(
-                array[rng.integers(0, len(array), size=len(array))].tolist()
-            )
+            values.extend(array[rng.integers(0, len(array), size=len(array))].tolist())
         estimates[index] = float(np.mean(values))
     return [
         float(np.quantile(estimates, 0.025)),
@@ -715,32 +694,26 @@ def _auc(scores: Sequence[float], labels: Sequence[bool]) -> float | None:
         return None
     ranks = _rankdata(score_array)
     positive_rank_sum = float(np.sum(ranks[label_array]))
-    return (
-        positive_rank_sum - positives * (positives + 1) / 2.0
-    ) / (positives * negatives)
+    return (positive_rank_sum - positives * (positives + 1) / 2.0) / (
+        positives * negatives
+    )
 
 
 def support_audit(records: Sequence[WindowRecord]) -> dict[str, object]:
     nonfallback = [
-        record
-        for record in records
-        if record.decision.decision.certificate_action != 0
+        record for record in records if record.decision.decision.certificate_action != 0
     ]
     harmful = [
         record for record in nonfallback if record.certificate_harmful_vs_fallback
     ]
     safe = [
-        record
-        for record in nonfallback
-        if not record.certificate_harmful_vs_fallback
+        record for record in nonfallback if not record.certificate_harmful_vs_fallback
     ]
 
     def summary(items: Sequence[WindowRecord]) -> dict[str, object]:
         if not items:
             return {"count": 0}
-        selected = np.asarray(
-            [item.nearest_selected_residual_rmse for item in items]
-        )
+        selected = np.asarray([item.nearest_selected_residual_rmse for item in items])
         global_distance = np.asarray(
             [item.nearest_global_residual_rmse for item in items]
         )
@@ -751,9 +724,7 @@ def support_audit(records: Sequence[WindowRecord]) -> dict[str, object]:
             "nearest_selected_residual_rmse_median": float(np.median(selected)),
             "nearest_selected_residual_rmse_max": float(np.max(selected)),
             "nearest_global_residual_rmse_mean": float(np.mean(global_distance)),
-            "nearest_global_residual_rmse_median": float(
-                np.median(global_distance)
-            ),
+            "nearest_global_residual_rmse_median": float(np.median(global_distance)),
             "nearest_global_residual_rmse_max": float(np.max(global_distance)),
             "regret_excess_mean": float(np.mean(excess)),
             "regret_excess_median": float(np.median(excess)),
@@ -775,9 +746,7 @@ def support_audit(records: Sequence[WindowRecord]) -> dict[str, object]:
             "source_regret_bound": item.certificate_source_regret_bound,
             "realized_regret": item.certificate_realized_regret,
             "regret_excess": item.certificate_regret_excess,
-            "nearest_selected_residual_rmse": (
-                item.nearest_selected_residual_rmse
-            ),
+            "nearest_selected_residual_rmse": (item.nearest_selected_residual_rmse),
             "nearest_global_residual_rmse": item.nearest_global_residual_rmse,
         }
         for item in harmful
@@ -786,12 +755,8 @@ def support_audit(records: Sequence[WindowRecord]) -> dict[str, object]:
         "certificate_nonfallback": summary(nonfallback),
         "harmful_certificate_nonfallback": summary(harmful),
         "safe_certificate_nonfallback": summary(safe),
-        "spearman_nearest_selected_vs_realized_regret": _spearman(
-            distances, realized
-        ),
-        "spearman_nearest_selected_vs_regret_excess": _spearman(
-            distances, excesses
-        ),
+        "spearman_nearest_selected_vs_realized_regret": _spearman(distances, realized),
+        "spearman_nearest_selected_vs_regret_excess": _spearman(distances, excesses),
         "nearest_selected_distance_auc_for_harm": _auc(distances, labels),
         "regret_excess_auc_for_harm": _auc(excesses, labels),
         "harmful_cases": harmful_cases,
@@ -898,8 +863,7 @@ def source_command(args: argparse.Namespace) -> int:
         threshold_result[dlo] = {
             "source_test_decision_count": len(records),
             "source_certificate_nonfallback_count": selected_count,
-            "source_certificate_nonfallback_fraction": selected_count
-            / len(records),
+            "source_certificate_nonfallback_fraction": selected_count / len(records),
             "primary": primary,
             "source_coverage_grid": grid,
         }
@@ -997,9 +961,7 @@ def _combine_method(
         "nonfallback_fraction": nonfallback_count / decision_count,
         "rmse_ratio_to_fallback": ratio,
         "rmse_reduction": 1.0 - ratio,
-        "mean_paired_trajectory_improvement": float(
-            np.mean(trajectory_improvements)
-        ),
+        "mean_paired_trajectory_improvement": float(np.mean(trajectory_improvements)),
         "trajectory_bootstrap_95_interval": interval,
         "trajectory_wins_ties_losses": [
             int(np.count_nonzero(ratios < 1.0 - ATOL)),
@@ -1010,9 +972,7 @@ def _combine_method(
         "harmful_decision_count": harmful_all,
         "harmful_nonfallback_count": harmful_nonfallback,
         "harmful_fraction_nonfallback": (
-            harmful_nonfallback / nonfallback_count
-            if nonfallback_count
-            else 0.0
+            harmful_nonfallback / nonfallback_count if nonfallback_count else 0.0
         ),
         "harmful_nonfallback_wilson95": list(wilson),
         "mean_normalized_regret": float(np.mean(regrets)),
@@ -1021,13 +981,17 @@ def _combine_method(
     }
 
 
-def _augment_for_combine(summary: dict[str, object], records: Sequence[WindowRecord], actions: Sequence[int]) -> dict[str, object]:
+def _augment_for_combine(
+    summary: dict[str, object], records: Sequence[WindowRecord], actions: Sequence[int]
+) -> dict[str, object]:
     result = dict(summary)
-    fallback_rmse = math.sqrt(float(np.mean([record.fallback_mse for record in records])))
+    fallback_rmse = math.sqrt(
+        float(np.mean([record.fallback_mse for record in records]))
+    )
     result["fallback_rmse_mm"] = 1000.0 * fallback_rmse
     result["regret_values"] = [
         float(record.normalized_regret[action])
-        for record, action in zip(records, actions)
+        for record, action in zip(records, actions, strict=False)
     ]
     return result
 
@@ -1045,8 +1009,7 @@ def target_command(args: argparse.Namespace) -> int:
         or thresholds.get("run_key") != request["run_key"]
         or threshold_seal.get("contract") != AUDIT_CONTRACT
         or threshold_seal.get("stage") != "source-seal"
-        or threshold_seal.get("thresholds_sha256")
-        != sha256_file(args.thresholds)
+        or threshold_seal.get("thresholds_sha256") != sha256_file(args.thresholds)
         or parent_seal.get("source_model_sha256")
         != sha256_file(args.parent_source_model)
         or thresholds.get("parent_source_model_sha256")
@@ -1113,15 +1076,19 @@ def target_command(args: argparse.Namespace) -> int:
                 if isinstance(threshold, dict)
             }
         point_by_dlo[dlo] = {}
-        for name in ("fallback", "jeffrey_point", "kernel_point", "map_point", "oracle"):
+        for name in (
+            "fallback",
+            "jeffrey_point",
+            "kernel_point",
+            "map_point",
+            "oracle",
+        ):
             actions = point_actions(records, name)
             point_by_dlo[dlo][name] = _augment_for_combine(
                 summarize_method(records, actions), records, actions
             )
 
-    combined_certificate = _combine_method(
-        certificate_by_dlo, audit, seed_offset=0
-    )
+    combined_certificate = _combine_method(certificate_by_dlo, audit, seed_offset=0)
     combined_source_gates: dict[str, object] = {}
     combined_matched_gates: dict[str, object] = {}
     for index, heuristic in enumerate(audit.heuristics):
@@ -1217,9 +1184,7 @@ def target_command(args: argparse.Namespace) -> int:
                 "nearest_global_residual_rmse": record.nearest_global_residual_rmse,
             }
             handle.write(json.dumps(payload, sort_keys=True, allow_nan=False) + "\n")
-    (output / "summary.md").write_text(
-        render_summary(result), encoding="utf-8"
-    )
+    (output / "summary.md").write_text(render_summary(result), encoding="utf-8")
     return 0
 
 
