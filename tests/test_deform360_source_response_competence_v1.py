@@ -58,7 +58,7 @@ def test_multivariate_belief_is_positive_definite_and_finite() -> None:
         [[0.25, 0.12, -0.03], [0.12, 0.30, 0.04], [-0.03, 0.04, 0.20]]
     )
     targets = design @ coefficient + rng.multivariate_normal(
-        mean=np.zeros(3), covariance=noise_covariance, size=len(design)
+        np.zeros(3), noise_covariance, size=len(design)
     )
     model = MODULE._fit(
         design[:120], targets[:120], ridge=0.01, eigenvalue_floor=1e-8
