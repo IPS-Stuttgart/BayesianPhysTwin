@@ -1,0 +1,119 @@
+name: Probe gpuserver4090 runner health from gpuserver6000
+
+on:
+  push:
+    branches:
+      - ops/gpuserver4090-runner-health-v1
+    paths:
+      - .github/workflows/gpuserver4090-runner-health-from-6000-v1.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 10
+    env:
+      PROTECTED_RUN_ID: "33361441865"
+      SCORE_JOB_ID: "99931773387"
+      DUPLICATE_RUN_ID: "33414972339"
+    steps:
+      - name: Check out exact diagnostic revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Probe DNS SSH reachability and unprivileged runner state
+        id: probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/gpuserver4090-runner-health-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          log="$RUNNER_TEMP/gpuserver4090-runner-health.log"
+          : > "$log"
+          selected=""
+          dns_ok=false
+          ssh_port_open=false
+          batch_ssh_ok=false
+          for host in gpuserver4090 workstation1; do
+            {
+              echo "=== host=$host ==="
+              getent ahostsv4 "$host" || true
+            } >> "$log" 2>&1
+            if getent ahostsv4 "$host" >/dev/null 2>&1; then
+              dns_ok=true
+            fi
+            if timeout 5 bash -c "</dev/tcp/$host/22" >/dev/null 2>&1; then
+              ssh_port_open=true
+              selected="$host"
+              echo "tcp22=reachable host=$host" >> "$log"
+              if timeout 20 ssh \
+                  -o BatchMode=yes \
+                  -o ConnectTimeout=5 \
+                  -o ServerAliveInterval=5 \
+                  -o ServerAliveCountMax=2 \
+                  -o StrictHostKeyChecking=accept-new \
+                  "$host" \
+                  'set -eu; echo hostname=$(hostname); echo user=$(id -un); echo uid=$(id -u); echo ---runner-processes---; pgrep -af "Runner.Listener|Runner.Worker|runsvc.sh|run.sh" || true; echo ---user-services---; systemctl --user --no-pager --plain --type=service --all 2>/dev/null | grep -Ei "actions|runner" || true; echo ---load---; uptime; echo ---disk---; df -h /home /mnt/seagate10tb 2>/dev/null || true' \
+                  >> "$log" 2>&1; then
+                batch_ssh_ok=true
+                break
+              fi
+              echo "batch_ssh=failed host=$host" >> "$log"
+            else
+              echo "tcp22=unreachable host=$host" >> "$log"
+            fi
+          done
+          DNS_OK="$dns_ok" SSH_PORT_OPEN="$ssh_port_open" \
+          BATCH_SSH_OK="$batch_ssh_ok" SELECTED_HOST="$selected" \
+          LOG_PATH="$log" OUTPUT_PATH="$out" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          log = Path(os.environ["LOG_PATH"])
+          text = log.read_text(encoding="utf-8", errors="replace")
+          result = {
+              "schema": "bayesian-phystwin.gpuserver4090-runner-health-probe.v1",
+              "schema_version": 1,
+              "source_runner_label": "gpuserver6000",
+              "source_runner_name": os.environ.get("RUNNER_NAME"),
+              "protected_run_id": 33361441865,
+              "score_job_id": 99931773387,
+              "duplicate_run_id": 33414972339,
+              "selected_host": os.environ["SELECTED_HOST"],
+              "dns_resolved": os.environ["DNS_OK"] == "true",
+              "ssh_port_reachable": os.environ["SSH_PORT_OPEN"] == "true",
+              "batch_ssh_available": os.environ["BATCH_SSH_OK"] == "true",
+              "runner_process_visible": "Runner.Listener" in text,
+              "runner_worker_visible": "Runner.Worker" in text,
+              "probe_log_sha256": hashlib.sha256(log.read_bytes()).hexdigest(),
+              "scientific_payload_read": False,
+              "remote_state_changed": False,
+              "target_scores_read": False,
+              "paper_claim_authorized": False,
+          }
+          Path(os.environ["OUTPUT_PATH"]).write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2, sort_keys=True))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+              stream.write(f"result={os.environ['OUTPUT_PATH']}\n")
+              stream.write(f"log={os.environ['LOG_PATH']}\n")
+          PY
+
+      - name: Upload bounded runner-health diagnostic
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: gpuserver4090-runner-health-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.probe.outputs.result }}
+            ${{ steps.probe.outputs.log }}
+          if-no-files-found: error
+          retention-days: 30
