@@ -167,3 +167,40 @@ def test_random_score_is_stable_and_keyed_by_decision() -> None:
     assert first == repeated
     assert first != other
     assert 0.0 <= first < 1.0
+
+
+def test_registered_support_violations_are_reported_separately_from_harm() -> None:
+    records = window_records(count=2)
+    first_decision = records[0].decision.decision._replace(
+        worst_case_regret=np.asarray([0.0, 0.20, 0.01]),
+        tolerance_mask=np.asarray([True, False, True]),
+    )
+    second_decision = records[1].decision.decision._replace(
+        worst_case_regret=np.asarray([0.0, 0.02, 0.01]),
+        tolerance_mask=np.asarray([True, True, True]),
+    )
+    modified = [
+        replace(
+            records[0],
+            decision=records[0].decision._replace(decision=first_decision),
+        ),
+        replace(
+            records[1],
+            decision=records[1].decision._replace(decision=second_decision),
+        ),
+    ]
+
+    summary = gate_audit.summarize_method(modified, [1, 1])
+
+    assert summary["registered_support_violation_count_nonfallback"] == 1
+    assert summary["registered_support_violation_fraction_nonfallback"] == 0.5
+    assert summary["registered_support_nonfallback_maximum_worst_case_regret"] == 0.20
+
+
+def test_registered_certificate_actions_have_no_support_violation() -> None:
+    records = window_records()
+    actions = gate_audit.certificate_actions(records)
+
+    summary = gate_audit.summarize_method(records, actions)
+
+    assert summary["registered_support_violation_count_nonfallback"] == 0
