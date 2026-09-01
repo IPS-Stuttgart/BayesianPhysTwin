@@ -7,13 +7,12 @@ import numpy as np
 import pytest
 
 from experiments.deform360_query_quotient_v1.run import (
-    analyze_sequences,
     EpisodeData,
+    analyze_sequences,
     load_protocol,
     query_class_index,
     validate_result,
 )
-
 
 PROTOCOL_PATH = (
     Path(__file__).resolve().parents[1]
