@@ -1,0 +1,34 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-force-queue-cancel-request-v1",
+  "request_id": "pokeflex-force-queue-cancel-20260901-v1",
+  "ordinary_cancel_attempt_run_id": 33499516926,
+  "ordinary_cancel_settle_timeout_seconds": 90,
+  "preserve_run_ids": [
+    33361441865,
+    33475220422
+  ],
+  "force_cancel": [
+    {
+      "run_id": 33363572071,
+      "job_id": 99658993621,
+      "purpose": "older read-only Deform360 diagnostic",
+      "target_payload_opened": false
+    },
+    {
+      "run_id": 33474012734,
+      "job_id": 99749476050,
+      "purpose": "older read-only Tracking Cloth pilot",
+      "target_payload_opened": false
+    },
+    {
+      "run_id": 33474698964,
+      "job_id": 99751544803,
+      "purpose": "older Tracking Cloth query-quotient evaluation",
+      "target_payload_opened": false
+    }
+  ],
+  "require_runner_id_zero": true,
+  "require_zero_executed_steps": true,
+  "scientific_protocol_change": false,
+  "delete_existing_evidence": false
+}
