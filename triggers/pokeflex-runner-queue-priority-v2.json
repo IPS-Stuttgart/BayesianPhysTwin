@@ -1,0 +1,48 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-runner-queue-priority-request-v2",
+  "request_id": "pokeflex-runner-queue-priority-20260901-v2",
+  "preserve": [
+    {
+      "run_id": 33361441865,
+      "purpose": "protected DLO4/DLO5 target fit already in progress"
+    },
+    {
+      "run_id": 33475220422,
+      "purpose": "frozen prospective PokeFlex five-target V5/V6 execution"
+    }
+  ],
+  "supersede": [
+    {
+      "run_id": 33363572071,
+      "job_id": 99658993621,
+      "concurrency_group": "deform360-real-evaluation-refs/heads/run/deform360-gpuserver4090-real-v1",
+      "purpose": "older read-only Deform360 diagnostic",
+      "target_payload_opened": false
+    },
+    {
+      "run_id": 33473574325,
+      "job_id": 99748086182,
+      "concurrency_group": "tracking-cloth-complete-real-20260901-v1",
+      "purpose": "older Tracking Cloth complete replay",
+      "target_payload_opened": false
+    },
+    {
+      "run_id": 33474012734,
+      "job_id": 99749476050,
+      "concurrency_group": "tracking-cloth-evaluation-workflow_dispatch-refs/heads/main",
+      "purpose": "older read-only Tracking Cloth pilot",
+      "target_payload_opened": false
+    },
+    {
+      "run_id": 33474698964,
+      "job_id": 99751544803,
+      "concurrency_group": "tracking-cloth-query-quotient-refs/heads/experiment/tracking-cloth-query-quotient-real-v1",
+      "purpose": "older Tracking Cloth query-quotient evaluation",
+      "target_payload_opened": false
+    }
+  ],
+  "cancel_current_dlo_run": false,
+  "cancel_frozen_pokeflex_run": false,
+  "scientific_protocol_change": false,
+  "delete_existing_evidence": false
+}
