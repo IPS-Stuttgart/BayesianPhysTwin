@@ -1,6 +1,6 @@
 # Retired one-shot GitHub Actions v1
 
-This directory preserves the exact Git blobs of fifteen historical one-shot
+This directory preserves the exact Git blobs of seventeen historical one-shot
 GitHub Actions workflows removed from `.github/workflows` after the corresponding
 executions reached a terminal state and their evidence boundaries were recorded.
 
@@ -21,6 +21,17 @@ reformatted or regenerated during retirement. Restoring an archived launcher to
 `.github/workflows` requires a separately reviewed workflow and protocol
 decision. Copying a historical file back into the active directory is not an
 authorized rerun.
+
+The DLO4/DLO5 frozen-transfer launcher is preserved after its protected
+execution lineage and evidence were retained and later superseded by completed
+recovery and follow-on workflows. Its Python experiment and contract tests
+remain active; only the historical Actions entry point is retired.
+
+The DLO4/DLO5 decision-identifiability launcher is preserved after one-shot run
+`33473378340` completed successfully, uploaded sealed evidence, and committed the
+compact result under `results/science/deform_dlo45_decision_identifiability_v1`.
+The request, protocol, implementation, tests, provenance, seals, and result stay
+active or committed; only the consumed launcher is retired.
 
 The visual-production failure diagnosis and its coupled reporter are preserved
 here after all of their trusted-main runs failed without a diagnosis artifact or
