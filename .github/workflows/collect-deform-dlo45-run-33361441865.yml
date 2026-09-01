@@ -1,0 +1,212 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Collect DLO45 run 33361441865 evidence
+
+on:
+  push:
+    branches:
+      - evidence/deform-dlo45-run-33361441865
+    paths:
+      - .github/requests/collect-deform-dlo45-run-33361441865.json
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: collect-deform-dlo45-run-33361441865
+  cancel-in-progress: false
+
+env:
+  BLOCKING_RUN_ID: "33361441865"
+  REQUEST_PATH: .github/requests/collect-deform-dlo45-run-33361441865.json
+  COLLECTOR: scripts/science/collect_deform_dlo45_run_evidence_v1.py
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate collector contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.16.5
+          python "$COLLECTOR" --self-test
+          ruff check "$COLLECTOR"
+          ruff format --check "$COLLECTOR"
+
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      conclusion: ${{ steps.blocker.outputs.conclusion }}
+      head_sha: ${{ steps.blocker.outputs.head_sha }}
+      html_url: ${{ steps.blocker.outputs.html_url }}
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Authorize exactly one add-only collection request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/evidence/deform-dlo45-run-33361441865
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/collect-deform-dlo45-run-33361441865.json'
+          REQUEST_PATH="$REQUEST_PATH" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text(encoding="utf-8"))
+          expected = {
+              "schema": "deform-dlo45-run-evidence-collection-request-v1",
+              "request_id": "collect-deform-dlo45-run-33361441865-20260901-v1",
+              "run_id": 33361441865,
+              "require_terminal": True,
+              "artifact_api_only": True,
+              "self_hosted_runner_used": False,
+              "target_rerun": False,
+              "method_change": False,
+              "paper_claim_authorized": False,
+          }
+          if request != expected:
+              raise SystemExit(f"collection request differs: {request!r}")
+          PY
+
+      - name: Wait for the protected run to become terminal
+        id: blocker
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 20700 ))
+          while true; do
+            record="$(curl -fsSL \
+              -H 'Accept: application/vnd.github+json' \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$BLOCKING_RUN_ID")"
+            status="$(python -c 'import json,sys; print(json.load(sys.stdin)["status"])' <<<"$record")"
+            conclusion="$(python -c 'import json,sys; print(json.load(sys.stdin).get("conclusion") or "")' <<<"$record")"
+            head_sha="$(python -c 'import json,sys; print(json.load(sys.stdin)["head_sha"])' <<<"$record")"
+            html_url="$(python -c 'import json,sys; print(json.load(sys.stdin)["html_url"])' <<<"$record")"
+            printf '{"run_id":%s,"status":"%s","conclusion":"%s","head_sha":"%s","observed_at":"%s"}\n' \
+              "$BLOCKING_RUN_ID" "$status" "$conclusion" "$head_sha" "$(date -u +%FT%TZ)"
+            if test "$status" = completed; then
+              echo "conclusion=$conclusion" >> "$GITHUB_OUTPUT"
+              echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+              echo "html_url=$html_url" >> "$GITHUB_OUTPUT"
+              break
+            fi
+            if test "$(date +%s)" -ge "$deadline"; then
+              echo "Protected run did not become terminal inside the hosted collection window" >&2
+              exit 75
+            fi
+            sleep 300
+          done
+
+  collect:
+    needs: [contracts, authorize]
+    if: always() && needs.contracts.result == 'success' && needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact authorized revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Record exact protected-run metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$BLOCKING_RUN_ID" \
+            > "$RUNNER_TEMP/deform-dlo45-run-metadata.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "deform-dlo45-run-metadata.json"
+          value = json.loads(path.read_text(encoding="utf-8"))
+          if value.get("id") != 33361441865 or value.get("status") != "completed":
+              raise SystemExit(f"protected run is not the terminal bound run: {value}")
+          PY
+
+      - name: Download every retained artifact from the protected run
+        uses: actions/download-artifact@da56cacac5b77e20dd173f01d3f2237d1f94d2f0 # v8.0.0
+        with:
+          run-id: 33361441865
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/deform-dlo45-artifacts
+
+      - name: Build bounded content-addressed evidence subset
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination=results/sota/deform_dlo45_frozen_v1/run-33361441865
+          test ! -e "$destination"
+          python "$COLLECTOR" \
+            --artifact-root "$RUNNER_TEMP/deform-dlo45-artifacts" \
+            --output-root "$destination" \
+            --run-metadata "$RUNNER_TEMP/deform-dlo45-run-metadata.json"
+
+      - name: Upload collected evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-run-33361441865-collected-evidence
+          path: results/sota/deform_dlo45_frozen_v1/run-33361441865
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Publish collected evidence to the review branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add results/sota/deform_dlo45_frozen_v1/run-33361441865
+          git diff --cached --check
+          git commit -m 'Record retained evidence from DLO45 run 33361441865'
+          git push origin HEAD:evidence/deform-dlo45-run-33361441865
