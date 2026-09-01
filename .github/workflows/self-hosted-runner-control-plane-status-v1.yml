@@ -1,0 +1,97 @@
+name: Inspect self-hosted runner control-plane status
+
+on:
+  push:
+    branches:
+      - ops/gpuserver4090-runner-health-v1
+    paths:
+      - .github/workflows/self-hosted-runner-control-plane-status-v1.yml
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Query repository runners and exact queued score job
+        id: inspect
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          runners="$RUNNER_TEMP/runners.json"
+          score="$RUNNER_TEMP/score-job.json"
+          output="$RUNNER_TEMP/self-hosted-runner-status.json"
+          curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runners?per_page=100" \
+            > "$runners"
+          curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/jobs/99931773387" \
+            > "$score"
+          RUNNERS="$runners" SCORE="$score" OUTPUT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          runners = json.loads(Path(os.environ["RUNNERS"]).read_text())
+          score = json.loads(Path(os.environ["SCORE"]).read_text())
+          selected = []
+          for runner in runners.get("runners", []):
+              labels = sorted(label["name"] for label in runner.get("labels", []))
+              if "gpuserver4090" in labels or "gpuserver6000" in labels:
+                  selected.append(
+                      {
+                          "id": runner.get("id"),
+                          "name": runner.get("name"),
+                          "os": runner.get("os"),
+                          "status": runner.get("status"),
+                          "busy": runner.get("busy"),
+                          "labels": labels,
+                      }
+                  )
+          result = {
+              "schema": "bayesian-phystwin.self-hosted-runner-control-plane-status.v1",
+              "schema_version": 1,
+              "repository_runner_count": runners.get("total_count"),
+              "selected_runners": selected,
+              "score_job": {
+                  "id": score.get("id"),
+                  "run_id": score.get("run_id"),
+                  "name": score.get("name"),
+                  "status": score.get("status"),
+                  "conclusion": score.get("conclusion"),
+                  "labels": score.get("labels"),
+                  "runner_id": score.get("runner_id"),
+                  "runner_name": score.get("runner_name"),
+                  "started_at": score.get("started_at"),
+              },
+              "scientific_payload_read": False,
+              "runner_state_changed": False,
+              "target_scores_read": False,
+          }
+          Path(os.environ["OUTPUT"]).write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2, sort_keys=True))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+              stream.write(f"result={os.environ['OUTPUT']}\n")
+          PY
+
+      - name: Upload runner control-plane status
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: self-hosted-runner-control-plane-status-${{ github.run_id }}
+          path: ${{ steps.inspect.outputs.result }}
+          if-no-files-found: error
+          retention-days: 30
