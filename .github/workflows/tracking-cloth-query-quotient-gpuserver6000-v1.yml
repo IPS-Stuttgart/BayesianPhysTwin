@@ -9,12 +9,12 @@ on:
       - ".github/workflows/tracking-cloth-query-quotient-gpuserver6000-v1.yml"
       - "experiments/tracking_cloth_query_quotient_v1/**"
       - "tests/test_tracking_cloth_query_quotient_v1.py"
-      - "run_requests/tracking-cloth-query-quotient-gpuserver6000-v1.json"
+      - "run_requests/tracking-cloth-query-quotient-gpuserver6000-v1-r2.json"
   push:
     branches:
       - experiment/tracking-cloth-query-quotient-real-v1
     paths:
-      - "run_requests/tracking-cloth-query-quotient-gpuserver6000-v1.json"
+      - "run_requests/tracking-cloth-query-quotient-gpuserver6000-v1-r2.json"
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ env:
   DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
   ARCHIVE_URL: https://fcoltraro.github.io/projects/dataset/tracking_dataset.zip
   ARCHIVE_MD5: b4868b702f8a42b2ea1069d0f1a3b8f6
-  REQUEST_PATH: run_requests/tracking-cloth-query-quotient-gpuserver6000-v1.json
+  REQUEST_PATH: run_requests/tracking-cloth-query-quotient-gpuserver6000-v1-r2.json
   PROTOCOL_PATH: experiments/tracking_cloth_query_quotient_v1/protocol.json
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -39,7 +39,7 @@ env:
 
 jobs:
   contracts:
-    name: Validate alternate-runner contract
+    name: Validate alternate-runner retry contract
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -83,7 +83,7 @@ jobs:
           git diff --check
 
   authorize:
-    name: Authorize one add-only staging request
+    name: Authorize pre-data runtime retry
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -95,7 +95,7 @@ jobs:
           fetch-depth: 2
           clean: true
 
-      - name: Validate exact request and closed claims
+      - name: Validate exact retry and prior closed boundary
         shell: bash
         env:
           BEFORE_SHA: ${{ github.event.before }}
@@ -129,7 +129,7 @@ jobs:
                   "tracking-cloth-query-quotient-staging-request-v1"
               ),
               "request_id": (
-                  "tracking-cloth-query-quotient-gpuserver6000-20260901-v1"
+                  "tracking-cloth-query-quotient-gpuserver6000-20260901-r2"
               ),
               "mode": "stage-verify-evaluate",
               "dataset_root": (
@@ -152,11 +152,15 @@ jobs:
                   "publisher-linked archive staged on alternate runner; "
                   "no fresh-confirmation claim"
               ),
+              "prior_failed_run_id": 33475548420,
+              "prior_failure_stage": "gpuserver6000-python-venv-unavailable",
+              "prior_dataset_access": False,
+              "retry_class": "pre-data-isolated-runtime-correction",
               "expected_source_revision": parent,
           }
           if request != expected:
               raise SystemExit(
-                  "request differs from frozen contract:\n"
+                  "request differs from frozen retry contract:\n"
                   + json.dumps(
                       {"actual": request, "expected": expected},
                       indent=2,
@@ -183,29 +187,61 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Prepare isolated runtime and custody paths
+      - name: Prepare isolated pip-target runtime and custody paths
         shell: bash
         run: |
           set -euo pipefail
+          selected=""
+          for candidate in python3.13 python3.12 python3.11 python3.10 /usr/bin/python3 python3; do
+            command -v "${candidate}" >/dev/null 2>&1 || continue
+            if "${candidate}" - <<'PY'
+          import sys
+          raise SystemExit(0 if sys.version_info >= (3, 10) else 1)
+          PY
+            then
+              if "${candidate}" -m pip --version >/dev/null 2>&1; then
+                selected="$(command -v "${candidate}")"
+                break
+              fi
+            fi
+          done
+          test -n "${selected}"
+
           parent="$(dirname "${DATASET_ROOT}")"
           mkdir -p "${parent}"
           output="$RUNNER_TEMP/tracking-cloth-query-quotient-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           work="$RUNNER_TEMP/tracking-cloth-query-quotient-work-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          venv="$RUNNER_TEMP/tracking-cloth-query-quotient-venv-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime="$RUNNER_TEMP/tracking-cloth-query-quotient-runtime-6000-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           test ! -e "${output}"
           test ! -e "${work}"
-          test ! -e "${venv}"
-          mkdir -p "${output}"
-          python3 -m venv "${venv}"
-          "${venv}/bin/python" -m pip install -e .
-          "${venv}/bin/python" -m pip install \
+          test ! -e "${runtime}"
+          mkdir -p "${output}" "${runtime}"
+          "${selected}" -m pip install \
+            --disable-pip-version-check \
+            --no-input \
+            --only-binary=:all: \
+            --target "${runtime}" \
             -r experiments/tracking_cloth_deformation_v1/requirements.txt
-          "${venv}/bin/python" -m pip check
+          eval_pythonpath="$PWD/src:$PWD:${runtime}"
+          PYTHONPATH="${eval_pythonpath}" "${selected}" - <<'PY'
+          import numpy
+          from bayesian_phystwin.query_quotient_belief_v1 import (
+              minimum_information_query_lift,
+          )
+          from experiments.tracking_cloth_query_quotient_v1.run import (
+              load_protocols,
+          )
+
+          assert numpy.__version__ == "1.26.4"
+          assert callable(minimum_information_query_lift)
+          assert callable(load_protocols)
+          PY
           {
             echo "EVAL_OUTPUT=${output}"
             echo "EVAL_WORK=${work}"
-            echo "EVAL_VENV=${venv}"
-            echo "EVAL_PYTHON=${venv}/bin/python"
+            echo "EVAL_RUNTIME=${runtime}"
+            echo "EVAL_PYTHON=${selected}"
+            echo "PYTHONPATH=${eval_pythonpath}"
             echo "CACHE_PARENT=${parent}"
           } >> "${GITHUB_ENV}"
           {
@@ -218,7 +254,9 @@ jobs:
             echo "dataset_root=${DATASET_ROOT}"
             echo "archive_url=${ARCHIVE_URL}"
             echo "archive_md5=${ARCHIVE_MD5}"
-            "${venv}/bin/python" --version
+            echo "retry_of_run=33475548420"
+            echo "prior_dataset_access=false"
+            "${selected}" --version
             uname -a
             df -h "${parent}"
           } > "${output}/environment.txt"
@@ -227,6 +265,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          command -v curl >/dev/null
+          command -v flock >/dev/null
           lock="${CACHE_PARENT}/.tracking-cloth-deformation-v1-zenodo-14644526.lock"
           exec 9>"${lock}"
           flock -w 30 9
@@ -279,14 +319,9 @@ jobs:
                   --output "${partial}" \
                   "${ARCHIVE_URL}"; then
                   rm -f "${partial}"
-                  curl \
-                    --fail --location --show-error \
-                    --retry 8 --retry-all-errors --retry-delay 5 \
-                    --connect-timeout 30 \
-                    --output "${partial}" \
-                    "${ARCHIVE_URL}"
                 fi
-              else
+              fi
+              if [[ ! -s "${partial}" ]]; then
                 curl \
                   --fail --location --show-error \
                   --retry 8 --retry-all-errors --retry-delay 5 \
@@ -297,12 +332,29 @@ jobs:
               mv "${partial}" "${archive}"
             fi
             echo "${ARCHIVE_MD5}  ${archive}" | md5sum --check --strict
-            unzip -t "${archive}"
             rm -rf "${staging}"
             mkdir "${staging}"
-            unzip -q "${archive}" -d "${staging}"
-            cp --reflink=auto "${archive}" "${staging}/tracking_dataset.zip"
-            "${EVAL_PYTHON}" - <<'PY'
+            STAGING_ROOT="${staging}" ARCHIVE_PATH="${archive}" \
+              "${EVAL_PYTHON}" - <<'PY'
+          import os
+          import shutil
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          archive = Path(os.environ["ARCHIVE_PATH"]).resolve(strict=True)
+          staging = Path(os.environ["STAGING_ROOT"]).resolve(strict=True)
+          with zipfile.ZipFile(archive) as zipped:
+              bad = zipped.testzip()
+              if bad is not None:
+                  raise SystemExit(f"archive integrity failure: {bad}")
+              for entry in zipped.infolist():
+                  path = PurePosixPath(entry.filename)
+                  if path.is_absolute() or ".." in path.parts:
+                      raise SystemExit(f"unsafe archive member: {entry.filename}")
+              zipped.extractall(staging)
+          shutil.copy2(archive, staging / "tracking_dataset.zip")
+          PY
+            STAGING_ROOT="${staging}" "${EVAL_PYTHON}" - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -314,12 +366,9 @@ jobs:
                   "experiments/tracking_cloth_deformation_v1/protocol.json"
               ).read_text(encoding="utf-8")
           )
-          staging = next(
-              Path(os.environ["CACHE_PARENT"]).glob(
-                  ".tracking-cloth-deformation-v1-zenodo-14644526-staging-*"
-              )
+          _, inventory = audit_dataset(
+              Path(os.environ["STAGING_ROOT"]), protocol
           )
-          _, inventory = audit_dataset(staging, protocol)
           print(json.dumps(inventory, indent=2, sort_keys=True))
           PY
             test ! -e "${DATASET_ROOT}"
@@ -465,4 +514,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          rm -rf -- "${EVAL_WORK:-}" "${EVAL_OUTPUT:-}" "${EVAL_VENV:-}"
+          rm -rf -- \
+            "${EVAL_WORK:-}" \
+            "${EVAL_OUTPUT:-}" \
+            "${EVAL_RUNTIME:-}"
