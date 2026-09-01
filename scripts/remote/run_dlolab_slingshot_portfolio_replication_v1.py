@@ -4,9 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import importlib.util
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from bayesian_phystwin.query_portfolio_replication_v1 import (
     BOOTSTRAP_REPLICATES,
@@ -39,6 +40,14 @@ POLICY_V1_ROOT = Path(
     "/home/florianpfaff/source-only/dlolab-query-portfolio-replication-v1/"
     "frozen-policy-v1"
 )
+RUNTIME_ROOT = Path(
+    "/home/florianpfaff/source-only/dlolab-query-portfolio-replication-v1/"
+    "frozen-runtime"
+)
+CANONICAL_PARENT_LIBRARY_PATH = (
+    "/home/fpfaff/source-only/dlo-lab-decision-v1-assets/"
+    "native-libs/root/usr/lib/x86_64-linux-gnu"
+)
 
 
 def _configure_methods() -> None:
@@ -66,6 +75,17 @@ def _load_runner() -> Any:
     wrapper.runner.WORKER_RUNNER_PATH = Path(__file__).resolve()
     wrapper.runner.V2_RUNNER.PARENT_ROOT = PARENT_ROOT
     wrapper.runner.V2_RUNNER.POLICY_V1_ROOT = POLICY_V1_ROOT
+    native_runtime = wrapper.runner.runtime
+
+    def parent_canonical_runtime() -> dict[str, Any]:
+        value = copy.deepcopy(cast(dict[str, Any], native_runtime()))
+        expected_library = RUNTIME_ROOT / "native-libs/root/usr/lib/x86_64-linux-gnu"
+        if Path(value["environment"]["LD_LIBRARY_PATH"]) != expected_library:
+            raise ValueError("exact staged parent native-library root required")
+        value["environment"]["LD_LIBRARY_PATH"] = CANONICAL_PARENT_LIBRARY_PATH
+        return value
+
+    wrapper.runner.runtime = parent_canonical_runtime
     extra = (
         "src/bayesian_phystwin/query_portfolio_replication_v1.py",
         "scripts/remote/run_dlolab_slingshot_portfolio_replication_v1.py",
