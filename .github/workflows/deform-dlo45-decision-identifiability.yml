@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: deform-dlo45-decision-identifiability-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   PYTHONHASHSEED: "0"
@@ -24,6 +24,9 @@ env:
   NUMEXPR_NUM_THREADS: "1"
   PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/protocol.json
   REQUEST: .github/requests/deform-dlo45-decision-identifiability-v1.json
+  DEFORM_UPSTREAM_REPOSITORY: roahmlab/DEFORM
+  DEFORM_UPSTREAM_COMMIT: b73b8b8ecc033caefa693fab7898741d4e6dbeff
+  NUMPY_VERSION: "2.2.6"
 
 jobs:
   contracts:
@@ -86,10 +89,10 @@ jobs:
   source:
     name: Source-only quotient and decision freeze
     needs: contracts
-    runs-on: [self-hosted, linux, x64, gpuserver4090]
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
-      - name: Check out exact revision
+      - name: Check out exact evaluation revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -97,43 +100,53 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Locate and validate official DLO4/DLO5 data
+      - name: Check out pinned source-only DEFORM data
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.DEFORM_UPSTREAM_REPOSITORY }}
+          ref: ${{ env.DEFORM_UPSTREAM_COMMIT }}
+          path: upstream-DEFORM
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/train
+            data_set/DLO5/train
+          sparse-checkout-cone-mode: false
+
+      - name: Set up pinned numerical runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install evaluation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==${NUMPY_VERSION}"
+          python -m pip install --no-deps -e .
+          python -m pip check
+
+      - name: Validate pinned source-only dataset
         id: dataset
         shell: bash
         run: |
           set -euo pipefail
-          candidates=(
-            /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
-            /home/florianpfaff/datasets/deform/data_set
-            /home/florianpfaff/datasets/deform
-          )
-          root=""
-          for candidate in "${candidates[@]}"; do
-            if [[ -d "${candidate}/DLO4/train" \
-               && -d "${candidate}/DLO4/eval" \
-               && -d "${candidate}/DLO5/train" \
-               && -d "${candidate}/DLO5/eval" ]]; then
-              root="${candidate}"
-              break
-            fi
-          done
-          test -n "${root}"
+          test "$(git -C upstream-DEFORM rev-parse HEAD)" = \
+            "${DEFORM_UPSTREAM_COMMIT}"
+          root="${GITHUB_WORKSPACE}/upstream-DEFORM/data_set"
           for dlo in DLO4 DLO5; do
             test "$(find "${root}/${dlo}/train" -maxdepth 1 -type f \
               -name '*.pkl' | wc -l)" -eq 56
-            test "$(find "${root}/${dlo}/eval" -maxdepth 1 -type f \
-              -name '*.pkl' | wc -l)" -eq 14
+            test ! -e "${root}/${dlo}/eval"
           done
           echo "root=${root}" >> "${GITHUB_OUTPUT}"
-
-      - name: Verify local numerical runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import numpy
-          print(numpy.__version__)
-          PY
 
       - name: Freeze source-only model and certificate settings
         shell: bash
@@ -144,28 +157,36 @@ jobs:
           out="${RUNNER_TEMP}/dlo45-decision-source"
           rm -rf "${out}"
           mkdir -p "${out}"
-          PYTHONPATH="${GITHUB_WORKSPACE}/src:${GITHUB_WORKSPACE}" \
-            python3 -m \
+          python -m \
             experiments.deform_dlo45_decision_identifiability_v1.evaluate \
             source \
             --protocol "${PROTOCOL}" \
             --dataset-root "${DATASET_ROOT}" \
             --output-root "${out}"
-          python3 - <<'PY'
+          python - <<'PY'
           import json
           import os
           from pathlib import Path
 
-          result = json.loads(
-              (Path(os.environ["RUNNER_TEMP"]) /
-               "dlo45-decision-source/source_result.json").read_text()
-          )
+          root = Path(os.environ["RUNNER_TEMP"]) / "dlo45-decision-source"
+          result = json.loads((root / "source_result.json").read_text())
           assert result["target_data_read"] is False
           assert set(result["dlos"]) == {"DLO4", "DLO5"}
+          provenance = {
+              "dataset_repository": os.environ["DEFORM_UPSTREAM_REPOSITORY"],
+              "dataset_commit": os.environ["DEFORM_UPSTREAM_COMMIT"],
+              "dataset_checkout": "sparse source-only train paths",
+              "numpy_version": os.environ["NUMPY_VERSION"],
+          }
+          (root / "dataset_provenance.json").write_text(
+              json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
           print(json.dumps({
               "all_source_gates_passed": result["all_source_gates_passed"],
               "DLO4": result["dlos"]["DLO4"]["selected_settings"],
               "DLO5": result["dlos"]["DLO5"]["selected_settings"],
+              "dataset_commit": provenance["dataset_commit"],
           }, indent=2, sort_keys=True))
           PY
 
@@ -180,10 +201,10 @@ jobs:
   target:
     name: One-shot held-trajectory evaluation
     needs: source
-    runs-on: [self-hosted, linux, x64, gpuserver4090]
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - name: Check out exact revision
+      - name: Check out exact evaluation revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -191,31 +212,58 @@ jobs:
           persist-credentials: true
           clean: true
 
+      - name: Check out pinned held DEFORM data
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.DEFORM_UPSTREAM_REPOSITORY }}
+          ref: ${{ env.DEFORM_UPSTREAM_COMMIT }}
+          path: upstream-DEFORM
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/eval
+            data_set/DLO5/eval
+          sparse-checkout-cone-mode: false
+
+      - name: Set up pinned numerical runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install evaluation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==${NUMPY_VERSION}"
+          python -m pip install --no-deps -e .
+          python -m pip check
+
       - name: Download exact source artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
         with:
           name: dlo45-decision-source-${{ github.run_id }}
           path: ${{ runner.temp }}/dlo45-decision-source
 
-      - name: Locate official target data
+      - name: Validate pinned held dataset
         id: dataset
         shell: bash
         run: |
           set -euo pipefail
-          candidates=(
-            /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
-            /home/florianpfaff/datasets/deform/data_set
-            /home/florianpfaff/datasets/deform
-          )
-          root=""
-          for candidate in "${candidates[@]}"; do
-            if [[ -d "${candidate}/DLO4/eval" \
-               && -d "${candidate}/DLO5/eval" ]]; then
-              root="${candidate}"
-              break
-            fi
+          test "$(git -C upstream-DEFORM rev-parse HEAD)" = \
+            "${DEFORM_UPSTREAM_COMMIT}"
+          root="${GITHUB_WORKSPACE}/upstream-DEFORM/data_set"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/eval" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 14
+            test ! -e "${root}/${dlo}/train"
           done
-          test -n "${root}"
           echo "root=${root}" >> "${GITHUB_OUTPUT}"
 
       - name: Evaluate the sealed policy once
@@ -228,8 +276,7 @@ jobs:
           out="${RUNNER_TEMP}/dlo45-decision-target"
           rm -rf "${out}"
           mkdir -p "${out}"
-          PYTHONPATH="${GITHUB_WORKSPACE}/src:${GITHUB_WORKSPACE}" \
-            python3 -m \
+          python -m \
             experiments.deform_dlo45_decision_identifiability_v1.evaluate \
             target \
             --protocol "${PROTOCOL}" \
@@ -247,6 +294,7 @@ jobs:
           path: |
             ${{ runner.temp }}/dlo45-decision-source/source_result.json
             ${{ runner.temp }}/dlo45-decision-source/source_seal.json
+            ${{ runner.temp }}/dlo45-decision-source/dataset_provenance.json
             ${{ runner.temp }}/dlo45-decision-target/target_result.json
             ${{ runner.temp }}/dlo45-decision-target/summary.md
           if-no-files-found: error
@@ -257,7 +305,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          run_key="$(python3 - <<'PY'
+          run_key="$(python - <<'PY'
           import json
           import os
 
@@ -272,10 +320,13 @@ jobs:
             "${destination}/source_result.json"
           cp "${RUNNER_TEMP}/dlo45-decision-source/source_seal.json" \
             "${destination}/source_seal.json"
+          cp "${RUNNER_TEMP}/dlo45-decision-source/dataset_provenance.json" \
+            "${destination}/dataset_provenance.json"
           cp "${RUNNER_TEMP}/dlo45-decision-target/target_result.json" \
             "${destination}/target_result.json"
           cp "${RUNNER_TEMP}/dlo45-decision-target/summary.md" \
             "${destination}/README.md"
+          rm -rf upstream-DEFORM
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
