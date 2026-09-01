@@ -595,14 +595,40 @@ def summarize_method(
         ],
         dtype=np.float64,
     )
+    registered_worst_case_regrets = np.asarray(
+        [
+            record.decision.decision.worst_case_regret[action]
+            for record, action in zip(records, actions, strict=False)
+        ],
+        dtype=np.float64,
+    )
+    registered_admissible = np.asarray(
+        [
+            record.decision.decision.tolerance_mask[action]
+            for record, action in zip(records, actions, strict=False)
+        ],
+        dtype=bool,
+    )
     action_array = np.asarray(actions, dtype=np.int64)
     nonfallback = action_array != 0
+    registered_support_violation = nonfallback & ~registered_admissible
     harmful = selected_mse > fallback_mse + ATOL
     fallback_rmse = math.sqrt(float(np.mean(fallback_mse)))
     selected_rmse = math.sqrt(float(np.mean(selected_mse)))
     harmful_nonfallback = int(np.count_nonzero(harmful & nonfallback))
     nonfallback_count = int(np.count_nonzero(nonfallback))
     interval = _wilson_interval(harmful_nonfallback, nonfallback_count)
+    support_violation_count = int(np.count_nonzero(registered_support_violation))
+    support_interval = _wilson_interval(support_violation_count, nonfallback_count)
+    nonfallback_support_regrets = registered_worst_case_regrets[nonfallback]
+    if nonfallback_count:
+        support_mean = float(np.mean(nonfallback_support_regrets))
+        support_p95 = float(np.quantile(nonfallback_support_regrets, 0.95))
+        support_maximum = float(np.max(nonfallback_support_regrets))
+    else:
+        support_mean = 0.0
+        support_p95 = 0.0
+        support_maximum = 0.0
     trajectories = _trajectory_summary(records, actions)
     ratios = np.asarray([float(item["ratio"]) for item in trajectories])
     return {
@@ -615,6 +641,14 @@ def summarize_method(
         "p95_normalized_regret": float(np.quantile(regrets, 0.95)),
         "p99_normalized_regret": float(np.quantile(regrets, 0.99)),
         "maximum_normalized_regret": float(np.max(regrets)),
+        "registered_support_nonfallback_mean_worst_case_regret": support_mean,
+        "registered_support_nonfallback_p95_worst_case_regret": support_p95,
+        "registered_support_nonfallback_maximum_worst_case_regret": support_maximum,
+        "registered_support_violation_count_nonfallback": support_violation_count,
+        "registered_support_violation_fraction_nonfallback": (
+            support_violation_count / nonfallback_count if nonfallback_count else 0.0
+        ),
+        "registered_support_violation_wilson95": list(support_interval),
         "harmful_decision_count": int(np.count_nonzero(harmful)),
         "harmful_fraction_all": float(np.mean(harmful)),
         "harmful_nonfallback_count": harmful_nonfallback,
@@ -933,6 +967,8 @@ def _combine_method(
     harmful_nonfallback = 0
     harmful_all = 0
     regret_values: list[float] = []
+    registered_support_values: list[float] = []
+    registered_support_violation_count = 0
     for dlo in DLOS:
         item = by_dlo[dlo]
         count = int(item["decision_count"])
@@ -945,6 +981,13 @@ def _combine_method(
         harmful_all += int(item["harmful_decision_count"])
         trajectories.extend(item["per_trajectory"])
         regret_values.extend(float(value) for value in item["regret_values"])
+        registered_support_values.extend(
+            float(value)
+            for value in item["registered_support_nonfallback_worst_case_regret_values"]
+        )
+        registered_support_violation_count += int(
+            item["registered_support_violation_count_nonfallback"]
+        )
     ratio = math.sqrt(total_selected_sse / total_fallback_sse)
     trajectory_improvements = [float(item["improvement"]) for item in trajectories]
     interval = _stratified_bootstrap(
@@ -955,6 +998,18 @@ def _combine_method(
     wilson = _wilson_interval(harmful_nonfallback, nonfallback_count)
     ratios = np.asarray([float(item["ratio"]) for item in trajectories])
     regrets = np.asarray(regret_values, dtype=np.float64)
+    support_regrets = np.asarray(registered_support_values, dtype=np.float64)
+    support_interval = _wilson_interval(
+        registered_support_violation_count, nonfallback_count
+    )
+    if nonfallback_count:
+        support_mean = float(np.mean(support_regrets))
+        support_p95 = float(np.quantile(support_regrets, 0.95))
+        support_maximum = float(np.max(support_regrets))
+    else:
+        support_mean = 0.0
+        support_p95 = 0.0
+        support_maximum = 0.0
     return {
         "decision_count": decision_count,
         "nonfallback_count": nonfallback_count,
@@ -978,6 +1033,18 @@ def _combine_method(
         "mean_normalized_regret": float(np.mean(regrets)),
         "p95_normalized_regret": float(np.quantile(regrets, 0.95)),
         "p99_normalized_regret": float(np.quantile(regrets, 0.99)),
+        "registered_support_nonfallback_mean_worst_case_regret": support_mean,
+        "registered_support_nonfallback_p95_worst_case_regret": support_p95,
+        "registered_support_nonfallback_maximum_worst_case_regret": support_maximum,
+        "registered_support_violation_count_nonfallback": (
+            registered_support_violation_count
+        ),
+        "registered_support_violation_fraction_nonfallback": (
+            registered_support_violation_count / nonfallback_count
+            if nonfallback_count
+            else 0.0
+        ),
+        "registered_support_violation_wilson95": list(support_interval),
     }
 
 
@@ -992,6 +1059,11 @@ def _augment_for_combine(
     result["regret_values"] = [
         float(record.normalized_regret[action])
         for record, action in zip(records, actions, strict=False)
+    ]
+    result["registered_support_nonfallback_worst_case_regret_values"] = [
+        float(record.decision.decision.worst_case_regret[action])
+        for record, action in zip(records, actions, strict=False)
+        if action != 0
     ]
     return result
 
@@ -1182,6 +1254,12 @@ def target_command(args: argparse.Namespace) -> int:
                 "certificate_regret_excess": record.certificate_regret_excess,
                 "nearest_selected_residual_rmse": record.nearest_selected_residual_rmse,
                 "nearest_global_residual_rmse": record.nearest_global_residual_rmse,
+                "registered_worst_case_regret_by_action": (
+                    record.decision.decision.worst_case_regret.tolist()
+                ),
+                "registered_tolerance_mask_by_action": (
+                    record.decision.decision.tolerance_mask.tolist()
+                ),
             }
             handle.write(json.dumps(payload, sort_keys=True, allow_nan=False) + "\n")
     (output / "summary.md").write_text(render_summary(result), encoding="utf-8")
