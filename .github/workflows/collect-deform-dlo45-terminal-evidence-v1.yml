@@ -1,0 +1,223 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Collect terminal DLO4/DLO5 evidence for ICRA
+
+on:
+  workflow_run:
+    workflows:
+      - DEFORM DLO4/DLO5 staged timeout recovery v3
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+
+concurrency:
+  group: collect-terminal-dlo45-run-33361441865
+  cancel-in-progress: false
+
+env:
+  EXPECTED_RUN_ID: "33361441865"
+  EXPECTED_HEAD_SHA: "0376ece871d7c3d9355788f812a3c4cc1c9165b0"
+  EXPECTED_HEAD_BRANCH: "science/deform-dlo45-time-budget-recovery-v3"
+  EXPECTED_WORKFLOW: "DEFORM DLO4/DLO5 staged timeout recovery v3"
+  ISSUE_NUMBER: "856"
+  EVIDENCE_BRANCH: "evidence/deform-dlo45-run-33361441865-terminal-v1"
+  DESTINATION: "results/sota/deform_dlo45_frozen_v1/run-33361441865"
+  COLLECTOR: "scripts/science/collect_deform_dlo45_run_evidence_v1.py"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+
+jobs:
+  collect:
+    name: Preserve exact terminal run evidence
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.workflow_run.id == 33361441865 &&
+      github.event.workflow_run.name == 'DEFORM DLO4/DLO5 staged timeout recovery v3' &&
+      github.event.workflow_run.head_sha == '0376ece871d7c3d9355788f812a3c4cc1c9165b0' &&
+      github.event.workflow_run.head_branch == 'science/deform-dlo45-time-budget-recovery-v3' &&
+      github.event.workflow_run.status == 'completed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out trusted terminal-evidence router
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate exact completion event and collector
+        shell: bash
+        env:
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+          EVENT_RUN_NAME: ${{ github.event.workflow_run.name }}
+          EVENT_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT_STATUS: ${{ github.event.workflow_run.status }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_RUN_ID" = "$EXPECTED_RUN_ID"
+          test "$EVENT_RUN_NAME" = "$EXPECTED_WORKFLOW"
+          test "$EVENT_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
+          test "$EVENT_HEAD_BRANCH" = "$EXPECTED_HEAD_BRANCH"
+          test "$EVENT_STATUS" = completed
+          python "$COLLECTOR" --self-test
+          python -m py_compile "$COLLECTOR"
+
+      - name: Record exact workflow-run metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$EXPECTED_RUN_ID" \
+            > "$RUNNER_TEMP/deform-dlo45-run-metadata.json"
+          RUN_METADATA="$RUNNER_TEMP/deform-dlo45-run-metadata.json" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RUN_METADATA"]).read_text(encoding="utf-8"))
+          expected = {
+              "id": 33361441865,
+              "name": "DEFORM DLO4/DLO5 staged timeout recovery v3",
+              "head_sha": "0376ece871d7c3d9355788f812a3c4cc1c9165b0",
+              "head_branch": "science/deform-dlo45-time-budget-recovery-v3",
+              "status": "completed",
+          }
+          for key, item in expected.items():
+              if value.get(key) != item:
+                  raise SystemExit(
+                      f"terminal run metadata differs at {key}: {value.get(key)!r}"
+                  )
+          PY
+
+      - name: Download every retained artifact from the exact run
+        uses: actions/download-artifact@da56cacac5b77e20dd173f01d3f2237d1f94d2f0 # v8.0.0
+        with:
+          run-id: 33361441865
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: ${{ runner.temp }}/deform-dlo45-artifacts
+
+      - name: Build bounded content-addressed evidence subset
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "$DESTINATION"
+          python "$COLLECTOR" \
+            --artifact-root "$RUNNER_TEMP/deform-dlo45-artifacts" \
+            --output-root "$DESTINATION" \
+            --run-metadata "$RUNNER_TEMP/deform-dlo45-run-metadata.json"
+          COLLECTION="$DESTINATION/collection.json" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["COLLECTION"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          if value.get("blocking_run_terminal") is not True:
+              raise SystemExit("collector did not bind a terminal run")
+          if value.get("run", {}).get("id") != 33361441865:
+              raise SystemExit("collector bound another run")
+          if value.get("source_artifact_file_count", 0) < 1:
+              raise SystemExit("terminal run had no retained artifacts")
+          retained = {item["source_path"] for item in value.get("retained", [])}
+          conclusion = value.get("run", {}).get("conclusion")
+          if conclusion == "success":
+              required_names = {"result.json", "joint_prediction_seal.json"}
+              present_names = {Path(item).name for item in retained}
+              missing = sorted(required_names - present_names)
+              if missing:
+                  raise SystemExit(
+                      f"successful terminal run lacks required evidence: {missing}"
+                  )
+          PY
+
+      - name: Upload terminal evidence subset
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-run-33361441865-terminal-evidence
+          path: ${{ env.DESTINATION }}
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Publish no-clobber review branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin "$EVIDENCE_BRANCH" >/dev/null 2>&1; then
+            echo "Refusing to overwrite existing terminal evidence branch: $EVIDENCE_BRANCH" >&2
+            exit 80
+          fi
+          git switch -c "$EVIDENCE_BRANCH"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$DESTINATION"
+          git diff --cached --check
+          git commit -m 'Record terminal evidence from DLO45 run 33361441865'
+          git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
+
+      - name: Route terminal handoff to issue 856
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PARENT_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+        run: |
+          set -euo pipefail
+          printf -v comment '%s\n' \
+            'Terminal handoff collected automatically.' \
+            '' \
+            "- protected run: \`$EXPECTED_RUN_ID\`" \
+            "- conclusion: \`$PARENT_CONCLUSION\`" \
+            "- evidence branch: \`$EVIDENCE_BRANCH\`" \
+            "- collected artifact ID: \`$ARTIFACT_ID\`" \
+            "- collected artifact digest: \`$ARTIFACT_DIGEST\`" \
+            '- target rerun: `false`' \
+            '- method change: `false`' \
+            '' \
+            'The bounded branch/artifact must now be verified against the joint prediction seal and ingested into the draft ICRA paper through its fail-closed target ingester. No paper claim is authorized by collection alone.'
+          payload="$(COMMENT="$comment" python -c \
+            'import json, os; print(json.dumps({"body": os.environ["COMMENT"]}))')"
+          curl -fsSL -X POST \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" \
+            --data "$payload"
+
+      - name: Publish terminal collection summary
+        shell: bash
+        env:
+          PARENT_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+        run: |
+          {
+            echo '## DLO4/DLO5 terminal evidence preserved'
+            echo
+            echo "- run: \`$EXPECTED_RUN_ID\`"
+            echo "- conclusion: \`$PARENT_CONCLUSION\`"
+            echo "- branch: \`$EVIDENCE_BRANCH\`"
+            echo "- artifact ID: \`$ARTIFACT_ID\`"
+            echo "- artifact digest: \`$ARTIFACT_DIGEST\`"
+            echo '- target rerun: `false`'
+            echo '- paper claim authorized: `false`'
+          } >> "$GITHUB_STEP_SUMMARY"
