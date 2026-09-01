@@ -1,0 +1,85 @@
+{
+  "aggregation": "separate_equal_world_query_specific_estimands",
+  "allocation": {
+    "gain_family_alpha": 0.01,
+    "gain_per_query_alpha": 0.005,
+    "harm_family_alpha": 0.04,
+    "harm_per_query_alpha": 0.02
+  },
+  "calibration_worlds": {
+    "dlolab_slingshot_v4": 128,
+    "dlolab_wrapping_v9": 0
+  },
+  "cross_task_reward_pooling": false,
+  "design_diagnostics": {
+    "diagnostic_only": true,
+    "maximum_harmful_worlds_per_query": 8
+  },
+  "fallback": "exact_registered_incumbent",
+  "fresh_worlds": true,
+  "frozen_component_policies": {
+    "dlolab_slingshot_v4": {
+      "calibration": "registered_independent_128_world_calibration_partition",
+      "policy": "policy_gain_guard",
+      "source_evidence_id": "2882809b7265714a93be2d3f1455eeac527adbe681cc990cde762777fcaf3a85"
+    },
+    "dlolab_wrapping_v9": {
+      "calibration": "frozen_v9_source_certificate",
+      "policy": "posterior_975_guard",
+      "source_evidence_id": "d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9"
+    }
+  },
+  "gain_test": {
+    "bootstrap": "world_level_percentile_lower_bound",
+    "estimand": "query_specific_mean_reward_gain_over_exact_fallback",
+    "pass": "lower_bound_strictly_greater_than_zero_for_both_queries",
+    "replicates": 100000,
+    "seed": 263100
+  },
+  "harm_test": {
+    "budget": 0.05,
+    "event": "gain_strictly_below_negative_reward_margin",
+    "pass": "upper_bound_at_most_budget_for_both_queries",
+    "upper_bound": "one_sided_clopper_pearson"
+  },
+  "joint_claim_confidence": 0.95,
+  "outcomes_opened": false,
+  "overall_alpha": 0.05,
+  "parent_protocol_id": "511f9451c582ded23cab24bbf2721b00c5079259a044aaf0b8b8fe45f4ce9dcd",
+  "protocol_id": "adb1c26d7093395cfd1f2d5418e567626975a69e9441d053a59258579c052d78",
+  "queries": [
+    "dlolab_wrapping_v9",
+    "dlolab_slingshot_v4"
+  ],
+  "recovery": {
+    "ordinary_future_seals": 0,
+    "ordinary_prefix_seals": 0,
+    "outcomes_opened": false,
+    "repair": "add_exact_staged_dlolab_experiments_to_worker_pythonpath",
+    "scientific_change": false,
+    "terminal_slingshot_v2_failure_id": "b0409889fb5b14d0f7eb558f8aa77965f6fbcb6d703909f465fe9ca26f496cad",
+    "terminal_stage": "calibration-prefixes",
+    "worker_import_preflight_required": true,
+    "worlds_reused": false
+  },
+  "reward_margin": 0.002,
+  "role": "prospective_two_query_public_simulator_replication_recovery_v3",
+  "schema": "bayesian_phystwin.query_portfolio_replication",
+  "sensor_seeds": {
+    "dlolab_slingshot_v4": {
+      "calibration": 263303,
+      "evaluation": 263304
+    },
+    "dlolab_wrapping_v9": 263103
+  },
+  "technical_failure_policy": "terminal_failure_no_replacement_no_partial_claim",
+  "version": 3,
+  "world_seeds": {
+    "dlolab_slingshot_v4": {
+      "calibration": 263301,
+      "evaluation": 263302
+    },
+    "dlolab_wrapping_v9": 263101
+  },
+  "worlds_per_query": 320
+}
