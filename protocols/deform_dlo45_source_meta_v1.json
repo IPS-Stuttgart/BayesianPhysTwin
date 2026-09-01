@@ -1,0 +1,47 @@
+{
+  "blocking_run": {
+    "head_sha": "0376ece871d7c3d9355788f812a3c4cc1c9165b0",
+    "run_id": 33361441865,
+    "source_artifact_id": 9777311875,
+    "source_artifact_sha256": "225183be4dad278d70daab0a5b350b79461328097238145dea1206e209d69272",
+    "target_status_when_frozen": "in-progress-refit-and-predict-before-joint-seal"
+  },
+  "claim_boundary": "A positive result supports joint source-side replication across DLO4 and DLO5 trajectories under the original gates. It is not held-out target evidence, an operator-level generalization p-value, cross-backend transfer, arbitrary-object generalization, safety, or state of the art.",
+  "contract": "deform-dlo45-source-meta-analysis-protocol-v1",
+  "evaluation": {
+    "aggregation": "resample-eight-trajectories-within-each-dlo-then-pool-equally",
+    "bootstrap_interpretation": "descriptive-source-panel-uncertainty-not-a-new-promotion-gate",
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20260901,
+    "decision_rule": "both-original-source-gates-passed",
+    "primary_metric": "pooled-mean-coordinate-l1-relative-improvement",
+    "secondary_metrics": [
+      "pooled-absolute-improvement",
+      "wins-ties-losses",
+      "exact-upper-sign-probability",
+      "free-node-improvement",
+      "equal-dlo-source-uncertainty-diagnostics"
+    ],
+    "statistical_unit": "complete-source-test-trajectory"
+  },
+  "information_boundary": {
+    "meta_analysis_frozen_before_target_outcome": true,
+    "new_model_selection": false,
+    "paper_claim_authorized": false,
+    "source_outcomes_already_opened": true,
+    "target_scores_used": false
+  },
+  "schema_version": 1,
+  "scientific_question": "Before the unopened DLO4/DLO5 targets are scored, how consistent is the already completed source-side benefit across both operators at the complete-trajectory unit?",
+  "source_results": {
+    "DLO4": {
+      "sha256": "c811db44c6f680e31d70698d4eea2e740fce2fd1703abf27fccf873ec32950e1",
+      "size_bytes": 8867
+    },
+    "DLO5": {
+      "sha256": "ce1cb3d1844516416ad53b5353cc9c0b55812ddb12d3d50b57a4da45698664d0",
+      "size_bytes": 8879
+    }
+  },
+  "status": "frozen-after-source-results-before-target-outcome"
+}
