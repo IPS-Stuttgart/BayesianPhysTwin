@@ -60,17 +60,13 @@ def _protocol() -> dict[str, object]:
 
 def test_context_gate_excludes_heldout_material_and_separates_actions() -> None:
     rows = _rows()
-    decisions = _fit_context_decisions(
-        rows, "wool", "query_horizon_gate", _protocol()
-    )
+    decisions = _fit_context_decisions(rows, "wool", "query_horizon_gate", _protocol())
     assert decisions[("shake", "free_marker_centroid", 1.0)] is True
     assert decisions[("twist", "free_marker_centroid", 1.0)] is False
 
 
 def test_rejection_is_exact_fallback() -> None:
-    selected = cross_material_policy_rows(
-        _rows(), "query_horizon_gate", _protocol()
-    )
+    selected = cross_material_policy_rows(_rows(), "query_horizon_gate", _protocol())
     twist = [row for row in selected if row["motion"] == "twist"]
     assert twist
     assert all(row["accepted"] is False for row in twist)
