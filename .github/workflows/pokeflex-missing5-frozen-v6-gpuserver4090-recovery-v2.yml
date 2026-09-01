@@ -1,0 +1,242 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: PokeFlex frozen missing-five V5/V6 recovery / gpuserver4090
+
+on:
+  push:
+    branches:
+      - science/pokeflex-missing5-frozen-v6-gpuserver4090-v1
+    paths:
+      - triggers/pokeflex-missing5-frozen-v6-gpuserver4090-recovery-v2.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-missing5-frozen-v6-gpuserver4090-recovery-v2
+  cancel-in-progress: false
+
+env:
+  REQUEST: triggers/pokeflex-missing5-frozen-v6-gpuserver4090-recovery-v2.json
+  ORCHESTRATOR: scripts/held/run_pokeflex_missing5_frozen_v6_workflow.sh
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/pokeflex
+  OUTPUT_BASE: /home/github-runner/.cache/workflows/pokeflex-missing5-frozen-v6-gpuserver4090-recovery-v2
+  PARENT_PROTOCOL: ${{ github.workspace }}/configs/sota/pokeflex_action_robust_official18_v4.json
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contract:
+    name: Verify exact lint-only recovery and frozen custody
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact recovery revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Require one add-only pre-target recovery request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/pokeflex-missing5-frozen-v6-gpuserver4090-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-missing5-frozen-v6-gpuserver4090-recovery-v2.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-missing5-frozen-v6-gpuserver4090-recovery-v2.json").read_text())
+          targets = [
+              "Pillow_T8",
+              "3dPrintedCylinder_T7",
+              "3dPrintedHeart_T14",
+              "Sponge_T10",
+              "3dPrintedPizza_T13",
+          ]
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-missing5-v6-recovery-request-v1",
+              "request_id": "pokeflex-missing5-frozen-v6-gpuserver4090-recovery-20260901-v2",
+              "runner_label": "gpuserver4090",
+              "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/pokeflex",
+              "expected_zip_count": 170,
+              "frozen_implementation_base_revision": "12ec594f7005f255bf18f999f0f04ae921cfbaad",
+              "frozen_v5_execution_protocol_sha256": "1bc0a3486c0b937000772fc74bfcab2ed4a4dd34f2d90d0199440bc043a59f7a",
+              "frozen_v6_execution_protocol_sha256": "e875495295acc8de4b7da70cdcaff9947838b8e92f1785dbbe32f9fc0c67e78b",
+              "target_take_ids": targets,
+              "prior_failed_run_id": 33475029653,
+              "prior_failure_stage": "hosted-contract-missing-scipy",
+              "prior_target_payload_access": False,
+              "scientific_protocol_changed": False,
+              "target_adaptation": False,
+              "replacement_allowed": False,
+              "joint_pre_scoring_seal_required": True,
+              "paper_claim_authorized": False,
+          }
+          if request != expected:
+              raise SystemExit(f"recovery request changed: {request!r}")
+          v5 = json.loads(Path("configs/sota/pokeflex_missing5_execution_v5.json").read_text())
+          v6 = json.loads(Path("configs/sota/pokeflex_missing5_execution_v6.json").read_text())
+          assert v5["execution_protocol_sha256"] == expected["frozen_v5_execution_protocol_sha256"]
+          assert v6["execution_protocol_sha256"] == expected["frozen_v6_execution_protocol_sha256"]
+          assert v6["target_take_ids"] == targets
+          assert v6["official_target_outcomes_used_to_build_protocol"] is False
+          assert v6["custody"]["replacement_allowed"] is False
+          assert v6["custody"]["target_adaptation"] == "forbidden"
+          assert v6["custody"]["target_mesh_access_before_barrier"] == "forbidden"
+          PY
+
+      - name: Run complete focused custody suite with pinned missing dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n "$ORCHESTRATOR"
+          python -m pip install -e . pytest "scipy==1.15.2"
+          python -m pytest -q \
+            tests/test_pokeflex_action_robust_official18_v4.py \
+            tests/test_pokeflex_missing5_execution_v5.py \
+            tests/test_pokeflex_missing5_execution_v6.py \
+            tests/test_pokeflex_missing5_causal_scale_v6.py
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  execute:
+    name: Five frozen targets with joint pre-scoring seal / gpuserver4090
+    needs: contract
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 1440
+    steps:
+      - name: Admit assigned runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+
+      - name: Check out exact recovery revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Allocate fresh execution custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_root="$OUTPUT_BASE/$GITHUB_SHA/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$run_root"
+          mkdir -p "$(dirname "$run_root")" "$run_root"
+          echo "RUN_ROOT=$run_root" >> "$GITHUB_ENV"
+
+      - name: Execute frozen V5 and V6 protocol
+        shell: bash
+        run: |
+          set -uo pipefail
+          bash "$ORCHESTRATOR" 2>&1 | tee "$RUN_ROOT/workflow-execution.log"
+          code=${PIPESTATUS[0]}
+          echo "SCIENCE_EXIT_CODE=$code" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Publish bounded outcome
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### Frozen PokeFlex missing-five recovery"
+            echo
+            echo "- Runner: \`$RUNNER_NAME\` / \`gpuserver4090\`"
+            echo "- Revision: \`$GITHUB_SHA\`"
+            echo "- Frozen targets: \`5\`"
+            echo "- Scientific protocol changed: \`false\`"
+            echo "- Target adaptation: \`false\`"
+            echo "- Replacement: \`false\`"
+            echo "- Science exit code: \`${SCIENCE_EXIT_CODE:-unavailable}\`"
+            if [[ -s "${RUN_ROOT:-}/status.json" ]]; then
+              python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUN_ROOT"])
+          status = json.loads((root / "status.json").read_text())
+          print(f"- Last stage: `{status['stage']}`")
+          print(f"- Target member payload opened: `{str(status['target_payload_opened']).lower()}`")
+          print(f"- Target metric computed: `{str(status['target_metric_computed']).lower()}`")
+          summary_path = root / "results/summary.json"
+          if summary_path.is_file():
+              summary = json.loads(summary_path.read_text())
+              print(f"- Joint pre-scoring seal: `{summary['joint_pre_scoring_seal_sha256']}`")
+              print(f"- V5 result: `{summary['v5_result_sha256']}`")
+              print(f"- V6 result: `{summary['v6_result_sha256']}`")
+          PY
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pokeflex-missing5-frozen-v6-recovery-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.RUN_ROOT }}/status.json
+            ${{ env.RUN_ROOT }}/workflow-execution.log
+            ${{ env.RUN_ROOT }}/environment.txt
+            ${{ env.RUN_ROOT }}/manifest
+            ${{ env.RUN_ROOT }}/stages/*/stage.json
+            ${{ env.RUN_ROOT }}/v5-predictions/*/seal.json
+            ${{ env.RUN_ROOT }}/v5-predictions/*/input_stage_manifest.json
+            ${{ env.RUN_ROOT }}/v6-predictions/*/seal.json
+            ${{ env.RUN_ROOT }}/barriers
+            ${{ env.RUN_ROOT }}/results
+            ${{ env.RUN_ROOT }}/logs
+            ${{ env.RUN_ROOT }}/ALL_FILES_SHA256SUMS
+            ${{ env.REQUEST }}
+            configs/sota/pokeflex_action_robust_official18_v4.json
+            configs/sota/pokeflex_missing5_execution_v5.json
+            configs/sota/pokeflex_missing5_execution_v6.json
+            configs/sota/pokeflex_missing5_scale_completion_v5.json
+            configs/sota/pokeflex_missing5_causal_scale_v6.json
+            results/sota/pokeflex_missing5_causal_scale_v6/source_result.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Enforce completion or retain the exact fail-closed state
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$RUN_ROOT/status.json"
+          code="${SCIENCE_EXIT_CODE:-99}"
+          if [[ "$code" -eq 0 ]]; then
+            test -s "$RUN_ROOT/barriers/joint-pre-scoring-seal.json"
+            test -s "$RUN_ROOT/results/v5-result.json"
+            test -s "$RUN_ROOT/results/v6-result.json"
+            test -s "$RUN_ROOT/results/summary.json"
+            test -s "$RUN_ROOT/results/report.md"
+            test -s "$RUN_ROOT/ALL_FILES_SHA256SUMS"
+          fi
+          rm -rf "$RUN_ROOT/runtime"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          exit "$code"
