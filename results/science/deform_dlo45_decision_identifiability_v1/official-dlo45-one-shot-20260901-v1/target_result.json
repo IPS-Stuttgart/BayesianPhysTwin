@@ -1,0 +1,739 @@
+{
+  "aggregate": {
+    "certificate_nonfallback_count": 82,
+    "certificate_rmse_ratio": 0.9572995678651203,
+    "decision_count": 532,
+    "improvement_ci95": [
+      0.030374429885011055,
+      0.056071807084165926
+    ],
+    "mean_trajectory_improvement": 0.04275501869284141
+  },
+  "claim_boundary": "This public-data result evaluates a frozen finite-action policy within DLO4 and DLO5. The exact certificate is conditional on the registered finite source-window support, quotient partition, and loss matrix. The pickle carrier co-locates permitted prefixes, future endpoint actions, and held internal-node outcomes; the code enforces semantic slicing but cannot provide byte-level channel separation. The result does not identify a unique physical state, prove the quotient physically correct, establish unseen-object generalization, calibrate uncertainty, or authorize deployment.",
+  "contract": "deform-dlo45-decision-identifiability-v1",
+  "dlos": {
+    "DLO4": {
+      "aggregate": {
+        "certificate": {
+          "action_counts": [
+            221,
+            27,
+            18
+          ],
+          "harm_fraction_vs_fallback": 0.011278195488721804,
+          "mean_normalized_regret": 0.46345772396764134,
+          "p95_normalized_regret": 0.852845055064231,
+          "rmse_mm": 29.605211168899185,
+          "rmse_ratio_to_fallback": 0.9459452796693467
+        },
+        "fallback": {
+          "action_counts": [
+            266,
+            0,
+            0
+          ],
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_normalized_regret": 0.5369200259349693,
+          "p95_normalized_regret": 0.8723325508935902,
+          "rmse_mm": 31.296959565407025,
+          "rmse_ratio_to_fallback": 1.0
+        },
+        "jeffrey_point": {
+          "action_counts": [
+            0,
+            146,
+            120
+          ],
+          "harm_fraction_vs_fallback": 0.041353383458646614,
+          "mean_normalized_regret": 0.10817253350606046,
+          "p95_normalized_regret": 0.29057106196328975,
+          "rmse_mm": 22.33050925562942,
+          "rmse_ratio_to_fallback": 0.7135041092078366
+        },
+        "kernel_point": {
+          "action_counts": [
+            0,
+            148,
+            118
+          ],
+          "harm_fraction_vs_fallback": 0.03759398496240601,
+          "mean_normalized_regret": 0.10739602287190361,
+          "p95_normalized_regret": 0.28932161462979517,
+          "rmse_mm": 22.369873643313777,
+          "rmse_ratio_to_fallback": 0.7147618795545724
+        },
+        "map_point": {
+          "action_counts": [
+            19,
+            44,
+            203
+          ],
+          "harm_fraction_vs_fallback": 0.03759398496240601,
+          "mean_normalized_regret": 0.07858365658578924,
+          "p95_normalized_regret": 0.4972922418525021,
+          "rmse_mm": 20.903078551611475,
+          "rmse_ratio_to_fallback": 0.6678948639699794
+        },
+        "oracle": {
+          "action_counts": [
+            5,
+            34,
+            227
+          ],
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_normalized_regret": 0.0,
+          "p95_normalized_regret": 0.0,
+          "rmse_mm": 19.544128090436974,
+          "rmse_ratio_to_fallback": 0.62447369846237
+        }
+      },
+      "certificate_exact_unique_fraction": 0.07142857142857142,
+      "certificate_nonfallback_fraction": 0.16917293233082709,
+      "certificate_tolerance_unique_fraction": 0.16917293233082706,
+      "decision_count": 266,
+      "maximum_certificate_trajectory_ratio": 1.000176255964006,
+      "mean_ambiguity_width_normalized": 0.12515803319764193,
+      "mean_kernel_unsupported_specificity_nats": 0.009447188944220012,
+      "mean_minimax_worst_case_regret": 0.1161999487309113,
+      "per_trajectory": [
+        {
+          "certificate_ratio": 1.000176255964006,
+          "certificate_rmse_mm": 23.987475634366614,
+          "decision_count": 19,
+          "fallback_rmse_mm": 23.98324844379216,
+          "jeffrey_point_ratio": 0.7518216488587979,
+          "jeffrey_point_rmse_mm": 18.03112539000202,
+          "kernel_point_ratio": 0.7518216488587979,
+          "kernel_point_rmse_mm": 18.03112539000202,
+          "map_point_ratio": 0.7584920957792135,
+          "map_point_rmse_mm": 18.191104375725477,
+          "oracle_ratio": 0.6903631583488034,
+          "oracle_rmse_mm": 16.55715114312038,
+          "trajectory": "11.pkl"
+        },
+        {
+          "certificate_ratio": 0.9362665486418921,
+          "certificate_rmse_mm": 19.78628684987286,
+          "decision_count": 19,
+          "fallback_rmse_mm": 21.133177169016662,
+          "jeffrey_point_ratio": 0.6693582640371316,
+          "jeffrey_point_rmse_mm": 14.145666783442136,
+          "kernel_point_ratio": 0.6693582640371316,
+          "kernel_point_rmse_mm": 14.145666783442136,
+          "map_point_ratio": 0.6719815438750226,
+          "map_point_rmse_mm": 14.201105021020195,
+          "oracle_ratio": 0.6223213544852098,
+          "oracle_rmse_mm": 13.151627440398359,
+          "trajectory": "16.pkl"
+        },
+        {
+          "certificate_ratio": 0.9510391046820841,
+          "certificate_rmse_mm": 32.36713783039679,
+          "decision_count": 19,
+          "fallback_rmse_mm": 34.03344580790562,
+          "jeffrey_point_ratio": 0.7057298442358542,
+          "jeffrey_point_rmse_mm": 24.01841840882262,
+          "kernel_point_ratio": 0.7057298442358542,
+          "kernel_point_rmse_mm": 24.01841840882262,
+          "map_point_ratio": 0.6135150409912334,
+          "map_point_rmse_mm": 20.880030899910135,
+          "oracle_ratio": 0.5810212826148572,
+          "oracle_rmse_mm": 19.774156335112558,
+          "trajectory": "30.pkl"
+        },
+        {
+          "certificate_ratio": 0.9021446108973963,
+          "certificate_rmse_mm": 31.229876230816217,
+          "decision_count": 19,
+          "fallback_rmse_mm": 34.61737270674456,
+          "jeffrey_point_ratio": 0.6754555282419632,
+          "jeffrey_point_rmse_mm": 23.382495767983066,
+          "kernel_point_ratio": 0.6754555282419632,
+          "kernel_point_rmse_mm": 23.382495767983066,
+          "map_point_ratio": 0.513027728449037,
+          "map_point_rmse_mm": 17.759672084614852,
+          "oracle_ratio": 0.5036525931902782,
+          "oracle_rmse_mm": 17.435129533186256,
+          "trajectory": "35.pkl"
+        },
+        {
+          "certificate_ratio": 1.0,
+          "certificate_rmse_mm": 28.59466447953676,
+          "decision_count": 19,
+          "fallback_rmse_mm": 28.59466447953676,
+          "jeffrey_point_ratio": 0.6569107564472203,
+          "jeffrey_point_rmse_mm": 18.784142673606954,
+          "kernel_point_ratio": 0.6569107564472203,
+          "kernel_point_rmse_mm": 18.784142673606954,
+          "map_point_ratio": 0.6533259444928635,
+          "map_point_rmse_mm": 18.681636178549887,
+          "oracle_ratio": 0.6147286697312052,
+          "oracle_rmse_mm": 17.577960056915778,
+          "trajectory": "41.pkl"
+        },
+        {
+          "certificate_ratio": 0.9892297142846295,
+          "certificate_rmse_mm": 18.95416375976174,
+          "decision_count": 19,
+          "fallback_rmse_mm": 19.160528122094085,
+          "jeffrey_point_ratio": 0.6743905650402024,
+          "jeffrey_point_rmse_mm": 12.92167938672772,
+          "kernel_point_ratio": 0.6630420375832847,
+          "kernel_point_rmse_mm": 12.70423560724509,
+          "map_point_ratio": 0.6897640420867208,
+          "map_point_rmse_mm": 13.216243326011902,
+          "oracle_ratio": 0.625109860365649,
+          "oracle_rmse_mm": 11.977435058934324,
+          "trajectory": "5.pkl"
+        },
+        {
+          "certificate_ratio": 0.9921839189865577,
+          "certificate_rmse_mm": 29.29645623178801,
+          "decision_count": 19,
+          "fallback_rmse_mm": 29.52724355955312,
+          "jeffrey_point_ratio": 0.7563017628761717,
+          "jeffrey_point_rmse_mm": 22.331506356964113,
+          "kernel_point_ratio": 0.7781701658267756,
+          "kernel_point_rmse_mm": 22.977220017145044,
+          "map_point_ratio": 0.7638235735235712,
+          "map_point_rmse_mm": 22.553604691958718,
+          "oracle_ratio": 0.725085676020824,
+          "oracle_rmse_mm": 21.409781357410093,
+          "trajectory": "56.pkl"
+        },
+        {
+          "certificate_ratio": 0.9539698011318904,
+          "certificate_rmse_mm": 25.57315809183172,
+          "decision_count": 19,
+          "fallback_rmse_mm": 26.807093957784645,
+          "jeffrey_point_ratio": 0.7898174454984702,
+          "jeffrey_point_rmse_mm": 21.172710470974945,
+          "kernel_point_ratio": 0.7898174454984702,
+          "kernel_point_rmse_mm": 21.172710470974945,
+          "map_point_ratio": 0.7151697294628814,
+          "map_point_rmse_mm": 19.171622133474887,
+          "oracle_ratio": 0.7025754417776762,
+          "oracle_rmse_mm": 18.83400588016622,
+          "trajectory": "58.pkl"
+        },
+        {
+          "certificate_ratio": 0.9730336513161015,
+          "certificate_rmse_mm": 38.458983900244725,
+          "decision_count": 19,
+          "fallback_rmse_mm": 39.52482408827901,
+          "jeffrey_point_ratio": 0.6441372108917037,
+          "jeffrey_point_rmse_mm": 25.45940994920927,
+          "kernel_point_ratio": 0.6441372108917037,
+          "kernel_point_rmse_mm": 25.45940994920927,
+          "map_point_ratio": 0.5931031282995305,
+          "map_point_rmse_mm": 23.442296812246916,
+          "oracle_ratio": 0.581045943030098,
+          "oracle_rmse_mm": 22.965738685472814,
+          "trajectory": "66.pkl"
+        },
+        {
+          "certificate_ratio": 0.9181802738000641,
+          "certificate_rmse_mm": 33.51809378942217,
+          "decision_count": 19,
+          "fallback_rmse_mm": 36.50491602340915,
+          "jeffrey_point_ratio": 0.7688346898987519,
+          "jeffrey_point_rmse_mm": 28.06624579063776,
+          "kernel_point_ratio": 0.7688346898987519,
+          "kernel_point_rmse_mm": 28.06624579063776,
+          "map_point_ratio": 0.7082138089536908,
+          "map_point_rmse_mm": 25.85328562247322,
+          "oracle_ratio": 0.6633462101098618,
+          "oracle_rmse_mm": 24.21539769450723,
+          "trajectory": "70.pkl"
+        },
+        {
+          "certificate_ratio": 0.9025285903773682,
+          "certificate_rmse_mm": 36.024096779860365,
+          "decision_count": 19,
+          "fallback_rmse_mm": 39.9146322498192,
+          "jeffrey_point_ratio": 0.7320729453628794,
+          "jeffrey_point_rmse_mm": 29.220422394201314,
+          "kernel_point_ratio": 0.735286190801579,
+          "kernel_point_rmse_mm": 29.348677904215418,
+          "map_point_ratio": 0.7364611222797888,
+          "map_point_rmse_mm": 29.395574862086896,
+          "oracle_ratio": 0.655717359812836,
+          "oracle_rmse_mm": 26.17271727675172,
+          "trajectory": "81.pkl"
+        },
+        {
+          "certificate_ratio": 0.8641501790814068,
+          "certificate_rmse_mm": 31.92373914890685,
+          "decision_count": 19,
+          "fallback_rmse_mm": 36.942350903452734,
+          "jeffrey_point_ratio": 0.6336397317976635,
+          "jeffrey_point_rmse_mm": 23.408141318438965,
+          "kernel_point_ratio": 0.6336397317976635,
+          "kernel_point_rmse_mm": 23.408141318438965,
+          "map_point_ratio": 0.5656065485303374,
+          "map_point_rmse_mm": 20.89483558909849,
+          "oracle_ratio": 0.448993099995777,
+          "oracle_rmse_mm": 16.58686065327304,
+          "trajectory": "84.pkl"
+        },
+        {
+          "certificate_ratio": 0.9827317187771012,
+          "certificate_rmse_mm": 27.506395518576937,
+          "decision_count": 19,
+          "fallback_rmse_mm": 27.989730048405832,
+          "jeffrey_point_ratio": 0.7824601968638987,
+          "jeffrey_point_rmse_mm": 21.900849683843006,
+          "kernel_point_ratio": 0.7824601968638987,
+          "kernel_point_rmse_mm": 21.900849683843006,
+          "map_point_ratio": 0.7508623777775872,
+          "map_point_rmse_mm": 21.016435257498784,
+          "oracle_ratio": 0.7244908794196289,
+          "oracle_rmse_mm": 20.278304137487552,
+          "trajectory": "93.pkl"
+        },
+        {
+          "certificate_ratio": 0.9958716321446514,
+          "certificate_rmse_mm": 30.257627801603885,
+          "decision_count": 19,
+          "fallback_rmse_mm": 30.383060250890782,
+          "jeffrey_point_ratio": 0.7705916146024494,
+          "jeffrey_point_rmse_mm": 23.41293145529743,
+          "kernel_point_ratio": 0.7659656731464296,
+          "kernel_point_rmse_mm": 23.272381197322087,
+          "map_point_ratio": 0.715785962530231,
+          "map_point_rmse_mm": 21.74776802629786,
+          "oracle_ratio": 0.701919623688523,
+          "oracle_rmse_mm": 21.32646621781098,
+          "trajectory": "96.pkl"
+        }
+      ],
+      "positive_ambiguity_fraction": 1.0
+    },
+    "DLO5": {
+      "aggregate": {
+        "certificate": {
+          "action_counts": [
+            229,
+            19,
+            18
+          ],
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_normalized_regret": 0.5072034696754472,
+          "p95_normalized_regret": 0.8540782672158286,
+          "rmse_mm": 36.095028818083705,
+          "rmse_ratio_to_fallback": 0.965172085619826
+        },
+        "fallback": {
+          "action_counts": [
+            266,
+            0,
+            0
+          ],
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_normalized_regret": 0.577796037245778,
+          "p95_normalized_regret": 0.8574232844046009,
+          "rmse_mm": 37.39750595346296,
+          "rmse_ratio_to_fallback": 1.0
+        },
+        "jeffrey_point": {
+          "action_counts": [
+            3,
+            164,
+            99
+          ],
+          "harm_fraction_vs_fallback": 0.007518796992481203,
+          "mean_normalized_regret": 0.13209546560386468,
+          "p95_normalized_regret": 0.29701431848579585,
+          "rmse_mm": 27.22473877885045,
+          "rmse_ratio_to_fallback": 0.7279827380127598
+        },
+        "kernel_point": {
+          "action_counts": [
+            3,
+            156,
+            107
+          ],
+          "harm_fraction_vs_fallback": 0.007518796992481203,
+          "mean_normalized_regret": 0.12604938765885965,
+          "p95_normalized_regret": 0.2951369858059324,
+          "rmse_mm": 26.999256914603198,
+          "rmse_ratio_to_fallback": 0.7219534090909906
+        },
+        "map_point": {
+          "action_counts": [
+            7,
+            36,
+            223
+          ],
+          "harm_fraction_vs_fallback": 0.02631578947368421,
+          "mean_normalized_regret": 0.041067794347173114,
+          "p95_normalized_regret": 0.2685246735487953,
+          "rmse_mm": 24.28555207913361,
+          "rmse_ratio_to_fallback": 0.6493896173010649
+        },
+        "oracle": {
+          "action_counts": [
+            1,
+            17,
+            248
+          ],
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_normalized_regret": 0.0,
+          "p95_normalized_regret": 0.0,
+          "rmse_mm": 23.436421294853588,
+          "rmse_ratio_to_fallback": 0.6266840714997842
+        }
+      },
+      "certificate_exact_unique_fraction": 0.03759398496240601,
+      "certificate_nonfallback_fraction": 0.13909774436090228,
+      "certificate_tolerance_unique_fraction": 0.13533834586466165,
+      "decision_count": 266,
+      "maximum_certificate_trajectory_ratio": 1.0,
+      "mean_ambiguity_width_normalized": 0.13645177345435963,
+      "mean_kernel_unsupported_specificity_nats": 0.011951436882848686,
+      "mean_minimax_worst_case_regret": 0.16659029082313132,
+      "per_trajectory": [
+        {
+          "certificate_ratio": 0.9220681631076113,
+          "certificate_rmse_mm": 25.305993646073425,
+          "decision_count": 19,
+          "fallback_rmse_mm": 27.444818787350382,
+          "jeffrey_point_ratio": 0.5932409032769402,
+          "jeffrey_point_rmse_mm": 16.28138908767968,
+          "kernel_point_ratio": 0.5891576573521512,
+          "kernel_point_rmse_mm": 16.169325143209658,
+          "map_point_ratio": 0.5297958732843278,
+          "map_point_rmse_mm": 14.54015173657442,
+          "oracle_ratio": 0.5179199251458753,
+          "oracle_rmse_mm": 14.214218491986623,
+          "trajectory": "18.pkl"
+        },
+        {
+          "certificate_ratio": 0.9684136086633347,
+          "certificate_rmse_mm": 31.122613612293243,
+          "decision_count": 19,
+          "fallback_rmse_mm": 32.13772848075796,
+          "jeffrey_point_ratio": 0.5786675596591826,
+          "jeffrey_point_rmse_mm": 18.59706091294962,
+          "kernel_point_ratio": 0.5744972283296742,
+          "kernel_point_rmse_mm": 18.463035937007078,
+          "map_point_ratio": 0.5385863785476291,
+          "map_point_rmse_mm": 17.30894279719843,
+          "oracle_ratio": 0.4870371328130484,
+          "oracle_rmse_mm": 15.652267134392602,
+          "trajectory": "3.pkl"
+        },
+        {
+          "certificate_ratio": 1.0,
+          "certificate_rmse_mm": 39.39360622014487,
+          "decision_count": 19,
+          "fallback_rmse_mm": 39.39360622014487,
+          "jeffrey_point_ratio": 0.7877659335987338,
+          "jeffrey_point_rmse_mm": 31.032940981833306,
+          "kernel_point_ratio": 0.7877659335987338,
+          "kernel_point_rmse_mm": 31.032940981833306,
+          "map_point_ratio": 0.6629715534156875,
+          "map_point_rmse_mm": 26.11684031041533,
+          "oracle_ratio": 0.6089438184137236,
+          "oracle_rmse_mm": 23.988492992781627,
+          "trajectory": "31.pkl"
+        },
+        {
+          "certificate_ratio": 0.98430190180535,
+          "certificate_rmse_mm": 36.09253267618563,
+          "decision_count": 19,
+          "fallback_rmse_mm": 36.66815294168057,
+          "jeffrey_point_ratio": 0.7846787549288684,
+          "jeffrey_point_rmse_mm": 28.772720595819234,
+          "kernel_point_ratio": 0.7813353713245407,
+          "kernel_point_rmse_mm": 28.650124894473038,
+          "map_point_ratio": 0.6421615102344925,
+          "map_point_rmse_mm": 23.546876470538944,
+          "oracle_ratio": 0.6058307245586461,
+          "oracle_rmse_mm": 22.214693664885587,
+          "trajectory": "32.pkl"
+        },
+        {
+          "certificate_ratio": 0.9494674495430189,
+          "certificate_rmse_mm": 37.07266677323754,
+          "decision_count": 19,
+          "fallback_rmse_mm": 39.04574800440048,
+          "jeffrey_point_ratio": 0.649418236444481,
+          "jeffrey_point_rmse_mm": 25.357020809673376,
+          "kernel_point_ratio": 0.6432601459812909,
+          "kernel_point_rmse_mm": 25.116573561259347,
+          "map_point_ratio": 0.579107826062437,
+          "map_point_rmse_mm": 22.6116982438101,
+          "oracle_ratio": 0.5631205851545011,
+          "oracle_rmse_mm": 21.98746446403319,
+          "trajectory": "33.pkl"
+        },
+        {
+          "certificate_ratio": 1.0,
+          "certificate_rmse_mm": 48.35674501118274,
+          "decision_count": 19,
+          "fallback_rmse_mm": 48.35674501118274,
+          "jeffrey_point_ratio": 0.8058007321455627,
+          "jeffrey_point_rmse_mm": 38.96590053418734,
+          "kernel_point_ratio": 0.7822773385507761,
+          "kernel_point_rmse_mm": 37.82838578832656,
+          "map_point_ratio": 0.7270445370993566,
+          "map_point_rmse_mm": 35.15750729228698,
+          "oracle_ratio": 0.7115023833512599,
+          "oracle_rmse_mm": 34.405939326565665,
+          "trajectory": "46.pkl"
+        },
+        {
+          "certificate_ratio": 0.9197464782325253,
+          "certificate_rmse_mm": 28.149606527087798,
+          "decision_count": 19,
+          "fallback_rmse_mm": 30.60583236065533,
+          "jeffrey_point_ratio": 0.6535184265593347,
+          "jeffrey_point_rmse_mm": 20.00147540787424,
+          "kernel_point_ratio": 0.6535184265593347,
+          "kernel_point_rmse_mm": 20.00147540787424,
+          "map_point_ratio": 0.5448510052417734,
+          "map_point_rmse_mm": 16.675618527964254,
+          "oracle_ratio": 0.524943441138603,
+          "oracle_rmse_mm": 16.066330958313625,
+          "trajectory": "56.pkl"
+        },
+        {
+          "certificate_ratio": 0.9314093129211212,
+          "certificate_rmse_mm": 29.612588052483673,
+          "decision_count": 19,
+          "fallback_rmse_mm": 31.79331325302251,
+          "jeffrey_point_ratio": 0.822214630109151,
+          "jeffrey_point_rmse_mm": 26.14092729627827,
+          "kernel_point_ratio": 0.822214630109151,
+          "kernel_point_rmse_mm": 26.14092729627827,
+          "map_point_ratio": 0.7642661258410822,
+          "map_point_rmse_mm": 24.29855234753945,
+          "oracle_ratio": 0.7492399307375659,
+          "oracle_rmse_mm": 23.820819819612318,
+          "trajectory": "58.pkl"
+        },
+        {
+          "certificate_ratio": 0.9842842095454607,
+          "certificate_rmse_mm": 33.57325914372148,
+          "decision_count": 19,
+          "fallback_rmse_mm": 34.10931397469589,
+          "jeffrey_point_ratio": 0.6183473772002657,
+          "jeffrey_point_rmse_mm": 21.09140483435357,
+          "kernel_point_ratio": 0.6183473772002657,
+          "kernel_point_rmse_mm": 21.09140483435357,
+          "map_point_ratio": 0.5352531885931778,
+          "map_point_rmse_mm": 18.257119065681813,
+          "oracle_ratio": 0.5279074369984155,
+          "oracle_rmse_mm": 18.006560518155943,
+          "trajectory": "6.pkl"
+        },
+        {
+          "certificate_ratio": 0.952418000077544,
+          "certificate_rmse_mm": 38.17131458585902,
+          "decision_count": 19,
+          "fallback_rmse_mm": 40.078321265191526,
+          "jeffrey_point_ratio": 0.7886135662640242,
+          "jeffrey_point_rmse_mm": 31.60630786281797,
+          "kernel_point_ratio": 0.7886135662640242,
+          "kernel_point_rmse_mm": 31.60630786281797,
+          "map_point_ratio": 0.7384601723794193,
+          "map_point_rmse_mm": 29.596244030171082,
+          "oracle_ratio": 0.7286496944655835,
+          "oracle_rmse_mm": 29.203056544575304,
+          "trajectory": "72.pkl"
+        },
+        {
+          "certificate_ratio": 0.9437008740654548,
+          "certificate_rmse_mm": 39.82758247831341,
+          "decision_count": 19,
+          "fallback_rmse_mm": 42.20360876295107,
+          "jeffrey_point_ratio": 0.707686083223433,
+          "jeffrey_point_rmse_mm": 29.866906583346996,
+          "kernel_point_ratio": 0.693723028751851,
+          "kernel_point_rmse_mm": 29.27761529529257,
+          "map_point_ratio": 0.6506886409034461,
+          "map_point_rmse_mm": 27.461408827185398,
+          "oracle_ratio": 0.6258668100953004,
+          "oracle_rmse_mm": 26.413837990978255,
+          "trajectory": "82.pkl"
+        },
+        {
+          "certificate_ratio": 0.9670466850735204,
+          "certificate_rmse_mm": 42.709526665780764,
+          "decision_count": 19,
+          "fallback_rmse_mm": 44.16490674649667,
+          "jeffrey_point_ratio": 0.6829739924357596,
+          "jeffrey_point_rmse_mm": 30.163482686207843,
+          "kernel_point_ratio": 0.6757862616040399,
+          "kernel_point_rmse_mm": 29.846037224306023,
+          "map_point_ratio": 0.5722250112913556,
+          "map_point_rmse_mm": 25.272264261695724,
+          "oracle_ratio": 0.5640995829038498,
+          "oracle_rmse_mm": 24.91340547468619,
+          "trajectory": "85.pkl"
+        },
+        {
+          "certificate_ratio": 0.9337713692208831,
+          "certificate_rmse_mm": 30.97104901312321,
+          "decision_count": 19,
+          "fallback_rmse_mm": 33.167700396473634,
+          "jeffrey_point_ratio": 0.6888295952178796,
+          "jeffrey_point_rmse_mm": 22.846893638410833,
+          "kernel_point_ratio": 0.6888295952178796,
+          "kernel_point_rmse_mm": 22.846893638410833,
+          "map_point_ratio": 0.6441507649864451,
+          "map_point_rmse_mm": 21.36499958322971,
+          "oracle_ratio": 0.6004769201947847,
+          "oracle_rmse_mm": 19.91643858401783,
+          "trajectory": "9.pkl"
+        },
+        {
+          "certificate_ratio": 0.984725424259467,
+          "certificate_rmse_mm": 37.954656769100765,
+          "decision_count": 19,
+          "fallback_rmse_mm": 38.54339070979448,
+          "jeffrey_point_ratio": 0.8048660524774376,
+          "jeffrey_point_rmse_mm": 31.02226672968782,
+          "kernel_point_ratio": 0.8039731585800782,
+          "kernel_point_rmse_mm": 30.98785157133951,
+          "map_point_ratio": 0.7497538465077178,
+          "map_point_rmse_mm": 28.898055442118245,
+          "oracle_ratio": 0.7287115470816479,
+          "oracle_rmse_mm": 28.087013873906745,
+          "trajectory": "99.pkl"
+        }
+      ],
+      "positive_ambiguity_fraction": 1.0
+    }
+  },
+  "eval_manifest": {
+    "DLO4": {
+      "11.pkl": {
+        "sha256": "32d4a9ca223e54a6f0c9cbce7fbc59d43e341d34a751689c7b45f7ce2790628e",
+        "size_bytes": 170034
+      },
+      "16.pkl": {
+        "sha256": "0e63c46e46f1473155dddb8fd8bbbc33d558eb687786543f9c5f59dc088de1eb",
+        "size_bytes": 170034
+      },
+      "30.pkl": {
+        "sha256": "ffb42323efc197a40b4408915bd6a7cb9a43db651df4a2d2b560010d15e668e2",
+        "size_bytes": 170034
+      },
+      "35.pkl": {
+        "sha256": "be0ecea4bb4ff794a71e3f34a95e8c788519e4fe26a679c54b96f2b0c290a0d9",
+        "size_bytes": 170034
+      },
+      "41.pkl": {
+        "sha256": "81c3ac173126d2f0320bc38102c15a65c0a82c284bc2ec12405d45e6f1289209",
+        "size_bytes": 170034
+      },
+      "5.pkl": {
+        "sha256": "c243bb95dca8678b8c062bbf2cdfc4b05b648f4193c131822c7931dde7ae018f",
+        "size_bytes": 170034
+      },
+      "56.pkl": {
+        "sha256": "55b0e9fb8c780ba1c9c7a204c1a88f25f23f9dda0666c075a23b3a17ab74f482",
+        "size_bytes": 170034
+      },
+      "58.pkl": {
+        "sha256": "17b39036b0c623420ffd55c852e91c1adb1255d66d1de162a5d55a0658ecb755",
+        "size_bytes": 170034
+      },
+      "66.pkl": {
+        "sha256": "2bac3fc5ed116cfc9bf72c1bee1db5edd701ef3768b5a3b61e4968d49a04cb62",
+        "size_bytes": 170034
+      },
+      "70.pkl": {
+        "sha256": "b36b6616b9dad92ed450f5be3f723074014f0deb205273c0c92b35d4c67d6ea2",
+        "size_bytes": 170034
+      },
+      "81.pkl": {
+        "sha256": "98a97e244327d240ba2c4c439791bc6555370e3e6a96e60cd165554ce74c81ef",
+        "size_bytes": 170034
+      },
+      "84.pkl": {
+        "sha256": "674262a8c79218b5cc215028bef69118ebed896b9da96effb335c889e5a13d45",
+        "size_bytes": 170034
+      },
+      "93.pkl": {
+        "sha256": "525d4c4768b3161423086e3c54d9148d934bf29070785d72f182ba22b3ff78f3",
+        "size_bytes": 170034
+      },
+      "96.pkl": {
+        "sha256": "8ac2aad64bceecf2b16ecfce70bdadc3828a9850276f7a667710a0411bb183f2",
+        "size_bytes": 170034
+      }
+    },
+    "DLO5": {
+      "18.pkl": {
+        "sha256": "78a96f4048ab9a83488fd78948369abe75eb31892f1adeb867b7e5f8b53429c4",
+        "size_bytes": 170034
+      },
+      "3.pkl": {
+        "sha256": "c5df906c6249671d6e4268a7877b9612d9cd68c2c5b2a1f22cf58363ed4078cc",
+        "size_bytes": 170034
+      },
+      "31.pkl": {
+        "sha256": "c3299806f57e509fafb2ab0933ea43f3fac3e9e489d71c99fdc67778d77583f9",
+        "size_bytes": 170034
+      },
+      "32.pkl": {
+        "sha256": "358581b5f0fe2e0dcdc205c4d2db1a94e2c76162ff57510960c161b779d8f545",
+        "size_bytes": 170034
+      },
+      "33.pkl": {
+        "sha256": "92dc09aab65cd72bdcf28e6a2440cef55ab3dc69f6c75711bb9645087768bc04",
+        "size_bytes": 170034
+      },
+      "46.pkl": {
+        "sha256": "17327537e50de259aa6b15d345f967ea3aeb0d954d2b7de330ce3c82d378f0e5",
+        "size_bytes": 170034
+      },
+      "56.pkl": {
+        "sha256": "0755872718107a2db7e227ea112744d27f7cddd51f7bbeb458136d20bec3efb6",
+        "size_bytes": 170034
+      },
+      "58.pkl": {
+        "sha256": "af9f7e37bc03c275d0e8cb729c9b3abade0160af6d1788e3c06f18628d203a2c",
+        "size_bytes": 170034
+      },
+      "6.pkl": {
+        "sha256": "1e38e0b1a5524da8d62d2ec15810f1b1d9cd27bc998d2fc5abd6483839541522",
+        "size_bytes": 170034
+      },
+      "72.pkl": {
+        "sha256": "890e1841be77c972e8248359cfd2da6676b5230cd2153aa999cfdd4384e16dcb",
+        "size_bytes": 170034
+      },
+      "82.pkl": {
+        "sha256": "a65c6b77c5588b3ca097f832a5242fd8b7dc469476a3ef9016aea381a8f080f0",
+        "size_bytes": 170034
+      },
+      "85.pkl": {
+        "sha256": "8163be94b04ff4f89f4bfe20e1ce25bce796bbfc619fd4d62bdefabae6c80bce",
+        "size_bytes": 170034
+      },
+      "9.pkl": {
+        "sha256": "6b766c0d17232da99e8214cecb51022ad0d6a7816faa1e0fd6eb8fd17baf32cf",
+        "size_bytes": 170034
+      },
+      "99.pkl": {
+        "sha256": "aa5abd36bc83457370bca81bf84e282629fe04e736c2f574bb4f9f127c6a79c9",
+        "size_bytes": 170034
+      }
+    }
+  },
+  "eval_manifest_sha256": "93f7799700f56a2a3da08bc647114dc5aa258f866af21e9eb3ad196816952ffb",
+  "protocol_sha256": "7e3da3b2365542d1f39a86b5714cfbf729d6e3a61dc653527f9531a4e167dab7",
+  "raw_predictions_published": false,
+  "request_sha256": "be1eb42cbd8ec8712b7353697b41cf0707c696893f5b22a1bf52ba3603c8b2a2",
+  "run_key": "official-dlo45-one-shot-20260901-v1",
+  "schema_version": 1,
+  "source_model_sha256": "a43aed43cd563ee47358e48cab84829dc7eebc77d97725721a11b228f3b6b7f0",
+  "source_seal_sha256": "bcf55e066fdf3b44c29329a8fdffc4f0ccc7e6166ae19a5593ab02f28c9c5e80",
+  "stage": "target-result",
+  "target_retries": false,
+  "target_tuning": false
+}
