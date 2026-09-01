@@ -14,6 +14,9 @@ on:
       - scripts/science/run_deform360_bound_replay_audit_v8.py
       - scripts/science/deform360_exact_confirmation_capture_v7.py
       - scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+      - scripts/science/deform360_exact_tcn_capture_v9.py
+      - scripts/science/deform360_tcn_query_uncertainty_v9.py
+      - scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py
 
 permissions:
   contents: write
@@ -26,7 +29,7 @@ jobs:
   format:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out the exact branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,6 +52,9 @@ jobs:
             scripts/science/run_deform360_bound_replay_audit_v8.py
             scripts/science/deform360_exact_confirmation_capture_v7.py
             scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+            scripts/science/deform360_exact_tcn_capture_v9.py
+            scripts/science/deform360_tcn_query_uncertainty_v9.py
+            scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py
           )
           python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
@@ -60,6 +66,8 @@ jobs:
             --output /tmp/unused.json
           python scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py \
             --self-test
+          python scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py \
+            --self-test
       - name: Commit canonical bytes
         shell: bash
         run: |
@@ -68,12 +76,15 @@ jobs:
             scripts/science/deform360_bound_replay_v8.py \
             scripts/science/run_deform360_bound_replay_audit_v8.py \
             scripts/science/deform360_exact_confirmation_capture_v7.py \
-            scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+            scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py \
+            scripts/science/deform360_exact_tcn_capture_v9.py \
+            scripts/science/deform360_tcn_query_uncertainty_v9.py \
+            scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py
           if git diff --cached --quiet; then
             echo 'Canonical formatting is already committed.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Apply canonical Deform360 bound-replay formatting'
+          git commit -m 'Apply canonical Deform360 query-uncertainty formatting'
           git push origin HEAD:science/deform360-same-mean-query-covariance-v6
