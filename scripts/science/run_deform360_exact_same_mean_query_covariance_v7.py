@@ -9,10 +9,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 import deform360_exact_confirmation_capture_v7 as exact_capture
 import deform360_query_covariance_v7 as query_cov
+import numpy as np
 
 SCHEMA = "bayesian-phystwin/deform360-exact-same-mean-query-covariance-v7"
 
