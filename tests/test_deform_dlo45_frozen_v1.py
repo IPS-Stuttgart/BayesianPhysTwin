@@ -17,7 +17,13 @@ if str(REMOTE) not in sys.path:
 from experiments.deform_dlo45_frozen_v1 import run  # noqa: E402
 
 PROTOCOL = ROOT / "experiments" / "deform_dlo45_frozen_v1" / "protocol.json"
-WORKFLOW = ROOT / ".github" / "workflows" / "deform-dlo45-frozen-transfer.yml"
+WORKFLOW = (
+    ROOT
+    / "archive"
+    / "github-actions"
+    / "retired-one-shot-v1"
+    / "deform-dlo45-frozen-transfer.yml"
+)
 
 
 def test_protocol_is_exact_and_target_jointly_sealed() -> None:
