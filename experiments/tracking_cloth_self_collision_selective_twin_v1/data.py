@@ -17,7 +17,7 @@ import numpy as np
 
 SELF_NAME = re.compile(
     r"^(cotton|denim|polyester|wool)_a2_"
-    r"(four_corners_normal|four_corners_parallel|two_corners_normal)_"
+    r"(four|two)(?:_corners)?_(normal|parallel)_"
     r"rep([123])\.csv$",
     re.IGNORECASE,
 )
@@ -132,12 +132,13 @@ def audit_dataset(
     for path in csvs:
         match = SELF_NAME.fullmatch(path.name)
         if match:
-            material, interaction, repetition = match.groups()
+            material, number, position, repetition = match.groups()
+            interaction = f"{number.lower()}_corners_{position.lower()}"
             cases.append(
                 Case(
                     path=path,
                     material=material.lower(),
-                    interaction=interaction.lower(),
+                    interaction=interaction,
                     repetition=int(repetition),
                 )
             )

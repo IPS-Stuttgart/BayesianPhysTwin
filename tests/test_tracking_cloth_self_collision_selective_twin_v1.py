@@ -42,7 +42,7 @@ def _write_case(path: Path, *, future_numeric: bool, forecast: float = 0.2) -> N
         writer.writerow(["Frame", "Time"] + [f"C{i}" for i in range(66)])
         for index in range(count):
             time = index * dt
-            positions = np.concatenate([cloth, rod], axis=0)
+            positions = np.concatenate([rod, cloth], axis=0)
             if time <= 0.5 or future_numeric:
                 cells = [f"{value:.9f}" for value in positions.reshape(-1)]
             else:
@@ -74,7 +74,7 @@ def _small_protocol() -> dict:
 
 
 def test_prediction_input_does_not_parse_future_coordinates(tmp_path: Path) -> None:
-    path = tmp_path / "cotton_a2_four_corners_normal_rep3.csv"
+    path = tmp_path / "cotton_A2_four_normal_rep3.csv"
     _write_case(path, future_numeric=False)
     inputs = prediction_input(
         Case(path, "cotton", "four_corners_normal", 3), _small_protocol()
@@ -86,7 +86,7 @@ def test_prediction_input_does_not_parse_future_coordinates(tmp_path: Path) -> N
 
 
 def test_contact_and_kinematic_predictions_are_finite(tmp_path: Path) -> None:
-    path = tmp_path / "cotton_a2_four_corners_normal_rep1.csv"
+    path = tmp_path / "cotton_A2_four_normal_rep1.csv"
     _write_case(path, future_numeric=True)
     protocol = _small_protocol()
     inputs = prediction_input(Case(path, "cotton", "four_corners_normal", 1), protocol)

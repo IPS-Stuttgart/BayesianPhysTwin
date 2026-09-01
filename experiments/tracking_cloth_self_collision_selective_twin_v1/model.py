@@ -150,39 +150,19 @@ def kinematic_predictions(
 
 
 def rod_forecast(inputs: InputView, protocol: dict[str, Any]) -> np.ndarray:
-    prefix_times = inputs.times[: inputs.cutoff + 1]
+    """Hold the recorded static rod pose fixed after the causal prefix.
+
+    The dataset's self-collision protocol uses a static metallic rod.  A
+    robust prefix median suppresses sub-millimetre marker jitter without
+    accessing any future rod coordinate.
+    """
+
+    del protocol
     rod = inputs.rod_prefix.copy()
-    centers = rod.mean(axis=1)
-    directions = rod[:, 1] - rod[:, 0]
-    lengths = np.linalg.norm(directions, axis=1)
-    directions = directions / lengths[:, None]
-    for index in range(1, len(directions)):
-        if np.dot(directions[index], directions[index - 1]) < 0:
-            directions[index] *= -1
-    window = _window(prefix_times, float(protocol["rod_velocity_window_seconds"]))
-    center_velocity = _linear_velocity(prefix_times[window], centers[window, None, :])[
-        0
-    ]
-    centered_t = prefix_times[window] - prefix_times[window].mean()
-    direction_velocity = np.einsum("t,td->d", centered_t, directions[window]) / np.dot(
-        centered_t, centered_t
-    )
-    center0 = centers[-1]
-    direction0 = directions[-1]
-    length = float(np.median(lengths))
+    reference = np.median(rod, axis=0)
     output = np.empty((len(inputs.times), 2, 3), dtype=float)
     output[: inputs.cutoff + 1] = rod
-    for index in range(inputs.cutoff + 1, len(inputs.times)):
-        horizon = float(inputs.times[index] - inputs.times[inputs.cutoff])
-        center = center0 + horizon * center_velocity
-        direction = direction0 + horizon * direction_velocity
-        norm = float(np.linalg.norm(direction))
-        if norm <= 1e-8:
-            direction = direction0
-        else:
-            direction /= norm
-        output[index, 0] = center - 0.5 * length * direction
-        output[index, 1] = center + 0.5 * length * direction
+    output[inputs.cutoff + 1 :] = reference
     return output
 
 
