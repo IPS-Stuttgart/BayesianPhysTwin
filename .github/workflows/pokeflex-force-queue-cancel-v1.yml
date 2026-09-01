@@ -1,0 +1,263 @@
+name: Force-cancel unopened pre-PokeFlex queue entries v1
+
+on:
+  push:
+    branches:
+      - ops/pokeflex-gpuserver6000-access-recovery-v2
+    paths:
+      - triggers/pokeflex-force-queue-cancel-v1.json
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  force-cancel:
+    name: Force-cancel only after repeated unopened-state verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact force-cancel revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only escalation request
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ops/pokeflex-gpuserver6000-access-recovery-v2
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-force-queue-cancel-v1.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-force-queue-cancel-v1.json").read_text())
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-force-queue-cancel-request-v1",
+              "request_id": "pokeflex-force-queue-cancel-20260901-v1",
+              "ordinary_cancel_attempt_run_id": 33499516926,
+              "ordinary_cancel_settle_timeout_seconds": 90,
+              "preserve_run_ids": [33361441865, 33475220422],
+              "force_cancel": [
+                  {
+                      "run_id": 33363572071,
+                      "job_id": 99658993621,
+                      "purpose": "older read-only Deform360 diagnostic",
+                      "target_payload_opened": False,
+                  },
+                  {
+                      "run_id": 33474012734,
+                      "job_id": 99749476050,
+                      "purpose": "older read-only Tracking Cloth pilot",
+                      "target_payload_opened": False,
+                  },
+                  {
+                      "run_id": 33474698964,
+                      "job_id": 99751544803,
+                      "purpose": "older Tracking Cloth query-quotient evaluation",
+                      "target_payload_opened": False,
+                  },
+              ],
+              "require_runner_id_zero": True,
+              "require_zero_executed_steps": True,
+              "scientific_protocol_change": False,
+              "delete_existing_evidence": False,
+          }
+          if request != expected:
+              raise SystemExit(f"force-cancel request changed: {request!r}")
+          PY
+
+      - name: Reverify and force-cancel the still-unopened jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/pokeflex-force-queue-cancel-v1"
+          mkdir -p "$evidence"
+          echo "EVIDENCE_ROOT=$evidence" >> "$GITHUB_ENV"
+          python3 - "$evidence/result.json" <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          output = Path(__import__("sys").argv[1])
+          repository = os.environ["GITHUB_REPOSITORY"]
+          api = os.environ["GITHUB_API_URL"]
+          token = os.environ["GH_TOKEN"]
+          targets = [
+              (33363572071, 99658993621, "older read-only Deform360 diagnostic"),
+              (33474012734, 99749476050, "older read-only Tracking Cloth pilot"),
+              (33474698964, 99751544803, "older Tracking Cloth query-quotient evaluation"),
+          ]
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def api_call(url: str, *, method: str = "GET") -> object | None:
+              request = urllib.request.Request(url, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      payload = response.read()
+                      return json.loads(payload) if payload else None
+              except urllib.error.HTTPError as error:
+                  payload = error.read().decode("utf-8", errors="replace")
+                  raise SystemExit(
+                      f"GitHub API {method} {url} failed with {error.code}: {payload}"
+                  ) from error
+
+          ordinary = api_call(
+              f"{api}/repos/{repository}/actions/runs/33499516926"
+          )
+          if not isinstance(ordinary, dict) or ordinary["conclusion"] != "failure":
+              raise SystemExit("ordinary cancellation attempt is not a recorded failure")
+
+          pre = []
+          for run_id, job_id, purpose in targets:
+              run = api_call(f"{api}/repos/{repository}/actions/runs/{run_id}")
+              jobs = api_call(
+                  f"{api}/repos/{repository}/actions/runs/{run_id}/jobs?per_page=100"
+              )
+              assert isinstance(run, dict) and isinstance(jobs, dict)
+              matches = [job for job in jobs["jobs"] if int(job["id"]) == job_id]
+              if len(matches) != 1:
+                  raise SystemExit(f"expected one job {job_id} in run {run_id}")
+              job = matches[0]
+              row = {
+                  "run_id": run_id,
+                  "job_id": job_id,
+                  "purpose": purpose,
+                  "run_status": run["status"],
+                  "run_conclusion": run["conclusion"],
+                  "job_status": job["status"],
+                  "job_conclusion": job["conclusion"],
+                  "runner_id": int(job.get("runner_id") or 0),
+                  "runner_name": job.get("runner_name") or "",
+                  "step_count": len(job.get("steps") or []),
+                  "labels": list(job.get("labels") or []),
+                  "target_payload_opened": False,
+              }
+              if row["run_status"] != "queued" or row["job_status"] != "queued":
+                  raise SystemExit(f"refusing force-cancel after a state change: {row}")
+              if row["run_conclusion"] is not None or row["job_conclusion"] is not None:
+                  raise SystemExit(f"refusing force-cancel after conclusion: {row}")
+              if row["runner_id"] != 0 or row["runner_name"] or row["step_count"] != 0:
+                  raise SystemExit(f"refusing force-cancel after execution opened: {row}")
+              if "gpuserver4090" not in row["labels"]:
+                  raise SystemExit(f"refusing force-cancel after retargeting: {row}")
+              pre.append(row)
+
+          dlo = api_call(f"{api}/repos/{repository}/actions/runs/33361441865")
+          pokeflex = api_call(f"{api}/repos/{repository}/actions/runs/33475220422")
+          assert isinstance(dlo, dict) and isinstance(pokeflex, dict)
+          if dlo["status"] != "in_progress":
+              raise SystemExit("protected DLO target fit changed state")
+          if pokeflex["status"] != "queued":
+              raise SystemExit("frozen PokeFlex run changed state")
+
+          for run_id, _job_id, _purpose in targets:
+              api_call(
+                  f"{api}/repos/{repository}/actions/runs/{run_id}/force-cancel",
+                  method="POST",
+              )
+
+          deadline = time.monotonic() + 90.0
+          remaining = {run_id for run_id, _job_id, _purpose in targets}
+          last: dict[int, dict[str, object]] = {}
+          while remaining and time.monotonic() < deadline:
+              for run_id in tuple(remaining):
+                  run = api_call(f"{api}/repos/{repository}/actions/runs/{run_id}")
+                  assert isinstance(run, dict)
+                  last[run_id] = {
+                      "run_id": run_id,
+                      "status": run["status"],
+                      "conclusion": run["conclusion"],
+                  }
+                  if run["status"] == "completed" and run["conclusion"] == "cancelled":
+                      remaining.remove(run_id)
+              if remaining:
+                  time.sleep(2.0)
+          if remaining:
+              raise SystemExit(f"force-cancellation did not settle: {last}")
+
+          dlo_after = api_call(f"{api}/repos/{repository}/actions/runs/33361441865")
+          pokeflex_after = api_call(
+              f"{api}/repos/{repository}/actions/runs/33475220422"
+          )
+          assert isinstance(dlo_after, dict) and isinstance(pokeflex_after, dict)
+          if dlo_after["status"] != "in_progress":
+              raise SystemExit("protected DLO run was not preserved")
+          if pokeflex_after["status"] != "queued":
+              raise SystemExit("frozen PokeFlex run was not preserved")
+
+          result = {
+              "schema": "bayesian-phystwin/pokeflex-force-queue-cancel-result-v1",
+              "ordinary_cancel_attempt_run_id": 33499516926,
+              "pre_force_cancel": pre,
+              "post_force_cancel": [
+                  last[run_id] for run_id, _job_id, _purpose in targets
+              ],
+              "preserved": {
+                  "dlo_run_id": 33361441865,
+                  "dlo_status": dlo_after["status"],
+                  "pokeflex_run_id": 33475220422,
+                  "pokeflex_status": pokeflex_after["status"],
+              },
+              "force_cancelled_run_count": len(targets),
+              "scientific_protocol_change": False,
+              "existing_evidence_deleted": False,
+          }
+          output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload force-cancellation audit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pokeflex-force-queue-cancel-v1-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}/result.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Publish queue outcome
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$EVIDENCE_ROOT/result.json" ]]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          print("### Audited gpuserver4090 force-cancellation")
+          print()
+          print(f"- Unopened lower-priority runs force-cancelled: `{value['force_cancelled_run_count']}`")
+          print(f"- Protected DLO run: `{value['preserved']['dlo_status']}`")
+          print(f"- Frozen PokeFlex run: `{value['preserved']['pokeflex_status']}`")
+          print("- Scientific protocol changed: `false`")
+          print("- Existing evidence deleted: `false`")
+          PY
+          else
+            echo 'Force-cancellation failed before producing a result artifact.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
