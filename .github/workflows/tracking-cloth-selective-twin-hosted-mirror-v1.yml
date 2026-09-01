@@ -6,13 +6,11 @@ on:
   pull_request:
     paths:
       - ".github/workflows/tracking-cloth-selective-twin-hosted-mirror-v1.yml"
-      - ".github/quality/workflow-inventory-budget-v1.json"
-      - ".github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json"
-      - "tests/test_workflow_inventory_budget.py"
+      - ".github/requests/tracking-cloth-selective-twin-hosted-zenodo-v1.json"
   push:
     branches: [main]
     paths:
-      - ".github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json"
+      - ".github/requests/tracking-cloth-selective-twin-hosted-zenodo-v1.json"
 
 permissions:
   contents: read
@@ -22,10 +20,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  REQUEST_PATH: .github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json
-  ARCHIVE_URL: https://fcoltraro.github.io/projects/dataset/tracking_dataset.zip
+  REQUEST_PATH: .github/requests/tracking-cloth-selective-twin-hosted-zenodo-v1.json
+  ARCHIVE_URL: "https://zenodo.org/records/14644526/files/tracking_dataset.zip?download=1"
   ARCHIVE_MD5: b4868b702f8a42b2ea1069d0f1a3b8f6
+  ARCHIVE_SHA256: 14916efa89a26d991c024024cc9449397d3a6f654311e621bb91e9602e231e1a
   SCIENTIFIC_SOURCE_REVISION: e9fd0fc35c534db867831c124b46e495e5eb3e57
+  ORIGINAL_SELF_HOSTED_RUN_ID: "33511626637"
+  FAILED_PROJECT_MIRROR_RUN_ID: "33516253812"
   PYTHONUNBUFFERED: "1"
   PYTHONDONTWRITEBYTECODE: "1"
   OPENBLAS_NUM_THREADS: "1"
@@ -61,12 +62,20 @@ jobs:
 
           request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
           expected = {
-              "schema": "tracking-cloth-selective-twin-hosted-mirror-request-v1",
-              "mode": "hosted_runtime_mirror",
+              "schema": "tracking-cloth-selective-twin-hosted-zenodo-request-v1",
+              "mode": "hosted_zenodo_mirror",
               "archive_url": os.environ["ARCHIVE_URL"],
               "archive_md5": os.environ["ARCHIVE_MD5"],
-              "scientific_source_revision": os.environ["SCIENTIFIC_SOURCE_REVISION"],
-              "original_self_hosted_run_id": "33511626637",
+              "archive_sha256": os.environ["ARCHIVE_SHA256"],
+              "scientific_source_revision": os.environ[
+                  "SCIENTIFIC_SOURCE_REVISION"
+              ],
+              "original_self_hosted_run_id": os.environ[
+                  "ORIGINAL_SELF_HOSTED_RUN_ID"
+              ],
+              "failed_project_mirror_run_id": os.environ[
+                  "FAILED_PROJECT_MIRROR_RUN_ID"
+              ],
               "prior_target_run_id": "33302686759",
               "paper_claim_authorized": False,
               "fresh_confirmation": False,
@@ -84,7 +93,7 @@ jobs:
           PY
 
   authorize:
-    name: Authorize hosted mirror request
+    name: Authorize hosted Zenodo mirror request
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -108,7 +117,7 @@ jobs:
           test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
           mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\t.github/requests/tracking-cloth-selective-twin-hosted-mirror-v1.json'
+          test "${changed[0]}" = $'A\t.github/requests/tracking-cloth-selective-twin-hosted-zenodo-v1.json'
           python - <<'PY'
           import json
           import os
@@ -132,7 +141,7 @@ jobs:
           PY
 
   evaluate:
-    name: Cross-material physical competence / hosted mirror
+    name: Cross-material physical competence / hosted Zenodo mirror
     needs: [contracts, authorize]
     if: >-
       always() &&
@@ -152,37 +161,69 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Materialize publisher-verified public archive
+      - name: Materialize publisher-verified Zenodo archive
         shell: bash
+        env:
+          DATASET_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/dataset
+          RECEIPT_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/archive_transport.json
         run: |
           set -euo pipefail
-          root="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          dataset="$root/dataset"
-          output="$root/output"
-          mkdir -p "$dataset"
+          mkdir -p "$DATASET_PATH"
+          archive="$DATASET_PATH/tracking_dataset.zip"
           curl --fail --location --retry 5 --retry-all-errors \
-            --connect-timeout 30 "$ARCHIVE_URL" \
-            --output "$dataset/tracking_dataset.zip"
-          printf '%s  %s\n' "$ARCHIVE_MD5" "$dataset/tracking_dataset.zip" \
+            --connect-timeout 30 "$ARCHIVE_URL" --output "$archive"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["DATASET_PATH"]) / "tracking_dataset.zip"
+          raw = path.read_bytes()
+          receipt = {
+              "schema": "tracking-cloth-archive-transport-receipt-v1",
+              "source_url": os.environ["ARCHIVE_URL"],
+              "byte_count": len(raw),
+              "md5": hashlib.md5(raw, usedforsecurity=False).hexdigest(),
+              "sha256": hashlib.sha256(raw).hexdigest(),
+              "expected_md5": os.environ["ARCHIVE_MD5"],
+              "expected_sha256": os.environ["ARCHIVE_SHA256"],
+              "scientific_source_revision": os.environ[
+                  "SCIENTIFIC_SOURCE_REVISION"
+              ],
+              "original_self_hosted_run_id": os.environ[
+                  "ORIGINAL_SELF_HOSTED_RUN_ID"
+              ],
+              "failed_project_mirror_run_id": os.environ[
+                  "FAILED_PROJECT_MIRROR_RUN_ID"
+              ],
+              "numeric_trajectory_values_read": False,
+          }
+          Path(os.environ["RECEIPT_PATH"]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+          printf '%s  %s\n' "$ARCHIVE_MD5" "$archive" \
             | md5sum --check --strict
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" \
+            | sha256sum --check --strict
           python - <<'PY'
           import os
           import zipfile
           from pathlib import Path
 
           archive = Path(os.environ["DATASET_PATH"]) / "tracking_dataset.zip"
+          root = archive.parent.resolve()
           with zipfile.ZipFile(archive) as zipped:
               bad = zipped.testzip()
               if bad is not None:
                   raise SystemExit(f"ZIP integrity failure: {bad}")
               for entry in zipped.infolist():
-                  destination = (archive.parent / entry.filename).resolve()
-                  if not destination.is_relative_to(archive.parent.resolve()):
+                  destination = (root / entry.filename).resolve()
+                  if not destination.is_relative_to(root):
                       raise SystemExit(f"Unsafe ZIP member: {entry.filename}")
-              zipped.extractall(archive.parent)
+              zipped.extractall(root)
           PY
-        env:
-          DATASET_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/dataset
       - name: Install frozen evaluation dependencies
         shell: bash
         run: |
@@ -196,11 +237,13 @@ jobs:
           test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/run.py")" = "$(git rev-parse "HEAD:experiments/tracking_cloth_selective_twin_v1/run.py")"
           test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/protocol.json")" = "$(git rev-parse "HEAD:experiments/tracking_cloth_selective_twin_v1/protocol.json")"
           root="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$root/output"
           python -m experiments.tracking_cloth_selective_twin_v1.run \
             --dataset-root "$root/dataset" \
-            --output "$root/output"
+            --output "$output"
+          cp "$root/archive_transport.json" "$output/archive_transport.json"
           REQUEST_PATH="$GITHUB_WORKSPACE/$REQUEST_PATH" \
-          OUTPUT_PATH="$root/output/evaluation_request.json" \
+          OUTPUT_PATH="$output/evaluation_request.json" \
           python - <<'PY'
           import hashlib
           import json
@@ -244,8 +287,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: tracking-cloth-selective-twin-hosted-mirror-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          name: tracking-cloth-selective-twin-hosted-zenodo-v1-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/archive_transport.json
             ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/*.json
             ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/*.csv
             ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/report.md
