@@ -13,9 +13,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
-
+from typing import Any
 
 SCHEMA = "bayesian-phystwin/deform360-bound-carrier-replay-v8"
 TACTILE_RE = re.compile(r"tactile", re.IGNORECASE)
@@ -77,8 +77,12 @@ def _retained_fingerprints(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     if not isinstance(source, list):
         raise ValueError(f"source fingerprints missing for {row.get('object_id')}")
     for episode in source:
-        if not isinstance(episode, Mapping) or not isinstance(episode.get("files"), list):
-            raise ValueError(f"invalid source fingerprint row for {row.get('object_id')}")
+        if not isinstance(episode, Mapping) or not isinstance(
+            episode.get("files"), list
+        ):
+            raise ValueError(
+                f"invalid source fingerprint row for {row.get('object_id')}"
+            )
         result.extend(episode["files"])
     target = row.get("target_fingerprint")
     if not isinstance(target, Mapping) or not isinstance(target.get("files"), list):
@@ -107,7 +111,9 @@ def _verify_retained_fingerprints(
         checked.add(relative_text)
         path = _bound_path(data_root, relative_text)
         if not path.is_file():
-            raise ValueError(f"retained confirmation carrier is missing: {relative_text}")
+            raise ValueError(
+                f"retained confirmation carrier is missing: {relative_text}"
+            )
         observed = _sampled_fingerprint(path)
         if int(record["size_bytes"]) != observed["size_bytes"]:
             raise ValueError(f"retained carrier size changed: {relative_text}")
@@ -127,7 +133,8 @@ def _recognized_current_files(
     tactile: set[str] = set()
     if raw.is_dir():
         for directory in sorted(
-            (path for path in raw.iterdir() if path.is_dir()), key=lambda path: path.name
+            (path for path in raw.iterdir() if path.is_dir()),
+            key=lambda path: path.name,
         ):
             if not TACTILE_RE.search(directory.name):
                 continue
@@ -202,7 +209,9 @@ def verify_bound_replay(
         missing_robot = sorted(expected_robot - current_robot)
         missing_tactile = sorted(expected_tactile - current_tactile)
         if missing_robot or missing_tactile:
-            raise ValueError(f"bound carrier disappeared from current inventory: {object_id}")
+            raise ValueError(
+                f"bound carrier disappeared from current inventory: {object_id}"
+            )
         added_robot = sorted(current_robot - expected_robot)
         added_tactile = sorted(current_tactile - expected_tactile)
         total_additions += len(added_robot) + len(added_tactile)
@@ -271,22 +280,20 @@ def build_bound_descriptors(
     """Construct the same descriptors as the original precommitted subset."""
 
     object_id = str(expected["object_id"])
-    metadata_path = (
-        data_root / "raw-repository" / "raw" / object_id / "metadata.json"
-    )
+    metadata_path = data_root / "raw-repository" / "raw" / object_id / "metadata.json"
     episodes = base.episode_records(base.read_json(metadata_path))
     action_by_id = {int(row["episode_id"]): row["action"] for row in episodes}
     robot_by_id = {
-        int(record["episode_id"]): _bound_path(
-            data_root, str(record["relative_path"])
-        )
+        int(record["episode_id"]): _bound_path(data_root, str(record["relative_path"]))
         for record in expected["robot_files"]
     }
     groups = list(expected["tactile_groups"])
     descriptors: list[Any] = []
     for episode_id in map(int, expected["complete_episode_ids"]):
         if episode_id not in robot_by_id or episode_id not in action_by_id:
-            raise ValueError(f"bound descriptor inputs are missing: {object_id}/{episode_id}")
+            raise ValueError(
+                f"bound descriptor inputs are missing: {object_id}/{episode_id}"
+            )
         tactile_paths = tuple(
             _bound_path(
                 data_root,
@@ -301,7 +308,9 @@ def build_bound_descriptors(
                 action=action_by_id[episode_id],
                 robot_path=robot_by_id[episode_id],
                 tactile_paths=tactile_paths,
-                median_paths=tuple(base.median_path_for(path) for path in tactile_paths),
+                median_paths=tuple(
+                    base.median_path_for(path) for path in tactile_paths
+                ),
             )
         )
     if len(descriptors) < minimum_episodes:
