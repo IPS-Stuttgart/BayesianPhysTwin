@@ -33,8 +33,7 @@ from typing import Any
 import numpy as np
 
 SCHEMA = (
-    "bayesian-phystwin/deform360-dependence-query-result-v6-"
-    "bound-carrier-recovery-v1"
+    "bayesian-phystwin/deform360-dependence-query-result-v6-bound-carrier-recovery-v1"
 )
 RECOVERY_SCHEMA = (
     "bayesian-phystwin/deform360-dependence-query-bound-carrier-recovery-v1"
@@ -140,7 +139,9 @@ def descriptor_from_receipt(
     receipt = _require_mapping(receipt_value, "episode fingerprint receipt")
     files = list(_require_sequence(receipt.get("files"), "fingerprint files"))
     if int(receipt.get("file_count", -1)) != len(files) or not files:
-        raise ValueError(f"invalid fingerprint receipt for {object_id} episode {episode_id}")
+        raise ValueError(
+            f"invalid fingerprint receipt for {object_id} episode {episode_id}"
+        )
 
     paths = [_verify_fingerprint(base, item, data_root) for item in files]
     robot_indices = [
@@ -261,9 +262,7 @@ def build_bound_descriptors(
     if len(descriptors) < minimum_episodes:
         raise ValueError(f"bound descriptor roster is too small: {object_id}")
 
-    metadata_path = (
-        data_root / "raw-repository" / "raw" / object_id / "metadata.json"
-    )
+    metadata_path = data_root / "raw-repository" / "raw" / object_id / "metadata.json"
     if not metadata_path.is_file():
         raise ValueError(f"metadata disappeared for bound object: {object_id}")
     actions_by_id = metadata_actions(v3.base, metadata_path)
@@ -279,7 +278,9 @@ def build_bound_descriptors(
     current_identity = current_identities(current)
     missing = sorted(expected_identity - current_identity)
     if missing:
-        raise ValueError(f"bound readiness carriers disappeared: {object_id}: {missing}")
+        raise ValueError(
+            f"bound readiness carriers disappeared: {object_id}: {missing}"
+        )
     projection = v5.selection_projection(current)
     extra_ids = sorted(
         set(map(int, current.get("complete_episode_ids", ()))) - set(expected_ids)
@@ -412,9 +413,7 @@ def run(
         reference_marginal = v6.marginal_variance(arms["full_low_rank"])
         marginal_parity = float(
             max(
-                np.max(
-                    np.abs(v6.marginal_variance(model) - reference_marginal)
-                )
+                np.max(np.abs(v6.marginal_variance(model) - reference_marginal))
                 for model in arms.values()
             )
         )
@@ -556,8 +555,7 @@ def run(
             if int(row["extra_readiness_identity_count"]) > 0
         ],
         "all_bound_numeric_fingerprints_equal": all(
-            bool(row["bound_numeric_fingerprints_equal"])
-            for row in carrier_drift
+            bool(row["bound_numeric_fingerprints_equal"]) for row in carrier_drift
         ),
         "all_bound_episode_actions_equal": all(
             bool(row["bound_episode_actions_equal"]) for row in carrier_drift
