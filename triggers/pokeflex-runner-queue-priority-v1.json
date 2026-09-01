@@ -1,0 +1,23 @@
+{
+  "schema": "bayesian-phystwin/pokeflex-runner-queue-priority-request-v1",
+  "request_id": "pokeflex-runner-queue-priority-20260901-v1",
+  "preserve_run_id": 33475220422,
+  "preserve_purpose": "frozen prospective five-target V5/V6 execution",
+  "supersede": [
+    {
+      "run_id": 33473538051,
+      "concurrency_group": "pokeflex-object-identity-placebo-gpuserver4090-v1",
+      "purpose": "retrospective object-identity placebo",
+      "target_payload_opened": false
+    },
+    {
+      "run_id": 33473949713,
+      "concurrency_group": "pokeflex-missing5-archive-readiness-v1",
+      "purpose": "metadata-only readiness audit already superseded by completed audits",
+      "target_payload_opened": false
+    }
+  ],
+  "cancel_current_dlo_run": false,
+  "scientific_protocol_change": false,
+  "delete_evidence": false
+}
