@@ -69,8 +69,7 @@ def run_exact_export(
             int(row["pooled_field_dimension"]),
         ):
             raise ValueError(
-                "captured target residual shape changed for "
-                f"{row['object_id']}"
+                f"captured target residual shape changed for {row['object_id']}"
             )
         projected_residuals = errors @ query.T
         projected_covariance = query_cov.project_compact_covariance(
@@ -244,9 +243,7 @@ def run_exact_export(
             "",
         ]
     )
-    (output_root / "report.md").write_text(
-        "\n".join(report_lines), encoding="utf-8"
-    )
+    (output_root / "report.md").write_text("\n".join(report_lines), encoding="utf-8")
     return result
 
 
@@ -292,9 +289,7 @@ def main() -> None:
         json.dumps(
             {
                 "status": result["status"],
-                "superior_target_passed": result["study"][
-                    "superior_target_passed"
-                ],
+                "superior_target_passed": result["study"]["superior_target_passed"],
                 "result_sha256": result["result_sha256"],
             },
             sort_keys=True,
