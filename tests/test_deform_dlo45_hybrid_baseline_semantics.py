@@ -1,9 +1,10 @@
+"""Verify that the registered DEFORM comparator is the complete hybrid model."""
+
 from __future__ import annotations
 
 import ast
 import json
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
@@ -47,7 +48,7 @@ def test_registered_deform_base_trains_the_released_network_modules() -> None:
 def test_registered_deform_base_keeps_the_learned_residual_active_at_rollout() -> None:
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
     rollout = _function(tree, "_rollout_records")
-    evaluation_calls = []
+    evaluation_calls: list[ast.Call] = []
     for node in ast.walk(rollout):
         if not isinstance(node, ast.Call):
             continue
