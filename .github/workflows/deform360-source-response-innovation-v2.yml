@@ -1,0 +1,233 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source-response innovation v2
+
+on:
+  push:
+    branches:
+      - science/deform360-icra-source-response-v1
+    paths:
+      - ".github/requests/deform360-source-response-innovation-v2.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-response-innovation-v2
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-response-innovation-v2.json
+  PROTOCOL_PATH: experiments/deform360_source_response_innovation_v2/protocol.json
+  IMPLEMENTATION_PATH: scripts/science/run_deform360_source_response_innovation_v2.py
+  TEST_PATH: tests/test_deform360_source_response_innovation_v2.py
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  SOURCE_OBJECT: 038-mat-cloth
+  SOURCE_EPISODE: "3"
+  SOURCE_EPISODE_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/cross-action-source-v1/038-mat-cloth/episode_0003
+  NUMPY_VERSION: "1.26.4"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      - name: Authorize one add-only v2 request and validate contracts
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/science/deform360-icra-source-response-v1
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-response-innovation-request-v2",
+              "request_id": "deform360-source-response-innovation-20260902-v2",
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "source_episode_root": os.environ["SOURCE_EPISODE_ROOT"],
+              "runner_label": "gpuserver4090",
+              "protocol_path": os.environ["PROTOCOL_PATH"],
+              "implementation_path": os.environ["IMPLEMENTATION_PATH"],
+              "test_path": os.environ["TEST_PATH"],
+              "numpy_version": os.environ["NUMPY_VERSION"],
+              "source_robot_tactile_payload_authorized": True,
+              "source_camera_pixel_access_authorized": False,
+              "persistent_dataset_write_authorized": False,
+              "target_directory_listing_authorized": False,
+              "target_numeric_access_authorized": False,
+              "target_scoring_authorized": False,
+              "fresh_confirmation_authorized": False,
+              "paper_claim_authorized": False,
+          }
+          if set(request) != set(required) | {"expected_source_revision"}:
+              raise SystemExit("request keys differ from the frozen v2 contract")
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"request field {key!r} changed")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind the exact source parent")
+          PY
+          python -m pip install --disable-pip-version-check \
+            "numpy==${NUMPY_VERSION}" pytest
+          python -m json.tool "${PROTOCOL_PATH}" >/dev/null
+          python -m py_compile "${IMPLEMENTATION_PATH}"
+          python -m pytest -q "${TEST_PATH}"
+
+  source:
+    needs: preflight
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      - name: Bind the exact source and execute the isolated v2 gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test "$(realpath -e "${SOURCE_EPISODE_ROOT}")" = "${SOURCE_EPISODE_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test -f "${SOURCE_EPISODE_ROOT}/robot/robot.npz"
+          for sensor in \
+            brics-odroid_tactilel_left \
+            brics-odroid_tactilel_right \
+            brics-odroid_tactiler_left \
+            brics-odroid_tactiler_right; do
+            test -f "${SOURCE_EPISODE_ROOT}/${sensor}/synced_tactile.npy"
+          done
+          output="${RUNNER_TEMP}/deform360-source-response-innovation-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime="${RUNNER_TEMP}/deform360-source-response-innovation-venv-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          install_log="${RUNNER_TEMP}/deform360-source-response-innovation-install-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.log"
+          test ! -e "${output}"
+          test ! -e "${runtime}"
+          python -m venv "${runtime}"
+          "${runtime}/bin/python" -m pip install --disable-pip-version-check \
+            "numpy==${NUMPY_VERSION}" > "${install_log}" 2>&1
+          "${runtime}/bin/python" -m pip check >> "${install_log}" 2>&1
+          "${runtime}/bin/python" "${IMPLEMENTATION_PATH}" \
+            --source-episode-root "${SOURCE_EPISODE_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output-dir "${output}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --revision "${GITHUB_SHA}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "EVIDENCE_ROOT=${output}"
+            echo "SOURCE_RUNTIME=${runtime}"
+            echo "INSTALL_LOG=${install_log}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify the immutable result and closed information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          if result["source_object"] != os.environ["SOURCE_OBJECT"]:
+              raise SystemExit("source object changed")
+          if result["source_episode"] != int(os.environ["SOURCE_EPISODE"]):
+              raise SystemExit("source episode changed")
+          if result["decision"] not in {
+              "source-response-innovation-qualified",
+              "source-response-innovation-not-qualified",
+          }:
+              raise SystemExit("unexpected scientific decision")
+          boundary = result["information_boundary"]
+          for key in (
+              "source_camera_pixels_opened",
+              "persistent_dataset_write_performed",
+              "target_directory_contents_listed",
+              "target_numeric_payload_opened",
+              "target_scoring_performed",
+              "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          if boundary["source_robot_payload_opened"] is not True:
+              raise SystemExit("source robot was not opened")
+          if boundary["source_tactile_payloads_opened"] is not True:
+              raise SystemExit("source tactile data were not opened")
+          print(json.dumps({
+              "decision": result["decision"],
+              "selected_horizon_frames": result["horizon_selection"]["selected_horizon_frames"],
+              "selected_output_dimension": result["tactile_preprocessing"]["selected_output_dimension"],
+              "dynamic_frame_fraction": result["tactile_preprocessing"]["dynamic_frame_fraction"],
+              "test_gains": result["test_gains"],
+              "qualification_checks": result["qualification_checks"],
+              "result_sha256": result["result_sha256"],
+          }, indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish scientific summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: test ! -f "${EVIDENCE_ROOT}/report.md" || cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload compact source evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-response-innovation-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+            ${{ env.PROTOCOL_PATH }}
+            ${{ env.REQUEST_PATH }}
+            ${{ env.INSTALL_LOG }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime and scratch
+        if: always()
+        shell: bash
+        run: rm -rf -- "${SOURCE_RUNTIME:-}" "${EVIDENCE_ROOT:-}" "${INSTALL_LOG:-}"

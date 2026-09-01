@@ -1,0 +1,63 @@
+{
+  "schema": "bayesian-phystwin/deform360-source-response-protocol-v1",
+  "source_object": "038-mat-cloth",
+  "source_episode": 3,
+  "information_boundary": {
+    "source_only": true,
+    "source_camera_pixel_access_authorized": false,
+    "target_directory_listing_authorized": false,
+    "target_numeric_access_authorized": false,
+    "target_scoring_authorized": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "response_contract": {
+    "tactile_sensors": [
+      "brics-odroid_tactilel_left",
+      "brics-odroid_tactilel_right",
+      "brics-odroid_tactiler_left",
+      "brics-odroid_tactiler_right"
+    ],
+    "per_sensor_outputs": [
+      "log_total_positive_signal",
+      "active_taxel_fraction",
+      "weighted_centroid_x",
+      "weighted_centroid_y"
+    ],
+    "prediction_horizon_frames": 1,
+    "minimum_output_train_std": 1e-06
+  },
+  "design": {
+    "contact_margin_frames": 8,
+    "train_fraction": 0.6,
+    "calibration_fraction": 0.2,
+    "ridge_grid": [1e-06, 0.0001, 0.01, 1.0, 100.0],
+    "covariance_scale_grid": [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0],
+    "permutation_block_frames": 8,
+    "permutation_seed": 20260902,
+    "covariance_eigenvalue_floor": 1e-06
+  },
+  "comparisons": [
+    "persistence",
+    "last_delta",
+    "state_only_bayesian_full_covariance",
+    "action_conditioned_bayesian_diagonal_covariance",
+    "action_conditioned_bayesian_full_covariance",
+    "action_block_permuted_bayesian_full_covariance"
+  ],
+  "qualification_gates": {
+    "minimum_train_transitions": 80,
+    "minimum_calibration_transitions": 25,
+    "minimum_test_transitions": 25,
+    "minimum_action_vs_state_nll_gain_per_dimension": 0.0,
+    "minimum_full_vs_diagonal_nll_gain_per_dimension": 0.0,
+    "minimum_true_vs_permuted_action_nll_gain_per_dimension": 0.0,
+    "maximum_action_rmse_ratio_to_persistence": 1.05,
+    "minimum_normalized_joint_nees": 0.5,
+    "maximum_normalized_joint_nees": 2.0,
+    "minimum_marginal_coverage": 0.8,
+    "maximum_marginal_coverage": 0.98
+  },
+  "statistical_scope": "Single-episode source competence diagnostic only. Frames are temporally dependent observations nested within one episode and are not independent experimental units.",
+  "claim_boundary": "This protocol may qualify source robot-to-tactile predictive competence and dependence-preserving uncertainty. It cannot establish physical-parameter identifiability, metric geometry, cross-action transport, target benefit, independent-object generalization, Causal4D decision value, safety, or an ICRA paper claim."
+}
