@@ -161,7 +161,6 @@ def _validate_source_result(
     tolerance = 1e-15
     wins = int(np.sum(differences > tolerance))
     ties = int(np.sum(np.abs(differences) <= tolerance))
-    losses = int(np.sum(differences < -tolerance))
     baseline_mean = float(np.mean(baseline))
     candidate_mean = float(np.mean(candidate))
     relative_improvement = 1.0 - candidate_mean / baseline_mean
