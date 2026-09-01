@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-to-dlo45-no-refit-coefficient-transfer-v1",
+  "status": "frozen-before-parent-target-scoring",
+  "scientific_question": "Do local-residual coefficients fitted only on DLO3 improve fresh DLO4 and DLO5 target predictions without any DLO4/DLO5 residual refit or target-dependent seed selection?",
+  "registration_boundary": {
+    "registered_date": "2026-09-01",
+    "blocking_workflow_run_id": 33361441865,
+    "blocking_workflow_name": "DEFORM DLO4/DLO5 staged timeout recovery v3",
+    "blocking_head_sha": "0376ece871d7c3d9355788f812a3c4cc1c9165b0",
+    "blocking_head_branch": "science/deform-dlo45-time-budget-recovery-v3",
+    "observed_parent_stage": "target-prediction-in-progress",
+    "source_outcomes_previously_opened": true,
+    "target_scores_opened": false,
+    "target_predictions_used_for_design": false,
+    "classification": "outcome-blind-pre-score-secondary-diagnostic"
+  },
+  "parent_dlo45": {
+    "run_root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1",
+    "require_workflow_success": true,
+    "result_contract": "deform-dlo45-frozen-transfer-result-v1",
+    "joint_seal_contract": "deform-dlo45-joint-prediction-seal-v1",
+    "prediction_seal_contract": "deform-dlo45-target-prediction-seal-v1",
+    "protocol": {
+      "repository_path": "experiments/deform_dlo45_frozen_v1/protocol.json",
+      "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+      "size_bytes": 4647
+    }
+  },
+  "dlo3_local_residual_models": [
+    {
+      "seed": 42,
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-42-run-bd5cfb14/local_residual_model.npz",
+      "sha256": "3fd149ab89769bec24b36263b9e99dcbd572610bd51a273d0d2c79ca30756e83",
+      "size_bytes": 1440868
+    },
+    {
+      "seed": 43,
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-43-run-bd5cfb14/local_residual_model.npz",
+      "sha256": "9c78101f2d08a4fcd3005092f0cb0ceff9bde3efb8c01386ebbcefb10f50a548",
+      "size_bytes": 1441139
+    },
+    {
+      "seed": 44,
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-44-run-da487c26/local_residual_model.npz",
+      "sha256": "738e7eb4ef5a87e3f8e7785fe16db7e915ffcfd05d19aade617f32f8ac5bc26f",
+      "size_bytes": 1441172
+    }
+  ],
+  "data": {
+    "source_model_dlo": "DLO3",
+    "dlos": [
+      "DLO4",
+      "DLO5"
+    ],
+    "partition": "eval",
+    "trajectory_count_per_dlo": 14,
+    "frame_count": 500,
+    "node_count": 12,
+    "prediction_horizon": 498,
+    "statistical_unit": "complete-trajectory",
+    "physical_backbone": "matching-object-alltrain-update-6400",
+    "interpretation": "residual-coefficient-transfer-not-complete-twin-transfer"
+  },
+  "evaluation": {
+    "primary_arm": "equal-seed-dlo3-residual-no-refit-to-dlo45",
+    "seed_aggregation": "arithmetic-prediction-mean",
+    "individual_seeds": [
+      42,
+      43,
+      44
+    ],
+    "shrinkage": 0.25,
+    "metric": "mean-coordinate-l1-m-all-nodes",
+    "dlo_aggregation": "equal-dlo-mean",
+    "comparators": [
+      "matching-object-alltrain-physical",
+      "matching-object-source-qualified-residual"
+    ],
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20260902,
+    "feature_support_diagnostic": {
+      "standardization": "dlo3-model-feature-location-and-scale",
+      "absolute_z_thresholds": [
+        3.0,
+        5.0,
+        10.0
+      ],
+      "selection_effect": "none"
+    },
+    "feature_support_diagnostic_affects_gate": false
+  },
+  "promotion_gate": {
+    "minimum_relative_improvement": 0.01,
+    "minimum_case_wins": 8,
+    "maximum_case_ratio": 1.1,
+    "minimum_improving_seed_models": 2,
+    "require_each_dlo": true,
+    "pooled_result_cannot_override_per_dlo_failure": true
+  },
+  "information_boundary": {
+    "frozen_before_parent_target_scoring": true,
+    "parent_target_prediction_may_have_started": true,
+    "dlo3_residual_refit": false,
+    "dlo4_or_dlo5_residual_refit": false,
+    "seed_or_weight_selection_from_target": false,
+    "shrinkage_selection_from_target": false,
+    "gate_selection_from_target": false,
+    "feature_support_selection": false,
+    "object_specific_physical_backbone_allowed": true,
+    "dlo3_official_evaluation_read": false,
+    "target_retry_authorized": false,
+    "case_replacement": false,
+    "prob4d_used": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A positive result supports unchanged DLO3 local-residual coefficient transfer to the exact released DLO4 and DLO5 target operators on top of separately fitted matching-object physical backbones. It is not transfer of the complete twin, arbitrary-object generalization, physical-parameter identification, deployment safety, or universal state of the art."
+}
