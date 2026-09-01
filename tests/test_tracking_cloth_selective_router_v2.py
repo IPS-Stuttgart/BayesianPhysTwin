@@ -7,7 +7,6 @@ import numpy as np
 
 from experiments.tracking_cloth_selective_router_v2 import run
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
     ROOT / "experiments/tracking_cloth_selective_router_v2/protocol.json"
