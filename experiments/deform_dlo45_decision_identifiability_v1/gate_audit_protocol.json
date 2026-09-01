@@ -1,0 +1,41 @@
+{
+  "contract": "deform-dlo45-decision-gate-audit-v1",
+  "schema_version": 1,
+  "parent_contract": "deform-dlo45-decision-identifiability-v1",
+  "parent_workflow_run_id": 33473378340,
+  "parent_source_artifact": "dlo45-decision-source-33473378340",
+  "parent_source_artifact_digest": "sha256:fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+  "dataset_repository": "roahmlab/DEFORM",
+  "dataset_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+  "candidate_action": "jeffrey_expected_loss_minimizer",
+  "primary_threshold_rule": "source_test_match_certificate_nonfallback_count",
+  "primary_target_use": "apply_source_frozen_scalar_threshold_without_target_adjustment",
+  "secondary_target_use": "rank_target_covariates_only_to_match_certificate_nonfallback_count_exactly",
+  "heuristics": [
+    "quotient_concentration",
+    "maximum_quotient_mass",
+    "maximum_kernel_weight",
+    "expected_fallback_advantage",
+    "expected_action_gap",
+    "hypothesis_action_agreement",
+    "negative_residual_disagreement",
+    "negative_unsupported_specificity",
+    "deterministic_random"
+  ],
+  "source_coverage_grid": [0.05, 0.10, 0.15, 0.20, 0.30, 0.50],
+  "bootstrap": {
+    "unit": "official_evaluation_trajectory_stratified_by_dlo",
+    "replicates": 20000,
+    "seed": 20260902
+  },
+  "support_audit": {
+    "nearest_selected_residual": true,
+    "nearest_global_residual": true,
+    "realized_regret_excess_over_registered_support_bound": true,
+    "harmful_certificate_case_listing": true
+  },
+  "target_tuning": false,
+  "target_outcomes_used_for_thresholds": false,
+  "target_retries": false,
+  "claim_boundary": "This retrospective follow-up compares the already frozen certificate with source-calibrated heuristic gates. Primary thresholds use only official DEFORM training trajectories assigned to the pre-existing source-test partition. The target-covariate matched analysis uses held prefixes/actions and scores but never held internal-node outcomes to choose coverage. Results remain within-DLO held-trajectory evidence and do not establish unseen-object generalization, calibrated probabilities, arbitrary-action safety, or deployment authorization."
+}
