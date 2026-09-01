@@ -1,0 +1,92 @@
+{
+  "schema": "bayesian-phystwin.public-real-query-competence-protocol",
+  "schema_version": 1,
+  "study_id": "public-real-query-competence-retrospective-v1",
+  "evidence_class": "retrospective-public-real-data-mechanism-evidence",
+  "claim_boundary": "Retrospective mechanism evidence on already-published public real-world measurements. This is not a fresh prospective certificate, a universal safety guarantee, an official benchmark claim, or state of the art.",
+  "foundational_contract": {
+    "commit": "bb282c8083bbc8598cb0382a07a14982eadea97e",
+    "committed_at": "2026-08-30T06:49:14+08:00",
+    "semantics": "object x action x horizon x query competence with exact fallback",
+    "predates_deform360_confirmation_outcomes": true
+  },
+  "composed_trust_contract": {
+    "commit": "24d3517691c2c7ec7d831287a69f2c89588616b9",
+    "semantics": "simulator competence and exact query-decision sufficiency are separate certificates"
+  },
+  "routing_rule": {
+    "id": "exact-object-profile-action-family-horizon-query-runtime-support-v1",
+    "risk_score": {
+      "supported": 0.0,
+      "unsupported": 1.0
+    },
+    "inclusive_threshold": 0.0,
+    "deform360_requirements": [
+      "same physical object supplies source episodes",
+      "target action family occurs in the object's source actions",
+      "source cross-validated Bayesian action ensemble RMSE does not exceed persistence",
+      "horizon is exactly 32 frames",
+      "query is exactly active-field RMSE",
+      "candidate and runtime identities match the published v5 result"
+    ],
+    "tracking_cloth_requirements": [
+      "source and target motion domains match exactly",
+      "query is exactly free-marker Euclidean trajectory RMSE",
+      "candidate and runtime identities match the published pilot"
+    ],
+    "pokeflex_requirements": [
+      "physical object profile was present in source calibration",
+      "query and deployment artifact identities match exactly"
+    ],
+    "fallback": "direct registered baseline arm; never reconstructed",
+    "harm_margin": 0.0
+  },
+  "statistics": {
+    "statistical_unit": "physical object or material-size specimen",
+    "confidence": 0.95,
+    "target_harm_probability": 0.05,
+    "bootstrap_replicates": 100000,
+    "bootstrap_seed": 260811,
+    "frame_pseudoreplication_forbidden": true
+  },
+  "inputs": {
+    "deform360_result": {
+      "run_id": 33335779766,
+      "artifact_id": 9738998271,
+      "artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+      "sha256": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7"
+    },
+    "tracking_protocol": {
+      "run_id": 33302686759,
+      "artifact_id": 9729454899,
+      "sha256": "ecd1898b3e2153e48cac72d68a2b7cf846ebb9711ce53e7f90af344770e5a29f"
+    },
+    "tracking_metrics": {
+      "run_id": 33302686759,
+      "artifact_id": 9729454899,
+      "sha256": "496cd70ab4221985897b8a768510ff5ccf3691aae2099895cadc034867af38c1"
+    },
+    "tracking_specimen_scores": {
+      "run_id": 33302686759,
+      "artifact_id": 9729454899,
+      "sha256": "d73930f1ded5ee11405729bacf4326378b4bffc68a2061c95211f7906d845369"
+    },
+    "pokeflex_same_profile": {
+      "path": "results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/prospective_evaluation.json",
+      "sha256": "0fc409a1bf85d4ef0e697bdb5604689094914ac57d32652660685007bfd67b98"
+    },
+    "pokeflex_independent_object": {
+      "path": "results/sota/pokeflex_independent_depth_regret_guard_calibration_v1/calibration_evaluation.json",
+      "sha256": "63cdd6fd06419937a7515356e1cb9f3b9177d879a1047071f3689f85d4605e93"
+    }
+  },
+  "information_boundary": {
+    "new_measurements_collected": false,
+    "raw_media_required": false,
+    "published_aggregate_outcomes_only": true,
+    "held_v8_forbidden": true,
+    "dlo4_dlo5_forbidden": true,
+    "protected_target_forbidden": true,
+    "backend_predictions_changed": false
+  }
+}

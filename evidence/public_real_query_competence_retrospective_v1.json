@@ -1,0 +1,1456 @@
+{
+  "artifact_id": "6f77ec5658d4e77e5eb514e584f090410c940c201a0eaaf7f2923ffcafbb12f6",
+  "claim_boundary": "Retrospective mechanism evidence on already-published public real-world measurements. It tests whether exact context support plus exact fallback separates useful from unsupported simulator use. It is not a fresh prospective certificate, a universal safety guarantee, an official benchmark claim, or state of the art.",
+  "deform360": {
+    "ablations": {
+      "always_candidate": {
+        "acceptance_fraction": 1.0,
+        "accepted_count": 92,
+        "accepted_wins_ties_losses": [
+          91,
+          0,
+          1
+        ],
+        "always_candidate_mean_loss": 0.6283797735320816,
+        "always_candidate_relative_change": -0.052181068723308854,
+        "candidate_wins_ties_losses": [
+          91,
+          0,
+          1
+        ],
+        "deployed_mean_loss": 0.6283797735320816,
+        "deployed_relative_change": -0.052181068723308854,
+        "exact_fallback_count": 0,
+        "exact_fallback_fraction": 0.0,
+        "fallback_mean_loss": 0.6629744910092352,
+        "group_count": 92,
+        "harm_margin": 0.0,
+        "harmful_accepted_count": 1,
+        "observed_harm_fraction": 0.010869565217391304,
+        "one_sided_clopper_pearson_upper": 0.050526360876957895,
+        "paired_group_bootstrap": {
+          "confidence": 0.95,
+          "interval": [
+            -0.04011896684357292,
+            -0.02949908402333703
+          ],
+          "observed_mean_difference": -0.034594717477153536,
+          "probability_difference_below_zero": 1.0,
+          "replicates": 100000,
+          "seed": 260811
+        },
+        "retrospective_harm_gate_passed": false,
+        "target_harm_probability": 0.05
+      },
+      "legacy_source_guard_with_exact_persistence_fallback": {
+        "acceptance_fraction": 0.8804347826086957,
+        "accepted_count": 81,
+        "accepted_wins_ties_losses": [
+          80,
+          0,
+          1
+        ],
+        "always_candidate_mean_loss": 0.6283797735320816,
+        "always_candidate_relative_change": -0.052181068723308854,
+        "candidate_wins_ties_losses": [
+          91,
+          0,
+          1
+        ],
+        "deployed_mean_loss": 0.6308383553046291,
+        "deployed_relative_change": -0.04847265790827915,
+        "exact_fallback_count": 11,
+        "exact_fallback_fraction": 0.11956521739130435,
+        "fallback_mean_loss": 0.6629744910092352,
+        "group_count": 92,
+        "harm_margin": 0.0,
+        "harmful_accepted_count": 1,
+        "observed_harm_fraction": 0.012345679012345678,
+        "one_sided_clopper_pearson_upper": 0.05722999982329158,
+        "paired_group_bootstrap": {
+          "confidence": 0.95,
+          "interval": [
+            -0.037936062609456485,
+            -0.026667433790866547
+          ],
+          "observed_mean_difference": -0.03213613570460615,
+          "probability_difference_below_zero": 1.0,
+          "replicates": 100000,
+          "seed": 260811
+        },
+        "retrospective_harm_gate_passed": false,
+        "target_harm_probability": 0.05
+      },
+      "source_nonregression_without_action_support": {
+        "acceptance_fraction": 1.0,
+        "accepted_count": 92,
+        "accepted_wins_ties_losses": [
+          91,
+          0,
+          1
+        ],
+        "always_candidate_mean_loss": 0.6283797735320816,
+        "always_candidate_relative_change": -0.052181068723308854,
+        "candidate_wins_ties_losses": [
+          91,
+          0,
+          1
+        ],
+        "deployed_mean_loss": 0.6283797735320816,
+        "deployed_relative_change": -0.052181068723308854,
+        "exact_fallback_count": 0,
+        "exact_fallback_fraction": 0.0,
+        "fallback_mean_loss": 0.6629744910092352,
+        "group_count": 92,
+        "harm_margin": 0.0,
+        "harmful_accepted_count": 1,
+        "observed_harm_fraction": 0.010869565217391304,
+        "one_sided_clopper_pearson_upper": 0.050526360876957895,
+        "paired_group_bootstrap": {
+          "confidence": 0.95,
+          "interval": [
+            -0.04011896684357292,
+            -0.02949908402333703
+          ],
+          "observed_mean_difference": -0.034594717477153536,
+          "probability_difference_below_zero": 1.0,
+          "replicates": 100000,
+          "seed": 260811
+        },
+        "retrospective_harm_gate_passed": false,
+        "target_harm_probability": 0.05
+      }
+    },
+    "candidate": "bayesian_action_ensemble",
+    "dataset": "Deform360",
+    "exact_context_policy": {
+      "acceptance_fraction": 0.7717391304347826,
+      "accepted_count": 71,
+      "accepted_wins_ties_losses": [
+        71,
+        0,
+        0
+      ],
+      "always_candidate_mean_loss": 0.6283797735320816,
+      "always_candidate_relative_change": -0.052181068723308854,
+      "candidate_wins_ties_losses": [
+        91,
+        0,
+        1
+      ],
+      "deployed_mean_loss": 0.6366841396815225,
+      "deployed_relative_change": -0.03965514764782485,
+      "exact_fallback_count": 21,
+      "exact_fallback_fraction": 0.22826086956521738,
+      "fallback_mean_loss": 0.6629744910092352,
+      "group_count": 92,
+      "harm_margin": 0.0,
+      "harmful_accepted_count": 0,
+      "observed_harm_fraction": 0.0,
+      "one_sided_clopper_pearson_upper": 0.041315658706909474,
+      "paired_group_bootstrap": {
+        "confidence": 0.95,
+        "interval": [
+          -0.0320984712608139,
+          -0.020989863290109538
+        ],
+        "observed_mean_difference": -0.026290351327712572,
+        "probability_difference_below_zero": 1.0,
+        "replicates": 100000,
+        "seed": 260811
+      },
+      "retrospective_harm_gate_passed": true,
+      "target_harm_probability": 0.05
+    },
+    "exact_context_rule": "exact-object-profile-action-family-horizon-query-runtime-support-v1",
+    "fallback": "persistence",
+    "gain_retained_fraction": 0.7599527686582476,
+    "group_count": 92,
+    "public_real_world": true,
+    "query_mismatch_control": {
+      "policy": {
+        "acceptance_fraction": 0.0,
+        "accepted_count": 0,
+        "accepted_wins_ties_losses": [
+          0,
+          0,
+          0
+        ],
+        "always_candidate_mean_loss": 0.14944932651525566,
+        "always_candidate_relative_change": 0.04748782646090888,
+        "candidate_wins_ties_losses": [
+          18,
+          0,
+          74
+        ],
+        "deployed_mean_loss": 0.14267404617024726,
+        "deployed_relative_change": 0.0,
+        "exact_fallback_count": 92,
+        "exact_fallback_fraction": 1.0,
+        "fallback_mean_loss": 0.14267404617024726,
+        "group_count": 92,
+        "harm_margin": 0.0,
+        "harmful_accepted_count": 0,
+        "observed_harm_fraction": null,
+        "one_sided_clopper_pearson_upper": 1.0,
+        "paired_group_bootstrap": {
+          "confidence": 0.95,
+          "interval": [
+            0.0,
+            0.0
+          ],
+          "observed_mean_difference": 0.0,
+          "probability_difference_below_zero": 0.0,
+          "replicates": 100000,
+          "seed": 260811
+        },
+        "retrospective_harm_gate_passed": false,
+        "target_harm_probability": 0.05
+      },
+      "query": "all-field-mae",
+      "reason": "query-functional-out-of-scope"
+    },
+    "query_rank_reversal": {
+      "alternate_query": "all-field-mae",
+      "alternate_query_candidate_mean": 0.14944932651525566,
+      "alternate_query_candidate_worse": true,
+      "alternate_query_fallback_mean": 0.14267404617024726,
+      "query_independent_routing_is_sufficient": false,
+      "rank_reversal_observed": true,
+      "registered_query": "active-field-rmse",
+      "registered_query_candidate_better": true,
+      "registered_query_candidate_mean": 0.6283797735320816,
+      "registered_query_fallback_mean": 0.6629744910092352,
+      "same_prediction_pair": true
+    },
+    "registered_query": "active-field-rmse",
+    "statistical_unit": "physical object",
+    "support_rows": [
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "004-rubber-band",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "005-thread",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "006-fur",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "007-feather",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "009-yellow-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "010-orange-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "011-green-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "012-hat-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "013-glove-cloth",
+        "source_action_families": [
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "014-glove-vinyl-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "015-airbag-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "016-shirt-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "017-chessboard-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "018-trashbag-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "019-trashbag-plastic-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "020-cutting-mat-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "021-bag-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "022-handkerchief",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "023-cleaning-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "024-glass-cleaner-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "025-bag-small-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "027-umbrella-bag-cloth",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "028-ziplog-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "029-foam-cloth",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "030-bandage-cloth",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "030-foam-flat-cloth",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "032-teabag-cloth",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "033-mask-cloth",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "034-plastic-bag-cloth",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "035-wipe-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "037-mop-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "translate"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "039-bday-hat",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "040-paper-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "041-wrap-paper-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "042-necktie-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "043-dog",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "044-doll",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "045-cat",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "046-sponge",
+        "source_action_families": [
+          "compress",
+          "other",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "047-rectangle-sponge",
+        "source_action_families": [
+          "compress",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "048-butter-sponge",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "049-ball",
+        "source_action_families": [
+          "compress",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "050-boxing",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "051-cube",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "052-rubber-duck",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "054-toothpaste",
+        "source_action_families": [
+          "lift"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "055-lettuce-cloth",
+        "source_action_families": [
+          "lift",
+          "other",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "056-makeup-sponge",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "057-kitchen-sponge",
+        "source_action_families": [
+          "compress",
+          "lift"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "059-shoe",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "060-bread-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "061-cup",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "062-banana",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "dynamic"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "064-box",
+        "source_action_families": [
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "065-pita-bread-cloth",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "068-nylon-rope",
+        "source_action_families": [
+          "lift",
+          "other",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "076-rubber-bands",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "translate"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "077-hemp-rope",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "078-fishing-line",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "079-chain-metal",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "082-curtain-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "083-blanket-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "084-apron-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "086-cotton-scarf-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "087-plastic-bag-blue-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "088-snake",
+        "source_action_families": [
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "090-sloth",
+        "source_action_families": [
+          "dynamic",
+          "lift"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "092-squirrel",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "093-squeezable-fruit",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "translate"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "094-ring",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "095-watermelon",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "096-octopus",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "097-pillow",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "098-beach-ball-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "100-puppet",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "102-stress-ball",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "103-ice-pack-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "104-alloy",
+        "source_action_families": [
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "105-clay-cloth",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "106-baking-mat",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "107-mitt-cloth",
+        "source_action_families": [
+          "dynamic",
+          "lift"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "109-pouch-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": false,
+        "exact_context_supported": false,
+        "object_id": "110-shower-cap-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "111-headband-cloth",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "112-wristband-cloth",
+        "source_action_families": [
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "other"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "113-collar",
+        "source_action_families": [
+          "compress",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "compress"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "114-finger-wrap-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "115-cotton-gauze-cloth",
+        "source_action_families": [
+          "lift",
+          "shape"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "116-hydrogel-patch-cloth",
+        "source_action_families": [
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "117-bubble-wrap-cloth",
+        "source_action_families": [
+          "lift",
+          "shape",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "shape"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "118-envelope-cloth",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "other"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      },
+      {
+        "action_family_supported": true,
+        "exact_context_supported": true,
+        "object_id": "119-seal-cloth",
+        "source_action_families": [
+          "dynamic",
+          "lift",
+          "translate"
+        ],
+        "source_candidate_nonregressing": true,
+        "target_action_family": "lift"
+      }
+    ]
+  },
+  "evidence_class": "retrospective-public-real-data-mechanism-evidence",
+  "exact_context_support_rule": "exact-object-profile-action-family-horizon-query-runtime-support-v1",
+  "information_boundary": {
+    "backend_predictions_changed": false,
+    "dlo4_dlo5_opened": false,
+    "held_v8_opened": false,
+    "new_measurements_collected": false,
+    "protected_target_opened": false,
+    "published_aggregate_outcomes_reused": true,
+    "raw_media_opened_by_this_audit": false
+  },
+  "input_sha256": {
+    "deform360_result": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7",
+    "pokeflex_independent_object": "63cdd6fd06419937a7515356e1cb9f3b9177d879a1047071f3689f85d4605e93",
+    "pokeflex_same_profile": "0fc409a1bf85d4ef0e697bdb5604689094914ac57d32652660685007bfd67b98",
+    "tracking_metrics": "496cd70ab4221985897b8a768510ff5ccf3691aae2099895cadc034867af38c1",
+    "tracking_protocol": "ecd1898b3e2153e48cac72d68a2b7cf846ebb9711ce53e7f90af344770e5a29f",
+    "tracking_specimen_scores": "d73930f1ded5ee11405729bacf4326378b4bffc68a2061c95211f7906d845369"
+  },
+  "interpretation": {
+    "exact_context_support_has_real_data_decision_value": true,
+    "global_simulator_ranking_is_sufficient": false,
+    "prospective_harm_certificate_supported": false,
+    "state_of_the_art_supported": false,
+    "universal_safety_supported": false
+  },
+  "pokeflex": {
+    "dataset": "PokeFlex",
+    "independent_object_stress": {
+      "avoided_mean_regression_mm": 0.05566449530661455,
+      "decision": "exact-fallback-object-profile-out-of-scope",
+      "exact_profile_policy_relative_change": 0.0,
+      "exact_profile_policy_selected_mean_CD_UL1_mm": 4.816552216972242,
+      "object_count": 4,
+      "original_guard_baseline_mean_CD_UL1_mm": 4.816552216972242,
+      "original_guard_false_safe_rate": 0.39436619718309857,
+      "original_guard_relative_change": 0.011556917230227004,
+      "original_guard_selected_mean_CD_UL1_mm": 4.872216712278856
+    },
+    "public_real_world": true,
+    "registered_query": "CD_UL1_mm",
+    "same_profile_replication": {
+      "baseline_mean_CD_UL1_mm": 6.417898622103879,
+      "decision": "registered-profile-policy-retained",
+      "object_count": 2,
+      "object_losses": 0,
+      "object_wins": 2,
+      "relative_change": -0.030601394040032703,
+      "selected_mean_CD_UL1_mm": 6.221501977459895,
+      "take_count": 3
+    }
+  },
+  "protocol_id": "d561ff6c3143c8f562cf64ba169436a303effd5fe117d9eb0afd0f42e7946992",
+  "schema": "bayesian-phystwin.public-real-query-competence-retrospective",
+  "schema_version": 1,
+  "status": "complete",
+  "tracking_cloth": {
+    "always_candidate": {
+      "acceptance_fraction": 1.0,
+      "accepted_count": 8,
+      "accepted_wins_ties_losses": [
+        0,
+        0,
+        8
+      ],
+      "always_candidate_mean_loss": 132.29049200912868,
+      "always_candidate_relative_change": 0.7604665144921483,
+      "candidate_wins_ties_losses": [
+        0,
+        0,
+        8
+      ],
+      "deployed_mean_loss": 132.29049200912868,
+      "deployed_relative_change": 0.7604665144921483,
+      "exact_fallback_count": 0,
+      "exact_fallback_fraction": 0.0,
+      "fallback_mean_loss": 75.14513392905475,
+      "group_count": 8,
+      "harm_margin": 0.0,
+      "harmful_accepted_count": 8,
+      "observed_harm_fraction": 1.0,
+      "one_sided_clopper_pearson_upper": 1.0,
+      "paired_group_bootstrap": {
+        "confidence": 0.95,
+        "interval": [
+          47.859940628148216,
+          66.85610319220069
+        ],
+        "observed_mean_difference": 57.14535808007391,
+        "probability_difference_below_zero": 0.0,
+        "replicates": 100000,
+        "seed": 260811
+      },
+      "retrospective_harm_gate_passed": false,
+      "target_harm_probability": 0.05
+    },
+    "candidate": "bayesian_physics",
+    "dataset": "Tracking Cloth Deformation",
+    "decision": "exact-fallback-action-domain-out-of-scope",
+    "exact_context_policy": {
+      "acceptance_fraction": 0.0,
+      "accepted_count": 0,
+      "accepted_wins_ties_losses": [
+        0,
+        0,
+        0
+      ],
+      "always_candidate_mean_loss": 132.29049200912868,
+      "always_candidate_relative_change": 0.7604665144921483,
+      "candidate_wins_ties_losses": [
+        0,
+        0,
+        8
+      ],
+      "deployed_mean_loss": 75.14513392905475,
+      "deployed_relative_change": 0.0,
+      "exact_fallback_count": 8,
+      "exact_fallback_fraction": 1.0,
+      "fallback_mean_loss": 75.14513392905475,
+      "group_count": 8,
+      "harm_margin": 0.0,
+      "harmful_accepted_count": 0,
+      "observed_harm_fraction": null,
+      "one_sided_clopper_pearson_upper": 1.0,
+      "paired_group_bootstrap": {
+        "confidence": 0.95,
+        "interval": [
+          0.0,
+          0.0
+        ],
+        "observed_mean_difference": 0.0,
+        "probability_difference_below_zero": 0.0,
+        "replicates": 100000,
+        "seed": 260811
+      },
+      "retrospective_harm_gate_passed": false,
+      "target_harm_probability": 0.05
+    },
+    "exact_context_rule": "exact-object-profile-action-family-horizon-query-runtime-support-v1",
+    "fallback": "persistence",
+    "group_count": 8,
+    "legacy_guarded_candidate_mean_rmse_mm": 156.46258254135427,
+    "legacy_guarded_relative_change_to_persistence": 1.0821385811764221,
+    "public_real_world": true,
+    "registered_query": "free-marker-euclidean-trajectory-rmse-mm",
+    "source_action_domain": "shake",
+    "statistical_unit": "material-size specimen",
+    "target_action_domain": "twist"
+  }
+}
