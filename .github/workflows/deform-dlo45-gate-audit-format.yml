@@ -45,7 +45,7 @@ jobs:
             experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py
             tests/test_deform_dlo45_decision_gate_audit_v1.py
           )
-          python -m ruff check --fix "${files[@]}"
+          python -m ruff check --fix --unsafe-fixes "${files[@]}"
           python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
