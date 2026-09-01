@@ -1,0 +1,404 @@
+name: PokeFlex gpuserver6000 access recovery v2
+
+on:
+  push:
+    branches:
+      - ops/pokeflex-gpuserver6000-access-recovery-v2
+    paths:
+      - triggers/pokeflex-gpuserver6000-access-recovery-v2.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-gpuserver6000-access-recovery-v2
+  cancel-in-progress: false
+
+jobs:
+  recover-audit-and-execute:
+    name: Repair runner-only access, audit frozen five, and execute if ready / gpuserver6000
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 1440
+    env:
+      REQUEST: triggers/pokeflex-gpuserver6000-access-recovery-v2.json
+      DATASET_ROOT: /mnt/lexar4tb/pokeflex
+      RUN_BASE: /home/github-runner/.cache/workflows/pokeflex-missing5-frozen-v6-gpuserver6000-v2
+      ORCHESTRATOR: scripts/held/run_pokeflex_missing5_frozen_v6_workflow.sh
+      PYTHONHASHSEED: "0"
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - name: Check out exact recovery revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only recovery request
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ops/pokeflex-gpuserver6000-access-recovery-v2
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-gpuserver6000-access-recovery-v2.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-gpuserver6000-access-recovery-v2.json").read_text())
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-gpuserver6000-access-recovery-request-v2",
+              "request_id": "pokeflex-gpuserver6000-access-recovery-20260901-v2",
+              "runner_label": "gpuserver6000",
+              "dataset_root": "/mnt/lexar4tb/pokeflex",
+              "expected_zip_count": 170,
+              "target_take_ids": [
+                  "Pillow_T8",
+                  "3dPrintedCylinder_T7",
+                  "3dPrintedHeart_T14",
+                  "Sponge_T10",
+                  "3dPrintedPizza_T13",
+              ],
+              "allowed_filesystem_mutation": (
+                  "add runner-only read and directory-traverse access to the existing "
+                  "dataset tree; do not modify archive bytes"
+              ),
+              "execute_frozen_v5_v6_if_ready": True,
+              "scientific_protocol_change": False,
+              "target_adaptation": False,
+              "replacement_allowed": False,
+          }
+          if request != expected:
+              raise SystemExit(f"recovery request changed: {request!r}")
+          PY
+
+      - name: Recover least-privilege dataset access and inspect central directories
+        id: readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/pokeflex-gpuserver6000-access-recovery-v2"
+          mkdir -p "$evidence"
+          echo "EVIDENCE_ROOT=$evidence" >> "$GITHUB_ENV"
+          run_root="$RUN_BASE/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "RUN_ROOT=$run_root" >> "$GITHUB_ENV"
+
+          test -d "$DATASET_ROOT"
+          runner_user="$(id -un)"
+          runner_group="$(id -gn)"
+          export EVIDENCE_ROOT="$evidence" RUNNER_USER="$runner_user" RUNNER_GROUP="$runner_group"
+
+          stat -Lc 'path=%n owner=%U group=%G mode=%a type=%F' \
+            /mnt /mnt/lexar4tb "$DATASET_ROOT" \
+            >"$evidence/stat-before.txt" 2>&1 || true
+          namei -om "$DATASET_ROOT" >"$evidence/namei-before.txt" 2>&1 || true
+
+          access_before=false
+          if find "$DATASET_ROOT" -maxdepth 1 -mindepth 1 -print -quit >/dev/null 2>&1; then
+            access_before=true
+          fi
+          repair_method=none
+
+          if [[ "$access_before" != true ]]; then
+            if command -v setfacl >/dev/null 2>&1 \
+              && setfacl -m "u:${runner_user}:rx" "$DATASET_ROOT" >/dev/null 2>&1 \
+              && find "$DATASET_ROOT" -type d -exec setfacl -m "u:${runner_user}:rx" {} + >/dev/null 2>&1 \
+              && find "$DATASET_ROOT" -type f -iname '*.zip' -exec setfacl -m "u:${runner_user}:r--" {} + >/dev/null 2>&1; then
+              repair_method=direct-posix-acl
+            elif sudo -n true >/dev/null 2>&1 && command -v setfacl >/dev/null 2>&1; then
+              sudo -n find "$DATASET_ROOT" -type d -exec setfacl -m "u:${runner_user}:rx" {} +
+              sudo -n find "$DATASET_ROOT" -type f -iname '*.zip' -exec setfacl -m "u:${runner_user}:r--" {} +
+              repair_method=sudo-posix-acl
+            elif sudo -n true >/dev/null 2>&1; then
+              sudo -n find "$DATASET_ROOT" -type d -exec chgrp "$runner_group" {} +
+              sudo -n find "$DATASET_ROOT" -type d -exec chmod g+rx {} +
+              sudo -n find "$DATASET_ROOT" -type f -iname '*.zip' -exec chgrp "$runner_group" {} +
+              sudo -n find "$DATASET_ROOT" -type f -iname '*.zip' -exec chmod g+r {} +
+              repair_method=sudo-group-read
+            fi
+          fi
+
+          access_after=false
+          if find "$DATASET_ROOT" -maxdepth 1 -mindepth 1 -print -quit >/dev/null 2>&1; then
+            access_after=true
+          fi
+
+          stat -Lc 'path=%n owner=%U group=%G mode=%a type=%F' \
+            /mnt /mnt/lexar4tb "$DATASET_ROOT" \
+            >"$evidence/stat-after.txt" 2>&1 || true
+          namei -om "$DATASET_ROOT" >"$evidence/namei-after.txt" 2>&1 || true
+
+          if [[ "$access_after" == true ]]; then
+            mkdir -p /home/github-runner/.cache/workflows
+            ln -sfn "$DATASET_ROOT" /home/github-runner/.cache/workflows/pokeflex-raw-gpuserver6000
+          fi
+
+          export ACCESS_BEFORE="$access_before" ACCESS_AFTER="$access_after" REPAIR_METHOD="$repair_method"
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import zipfile
+          from pathlib import Path
+
+          root = Path(os.environ["DATASET_ROOT"])
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          targets = [
+              "Pillow_T8",
+              "3dPrintedCylinder_T7",
+              "3dPrintedHeart_T14",
+              "Sponge_T10",
+              "3dPrintedPizza_T13",
+          ]
+
+          result: dict[str, object] = {
+              "schema": "bayesian-phystwin/pokeflex-gpuserver6000-access-readiness-v2",
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "runner_user": os.environ["RUNNER_USER"],
+              "runner_group": os.environ["RUNNER_GROUP"],
+              "dataset_root": str(root),
+              "access_before": os.environ["ACCESS_BEFORE"] == "true",
+              "access_after": os.environ["ACCESS_AFTER"] == "true",
+              "repair_method": os.environ["REPAIR_METHOD"],
+              "archive_payload_modified": False,
+              "archive_member_payload_decoded": False,
+              "target_mesh_geometry_decoded": False,
+              "targets": {},
+          }
+
+          if result["access_after"]:
+              zip_paths = sorted(
+                  path for path in root.rglob("*")
+                  if path.is_file() and path.suffix.lower() == ".zip"
+              )
+          else:
+              zip_paths = []
+          result["zip_count"] = len(zip_paths)
+          result["total_zip_bytes"] = sum(path.stat().st_size for path in zip_paths)
+          by_name: dict[str, list[Path]] = {}
+          for path in zip_paths:
+              by_name.setdefault(path.name, []).append(path)
+
+          ready_count = 0
+          for take_id in targets:
+              matches = by_name.get(f"{take_id}.zip", [])
+              row: dict[str, object] = {
+                  "archive_match_count": len(matches),
+                  "archive_relative_paths": [
+                      path.relative_to(root).as_posix() for path in matches
+                  ],
+                  "central_directory_readable": False,
+                  "official_take_identity_verified": False,
+                  "required_streams_present": False,
+                  "camera_panel_sufficient": False,
+                  "mesh_frames_contiguous_from_one": False,
+                  "mesh_frame_count": 0,
+                  "episode_length": 0,
+                  "evaluator_compatible": False,
+              }
+              if len(matches) == 1:
+                  archive_path = matches[0]
+                  try:
+                      with zipfile.ZipFile(archive_path) as archive:
+                          infos = archive.infolist()
+                      names = tuple(sorted(info.filename for info in infos))
+                      row["central_directory_readable"] = True
+                      root_prefix = f"{take_id}/"
+                      rooted = bool(names) and all(name.startswith(root_prefix) for name in names)
+                      mesh_pattern = re.compile(
+                          rf"^{re.escape(root_prefix)}meshes/mesh-f(\d{{5}})\.obj$"
+                      )
+                      mesh_frames = sorted(
+                          int(match.group(1))
+                          for name in names
+                          if (match := mesh_pattern.fullmatch(name)) is not None
+                      )
+                      contiguous = bool(mesh_frames) and mesh_frames == list(
+                          range(1, max(mesh_frames) + 1)
+                      )
+                      required_exact = {f"{root_prefix}robot_data.json"}
+                      required_prefixes = {
+                          f"{root_prefix}kinect/{camera}/{modality}/"
+                          for camera in (0, 1)
+                          for modality in ("color", "depth")
+                      }
+                      required_prefixes.update(
+                          f"{root_prefix}realsense/{camera}/{modality}/"
+                          for camera in (0, 1)
+                          for modality in ("color", "depth")
+                      )
+                      required_prefixes.update(
+                          f"{root_prefix}volucam/{camera}/color/"
+                          for camera in (0, 1)
+                      )
+                      required_prefixes.update(
+                          {f"{root_prefix}mesh_confidence/", f"{root_prefix}meshes/"}
+                      )
+                      streams = required_exact.issubset(names) and all(
+                          any(name.startswith(prefix) and name != prefix for name in names)
+                          for prefix in required_prefixes
+                      )
+                      camera_prefixes = {
+                          prefix
+                          for prefix in required_prefixes
+                          if any(sensor in prefix for sensor in ("/kinect/", "/realsense/", "/volucam/"))
+                      }
+                      panel = all(
+                          any(name.startswith(prefix) and name != prefix for name in names)
+                          for prefix in camera_prefixes
+                      )
+                      compatible = bool(rooted and streams and contiguous and len(mesh_frames) >= 7)
+                      metadata_rows = [
+                          [info.filename, int(info.file_size), int(info.compress_size), int(info.CRC)]
+                          for info in infos
+                      ]
+                      metadata_sha = hashlib.sha256(
+                          json.dumps(metadata_rows, separators=(",", ":")).encode("utf-8")
+                      ).hexdigest()
+                      row.update({
+                          "central_directory_record_count": len(infos),
+                          "central_directory_sha256": metadata_sha,
+                          "official_take_identity_verified": rooted,
+                          "required_streams_present": streams,
+                          "camera_panel_sufficient": panel,
+                          "mesh_frames_contiguous_from_one": contiguous,
+                          "mesh_frame_count": len(mesh_frames),
+                          "episode_length": max(mesh_frames, default=0),
+                          "evaluator_compatible": compatible,
+                          "archive_byte_size": archive_path.stat().st_size,
+                      })
+                      ready_count += int(compatible)
+                  except Exception as error:
+                      row["central_directory_error"] = f"{type(error).__name__}: {error}"
+              result["targets"][take_id] = row
+
+          result["ready_target_count"] = ready_count
+          result["complete_frozen_execution_ready"] = bool(
+              result["access_after"]
+              and result["zip_count"] == 170
+              and ready_count == 5
+          )
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"))
+          result["result_id"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+          (evidence / "readiness.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "access_before": result["access_before"],
+              "access_after": result["access_after"],
+              "repair_method": result["repair_method"],
+              "zip_count": result["zip_count"],
+              "ready_target_count": ready_count,
+              "complete_frozen_execution_ready": result["complete_frozen_execution_ready"],
+          }, indent=2))
+          PY
+
+          ready="$(python3 -c 'import json,os; print(str(json.load(open(os.path.join(os.environ["EVIDENCE_ROOT"], "readiness.json")))["complete_frozen_execution_ready"]).lower())')"
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+
+      - name: Execute the unchanged frozen V5/V6 protocol on gpuserver6000
+        if: steps.readiness.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$ORCHESTRATOR" || test -f "$ORCHESTRATOR"
+          mkdir -p "$RUN_BASE"
+          test ! -e "$RUN_ROOT"
+          DATASET_ROOT="$DATASET_ROOT" RUN_ROOT="$RUN_ROOT" bash "$ORCHESTRATOR"
+
+      - name: Publish bounded recovery and result summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### PokeFlex gpuserver6000 access recovery v2"
+            echo
+            if [[ -f "${EVIDENCE_ROOT:-}/readiness.json" ]]; then
+              python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "readiness.json").read_text())
+          print(f"- Access before: `{value['access_before']}`")
+          print(f"- Access after: `{value['access_after']}`")
+          print(f"- Repair method: `{value['repair_method']}`")
+          print(f"- ZIP count: `{value['zip_count']}`")
+          print(f"- Frozen targets ready: `{value['ready_target_count']}/5`")
+          print(f"- Full frozen execution ready: `{value['complete_frozen_execution_ready']}`")
+          print(f"- Archive bytes modified: `{value['archive_payload_modified']}`")
+          print(f"- Member payload decoded by readiness audit: `{value['archive_member_payload_decoded']}`")
+          PY
+            fi
+            if [[ -f "${RUN_ROOT:-}/status.json" ]]; then
+              python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads((Path(os.environ["RUN_ROOT"]) / "status.json").read_text())
+          print(f"- Frozen execution stage: `{value['stage']}`")
+          print(f"- Target metric computed: `{value['target_metric_computed']}`")
+          PY
+            else
+              echo "- Frozen execution stage: `not started`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compact access and frozen-execution evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pokeflex-gpuserver6000-access-recovery-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}
+            ${{ env.RUN_ROOT }}/status.json
+            ${{ env.RUN_ROOT }}/environment.txt
+            ${{ env.RUN_ROOT }}/manifest
+            ${{ env.RUN_ROOT }}/barriers
+            ${{ env.RUN_ROOT }}/results
+            ${{ env.RUN_ROOT }}/logs
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Enforce either complete recovery evidence or completed frozen result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$EVIDENCE_ROOT/readiness.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          readiness = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "readiness.json").read_text())
+          assert readiness["archive_payload_modified"] is False
+          assert readiness["archive_member_payload_decoded"] is False
+          assert readiness["target_mesh_geometry_decoded"] is False
+          if readiness["complete_frozen_execution_ready"]:
+              status_path = Path(os.environ["RUN_ROOT"]) / "status.json"
+              assert status_path.is_file(), "frozen execution did not create status.json"
+              status = json.loads(status_path.read_text())
+              assert status["stage"] == "complete", status
+              assert status["target_metric_computed"] is True, status
+          else:
+              raise SystemExit("gpuserver6000 remains unavailable for the complete frozen-five execution")
+          PY
