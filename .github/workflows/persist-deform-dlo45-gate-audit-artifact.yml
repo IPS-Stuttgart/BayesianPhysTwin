@@ -1,0 +1,120 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expiry: 2026-09-15
+name: Persist verified DEFORM gate-audit artifact
+
+on:
+  push:
+    paths:
+      - ".github/workflows/persist-deform-dlo45-gate-audit-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  persist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Download completed audit artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dlo45-gate-risk-audit-33538346956
+          run-id: "33538346956"
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: ${{ runner.temp }}/audit
+
+      - name: Verify exact artifact members and create compact record
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/audit"
+          test "$(sha256sum "${root}/audit-target/target_audit.json" | cut -d' ' -f1)" = "f5e68329fb91702e22c44d8ab6af8f6876e48e26aec42df5d7cf643bd9728c88"
+          test "$(sha256sum "${root}/audit-target/per_decision.jsonl" | cut -d' ' -f1)" = "3d3791dcac0db851a918e158cf09f14ac6ff382c31e5921058119434cb6a5cde"
+          test "$(sha256sum "${root}/audit-source/thresholds.json" | cut -d' ' -f1)" = "f869d82fd9523fa88da6a1aede37c7988f902f755977142e81cbcab8226cc659"
+          test "$(sha256sum "${root}/audit-source/source_audit.json" | cut -d' ' -f1)" = "a9ba8f226eac836f162d04e150cb815ab3af3864b1779b560a4c175e577a4150"
+          test "$(sha256sum "${root}/audit-source/source_seal.json" | cut -d' ' -f1)" = "507cca04d535cf6a6c8d479354fb615a589377e84b6059c97e8da0a0f17acab4"
+          TARGET_AUDIT="${root}/audit-target/target_audit.json" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source = json.loads(Path(os.environ["TARGET_AUDIT"]).read_text())
+          compact = {
+              "contract": "deform-dlo45-decision-gate-audit-compact-v1",
+              "schema_version": 1,
+              "status": "complete",
+              "run_key": source["run_key"],
+              "audit_contract": source["contract"],
+              "workflow": {
+                  "run_id": 33538346956,
+                  "artifact_id": 9812568172,
+                  "artifact_name": "dlo45-gate-risk-audit-33538346956",
+                  "artifact_sha256": "d54eafa9c7f81aacbaa3a0b40fcb0ebfff92d4dc5d27d2a9359a5e6709360480",
+              },
+              "parent_workflow_run_id": 33473378340,
+              "certificate": source["combined"]["certificate"],
+              "source_calibrated_gates": source["combined"]["source_calibrated_gates"],
+              "target_covariate_matched_gates": source["combined"]["target_covariate_matched_gates"],
+              "support_mismatch_audit": source["support_mismatch_audit"],
+              "target_tuning": source["target_threshold_tuning"],
+              "target_outcomes_used_for_thresholds": source["target_outcomes_used_for_thresholds"],
+              "target_retries": source["target_retries"],
+              "claim_boundary": source["claim_boundary"],
+              "comparative_conclusion": {
+                  "certificate_empirically_dominates_all_heuristics": False,
+                  "best_source_calibrated_gate": "expected_fallback_advantage",
+                  "best_target_covariate_matched_gate": "expected_fallback_advantage",
+                  "paper_implication": "Retain the exact certificate as a conditional admissibility guarantee; do not claim that it is the empirical utility optimum on DEFORM."
+              },
+          }
+          Path(os.environ["RUNNER_TEMP"], "audit", "compact_result.json").write_text(
+              json.dumps(compact, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+
+      - name: Commit complete and compact evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/audit"
+          destination="results/science/deform_dlo45_decision_gate_audit_v1/official-dlo45-gate-risk-audit-20260902-v1"
+          test ! -e "${destination}"
+          mkdir -p "${destination}"
+          cp "${root}/audit-source/thresholds.json" "${destination}/thresholds.json"
+          cp "${root}/audit-source/source_audit.json" "${destination}/source_audit.json"
+          cp "${root}/audit-source/source_seal.json" "${destination}/source_seal.json"
+          cp "${root}/audit-target/target_audit.json" "${destination}/target_audit.json"
+          cp "${root}/audit-target/per_decision.jsonl" "${destination}/per_decision.jsonl"
+          cp "${root}/audit-target/summary.md" "${destination}/README.md"
+          cp "${root}/compact_result.json" "${destination}/compact_result.json"
+          sed -i 's/[[:space:]]\+$//' "${destination}/README.md"
+          cat > "${destination}/provenance.json" <<EOF
+          {
+            "audit_workflow_run_id": 33538346956,
+            "audit_artifact_id": 9812568172,
+            "audit_artifact_sha256": "d54eafa9c7f81aacbaa3a0b40fcb0ebfff92d4dc5d27d2a9359a5e6709360480",
+            "parent_workflow_run_id": 33473378340,
+            "dataset_repository": "roahmlab/DEFORM",
+            "dataset_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+            "target_tuning": false,
+            "target_retries": false
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${destination}"
+          git diff --cached --check
+          git commit -m "Record DEFORM matched-coverage gate and support audit"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
