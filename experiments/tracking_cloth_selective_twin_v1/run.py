@@ -210,9 +210,9 @@ def _source_predictions(
     base_protocol: dict[str, Any],
     scale: float,
 ) -> tuple[list[RecordPrediction], dict[str, np.ndarray]]:
-    by_specimen: dict[
-        str, list[tuple[Case, Inputs, Any, np.ndarray]]
-    ] = defaultdict(list)
+    by_specimen: dict[str, list[tuple[Case, Inputs, Any, np.ndarray]]] = defaultdict(
+        list
+    )
     for case in cases:
         if case.motion != "shake":
             continue
@@ -472,8 +472,7 @@ def cross_material_policy_rows(
                     "selected_minus_fallback_mm": selected - fallback,
                     "selected_practical_harm": bool(
                         accepted
-                        and selected
-                        > fallback + float(row["practical_harm_margin_mm"])
+                        and selected > fallback + float(row["practical_harm_margin_mm"])
                     ),
                     "exact_fallback": bool(accepted or selected == fallback),
                 }
@@ -560,8 +559,7 @@ def summarize(
     required = protocol["positive_feasibility_gate"]
     criteria = {
         "minimum_selected_coverage": (
-            primary["selected_coverage"]
-            >= float(required["minimum_selected_coverage"])
+            primary["selected_coverage"] >= float(required["minimum_selected_coverage"])
         ),
         "negative_equal_material_regret": (
             primary["equal_material_selected_minus_fallback_mm"] < 0
@@ -572,9 +570,7 @@ def summarize(
         "all_heldout_material_mean_regrets_nonpositive": (
             primary["heldout_materials_nonpositive"] == len(protocol["materials"])
         ),
-        "zero_exact_fallback_violations": (
-            primary["exact_fallback_violations"] == 0
-        ),
+        "zero_exact_fallback_violations": (primary["exact_fallback_violations"] == 0),
         "lower_practical_harm_rate_than_always_candidate": (
             primary["accepted_practical_harm_fraction"]
             < always["accepted_practical_harm_fraction"]
@@ -671,9 +667,9 @@ def _report(result: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     for summary in (fallback, always, motion, primary):
         interval = summary["material_bootstrap_95_interval_mm"]
         lines.append(
-            f"| {summary['policy']} | {100*summary['selected_coverage']:.2f}% "
+            f"| {summary['policy']} | {100 * summary['selected_coverage']:.2f}% "
             f"| {summary['equal_material_selected_minus_fallback_mm']:.4f} "
-            f"| {100*summary['accepted_practical_harm_fraction']:.2f}% "
+            f"| {100 * summary['accepted_practical_harm_fraction']:.2f}% "
             f"| [{interval[0]:.4f}, {interval[1]:.4f}] |"
         )
     lines.extend(
