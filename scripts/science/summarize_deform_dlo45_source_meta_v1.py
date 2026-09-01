@@ -134,10 +134,8 @@ def _write_report(path: Path, result: Mapping[str, object]) -> None:
             "| {dlo} | {baseline:.4f} | {candidate:.4f} | {gain:.2f}% | "
             "{wins}/{ties}/{losses} |".format(
                 dlo=dlo,
-                baseline=1000.0
-                * float(cast(Any, row["baseline_mean_l1_m"])),
-                candidate=1000.0
-                * float(cast(Any, row["candidate_mean_l1_m"])),
+                baseline=1000.0 * float(cast(Any, row["baseline_mean_l1_m"])),
+                candidate=1000.0 * float(cast(Any, row["candidate_mean_l1_m"])),
                 gain=100.0 * float(cast(Any, row["relative_improvement"])),
                 wins=row["wins"],
                 ties=row["ties"],
