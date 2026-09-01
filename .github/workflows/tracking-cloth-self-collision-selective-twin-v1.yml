@@ -1,0 +1,361 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth self-collision selective twin v1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml"
+      - ".github/quality/workflow-inventory-budget-v1.json"
+      - ".github/requests/tracking-cloth-self-collision-selective-twin-v1.json"
+      - "docs/selective_competence_theorem_v1.md"
+      - "src/bayesian_phystwin/selective_competence_bound_v1.py"
+      - "experiments/tracking_cloth_self_collision_selective_twin_v1/**"
+      - "tests/test_selective_competence_bound_v1.py"
+      - "tests/test_tracking_cloth_self_collision_selective_twin_v1.py"
+      - "tests/test_workflow_inventory_budget.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/requests/tracking-cloth-self-collision-selective-twin-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-self-collision-selective-twin-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  REQUEST_PATH: .github/requests/tracking-cloth-self-collision-selective-twin-v1.json
+  PROTOCOL_PATH: experiments/tracking_cloth_self_collision_selective_twin_v1/protocol.json
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Self-collision selective-twin contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install focused dependencies
+        run: python -m pip install -e . pytest ruff
+      - name: Test finite-sample bounds and experiment contracts
+        run: |
+          python -m pytest -q \
+            tests/test_selective_competence_bound_v1.py \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
+      - name: Lint and format new scientific code
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/selective_competence_bound_v1.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1 \
+            tests/test_selective_competence_bound_v1.py \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/selective_competence_bound_v1.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1 \
+            tests/test_selective_competence_bound_v1.py \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
+      - name: Validate frozen protocol and optional request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          protocol = json.loads(Path(os.environ["PROTOCOL_PATH"]).read_text())
+          assert protocol["schema"] == (
+              "bayesian-phystwin.tracking-cloth-self-collision-selective-twin.v1"
+          )
+          assert protocol["fit_repetition"] == 1
+          assert protocol["selection_repetition"] == 2
+          assert protocol["confirmation_repetition"] == 3
+          boundary = protocol["information_boundary"]
+          assert boundary["fresh_confirmation"] is True
+          assert boundary[
+              "rep3_numeric_outcomes_may_not_be_read_before_joint_prediction_seal"
+          ] is True
+          assert boundary[
+              "rep3_future_cloth_or_rod_coordinates_used_for_prediction"
+          ] is False
+          assert boundary["paper_claim_authorized"] is False
+
+          request_path = Path(os.environ["REQUEST_PATH"])
+          if request_path.exists():
+              request = json.loads(request_path.read_text())
+              expected = {
+                  "schema": (
+                      "tracking-cloth-self-collision-selective-twin-request-v1"
+                  ),
+                  "mode": "fresh_rep3_confirmation",
+                  "dataset_root": os.environ["DATASET_ROOT"],
+                  "runner_label": "gpuserver4090",
+                  "fit_repetition": 1,
+                  "selection_repetition": 2,
+                  "confirmation_repetition": 3,
+                  "fresh_confirmation": True,
+                  "paper_claim_authorized": False,
+              }
+              for key, value in expected.items():
+                  assert request.get(key) == value, (key, request.get(key), value)
+              assert set(request) == set(expected) | {
+                  "request_id",
+                  "expected_source_revision",
+                  "protocol_sha256",
+              }
+              assert request["request_id"]
+              revision = request["expected_source_revision"]
+              assert len(revision) == 40
+              assert set(revision) <= set("0123456789abcdef")
+          PY
+
+  authorize:
+    name: Authorize one fresh repetition request
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      source_revision: ${{ steps.request.outputs.source_revision }}
+      request_id: ${{ steps.request.outputs.request_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Require one newly added immutable request
+        id: request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/tracking-cloth-self-collision-selective-twin-v1.json'
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request is not bound to its trigger parent")
+          protocol = subprocess.check_output(
+              ["git", "show", f"{parent}:{os.environ['PROTOCOL_PATH']}"]
+          )
+          digest = hashlib.sha256(protocol).hexdigest()
+          if request["protocol_sha256"] != digest:
+              raise SystemExit("request protocol digest changed")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as stream:
+              stream.write(f"source_revision={parent}\n")
+              stream.write(f"request_id={request['request_id']}\n")
+          PY
+
+  source:
+    name: Fit rep1 and freeze rep2 handoff / gpuserver4090
+    needs: [contracts, authorize]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Prepare isolated source execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          venv="$RUNNER_TEMP/self-collision-source-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$RUNNER_TEMP/self-collision-source-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          test ! -e "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install -e .
+          echo "SC_PY=$venv/bin/python" >> "$GITHUB_ENV"
+          echo "SC_VENV=$venv" >> "$GITHUB_ENV"
+          echo "SC_SOURCE=$output" >> "$GITHUB_ENV"
+      - name: Fit rep1 and cross-fit the rep2 handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SC_PY" -m experiments.tracking_cloth_self_collision_selective_twin_v1.run \
+            --stage source \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$SC_SOURCE"
+          jq -e '.source_gate.pass == true' "$SC_SOURCE/source_result.json"
+      - name: Publish source summary
+        if: always() && env.SC_SOURCE != ''
+        shell: bash
+        run: |
+          if test -f "$SC_SOURCE/report.md"; then
+            cat "$SC_SOURCE/report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload source evidence
+        if: always() && env.SC_SOURCE != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-self-collision-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.SC_SOURCE }}/*.json
+            ${{ env.SC_SOURCE }}/*.csv
+            ${{ env.SC_SOURCE }}/report.md
+            ${{ env.SC_SOURCE }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+      - name: Remove isolated source execution
+        if: always()
+        shell: bash
+        run: rm -rf "${SC_SOURCE:-}" "${SC_VENV:-}"
+
+  confirm:
+    name: Seal and score rep3 once / gpuserver4090
+    needs: [contracts, authorize, source]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success' &&
+      needs.source.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Download exact source evidence from this run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: tracking-cloth-self-collision-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/self-collision-source-evidence
+      - name: Prepare isolated confirmation execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          source="$RUNNER_TEMP/self-collision-source-evidence"
+          prediction="$RUNNER_TEMP/self-collision-prediction-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          result="$RUNNER_TEMP/self-collision-result-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          venv="$RUNNER_TEMP/self-collision-confirm-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test -f "$source/source_result.json"
+          test ! -e "$prediction"
+          test ! -e "$result"
+          test ! -e "$venv"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install -e .
+          echo "SC_PY=$venv/bin/python" >> "$GITHUB_ENV"
+          echo "SC_VENV=$venv" >> "$GITHUB_ENV"
+          echo "SC_SOURCE=$source" >> "$GITHUB_ENV"
+          echo "SC_PREDICTION=$prediction" >> "$GITHUB_ENV"
+          echo "SC_RESULT=$result" >> "$GITHUB_ENV"
+      - name: Predict rep3 from causal prefixes only
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SC_PY" -m experiments.tracking_cloth_self_collision_selective_twin_v1.run \
+            --stage predict \
+            --dataset-root "$DATASET_ROOT" \
+            --source "$SC_SOURCE" \
+            --output "$SC_PREDICTION"
+          test -f "$SC_PREDICTION/private_predictions.npz"
+          test "$(jq -r '.rep3_numeric_outcomes_read' "$SC_PREDICTION/prediction_seal.json")" = false
+      - name: Publish complete joint prediction seal before scoring
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-self-collision-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.SC_PREDICTION }}/prediction_seal.json
+            ${{ env.SC_PREDICTION }}/protocol.json
+            ${{ env.SC_PREDICTION }}/dataset_manifest.json
+            ${{ env.SC_PREDICTION }}/source_result.json
+            ${{ env.SC_PREDICTION }}/physics_fits.json
+            ${{ env.SC_PREDICTION }}/policy.json
+            ${{ env.SC_PREDICTION }}/report.md
+            ${{ env.SC_PREDICTION }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+      - name: Score only the jointly sealed rep3 predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SC_PY" -m experiments.tracking_cloth_self_collision_selective_twin_v1.run \
+            --stage score \
+            --dataset-root "$DATASET_ROOT" \
+            --prediction "$SC_PREDICTION" \
+            --output "$SC_RESULT"
+      - name: Reject private arrays from public evidence
+        if: always() && env.SC_RESULT != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find "$SC_RESULT" -type f \( -iname '*.npz' -o -iname '*.pkl' \) \
+              -print -quit | grep -q .; then
+            echo "private trajectory array found in result output" >&2
+            exit 3
+          fi
+      - name: Publish confirmation summary
+        if: always() && env.SC_RESULT != ''
+        shell: bash
+        run: |
+          if test -f "$SC_RESULT/report.md"; then
+            cat "$SC_RESULT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload compact confirmation evidence
+        if: always() && env.SC_RESULT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-self-collision-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.SC_RESULT }}/*.json
+            ${{ env.SC_RESULT }}/*.csv
+            ${{ env.SC_RESULT }}/report.md
+            ${{ env.SC_RESULT }}/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: error
+      - name: Remove private predictions and isolated environment
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "${SC_PREDICTION:-}" "${SC_RESULT:-}" "${SC_VENV:-}" "${SC_SOURCE:-}"
