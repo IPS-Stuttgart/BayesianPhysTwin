@@ -150,10 +150,7 @@ def _write_report(path: Path, result: Mapping[str, object]) -> None:
             "",
             "## Residual geometry",
             "",
-            (
-                "- Positive trajectory alignments: "
-                f"**{alignment['positive_cases']}/8**"
-            ),
+            (f"- Positive trajectory alignments: **{alignment['positive_cases']}/8**"),
             (
                 "- Median alignment cosine: "
                 f"**{float(cast(Any, alignment['median_cosine'])):.4f}**"
@@ -186,9 +183,9 @@ def main() -> int:
     protocol = load_cross_backend_scalar_protocol(protocol_path)
     parent_record = _mapping(protocol["parent"], label="parent")
     repository_root = protocol_path.parent.parent
-    parent_protocol_path = (
-        repository_root / str(parent_record["protocol"])
-    ).resolve(strict=True)
+    parent_protocol_path = (repository_root / str(parent_record["protocol"])).resolve(
+        strict=True
+    )
     parent_protocol = load_cross_backend_transfer_protocol(parent_protocol_path)
 
     output_root = args.output_root.resolve()

@@ -36,15 +36,15 @@ def test_protocol_freezes_one_scalar_complete_trajectory_folds() -> None:
     assert protocol["transport"]["maximum_scalar"] == 4.0
     assert protocol["source_panel"]["trajectory_count"] == 8
     assert (
-        protocol["information_boundary"][
-            "same_trajectory_label_used_for_its_scalar"
-        ]
+        protocol["information_boundary"]["same_trajectory_label_used_for_its_scalar"]
         is False
     )
     assert protocol["information_boundary"]["dlo3_official_evaluation_read"] is False
 
 
-def test_scalar_transport_recovers_shared_direction_when_direct_amplitude_fails() -> None:
+def test_scalar_transport_recovers_shared_direction_when_direct_amplitude_fails() -> (
+    None
+):
     protocol = load_cross_backend_scalar_protocol(PROTOCOL)
     names, truth, baseline, specific = _problem()
     direct = np.full_like(truth, -0.10)
@@ -60,9 +60,7 @@ def test_scalar_transport_recovers_shared_direction_when_direct_amplitude_fails(
 
     assert result["claim_ladder"]["exact_no_refit_point_transfer_supported"] is False
     assert (
-        result["claim_ladder"][
-            "one_scalar_cross_validated_point_transfer_supported"
-        ]
+        result["claim_ladder"]["one_scalar_cross_validated_point_transfer_supported"]
         is True
     )
     assert result["claim_ladder"]["directional_alignment_supported"] is True
@@ -128,9 +126,7 @@ def test_alignment_is_scale_invariant_and_rejects_shape_mismatch() -> None:
     truth = np.ones_like(baseline)
     direct = 7.0 * truth
 
-    assert trajectory_alignment(direct, baseline, truth) == pytest.approx(
-        np.ones(3)
-    )
+    assert trajectory_alignment(direct, baseline, truth) == pytest.approx(np.ones(3))
     with pytest.raises(ValueError, match="differ in shape"):
         trajectory_alignment(direct[:, :, :1], baseline, truth)
 
@@ -151,7 +147,9 @@ def test_runner_writes_method_seal_before_source_payload_loading() -> None:
     source = RUNNER.read_text(encoding="utf-8")
 
     seal = source.index('method_seal_path = output_root / "method_seal.json"')
-    source_load = source.index("trajectories = direct_runtime._load_source_trajectories(")
+    source_load = source.index(
+        "trajectories = direct_runtime._load_source_trajectories("
+    )
     assert seal < source_load
     assert "same_trajectory_label_used_for_its_scalar" in source
     assert "dlo3_official_evaluation_read" in source

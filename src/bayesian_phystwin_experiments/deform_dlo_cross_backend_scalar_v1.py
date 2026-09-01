@@ -52,8 +52,7 @@ def load_cross_backend_scalar_protocol(path: str | Path) -> dict[str, object]:
 
     parent = _mapping(payload.get("parent"), label="parent")
     if (
-        parent.get("protocol")
-        != "protocols/deform_dlo3_cross_backend_transfer_v1.json"
+        parent.get("protocol") != "protocols/deform_dlo3_cross_backend_transfer_v1.json"
         or parent.get("direct_arm") != "equal-seed-no-refit-transfer"
         or parent.get("direct_shrinkage") != 0.25
         or parent.get("seed_models") != [42, 43, 44]
@@ -81,7 +80,8 @@ def load_cross_backend_scalar_protocol(path: str | Path) -> dict[str, object]:
         or transport.get("fold_specific_high_dimensional_parameters") is not False
         or float(cast(Any, transport.get("minimum_scalar", math.nan))) != 0.0
         or float(cast(Any, transport.get("maximum_scalar", math.nan))) != 4.0
-        or transport.get("selection_metric") != "coordinate-l2-on-seven-training-trajectories"
+        or transport.get("selection_metric")
+        != "coordinate-l2-on-seven-training-trajectories"
         or transport.get("evaluation_metric") != "mean-coordinate-l1-m-all-nodes"
     ):
         raise ValueError("scalar transport operator changed")
@@ -197,8 +197,7 @@ def _point_gate(
     return (
         float(cast(Any, summary["relative_improvement"]))
         >= float(cast(Any, gate["minimum_relative_improvement"]))
-        and int(cast(Any, summary["wins"]))
-        >= int(cast(Any, gate["minimum_case_wins"]))
+        and int(cast(Any, summary["wins"])) >= int(cast(Any, gate["minimum_case_wins"]))
         and float(cast(Any, summary["maximum_case_ratio"]))
         <= float(cast(Any, gate["maximum_case_ratio"]))
     )
@@ -280,12 +279,9 @@ def evaluate_cross_backend_scalar_transport(
     median_alignment = float(np.median(alignment))
     positive_scalars = int(np.sum(scalars > 0.0))
     directional_passed = (
-        positive_alignment
-        >= int(cast(Any, gate["minimum_positive_alignment_cases"]))
-        and median_alignment
-        >= float(cast(Any, gate["minimum_median_alignment"]))
-        and positive_scalars
-        >= int(cast(Any, gate["minimum_positive_fold_scalars"]))
+        positive_alignment >= int(cast(Any, gate["minimum_positive_alignment_cases"]))
+        and median_alignment >= float(cast(Any, gate["minimum_median_alignment"]))
+        and positive_scalars >= int(cast(Any, gate["minimum_positive_fold_scalars"]))
     )
     scalar_point_passed = _point_gate(scalar_summary, gate)
     direct_point_passed = _point_gate(direct_summary, gate)
@@ -296,9 +292,7 @@ def evaluate_cross_backend_scalar_transport(
     specific_mean = float(cast(Any, specific_summary["candidate_mean_l1_m"]))
     specific_gain = baseline_mean - specific_mean
     retained = (
-        (baseline_mean - scalar_mean) / specific_gain
-        if specific_gain > 0.0
-        else None
+        (baseline_mean - scalar_mean) / specific_gain if specific_gain > 0.0 else None
     )
 
     cases = []
@@ -349,9 +343,7 @@ def evaluate_cross_backend_scalar_transport(
                 cast(Any, gate["minimum_positive_alignment_cases"])
             ),
             "median_cosine": median_alignment,
-            "minimum_median_cosine": float(
-                cast(Any, gate["minimum_median_alignment"])
-            ),
+            "minimum_median_cosine": float(cast(Any, gate["minimum_median_alignment"])),
             "passed": directional_passed,
         },
         "fold_scalars": {
