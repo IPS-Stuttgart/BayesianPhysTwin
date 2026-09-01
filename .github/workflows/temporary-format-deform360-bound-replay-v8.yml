@@ -1,0 +1,78 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #834
+# workflow-expiry: 2026-09-15
+name: Canonicalize Deform360 bound replay v8
+
+on:
+  push:
+    branches:
+      - science/deform360-same-mean-query-covariance-v6
+    paths:
+      - .github/workflows/temporary-format-deform360-bound-replay-v8.yml
+      - scripts/science/deform360_bound_replay_v8.py
+      - scripts/science/run_deform360_bound_replay_audit_v8.py
+      - scripts/science/deform360_exact_confirmation_capture_v7.py
+      - scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canonicalize-deform360-bound-replay-v8
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/deform360-same-mean-query-covariance-v6
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Format, lint, and self-test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==1.26.4 ruff==0.14.14
+          files=(
+            scripts/science/deform360_bound_replay_v8.py
+            scripts/science/run_deform360_bound_replay_audit_v8.py
+            scripts/science/deform360_exact_confirmation_capture_v7.py
+            scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python scripts/science/run_deform360_bound_replay_audit_v8.py \
+            --self-test \
+            --confirmation-artifact-root . \
+            --data-root . \
+            --output /tmp/unused.json
+          python scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py \
+            --self-test
+      - name: Commit canonical bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- \
+            scripts/science/deform360_bound_replay_v8.py \
+            scripts/science/run_deform360_bound_replay_audit_v8.py \
+            scripts/science/deform360_exact_confirmation_capture_v7.py \
+            scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+          if git diff --cached --quiet; then
+            echo 'Canonical formatting is already committed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Apply canonical Deform360 bound-replay formatting'
+          git push origin HEAD:science/deform360-same-mean-query-covariance-v6
