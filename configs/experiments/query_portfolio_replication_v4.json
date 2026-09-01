@@ -1,0 +1,101 @@
+{
+  "aggregation": "separate_equal_world_query_specific_estimands",
+  "allocation": {
+    "gain_family_alpha": 0.01,
+    "gain_per_query_alpha": 0.005,
+    "harm_family_alpha": 0.04,
+    "harm_per_query_alpha": 0.02
+  },
+  "calibration_worlds": {
+    "dlolab_slingshot_v4": 128,
+    "dlolab_wrapping_v9": 0
+  },
+  "complete_upstream": {
+    "plane_asset_sha256": "be1a566d558bd89cabfee5b65d13f3c76acd4c009e3eb8830b369b2dfa079d29",
+    "revision": "c5026a9416b03c6bc5186eba13cd4ffd4c0e7796",
+    "working_tree_clean": true
+  },
+  "cross_task_reward_pooling": false,
+  "design_diagnostics": {
+    "diagnostic_only": true,
+    "maximum_harmful_worlds_per_query": 8
+  },
+  "fallback": "exact_registered_incumbent",
+  "fresh_worlds": true,
+  "frozen_component_policies": {
+    "dlolab_slingshot_v4": {
+      "calibration": "registered_independent_128_world_calibration_partition",
+      "policy": "policy_gain_guard",
+      "source_evidence_id": "2882809b7265714a93be2d3f1455eeac527adbe681cc990cde762777fcaf3a85"
+    },
+    "dlolab_wrapping_v9": {
+      "calibration": "frozen_v9_source_certificate",
+      "policy": "posterior_975_guard",
+      "source_evidence_id": "d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9"
+    }
+  },
+  "gain_test": {
+    "bootstrap": "world_level_percentile_lower_bound",
+    "estimand": "query_specific_mean_reward_gain_over_exact_fallback",
+    "pass": "lower_bound_strictly_greater_than_zero_for_both_queries",
+    "replicates": 100000,
+    "seed": 263100
+  },
+  "harm_test": {
+    "budget": 0.05,
+    "event": "gain_strictly_below_negative_reward_margin",
+    "pass": "upper_bound_at_most_budget_for_both_queries",
+    "upper_bound": "one_sided_clopper_pearson"
+  },
+  "joint_claim_confidence": 0.95,
+  "outcomes_opened": false,
+  "overall_alpha": 0.05,
+  "parent_protocol_id": "c1e507fa445bca097c1b3d1f502fa9042584454dc12233d481c90f8223fc135e",
+  "protocol_id": "595ea3752b83ad8403555bd5f237a8b0ccf764b7e1bfa094fe8a36664182a7c2",
+  "queries": [
+    "dlolab_wrapping_v9",
+    "dlolab_slingshot_v4"
+  ],
+  "recovery": {
+    "ordinary_future_seals": 0,
+    "ordinary_prefix_seals": 0,
+    "outcomes_opened": false,
+    "repair": "use_complete_tree_at_identical_frozen_upstream_commit",
+    "scene_construction_preflight_passed": true,
+    "scene_preflight_actions": 0,
+    "scene_preflight_registered_worlds": 0,
+    "scientific_change": false,
+    "terminal_slingshot_v3_failure_id": "d4af5d766a1dfb967ba4abc64f100444c7166fe1e2d75fe0eedd5dca1e17457b",
+    "terminal_stage": "calibration-prefixes",
+    "worlds_reused": false
+  },
+  "reward_margin": 0.002,
+  "role": "prospective_two_query_public_simulator_replication_recovery_v4",
+  "runtime_additions": {
+    "addition_manifest_sha256": "f10841ae78a89aa0375f60f8f3da3bd0331c5434bd7f0e75ebc22076f4651a03",
+    "ipython_version": "9.17.0",
+    "libglapi_sha256": "6b0b3d9623ca09ae7d16d3320d8866dc0557d67e9cbb63c12752fe723444a0a1",
+    "libllvm_15_sha256": "de2e35a4f9b3f6a06d2a8a3342b3f62a3842b1923b8dfc2a6ce48e0cc2d1e85d",
+    "mediapy_version": "1.2.7",
+    "purpose": "restore_omitted_dependencies_of_the_hash_identical_parent_runtime",
+    "scientific_change": false
+  },
+  "schema": "bayesian_phystwin.query_portfolio_replication",
+  "sensor_seeds": {
+    "dlolab_slingshot_v4": {
+      "calibration": 263403,
+      "evaluation": 263404
+    },
+    "dlolab_wrapping_v9": 263103
+  },
+  "technical_failure_policy": "terminal_failure_no_replacement_no_partial_claim",
+  "version": 4,
+  "world_seeds": {
+    "dlolab_slingshot_v4": {
+      "calibration": 263401,
+      "evaluation": 263402
+    },
+    "dlolab_wrapping_v9": 263101
+  },
+  "worlds_per_query": 320
+}
