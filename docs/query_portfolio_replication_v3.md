@@ -4,6 +4,10 @@ The Slingshot v2 ledger-bearing attempt terminated during calibration-prefix
 imports with zero ordinary prefix or future seals and no outcome access. The
 staged native libraries were available, but worker `PYTHONPATH` omitted the
 exact frozen DLO-Lab `experiments` directory containing `envs.env_slingshot`.
+The transferred OSMesa directory also omitted its `libLLVM-15` and `libglapi`
+dependencies, while the transferred Python environment omitted the parent's
+`mediapy`/IPython import dependency. V3 hash-binds these separately staged
+runtime additions and validates them in every parent and worker process.
 
 V3 leaves the running Wrapping v1 roster unchanged and retains every scientific
 and statistical setting. It assigns entirely new Slingshot calibration,

@@ -4,7 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.metadata
 import importlib.util
+import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -18,9 +22,52 @@ V2_PATH = ROOT / "scripts/remote/run_dlolab_slingshot_portfolio_replication_v2.p
 BASE = Path("/home/florianpfaff/source-only/dlolab-query-portfolio-replication-v1")
 OUTPUT = BASE / "slingshot-v3"
 ATTEMPT = BASE / "slingshot-v3.attempt.json"
+UPSTREAM_ROOT = BASE / "frozen-runtime/upstream"
+ADDITIONS = BASE / "frozen-runtime-additions-v3"
+ADDITIONS_MANIFEST = BASE / "frozen-runtime-additions-v3.sha256"
+NATIVE_DEPENDENCIES = Path(
+    "/home/florianpfaff/source-only/dlolab-runtime-linux-v7-assets/native-libs"
+)
+EXPECTED_ADDITIONS_MANIFEST_SHA256 = (
+    "f10841ae78a89aa0375f60f8f3da3bd0331c5434bd7f0e75ebc22076f4651a03"
+)
+EXPECTED_PRELOAD = ":".join(
+    str(NATIVE_DEPENDENCIES / name)
+    for name in ("libLLVM-15.so.1", "libglapi.so.0")
+)
+EXPECTED_NATIVE_SHA256 = {
+    "libLLVM-15.so.1": "de2e35a4f9b3f6a06d2a8a3342b3f62a3842b1923b8dfc2a6ce48e0cc2d1e85d",
+    "libglapi.so.0": "6b0b3d9623ca09ae7d16d3320d8866dc0557d67e9cbb63c12752fe723444a0a1",
+}
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _verify_runtime_additions() -> None:
+    required_paths = (UPSTREAM_ROOT / "experiments", UPSTREAM_ROOT, ADDITIONS)
+    if any(str(path) not in sys.path for path in required_paths):
+        raise ValueError("exact staged DLO-Lab Python paths required")
+    if (
+        _sha256(ADDITIONS_MANIFEST) != EXPECTED_ADDITIONS_MANIFEST_SHA256
+        or importlib.metadata.version("mediapy") != "1.2.7"
+        or importlib.metadata.version("ipython") != "9.17.0"
+    ):
+        raise ValueError("staged Python runtime additions changed")
+    if os.environ.get("LD_PRELOAD") != EXPECTED_PRELOAD or any(
+        _sha256(NATIVE_DEPENDENCIES / name) != digest
+        for name, digest in EXPECTED_NATIVE_SHA256.items()
+    ):
+        raise ValueError("staged native runtime dependencies changed")
 
 
 def _load_runner() -> Any:
+    _verify_runtime_additions()
     spec = importlib.util.spec_from_file_location("slingshot_portfolio_v3_base", V2_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError("cannot load registered Slingshot v2 adapter")

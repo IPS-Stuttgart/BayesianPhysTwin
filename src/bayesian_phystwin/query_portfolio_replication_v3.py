@@ -42,6 +42,21 @@ def protocol() -> dict[str, Any]:
         "repair": "add_exact_staged_dlolab_experiments_to_worker_pythonpath",
         "worker_import_preflight_required": True,
     }
+    value["runtime_additions"] = {
+        "scientific_change": False,
+        "purpose": "restore_omitted_dependencies_of_the_hash_identical_parent_runtime",
+        "mediapy_version": "1.2.7",
+        "ipython_version": "9.17.0",
+        "addition_manifest_sha256": (
+            "f10841ae78a89aa0375f60f8f3da3bd0331c5434bd7f0e75ebc22076f4651a03"
+        ),
+        "libllvm_15_sha256": (
+            "de2e35a4f9b3f6a06d2a8a3342b3f62a3842b1923b8dfc2a6ce48e0cc2d1e85d"
+        ),
+        "libglapi_sha256": (
+            "6b0b3d9623ca09ae7d16d3320d8866dc0557d67e9cbb63c12752fe723444a0a1"
+        ),
+    }
     value["outcomes_opened"] = False
     value["protocol_id"] = content_id(value)
     return value
