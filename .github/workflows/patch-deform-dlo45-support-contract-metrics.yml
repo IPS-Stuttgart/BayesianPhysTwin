@@ -1,0 +1,356 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expiry: 2026-09-15
+name: Patch DEFORM gate audit support-contract metrics
+
+on:
+  push:
+    paths:
+      - ".github/workflows/patch-deform-dlo45-support-contract-metrics.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Add registered-support metrics and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py")
+          text = path.read_text()
+
+          def replace_once(old: str, new: str) -> None:
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"expected one match, found {count}: {old[:80]!r}")
+              text = text.replace(old, new, 1)
+
+          replace_once(
+          '''    regrets = np.asarray(
+                  [
+                      record.normalized_regret[action]
+                      for record, action in zip(records, actions, strict=False)
+                  ],
+                  dtype=np.float64,
+              )
+              action_array = np.asarray(actions, dtype=np.int64)
+              nonfallback = action_array != 0
+              harmful = selected_mse > fallback_mse + ATOL
+          ''',
+          '''    regrets = np.asarray(
+                  [
+                      record.normalized_regret[action]
+                      for record, action in zip(records, actions, strict=False)
+                  ],
+                  dtype=np.float64,
+              )
+              registered_worst_case_regrets = np.asarray(
+                  [
+                      record.decision.decision.worst_case_regret[action]
+                      for record, action in zip(records, actions, strict=False)
+                  ],
+                  dtype=np.float64,
+              )
+              registered_admissible = np.asarray(
+                  [
+                      record.decision.decision.tolerance_mask[action]
+                      for record, action in zip(records, actions, strict=False)
+                  ],
+                  dtype=bool,
+              )
+              action_array = np.asarray(actions, dtype=np.int64)
+              nonfallback = action_array != 0
+              registered_support_violation = nonfallback & ~registered_admissible
+              harmful = selected_mse > fallback_mse + ATOL
+          ''')
+
+          replace_once(
+          '''    harmful_nonfallback = int(np.count_nonzero(harmful & nonfallback))
+              nonfallback_count = int(np.count_nonzero(nonfallback))
+              interval = _wilson_interval(harmful_nonfallback, nonfallback_count)
+              trajectories = _trajectory_summary(records, actions)
+          ''',
+          '''    harmful_nonfallback = int(np.count_nonzero(harmful & nonfallback))
+              nonfallback_count = int(np.count_nonzero(nonfallback))
+              interval = _wilson_interval(harmful_nonfallback, nonfallback_count)
+              support_violation_count = int(np.count_nonzero(registered_support_violation))
+              support_interval = _wilson_interval(support_violation_count, nonfallback_count)
+              nonfallback_support_regrets = registered_worst_case_regrets[nonfallback]
+              if nonfallback_count:
+                  support_mean = float(np.mean(nonfallback_support_regrets))
+                  support_p95 = float(np.quantile(nonfallback_support_regrets, 0.95))
+                  support_maximum = float(np.max(nonfallback_support_regrets))
+              else:
+                  support_mean = 0.0
+                  support_p95 = 0.0
+                  support_maximum = 0.0
+              trajectories = _trajectory_summary(records, actions)
+          ''')
+
+          replace_once(
+          '''        "maximum_normalized_regret": float(np.max(regrets)),
+                  "harmful_decision_count": int(np.count_nonzero(harmful)),
+          ''',
+          '''        "maximum_normalized_regret": float(np.max(regrets)),
+                  "registered_support_nonfallback_mean_worst_case_regret": support_mean,
+                  "registered_support_nonfallback_p95_worst_case_regret": support_p95,
+                  "registered_support_nonfallback_maximum_worst_case_regret": support_maximum,
+                  "registered_support_violation_count_nonfallback": support_violation_count,
+                  "registered_support_violation_fraction_nonfallback": (
+                      support_violation_count / nonfallback_count if nonfallback_count else 0.0
+                  ),
+                  "registered_support_violation_wilson95": list(support_interval),
+                  "harmful_decision_count": int(np.count_nonzero(harmful)),
+          ''')
+
+          replace_once(
+          '''    harmful_all = 0
+              regret_values: list[float] = []
+              for dlo in DLOS:
+          ''',
+          '''    harmful_all = 0
+              regret_values: list[float] = []
+              registered_support_values: list[float] = []
+              registered_support_violation_count = 0
+              for dlo in DLOS:
+          ''')
+
+          replace_once(
+          '''        regret_values.extend(float(value) for value in item["regret_values"])
+              ratio = math.sqrt(total_selected_sse / total_fallback_sse)
+          ''',
+          '''        regret_values.extend(float(value) for value in item["regret_values"])
+                  registered_support_values.extend(
+                      float(value)
+                      for value in item[
+                          "registered_support_nonfallback_worst_case_regret_values"
+                      ]
+                  )
+                  registered_support_violation_count += int(
+                      item["registered_support_violation_count_nonfallback"]
+                  )
+              ratio = math.sqrt(total_selected_sse / total_fallback_sse)
+          ''')
+
+          replace_once(
+          '''    regrets = np.asarray(regret_values, dtype=np.float64)
+              return {
+          ''',
+          '''    regrets = np.asarray(regret_values, dtype=np.float64)
+              support_regrets = np.asarray(registered_support_values, dtype=np.float64)
+              support_interval = _wilson_interval(
+                  registered_support_violation_count, nonfallback_count
+              )
+              if nonfallback_count:
+                  support_mean = float(np.mean(support_regrets))
+                  support_p95 = float(np.quantile(support_regrets, 0.95))
+                  support_maximum = float(np.max(support_regrets))
+              else:
+                  support_mean = 0.0
+                  support_p95 = 0.0
+                  support_maximum = 0.0
+              return {
+          ''')
+
+          replace_once(
+          '''        "p99_normalized_regret": float(np.quantile(regrets, 0.99)),
+              }
+          ''',
+          '''        "p99_normalized_regret": float(np.quantile(regrets, 0.99)),
+                  "registered_support_nonfallback_mean_worst_case_regret": support_mean,
+                  "registered_support_nonfallback_p95_worst_case_regret": support_p95,
+                  "registered_support_nonfallback_maximum_worst_case_regret": support_maximum,
+                  "registered_support_violation_count_nonfallback": (
+                      registered_support_violation_count
+                  ),
+                  "registered_support_violation_fraction_nonfallback": (
+                      registered_support_violation_count / nonfallback_count
+                      if nonfallback_count
+                      else 0.0
+                  ),
+                  "registered_support_violation_wilson95": list(support_interval),
+              }
+          ''')
+
+          replace_once(
+          '''    result["regret_values"] = [
+                  float(record.normalized_regret[action])
+                  for record, action in zip(records, actions, strict=False)
+              ]
+              return result
+          ''',
+          '''    result["regret_values"] = [
+                  float(record.normalized_regret[action])
+                  for record, action in zip(records, actions, strict=False)
+              ]
+              result["registered_support_nonfallback_worst_case_regret_values"] = [
+                  float(record.decision.decision.worst_case_regret[action])
+                  for record, action in zip(records, actions, strict=False)
+                  if action != 0
+              ]
+              return result
+          ''')
+
+          replace_once(
+          '''                "nearest_global_residual_rmse": record.nearest_global_residual_rmse,
+                      }
+          ''',
+          '''                "nearest_global_residual_rmse": record.nearest_global_residual_rmse,
+                          "registered_worst_case_regret_by_action": (
+                              record.decision.decision.worst_case_regret.tolist()
+                          ),
+                          "registered_tolerance_mask_by_action": (
+                              record.decision.decision.tolerance_mask.tolist()
+                          ),
+                      }
+          ''')
+
+          replace_once(
+          '''        f"- p95 normalized regret: **{float(certificate['p95_normalized_regret']):.4f}**",
+                  "",
+          ''',
+          '''        f"- p95 realized normalized regret: **{float(certificate['p95_normalized_regret']):.4f}**",
+                  (
+                      "- registered-support violations: **"
+                      f"{int(certificate['registered_support_violation_count_nonfallback'])}/"
+                      f"{int(certificate['nonfallback_count'])}**"
+                  ),
+                  (
+                      "- p95 registered worst-case regret: **"
+                      f"{float(certificate['registered_support_nonfallback_p95_worst_case_regret']):.4f}**"
+                  ),
+                  "",
+          ''')
+
+          replace_once(
+          '''        "| Gate | Coverage | RMSE reduction | Harm/nonfallback | p95 regret |",
+                  "| --- | ---: | ---: | ---: | ---: |",
+          ''',
+          '''        "| Gate | Coverage | RMSE reduction | Harm | Support violations | p95 registered regret |",
+                  "| --- | ---: | ---: | ---: | ---: | ---: |",
+          ''')
+
+          replace_once(
+          '''            f"{int(item['harmful_nonfallback_count'])}/{int(item['nonfallback_count'])} | "
+                      f"{float(item['p95_normalized_regret']):.4f} |"
+          ''',
+          '''            f"{int(item['harmful_nonfallback_count'])}/{int(item['nonfallback_count'])} | "
+                      f"{int(item['registered_support_violation_count_nonfallback'])}/"
+                      f"{int(item['nonfallback_count'])} | "
+                      f"{float(item['registered_support_nonfallback_p95_worst_case_regret']):.4f} |"
+          ''')
+
+          replace_once(
+          '''            "| Gate | RMSE reduction | Harm/nonfallback | p95 regret |",
+                      "| --- | ---: | ---: | ---: |",
+          ''',
+          '''            "| Gate | RMSE reduction | Harm | Support violations | p95 registered regret |",
+                      "| --- | ---: | ---: | ---: | ---: |",
+          ''')
+
+          # The same two-line row fragment occurs once more in the matched table.
+          replace_once(
+          '''            f"{int(item['harmful_nonfallback_count'])}/{int(item['nonfallback_count'])} | "
+                      f"{float(item['p95_normalized_regret']):.4f} |"
+          ''',
+          '''            f"{int(item['harmful_nonfallback_count'])}/{int(item['nonfallback_count'])} | "
+                      f"{int(item['registered_support_violation_count_nonfallback'])}/"
+                      f"{int(item['nonfallback_count'])} | "
+                      f"{float(item['registered_support_nonfallback_p95_worst_case_regret']):.4f} |"
+          ''')
+
+          path.write_text(text)
+
+          tests = Path("tests/test_deform_dlo45_decision_gate_audit_v1.py")
+          test_text = tests.read_text()
+          addition = '''
+
+          def test_registered_support_violations_are_reported_separately_from_harm() -> None:
+              records = window_records(count=2)
+              first_decision = replace(
+                  records[0].decision.decision,
+                  worst_case_regret=np.asarray([0.0, 0.20, 0.01]),
+                  tolerance_mask=np.asarray([True, False, True]),
+              )
+              second_decision = replace(
+                  records[1].decision.decision,
+                  worst_case_regret=np.asarray([0.0, 0.02, 0.01]),
+                  tolerance_mask=np.asarray([True, True, True]),
+              )
+              modified = [
+                  replace(
+                      records[0],
+                      decision=records[0].decision._replace(decision=first_decision),
+                  ),
+                  replace(
+                      records[1],
+                      decision=records[1].decision._replace(decision=second_decision),
+                  ),
+              ]
+
+              summary = gate_audit.summarize_method(modified, [1, 1])
+
+              assert summary["registered_support_violation_count_nonfallback"] == 1
+              assert summary["registered_support_violation_fraction_nonfallback"] == 0.5
+              assert summary["registered_support_nonfallback_maximum_worst_case_regret"] == 0.20
+
+
+          def test_registered_certificate_actions_have_no_support_violation() -> None:
+              records = window_records()
+              actions = gate_audit.certificate_actions(records)
+
+              summary = gate_audit.summarize_method(records, actions)
+
+              assert summary["registered_support_violation_count_nonfallback"] == 0
+          '''
+          if "test_registered_support_violations_are_reported_separately_from_harm" in test_text:
+              raise SystemExit("support-contract tests already present")
+          tests.write_text(test_text.rstrip() + addition + "\n")
+          PY
+
+      - name: Canonicalize and test the patched audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "ruff==0.16.5" "pytest==9.0.2" "numpy==2.2.6"
+          python -m pip install --no-deps -e .
+          files=(
+            experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py
+            tests/test_deform_dlo45_decision_gate_audit_v1.py
+          )
+          python -m ruff check --fix --unsafe-fixes "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_decision_gate_audit_v1.py \
+            tests/test_query_quotient_belief_v1.py
+          git diff --check
+
+      - name: Commit support-contract instrumentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            experiments/deform_dlo45_decision_identifiability_v1/gate_audit.py \
+            tests/test_deform_dlo45_decision_gate_audit_v1.py
+          git commit -m "Audit registered-support compliance of DEFORM decision gates"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
