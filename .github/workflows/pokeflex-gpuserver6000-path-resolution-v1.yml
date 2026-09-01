@@ -1,0 +1,166 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: PokeFlex gpuserver6000 path resolution v1
+
+on:
+  push:
+    branches:
+      - ops/pokeflex-gpuserver6000-path-resolution-v1
+    paths:
+      - triggers/pokeflex-gpuserver6000-path-resolution-v1.json
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Resolve runner-visible PokeFlex mirrors without reading payloads
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact audit revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only audit request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ops/pokeflex-gpuserver6000-path-resolution-v1
+          test "$PUSH_FORCED" = false
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-gpuserver6000-path-resolution-v1.json'
+
+      - name: Audit known paths and bounded parents
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/pokeflex-gpuserver6000-path-resolution-v1"
+          mkdir "$output"
+          echo "AUDIT_OUTPUT=$output" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          output = Path(os.environ["RUNNER_TEMP"]) / "pokeflex-gpuserver6000-path-resolution-v1"
+          known = [
+              Path("/mnt/lexar4tb/pokeflex"),
+              Path("/home/florianpfaff/datasets/pokeflex"),
+              Path("/home/github-runner/.cache/datasets/pokeflex"),
+              Path("/home/github-runner/.cache/workflows/pokeflex"),
+          ]
+          parents = [
+              Path("/mnt/lexar4tb"),
+              Path("/home/florianpfaff/datasets"),
+              Path("/home/github-runner/.cache/datasets"),
+              Path("/home/github-runner/.cache/workflows"),
+          ]
+          target_names = {
+              "Pillow_T8.zip",
+              "3dPrintedCylinder_T7.zip",
+              "3dPrintedHeart_T14.zip",
+              "Sponge_T10.zip",
+              "3dPrintedPizza_T13.zip",
+          }
+
+          candidates: set[Path] = set(known)
+          for parent in parents:
+              if not parent.is_dir():
+                  continue
+              try:
+                  for child in parent.iterdir():
+                      if "pokeflex" in child.name.lower():
+                          candidates.add(child)
+              except OSError:
+                  pass
+
+          records = []
+          for candidate in sorted(candidates, key=str):
+              record = {
+                  "path": str(candidate),
+                  "lexists": os.path.lexists(candidate),
+                  "is_symlink": candidate.is_symlink(),
+                  "exists": candidate.exists(),
+                  "is_dir": candidate.is_dir(),
+                  "resolved_path": None,
+                  "zip_count": 0,
+                  "total_zip_bytes": 0,
+                  "exact_five_present": [],
+                  "top_level_entries": [],
+                  "error": None,
+              }
+              try:
+                  if candidate.exists():
+                      record["resolved_path"] = str(candidate.resolve())
+                  if candidate.is_dir():
+                      record["top_level_entries"] = sorted(
+                          item.name for item in candidate.iterdir()
+                      )[:100]
+                      zips = []
+                      for root, directories, files in os.walk(candidate, followlinks=True):
+                          root_path = Path(root)
+                          depth = len(root_path.relative_to(candidate).parts)
+                          if depth >= 7:
+                              directories[:] = []
+                          for filename in files:
+                              if filename.lower().endswith(".zip"):
+                                  zips.append(root_path / filename)
+                      record["zip_count"] = len(zips)
+                      record["total_zip_bytes"] = sum(path.stat().st_size for path in zips)
+                      present = {path.name for path in zips} & target_names
+                      record["exact_five_present"] = sorted(present)
+              except Exception as error:
+                  record["error"] = f"{type(error).__name__}: {error}"
+              records.append(record)
+
+          result = {
+              "schema": "bayesian-phystwin/pokeflex-gpuserver6000-path-resolution-v1",
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "runner_os": os.environ.get("RUNNER_OS"),
+              "runner_arch": os.environ.get("RUNNER_ARCH"),
+              "payload_bytes_read": False,
+              "archive_member_metadata_read": False,
+              "records": records,
+          }
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":")).encode()
+          result["result_id"] = hashlib.sha256(canonical).hexdigest()
+          (output / "result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload path-resolution evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pokeflex-gpuserver6000-path-resolution-v1-${{ github.run_id }}
+          path: ${{ env.AUDIT_OUTPUT }}/result.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce metadata-only completion
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$AUDIT_OUTPUT/result.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads((Path(os.environ["AUDIT_OUTPUT"]) / "result.json").read_text())
+          assert value["payload_bytes_read"] is False
+          assert value["archive_member_metadata_read"] is False
+          PY
