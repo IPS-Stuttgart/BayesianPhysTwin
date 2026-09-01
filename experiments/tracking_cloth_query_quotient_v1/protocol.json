@@ -1,0 +1,75 @@
+{
+  "schema": "bayesian-phystwin/tracking-cloth-query-quotient-v1",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-shake-to-twist-query-quotient-v1",
+  "dataset_record": "14644526",
+  "base_protocol_path": "experiments/tracking_cloth_deformation_v1/protocol.json",
+  "base_protocol_sha256": "dce643276e2800fbbaa32b8eb28366adab588b569ae6f0f17e850e55261ba336",
+  "prior": {
+    "semantics": "registered product prior over the frozen 3x3 stiffness-damping bank",
+    "stiffness_weights": [
+      0.2,
+      0.6,
+      0.2
+    ],
+    "damping_weights": [
+      0.2,
+      0.6,
+      0.2
+    ]
+  },
+  "query": {
+    "name": "tail_centered_shape_rms_deformation",
+    "unit": "metre",
+    "tail_fraction": 0.25,
+    "requested_class_count": 3,
+    "partition_rule": "sorted hypothesis-query values split at 3/9 and 6/9 rank boundaries; a boundary inside a numerical tie is omitted",
+    "minimum_gap_m": 1e-09,
+    "interpretation": "low, middle, or high nonrigid deformation regime under the registered twisting input"
+  },
+  "scoring": {
+    "categorical_scores": [
+      "log_score",
+      "brier_score",
+      "class_accuracy"
+    ],
+    "trajectory_score": "finite-distribution energy score normalized by square root of evaluated coordinate dimension",
+    "trajectory_time_stride": 5,
+    "probability_floor": 1e-12
+  },
+  "controls": {
+    "wrong_specimen_rotation": 1,
+    "wrong_specimen_rule": "cyclic next specimen in lexicographic material-size order",
+    "hypothesis_identity_permutation": [
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1,
+      0
+    ],
+    "identity_control_rule": "reverse the frozen 3x3 parameter-bank identity before quotient aggregation"
+  },
+  "analysis": {
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 14644527,
+    "specificity_tolerance_nats": 1e-10,
+    "query_expectation_tolerance_m": 1e-09,
+    "stiffness_decision_threshold": 400.0,
+    "inferential_unit": "eight material-size specimens, with four target conditions averaged within specimen"
+  },
+  "evidence_class": "retrospective public-real-data query-quotient validation; prior target exposure not assumed absent; no fresh-confirmation claim",
+  "claim_boundary": "This study tests a registered query quotient, Jeffrey I-projection, unsupported specificity, ambiguity, and source-to-target transport on public cloth trajectories. It does not establish unique material identity, command-conditioned intervention effects, calibrated joint trajectory uncertainty, unseen-object generalization, safety, or a fresh confirmatory result.",
+  "information_boundary": {
+    "public_real_measurements": true,
+    "source_motion_only_for_belief_update": true,
+    "target_prefix_and_prescribed_corners_only_before_seal": true,
+    "target_outcomes_used_for_selection": false,
+    "raw_data_upload": false,
+    "fresh_confirmation_authorized": false,
+    "paper_claim_authorized": false
+  }
+}
