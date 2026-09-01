@@ -59,7 +59,7 @@ The target result reports:
 The primary comparison is certificate versus exact fallback. Point comparators
 are diagnostics, not alternative certified methods.
 
-## Run
+## Reproducible workflow
 
 The GitHub Actions workflow is triggered only by a change to:
 
@@ -67,13 +67,47 @@ The GitHub Actions workflow is triggered only by a change to:
 .github/requests/deform-dlo45-decision-identifiability-v1.json
 ```
 
-It runs the source and target stages on the self-hosted runner tagged
-`gpuserver4090`, uploads the complete compact evidence, and commits only JSON and
-Markdown summaries under:
+The official public DEFORM repository is pinned to commit
+`b73b8b8ecc033caefa693fab7898741d4e6dbeff`. The source job receives sparse
+checkouts of only `DLO4/train` and `DLO5/train`; the target job receives sparse
+checkouts of only `DLO4/eval` and `DLO5/eval`. Both jobs run with Python 3.12,
+NumPy 2.2.6, deterministic thread limits, and content-addressed source artifacts.
+
+The complete one-shot run is GitHub Actions run `33473378340`. Its compact
+result artifact has SHA-256 digest
+`588e006efe45d5f6bbc5459f9f031a4c4f92c28aaaf4004ef4c0d5c85eba5663`.
+The committed evidence is under:
 
 ```text
-results/science/deform_dlo45_decision_identifiability_v1/<run_key>/
+results/science/deform_dlo45_decision_identifiability_v1/
+  official-dlo45-one-shot-20260901-v1/
 ```
+
+That directory contains the dataset provenance, source result, source seal,
+target result, and human-readable summary. The sealed source-model SHA-256 is
+`a43aed43cd563ee47358e48cab84829dc7eebc77d97725721a11b228f3b6b7f0`.
+
+## One-shot held-data result
+
+The source-only selection chose 16 quotient classes, 16 neighbors, temperature
+scale 1.0, and regret tolerance 0.05 for both DLOs. All registered source gates
+passed before the held evaluation was opened.
+
+| DLO | Fallback RMSE [mm] | Certificate RMSE [mm] | Reduction | Nonfallback | Harm versus fallback |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| DLO4 | 31.297 | 29.605 | 5.41% | 45 / 266 | 3 / 266 |
+| DLO5 | 37.398 | 36.095 | 3.48% | 37 / 266 | 0 / 266 |
+
+Across all 532 decisions, the certificate RMSE ratio is `0.9572996`, equivalent
+to a 4.27% aggregate RMSE reduction. The mean paired trajectory improvement is
+4.28%, with a frozen trajectory-bootstrap 95% interval of 3.04% to 5.61%.
+The certificate selected a nonfallback action in 82 of 532 decisions.
+
+The diagnostic point estimators achieve larger RMSE reductions but solve a
+less conservative problem. For example, their decisions use a single lifted or
+point belief rather than controlling worst-case regret over every complete belief
+compatible with the registered quotient masses. They are therefore reported as
+headroom, not as substitutes for the certificate.
 
 ## Claim boundary
 
