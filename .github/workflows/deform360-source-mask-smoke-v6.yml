@@ -1,0 +1,425 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source mask smoke v6
+
+on:
+  push:
+    branches:
+      - science/deform360-explicit-mount-source-v1
+    paths:
+      - ".github/requests/deform360-source-mask-smoke-v6.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-mask-smoke-v6
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-mask-smoke-v6.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  SOURCE_OBJECT: 038-mat-cloth
+  SOURCE_EPISODE: "3"
+  OFFICIAL_DEFORM360_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  SAM3_REVISION: 46957e47805eaa273f4aa7bbbd25a88bca9108ce
+  SETUPTOOLS_VERSION: "80.9.0"
+  EINOPS_VERSION: "0.8.1"
+  PYCOCOTOOLS_VERSION: "2.0.10"
+  PSUTIL_VERSION: "6.1.1"
+  TORCH_VERSION: "2.9.1"
+  TORCHVISION_VERSION: "0.24.1"
+  RUNTIME_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/runtime/deform360-mask-v6-sam3-46957e47-psutil611-py312
+  MODEL_CACHE_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/runtime/model-cache
+  PIP_CACHE_DIR: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/runtime/pip-cache
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  CUDA_VISIBLE_DEVICES: "0"
+  TOKENIZERS_PARALLELISM: "false"
+
+jobs:
+  smoke:
+    name: psutil-qualified SAM3 source mask / gpuserver4090
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 240
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - name: Check out pinned official Deform360 implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_DEFORM360_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize exactly one newly added source-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-mask-smoke-request-v6",
+              "raw_root": os.environ["RAW_ROOT"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "runner_label": "gpuserver4090",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "sam3_revision": os.environ["SAM3_REVISION"],
+              "setuptools_version": os.environ["SETUPTOOLS_VERSION"],
+              "einops_version": os.environ["EINOPS_VERSION"],
+              "pycocotools_version": os.environ["PYCOCOTOOLS_VERSION"],
+              "psutil_version": os.environ["PSUTIL_VERSION"],
+              "torch_version": os.environ["TORCH_VERSION"],
+              "torchvision_version": os.environ["TORCHVISION_VERSION"],
+              "runtime_contract": "sam3-source-date-plus-explicit-import-dependencies-v3",
+              "camera_selection": "lexicographically-first-aligned-camera",
+              "prompt_source": "raw-metadata-sam_prompt",
+              "source_mask_smoke_authorized": True,
+              "persistent_runtime_and_model_cache_authorized": True,
+              "persistent_source_mask_write_authorized": False,
+              "target_future_authorized": False,
+          }
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"request field {key!r} changed")
+          if set(request) != set(required) | {"request_id", "expected_source_revision"}:
+              raise SystemExit("request keys differ from the v6 mask contract")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind the exact source parent")
+          if not request["request_id"]:
+              raise SystemExit("request_id must be nonempty")
+          PY
+
+      - name: Verify source state and prepare isolated paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test -w "${STAGING_ROOT}"
+          test "$(git -C _deform360_official rev-parse HEAD)" = "${OFFICIAL_DEFORM360_REVISION}"
+          source_episode="${STAGING_ROOT}/cross-action-source-v1/${SOURCE_OBJECT}/episode_0003"
+          test -f "${source_episode}/robot/robot.npz"
+          test "$(find "${source_episode}" -mindepth 2 -maxdepth 2 -name undistorted.mp4 -type f | wc -l)" -ge 1
+          evidence="${RUNNER_TEMP}/deform360-source-mask-v6-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          smoke="${RUNNER_TEMP}/deform360-source-mask-tree-v6-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          build="${RUNTIME_ROOT}.build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${evidence}"
+          test ! -e "${smoke}"
+          test ! -e "${build}"
+          mkdir -p \
+            "${evidence}" \
+            "$(dirname "${RUNTIME_ROOT}")" \
+            "${MODEL_CACHE_ROOT}/huggingface" \
+            "${MODEL_CACHE_ROOT}/torch" \
+            "${PIP_CACHE_DIR}"
+          {
+            echo "SOURCE_EPISODE_ROOT=${source_episode}"
+            echo "EVIDENCE_ROOT=${evidence}"
+            echo "SMOKE_ROOT=${smoke}"
+            echo "RUNTIME_BUILD=${build}"
+            echo "HF_HOME=${MODEL_CACHE_ROOT}/huggingface"
+            echo "HUGGINGFACE_HUB_CACHE=${MODEL_CACHE_ROOT}/huggingface/hub"
+            echo "TORCH_HOME=${MODEL_CACHE_ROOT}/torch"
+          } >> "${GITHUB_ENV}"
+
+      - name: Build or verify repaired SAM3 runtime
+        id: runtime
+        shell: bash
+        run: |
+          set -u
+          ready=false
+          reused=false
+          log="${EVIDENCE_ROOT}/runtime-install.log"
+          manifest="${RUNTIME_ROOT}/runtime-manifest.json"
+          if [[ -x "${RUNTIME_ROOT}/bin/python" && -f "${manifest}" ]]; then
+            if RUNTIME_MANIFEST="${manifest}" "${RUNTIME_ROOT}/bin/python" - <<'PY'
+          import importlib
+          import importlib.metadata
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path(os.environ["RUNTIME_MANIFEST"]).read_text())
+          expected = {
+              "kind": "deform360-source-mask-runtime-v6",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "sam3_revision": os.environ["SAM3_REVISION"],
+              "psutil_version": os.environ["PSUTIL_VERSION"],
+              "python_series": "3.12",
+          }
+          for key, value in expected.items():
+              if manifest.get(key) != value:
+                  raise SystemExit(f"runtime manifest mismatch: {key}")
+          for name in (
+              "cv2", "deform360", "einops", "h5py", "numpy", "psutil",
+              "pycocotools", "sam3", "sam3.model_builder", "torch", "torchvision",
+          ):
+              importlib.import_module(name)
+          if importlib.metadata.version("psutil") != os.environ["PSUTIL_VERSION"]:
+              raise SystemExit("psutil version changed")
+          PY
+            then
+              ready=true
+              reused=true
+              echo "Reusing exact v6 runtime ${RUNTIME_ROOT}" | tee "${log}"
+            fi
+          fi
+
+          if [[ "${ready}" != true ]]; then
+            rm -rf -- "${RUNTIME_BUILD}"
+            python -m venv "${RUNTIME_BUILD}"
+            code=0
+            set +e
+            "${RUNTIME_BUILD}/bin/python" -m pip install --disable-pip-version-check \
+              "setuptools==${SETUPTOOLS_VERSION}" wheel > "${log}" 2>&1
+            code=$?
+            if [[ "${code}" -eq 0 ]]; then
+              "${RUNTIME_BUILD}/bin/python" -m pip install --disable-pip-version-check \
+                "${GITHUB_WORKSPACE}/_deform360_official[annotations]" \
+                "torch==${TORCH_VERSION}" \
+                "torchvision==${TORCHVISION_VERSION}" \
+                "einops==${EINOPS_VERSION}" \
+                "pycocotools==${PYCOCOTOOLS_VERSION}" \
+                "psutil==${PSUTIL_VERSION}" \
+                "git+https://github.com/facebookresearch/sam3.git@${SAM3_REVISION}" \
+                >> "${log}" 2>&1
+              code=$?
+            fi
+            if [[ "${code}" -eq 0 ]]; then
+              "${RUNTIME_BUILD}/bin/python" -m pip install --disable-pip-version-check \
+                --force-reinstall --no-deps "setuptools==${SETUPTOOLS_VERSION}" \
+                >> "${log}" 2>&1
+              code=$?
+            fi
+            if [[ "${code}" -eq 0 ]]; then
+              "${RUNTIME_BUILD}/bin/python" -m pip check >> "${log}" 2>&1
+              code=$?
+            fi
+            if [[ "${code}" -eq 0 ]]; then
+              MANIFEST_ROOT="${RUNTIME_BUILD}" \
+              "${RUNTIME_BUILD}/bin/python" - <<'PY' >> "${log}" 2>&1
+          import importlib
+          import importlib.metadata
+          import json
+          import os
+          import platform
+          import sys
+          from pathlib import Path
+
+          import einops
+          import torch
+
+          for name in (
+              "cv2", "deform360", "h5py", "numpy", "psutil", "pycocotools",
+              "sam3", "sam3.model_builder", "torchvision",
+          ):
+              importlib.import_module(name)
+          if not torch.cuda.is_available():
+              raise SystemExit("CUDA unavailable")
+          observed = {
+              "einops": einops.__version__,
+              "pycocotools": importlib.metadata.version("pycocotools"),
+              "psutil": importlib.metadata.version("psutil"),
+          }
+          expected = {
+              "einops": os.environ["EINOPS_VERSION"],
+              "pycocotools": os.environ["PYCOCOTOOLS_VERSION"],
+              "psutil": os.environ["PSUTIL_VERSION"],
+          }
+          if observed != expected:
+              raise SystemExit(f"runtime versions changed: {observed}")
+          payload = {
+              "kind": "deform360-source-mask-runtime-v6",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "sam3_revision": os.environ["SAM3_REVISION"],
+              "setuptools_version": os.environ["SETUPTOOLS_VERSION"],
+              "einops_version": observed["einops"],
+              "pycocotools_version": observed["pycocotools"],
+              "psutil_version": observed["psutil"],
+              "torch_version": os.environ["TORCH_VERSION"],
+              "torchvision_version": os.environ["TORCHVISION_VERSION"],
+              "python_series": "3.12",
+              "python": sys.version,
+              "platform": platform.platform(),
+              "torch": torch.__version__,
+              "torch_cuda": torch.version.cuda,
+              "cuda_devices": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+          }
+          (Path(os.environ["MANIFEST_ROOT"]) / "runtime-manifest.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+              code=$?
+            fi
+            set -e
+            if [[ "${code}" -eq 0 ]]; then
+              rm -rf -- "${RUNTIME_ROOT}"
+              mv "${RUNTIME_BUILD}" "${RUNTIME_ROOT}"
+              ready=true
+            else
+              rm -rf -- "${RUNTIME_BUILD}"
+            fi
+          fi
+          echo "ready=${ready}" >> "${GITHUB_OUTPUT}"
+          echo "reused=${reused}" >> "${GITHUB_OUTPUT}"
+          echo "RUNTIME_READY=${ready}" >> "${GITHUB_ENV}"
+          echo "RUNTIME_REUSED=${reused}" >> "${GITHUB_ENV}"
+          exit 0
+
+      - name: Execute one-camera source mask qualification
+        if: steps.runtime.outputs.ready == 'true'
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          cp "${RUNTIME_ROOT}/runtime-manifest.json" "${EVIDENCE_ROOT}/runtime-manifest.json"
+          "${RUNTIME_ROOT}/bin/python" scripts/science/run_deform360_source_mask_smoke_v4.py \
+            --raw-root "${RAW_ROOT}" \
+            --source-episode-root "${SOURCE_EPISODE_ROOT}" \
+            --source-object "${SOURCE_OBJECT}" \
+            --source-episode "${SOURCE_EPISODE}" \
+            --smoke-root "${SMOKE_ROOT}" \
+            --evidence-root "${EVIDENCE_ROOT}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --revision "${GITHUB_SHA}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+            --official-deform360-revision "${OFFICIAL_DEFORM360_REVISION}" \
+            --sam3-revision "${SAM3_REVISION}" \
+            --einops-version "${EINOPS_VERSION}"
+
+      - name: Record runtime bootstrap failure
+        if: steps.runtime.outputs.ready != 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          result = {
+              "schema": "bayesian-phystwin/deform360-source-mask-smoke-v6",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "sam3_revision": os.environ["SAM3_REVISION"],
+              "psutil_version": os.environ["PSUTIL_VERSION"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "mask": {"status": "not-run"},
+              "decision": "source-mask-runtime-bootstrap-failed",
+              "next_action": "Retain the exact installation log and repair only the recorded import dependency.",
+              "information_boundary": {
+                  "source_video_decoded": False,
+                  "persistent_runtime_or_model_cache_written": True,
+                  "persistent_source_mask_written": False,
+                  "requested_processed_tree_modified": False,
+                  "target_directory_contents_listed": False,
+                  "target_numeric_payload_opened": False,
+                  "target_scoring_performed": False,
+                  "fresh_confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+              },
+              "claim_boundary": "Source-only technical runtime evidence; no source mask, geometry, target, calibration, safety, or paper claim.",
+          }
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"))
+          result["result_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+          (evidence / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+          (evidence / "report.md").write_text("# Deform360 source mask smoke v6\n\nDecision: `source-mask-runtime-bootstrap-failed`\n")
+          PY
+
+      - name: Verify target closure and result contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "result.json").read_text())
+          boundary = result["information_boundary"]
+          for key in (
+              "persistent_source_mask_written", "requested_processed_tree_modified",
+              "target_directory_contents_listed", "target_numeric_payload_opened",
+              "target_scoring_performed", "fresh_confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          print(json.dumps({"decision": result["decision"], "mask": result["mask"]}, indent=2))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish compact summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: test ! -f "${EVIDENCE_ROOT}/report.md" || cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload compact source evidence
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-mask-v6-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/runtime-install.log
+            ${{ env.EVIDENCE_ROOT }}/runtime-manifest.json
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove nonpersistent scratch
+        if: always()
+        shell: bash
+        run: rm -rf -- "${RUNTIME_BUILD:-}" "${SMOKE_ROOT:-}" "${EVIDENCE_ROOT:-}"
