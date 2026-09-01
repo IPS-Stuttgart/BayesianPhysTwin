@@ -16,14 +16,13 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from numbers import Real
 from typing import Final
 
 SCHEMA: Final = "bayesian-phystwin.selective-competence-bound"
 SCHEMA_VERSION: Final = 1
 
 
-def _probability(value: Real, *, name: str, closed_zero: bool = True) -> float:
+def _probability(value: float, *, name: str, closed_zero: bool = True) -> float:
     if isinstance(value, bool):
         raise ValueError(f"{name} must be a real probability")
     result = float(value)
@@ -185,10 +184,14 @@ class SelectiveCompetenceCertificateV1:
         maximum_regret_value = float(maximum_regret)
         if not math.isfinite(maximum_regret_value):
             raise ValueError("maximum_regret must be finite")
+        harm_upper_bound = self.harm_upper_bound
+        regret_upper_bound = self.regret_upper_bound
+        if harm_upper_bound is None or regret_upper_bound is None:
+            raise RuntimeError("certificate endpoints were not initialized")
         return bool(
             self.accepted_count > 0
-            and float(self.harm_upper_bound) <= maximum_harm_value
-            and float(self.regret_upper_bound) <= maximum_regret_value
+            and harm_upper_bound <= maximum_harm_value
+            and regret_upper_bound <= maximum_regret_value
         )
 
     def to_record(self) -> dict[str, object]:
