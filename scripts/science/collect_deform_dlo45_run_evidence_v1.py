@@ -9,7 +9,6 @@ import json
 import shutil
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 SCHEMA = "bayesian-phystwin/deform-dlo45-run-evidence-collection-v1"
 TEXT_EXTENSIONS = {".json", ".md", ".csv", ".txt", ".jsonl", ".log", ".yml", ".yaml"}
@@ -248,7 +247,9 @@ def collect(
         "",
     ]
     if not candidates:
-        lines.append("No JSON result candidate was present in the downloaded artifacts.")
+        lines.append(
+            "No JSON result candidate was present in the downloaded artifacts."
+        )
     for candidate in candidates:
         lines.extend(
             [
@@ -268,7 +269,9 @@ def collect(
     checksum_rows = []
     for path in sorted(destination.rglob("*")):
         if path.is_file() and path.name != "SHA256SUMS":
-            checksum_rows.append(f"{_sha256(path)}  {path.relative_to(destination).as_posix()}")
+            checksum_rows.append(
+                f"{_sha256(path)}  {path.relative_to(destination).as_posix()}"
+            )
     (destination / "SHA256SUMS").write_text(
         "\n".join(checksum_rows) + "\n", encoding="utf-8"
     )
@@ -307,7 +310,10 @@ def _self_test() -> None:
         )
         _require(result["result_candidate_count"] == 1, "fixture result count")
         _require(
-            any(str(row["retained_path"]).endswith(".tail.txt") for row in result["retained"]),
+            any(
+                str(row["retained_path"]).endswith(".tail.txt")
+                for row in result["retained"]
+            ),
             "fixture log was not bounded",
         )
         _require((output / "SHA256SUMS").is_file(), "fixture checksums missing")
@@ -331,7 +337,9 @@ def main() -> int:
     _require(args.artifact_root is not None, "--artifact-root is required")
     _require(args.output_root is not None, "--output-root is required")
     _require(args.run_metadata is not None, "--run-metadata is required")
-    metadata = json.loads(args.run_metadata.resolve(strict=True).read_text(encoding="utf-8"))
+    metadata = json.loads(
+        args.run_metadata.resolve(strict=True).read_text(encoding="utf-8")
+    )
     _require(isinstance(metadata, Mapping), "run metadata must be a JSON object")
     result = collect(args.artifact_root, args.output_root, metadata)
     print(
