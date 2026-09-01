@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import deform360_bound_replay_v8 as bound_replay
 import deform360_query_covariance_v7 as query_cov
 import numpy as np
 
@@ -167,6 +168,17 @@ def reproduce_exact_confirmation(
     frozen_root = frozen_root.resolve(strict=True)
     data_root = data_root.resolve(strict=True)
     reference, protocol_path, readiness_path = validate_artifact(artifact_root)
+    protocol = read_json(protocol_path)
+    readiness = read_json(readiness_path)
+    manifest = readiness["selection_manifest"]
+    expected_by_object = {str(row["object_id"]): row for row in manifest}
+    replay_audit = bound_replay.verify_bound_replay(
+        data_root,
+        protocol,
+        readiness,
+        reference,
+    )
+
     binding = reference["development_method_binding"]
     frozen_revision = str(binding["development_source_revision"])
     if git_output(frozen_root, "rev-parse", "HEAD") != frozen_revision:
@@ -183,13 +195,51 @@ def reproduce_exact_confirmation(
         confirmation_path, "deform360_untouched_confirmation_v5_exact_export"
     )
     original_validate = confirmation.validate_frozen_method
+    original_load_module = confirmation.load_module
     captures: list[dict[str, Any]] = []
 
+    def load_bound_control(path: Path, name: str) -> Any:
+        module = original_load_module(path, name)
+        if path.name == "audit_deform360_untouched_confirmation_v5.py":
+
+            def inspect_bound_object(
+                root: Path,
+                object_id: str,
+                minimum_episodes: int,
+            ) -> dict[str, Any]:
+                del root, minimum_episodes
+                expected = expected_by_object.get(str(object_id))
+                if expected is None:
+                    raise ValueError(f"object is outside the bound roster: {object_id}")
+                return bound_replay.inspection_from_bound_manifest(expected)
+
+            module.inspect_object = inspect_bound_object
+        return module
+
+    confirmation.load_module = load_bound_control
+
     def validate_and_intercept(
-        root: Path, protocol: dict[str, Any]
+        root: Path, frozen_protocol: dict[str, Any]
     ) -> tuple[Any, dict[str, Any], dict[str, Any]]:
-        v3, development, base_protocol = original_validate(root, protocol)
+        v3, development, base_protocol = original_validate(root, frozen_protocol)
         original_metrics = v3.base.probabilistic_metrics
+
+        def discover_bound_object(
+            current_root: Path,
+            object_id: str,
+            minimum_episodes: int,
+        ) -> list[Any]:
+            expected = expected_by_object.get(str(object_id))
+            if expected is None:
+                raise ValueError(f"object is outside the bound roster: {object_id}")
+            return bound_replay.build_bound_descriptors(
+                v3.base,
+                current_root,
+                expected,
+                minimum_episodes,
+            )
+
+        v3.base.discover_object = discover_bound_object
 
         def capture_metrics(
             errors: np.ndarray,
@@ -239,6 +289,7 @@ def reproduce_exact_confirmation(
         "reference": reference,
         "reproduced": reproduced,
         "captures": captures,
+        "bound_carrier_replay": replay_audit,
         "maximum_absolute_numeric_difference": maximum_difference,
         "confirmation_revision": CONFIRMATION_REVISION,
         "frozen_revision": frozen_revision,
@@ -250,4 +301,5 @@ def self_test() -> None:
         {"x": [1.0, True, "a"]},
         {"x": [1.0 + 1e-13, True, "a"]},
     )
+    bound_replay.self_test()
     print("exact Deform360 confirmation capture v7 self-test passed")
