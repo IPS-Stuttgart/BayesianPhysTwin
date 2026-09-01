@@ -1,4 +1,4 @@
-"""Contracts for the Deform360 decision-sufficient compression study."""
+"""Corrected contracts for decision-sufficient covariance compression."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ MODULE_PATH = (
     / "run_deform360_decision_sufficient_compression_v1.py"
 )
 SPEC = importlib.util.spec_from_file_location(
-    "deform360_decision_sufficient_compression_v1",
+    "deform360_decision_sufficient_compression_v1_fixed",
     MODULE_PATH,
 )
 assert SPEC is not None and SPEC.loader is not None
@@ -72,7 +72,7 @@ def test_scalar_query_needs_at_most_one_shared_factor() -> None:
     assert basis.shape[1] <= 1
     full = weight @ factor
     compressed = weight @ (factor @ basis)
-    assert np.sum(compressed**2) == np.testing.assert_allclose(
+    np.testing.assert_allclose(
         np.sum(compressed**2),
         np.sum(full**2),
         rtol=1e-11,

@@ -105,9 +105,7 @@ def array_digest(value: object) -> str:
     digest = hashlib.sha256()
     digest.update(array.dtype.str.encode("ascii"))
     digest.update(b"\0")
-    digest.update(
-        json.dumps(list(array.shape), separators=(",", ":")).encode("ascii")
-    )
+    digest.update(json.dumps(list(array.shape), separators=(",", ":")).encode("ascii"))
     digest.update(b"\0")
     digest.update(array.tobytes(order="C"))
     return digest.hexdigest()
@@ -169,7 +167,10 @@ def validate_protocol(
     ):
         if boundary.get(key) is not False:
             raise ValueError(f"forbidden change enabled: {key}")
-    if boundary.get("projection_uses_only_covariance_factor_and_registered_queries") is not True:
+    if (
+        boundary.get("projection_uses_only_covariance_factor_and_registered_queries")
+        is not True
+    ):
         raise ValueError("projection information boundary changed")
     if protocol.get("paper_claim_authorized") is not False:
         raise ValueError("protocol may not self-authorize a paper claim")
@@ -474,9 +475,7 @@ def run(
                 raw_variances,
                 event=event,
                 probability=float(original_evaluation["coverage_probability"]),
-                event_quantile=float(
-                    original_evaluation["event_threshold_quantile"]
-                ),
+                event_quantile=float(original_evaluation["event_threshold_quantile"]),
             )
             scalar_basis, scalar_singular = orthonormal_range(
                 factor.T @ np.asarray(weight, dtype=np.float64)[:, None],
@@ -485,9 +484,7 @@ def run(
             scalar_model = projected_model(v3.base, covariance, scalar_basis)
             per_query_rank = int(scalar_basis.shape[1])
             per_query_ranks.append(per_query_rank)
-            per_query_reductions.append(
-                float(factor.shape[1] / max(per_query_rank, 1))
-            )
+            per_query_reductions.append(float(factor.shape[1] / max(per_query_rank, 1)))
 
             models = {
                 "full_low_rank": covariance,
@@ -623,12 +620,7 @@ def run(
     representation_summary = {
         representation: {
             metric: float(
-                np.mean(
-                    [
-                        object_average(row, representation, metric)
-                        for row in rows
-                    ]
-                )
+                np.mean([object_average(row, representation, metric) for row in rows])
             )
             for metric in METRICS
         }
@@ -643,9 +635,7 @@ def run(
             repetitions=repetitions,
             seed=seed + index,
         )
-        for index, metric in enumerate(
-            ("decision_loss", "event_brier", "query_nll")
-        )
+        for index, metric in enumerate(("decision_loss", "event_brier", "query_nll"))
     }
 
     gates = {
@@ -707,9 +697,7 @@ def run(
             "median": float(np.median(all_per_query_reductions)),
             "maximum": float(np.max(all_per_query_reductions)),
         },
-        "portfolio_query_covariance_max_abs_error": (
-            max_portfolio_covariance_error
-        ),
+        "portfolio_query_covariance_max_abs_error": (max_portfolio_covariance_error),
         "per_query_variance_max_abs_error": max_query_variance_error,
         "registered_metric_max_abs_error": max_metric_error,
         "representation_summary": representation_summary,
@@ -793,9 +781,7 @@ def write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
                     "target_episode_id": row["target_episode_id"],
                     "target_action_family": row["target_action_family"],
                     "original_factor_rank": row["original_factor_rank"],
-                    "portfolio_sufficient_rank": row[
-                        "portfolio_sufficient_rank"
-                    ],
+                    "portfolio_sufficient_rank": row["portfolio_sufficient_rank"],
                     "portfolio_factor_entry_reduction": row[
                         "portfolio_factor_entry_reduction"
                     ],
