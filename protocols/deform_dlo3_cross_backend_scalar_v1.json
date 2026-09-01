@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo3-cross-backend-scalar-transport-v1",
+  "status": "frozen-before-scalar-transport-outcome-read",
+  "scientific_question": "If exact DEFORM coefficient magnitude does not transfer to PyElastica, does the unchanged high-dimensional residual field retain a transferable direction after only one cross-validated scalar amplitude?",
+  "parent": {
+    "protocol": "protocols/deform_dlo3_cross_backend_transfer_v1.json",
+    "direct_arm": "equal-seed-no-refit-transfer",
+    "direct_shrinkage": 0.25,
+    "seed_models": [
+      42,
+      43,
+      44
+    ]
+  },
+  "source_panel": {
+    "dataset": "DEFORM-DLO3",
+    "partition": "train/source_test",
+    "trajectory_count": 8,
+    "frame_count": 500,
+    "node_count": 12,
+    "statistical_unit": "complete-trajectory",
+    "source_outcomes_previously_opened": true,
+    "official_evaluation_read": false,
+    "interpretation": "retrospective-cross-validated-source-diagnostic"
+  },
+  "transport": {
+    "operator": "leave-one-complete-trajectory-out-pooled-least-squares-scalar-v1",
+    "base_correction": "equal-seed-DEFORM-no-refit-prediction-minus-raw-PyElastica",
+    "intercept": false,
+    "correction_field_refit": false,
+    "fold_specific_high_dimensional_parameters": false,
+    "minimum_scalar": 0.0,
+    "maximum_scalar": 4.0,
+    "selection_metric": "coordinate-l2-on-seven-training-trajectories",
+    "evaluation_metric": "mean-coordinate-l1-m-all-nodes",
+    "same_trajectory_excluded_from_scalar_fit": true
+  },
+  "evaluation": {
+    "comparators": [
+      "raw-pyelastica",
+      "direct-equal-seed-no-refit-transfer",
+      "pyelastica-specific-high-dimensional-source-refit"
+    ],
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20260901,
+    "bootstrap_interpretation": "descriptive-fixed-fold-predictions-over-complete-trajectories",
+    "directional_statistic": "complete-trajectory-cosine-between-transferred-and-true-residual"
+  },
+  "promotion_gate": {
+    "minimum_relative_improvement": 0.01,
+    "minimum_case_wins": 6,
+    "maximum_case_ratio": 1.1,
+    "minimum_positive_alignment_cases": 6,
+    "minimum_median_alignment": 0.05,
+    "minimum_positive_fold_scalars": 6,
+    "decision": "conjunctive-cross-validated-point-and-directional-gate"
+  },
+  "execution_priority": {
+    "blocking_run_id": 33361441865,
+    "required_blocking_run_terminal_before_dispatch": true,
+    "runner_label": "gpuserver4090",
+    "shared_concurrency_group_with_exact_transfer": "deform-dlo3-cross-backend-transfer-v1"
+  },
+  "information_boundary": {
+    "source_test_labels_used_in_other_folds": true,
+    "same_trajectory_label_used_for_its_scalar": false,
+    "pyelastica_high_dimensional_refit": false,
+    "deform_refit": false,
+    "target_side_high_dimensional_selection": false,
+    "dlo3_official_evaluation_read": false,
+    "dlo4_or_dlo5_read": false,
+    "held_v8_access": false,
+    "prob4d_used": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A positive result supports shared cross-backend residual geometry with one-dimensional amplitude recalibration on other complete source trajectories. It is explicitly weaker than exact no-refit coefficient transfer and is not fresh target confirmation, arbitrary-backend transfer, zero-shot object generalization, deployment safety, or state of the art."
+}
