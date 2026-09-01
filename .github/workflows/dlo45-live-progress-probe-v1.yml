@@ -1,0 +1,83 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Read-only DLO45 live progress probe
+
+on:
+  push:
+    branches:
+      - ops/dlo45-live-progress-probe-v1
+    paths:
+      - .github/workflows/dlo45-live-progress-probe-v1.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 10
+    steps:
+      - name: Query active gpuserver4090 DLO45 custody state read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=gpuserver4090
+          root=/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          echo "probe_started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          getent hosts "$target" || true
+
+          remote_script=$(cat <<'REMOTE'
+          set -euo pipefail
+          root=/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          echo "remote_host=$(hostname)"
+          echo "remote_time_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for dlo in dlo4 dlo5; do
+            progress="$root/${dlo}-target/alltrain/progress.json"
+            echo "--- ${dlo^^} target training progress ---"
+            if test -f "$progress"; then
+              cat "$progress"
+            else
+              echo '{"available":false}'
+            fi
+          done
+          echo "--- stage files ---"
+          for relative in \
+            joint/target_authorization.json \
+            dlo4-target/method_seal.json \
+            dlo5-target/method_seal.json \
+            dlo4-target/prediction_seal.json \
+            dlo5-target/prediction_seal.json \
+            joint/joint_prediction_seal.json \
+            score/result.json; do
+            if test -f "$root/$relative"; then
+              printf 'present %s bytes=%s mtime=%s\n' \
+                "$relative" \
+                "$(stat -c %s "$root/$relative")" \
+                "$(stat -c %y "$root/$relative")"
+            else
+              printf 'missing %s\n' "$relative"
+            fi
+          done
+          echo "--- active evaluator processes ---"
+          ps -eo pid=,etimes=,cmd= | grep 'experiments.deform_dlo45_frozen_v1.run predict' | grep -v grep || true
+          echo "--- GPUs ---"
+          nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits || true
+          REMOTE
+          )
+
+          ssh_options=(
+            -o BatchMode=yes
+            -o ConnectTimeout=8
+            -o ConnectionAttempts=1
+            -o StrictHostKeyChecking=accept-new
+            -o LogLevel=ERROR
+          )
+          for endpoint in "$target" "github-runner@$target" "florianpfaff@$target"; do
+            echo "trying_endpoint=$endpoint"
+            if ssh "${ssh_options[@]}" "$endpoint" bash -s <<<"$remote_script"; then
+              echo "probe_endpoint=$endpoint"
+              exit 0
+            fi
+          done
+          echo "No noninteractive SSH route from gpuserver6000 to gpuserver4090." >&2
+          exit 1
