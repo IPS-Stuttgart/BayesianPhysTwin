@@ -1,0 +1,386 @@
+# workflow-lifecycle: one-shot-retry
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 source gripper-mask smoke v3 retry1
+
+on:
+  push:
+    branches:
+      - science/deform360-icra-source-response-v1
+    paths:
+      - ".github/requests/deform360-source-gripper-mask-smoke-v3-retry1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-gripper-mask-smoke-v3
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-source-gripper-mask-smoke-v3-retry1.json
+  RAW_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/raw-repository
+  REQUESTED_PROCESSED_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360/processed-repository
+  STAGING_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1
+  SOURCE_OBJECT: 038-mat-cloth
+  SOURCE_EPISODE: "3"
+  SOURCE_EPISODE_ROOT: /mnt/seagate10tb/bayesian-phystwin-deform360-processed-v1/cross-action-source-v1/038-mat-cloth/episode_0003
+  IMPLEMENTATION_PATH: scripts/science/run_deform360_gripper_mask_smoke_v1.py
+  OFFICIAL_DEFORM360_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  YOURDFPY_REVISION: 4daf0991b409bf7eab4eefa3c344ab1e6004c588
+  SETUPTOOLS_VERSION: "80.9.0"
+  NUMPY_VERSION: "1.26.4"
+  OPENCV_CONTRIB_VERSION: "4.10.0.84"
+  HUGGINGFACE_HUB_VERSION: "0.27.1"
+  H5PY_VERSION: "3.12.1"
+  LXML_VERSION: "5.3.0"
+  SIX_VERSION: "1.17.0"
+  TRIMESH_VERSION: "5.1.0"
+  PYRENDER_VERSION: "0.1.45"
+  PYGLET_VERSION: "1.5.31"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  preflight:
+    name: Exact install and CPU-safe URDF contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_DEFORM360_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: clemense/yourdfpy
+          ref: ${{ env.YOURDFPY_REVISION }}
+          path: _yourdfpy_fixed
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Authorize one add-only retry request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/science/deform360-icra-source-response-v1
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          required = {
+              "schema": "deform360-source-gripper-mask-smoke-request-v3",
+              "request_id": "deform360-source-gripper-mask-smoke-20260902-v3-retry1",
+              "raw_root": os.environ["RAW_ROOT"],
+              "requested_processed_root": os.environ["REQUESTED_PROCESSED_ROOT"],
+              "staging_root": os.environ["STAGING_ROOT"],
+              "source_object": os.environ["SOURCE_OBJECT"],
+              "source_episode": int(os.environ["SOURCE_EPISODE"]),
+              "source_episode_root": os.environ["SOURCE_EPISODE_ROOT"],
+              "runner_label": "gpuserver4090",
+              "implementation_path": os.environ["IMPLEMENTATION_PATH"],
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "yourdfpy_revision": os.environ["YOURDFPY_REVISION"],
+              "setuptools_version": os.environ["SETUPTOOLS_VERSION"],
+              "numpy_version": os.environ["NUMPY_VERSION"],
+              "opencv_contrib_version": os.environ["OPENCV_CONTRIB_VERSION"],
+              "huggingface_hub_version": os.environ["HUGGINGFACE_HUB_VERSION"],
+              "h5py_version": os.environ["H5PY_VERSION"],
+              "lxml_version": os.environ["LXML_VERSION"],
+              "six_version": os.environ["SIX_VERSION"],
+              "trimesh_version": os.environ["TRIMESH_VERSION"],
+              "pyrender_version": os.environ["PYRENDER_VERSION"],
+              "pyglet_version": os.environ["PYGLET_VERSION"],
+              "kinematics_fix_contract": "yourdfpy-dict-and-numpy-scalar-fixes-v1",
+              "camera_selection": "lexicographically-first-aligned-camera",
+              "source_video_header_access_authorized": True,
+              "source_robot_payload_access_authorized": True,
+              "source_gripper_mask_smoke_authorized": True,
+              "persistent_source_gripper_mask_write_authorized": False,
+              "requested_processed_tree_write_authorized": False,
+              "target_directory_listing_authorized": False,
+              "target_numeric_access_authorized": False,
+              "target_scoring_authorized": False,
+              "fresh_confirmation_authorized": False,
+              "paper_claim_authorized": False,
+          }
+          if set(request) != set(required) | {"expected_source_revision"}:
+              raise SystemExit("request keys differ from the frozen retry contract")
+          for key, expected in required.items():
+              if request.get(key) != expected:
+                  raise SystemExit(f"request field {key!r} changed")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("request does not bind the exact workflow parent")
+          PY
+
+      - name: Install the pinned stack and test kinematics without a GL backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="${RUNNER_TEMP}/deform360-gripper-mask-v3-retry1-preflight"
+          log="${RUNNER_TEMP}/deform360-gripper-mask-v3-retry1-preflight.log"
+          python -m venv "${runtime}"
+          "${runtime}/bin/python" -m pip install --disable-pip-version-check \
+            "setuptools==${SETUPTOOLS_VERSION}" wheel > "${log}" 2>&1
+          "${runtime}/bin/python" -m pip install --disable-pip-version-check \
+            "${GITHUB_WORKSPACE}/_deform360_official[annotations]" \
+            "numpy==${NUMPY_VERSION}" \
+            "opencv-contrib-python==${OPENCV_CONTRIB_VERSION}" \
+            "huggingface-hub==${HUGGINGFACE_HUB_VERSION}" \
+            "h5py==${H5PY_VERSION}" \
+            "lxml==${LXML_VERSION}" \
+            "six==${SIX_VERSION}" \
+            "trimesh==${TRIMESH_VERSION}" \
+            "pyrender==${PYRENDER_VERSION}" \
+            "pyglet==${PYGLET_VERSION}" >> "${log}" 2>&1
+          "${runtime}/bin/python" -m pip install --disable-pip-version-check \
+            --force-reinstall --no-deps "${GITHUB_WORKSPACE}/_yourdfpy_fixed" \
+            >> "${log}" 2>&1
+          "${runtime}/bin/python" -m pip check >> "${log}" 2>&1
+          env -u PYOPENGL_PLATFORM "${runtime}/bin/python" - <<'PY'
+          import hashlib
+          import importlib
+          import importlib.metadata
+          import inspect
+          import json
+          import os
+
+          import yourdfpy
+          from deform360.processing.urdf_render import (
+              default_urdf_path,
+              opening_to_umi_joints,
+          )
+
+          for module in ("cv2", "h5py", "lxml", "numpy", "six", "trimesh", "yourdfpy"):
+              importlib.import_module(module)
+          source = inspect.getsource(yourdfpy.URDF._forward_kinematics_joint)
+          if "q.item()" not in source:
+              raise SystemExit("pinned yourdfpy lacks the NumPy scalar fix")
+          urdf_path = default_urdf_path()
+          model = yourdfpy.URDF.load(str(urdf_path), load_meshes=True)
+          model.update_cfg(opening_to_umi_joints(0.076))
+          print(json.dumps({
+              "urdf_load_and_dict_update_succeeded": True,
+              "forward_kinematics_source_sha256": hashlib.sha256(source.encode()).hexdigest(),
+              "pyrender_distribution": importlib.metadata.version("pyrender"),
+              "pyglet_distribution": importlib.metadata.version("pyglet"),
+              "yourdfpy_module": yourdfpy.__file__,
+              "urdf_path": str(urdf_path),
+          }, indent=2, sort_keys=True))
+          PY
+          python -m py_compile "${IMPLEMENTATION_PATH}"
+
+  smoke:
+    name: Fixed-kinematics UMI silhouette / gpuserver4090
+    needs: preflight
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    env:
+      PYOPENGL_PLATFORM: egl
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.OFFICIAL_DEFORM360_REVISION }}
+          path: _deform360_official
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: clemense/yourdfpy
+          ref: ${{ env.YOURDFPY_REVISION }}
+          path: _yourdfpy_fixed
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+
+      - name: Bind source and prepare evidence before provisioning
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${RAW_ROOT}")" = "${RAW_ROOT}"
+          test "$(realpath -e "${REQUESTED_PROCESSED_ROOT}")" = "${REQUESTED_PROCESSED_ROOT}"
+          test "$(realpath -e "${STAGING_ROOT}")" = "${STAGING_ROOT}"
+          test "$(realpath -e "${SOURCE_EPISODE_ROOT}")" = "${SOURCE_EPISODE_ROOT}"
+          test ! -w "${REQUESTED_PROCESSED_ROOT}"
+          test -f "${SOURCE_EPISODE_ROOT}/robot/robot.npz"
+          test -f "${SOURCE_EPISODE_ROOT}/undistorted_intrinsics.npy"
+          test -f "${SOURCE_EPISODE_ROOT}/extrinsics.npy"
+          test "$(git -C _deform360_official rev-parse HEAD)" = "${OFFICIAL_DEFORM360_REVISION}"
+          test "$(git -C _yourdfpy_fixed rev-parse HEAD)" = "${YOURDFPY_REVISION}"
+          evidence="${RUNNER_TEMP}/deform360-gripper-mask-v3-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          smoke="${RUNNER_TEMP}/deform360-gripper-mask-tree-v3-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime="${RUNNER_TEMP}/deform360-gripper-mask-venv-v3-retry1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${evidence}"
+          {
+            echo "EVIDENCE_ROOT=${evidence}"
+            echo "SMOKE_ROOT=${smoke}"
+            echo "GRIPPER_RUNTIME=${runtime}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Provision the exact renderer runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "${GRIPPER_RUNTIME}"
+          "${GRIPPER_RUNTIME}/bin/python" -m pip install --disable-pip-version-check \
+            "setuptools==${SETUPTOOLS_VERSION}" wheel \
+            > "${EVIDENCE_ROOT}/runtime-install.log" 2>&1
+          "${GRIPPER_RUNTIME}/bin/python" -m pip install --disable-pip-version-check \
+            "${GITHUB_WORKSPACE}/_deform360_official[annotations]" \
+            "numpy==${NUMPY_VERSION}" \
+            "opencv-contrib-python==${OPENCV_CONTRIB_VERSION}" \
+            "huggingface-hub==${HUGGINGFACE_HUB_VERSION}" \
+            "h5py==${H5PY_VERSION}" \
+            "lxml==${LXML_VERSION}" \
+            "six==${SIX_VERSION}" \
+            "trimesh==${TRIMESH_VERSION}" \
+            "pyrender==${PYRENDER_VERSION}" \
+            "pyglet==${PYGLET_VERSION}" \
+            >> "${EVIDENCE_ROOT}/runtime-install.log" 2>&1
+          "${GRIPPER_RUNTIME}/bin/python" -m pip install --disable-pip-version-check \
+            --force-reinstall --no-deps "${GITHUB_WORKSPACE}/_yourdfpy_fixed" \
+            >> "${EVIDENCE_ROOT}/runtime-install.log" 2>&1
+          "${GRIPPER_RUNTIME}/bin/python" -m pip check \
+            >> "${EVIDENCE_ROOT}/runtime-install.log" 2>&1
+          "${GRIPPER_RUNTIME}/bin/python" -m pip freeze \
+            > "${EVIDENCE_ROOT}/runtime-freeze.txt"
+
+      - name: Qualify fixed kinematics and render one scratch silhouette
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${GRIPPER_RUNTIME}/bin/python" - <<'PY'
+          import hashlib
+          import inspect
+          import json
+          import os
+          from pathlib import Path
+
+          import yourdfpy
+          from deform360.processing.urdf_render import default_urdf_path, opening_to_umi_joints
+
+          source = inspect.getsource(yourdfpy.URDF._forward_kinematics_joint)
+          if "q.item()" not in source:
+              raise SystemExit("pinned yourdfpy lacks the NumPy scalar fix")
+          urdf_path = default_urdf_path()
+          model = yourdfpy.URDF.load(str(urdf_path), load_meshes=True)
+          model.update_cfg(opening_to_umi_joints(0.076))
+          payload = {
+              "schema": "deform360-gripper-renderer-runtime-v3-retry1",
+              "official_deform360_revision": os.environ["OFFICIAL_DEFORM360_REVISION"],
+              "yourdfpy_revision": os.environ["YOURDFPY_REVISION"],
+              "yourdfpy_module": yourdfpy.__file__,
+              "forward_kinematics_source_sha256": hashlib.sha256(source.encode()).hexdigest(),
+              "urdf_path": str(urdf_path),
+              "urdf_load_and_dict_update_succeeded": True,
+          }
+          (Path(os.environ["EVIDENCE_ROOT"]) / "kinematics-qualification.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          "${GRIPPER_RUNTIME}/bin/python" "${IMPLEMENTATION_PATH}" \
+            --source-episode-root "${SOURCE_EPISODE_ROOT}" \
+            --source-object "${SOURCE_OBJECT}" \
+            --source-episode "${SOURCE_EPISODE}" \
+            --smoke-root "${SMOKE_ROOT}" \
+            --evidence-root "${EVIDENCE_ROOT}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --revision "${GITHUB_SHA}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+            --official-deform360-revision "${OFFICIAL_DEFORM360_REVISION}"
+
+      - name: Require a nonempty silhouette and closed target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          result = json.loads((evidence / "result.json").read_text())
+          if result["decision"] != "source-gripper-mask-runtime-qualified":
+              raise SystemExit(json.dumps(result.get("errors", []), indent=2))
+          if result["mask"].get("frames_nonempty", 0) < 1:
+              raise SystemExit("rendered silhouette is empty in every frame")
+          boundary = result["information_boundary"]
+          for key in (
+              "persistent_gripper_mask_written",
+              "requested_processed_tree_modified",
+              "target_directory_contents_listed",
+              "target_numeric_payload_opened",
+              "target_scoring_performed",
+              "paper_claim_authorized",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"closed boundary changed: {key}")
+          print(json.dumps({
+              "decision": result["decision"],
+              "mask": result["mask"],
+              "result_sha256": result["result_sha256"],
+          }, indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Publish summary
+        if: always() && env.EVIDENCE_ROOT != ''
+        shell: bash
+        run: test ! -f "${EVIDENCE_ROOT}/report.md" || cat "${EVIDENCE_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload evidence even when provisioning or rendering fails
+        if: always() && env.EVIDENCE_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-source-gripper-mask-v3-retry1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/runtime-install.log
+            ${{ env.EVIDENCE_ROOT }}/runtime-freeze.txt
+            ${{ env.EVIDENCE_ROOT }}/kinematics-qualification.json
+            ${{ env.EVIDENCE_ROOT }}/result.json
+            ${{ env.EVIDENCE_ROOT }}/report.md
+            ${{ env.REQUEST_PATH }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime and scratch
+        if: always()
+        shell: bash
+        run: rm -rf -- "${GRIPPER_RUNTIME:-}" "${SMOKE_ROOT:-}" "${EVIDENCE_ROOT:-}"
