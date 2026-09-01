@@ -70,7 +70,7 @@ def test_historical_key_is_retained_but_reader_facing_semantics_are_hybrid() -> 
         protocol["target_evaluation"]["primary_comparator"]
         == "matching-update-6400-physical-checkpoint"
     )
-    readme = README.read_text(encoding="utf-8")
+    readme = " ".join(README.read_text(encoding="utf-8").split())
     assert "source-closed retraining of the released DEFORM hybrid" in readme
     assert "This is not a bare-physics baseline" in readme
     assert "no authors-released pretrained DLO4/DLO5 checkpoint" in readme
