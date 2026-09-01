@@ -11,9 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 import deform360_query_covariance_v7 as query_cov
+import numpy as np
 
 CONFIRMATION_SCHEMA = "bayesian-phystwin/deform360-untouched-confirmation-result-v5"
 READINESS_SCHEMA = "bayesian-phystwin/deform360-untouched-readiness-v5"
