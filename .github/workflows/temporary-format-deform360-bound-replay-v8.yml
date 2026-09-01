@@ -50,6 +50,7 @@ jobs:
             scripts/science/deform360_exact_confirmation_capture_v7.py
             scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
           )
+          python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python scripts/science/run_deform360_bound_replay_audit_v8.py \
