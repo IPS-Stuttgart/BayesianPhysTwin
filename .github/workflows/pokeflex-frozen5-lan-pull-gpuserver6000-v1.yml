@@ -1,0 +1,504 @@
+name: PokeFlex frozen-five LAN pull and execution v1
+
+on:
+  push:
+    branches:
+      - ops/pokeflex-gpuserver6000-access-recovery-v2
+    paths:
+      - triggers/pokeflex-frozen5-lan-pull-gpuserver6000-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-frozen5-lan-pull-gpuserver6000-v1
+  cancel-in-progress: false
+
+jobs:
+  pull-and-execute:
+    name: Pull five sealed-input ZIPs over LAN and execute / gpuserver6000
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 1440
+    env:
+      REQUEST: triggers/pokeflex-frozen5-lan-pull-gpuserver6000-v1.json
+      MIRROR_ROOT: /home/github-runner/.cache/workflows/pokeflex-frozen5-mirror-gpuserver6000-v1
+      RUN_BASE: /home/github-runner/.cache/workflows/pokeflex-missing5-frozen-v6-gpuserver6000-lan-v1
+      ORCHESTRATOR: scripts/held/run_pokeflex_missing5_frozen_v6_workflow.sh
+      PYTHONHASHSEED: "0"
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - name: Check out exact LAN-transfer revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only transfer request
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ops/pokeflex-gpuserver6000-access-recovery-v2
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-frozen5-lan-pull-gpuserver6000-v1.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-frozen5-lan-pull-gpuserver6000-v1.json").read_text())
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-frozen5-lan-pull-request-v1",
+              "request_id": "pokeflex-frozen5-lan-pull-gpuserver6000-20260901-v1",
+              "source_server": "gpuserver4090",
+              "destination_runner_label": "gpuserver6000",
+              "source_roots": [
+                  "/mnt/seagate10tb/florianpfaff/datasets/pokeflex",
+                  "/home/github-runner/.cache/datasets/pokeflex",
+                  "/home/florianpfaff/datasets/pokeflex",
+              ],
+              "target_take_ids": [
+                  "Pillow_T8",
+                  "3dPrintedCylinder_T7",
+                  "3dPrintedHeart_T14",
+                  "Sponge_T10",
+                  "3dPrintedPizza_T13",
+              ],
+              "transfer_scope": "exact five registered ZIP archives only",
+              "decode_member_payload_during_transfer": False,
+              "execute_frozen_v5_v6_after_hash_verified_transfer": True,
+              "scientific_protocol_change": False,
+              "target_adaptation": False,
+              "replacement_allowed": False,
+          }
+          if request != expected:
+              raise SystemExit(f"transfer request changed: {request!r}")
+          PY
+
+      - name: Probe noninteractive LAN access to gpuserver4090
+        id: remote
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/pokeflex-frozen5-lan-pull-v1"
+          mkdir -p "$evidence"
+          echo "EVIDENCE_ROOT=$evidence" >> "$GITHUB_ENV"
+          run_root="$RUN_BASE/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "RUN_ROOT=$run_root" >> "$GITHUB_ENV"
+          known_hosts="$evidence/known_hosts"
+          touch "$known_hosts"
+          chmod 600 "$known_hosts"
+          echo "KNOWN_HOSTS=$known_hosts" >> "$GITHUB_ENV"
+
+          endpoints=(
+            github-runner@129.69.102.139
+            florianpfaff@129.69.102.139
+            github-runner@gpuserver4090
+            florianpfaff@gpuserver4090
+          )
+          selected_endpoint=""
+          selected_root=""
+          selected_probe=""
+          for endpoint in "${endpoints[@]}"; do
+            safe="${endpoint//@/_at_}"
+            safe="${safe//./_}"
+            probe="$evidence/probe-${safe}.json"
+            error="$evidence/probe-${safe}.stderr"
+            if timeout 30s ssh \
+              -o BatchMode=yes \
+              -o ConnectTimeout=8 \
+              -o ConnectionAttempts=1 \
+              -o StrictHostKeyChecking=accept-new \
+              -o UserKnownHostsFile="$known_hosts" \
+              "$endpoint" python3 - >"$probe" 2>"$error" <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          from pathlib import Path
+
+          roots = [
+              Path("/mnt/seagate10tb/florianpfaff/datasets/pokeflex"),
+              Path("/home/github-runner/.cache/datasets/pokeflex"),
+              Path("/home/florianpfaff/datasets/pokeflex"),
+          ]
+          targets = [
+              "Pillow_T8",
+              "3dPrintedCylinder_T7",
+              "3dPrintedHeart_T14",
+              "Sponge_T10",
+              "3dPrintedPizza_T13",
+          ]
+          records = []
+          for root in roots:
+              row = {
+                  "path": str(root),
+                  "exists": root.is_dir(),
+                  "readable": os.access(root, os.R_OK | os.X_OK),
+                  "zip_count": 0,
+                  "total_zip_bytes": 0,
+                  "target_matches": {},
+                  "ready": False,
+              }
+              if row["exists"] and row["readable"]:
+                  try:
+                      zips = sorted(
+                          path for path in root.rglob("*")
+                          if path.is_file() and path.suffix.lower() == ".zip"
+                      )
+                      row["zip_count"] = len(zips)
+                      row["total_zip_bytes"] = sum(path.stat().st_size for path in zips)
+                      by_name = {}
+                      for path in zips:
+                          by_name.setdefault(path.name, []).append(path)
+                      target_total = 0
+                      for take in targets:
+                          matches = by_name.get(f"{take}.zip", [])
+                          row["target_matches"][take] = [
+                              {
+                                  "path": str(path),
+                                  "size_bytes": path.stat().st_size,
+                              }
+                              for path in matches
+                          ]
+                          target_total += sum(path.stat().st_size for path in matches)
+                      row["target_total_bytes"] = target_total
+                      row["ready"] = row["zip_count"] == 170 and all(
+                          len(row["target_matches"][take]) == 1 for take in targets
+                      )
+                  except Exception as exc:
+                      row["error"] = f"{type(exc).__name__}: {exc}"
+              records.append(row)
+          payload = {
+              "remote_user": os.environ.get("USER"),
+              "remote_hostname": os.uname().nodename,
+              "member_payload_decoded": False,
+              "target_geometry_decoded": False,
+              "records": records,
+          }
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          PY
+            then
+              root="$(python3 - "$probe" <<'PY'
+          import json
+          import sys
+          value = json.load(open(sys.argv[1]))
+          ready = [row for row in value["records"] if row.get("ready")]
+          print(ready[0]["path"] if ready else "")
+          PY
+          )"
+              if [[ -n "$root" ]]; then
+                selected_endpoint="$endpoint"
+                selected_root="$root"
+                selected_probe="$probe"
+                break
+              fi
+            fi
+          done
+
+          python3 - "$evidence/remote-selection.json" "$selected_endpoint" "$selected_root" "$selected_probe" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          output = Path(sys.argv[1])
+          payload = {
+              "schema": "bayesian-phystwin/pokeflex-frozen5-remote-selection-v1",
+              "selected_endpoint": sys.argv[2] or None,
+              "selected_root": sys.argv[3] or None,
+              "selected_probe": Path(sys.argv[4]).name if sys.argv[4] else None,
+              "member_payload_decoded": False,
+              "target_geometry_decoded": False,
+              "ready": bool(sys.argv[2] and sys.argv[3]),
+          }
+          output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+          print(json.dumps(payload, indent=2))
+          PY
+          test -n "$selected_endpoint"
+          test -n "$selected_root"
+          echo "endpoint=$selected_endpoint" >> "$GITHUB_OUTPUT"
+          echo "root=$selected_root" >> "$GITHUB_OUTPUT"
+          echo "REMOTE_ENDPOINT=$selected_endpoint" >> "$GITHUB_ENV"
+          echo "REMOTE_ROOT=$selected_root" >> "$GITHUB_ENV"
+
+      - name: Transfer and independently hash the exact five archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$MIRROR_ROOT"
+          chmod 750 "$MIRROR_ROOT"
+          wrapper="$EVIDENCE_ROOT/ssh-wrapper"
+          cat >"$wrapper" <<'SH'
+          #!/usr/bin/env bash
+          exec ssh \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            -o ConnectionAttempts=2 \
+            -o ServerAliveInterval=20 \
+            -o ServerAliveCountMax=6 \
+            -o StrictHostKeyChecking=accept-new \
+            -o UserKnownHostsFile="$KNOWN_HOSTS" \
+            "$@"
+          SH
+          chmod 700 "$wrapper"
+          export KNOWN_HOSTS
+
+          target_total="$(python3 - "$EVIDENCE_ROOT/remote-selection.json" "$EVIDENCE_ROOT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          selection = json.load(open(sys.argv[1]))
+          probe = json.load(open(Path(sys.argv[2]) / selection["selected_probe"]))
+          row = next(item for item in probe["records"] if item["path"] == selection["selected_root"])
+          print(row["target_total_bytes"])
+          PY
+          )"
+          available="$(df --output=avail -B1 "$MIRROR_ROOT" | tail -n 1 | tr -d ' ')"
+          reserve=$((20 * 1024 * 1024 * 1024))
+          test "$available" -gt $((target_total + reserve))
+
+          takes=(
+            Pillow_T8
+            3dPrintedCylinder_T7
+            3dPrintedHeart_T14
+            Sponge_T10
+            3dPrintedPizza_T13
+          )
+          transfer_log="$EVIDENCE_ROOT/rsync.log"
+          : >"$transfer_log"
+          for take in "${takes[@]}"; do
+            remote_file="$REMOTE_ROOT/$take.zip"
+            rsync \
+              --archive \
+              --partial \
+              --append-verify \
+              --human-readable \
+              --info=progress2,stats2 \
+              --bwlimit=150000 \
+              --rsync-path='ionice -c3 nice -n 15 rsync' \
+              -e "$wrapper" \
+              "$REMOTE_ENDPOINT:$remote_file" \
+              "$MIRROR_ROOT/" \
+              >>"$transfer_log" 2>&1
+            test -s "$MIRROR_ROOT/$take.zip"
+            chmod 640 "$MIRROR_ROOT/$take.zip"
+          done
+
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          mirror = Path(os.environ["MIRROR_ROOT"])
+          endpoint = os.environ["REMOTE_ENDPOINT"]
+          root = os.environ["REMOTE_ROOT"]
+          wrapper = Path(os.environ["EVIDENCE_ROOT"]) / "ssh-wrapper"
+          takes = [
+              "Pillow_T8",
+              "3dPrintedCylinder_T7",
+              "3dPrintedHeart_T14",
+              "Sponge_T10",
+              "3dPrintedPizza_T13",
+          ]
+
+          def local_digest(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for block in iter(lambda: handle.read(4 * 1024 * 1024), b""):
+                      digest.update(block)
+              return digest.hexdigest()
+
+          rows = []
+          for take in takes:
+              remote_path = f"{root}/{take}.zip"
+              remote_line = subprocess.check_output(
+                  [str(wrapper), endpoint, "sha256sum", "--", remote_path],
+                  text=True,
+              ).strip()
+              remote_sha = remote_line.split()[0]
+              local_path = mirror / f"{take}.zip"
+              local_sha = local_digest(local_path)
+              if local_sha != remote_sha:
+                  raise SystemExit(f"post-transfer hash mismatch for {take}")
+              rows.append({
+                  "take_id": take,
+                  "remote_path": remote_path,
+                  "local_path": str(local_path),
+                  "size_bytes": local_path.stat().st_size,
+                  "sha256": local_sha,
+              })
+          payload = {
+              "schema": "bayesian-phystwin/pokeflex-frozen5-lan-transfer-manifest-v1",
+              "source_endpoint": endpoint,
+              "source_root": root,
+              "destination_root": str(mirror),
+              "transport": "rsync over noninteractive SSH with append verification",
+              "archive_member_payload_decoded": False,
+              "target_geometry_decoded": False,
+              "archive_count": len(rows),
+              "total_bytes": sum(row["size_bytes"] for row in rows),
+              "archives": rows,
+          }
+          canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+          payload["manifest_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+          out = Path(os.environ["EVIDENCE_ROOT"]) / "transfer-manifest.json"
+          out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+          print(json.dumps({
+              "archive_count": payload["archive_count"],
+              "total_bytes": payload["total_bytes"],
+              "manifest_sha256": payload["manifest_sha256"],
+          }, indent=2))
+          PY
+          ln -sfn "$MIRROR_ROOT" /home/github-runner/.cache/workflows/pokeflex-frozen5-current
+
+      - name: Prepare an operational subset wrapper without changing scientific code
+        shell: bash
+        run: |
+          set -euo pipefail
+          patched="$RUNNER_TEMP/run-pokeflex-frozen5-subset-v1.sh"
+          python3 - "$ORCHESTRATOR" "$patched" <<'PY'
+          from pathlib import Path
+          import sys
+
+          source = Path(sys.argv[1])
+          target = Path(sys.argv[2])
+          text = source.read_text()
+          old_count = '''zip_count="$(find "$DATASET_ROOT" -type f -iname '*.zip' -printf '.' | wc -c)"
+          if [[ "$zip_count" -ne 170 ]]; then
+            echo "expected 170 verified ZIPs, found $zip_count" >&2
+          '''
+          new_count = '''zip_count="$(find "$DATASET_ROOT" -type f -iname '*.zip' -printf '.' | wc -c)"
+          expected_zip_count="${EXPECTED_ZIP_COUNT:-170}"
+          if [[ "$zip_count" -ne "$expected_zip_count" ]]; then
+            echo "expected $expected_zip_count verified ZIPs, found $zip_count" >&2
+          '''
+          if text.count(old_count) != 1:
+              raise SystemExit("archive-count guard did not match exactly once")
+          text = text.replace(old_count, new_count)
+          old_gpu = '    local gpu=$((index % 2))\n'
+          new_gpu = '    local gpu=$((index % GPU_COUNT))\n'
+          if text.count(old_gpu) != 1:
+              raise SystemExit("GPU scheduling line did not match exactly once")
+          text = text.replace(old_gpu, new_gpu)
+          target.write_text(text)
+          PY
+          chmod 700 "$patched"
+          bash -n "$patched"
+          diff -u "$ORCHESTRATOR" "$patched" >"$EVIDENCE_ROOT/operational-wrapper.diff" || true
+          sha256sum "$ORCHESTRATOR" "$patched" >"$EVIDENCE_ROOT/operational-wrapper.sha256"
+          echo "PATCHED_ORCHESTRATOR=$patched" >> "$GITHUB_ENV"
+
+      - name: Execute the unchanged V5/V6 methods after the joint barrier
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find "$MIRROR_ROOT" -maxdepth 1 -type f -name '*.zip' | wc -l)" -eq 5
+          gpu_count="$(nvidia-smi -L | wc -l)"
+          test "$gpu_count" -ge 1
+          export GPU_COUNT="$gpu_count"
+          export EXPECTED_ZIP_COUNT=5
+          mkdir -p "$RUN_BASE"
+          test ! -e "$RUN_ROOT"
+          DATASET_ROOT="$MIRROR_ROOT" RUN_ROOT="$RUN_ROOT" \
+            bash "$PATCHED_ORCHESTRATOR"
+
+      - name: Publish bounded progress summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### PokeFlex frozen-five LAN pull"
+            echo
+            if [[ -f "${EVIDENCE_ROOT:-}/remote-selection.json" ]]; then
+              python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "remote-selection.json").read_text())
+          print(f"- Remote endpoint found: `{value['ready']}`")
+          print(f"- Source endpoint: `{value['selected_endpoint']}`")
+          print(f"- Source root: `{value['selected_root']}`")
+          PY
+            fi
+            if [[ -f "${EVIDENCE_ROOT:-}/transfer-manifest.json" ]]; then
+              python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads((Path(os.environ["EVIDENCE_ROOT"]) / "transfer-manifest.json").read_text())
+          print(f"- Hash-verified archives transferred: `{value['archive_count']}/5`")
+          print(f"- Transferred bytes: `{value['total_bytes']}`")
+          PY
+            fi
+            if [[ -f "${RUN_ROOT:-}/status.json" ]]; then
+              python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads((Path(os.environ["RUN_ROOT"]) / "status.json").read_text())
+          print(f"- Frozen execution stage: `{value['stage']}`")
+          print(f"- Target metric computed: `{value['target_metric_computed']}`")
+          PY
+            else
+              echo "- Frozen execution stage: `not started`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compact transfer and frozen-execution evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pokeflex-frozen5-lan-pull-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}
+            ${{ env.RUN_ROOT }}/status.json
+            ${{ env.RUN_ROOT }}/environment.txt
+            ${{ env.RUN_ROOT }}/manifest
+            ${{ env.RUN_ROOT }}/barriers
+            ${{ env.RUN_ROOT }}/results
+            ${{ env.RUN_ROOT }}/logs
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Enforce completed frozen result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$EVIDENCE_ROOT/remote-selection.json"
+          test -s "$EVIDENCE_ROOT/transfer-manifest.json"
+          test -s "$RUN_ROOT/status.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          selection = json.loads((evidence / "remote-selection.json").read_text())
+          transfer = json.loads((evidence / "transfer-manifest.json").read_text())
+          status = json.loads((Path(os.environ["RUN_ROOT"]) / "status.json").read_text())
+          assert selection["ready"] is True
+          assert selection["member_payload_decoded"] is False
+          assert transfer["archive_count"] == 5
+          assert transfer["archive_member_payload_decoded"] is False
+          assert transfer["target_geometry_decoded"] is False
+          assert status["stage"] == "complete", status
+          assert status["target_metric_computed"] is True, status
+          PY
