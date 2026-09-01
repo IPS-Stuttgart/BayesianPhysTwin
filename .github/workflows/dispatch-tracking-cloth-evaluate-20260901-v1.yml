@@ -1,0 +1,179 @@
+name: Dispatch Tracking Cloth evaluation 20260901 v1
+
+on:
+  push:
+    branches:
+      - ops/dispatch-tracking-cloth-evaluate-20260901-v1
+    paths:
+      - run_requests/tracking-cloth-evaluate-20260901-v1.json
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: dispatch-tracking-cloth-evaluate-20260901-v1
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Dispatch maintained real-data evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Validate one add-only request and dispatch main workflow
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          request=run_requests/tracking-cloth-evaluate-20260901-v1.json
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${request}"
+          mkdir -p dispatch-receipt
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          request_path = Path("run_requests/tracking-cloth-evaluate-20260901-v1.json")
+          request = json.loads(request_path.read_text(encoding="utf-8"))
+          expected = {
+              "schema": "bayesian-phystwin/tracking-cloth-dispatch-request-v1",
+              "request_id": "tracking-cloth-evaluate-20260901-v1",
+              "target_workflow": "tracking-cloth-evaluation.yml",
+              "target_ref": "main",
+              "mode": "evaluate",
+              "workers": "4",
+              "runner_label": "gpuserver4090",
+              "dataset_root": (
+                  "/home/github-runner/.cache/datasets/"
+                  "tracking-cloth-deformation-v1-zenodo-14644526"
+              ),
+              "authorize_target_scoring": True,
+              "paper_claim_authorized": False,
+              "evidence_class": (
+                  "retrospective public-real-data replication; "
+                  "no fresh-confirmation claim"
+              ),
+          }
+          if request != expected:
+              raise SystemExit(
+                  "request differs from frozen value:\n"
+                  + json.dumps({"actual": request, "expected": expected}, indent=2)
+              )
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          api_root = os.environ.get("GITHUB_API_URL", "https://api.github.com")
+          token = os.environ["GH_TOKEN"]
+          workflow = request["target_workflow"]
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "bayesian-phystwin-tracking-cloth-dispatch",
+          }
+
+          def api(method: str, path: str, payload: object | None = None):
+              data = None
+              if payload is not None:
+                  data = json.dumps(payload).encode("utf-8")
+              call = urllib.request.Request(
+                  api_root + path,
+                  data=data,
+                  headers=headers,
+                  method=method,
+              )
+              try:
+                  with urllib.request.urlopen(call, timeout=60) as response:
+                      raw = response.read()
+              except urllib.error.HTTPError as error:
+                  detail = error.read().decode("utf-8", errors="replace")
+                  raise SystemExit(f"GitHub API {method} {path} failed: {error.code}: {detail}")
+              return json.loads(raw) if raw else None
+
+          query = urllib.parse.urlencode(
+              {"event": "workflow_dispatch", "branch": "main", "per_page": 50}
+          )
+          runs_path = f"/repos/{repository}/actions/workflows/{workflow}/runs?{query}"
+          before = api("GET", runs_path)
+          before_ids = {int(item["id"]) for item in before.get("workflow_runs", [])}
+
+          api(
+              "POST",
+              f"/repos/{repository}/actions/workflows/{workflow}/dispatches",
+              {
+                  "ref": request["target_ref"],
+                  "inputs": {
+                      "mode": request["mode"],
+                      "workers": request["workers"],
+                  },
+              },
+          )
+
+          spawned = None
+          deadline = time.monotonic() + 180.0
+          while time.monotonic() < deadline:
+              current = api("GET", runs_path)
+              candidates = [
+                  item
+                  for item in current.get("workflow_runs", [])
+                  if int(item["id"]) not in before_ids
+                  and item.get("head_branch") == request["target_ref"]
+              ]
+              if candidates:
+                  candidates.sort(key=lambda item: item["created_at"], reverse=True)
+                  spawned = candidates[0]
+                  break
+              time.sleep(5.0)
+          if spawned is None:
+              raise SystemExit("dispatch accepted but no new workflow run became visible")
+
+          receipt = {
+              "schema_version": 1,
+              "request": request,
+              "dispatcher_repository": repository,
+              "dispatcher_sha": os.environ["GITHUB_SHA"],
+              "downstream_run": {
+                  "id": int(spawned["id"]),
+                  "run_number": int(spawned["run_number"]),
+                  "status": spawned.get("status"),
+                  "conclusion": spawned.get("conclusion"),
+                  "head_sha": spawned.get("head_sha"),
+                  "head_branch": spawned.get("head_branch"),
+                  "html_url": spawned.get("html_url"),
+                  "created_at": spawned.get("created_at"),
+              },
+          }
+          Path("dispatch-receipt/receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload dispatch receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-evaluate-dispatch-${{ github.run_id }}
+          path: dispatch-receipt
+          if-no-files-found: warn
+          retention-days: 30
