@@ -82,17 +82,20 @@ def load_source_meta_protocol(path: str | Path) -> dict[str, object]:
         evaluation.get("statistical_unit") != "complete-source-test-trajectory"
         or evaluation.get("aggregation")
         != "resample-eight-trajectories-within-each-dlo-then-pool-equally"
-        or _as_int(evaluation.get("bootstrap_repetitions"), label="bootstrap repetitions")
+        or _as_int(
+            evaluation.get("bootstrap_repetitions"), label="bootstrap repetitions"
+        )
         != 10000
-        or _as_int(evaluation.get("bootstrap_seed"), label="bootstrap seed")
-        != 20260901
+        or _as_int(evaluation.get("bootstrap_seed"), label="bootstrap seed") != 20260901
         or evaluation.get("primary_metric")
         != "pooled-mean-coordinate-l1-relative-improvement"
         or evaluation.get("decision_rule") != "both-original-source-gates-passed"
     ):
         raise ValueError("source meta-analysis evaluation changed")
 
-    boundary = _mapping(payload.get("information_boundary"), label="information boundary")
+    boundary = _mapping(
+        payload.get("information_boundary"), label="information boundary"
+    )
     if (
         boundary.get("source_outcomes_already_opened") is not True
         or boundary.get("meta_analysis_frozen_before_target_outcome") is not True
@@ -282,9 +285,7 @@ def _stratified_bootstrap(
     rng = np.random.default_rng(seed)
     absolute = np.empty(repetitions, dtype=np.float64)
     relative = np.empty(repetitions, dtype=np.float64)
-    per_dlo_relative = {
-        dlo: np.empty(repetitions, dtype=np.float64) for dlo in DLOS
-    }
+    per_dlo_relative = {dlo: np.empty(repetitions, dtype=np.float64) for dlo in DLOS}
     for draw in range(repetitions):
         baselines = []
         candidates = []
@@ -297,8 +298,8 @@ def _stratified_bootstrap(
             sampled_candidate = candidate[indices]
             baselines.append(sampled_baseline)
             candidates.append(sampled_candidate)
-            per_dlo_relative[dlo][draw] = (
-                1.0 - np.mean(sampled_candidate) / np.mean(sampled_baseline)
+            per_dlo_relative[dlo][draw] = 1.0 - np.mean(sampled_candidate) / np.mean(
+                sampled_baseline
             )
         pooled_baseline = np.concatenate(baselines)
         pooled_candidate = np.concatenate(candidates)
@@ -390,9 +391,7 @@ def evaluate_source_meta_analysis(
                     "name": name,
                     "baseline_l1_m": float(baseline[index]),
                     "candidate_l1_m": float(candidate[index]),
-                    "absolute_improvement_m": float(
-                        baseline[index] - candidate[index]
-                    ),
+                    "absolute_improvement_m": float(baseline[index] - candidate[index]),
                     "candidate_to_baseline_ratio": float(
                         candidate[index] / baseline[index]
                     ),
