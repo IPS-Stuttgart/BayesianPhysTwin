@@ -53,10 +53,18 @@ CANONICAL_PARENT_LIBRARY_PATH = (
 def _configure_methods() -> None:
     method_v4.COUNTS["calibration"] = 128
     method_v4.COUNTS["evaluation"] = WORLD_COUNT
-    method_v4.WORLD_SEEDS["calibration"] = WORLD_SEEDS["dlolab_slingshot_v4"] - 1
-    method_v4.WORLD_SEEDS["evaluation"] = WORLD_SEEDS["dlolab_slingshot_v4"]
-    method_v4.SENSOR_SEEDS["calibration"] = SENSOR_SEEDS["dlolab_slingshot_v4"] - 1
-    method_v4.SENSOR_SEEDS["evaluation"] = SENSOR_SEEDS["dlolab_slingshot_v4"]
+    world_seeds = WORLD_SEEDS["dlolab_slingshot_v4"]
+    sensor_seeds = SENSOR_SEEDS["dlolab_slingshot_v4"]
+    if isinstance(world_seeds, dict) and isinstance(sensor_seeds, dict):
+        method_v4.WORLD_SEEDS.update(world_seeds)
+        method_v4.SENSOR_SEEDS.update(sensor_seeds)
+    elif isinstance(world_seeds, int) and isinstance(sensor_seeds, int):
+        method_v4.WORLD_SEEDS["calibration"] = world_seeds - 1
+        method_v4.WORLD_SEEDS["evaluation"] = world_seeds
+        method_v4.SENSOR_SEEDS["calibration"] = sensor_seeds - 1
+        method_v4.SENSOR_SEEDS["evaluation"] = sensor_seeds
+    else:
+        raise ValueError("Slingshot calibration/evaluation seeds changed")
     method_v3.BOOTSTRAP_SEED = BOOTSTRAP_SEED + 1
     method_v3.BOOTSTRAP_REPLICATES = BOOTSTRAP_REPLICATES
 
