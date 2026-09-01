@@ -165,10 +165,10 @@ jobs:
         shell: bash
         env:
           DATASET_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/dataset
-          OUTPUT_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output
+          RECEIPT_PATH: ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/archive_transport.json
         run: |
           set -euo pipefail
-          mkdir -p "$DATASET_PATH" "$OUTPUT_PATH"
+          mkdir -p "$DATASET_PATH"
           archive="$DATASET_PATH/tracking_dataset.zip"
           curl --fail --location --retry 5 --retry-all-errors \
             --connect-timeout 30 "$ARCHIVE_URL" --output "$archive"
@@ -199,8 +199,9 @@ jobs:
               ],
               "numeric_trajectory_values_read": False,
           }
-          target = Path(os.environ["OUTPUT_PATH"]) / "archive_transport.json"
-          target.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+          Path(os.environ["RECEIPT_PATH"]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
           PY
           printf '%s  %s\n' "$ARCHIVE_MD5" "$archive" \
             | md5sum --check --strict
@@ -236,11 +237,13 @@ jobs:
           test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/run.py")" = "$(git rev-parse "HEAD:experiments/tracking_cloth_selective_twin_v1/run.py")"
           test "$(git rev-parse "$SCIENTIFIC_SOURCE_REVISION:experiments/tracking_cloth_selective_twin_v1/protocol.json")" = "$(git rev-parse "HEAD:experiments/tracking_cloth_selective_twin_v1/protocol.json")"
           root="$RUNNER_TEMP/tracking-cloth-hosted-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$root/output"
           python -m experiments.tracking_cloth_selective_twin_v1.run \
             --dataset-root "$root/dataset" \
-            --output "$root/output"
+            --output "$output"
+          cp "$root/archive_transport.json" "$output/archive_transport.json"
           REQUEST_PATH="$GITHUB_WORKSPACE/$REQUEST_PATH" \
-          OUTPUT_PATH="$root/output/evaluation_request.json" \
+          OUTPUT_PATH="$output/evaluation_request.json" \
           python - <<'PY'
           import hashlib
           import json
@@ -286,6 +289,7 @@ jobs:
         with:
           name: tracking-cloth-selective-twin-hosted-zenodo-v1-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/archive_transport.json
             ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/*.json
             ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/*.csv
             ${{ runner.temp }}/tracking-cloth-hosted-${{ github.run_id }}-${{ github.run_attempt }}/output/report.md
