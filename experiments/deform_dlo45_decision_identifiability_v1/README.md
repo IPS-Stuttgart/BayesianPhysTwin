@@ -59,21 +59,35 @@ The target result reports:
 The primary comparison is certificate versus exact fallback. Point comparators
 are diagnostics, not alternative certified methods.
 
-## Reproducible workflow
+## Reproducible one-shot execution
 
-The GitHub Actions workflow is triggered only by a change to:
+The completed GitHub Actions launcher was authorized by the checked-in request:
 
 ```text
 .github/requests/deform-dlo45-decision-identifiability-v1.json
 ```
 
-The official public DEFORM repository is pinned to commit
-`b73b8b8ecc033caefa693fab7898741d4e6dbeff`. The source job receives sparse
-checkouts of only `DLO4/train` and `DLO5/train`; the target job receives sparse
-checkouts of only `DLO4/eval` and `DLO5/eval`. Both jobs run with Python 3.12,
-NumPy 2.2.6, deterministic thread limits, and content-addressed source artifacts.
+The official public DEFORM repository was pinned to commit
+`b73b8b8ecc033caefa693fab7898741d4e6dbeff`. The source job received sparse
+checkouts of only `DLO4/train` and `DLO5/train`; the target job received sparse
+checkouts of only `DLO4/eval` and `DLO5/eval`. Both jobs used Python 3.12,
+NumPy 2.2.6, deterministic thread limits, and a content-addressed source
+artifact.
 
-The complete one-shot run is GitHub Actions run `33473378340`. Its compact
+The launcher completed its one-shot purpose and is now retained byte-for-byte as
+an inactive historical entry at:
+
+```text
+archive/github-actions/retired-one-shot-v1/
+  deform-dlo45-decision-identifiability.yml
+```
+
+Restoring that file to `.github/workflows` is not an authorized rerun. A future
+rerun requires a separately reviewed request and custody decision. The source
+and target commands remain directly reproducible from the pinned protocol and
+public-data commit.
+
+The complete one-shot execution is GitHub Actions run `33473378340`. Its compact
 result artifact has SHA-256 digest
 `588e006efe45d5f6bbc5459f9f031a4c4f92c28aaaf4004ef4c0d5c85eba5663`.
 The committed evidence is under:
