@@ -1,0 +1,383 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: PokeFlex object-identity placebo / gpuserver4090
+
+on:
+  push:
+    branches:
+      - science/pokeflex-object-identity-placebo-gpuserver4090-v1
+    paths:
+      - triggers/pokeflex-object-identity-placebo-gpuserver4090-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-object-identity-placebo-gpuserver4090-v1
+  cancel-in-progress: false
+
+env:
+  REQUEST: triggers/pokeflex-object-identity-placebo-gpuserver4090-v1.json
+  PROTOCOL: protocols/pokeflex_object_identity_placebo_v1.json
+  SCRIPT: scripts/science/run_pokeflex_object_identity_placebo_v1.py
+  ZIP_ROOT: /mnt/seagate10tb/florianpfaff/datasets/pokeflex
+  PREDICTION_ROOT: /home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2
+  OUTPUT_BASE: /home/github-runner/.cache/workflows/pokeflex-object-identity-placebo-gpuserver4090-v1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Validate unchanged scientific protocol and one-file request
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Require one add-only execution request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/science/pokeflex-object-identity-placebo-gpuserver4090-v1
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-object-identity-placebo-gpuserver4090-v1.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          value = json.loads(Path("triggers/pokeflex-object-identity-placebo-gpuserver4090-v1.json").read_text())
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-placebo-execution-request-v1",
+              "request_id": "pokeflex-object-identity-placebo-gpuserver4090-20260901-v1",
+              "runner_label": "gpuserver4090",
+              "zip_root": "/mnt/seagate10tb/florianpfaff/datasets/pokeflex",
+              "prediction_root": "/home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2",
+              "zip_count": 170,
+              "zip_crc_audit_passed": True,
+              "scientific_protocol_changed": False,
+              "model_refit": False,
+              "new_prediction": False,
+              "target_rescoring": "retrospective-exact-randomization-diagnostic",
+              "prior_queued_run_id": 33435908914,
+              "paper_claim_authorized": False,
+          }
+          if value != expected:
+              raise SystemExit(f"execution request changed: {value!r}")
+          PY
+
+      - name: Validate the registered implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "numpy==2.2.6" "scipy==1.15.2" "trimesh==4.6.4" "ruff==0.16.5"
+          python -m py_compile "$SCRIPT"
+          python -m ruff check --ignore B023 "$SCRIPT"
+          python "$SCRIPT" self-test
+          python -m json.tool "$PROTOCOL" >/dev/null
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  evidence:
+    name: Exact 51,480-allocation real-data diagnostic / gpuserver4090
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 720
+    steps:
+      - name: Admit the assigned runner and bind immutable inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test -d "$ZIP_ROOT"
+          test -d "$PREDICTION_ROOT"
+          zip_count="$(find "$ZIP_ROOT" -type f -iname '*.zip' -printf '.' | wc -c)"
+          test "$zip_count" -eq 170
+          seal_count="$(find "$PREDICTION_ROOT" -type f -name seal.json -printf '.' | wc -c)"
+          test "$seal_count" -ge 13
+          run_root="$OUTPUT_BASE/$GITHUB_SHA/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$run_root"
+          mkdir -p "$run_root/extracted" "$run_root/output" "$run_root/logs"
+          {
+            echo "RUN_ROOT=$run_root"
+            echo "EXTRACT_ROOT=$run_root/extracted"
+            echo "EVIDENCE_OUTPUT=$run_root/output"
+            echo "RUNTIME_PROTOCOL=$GITHUB_WORKSPACE/_runtime_pokeflex_placebo/protocol.json"
+          } >> "$GITHUB_ENV"
+
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve the retained numerical environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          science_python=""
+          for candidate in \
+            "$PREDICTION_ROOT/venv/bin/python" \
+            "$PREDICTION_ROOT/.venv/bin/python" \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "$candidate" ]] && \
+               "$candidate" -c 'import numpy, scipy, trimesh' >/dev/null 2>&1; then
+              science_python="$candidate"
+              break
+            fi
+          done
+          if [[ -z "$science_python" ]]; then
+            python3 -m venv "$RUN_ROOT/venv"
+            "$RUN_ROOT/venv/bin/python" -m pip install \
+              "numpy==2.2.6" "scipy==1.15.2" "trimesh==4.6.4"
+            science_python="$RUN_ROOT/venv/bin/python"
+          fi
+          echo "SCIENCE_PYTHON=$science_python" >> "$GITHUB_ENV"
+          {
+            echo "runner_name=$RUNNER_NAME"
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            echo "github_sha=$GITHUB_SHA"
+            echo "zip_root=$ZIP_ROOT"
+            echo "prediction_root=$PREDICTION_ROOT"
+            echo "science_python=$science_python"
+            "$science_python" --version
+            "$science_python" - <<'PY'
+          import numpy
+          import scipy
+          import trimesh
+          print(f"numpy={numpy.__version__}")
+          print(f"scipy={scipy.__version__}")
+          print(f"trimesh={trimesh.__version__}")
+          PY
+            df -h "$ZIP_ROOT" "$OUTPUT_BASE"
+          } | tee "$RUN_ROOT/environment.txt"
+
+      - name: Materialize only the registered target mesh frames from verified ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SCIENCE_PYTHON" - <<'PY' 2>&1 | tee "$RUN_ROOT/logs/extract-target-meshes.log"
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          repo = Path(os.environ["GITHUB_WORKSPACE"])
+          zip_root = Path(os.environ["ZIP_ROOT"])
+          extract_root = Path(os.environ["EXTRACT_ROOT"])
+          protocol_path = repo / os.environ["PROTOCOL"]
+          target_result_path = (
+              repo
+              / "results/sota/pokeflex_action_robust_official13_public_v1/target_result.json"
+          )
+          protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+          target_result = json.loads(target_result_path.read_text(encoding="utf-8"))
+          take_order = list(protocol["target_take_order"])
+          target_rows = {row["take_id"]: row for row in target_result["objects"]}
+          wanted = {
+              take: {f"mesh-f{int(frame['target_frame']):05d}.obj" for frame in target_rows[take]["frames"]}
+              for take in take_order
+          }
+          zip_paths = sorted(zip_root.rglob("*.zip"))
+          if len(zip_paths) != 170:
+              raise SystemExit(f"expected 170 ZIPs, found {len(zip_paths)}")
+
+          def norm(value: str) -> str:
+              return re.sub(r"[^a-z0-9]", "", value.lower())
+
+          take_norm = {take: norm(take) for take in take_order}
+          found: dict[tuple[str, str], dict[str, str]] = {}
+          for zip_index, zip_path in enumerate(zip_paths, start=1):
+              zip_stem = norm(zip_path.stem)
+              with zipfile.ZipFile(zip_path) as archive:
+                  for info in archive.infolist():
+                      if info.is_dir():
+                          continue
+                      member = info.filename.replace("\\", "/")
+                      filename = PurePosixPath(member).name
+                      possible = [take for take, files in wanted.items() if filename in files]
+                      if not possible:
+                          continue
+                      member_norm = norm(member)
+                      matches = [
+                          take
+                          for take in possible
+                          if take_norm[take] in member_norm or take_norm[take] in zip_stem
+                      ]
+                      if len(matches) != 1:
+                          continue
+                      take = matches[0]
+                      payload = archive.read(info)
+                      digest = hashlib.sha256(payload).hexdigest()
+                      key = (take, filename)
+                      previous = found.get(key)
+                      if previous is not None and previous["sha256"] != digest:
+                          raise SystemExit(f"non-identical duplicate for {take}/{filename}")
+                      destination = extract_root / take / "meshes" / filename
+                      destination.parent.mkdir(parents=True, exist_ok=True)
+                      if not destination.exists():
+                          destination.write_bytes(payload)
+                      found[key] = {
+                          "take_id": take,
+                          "filename": filename,
+                          "zip_path": str(zip_path),
+                          "member": info.filename,
+                          "sha256": digest,
+                          "byte_size": str(len(payload)),
+                      }
+              if zip_index % 20 == 0:
+                  print(f"scanned {zip_index}/170 ZIPs; materialized {len(found)} frames", flush=True)
+
+          expected = {(take, filename) for take, files in wanted.items() for filename in files}
+          missing = sorted(expected - set(found))
+          if missing:
+              raise SystemExit(f"missing {len(missing)} registered target meshes: {missing[:20]}")
+          manifest = {
+              "schema": "bayesian-phystwin/pokeflex-target-mesh-materialization-v1",
+              "zip_root": str(zip_root),
+              "zip_count": len(zip_paths),
+              "take_count": len(take_order),
+              "mesh_count": len(found),
+              "records": [found[key] for key in sorted(found)],
+          }
+          manifest_path = Path(os.environ["RUN_ROOT"]) / "target-mesh-materialization.json"
+          manifest_path.write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({k: manifest[k] for k in ("zip_count", "take_count", "mesh_count")}, indent=2))
+          PY
+
+      - name: Bind an execution-only protocol overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname "$RUNTIME_PROTOCOL")"
+          "$SCIENCE_PYTHON" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source = Path(os.environ["PROTOCOL"])
+          target = Path(os.environ["RUNTIME_PROTOCOL"])
+          value = json.loads(source.read_text(encoding="utf-8"))
+          value["runner_label"] = "gpuserver4090"
+          value["input_contract"]["scoring_root"] = os.environ["PREDICTION_ROOT"]
+          value["input_contract"]["dataset_search_roots"] = [
+              os.environ["EXTRACT_ROOT"],
+              os.environ["PREDICTION_ROOT"],
+              os.environ["ZIP_ROOT"],
+          ]
+          target.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+          cp "$RUNTIME_PROTOCOL" "$EVIDENCE_OUTPUT/execution_protocol.json"
+          cp "$REQUEST" "$EVIDENCE_OUTPUT/execution_request.json"
+
+      - name: Score the exact multiplier bank and enumerate all allocations
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SCIENCE_PYTHON" -m py_compile "$SCRIPT"
+          "$SCIENCE_PYTHON" "$SCRIPT" self-test
+          "$SCIENCE_PYTHON" "$SCRIPT" run \
+            --protocol "$RUNTIME_PROTOCOL" \
+            --output "$EVIDENCE_OUTPUT" \
+            --repository-revision "$GITHUB_SHA" \
+            2>&1 | tee "$RUN_ROOT/logs/placebo.log"
+          cp "$RUN_ROOT/environment.txt" "$EVIDENCE_OUTPUT/environment.txt"
+          cp "$RUN_ROOT/target-mesh-materialization.json" "$EVIDENCE_OUTPUT/target-mesh-materialization.json"
+          cp "$RUN_ROOT/logs/extract-target-meshes.log" "$EVIDENCE_OUTPUT/extract-target-meshes.log"
+          cp "$RUN_ROOT/logs/placebo.log" "$EVIDENCE_OUTPUT/execution.log"
+          sha256sum "$EVIDENCE_OUTPUT"/* > "$EVIDENCE_OUTPUT/ALL_FILES_SHA256SUMS"
+
+      - name: Publish the bounded result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### PokeFlex object-identity placebo on gpuserver4090"
+            echo
+            echo "- Runner: \`$RUNNER_NAME\` / \`gpuserver4090\`"
+            echo "- Revision: \`$GITHUB_SHA\`"
+            echo "- Raw ZIP count: \`170\`"
+            echo "- Model refit: \`false\`"
+            echo "- New prediction: \`false\`"
+            echo "- Target rescoring: \`retrospective\`"
+            if [[ -f "${EVIDENCE_OUTPUT:-}/result.json" ]]; then
+              "$SCIENCE_PYTHON" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["EVIDENCE_OUTPUT"]) / "result.json").read_text())
+          primary = result["primary"]
+          secondary = result["secondary"]
+          print(f"- Result ID: `{result['result_id']}`")
+          print(f"- Correct-assignment mean CD: `{primary['observed_object_balanced_CD_UL1_mm']:.9f} mm`")
+          print(f"- Global mean CD: `{primary['global_multiplier_1_object_balanced_CD_UL1_mm']:.9f} mm`")
+          print(f"- Exact randomization p-value: `{primary['exact_lower_tail_p_value']:.8f}`")
+          print(f"- Exact rank: `{primary['observed_rank_lower_is_better']}/{primary['allocation_count']}`")
+          print(f"- Relation specificity supported: `{primary['relation_specificity_supported_at_0_05']}`")
+          print(f"- Adjusted-object wins: `{secondary['adjusted_take_win_count_vs_global']}/{secondary['adjusted_take_count']}`")
+          PY
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pokeflex-object-identity-placebo-gpuserver4090-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_OUTPUT }}
+            ${{ env.RUN_ROOT }}/logs
+            ${{ env.RUN_ROOT }}/environment.txt
+            ${{ env.RUN_ROOT }}/target-mesh-materialization.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Enforce execution completeness, not a favorable outcome
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$EVIDENCE_OUTPUT/result.json"
+          test -s "$EVIDENCE_OUTPUT/report.md"
+          test -s "$EVIDENCE_OUTPUT/score_matrix.csv"
+          test -s "$EVIDENCE_OUTPUT/SHA256SUMS"
+          test -s "$EVIDENCE_OUTPUT/target-mesh-materialization.json"
+          rm -rf "$GITHUB_WORKSPACE/_runtime_pokeflex_placebo"
+          test -z "$(git status --porcelain --untracked-files=all)"
