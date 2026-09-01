@@ -17,14 +17,18 @@ jobs:
     runs-on: [self-hosted, Linux, X64, gpuserver6000]
     timeout-minutes: 10
     steps:
-      - name: Query active gpuserver4090 DLO45 custody state read-only
+      - name: Query active workstation1 DLO45 custody state read-only
         shell: bash
         run: |
           set -euo pipefail
-          target=gpuserver4090
-          root=/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
           echo "probe_started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          getent hosts "$target" || true
+          echo "local_host=$(hostname)"
+          echo "--- candidate resolution ---"
+          for host in workstation1 workstation1.local gpuserver4090; do
+            getent hosts "$host" || true
+          done
+          echo "--- SSH configuration aliases ---"
+          test ! -f "$HOME/.ssh/config" || sed -n 's/^[[:space:]]*[Hh]ost[[:space:]]\+//p' "$HOME/.ssh/config"
 
           remote_script=$(cat <<'REMOTE'
           set -euo pipefail
@@ -72,12 +76,18 @@ jobs:
             -o StrictHostKeyChecking=accept-new
             -o LogLevel=ERROR
           )
-          for endpoint in "$target" "github-runner@$target" "florianpfaff@$target"; do
-            echo "trying_endpoint=$endpoint"
-            if ssh "${ssh_options[@]}" "$endpoint" bash -s <<<"$remote_script"; then
-              echo "probe_endpoint=$endpoint"
-              exit 0
-            fi
+          hosts=(workstation1 workstation1.local gpuserver4090)
+          users=("" github-runner florianpfaff)
+          for host in "${hosts[@]}"; do
+            for user in "${users[@]}"; do
+              endpoint="$host"
+              test -z "$user" || endpoint="$user@$host"
+              echo "trying_endpoint=$endpoint"
+              if ssh "${ssh_options[@]}" "$endpoint" bash -s <<<"$remote_script"; then
+                echo "probe_endpoint=$endpoint"
+                exit 0
+              fi
+            done
           done
-          echo "No noninteractive SSH route from gpuserver6000 to gpuserver4090." >&2
+          echo "No noninteractive SSH route from gpuserver6000 to workstation1." >&2
           exit 1
