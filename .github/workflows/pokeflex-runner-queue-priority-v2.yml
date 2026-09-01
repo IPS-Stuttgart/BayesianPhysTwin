@@ -1,0 +1,256 @@
+name: Prioritize frozen PokeFlex five-target execution v2
+
+on:
+  push:
+    branches:
+      - ops/pokeflex-gpuserver6000-access-recovery-v2
+    paths:
+      - triggers/pokeflex-runner-queue-priority-v2.json
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  authorize:
+    name: Verify four older self-hosted jobs remain unopened
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      authorized: ${{ steps.verify.outputs.authorized }}
+    steps:
+      - name: Check out exact queue-priority revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require one add-only priority request
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ops/pokeflex-gpuserver6000-access-recovery-v2
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\ttriggers/pokeflex-runner-queue-priority-v2.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path("triggers/pokeflex-runner-queue-priority-v2.json").read_text())
+          expected = {
+              "schema": "bayesian-phystwin/pokeflex-runner-queue-priority-request-v2",
+              "request_id": "pokeflex-runner-queue-priority-20260901-v2",
+              "preserve": [
+                  {
+                      "run_id": 33361441865,
+                      "purpose": "protected DLO4/DLO5 target fit already in progress",
+                  },
+                  {
+                      "run_id": 33475220422,
+                      "purpose": "frozen prospective PokeFlex five-target V5/V6 execution",
+                  },
+              ],
+              "supersede": [
+                  {
+                      "run_id": 33363572071,
+                      "job_id": 99658993621,
+                      "concurrency_group": "deform360-real-evaluation-refs/heads/run/deform360-gpuserver4090-real-v1",
+                      "purpose": "older read-only Deform360 diagnostic",
+                      "target_payload_opened": False,
+                  },
+                  {
+                      "run_id": 33473574325,
+                      "job_id": 99748086182,
+                      "concurrency_group": "tracking-cloth-complete-real-20260901-v1",
+                      "purpose": "older Tracking Cloth complete replay",
+                      "target_payload_opened": False,
+                  },
+                  {
+                      "run_id": 33474012734,
+                      "job_id": 99749476050,
+                      "concurrency_group": "tracking-cloth-evaluation-workflow_dispatch-refs/heads/main",
+                      "purpose": "older read-only Tracking Cloth pilot",
+                      "target_payload_opened": False,
+                  },
+                  {
+                      "run_id": 33474698964,
+                      "job_id": 99751544803,
+                      "concurrency_group": "tracking-cloth-query-quotient-refs/heads/experiment/tracking-cloth-query-quotient-real-v1",
+                      "purpose": "older Tracking Cloth query-quotient evaluation",
+                      "target_payload_opened": False,
+                  },
+              ],
+              "cancel_current_dlo_run": False,
+              "cancel_frozen_pokeflex_run": False,
+              "scientific_protocol_change": False,
+              "delete_existing_evidence": False,
+          }
+          if request != expected:
+              raise SystemExit(f"queue-priority request changed: {request!r}")
+          PY
+
+      - name: Verify queued jobs have no assigned runner or executed steps
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/pokeflex-queue-priority-v2"
+          mkdir -p "$evidence"
+          python3 - "$evidence/verification.json" <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          output = Path(__import__("sys").argv[1])
+          repository = os.environ["GITHUB_REPOSITORY"]
+          api = os.environ["GITHUB_API_URL"]
+          token = os.environ["GH_TOKEN"]
+          targets = [
+              (33363572071, 99658993621),
+              (33473574325, 99748086182),
+              (33474012734, 99749476050),
+              (33474698964, 99751544803),
+          ]
+
+          def load(url: str) -> object:
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+
+          records = []
+          for run_id, job_id in targets:
+              run = load(f"{api}/repos/{repository}/actions/runs/{run_id}")
+              jobs = load(f"{api}/repos/{repository}/actions/runs/{run_id}/jobs?per_page=100")
+              selected = [job for job in jobs["jobs"] if int(job["id"]) == job_id]
+              if len(selected) != 1:
+                  raise SystemExit(f"expected one job {job_id} in run {run_id}")
+              job = selected[0]
+              record = {
+                  "run_id": run_id,
+                  "job_id": job_id,
+                  "run_status": run["status"],
+                  "run_conclusion": run["conclusion"],
+                  "job_status": job["status"],
+                  "job_conclusion": job["conclusion"],
+                  "runner_id": int(job.get("runner_id") or 0),
+                  "runner_name": job.get("runner_name") or "",
+                  "step_count": len(job.get("steps") or []),
+                  "labels": list(job.get("labels") or []),
+              }
+              if record["run_status"] != "queued":
+                  raise SystemExit(f"run changed state before supersession: {record}")
+              if record["job_status"] != "queued":
+                  raise SystemExit(f"job changed state before supersession: {record}")
+              if record["run_conclusion"] is not None or record["job_conclusion"] is not None:
+                  raise SystemExit(f"queued run already has a conclusion: {record}")
+              if record["runner_id"] != 0 or record["runner_name"] or record["step_count"] != 0:
+                  raise SystemExit(f"job is no longer unopened: {record}")
+              if "gpuserver4090" not in record["labels"]:
+                  raise SystemExit(f"job no longer targets gpuserver4090: {record}")
+              records.append(record)
+
+          preserved_dlo = load(f"{api}/repos/{repository}/actions/runs/33361441865")
+          preserved_pokeflex = load(f"{api}/repos/{repository}/actions/runs/33475220422")
+          if preserved_dlo["status"] != "in_progress":
+              raise SystemExit("protected DLO run is no longer in progress")
+          if preserved_pokeflex["status"] != "queued":
+              raise SystemExit("frozen PokeFlex run is no longer queued")
+
+          payload = {
+              "schema": "bayesian-phystwin/pokeflex-runner-queue-verification-v2",
+              "unopened_jobs": records,
+              "preserved_dlo_status": preserved_dlo["status"],
+              "preserved_pokeflex_status": preserved_pokeflex["status"],
+              "scientific_protocol_change": False,
+              "evidence_deleted": False,
+          }
+          output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          PY
+          echo 'authorized=true' >> "$GITHUB_OUTPUT"
+
+      - name: Upload pre-supersession verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pokeflex-runner-queue-priority-v2-${{ github.run_id }}
+          path: ${{ runner.temp }}/pokeflex-queue-priority-v2/verification.json
+          if-no-files-found: error
+          retention-days: 90
+
+  supersede:
+    name: Supersede unopened ${{ matrix.label }}
+    needs: authorize
+    if: needs.authorize.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Deform360 diagnostic
+            group: deform360-real-evaluation-refs/heads/run/deform360-gpuserver4090-real-v1
+            old_run_id: 33363572071
+          - label: Tracking Cloth complete replay
+            group: tracking-cloth-complete-real-20260901-v1
+            old_run_id: 33473574325
+          - label: Tracking Cloth read-only pilot
+            group: tracking-cloth-evaluation-workflow_dispatch-refs/heads/main
+            old_run_id: 33474012734
+          - label: Tracking Cloth query quotient
+            group: tracking-cloth-query-quotient-refs/heads/experiment/tracking-cloth-query-quotient-real-v1
+            old_run_id: 33474698964
+    concurrency:
+      group: ${{ matrix.group }}
+      cancel-in-progress: true
+    steps:
+      - name: Hold exact concurrency group until supersession is registered
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Superseding unopened lower-priority run ${{ matrix.old_run_id }}"
+          echo "Concurrency group: ${{ matrix.group }}"
+          sleep 20
+
+  record:
+    name: Record preserved prospective priority
+    needs: [authorize, supersede]
+    if: always() && needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Publish queue decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo '### gpuserver4090 prospective-run priority v2'
+            echo
+            echo '- Preserved active DLO4/DLO5 target fit: `33361441865`'
+            echo '- Preserved frozen PokeFlex run: `33475220422`'
+            echo '- Superseded unopened Deform360 diagnostic: `33363572071`'
+            echo '- Superseded unopened Tracking Cloth complete replay: `33473574325`'
+            echo '- Superseded unopened Tracking Cloth pilot: `33474012734`'
+            echo '- Superseded unopened Tracking Cloth query quotient: `33474698964`'
+            echo '- Scientific protocol changed: `false`'
+            echo '- Existing evidence deleted: `false`'
+          } >> "$GITHUB_STEP_SUMMARY"
