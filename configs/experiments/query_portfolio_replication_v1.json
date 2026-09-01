@@ -1,0 +1,61 @@
+{
+  "aggregation": "separate_equal_world_query_specific_estimands",
+  "allocation": {
+    "gain_family_alpha": 0.01,
+    "gain_per_query_alpha": 0.005,
+    "harm_family_alpha": 0.04,
+    "harm_per_query_alpha": 0.02
+  },
+  "cross_task_reward_pooling": false,
+  "design_diagnostics": {
+    "diagnostic_only": true,
+    "maximum_harmful_worlds_per_query": 8
+  },
+  "fallback": "exact_registered_incumbent",
+  "fresh_worlds": true,
+  "frozen_component_policies": {
+    "dlolab_slingshot_v4": {
+      "policy": "policy_gain_guard",
+      "source_evidence_id": "2882809b7265714a93be2d3f1455eeac527adbe681cc990cde762777fcaf3a85"
+    },
+    "dlolab_wrapping_v9": {
+      "policy": "posterior_975_guard",
+      "source_evidence_id": "d3c577ce1ec215c6d56c4d405e7f9d886f38b7e6d021bb6d62f37da6bd4784b9"
+    }
+  },
+  "gain_test": {
+    "bootstrap": "world_level_percentile_lower_bound",
+    "estimand": "query_specific_mean_reward_gain_over_exact_fallback",
+    "pass": "lower_bound_strictly_greater_than_zero_for_both_queries",
+    "replicates": 100000,
+    "seed": 263100
+  },
+  "harm_test": {
+    "budget": 0.05,
+    "event": "gain_strictly_below_negative_reward_margin",
+    "pass": "upper_bound_at_most_budget_for_both_queries",
+    "upper_bound": "one_sided_clopper_pearson"
+  },
+  "joint_claim_confidence": 0.95,
+  "outcomes_opened": false,
+  "overall_alpha": 0.05,
+  "protocol_id": "e3bdcc3cc9b837d29704fa2144b86e0e5d1363cfaeb4ea9f1a13b3e8efcf0e9e",
+  "queries": [
+    "dlolab_wrapping_v9",
+    "dlolab_slingshot_v4"
+  ],
+  "reward_margin": 0.002,
+  "role": "prospective_two_query_public_simulator_replication",
+  "schema": "bayesian_phystwin.query_portfolio_replication",
+  "sensor_seeds": {
+    "dlolab_slingshot_v4": 263104,
+    "dlolab_wrapping_v9": 263103
+  },
+  "technical_failure_policy": "terminal_failure_no_replacement_no_partial_claim",
+  "version": 1,
+  "world_seeds": {
+    "dlolab_slingshot_v4": 263102,
+    "dlolab_wrapping_v9": 263101
+  },
+  "worlds_per_query": 320
+}
