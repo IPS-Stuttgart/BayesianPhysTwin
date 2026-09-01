@@ -1,0 +1,122 @@
+{
+  "admission_thresholds_mm": [
+    -10.0,
+    -7.5,
+    -5.0,
+    -2.5,
+    0.0,
+    2.5,
+    5.0
+  ],
+  "arm_semantics": {
+    "bayesian_physics": "source-weighted spring-bank posterior mean",
+    "last_residual": "nominal spring forecast plus the last observed prefix residual outside simulator state",
+    "persistence": "exact prefix-end persistence"
+  },
+  "bootstrap_repetitions": 20000,
+  "bootstrap_seed": 14644529,
+  "bootstrap_unit": "material",
+  "candidate_arms": [
+    "bayesian_physics",
+    "last_residual"
+  ],
+  "claim_boundary": "Retrospective nested cross-material evidence that observable task context can route among persistence, a Bayesian spring-bank mean, and a last-prefix-residual correction. It can establish held-out-material predictive complementarity on the already-open public Tracking Cloth free-hanging factorial. It cannot establish fresh physical confirmation, unseen-material or unseen-action generalization, causal intervention value, calibrated joint uncertainty, deployment safety, universal simulator validity, or state of the art.",
+  "comparators": [
+    "always_fallback",
+    "v1_query_horizon_gate",
+    "nested_physics_only",
+    "nested_residual_only",
+    "nested_triage_drop_last_residual",
+    "nested_triage_drop_bayesian_physics",
+    "outcome_oracle"
+  ],
+  "dataset_record": "14644526",
+  "fallback_arm": "persistence",
+  "feature_outcome_boundary": {
+    "future_driven_corner_trajectory_used_by_candidate_generation": true,
+    "future_free_marker_outcome_used": false,
+    "heldout_material_used_for_fit_or_threshold_selection": false,
+    "material_identity_used_as_model_feature": false
+  },
+  "features": [
+    "motion-query-horizon joint category",
+    "speed",
+    "grasp",
+    "cloth size"
+  ],
+  "information_boundary": {
+    "fresh_confirmation": false,
+    "future_free_marker_outcomes_used_as_features": false,
+    "heldout_material_outcomes_used_for_its_fit_or_inner_selection": false,
+    "material_identity_used_as_feature": false,
+    "paper_claim_authorized": false,
+    "prior_target_exposure": true,
+    "raw_trajectory_upload": false,
+    "retrospective_model_development": true,
+    "same_specimen_shaking_outcomes_used_to_fit_twist_simulator_weights": true
+  },
+  "inner_selection": {
+    "maximum_practical_harm_fraction": 0.1,
+    "minimum_selected_coverage": 0.2,
+    "no_feasible_candidate_policy": "retain best safe below-coverage diagnostic and mark inner_feasible false",
+    "objective": "maximum equal-material loss reduction versus persistence",
+    "require_exact_fallback": true,
+    "require_nonpositive_mean_regret_in_each_inner_heldout_material": true,
+    "tie_breaking": [
+      "lower practical harm",
+      "higher coverage",
+      "ridge alpha closest to one",
+      "threshold closest to zero"
+    ]
+  },
+  "inner_split": "leave-one-material-out-within-each-outer-training-set",
+  "materials": [
+    "cotton",
+    "denim",
+    "polyester",
+    "wool"
+  ],
+  "outer_split": "leave-one-material-out",
+  "parent_evidence": {
+    "interpretation": "All 64 free-hanging outcomes were open before v2 design.",
+    "result_id": "25ab847afd8e4a90eef19c2a48cd4c257fe6bf88f6159f617ed5119fec7fa26f",
+    "scientific_source_revision": "e9fd0fc35c534db867831c124b46e495e5eb3e57",
+    "study": "tracking-cloth-selective-digital-twin-retrospective-v1",
+    "workflow_run_id": "33518742754"
+  },
+  "primary_policy": "nested_triage",
+  "regret_models": {
+    "family": "dense one-hot ridge with unpenalized intercept",
+    "joint_multioutput_fit": true,
+    "ridge_alphas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0
+    ],
+    "targets": [
+      "bayesian_physics minus persistence query RMSE",
+      "last_residual minus persistence query RMSE"
+    ]
+  },
+  "retrospective_progress_criteria": {
+    "interpretation": "Descriptive progress criteria fixed for exact rerun after all outcomes were already open; not a prospective confirmation gate.",
+    "maximum_practical_harm_fraction": 0.1,
+    "minimum_selected_coverage": 0.2,
+    "require_all_heldout_materials_improve": true,
+    "require_all_outer_folds_inner_feasible": true,
+    "require_negative_equal_material_regret": true,
+    "require_negative_material_bootstrap_upper_95": true,
+    "require_negative_material_bootstrap_upper_95_against_each_locked_drop_one_expert_ablation": true,
+    "require_zero_exact_fallback_violations": true
+  },
+  "ridge_alphas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0
+  ],
+  "schema": "bayesian-phystwin.tracking-cloth-selective-router.v2",
+  "schema_version": 2,
+  "study_id": "tracking-cloth-nested-expert-router-retrospective-v2"
+}
