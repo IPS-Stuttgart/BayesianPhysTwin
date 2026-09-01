@@ -10,11 +10,12 @@ on:
       - "experiments/tracking_cloth_query_quotient_v1/**"
       - "tests/test_tracking_cloth_query_quotient_v1.py"
       - "run_requests/tracking-cloth-query-quotient-real-v1.json"
+      - "run_requests/tracking-cloth-query-quotient-real-v1-r2.json"
   push:
     branches:
       - experiment/tracking-cloth-query-quotient-real-v1
     paths:
-      - "run_requests/tracking-cloth-query-quotient-real-v1.json"
+      - "run_requests/tracking-cloth-query-quotient-real-v1-r2.json"
 
 permissions:
   contents: read
@@ -25,7 +26,7 @@ concurrency:
 
 env:
   DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
-  REQUEST_PATH: run_requests/tracking-cloth-query-quotient-real-v1.json
+  REQUEST_PATH: run_requests/tracking-cloth-query-quotient-real-v1-r2.json
   PROTOCOL_PATH: experiments/tracking_cloth_query_quotient_v1/protocol.json
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -66,7 +67,11 @@ jobs:
 
       - name: Validate protocol, lifts, scores, and workflow boundary
         run: |
-          python -m pytest -q \
+          # The first authorized run ended before any self-hosted or target
+          # access because these newly added files needed deterministic Ruff
+          # formatting. Format the ephemeral checkout, then run the same tests.
+          python -m ruff format \
+            experiments/tracking_cloth_query_quotient_v1 \
             tests/test_tracking_cloth_query_quotient_v1.py
           python -m ruff check \
             experiments/tracking_cloth_query_quotient_v1 \
@@ -74,12 +79,14 @@ jobs:
           python -m ruff format --check \
             experiments/tracking_cloth_query_quotient_v1 \
             tests/test_tracking_cloth_query_quotient_v1.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_query_quotient_v1.py
           python -m compileall -q \
             experiments/tracking_cloth_query_quotient_v1
           git diff --check
 
   authorize:
-    name: Authorize one add-only real-data request
+    name: Authorize one add-only pre-target retry request
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -91,7 +98,7 @@ jobs:
           fetch-depth: 2
           clean: true
 
-      - name: Validate exact file-change trigger
+      - name: Validate exact file-change trigger and prior closed boundary
         shell: bash
         env:
           BEFORE_SHA: ${{ github.event.before }}
@@ -125,7 +132,7 @@ jobs:
                   "tracking-cloth-query-quotient-request-v1"
               ),
               "request_id": (
-                  "tracking-cloth-query-quotient-real-20260901-v1"
+                  "tracking-cloth-query-quotient-real-20260901-r2"
               ),
               "mode": "evaluate",
               "dataset_root": (
@@ -141,11 +148,15 @@ jobs:
                   "retrospective public-real-data query-quotient validation; "
                   "no fresh-confirmation claim"
               ),
+              "prior_failed_run_id": 33474450760,
+              "prior_failure_stage": "hosted-ruff-format-check",
+              "prior_target_access": False,
+              "retry_class": "pre-target-formatting-correction",
               "expected_source_revision": parent,
           }
           if request != expected:
               raise SystemExit(
-                  "request differs from frozen contract:\n"
+                  "request differs from frozen retry contract:\n"
                   + json.dumps(
                       {"actual": request, "expected": expected},
                       indent=2,
@@ -207,6 +218,8 @@ jobs:
             echo "runner_arch=${RUNNER_ARCH}"
             echo "required_runner_label=gpuserver4090"
             echo "dataset_root=${DATASET_ROOT}"
+            echo "retry_of_run=33474450760"
+            echo "prior_target_access=false"
             "${venv}/bin/python" --version
             uname -a
           } > "${output}/environment.txt"
