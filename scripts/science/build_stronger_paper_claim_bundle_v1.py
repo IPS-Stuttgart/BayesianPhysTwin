@@ -9,7 +9,6 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
 
 SCHEMA = "bayesian-phystwin/stronger-paper-claim-bundle-v1"
 DIRECT_CONTRACT = "deform-dlo3-cross-backend-coefficient-transfer-result-v1"
@@ -90,7 +89,9 @@ def _validate_direct(value: Mapping[str, object]) -> dict[str, object]:
         boundary.get("dlo3_official_evaluation_read") is False,
         "direct result opened DLO3 official evaluation",
     )
-    _require(boundary.get("dlo4_or_dlo5_read") is False, "direct result read reserve DLOs")
+    _require(
+        boundary.get("dlo4_or_dlo5_read") is False, "direct result read reserve DLOs"
+    )
     gate = _mapping(value.get("promotion_gate"), label="direct promotion gate")
     primary = _mapping(
         value.get("primary_vs_raw_pyelastica"), label="direct primary comparison"
@@ -129,7 +130,9 @@ def _validate_scalar(value: Mapping[str, object]) -> dict[str, object]:
         boundary.get("dlo3_official_evaluation_read") is False,
         "scalar result opened DLO3 official evaluation",
     )
-    _require(boundary.get("dlo4_or_dlo5_read") is False, "scalar result read reserve DLOs")
+    _require(
+        boundary.get("dlo4_or_dlo5_read") is False, "scalar result read reserve DLOs"
+    )
     gate = _mapping(value.get("promotion_gate"), label="scalar promotion gate")
     point = _mapping(value.get("scalar_vs_raw_pyelastica"), label="scalar comparison")
     alignment = _mapping(value.get("directional_alignment"), label="alignment")
@@ -182,7 +185,9 @@ def _walk_relevant(
     return booleans, decisions
 
 
-def _choose_dlo45_result(retained_root: Path) -> tuple[Path | None, dict[str, object] | None]:
+def _choose_dlo45_result(
+    retained_root: Path,
+) -> tuple[Path | None, dict[str, object] | None]:
     candidates: list[tuple[int, Path, dict[str, object]]] = []
     for path in sorted(retained_root.rglob("result.json")):
         try:
@@ -198,7 +203,10 @@ def _choose_dlo45_result(retained_root: Path) -> tuple[Path | None, dict[str, ob
             score += 40
         if "decision" in value:
             score += 20
-        if "dlo4" in json.dumps(value).casefold() and "dlo5" in json.dumps(value).casefold():
+        if (
+            "dlo4" in json.dumps(value).casefold()
+            and "dlo5" in json.dumps(value).casefold()
+        ):
             score += 10
         candidates.append((score, path, value))
     if not candidates:
@@ -242,22 +250,27 @@ def _interpret_dlo45(value: Mapping[str, object] | None) -> dict[str, object]:
     elif both_explicitly_positive:
         status = "supported"
         reason = "DLO4 and DLO5 each have explicit positive machine-readable gates"
-    elif has_positive_decision and names_both_dlos and booleans and all(
-        flag for _, flag in booleans
+    elif (
+        has_positive_decision
+        and names_both_dlos
+        and booleans
+        and all(flag for _, flag in booleans)
     ):
         status = "supported"
-        reason = "the retained joint decision is positive and all explicit gates are true"
+        reason = (
+            "the retained joint decision is positive and all explicit gates are true"
+        )
     else:
         status = "manual-review-required"
-        reason = "the retained schema does not provide an unambiguous two-DLO positive gate"
+        reason = (
+            "the retained schema does not provide an unambiguous two-DLO positive gate"
+        )
     return {
         "status": status,
         "reason": reason,
         "result_contract": value.get("contract", value.get("schema")),
         "decisions": [{"path": path, "value": text} for path, text in decisions],
-        "relevant_booleans": [
-            {"path": path, "value": flag} for path, flag in booleans
-        ],
+        "relevant_booleans": [{"path": path, "value": flag} for path, flag in booleans],
     }
 
 
@@ -693,9 +706,7 @@ def main() -> int:
         json.dumps(
             {
                 "recommended_claim_tier": bundle["recommended_claim_tier"],
-                "recommended_claim_tier_name": bundle[
-                    "recommended_claim_tier_name"
-                ],
+                "recommended_claim_tier_name": bundle["recommended_claim_tier_name"],
                 "claim_ready_for_manual_authorization": bundle[
                     "claim_ready_for_manual_authorization"
                 ],
