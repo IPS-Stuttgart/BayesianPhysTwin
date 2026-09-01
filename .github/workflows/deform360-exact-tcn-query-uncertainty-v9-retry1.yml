@@ -1,0 +1,324 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #834
+# workflow-expiry: 2026-09-15
+name: Deform360 exact action-TCN query uncertainty v9 retry1
+
+on:
+  push:
+    branches:
+      - science/deform360-same-mean-query-covariance-v6
+    paths:
+      - .github/requests/deform360-exact-tcn-query-uncertainty-v9-retry1.json
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-exact-action-tcn-query-uncertainty-v9
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-exact-tcn-query-uncertainty-v9-retry1.json
+  TCN_RUN_ID: '33417883597'
+  TCN_ARTIFACT_ID: '9767812227'
+  TCN_ARTIFACT_SHA256: 68ff5fb8e2274f3e71a20ef79a7450d0baa0cf57985e88064b31e4c1edc2bca2
+  TCN_EXECUTION_REVISION: a32948698fe43e4e52a443a93c9c1604012a21cf
+  TCN_RESULT_SHA256: 4905c9958e1290f60abcae5b3248cbcca1ac1dfb824144ed4b76909cf5fa1333
+  TCN_CACHE_ROOT: /mnt/lexar4tb/datasets/deform360-tcn-carriers-v6-5ea8c5d3-e92deaf7
+  QUERY_RUN_ID: '33551155955'
+  QUERY_ARTIFACT_ID: '9817555660'
+  QUERY_ARTIFACT_SHA256: 31a6905426639c842b2dcbaf0028229f1f4869361d44e08d8d3373e70cae53e2
+  QUERY_RESULT_SHA256: b725a1e823292ccdbfafc67e4371aec7f6346f1e062f61100950f01564a9d8c7
+  DROPOUT_DRAWS: '32'
+  FOLD_COUNT: '5'
+  MATURITY_LAG_WINDOWS: '4'
+  BOOTSTRAP_REPETITIONS: '10000'
+  PYTHONHASHSEED: '0'
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  PIP_NO_CACHE_DIR: '1'
+  CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+  CUDA_VISIBLE_DEVICES: '0'
+  OMP_NUM_THREADS: '4'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  NUMEXPR_NUM_THREADS: '1'
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+      - name: Authorize content-identical scientific retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.event.forced }}" = false
+          test "${{ github.event.before }}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${{ github.event.before }}" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ['REQUEST_PATH']).read_text())
+          parent = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^'], text=True
+          ).strip()
+          expected = {
+              'schema': 'deform360-exact-tcn-query-uncertainty-request-v9',
+              'mode': 'reproduce-best-action-tcn-and-crossfit-causal-query-uncertainty',
+              'retry_of_run_id': 33553299613,
+              'technical_change': 'remove-hosted-setup-python-pip-cache-conflict-only',
+              'runner_label': 'gpuserver4090',
+              'runner_name': 'workstation2',
+              'tcn_run_id': int(os.environ['TCN_RUN_ID']),
+              'tcn_artifact_id': int(os.environ['TCN_ARTIFACT_ID']),
+              'tcn_artifact_sha256': os.environ['TCN_ARTIFACT_SHA256'],
+              'tcn_execution_revision': os.environ['TCN_EXECUTION_REVISION'],
+              'tcn_result_sha256': os.environ['TCN_RESULT_SHA256'],
+              'tcn_cache_root': os.environ['TCN_CACHE_ROOT'],
+              'query_run_id': int(os.environ['QUERY_RUN_ID']),
+              'query_artifact_id': int(os.environ['QUERY_ARTIFACT_ID']),
+              'query_artifact_sha256': os.environ['QUERY_ARTIFACT_SHA256'],
+              'query_result_sha256': os.environ['QUERY_RESULT_SHA256'],
+              'query_dimension': 12,
+              'dropout_draws': int(os.environ['DROPOUT_DRAWS']),
+              'fold_count': int(os.environ['FOLD_COUNT']),
+              'maturity_lag_windows': int(os.environ['MATURITY_LAG_WINDOWS']),
+              'bootstrap_repetitions': int(os.environ['BOOTSTRAP_REPETITIONS']),
+              'dropout_blend_weights': [0.0, 0.25, 0.5, 0.75, 1.0],
+              'online_prior_strengths': [2.0, 4.0, 8.0, 16.0, 32.0, 64.0],
+              'exact_tcn_reproduction_required': True,
+              'same_predictive_mean_required': True,
+              'equal_object_weighting_required': True,
+              'current_or_future_outcome_forbidden': True,
+              'new_measurements_authorized': False,
+              'point_mean_retuning_authorized': False,
+              'globally_fresh_confirmation_authorized': False,
+              'paper_claim_authorized': False,
+              'expected_source_revision': parent,
+          }
+          if request != expected:
+              raise SystemExit('retry request differs from the frozen v9 contract')
+          PY
+
+  real-output-study:
+    needs: authorize
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 300
+    env:
+      OUT: /home/github-runner/.cache/workflows/deform360-exact-tcn-query-uncertainty-v9/${{ github.run_id }}-${{ github.run_attempt }}
+      VENV: /home/github-runner/actions-runner/_work/_temp/deform360-exact-tcn-query-uncertainty-v9-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out exact control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Check out exact historical TCN source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TCN_EXECUTION_REVISION }}
+          path: _exact_tcn_v6
+          persist-credentials: false
+          clean: true
+      - name: Bind exact cache and fresh custody roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = workstation2
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C _exact_tcn_v6 rev-parse HEAD)" = "$TCN_EXECUTION_REVISION"
+          test "$(realpath -e "$TCN_CACHE_ROOT")" = "$TCN_CACHE_ROOT"
+          test -d "$TCN_CACHE_ROOT/raw-repository/raw"
+          test -d "$TCN_CACHE_ROOT/processed-repository/processed"
+          test ! -e "$OUT"
+          test ! -e "$VENV"
+          mkdir -p "$OUT/tcn-artifact" "$OUT/query-artifact"
+          chmod 700 "$OUT"
+          python3 --version | tee "$OUT/system-python.txt"
+          test "$(python3 -c 'import platform; print(platform.python_version())')" = 3.12.3
+      - name: Download and verify immutable evidence artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${TCN_ARTIFACT_ID}/zip" \
+            --output "$OUT/tcn-artifact.zip"
+          printf '%s  %s\n' "$TCN_ARTIFACT_SHA256" "$OUT/tcn-artifact.zip" \
+            | sha256sum --check --strict
+          unzip -q "$OUT/tcn-artifact.zip" -d "$OUT/tcn-artifact"
+          mapfile -t tcn_results < <(find "$OUT/tcn-artifact" -type f -name result.json -print)
+          test "${#tcn_results[@]}" -eq 1
+          tcn_root="$(dirname "${tcn_results[0]}")"
+          test -s "$tcn_root/effective-protocol.json"
+          test -s "$tcn_root/carrier-manifest.json"
+          echo "TCN_ARTIFACT_ROOT=${tcn_root}" >> "$GITHUB_ENV"
+
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${QUERY_ARTIFACT_ID}/zip" \
+            --output "$OUT/query-artifact.zip"
+          printf '%s  %s\n' "$QUERY_ARTIFACT_SHA256" "$OUT/query-artifact.zip" \
+            | sha256sum --check --strict
+          unzip -q "$OUT/query-artifact.zip" -d "$OUT/query-artifact"
+          mapfile -t query_files < <(find "$OUT/query-artifact" -type f -name query-sufficient-statistics-v7.npz -print)
+          mapfile -t query_results < <(find "$OUT/query-artifact" -type f -name result.json -print)
+          test "${#query_files[@]}" -eq 1
+          test "${#query_results[@]}" -eq 1
+          python3 - "${query_results[0]}" <<'PY'
+          import json
+          import os
+          import sys
+
+          result = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert result['result_sha256'] == os.environ['QUERY_RESULT_SHA256']
+          assert result['exact_reproduction']['object_count'] == 92
+          assert result['same_mean_contract']['predictive_mean_changed'] is False
+          PY
+          echo "QUERY_SOURCE_NPZ=${query_files[0]}" >> "$GITHUB_ENV"
+      - name: Bootstrap exact historical CUDA runtime and validate contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv --without-pip "$VENV"
+          curl --fail --location --retry 4 --retry-all-errors \
+            https://bootstrap.pypa.io/get-pip.py \
+            --output "$OUT/get-pip.py"
+          "$VENV/bin/python" "$OUT/get-pip.py"
+          "$VENV/bin/python" -m pip install numpy==1.26.4 ruff==0.14.14
+          "$VENV/bin/python" -m pip install \
+            'torch==2.8.0+cu128' \
+            --index-url https://download.pytorch.org/whl/cu128
+          files=(
+            scripts/science/deform360_exact_tcn_capture_v9.py
+            scripts/science/deform360_tcn_query_uncertainty_v9.py
+            scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py
+          )
+          "$VENV/bin/python" -m ruff check "${files[@]}"
+          "$VENV/bin/python" -m ruff format --check "${files[@]}"
+          "$VENV/bin/python" \
+            scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py \
+            --self-test
+          "$VENV/bin/python" - <<'PY' | tee "$OUT/runtime.txt"
+          import platform
+          import torch
+
+          assert platform.python_version() == '3.12.3'
+          assert torch.__version__ == '2.8.0+cu128'
+          assert torch.cuda.is_available()
+          value = torch.nn.Conv1d(8, 8, 3, padding=1).cuda()(
+              torch.zeros((2, 8, 8), device='cuda')
+          )
+          assert torch.isfinite(value).all()
+          print(platform.python_version())
+          print(torch.__version__)
+          print(torch.cuda.get_device_name(0))
+          PY
+      - name: Reproduce the best mean and evaluate causal query uncertainty
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VENV/bin/python" \
+            scripts/science/run_deform360_exact_tcn_query_uncertainty_v9.py \
+            --tcn-artifact-root "$TCN_ARTIFACT_ROOT" \
+            --exact-tcn-root _exact_tcn_v6 \
+            --data-root "$TCN_CACHE_ROOT" \
+            --query-source-npz "$QUERY_SOURCE_NPZ" \
+            --output-root "$OUT/study" \
+            --dropout-draws "$DROPOUT_DRAWS" \
+            --fold-count "$FOLD_COUNT" \
+            --maturity-lag-windows "$MATURITY_LAG_WINDOWS" \
+            --bootstrap-repetitions "$BOOTSTRAP_REPETITIONS" \
+            2>&1 | tee "$OUT/console.log"
+          cat "$OUT/study/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify exact reproduction and information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VENV/bin/python" - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ['OUT']) / 'study'
+          result = json.loads((root / 'result.json').read_text())
+          manifest = json.loads((root / 'capture-manifest.json').read_text())
+          assert result['status'] == 'completed'
+          assert result['exact_tcn_reproduction']['passed'] is True
+          assert result['exact_tcn_reproduction']['maximum_absolute_numeric_difference'] <= 1e-10
+          assert math.isclose(
+              result['point_prediction']['active_field_rmse'],
+              0.6163561621007425,
+              rel_tol=0.0,
+              abs_tol=1e-10,
+          )
+          assert result['point_prediction']['predictive_mean_changed'] is False
+          assert result['uncertainty_study']['object_count'] == 92
+          assert result['uncertainty_study']['query_dimension'] == 12
+          assert result['uncertainty_study']['gates'][
+              'zero_future_or_current_outcome_uses'
+          ] is True
+          assert result['information_boundary'][
+              'online_update_uses_current_or_future_outcome'
+          ] is False
+          assert result['paper_claim_authorized'] is False
+          assert result['globally_fresh_confirmation_authorized'] is False
+          assert manifest['exact_scientific_result_reproduction'] is True
+          assert manifest['carrier_audit']['file_count'] == 6176
+          assert manifest['carrier_audit']['all_sha256_verified'] is True
+          PY
+          sha256sum \
+            "$OUT/study"/* \
+            "$OUT/runtime.txt" \
+            "$OUT/system-python.txt" \
+            > "$OUT/sha256sums.txt"
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git -C _exact_tcn_v6 diff --exit-code
+          test -z "$(git -C _exact_tcn_v6 status --porcelain --untracked-files=all)"
+      - name: Upload compact final-result evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-exact-tcn-query-uncertainty-v9-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUT }}/study/result.json
+            ${{ env.OUT }}/study/report.md
+            ${{ env.OUT }}/study/capture-manifest.json
+            ${{ env.OUT }}/study/exact-tcn-query-capture-v9.npz
+            ${{ env.OUT }}/console.log
+            ${{ env.OUT }}/runtime.txt
+            ${{ env.OUT }}/system-python.txt
+            ${{ env.OUT }}/sha256sums.txt
+            ${{ env.REQUEST_PATH }}
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Remove isolated runtime and preserve private originals
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "$VENV"
+          if test -d "$OUT"; then chmod -R go-rwx "$OUT"; fi
