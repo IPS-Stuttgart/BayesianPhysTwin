@@ -28,6 +28,7 @@ env:
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
   NUMPY_VERSION: "2.2.6"
+  H5PY_VERSION: "3.16.0"
   SOURCE_RUN_ID: "33473378340"
   SOURCE_ARTIFACT_ID: "9787311310"
   SOURCE_ARTIFACT_NAME: "dlo45-decision-source-33473378340"
@@ -37,6 +38,7 @@ env:
   DEFORM_COMMIT: "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
   PROB4D_REPOSITORY: "IPS-Stuttgart/Prob4D"
   PROB4D_COMMIT: "f25b0cdb0a258e1b2ef276d25a723c2cf3a9fb4f"
+  ADAPTER_MODULE: "experiments.deform_dlo45_information_contract_v1.export"
   ADAPTER: "experiments/deform_dlo45_information_contract_v1/export.py"
   REQUEST: "experiments/deform_dlo45_information_contract_v1/request.json"
   PROTOCOL: "experiments/deform_dlo45_decision_identifiability_v1/protocol.json"
@@ -85,8 +87,8 @@ jobs:
             tests/test_deform_dlo45_information_contract_v1.py \
             tests/test_deform_dlo45_decision_identifiability_v1.py \
             tests/test_query_quotient_belief_v1.py
-          python "${ADAPTER}" export --help >/dev/null
-          python "${ADAPTER}" validate --help >/dev/null
+          python -m "${ADAPTER_MODULE}" export --help >/dev/null
+          python -m "${ADAPTER_MODULE}" validate --help >/dev/null
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
 
@@ -143,7 +145,8 @@ jobs:
             "pip==25.2" \
             "setuptools==80.9.0" \
             "wheel==0.45.1" \
-            "numpy==${NUMPY_VERSION}"
+            "numpy==${NUMPY_VERSION}" \
+            "h5py==${H5PY_VERSION}"
           python -m pip install --no-deps -e .
           python -m pip install --no-deps -e prob4d-source
           python -m pip check
@@ -206,7 +209,7 @@ jobs:
           source_root="${RUNNER_TEMP}/dlo45-decision-source"
           output_root="${RUNNER_TEMP}/dlo45-information-contract"
           rm -rf "${output_root}"
-          python -m experiments.deform_dlo45_information_contract_v1.export \
+          python -m "${ADAPTER_MODULE}" \
             export \
             --request "${REQUEST}" \
             --protocol "${PROTOCOL}" \
@@ -222,7 +225,7 @@ jobs:
               "${output_root}/${method}/suite.json" \
               "${output_root}/${method}/benchmark_result.json"
           done
-          python -m experiments.deform_dlo45_information_contract_v1.export \
+          python -m "${ADAPTER_MODULE}" \
             validate \
             --output-root "${output_root}" \
             --reference-result "${REFERENCE_RESULT}" \
