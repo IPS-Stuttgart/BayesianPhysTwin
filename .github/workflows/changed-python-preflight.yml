@@ -107,7 +107,7 @@ jobs:
               "results/science/active_decision_acquisition_v1/controlled-v1/summary.md",
               "src/bayesian_phystwin/active_decision_acquisition_v1.py",
               "tests/test_active_decision_acquisition_study_v1.py",
-              "tests/test_active_decision_v1.py",
+              "tests/test_active_decision_acquisition_v1.py",
           }
           with zipfile.ZipFile(archive_path) as archive:
               bad = archive.testzip()
@@ -134,7 +134,7 @@ jobs:
             results/science/active_decision_acquisition_v1/controlled-v1/summary.md \
             src/bayesian_phystwin/active_decision_acquisition_v1.py \
             tests/test_active_decision_acquisition_study_v1.py \
-            tests/test_active_decision_v1.py
+            tests/test_active_decision_acquisition_v1.py
           python - <<'PY'
           import subprocess
 
@@ -147,7 +147,7 @@ jobs:
               "results/science/active_decision_acquisition_v1/controlled-v1/summary.md",
               "src/bayesian_phystwin/active_decision_acquisition_v1.py",
               "tests/test_active_decision_acquisition_study_v1.py",
-              "tests/test_active_decision_v1.py",
+              "tests/test_active_decision_acquisition_v1.py",
           }
           expected.update(
               f"ops/bootstrap/active-decision/chunk-{index:02d}.txt" for index in range(8)
