@@ -144,7 +144,10 @@ def build() -> dict[str, Any]:
     ]
     if observed != expected:
         raise RuntimeError(f"calibrated phase diagram changed: {observed!r}")
-    expected_upper = [0.08, 0.14, 0.24, 1.5]
+    # The fallback plan is calibrated as a complete plan too. Its unknown-loss
+    # interval has zero width, so the registered positive scale floor contributes
+    # 0.01 at score 0.10.
+    expected_upper = [0.08, 0.14, 0.24, 1.51]
     for row, expected_value in zip(rows, expected_upper, strict=True):
         if abs(row["calibrated_regret_upper"] - expected_value) > 1e-12:
             raise RuntimeError(
