@@ -65,8 +65,9 @@ def test_perfect_probe_resolves_opposing_actions_in_common_union() -> None:
         regret_tolerance=0.05,
     )
 
-    assert result.direct_decision_certificate.minimax_worst_case_regret == pytest.approx(
-        1.0
+    assert (
+        result.direct_decision_certificate.minimax_worst_case_regret
+        == pytest.approx(1.0)
     )
     assert result.route == "probe"
     assert result.selected_probe_index == 0
@@ -74,7 +75,9 @@ def test_perfect_probe_resolves_opposing_actions_in_common_union() -> None:
     assert result.selected_worst_case_regret == pytest.approx(0.05)
 
 
-def test_probe_cost_is_compared_against_direct_actions_not_added_to_internal_regret() -> None:
+def test_probe_cost_is_compared_against_direct_actions_not_added_to_internal_regret() -> (
+    None
+):
     prior, quotient, classes, losses = _ambiguous_two_worlds()
     result = act_probe_fallback_certificate(
         prior,
