@@ -1,0 +1,207 @@
+"""Export only registered DLO3 source reports from a mixed Actions ZIP."""
+
+import hashlib
+import json
+import struct
+import subprocess
+import urllib.error
+import urllib.request
+import zlib
+from pathlib import Path, PurePosixPath
+
+
+REPO = "IPS-Stuttgart/BayesianPhysTwin"
+ARTIFACT_ID = 9811886089
+SIZE = 67379
+OUTPUT = Path("/tmp/bpt-dlo3-source-transfer-export-v1")
+ALLOWED = {
+    f"{arm}/{name}"
+    for arm in ("cross-backend", "cross-backend-scalar")
+    for name in (
+        "preflight.json", "method_seal.json", "result.json",
+        "report.md", "trajectory-results.csv",
+    )
+}
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def signed_archive_url():
+    token = subprocess.check_output(["gh", "auth", "token"], text=True).strip()
+    request = urllib.request.Request(
+        f"https://api.github.com/repos/{REPO}/actions/artifacts/{ARTIFACT_ID}/zip",
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+    )
+    try:
+        urllib.request.build_opener(NoRedirect()).open(request, timeout=60)
+    except urllib.error.HTTPError as error:
+        if error.code != 302:
+            raise RuntimeError(f"archive API returned HTTP {error.code}") from None
+        url = error.headers["Location"]
+        error.close()
+        if not url.startswith("https://"):
+            raise RuntimeError("archive redirect is not HTTPS")
+        return url
+    raise RuntimeError("archive API did not redirect")
+
+
+def parse_directory(data, expected_count):
+    records = []
+    cursor = 0
+    while cursor < len(data):
+        fields = struct.unpack_from("<4s6H3I5H2I", data, cursor)
+        if fields[0] != b"PK\x01\x02":
+            raise RuntimeError("bad central directory signature")
+        (_, _, _, flags, compression, _, _, crc, compressed, expanded,
+         name_size, extra_size, comment_size, disk, _, _, offset) = fields
+        end = cursor + 46 + name_size + extra_size + comment_size
+        if end > len(data) or disk != 0 or flags & 1:
+            raise RuntimeError("invalid/encrypted/spanned archive")
+        name = data[cursor + 46:cursor + 46 + name_size].decode(
+            "utf-8" if flags & 2048 else "cp437"
+        )
+        path = PurePosixPath(name)
+        if path.is_absolute() or ".." in path.parts or "\\" in name:
+            raise RuntimeError("noncanonical ZIP path")
+        if max(compressed, expanded, offset) >= 0xFFFFFFFF:
+            raise RuntimeError("ZIP64 members are not supported")
+        records.append({
+            "name": name, "flags": flags, "compression": compression,
+            "crc": crc, "compressed": compressed, "expanded": expanded,
+            "offset": offset,
+        })
+        cursor = end
+    if len(records) != expected_count or len({x["name"] for x in records}) != len(records):
+        raise RuntimeError("central directory count/uniqueness mismatch")
+    return records
+
+
+def main():
+    if OUTPUT.exists():
+        raise RuntimeError("write-once output already exists")
+    url = signed_archive_url()
+    ranges = []
+
+    def read_range(start, length, purpose):
+        if length <= 0 or start < 0 or start + length > SIZE:
+            raise RuntimeError("invalid archive range")
+        stop = start + length - 1
+        request = urllib.request.Request(url, headers={
+            "Range": f"bytes={start}-{stop}", "Accept-Encoding": "identity",
+        })
+        with urllib.request.urlopen(request, timeout=60) as response:
+            if response.status != 206:
+                raise RuntimeError("server ignored Range; body not read")
+            if response.headers.get("Content-Range") != f"bytes {start}-{stop}/{SIZE}":
+                raise RuntimeError("server returned a different range; body not read")
+            data = response.read(length + 1)
+        if len(data) != length:
+            raise RuntimeError("range response length mismatch")
+        ranges.append({"start": start, "length": length, "purpose": purpose})
+        return data
+
+    eocd = read_range(SIZE - 22, 22, "zip-end-metadata")
+    sig, disk, cddisk, disk_count, count, directory_size, directory_offset, comment = (
+        struct.unpack("<4s4H2IH", eocd)
+    )
+    if sig != b"PK\x05\x06" or disk or cddisk or disk_count != count or comment:
+        raise RuntimeError("unsupported ZIP end metadata")
+    if directory_offset + directory_size > SIZE - 22:
+        raise RuntimeError("invalid directory bounds")
+    records = parse_directory(
+        read_range(directory_offset, directory_size, "zip-central-directory-metadata"), count
+    )
+    selected = {}
+    for record in records:
+        name = record["name"]
+        for allowed in ALLOWED | {"SHA256SUMS"}:
+            if name == allowed or name.endswith("/" + allowed):
+                if allowed in selected:
+                    raise RuntimeError("ambiguous allowed member")
+                selected[allowed] = record
+    if set(selected) != ALLOWED | {"SHA256SUMS"}:
+        raise RuntimeError(f"missing allowed members: {sorted(ALLOWED - selected.keys())}")
+
+    def decode_member(key):
+        record = selected[key]
+        offset = record["offset"]
+        fixed = read_range(offset, 30, f"{key}:local-header")
+        fields = struct.unpack("<4s5H3I2H", fixed)
+        sig, _, flags, compression, _, _, _, _, _, name_size, extra_size = fields
+        if sig != b"PK\x03\x04" or flags != record["flags"] or compression != record["compression"]:
+            raise RuntimeError("local/central metadata mismatch")
+        header = read_range(offset + 30, name_size + extra_size, f"{key}:local-name")
+        name = header[:name_size].decode("utf-8" if flags & 2048 else "cp437")
+        if name != record["name"]:
+            raise RuntimeError("local/central name mismatch")
+        data_start = offset + 30 + name_size + extra_size
+        if data_start + record["compressed"] > directory_offset:
+            raise RuntimeError("payload crosses central directory")
+        packed = read_range(data_start, record["compressed"], f"{key}:allowed-payload")
+        if record["expanded"] > 2_000_000:
+            raise RuntimeError("source report exceeds size cap")
+        if compression == 0:
+            data = packed
+        elif compression == 8:
+            decompressor = zlib.decompressobj(-15)
+            data = decompressor.decompress(packed, record["expanded"] + 1)
+            if not decompressor.eof or decompressor.unused_data:
+                raise RuntimeError("invalid deflate stream")
+        else:
+            raise RuntimeError("unsupported compression")
+        if len(data) != record["expanded"] or zlib.crc32(data) != record["crc"]:
+            raise RuntimeError("member length/CRC mismatch")
+        return data
+
+    checksums = decode_member("SHA256SUMS")
+    expected = {}
+    for line in checksums.decode("utf-8").splitlines():
+        digest, name = line.split("  ", 1)
+        if name in ALLOWED:
+            if len(digest) != 64 or name in expected:
+                raise RuntimeError("invalid source checksum metadata")
+            expected[name] = digest
+    if set(expected) != ALLOWED:
+        raise RuntimeError("source checksums incomplete")
+    payloads = {}
+    for key in sorted(ALLOWED):
+        data = decode_member(key)
+        if hashlib.sha256(data).hexdigest() != expected[key]:
+            raise RuntimeError("source member SHA256 mismatch")
+        payloads[key] = data
+    OUTPUT.mkdir(mode=0o700)
+    for key, data in payloads.items():
+        path = OUTPUT / key
+        path.parent.mkdir(exist_ok=True)
+        path.write_bytes(data)
+    receipt = {
+        "schema_version": 1,
+        "repository": REPO,
+        "run_id": 33536420739,
+        "artifact_id": ARTIFACT_ID,
+        "artifact_size_bytes": SIZE,
+        "artifact_sha256_api_attestation": "bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0",
+        "whole_zip_sha256_recomputed": False,
+        "source_member_sha256_matches_archive_manifest": True,
+        "source_members": expected,
+        "checksum_metadata_sha256": hashlib.sha256(checksums).hexdigest(),
+        "ranges": ranges,
+        "protected_member_payload_read": False,
+        "retrieval_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    }
+    identity = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+    receipt["receipt_sha256"] = hashlib.sha256(identity).hexdigest()
+    (OUTPUT / "source_export_receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    print(json.dumps({
+        "output": str(OUTPUT), "source_members": len(payloads),
+        "range_bytes_read": sum(x["length"] for x in ranges),
+        "receipt_sha256": receipt["receipt_sha256"],
+        "protected_member_payload_read": False,
+    }, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

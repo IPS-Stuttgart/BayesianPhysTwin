@@ -1,0 +1,505 @@
+{
+  "backend_specific_gain_retained_fraction": 0.10062543099739471,
+  "cases": [
+    {
+      "alignment_cosine": 0.35013581898512997,
+      "baseline_l1_m": 0.019090213388265862,
+      "direct_l1_m": 0.01850139374113503,
+      "fold_scalar": 3.3128037724909136,
+      "name": "6.pkl",
+      "scalar_l1_m": 0.020797688734834917
+    },
+    {
+      "alignment_cosine": 0.2848000302090398,
+      "baseline_l1_m": 0.02052046156816894,
+      "direct_l1_m": 0.019784541537548356,
+      "fold_scalar": 2.7934422721277206,
+      "name": "37.pkl",
+      "scalar_l1_m": 0.019891970261485505
+    },
+    {
+      "alignment_cosine": 0.3618067734780578,
+      "baseline_l1_m": 0.012215580116545574,
+      "direct_l1_m": 0.011728408490371088,
+      "fold_scalar": 2.678146324142859,
+      "name": "47.pkl",
+      "scalar_l1_m": 0.012628302381320173
+    },
+    {
+      "alignment_cosine": 0.32661982648377547,
+      "baseline_l1_m": 0.02540842933252846,
+      "direct_l1_m": 0.024979468054939898,
+      "fold_scalar": 2.4073868983581255,
+      "name": "22.pkl",
+      "scalar_l1_m": 0.02503446957550083
+    },
+    {
+      "alignment_cosine": 0.4106423241040111,
+      "baseline_l1_m": 0.02005008787252384,
+      "direct_l1_m": 0.01942508100842146,
+      "fold_scalar": 2.4289362014875393,
+      "name": "24.pkl",
+      "scalar_l1_m": 0.018830156762221394
+    },
+    {
+      "alignment_cosine": 0.44966410497066467,
+      "baseline_l1_m": 0.01418177252104741,
+      "direct_l1_m": 0.01333304736538888,
+      "fold_scalar": 2.5018307099594197,
+      "name": "87.pkl",
+      "scalar_l1_m": 0.0126058301015234
+    },
+    {
+      "alignment_cosine": 0.37969119182380684,
+      "baseline_l1_m": 0.040268043677137676,
+      "direct_l1_m": 0.039436736009241476,
+      "fold_scalar": 2.1148559124499196,
+      "name": "112.pkl",
+      "scalar_l1_m": 0.03929919522473076
+    },
+    {
+      "alignment_cosine": 0.41463520728093445,
+      "baseline_l1_m": 0.03110325274224616,
+      "direct_l1_m": 0.03019228918975918,
+      "fold_scalar": 2.2364361515799516,
+      "name": "19.pkl",
+      "scalar_l1_m": 0.029636501907931483
+    }
+  ],
+  "claim_boundary": "A positive result supports a shared cross-backend residual direction whose amplitude can be recalibrated with one scalar fitted on other complete source trajectories. It is weaker than exact no-refit coefficient transfer and is not fresh target confirmation, arbitrary-backend transfer, zero-shot object generalization, safety, or state of the art.",
+  "claim_ladder": {
+    "directional_alignment_supported": true,
+    "exact_no_refit_point_transfer_supported": true,
+    "one_scalar_cross_validated_point_transfer_supported": true,
+    "shared_residual_geometry_supported": true
+  },
+  "contract": "deform-dlo3-cross-backend-scalar-transport-result-v1",
+  "decision": "cross-backend-shared-residual-geometry-supported",
+  "deform_local_residual_models": {
+    "42": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-42-run-bd5cfb14/local_residual_model.npz",
+      "sha256": "3fd149ab89769bec24b36263b9e99dcbd572610bd51a273d0d2c79ca30756e83",
+      "size_bytes": 1440868
+    },
+    "43": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-43-run-bd5cfb14/local_residual_model.npz",
+      "sha256": "9c78101f2d08a4fcd3005092f0cb0ceff9bde3efb8c01386ebbcefb10f50a548",
+      "size_bytes": 1441139
+    },
+    "44": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-44-run-da487c26/local_residual_model.npz",
+      "sha256": "738e7eb4ef5a87e3f8e7785fe16db7e915ffcfd05d19aade617f32f8ac5bc26f",
+      "size_bytes": 1441172
+    }
+  },
+  "direct_vs_raw_pyelastica": {
+    "baseline_mean_l1_m": 0.02285473015230799,
+    "candidate_mean_l1_m": 0.02217262067460067,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.019090213388265862,
+        "candidate_l1_m": 0.01850139374113503,
+        "candidate_to_baseline_ratio": 0.9691559420968673,
+        "candidate_wins": true,
+        "difference_m": -0.0005888196471308324,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02052046156816894,
+        "candidate_l1_m": 0.019784541537548356,
+        "candidate_to_baseline_ratio": 0.9641372574307913,
+        "candidate_wins": true,
+        "difference_m": -0.0007359200306205835,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.012215580116545574,
+        "candidate_l1_m": 0.011728408490371088,
+        "candidate_to_baseline_ratio": 0.9601188300902199,
+        "candidate_wins": true,
+        "difference_m": -0.0004871716261744853,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02540842933252846,
+        "candidate_l1_m": 0.024979468054939898,
+        "candidate_to_baseline_ratio": 0.9831173634554657,
+        "candidate_wins": true,
+        "difference_m": -0.0004289612775885618,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02005008787252384,
+        "candidate_l1_m": 0.01942508100842146,
+        "candidate_to_baseline_ratio": 0.9688277244430996,
+        "candidate_wins": true,
+        "difference_m": -0.0006250068641023808,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01418177252104741,
+        "candidate_l1_m": 0.01333304736538888,
+        "candidate_to_baseline_ratio": 0.9401538027493443,
+        "candidate_wins": true,
+        "difference_m": -0.000848725155658531,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.040268043677137676,
+        "candidate_l1_m": 0.039436736009241476,
+        "candidate_to_baseline_ratio": 0.9793556480031291,
+        "candidate_wins": true,
+        "difference_m": -0.0008313076678962,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03110325274224616,
+        "candidate_l1_m": 0.03019228918975918,
+        "candidate_to_baseline_ratio": 0.9707116307083324,
+        "candidate_wins": true,
+        "difference_m": -0.000910963552486977,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 0,
+    "maximum_case_ratio": 0.9831173634554657,
+    "mean_difference_m": -0.000682109477707319,
+    "object_bootstrap_95_interval_m": [
+      -0.000793156566888391,
+      -0.0005666396915405747
+    ],
+    "relative_improvement": 0.029845440010081936,
+    "ties": 0,
+    "wins": 8
+  },
+  "directional_alignment": {
+    "median_cosine": 0.3707489826509323,
+    "minimum_median_cosine": 0.05,
+    "minimum_positive_cases": 6,
+    "passed": true,
+    "positive_cases": 8,
+    "trajectory_cosines": [
+      0.35013581898512997,
+      0.2848000302090398,
+      0.3618067734780578,
+      0.32661982648377547,
+      0.4106423241040111,
+      0.44966410497066467,
+      0.37969119182380684,
+      0.41463520728093445
+    ]
+  },
+  "fold_scalars": {
+    "maximum": 3.3128037724909136,
+    "median": 2.4653834557234795,
+    "minimum": 2.1148559124499196,
+    "minimum_positive_count": 6,
+    "positive_count": 8,
+    "values": [
+      3.3128037724909136,
+      2.7934422721277206,
+      2.678146324142859,
+      2.4073868983581255,
+      2.4289362014875393,
+      2.5018307099594197,
+      2.1148559124499196,
+      2.2364361515799516
+    ]
+  },
+  "information_boundary": {
+    "deform_refit": false,
+    "dlo3_official_evaluation_read": false,
+    "dlo4_or_dlo5_read": false,
+    "held_v8_access": false,
+    "paper_claim_authorized": false,
+    "pyelastica_high_dimensional_refit": false,
+    "retrospective_source_only": true,
+    "same_trajectory_label_used_for_its_scalar": false,
+    "source_test_labels_used_in_other_folds": true
+  },
+  "method_seal": {
+    "path": "/home/github-runner/.cache/workflows/deform-dlo3-hierarchical-transfers-v1/runs/33536420739-1/cross-backend-scalar/method_seal.json",
+    "sha256": "1cc062a3261283fc8448b069257be25153696c45d1c8db0d81582f78f2fa5f4a",
+    "size_bytes": 2380
+  },
+  "methods": {
+    "direct_equal_seed_no_refit": 0.02217262067460067,
+    "leave_one_trajectory_out_one_scalar": 0.022340514368693557,
+    "pyelastica_specific_high_dimensional_refit": 0.017744533072727324,
+    "raw_pyelastica": 0.02285473015230799
+  },
+  "parent_protocol": {
+    "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/protocols/deform_dlo3_cross_backend_transfer_v1.json",
+    "sha256": "6ebf272415b7219eba20021375ce4288fc47b26be21afc4105e7077875f7f01a",
+    "size_bytes": 3835
+  },
+  "promotion_gate": {
+    "directional_passed": true,
+    "maximum_case_ratio": 1.1,
+    "minimum_case_wins": 6,
+    "minimum_relative_improvement": 0.01,
+    "scalar_point_passed": true,
+    "supported": true
+  },
+  "protocol": {
+    "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/protocols/deform_dlo3_cross_backend_scalar_v1.json",
+    "sha256": "80ae904b0f6dd229611083b6cb8832db95c8555ed1943bf4f6ac2ab55807ee12",
+    "size_bytes": 3353
+  },
+  "pyelastica_source_predictions": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v1/pyelastica-run-7c304f79/source_predictions.npz",
+    "sha256": "c8658f04aa81af1895f7f010d03a08e945fca7b63342b341eaa889408f5b69c8",
+    "size_bytes": 5185195
+  },
+  "pyelastica_specific_vs_raw_pyelastica": {
+    "baseline_mean_l1_m": 0.02285473015230799,
+    "candidate_mean_l1_m": 0.017744533072727324,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.019090213388265862,
+        "candidate_l1_m": 0.014618633567767943,
+        "candidate_to_baseline_ratio": 0.7657658544955577,
+        "candidate_wins": true,
+        "difference_m": -0.0044715798204979194,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02052046156816894,
+        "candidate_l1_m": 0.015341249980191398,
+        "candidate_to_baseline_ratio": 0.7476074516758695,
+        "candidate_wins": true,
+        "difference_m": -0.005179211587977541,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.012215580116545574,
+        "candidate_l1_m": 0.009790484783414936,
+        "candidate_to_baseline_ratio": 0.8014752218074415,
+        "candidate_wins": true,
+        "difference_m": -0.002425095333130638,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02540842933252846,
+        "candidate_l1_m": 0.02104574246630431,
+        "candidate_to_baseline_ratio": 0.8282976562963325,
+        "candidate_wins": true,
+        "difference_m": -0.004362686866224149,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02005008787252384,
+        "candidate_l1_m": 0.01618259499324743,
+        "candidate_to_baseline_ratio": 0.8071084324485017,
+        "candidate_wins": true,
+        "difference_m": -0.0038674928792764088,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01418177252104741,
+        "candidate_l1_m": 0.01099035318474682,
+        "candidate_to_baseline_ratio": 0.7749632966144288,
+        "candidate_wins": true,
+        "difference_m": -0.0031914193363005907,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.040268043677137676,
+        "candidate_l1_m": 0.03031899777241912,
+        "candidate_to_baseline_ratio": 0.7529294945518508,
+        "candidate_wins": true,
+        "difference_m": -0.009949045904718557,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03110325274224616,
+        "candidate_l1_m": 0.023668207833726654,
+        "candidate_to_baseline_ratio": 0.7609560334369525,
+        "candidate_wins": true,
+        "difference_m": -0.0074350449085195044,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 0,
+    "maximum_case_ratio": 0.8282976562963325,
+    "mean_difference_m": -0.005110197079580664,
+    "object_bootstrap_95_interval_m": [
+      -0.006847174526363333,
+      -0.0036898582065956146
+    ],
+    "relative_improvement": 0.2235947239597844,
+    "ties": 0,
+    "wins": 8
+  },
+  "scalar_vs_pyelastica_specific": {
+    "baseline_mean_l1_m": 0.017744533072727324,
+    "candidate_mean_l1_m": 0.022340514368693557,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.014618633567767943,
+        "candidate_l1_m": 0.020797688734834917,
+        "candidate_to_baseline_ratio": 1.4226834976348905,
+        "candidate_wins": false,
+        "difference_m": 0.006179055167066974,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.015341249980191398,
+        "candidate_l1_m": 0.019891970261485505,
+        "candidate_to_baseline_ratio": 1.2966329528017595,
+        "candidate_wins": false,
+        "difference_m": 0.004550720281294107,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.009790484783414936,
+        "candidate_l1_m": 0.012628302381320173,
+        "candidate_to_baseline_ratio": 1.289854655891248,
+        "candidate_wins": false,
+        "difference_m": 0.002837817597905237,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02104574246630431,
+        "candidate_l1_m": 0.02503446957550083,
+        "candidate_to_baseline_ratio": 1.1895265570023366,
+        "candidate_wins": false,
+        "difference_m": 0.003988727109196521,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01618259499324743,
+        "candidate_l1_m": 0.018830156762221394,
+        "candidate_to_baseline_ratio": 1.1636055138300576,
+        "candidate_wins": false,
+        "difference_m": 0.002647561768973964,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01099035318474682,
+        "candidate_l1_m": 0.0126058301015234,
+        "candidate_to_baseline_ratio": 1.1469904460412292,
+        "candidate_wins": false,
+        "difference_m": 0.0016154769167765794,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03031899777241912,
+        "candidate_l1_m": 0.03929919522473076,
+        "candidate_to_baseline_ratio": 1.2961904453346025,
+        "candidate_wins": false,
+        "difference_m": 0.008980197452311638,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.023668207833726654,
+        "candidate_l1_m": 0.029636501907931483,
+        "candidate_to_baseline_ratio": 1.2521650188359486,
+        "candidate_wins": false,
+        "difference_m": 0.005968294074204829,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 8,
+    "maximum_case_ratio": 1.4226834976348905,
+    "mean_difference_m": 0.004595981295966231,
+    "object_bootstrap_95_interval_m": [
+      0.003140840140931838,
+      0.0062141426159916585
+    ],
+    "relative_improvement": -0.25900829721071017,
+    "ties": 0,
+    "wins": 0
+  },
+  "scalar_vs_raw_pyelastica": {
+    "baseline_mean_l1_m": 0.02285473015230799,
+    "candidate_mean_l1_m": 0.022340514368693557,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.019090213388265862,
+        "candidate_l1_m": 0.020797688734834917,
+        "candidate_to_baseline_ratio": 1.0894424442431108,
+        "candidate_wins": false,
+        "difference_m": 0.0017074753465690547,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02052046156816894,
+        "candidate_l1_m": 0.019891970261485505,
+        "candidate_to_baseline_ratio": 0.9693724576030813,
+        "candidate_wins": true,
+        "difference_m": -0.000628491306683434,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.012215580116545574,
+        "candidate_l1_m": 0.012628302381320173,
+        "candidate_to_baseline_ratio": 1.0337865464297993,
+        "candidate_wins": false,
+        "difference_m": 0.00041272226477459886,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02540842933252846,
+        "candidate_l1_m": 0.02503446957550083,
+        "candidate_to_baseline_ratio": 0.9852820592672812,
+        "candidate_wins": true,
+        "difference_m": -0.0003739597570276282,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02005008787252384,
+        "candidate_l1_m": 0.018830156762221394,
+        "candidate_to_baseline_ratio": 0.9391558222558112,
+        "candidate_wins": true,
+        "difference_m": -0.0012199311103024447,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01418177252104741,
+        "candidate_l1_m": 0.0126058301015234,
+        "candidate_to_baseline_ratio": 0.8888754972493651,
+        "candidate_wins": true,
+        "difference_m": -0.0015759424195240113,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.040268043677137676,
+        "candidate_l1_m": 0.03929919522473076,
+        "candidate_to_baseline_ratio": 0.9759400168487206,
+        "candidate_wins": true,
+        "difference_m": -0.0009688484524069188,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03110325274224616,
+        "candidate_l1_m": 0.029636501907931483,
+        "candidate_to_baseline_ratio": 0.9528425259419104,
+        "candidate_wins": true,
+        "difference_m": -0.0014667508343146757,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 2,
+    "maximum_case_ratio": 1.0894424442431108,
+    "mean_difference_m": -0.0005142157836144324,
+    "object_bootstrap_95_interval_m": [
+      -0.0011660376516592372,
+      0.00028656352086130313
+    ],
+    "relative_improvement": 0.022499315467196745,
+    "ties": 0,
+    "wins": 6
+  },
+  "schema_version": 1,
+  "source_manifest": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/deform-dlo3-source-manifest-bbf75a0b.json",
+    "sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+    "size_bytes": 18803
+  },
+  "source_payload_loaded_after_method_seal": true
+}

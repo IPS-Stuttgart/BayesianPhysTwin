@@ -1,0 +1,562 @@
+{
+  "backend_specific_gain_retained_fraction": 0.1334800727026542,
+  "claim_boundary": "Retrospective source-only DLO3 coefficient-transfer diagnostic. A positive decision supports no-refit transfer from DEFORM-fitted local residuals to sealed PyElastica source predictions; it does not establish target confirmation, arbitrary-backend transfer, zero-shot object generalization, safety, or state of the art.",
+  "contract": "deform-dlo3-cross-backend-coefficient-transfer-result-v1",
+  "decision": "no-refit-cross-backend-transfer-supported",
+  "deform_local_residual_models": {
+    "42": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-42-run-bd5cfb14/local_residual_model.npz",
+      "sha256": "3fd149ab89769bec24b36263b9e99dcbd572610bd51a273d0d2c79ca30756e83",
+      "size_bytes": 1440868
+    },
+    "43": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-43-run-bd5cfb14/local_residual_model.npz",
+      "sha256": "9c78101f2d08a4fcd3005092f0cb0ceff9bde3efb8c01386ebbcefb10f50a548",
+      "size_bytes": 1441139
+    },
+    "44": {
+      "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-44-run-da487c26/local_residual_model.npz",
+      "sha256": "738e7eb4ef5a87e3f8e7785fe16db7e915ffcfd05d19aade617f32f8ac5bc26f",
+      "size_bytes": 1441172
+    }
+  },
+  "direct_transfer_vs_pyelastica_specific": {
+    "baseline_mean_l1_m": 0.017744533072727324,
+    "candidate_mean_l1_m": 0.02217262067460067,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.014618633567767943,
+        "candidate_l1_m": 0.01850139374113503,
+        "candidate_to_baseline_ratio": 1.2656034953860553,
+        "candidate_wins": false,
+        "difference_m": 0.003882760173367087,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.015341249980191398,
+        "candidate_l1_m": 0.019784541537548356,
+        "candidate_to_baseline_ratio": 1.2896303471421253,
+        "candidate_wins": false,
+        "difference_m": 0.004443291557356958,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.009790484783414936,
+        "candidate_l1_m": 0.011728408490371088,
+        "candidate_to_baseline_ratio": 1.1979395045114611,
+        "candidate_wins": false,
+        "difference_m": 0.0019379237069561527,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02104574246630431,
+        "candidate_l1_m": 0.024979468054939898,
+        "candidate_to_baseline_ratio": 1.186913129576386,
+        "candidate_wins": false,
+        "difference_m": 0.003933725588635587,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01618259499324743,
+        "candidate_l1_m": 0.01942508100842146,
+        "candidate_to_baseline_ratio": 1.2003687305112085,
+        "candidate_wins": false,
+        "difference_m": 0.003242486015174028,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01099035318474682,
+        "candidate_l1_m": 0.01333304736538888,
+        "candidate_to_baseline_ratio": 1.2131591352217337,
+        "candidate_wins": false,
+        "difference_m": 0.0023426941806420597,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03031899777241912,
+        "candidate_l1_m": 0.039436736009241476,
+        "candidate_to_baseline_ratio": 1.3007269008448779,
+        "candidate_wins": false,
+        "difference_m": 0.009117738236822357,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.023668207833726654,
+        "candidate_l1_m": 0.03019228918975918,
+        "candidate_to_baseline_ratio": 1.2756474593203404,
+        "candidate_wins": false,
+        "difference_m": 0.006524081356032527,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 8,
+    "maximum_case_ratio": 1.3007269008448779,
+    "mean_difference_m": 0.004428087601873344,
+    "object_bootstrap_95_interval_m": [
+      0.003064867875012509,
+      0.006086199245369174
+    ],
+    "relative_improvement": -0.24954658337441127,
+    "ties": 0,
+    "wins": 0
+  },
+  "individual_seed_vs_raw_pyelastica": {
+    "42": {
+      "baseline_mean_l1_m": 0.02285473015230799,
+      "candidate_mean_l1_m": 0.022154278221340078,
+      "case_count": 8,
+      "cases": [
+        {
+          "baseline_l1_m": 0.019090213388265862,
+          "candidate_l1_m": 0.018535717796933367,
+          "candidate_to_baseline_ratio": 0.9709539343508163,
+          "candidate_wins": true,
+          "difference_m": -0.0005544955913324955,
+          "name": "6.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02052046156816894,
+          "candidate_l1_m": 0.019715486506830873,
+          "candidate_to_baseline_ratio": 0.9607720782174446,
+          "candidate_wins": true,
+          "difference_m": -0.000804975061338066,
+          "name": "37.pkl"
+        },
+        {
+          "baseline_l1_m": 0.012215580116545574,
+          "candidate_l1_m": 0.01172621875805973,
+          "candidate_to_baseline_ratio": 0.959939572757333,
+          "candidate_wins": true,
+          "difference_m": -0.0004893613584858441,
+          "name": "47.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02540842933252846,
+          "candidate_l1_m": 0.024983318126045012,
+          "candidate_to_baseline_ratio": 0.983268890771646,
+          "candidate_wins": true,
+          "difference_m": -0.00042511120648344725,
+          "name": "22.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02005008787252384,
+          "candidate_l1_m": 0.019412889944182866,
+          "candidate_to_baseline_ratio": 0.9682196939787893,
+          "candidate_wins": true,
+          "difference_m": -0.0006371979283409726,
+          "name": "24.pkl"
+        },
+        {
+          "baseline_l1_m": 0.01418177252104741,
+          "candidate_l1_m": 0.013307547060473792,
+          "candidate_to_baseline_ratio": 0.9383556985365429,
+          "candidate_wins": true,
+          "difference_m": -0.0008742254605736185,
+          "name": "87.pkl"
+        },
+        {
+          "baseline_l1_m": 0.040268043677137676,
+          "candidate_l1_m": 0.039400807322236435,
+          "candidate_to_baseline_ratio": 0.9784634097982362,
+          "candidate_wins": true,
+          "difference_m": -0.0008672363549012407,
+          "name": "112.pkl"
+        },
+        {
+          "baseline_l1_m": 0.03110325274224616,
+          "candidate_l1_m": 0.03015224025595854,
+          "candidate_to_baseline_ratio": 0.9694240183118886,
+          "candidate_wins": true,
+          "difference_m": -0.0009510124862876189,
+          "name": "19.pkl"
+        }
+      ],
+      "losses": 0,
+      "maximum_case_ratio": 0.983268890771646,
+      "mean_difference_m": -0.0007004519309679129,
+      "object_bootstrap_95_interval_m": [
+        -0.0008260057207092615,
+        -0.0005687517179036731
+      ],
+      "relative_improvement": 0.030648007055868787,
+      "ties": 0,
+      "wins": 8
+    },
+    "43": {
+      "baseline_mean_l1_m": 0.02285473015230799,
+      "candidate_mean_l1_m": 0.02223110992408237,
+      "case_count": 8,
+      "cases": [
+        {
+          "baseline_l1_m": 0.019090213388265862,
+          "candidate_l1_m": 0.018434920199549214,
+          "candidate_to_baseline_ratio": 0.9656738677882231,
+          "candidate_wins": true,
+          "difference_m": -0.0006552931887166477,
+          "name": "6.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02052046156816894,
+          "candidate_l1_m": 0.019892829276874587,
+          "candidate_to_baseline_ratio": 0.9694143190098644,
+          "candidate_wins": true,
+          "difference_m": -0.0006276322912943527,
+          "name": "37.pkl"
+        },
+        {
+          "baseline_l1_m": 0.012215580116545574,
+          "candidate_l1_m": 0.011706647379392802,
+          "candidate_to_baseline_ratio": 0.9583374074503888,
+          "candidate_wins": true,
+          "difference_m": -0.0005089327371527713,
+          "name": "47.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02540842933252846,
+          "candidate_l1_m": 0.02502310496004891,
+          "candidate_to_baseline_ratio": 0.9848347818971144,
+          "candidate_wins": true,
+          "difference_m": -0.00038532437247955006,
+          "name": "22.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02005008787252384,
+          "candidate_l1_m": 0.019505068925160043,
+          "candidate_to_baseline_ratio": 0.9728171292400829,
+          "candidate_wins": true,
+          "difference_m": -0.0005450189473637963,
+          "name": "24.pkl"
+        },
+        {
+          "baseline_l1_m": 0.01418177252104741,
+          "candidate_l1_m": 0.01339653833061576,
+          "candidate_to_baseline_ratio": 0.944630744198846,
+          "candidate_wins": true,
+          "difference_m": -0.0007852341904316506,
+          "name": "87.pkl"
+        },
+        {
+          "baseline_l1_m": 0.040268043677137676,
+          "candidate_l1_m": 0.03957961187002795,
+          "candidate_to_baseline_ratio": 0.9829037682428913,
+          "candidate_wins": true,
+          "difference_m": -0.0006884318071097226,
+          "name": "112.pkl"
+        },
+        {
+          "baseline_l1_m": 0.03110325274224616,
+          "candidate_l1_m": 0.030310158450989676,
+          "candidate_to_baseline_ratio": 0.9745012427533261,
+          "candidate_wins": true,
+          "difference_m": -0.0007930942912564819,
+          "name": "19.pkl"
+        }
+      ],
+      "losses": 0,
+      "maximum_case_ratio": 0.9848347818971144,
+      "mean_difference_m": -0.0006236202282256216,
+      "object_bootstrap_95_interval_m": [
+        -0.0007122889644286285,
+        -0.0005306257175299843
+      ],
+      "relative_improvement": 0.02728626520942079,
+      "ties": 0,
+      "wins": 8
+    },
+    "44": {
+      "baseline_mean_l1_m": 0.02285473015230799,
+      "candidate_mean_l1_m": 0.022139672252683512,
+      "case_count": 8,
+      "cases": [
+        {
+          "baseline_l1_m": 0.019090213388265862,
+          "candidate_l1_m": 0.018554994167707808,
+          "candidate_to_baseline_ratio": 0.9719636858073553,
+          "candidate_wins": true,
+          "difference_m": -0.0005352192205580544,
+          "name": "6.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02052046156816894,
+          "candidate_l1_m": 0.019753177968732532,
+          "candidate_to_baseline_ratio": 0.9626088527839644,
+          "candidate_wins": true,
+          "difference_m": -0.0007672835994364073,
+          "name": "37.pkl"
+        },
+        {
+          "baseline_l1_m": 0.012215580116545574,
+          "candidate_l1_m": 0.011759006963966489,
+          "candidate_to_baseline_ratio": 0.9626237028267963,
+          "candidate_wins": true,
+          "difference_m": -0.00045657315257908483,
+          "name": "47.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02540842933252846,
+          "candidate_l1_m": 0.024933958302787947,
+          "candidate_to_baseline_ratio": 0.9813262353398176,
+          "candidate_wins": true,
+          "difference_m": -0.00047447102974051275,
+          "name": "22.pkl"
+        },
+        {
+          "baseline_l1_m": 0.02005008787252384,
+          "candidate_l1_m": 0.019359550864878047,
+          "candidate_to_baseline_ratio": 0.9655594024307451,
+          "candidate_wins": true,
+          "difference_m": -0.0006905370076457917,
+          "name": "24.pkl"
+        },
+        {
+          "baseline_l1_m": 0.01418177252104741,
+          "candidate_l1_m": 0.013297094524918795,
+          "candidate_to_baseline_ratio": 0.9376186584000237,
+          "candidate_wins": true,
+          "difference_m": -0.0008846779961286157,
+          "name": "87.pkl"
+        },
+        {
+          "baseline_l1_m": 0.040268043677137676,
+          "candidate_l1_m": 0.03933695263673363,
+          "candidate_to_baseline_ratio": 0.9768776688564914,
+          "candidate_wins": true,
+          "difference_m": -0.0009310910404040432,
+          "name": "112.pkl"
+        },
+        {
+          "baseline_l1_m": 0.03110325274224616,
+          "candidate_l1_m": 0.030122642591742823,
+          "candidate_to_baseline_ratio": 0.9684724244557413,
+          "candidate_wins": true,
+          "difference_m": -0.0009806101505033353,
+          "name": "19.pkl"
+        }
+      ],
+      "losses": 0,
+      "maximum_case_ratio": 0.9813262353398176,
+      "mean_difference_m": -0.0007150578996244807,
+      "object_bootstrap_95_interval_m": [
+        -0.0008468450914437971,
+        -0.0005779045912541957
+      ],
+      "relative_improvement": 0.03128708564306837,
+      "ties": 0,
+      "wins": 8
+    }
+  },
+  "information_boundary": {
+    "deform_refit": false,
+    "dlo3_official_evaluation_read": false,
+    "dlo4_or_dlo5_read": false,
+    "paper_claim_authorized": false,
+    "pyelastica_refit": false,
+    "source_outcomes_previously_opened": true,
+    "target_side_selection": false
+  },
+  "method_seal": {
+    "path": "/home/github-runner/.cache/workflows/deform-dlo3-hierarchical-transfers-v1/runs/33536420739-1/cross-backend/method_seal.json",
+    "sha256": "44f560014fd66481fb5bc916b8f391c0a3614f941298de8a0f9d619efab55a21",
+    "size_bytes": 2026
+  },
+  "methods": {
+    "deform_no_refit_equal_seed_transfer": 0.02217262067460067,
+    "deform_no_refit_seed_42": 0.022154278221340078,
+    "deform_no_refit_seed_43": 0.02223110992408237,
+    "deform_no_refit_seed_44": 0.022139672252683512,
+    "pyelastica_specific_candidate": 0.017744533072727324,
+    "raw_pyelastica": 0.02285473015230799
+  },
+  "primary_arm": "equal-seed-no-refit-transfer",
+  "primary_vs_raw_pyelastica": {
+    "baseline_mean_l1_m": 0.02285473015230799,
+    "candidate_mean_l1_m": 0.02217262067460067,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.019090213388265862,
+        "candidate_l1_m": 0.01850139374113503,
+        "candidate_to_baseline_ratio": 0.9691559420968673,
+        "candidate_wins": true,
+        "difference_m": -0.0005888196471308324,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02052046156816894,
+        "candidate_l1_m": 0.019784541537548356,
+        "candidate_to_baseline_ratio": 0.9641372574307913,
+        "candidate_wins": true,
+        "difference_m": -0.0007359200306205835,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.012215580116545574,
+        "candidate_l1_m": 0.011728408490371088,
+        "candidate_to_baseline_ratio": 0.9601188300902199,
+        "candidate_wins": true,
+        "difference_m": -0.0004871716261744853,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02540842933252846,
+        "candidate_l1_m": 0.024979468054939898,
+        "candidate_to_baseline_ratio": 0.9831173634554657,
+        "candidate_wins": true,
+        "difference_m": -0.0004289612775885618,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02005008787252384,
+        "candidate_l1_m": 0.01942508100842146,
+        "candidate_to_baseline_ratio": 0.9688277244430996,
+        "candidate_wins": true,
+        "difference_m": -0.0006250068641023808,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01418177252104741,
+        "candidate_l1_m": 0.01333304736538888,
+        "candidate_to_baseline_ratio": 0.9401538027493443,
+        "candidate_wins": true,
+        "difference_m": -0.000848725155658531,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.040268043677137676,
+        "candidate_l1_m": 0.039436736009241476,
+        "candidate_to_baseline_ratio": 0.9793556480031291,
+        "candidate_wins": true,
+        "difference_m": -0.0008313076678962,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03110325274224616,
+        "candidate_l1_m": 0.03019228918975918,
+        "candidate_to_baseline_ratio": 0.9707116307083324,
+        "candidate_wins": true,
+        "difference_m": -0.000910963552486977,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 0,
+    "maximum_case_ratio": 0.9831173634554657,
+    "mean_difference_m": -0.000682109477707319,
+    "object_bootstrap_95_interval_m": [
+      -0.000793156566888391,
+      -0.0005666396915405747
+    ],
+    "relative_improvement": 0.029845440010081936,
+    "ties": 0,
+    "wins": 8
+  },
+  "promotion_gate": {
+    "improving_seed_models": 3,
+    "maximum_case_ratio": 1.1,
+    "minimum_case_wins": 6,
+    "minimum_improving_seed_models": 2,
+    "minimum_relative_improvement": 0.01,
+    "passed": true,
+    "seed_stability_passed": true,
+    "supported": true
+  },
+  "protocol": {
+    "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/protocols/deform_dlo3_cross_backend_transfer_v1.json",
+    "sha256": "6ebf272415b7219eba20021375ce4288fc47b26be21afc4105e7077875f7f01a",
+    "size_bytes": 3835
+  },
+  "pyelastica_source_predictions": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v1/pyelastica-run-7c304f79/source_predictions.npz",
+    "sha256": "c8658f04aa81af1895f7f010d03a08e945fca7b63342b341eaa889408f5b69c8",
+    "size_bytes": 5185195
+  },
+  "pyelastica_specific_vs_raw_pyelastica": {
+    "baseline_mean_l1_m": 0.02285473015230799,
+    "candidate_mean_l1_m": 0.017744533072727324,
+    "case_count": 8,
+    "cases": [
+      {
+        "baseline_l1_m": 0.019090213388265862,
+        "candidate_l1_m": 0.014618633567767943,
+        "candidate_to_baseline_ratio": 0.7657658544955577,
+        "candidate_wins": true,
+        "difference_m": -0.0044715798204979194,
+        "name": "6.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02052046156816894,
+        "candidate_l1_m": 0.015341249980191398,
+        "candidate_to_baseline_ratio": 0.7476074516758695,
+        "candidate_wins": true,
+        "difference_m": -0.005179211587977541,
+        "name": "37.pkl"
+      },
+      {
+        "baseline_l1_m": 0.012215580116545574,
+        "candidate_l1_m": 0.009790484783414936,
+        "candidate_to_baseline_ratio": 0.8014752218074415,
+        "candidate_wins": true,
+        "difference_m": -0.002425095333130638,
+        "name": "47.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02540842933252846,
+        "candidate_l1_m": 0.02104574246630431,
+        "candidate_to_baseline_ratio": 0.8282976562963325,
+        "candidate_wins": true,
+        "difference_m": -0.004362686866224149,
+        "name": "22.pkl"
+      },
+      {
+        "baseline_l1_m": 0.02005008787252384,
+        "candidate_l1_m": 0.01618259499324743,
+        "candidate_to_baseline_ratio": 0.8071084324485017,
+        "candidate_wins": true,
+        "difference_m": -0.0038674928792764088,
+        "name": "24.pkl"
+      },
+      {
+        "baseline_l1_m": 0.01418177252104741,
+        "candidate_l1_m": 0.01099035318474682,
+        "candidate_to_baseline_ratio": 0.7749632966144288,
+        "candidate_wins": true,
+        "difference_m": -0.0031914193363005907,
+        "name": "87.pkl"
+      },
+      {
+        "baseline_l1_m": 0.040268043677137676,
+        "candidate_l1_m": 0.03031899777241912,
+        "candidate_to_baseline_ratio": 0.7529294945518508,
+        "candidate_wins": true,
+        "difference_m": -0.009949045904718557,
+        "name": "112.pkl"
+      },
+      {
+        "baseline_l1_m": 0.03110325274224616,
+        "candidate_l1_m": 0.023668207833726654,
+        "candidate_to_baseline_ratio": 0.7609560334369525,
+        "candidate_wins": true,
+        "difference_m": -0.0074350449085195044,
+        "name": "19.pkl"
+      }
+    ],
+    "losses": 0,
+    "maximum_case_ratio": 0.8282976562963325,
+    "mean_difference_m": -0.005110197079580664,
+    "object_bootstrap_95_interval_m": [
+      -0.006817160119032352,
+      -0.003675796468144037
+    ],
+    "relative_improvement": 0.2235947239597844,
+    "ties": 0,
+    "wins": 8
+  },
+  "schema_version": 1,
+  "source_manifest": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/deform-dlo3-source-manifest-bbf75a0b.json",
+    "sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb",
+    "size_bytes": 18803
+  },
+  "source_payload_loaded_after_method_seal": true,
+  "source_trajectory_count": 8
+}
