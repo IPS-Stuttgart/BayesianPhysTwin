@@ -10,14 +10,24 @@ on:
       - ".github/requests/tracking-cloth-self-collision-selective-twin-v1.json"
       - "docs/selective_competence_theorem_v1.md"
       - "src/bayesian_phystwin/selective_competence_bound_v1.py"
+      - "src/bayesian_phystwin/act_sense_fallback_certificate_v1.py"
       - "experiments/tracking_cloth_self_collision_selective_twin_v1/**"
+      - "experiments/tracking_cloth_action_feasibility_v1/**"
       - "tests/test_selective_competence_bound_v1.py"
       - "tests/test_tracking_cloth_self_collision_selective_twin_v1.py"
+      - "tests/test_tracking_cloth_action_feasibility_v1.py"
+      - "tests/test_tracking_cloth_action_actual_time_v1.py"
       - "tests/test_workflow_inventory_budget.py"
   push:
     branches: [main]
     paths:
+      - ".github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml"
       - ".github/requests/tracking-cloth-self-collision-selective-twin-v1.json"
+      - "src/bayesian_phystwin/act_sense_fallback_certificate_v1.py"
+      - "experiments/tracking_cloth_self_collision_selective_twin_v1/data.py"
+      - "experiments/tracking_cloth_action_feasibility_v1/**"
+      - "tests/test_tracking_cloth_action_feasibility_v1.py"
+      - "tests/test_tracking_cloth_action_actual_time_v1.py"
 
 permissions:
   contents: read
@@ -30,6 +40,7 @@ env:
   DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
   REQUEST_PATH: .github/requests/tracking-cloth-self-collision-selective-twin-v1.json
   PROTOCOL_PATH: experiments/tracking_cloth_self_collision_selective_twin_v1/protocol.json
+  ACTION_PROTOCOL_PATH: experiments/tracking_cloth_action_feasibility_v1/protocol.json
   PYTHONUNBUFFERED: "1"
   PYTHONDONTWRITEBYTECODE: "1"
   OPENBLAS_NUM_THREADS: "1"
@@ -37,10 +48,66 @@ env:
   MKL_NUM_THREADS: "1"
 
 jobs:
-  contracts:
-    name: Self-collision selective-twin contracts
+  classify_push:
+    name: Classify self-collision push
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+    outputs:
+      legacy_request: ${{ steps.classify.outputs.legacy_request }}
+      action_audit: ${{ steps.classify.outputs.action_audit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - id: classify
+        name: Separate legacy confirmation from source-only action audit
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA")
+          legacy_request=false
+          action_audit=false
+          for path in "${changed[@]}"; do
+            case "$path" in
+              .github/requests/tracking-cloth-self-collision-selective-twin-v1.json)
+                legacy_request=true
+                ;;
+              src/bayesian_phystwin/act_sense_fallback_certificate_v1.py)
+                action_audit=true
+                ;;
+              experiments/tracking_cloth_self_collision_selective_twin_v1/data.py)
+                action_audit=true
+                ;;
+              experiments/tracking_cloth_action_feasibility_v1/*)
+                action_audit=true
+                ;;
+              tests/test_tracking_cloth_action_feasibility_v1.py)
+                action_audit=true
+                ;;
+              tests/test_tracking_cloth_action_actual_time_v1.py)
+                action_audit=true
+                ;;
+            esac
+          done
+          if [ "$legacy_request" = true ] && [ "$action_audit" = true ]; then
+            echo "legacy confirmation and action-audit changes must be separate" >&2
+            exit 2
+          fi
+          {
+            echo "legacy_request=$legacy_request"
+            echo "action_audit=$action_audit"
+          } >> "$GITHUB_OUTPUT"
+
+  contracts:
+    name: Self-collision and physical-action contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,24 +119,32 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install focused dependencies
         run: python -m pip install -e . pytest ruff
-      - name: Test finite-sample bounds and experiment contracts
+      - name: Test finite-sample, selective-twin, and physical-action contracts
         run: |
           python -m pytest -q \
             tests/test_selective_competence_bound_v1.py \
-            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
-      - name: Lint and format new scientific code
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py
+      - name: Lint and format Tracking Cloth scientific code
         run: |
           python -m ruff check \
             src/bayesian_phystwin/selective_competence_bound_v1.py \
             experiments/tracking_cloth_self_collision_selective_twin_v1 \
+            experiments/tracking_cloth_action_feasibility_v1 \
             tests/test_selective_competence_bound_v1.py \
-            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py
           python -m ruff format --check \
             src/bayesian_phystwin/selective_competence_bound_v1.py \
             experiments/tracking_cloth_self_collision_selective_twin_v1 \
+            experiments/tracking_cloth_action_feasibility_v1 \
             tests/test_selective_competence_bound_v1.py \
-            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
-      - name: Validate frozen protocol and optional request
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py
+      - name: Validate frozen selective-twin protocol and optional request
         shell: bash
         run: |
           set -euo pipefail
@@ -123,10 +198,47 @@ jobs:
               assert len(revision) == 40
               assert set(revision) <= set("0123456789abcdef")
           PY
+      - name: Verify source-only physical-action boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          protocol = json.loads(
+              Path(os.environ["ACTION_PROTOCOL_PATH"]).read_text(encoding="utf-8")
+          )
+          assert protocol["source_repetitions"] == [1, 2]
+          assert protocol["reserved_target_repetition"] == 3
+          assert protocol["analysis_sample_period_seconds"] == 1.0 / 30.0
+          boundary = protocol["information_boundary"]
+          assert boundary["target_rep3_numeric_outcomes_read"] is False
+          assert boundary["target_protocol_authorized"] is False
+          assert boundary["nominal_capture_rate_assumed_exact"] is False
+
+          workflow = Path(
+              ".github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml"
+          ).read_text(encoding="utf-8")
+          action_job = workflow[workflow.index("\n  action_audit:") :]
+          assert "[self-hosted, Linux, X64, gpuserver4090]" in action_job
+          assert "--stage predict" not in action_job
+          assert "--stage score" not in action_job
+          assert "secrets" + "." not in action_job
+          assert "contents:" + " write" not in workflow
+          assert "git" + " push" not in workflow
+          PY
 
   authorize:
     name: Authorize one fresh repetition request
-    if: github.event_name == 'push'
+    needs: [contracts, classify_push]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      needs.contracts.result == 'success' &&
+      needs.classify_push.result == 'success' &&
+      needs.classify_push.outputs.legacy_request == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -177,13 +289,15 @@ jobs:
 
   source:
     name: Fit rep1 and freeze rep2 handoff / gpuserver4090
-    needs: [contracts, authorize]
+    needs: [contracts, classify_push, authorize]
     if: >-
       always() &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       needs.contracts.result == 'success' &&
+      needs.classify_push.result == 'success' &&
+      needs.classify_push.outputs.legacy_request == 'true' &&
       needs.authorize.result == 'success'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 180
@@ -245,13 +359,15 @@ jobs:
 
   confirm:
     name: Seal and score rep3 once / gpuserver4090
-    needs: [contracts, authorize, source]
+    needs: [contracts, classify_push, authorize, source]
     if: >-
       always() &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       needs.contracts.result == 'success' &&
+      needs.classify_push.result == 'success' &&
+      needs.classify_push.outputs.legacy_request == 'true' &&
       needs.authorize.result == 'success' &&
       needs.source.result == 'success'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
@@ -359,3 +475,71 @@ jobs:
         shell: bash
         run: |
           rm -rf "${SC_PREDICTION:-}" "${SC_RESULT:-}" "${SC_VENV:-}" "${SC_SOURCE:-}"
+
+  action_audit:
+    name: Source-only physical-action audit / gpuserver4090
+    needs: [contracts, classify_push]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.classify_push.result == 'success' &&
+      needs.classify_push.outputs.action_audit == 'true'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact merged revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      - name: Execute source-only factorial audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          venv="$RUNNER_TEMP/tracking-action-source-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$RUNNER_TEMP/tracking-action-source-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          test ! -e "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install -e .
+          "$venv/bin/python" -m \
+            experiments.tracking_cloth_action_feasibility_v1.run \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$output"
+          cp "$ACTION_PROTOCOL_PATH" "$output/protocol.json"
+          echo "ACTION_SOURCE_OUTPUT=$output" >> "$GITHUB_ENV"
+          echo "ACTION_SOURCE_VENV=$venv" >> "$GITHUB_ENV"
+      - name: Verify target closure and publish compact summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '.information_boundary.target_rep3_numeric_outcomes_read == false' \
+            "$ACTION_SOURCE_OUTPUT/result.json"
+          jq -e '.information_boundary.target_protocol_authorized == false' \
+            "$ACTION_SOURCE_OUTPUT/result.json"
+          cat "$ACTION_SOURCE_OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload source-only evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-action-feasibility-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.ACTION_SOURCE_OUTPUT }}/result.json
+            ${{ env.ACTION_SOURCE_OUTPUT }}/source_cases.csv
+            ${{ env.ACTION_SOURCE_OUTPUT }}/SUMMARY.md
+            ${{ env.ACTION_SOURCE_OUTPUT }}/protocol.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Remove source execution
+        if: always()
+        shell: bash
+        run: rm -rf "${ACTION_SOURCE_OUTPUT:-}" "${ACTION_SOURCE_VENV:-}"
