@@ -47,7 +47,8 @@ jobs:
           test "${#changed[@]}" -eq 1
           test "${changed[0]}" = "$REQUEST"
           python -m py_compile \
-            experiments/deform_dlo45_decision_directed_sensing_v3/evaluate.py
+            experiments/deform_dlo45_decision_directed_sensing_v3/evaluate.py \
+            experiments/deform_dlo45_decision_directed_sensing_v3/execute.py
           python -m json.tool "$PROTOCOL" >/dev/null
           python -m json.tool "$CORE_PROTOCOL" >/dev/null
           python - <<'PY'
@@ -147,7 +148,7 @@ jobs:
           out="$RUNNER_TEMP/deform-dlo45-v3-result-$GITHUB_RUN_ID"
           rm -rf -- "$out"
           "$PYTHON" -m \
-            experiments.deform_dlo45_decision_directed_sensing_v3.evaluate \
+            experiments.deform_dlo45_decision_directed_sensing_v3.execute \
             --dataset-root "$SOURCE_ROOT" \
             --protocol "$PROTOCOL" \
             --output-dir "$out" \
