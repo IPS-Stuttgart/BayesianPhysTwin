@@ -1,0 +1,57 @@
+{
+  "schema": "bayesian-phystwin.tracking-cloth-cross-action-transport",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-cross-action-transport-source-target-v1",
+  "dataset_record": "14644526",
+  "dataset_archive_name": "tracking-cloth-deformation-v1.zip",
+  "dataset_archive_sha256": "385d535297beb224513978987eaac53b1c0f1fc558684072283c5f26ce7fc1a4",
+  "dataset_extracted_sha256": "6a634745b4da05084056f5ce5182ef2c687d942ff8f4f742f8437c953b874108",
+  "materials": [
+    "cotton",
+    "denim",
+    "polyester",
+    "wool"
+  ],
+  "interactions": [
+    "four_corners_normal",
+    "four_corners_parallel",
+    "two_corners_normal"
+  ],
+  "source_repetitions": [
+    1,
+    2
+  ],
+  "model_repetition": 1,
+  "retrospective_target_repetition": 2,
+  "reserved_confirmation_repetition": 3,
+  "prefix_seconds": 0.5,
+  "forecast_seconds": 3.0,
+  "analysis_sample_period_seconds": 0.03333333333333333,
+  "initial_observation_deadline_seconds": 0.55,
+  "pca_components": 8,
+  "affine_constraint_weight": 100.0,
+  "rank_relative_tolerance": 1e-10,
+  "rank_absolute_tolerance": 1e-12,
+  "adequacy_radius_rule": "maximum_leave_one_material_out_source_query_residual",
+  "minimum_adequate_material_fraction": 0.75,
+  "minimum_material_match_accuracy": 0.5,
+  "minimum_persistence_gap_recovery": 0.25,
+  "maximum_exact_pairing_p_value": 0.1,
+  "require_gain_over_action_mean": true,
+  "require_gain_over_wrong_action": true,
+  "require_gain_over_diagnostic_copy": true,
+  "permutation_control": "all_24_material_association_permutations",
+  "diagnostic_selection": "minimum_leave_one_material_out_rep1_target_geometry_rmse",
+  "information_order": {
+    "stage_1": "Read all repetition-1 interactions, choose one diagnostic interaction, fit the source basis, and freeze every model choice.",
+    "stage_2": "Read only the chosen repetition-2 diagnostic interaction and seal predictions for the other two repetition-2 interactions.",
+    "stage_3": "Verify the prediction seal before reading the eight held-action repetition-2 trajectories and score once.",
+    "rep3_rule": "No repetition-3 numeric trajectory may be parsed by this study."
+  },
+  "retrospective_status": {
+    "globally_fresh_target": false,
+    "reason": "Repetition 2 has been available to earlier project analyses; this protocol supplies a newly frozen trajectory-geometry analysis but is not an independently blind confirmation.",
+    "rep3_confirmation_authorized": false
+  },
+  "claim_boundary": "This is a retrospective source-frozen cross-action trajectory-geometry gate on separate Tracking Cloth recordings. It tests whether one observed interaction can index a repetition-1 response library well enough to predict two other repetition-2 interaction queries, with exact material-association, wrong-action, and diagnostic-copy controls. It is not a same-episode online probe-reset-act experiment, does not establish natural material causation, does not validate unrestricted nonlinear closure, does not provide an independently blind confirmation, and does not authorize numeric access to repetition 3."
+}
