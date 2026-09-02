@@ -1,0 +1,137 @@
+{
+  "contract": "deform-dlo45-decision-directed-sensing-v2",
+  "schema_version": 2,
+  "data": {
+    "dataset": "DEFORM",
+    "dlos": [
+      "DLO4",
+      "DLO5"
+    ],
+    "frame_count": 500,
+    "node_count": 12,
+    "train_trajectory_count": 56,
+    "evaluation_trajectory_count": 14,
+    "known_endpoint_nodes": [
+      0,
+      1,
+      -2,
+      -1
+    ],
+    "candidate_internal_nodes": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "task_internal_nodes": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "official_revision": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "windows": {
+    "first_current_frame": 4,
+    "horizon_frames": 25,
+    "stride_frames": 25,
+    "future_endpoint_path_is_input": true,
+    "future_internal_nodes_are_outcomes": true
+  },
+  "source_split": {
+    "fit_count": 39,
+    "calibration_count": 9,
+    "source_test_count": 8,
+    "domain_separator": "bayesian-phystwin/deform-dlo45-decision-directed-sensing-v3/replication-0007"
+  },
+  "model": {
+    "support_neighbors": 16,
+    "response_clusters": 8,
+    "state_projection_dimension": 16,
+    "query_projection_dimension": 8,
+    "temperature_scale": 1.0,
+    "kmeans_iterations": 50,
+    "minimum_class_support": 1,
+    "action_portfolio": "fallback-plus-global-source-response-prototype-per-class",
+    "predictive_sensor_quadrature": "current-local-support-hypothesis-mixture"
+  },
+  "calibration": {
+    "sensor_log_likelihood_scales": [
+      2.0
+    ],
+    "action_prototype_scales": [
+      1.0
+    ],
+    "regret_tolerances": [
+      0.05
+    ],
+    "measurement_budget": 4,
+    "maximum_nonfallback_harmful_fraction": 0.05,
+    "minimum_nonfallback_decisions": 20,
+    "selection_objective": "fixed-v2-operating-point-replication-with-calibration-gate",
+    "shared_across_dlos": true,
+    "fallback_when_no_candidate_is_eligible": "evaluate-deterministic-fixed-configuration-and-mark-calibration-gate-failed"
+  },
+  "sensing": {
+    "policies": [
+      "decision_regret",
+      "bayes_risk",
+      "posterior_entropy",
+      "class_entropy",
+      "state_variance",
+      "query_variance",
+      "center_out",
+      "random",
+      "oracle_decision"
+    ],
+    "measurement_budgets": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      8
+    ],
+    "maximum_measurements": 8,
+    "center_out_internal_nodes": [
+      5,
+      6,
+      4,
+      7,
+      3,
+      8,
+      2,
+      9
+    ],
+    "measurement_block": "current line-relative position plus one-frame line-relative velocity",
+    "measurement_costs_by_internal_node": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "adaptive_selection": "maximize_expected_metric_reduction_per_measurement_cost",
+    "random_seed": 20260907
+  },
+  "evaluation": {
+    "primary_stage": "source-test-only-competing-action-pilot",
+    "evaluation_split_opened": false,
+    "bootstrap_unit": "complete_source_test_trajectory_stratified_by_dlo",
+    "bootstrap_replicates": 2000,
+    "bootstrap_seed": 20260908,
+    "paired_policy_comparisons": true,
+    "cost_rmse_frontiers": true,
+    "target_tuning": false,
+    "new_data_collection": false
+  },
+  "claim_boundary": "Non-overlapping source-test replication of the fixed v2 operating point on existing public DEFORM training trajectories. The likelihood scale, action-prototype scale, support-regret tolerance, acquisition policies, and sensing budget were fixed from the preceding v2 study before this replication split was evaluated. The new source-test roster is required to have zero filename overlap with the v2 source-test roster. Official evaluation files remain absent. Exact regret remains conditional on the registered finite local support and quotient; transport calibration is added by the outer v3 protocol."
+}
