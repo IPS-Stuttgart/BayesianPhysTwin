@@ -1,0 +1,77 @@
+{
+  "claim_boundary": "The active-probe certificate is exact only for the supplied finite hypotheses, positive prior support, quotient masses, probe-outcome likelihood, outcome-conditioned losses, and deterministic terminal policies. It does not validate the physical probe, support completeness, likelihood calibration, loss model, target transport, probe cost, continuous actions, deployment, or safety.",
+  "current_state_entropy_bits": 2.0,
+  "probes": [
+    {
+      "cost": 0.0,
+      "decision_identified": false,
+      "expected_posterior_state_entropy_bits": 2.0,
+      "minimax_worst_case_regret": 1.0,
+      "name": "no_probe",
+      "outcome_count": 1,
+      "state_identified": false,
+      "terminal_policy": [
+        0
+      ]
+    },
+    {
+      "cost": 1.0,
+      "decision_identified": true,
+      "expected_posterior_state_entropy_bits": 1.0,
+      "minimax_worst_case_regret": 0.0,
+      "name": "decision_probe",
+      "outcome_count": 2,
+      "state_identified": false,
+      "terminal_policy": [
+        0,
+        1
+      ]
+    },
+    {
+      "cost": 4.0,
+      "decision_identified": true,
+      "expected_posterior_state_entropy_bits": 0.0,
+      "minimax_worst_case_regret": 0.0,
+      "name": "state_probe",
+      "outcome_count": 4,
+      "state_identified": true,
+      "terminal_policy": [
+        0,
+        0,
+        1,
+        1
+      ]
+    }
+  ],
+  "registered_regret_tolerance": 0.0,
+  "schema": "bayesian-phystwin/active-decision-probe-controlled-v1",
+  "schema_version": 1,
+  "selection": {
+    "admissible_probe_mask": [
+      false,
+      true,
+      true
+    ],
+    "claim_boundary": "The active-probe certificate is exact only for the supplied finite hypotheses, positive prior support, quotient masses, probe-outcome likelihood, outcome-conditioned losses, and deterministic terminal policies. It does not validate the physical probe, support completeness, likelihood calibration, loss model, target transport, probe cost, continuous actions, deployment, or safety.",
+    "fallback_required": false,
+    "probe_costs": [
+      0.0,
+      1.0,
+      4.0
+    ],
+    "probe_minimax_regrets": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "probe_names": [
+      "no_probe",
+      "decision_probe",
+      "state_probe"
+    ],
+    "selected_probe_index": 1,
+    "selected_probe_name": "decision_probe",
+    "semantics": "exact-minimax-regret-for-finite-outcome-contingent-actions-over-registered-quotient-and-prior-support-v1",
+    "version": 1
+  }
+}
