@@ -1,0 +1,139 @@
+name: Anytime factor-envelope confirmation v4
+
+on:
+  push:
+    branches:
+      - science/anytime-valid-simulator-admission-v1
+    paths:
+      - .github/workflows/anytime-factor-envelope-v4.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: anytime-factor-envelope-v4-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  confirm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: science/anytime-valid-simulator-admission-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install focused environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest==9.0.2 ruff==0.16.5
+
+      - name: Format and validate factor-envelope sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/remote/run_anytime_factor_envelope_v4.py
+            src/bayesian_phystwin/anytime_factor_envelope_v4.py
+            src/bayesian_phystwin_experiments/anytime_factor_envelope_v4.py
+            tests/test_anytime_factor_envelope_v4.py
+            tests/test_anytime_factor_envelope_study_v4.py
+          )
+          ruff check --fix --unsafe-fixes "${files[@]}"
+          ruff format "${files[@]}"
+          ruff check "${files[@]}"
+          ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+
+      - name: Run factor-envelope and switching regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest -q \
+            tests/test_anytime_factor_envelope_v4.py \
+            tests/test_anytime_factor_envelope_study_v4.py \
+            tests/test_anytime_switching_admission_v3.py \
+            tests/test_anytime_switching_admission_study_v3.py
+
+      - name: Execute frozen confirmation roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf results/science/anytime_factor_envelope_v4
+          python scripts/remote/run_anytime_factor_envelope_v4.py \
+            --protocol protocols/anytime_factor_envelope_v4.json \
+            --output-root results/science/anytime_factor_envelope_v4
+
+      - name: Verify claim-bearing artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("results/science/anytime_factor_envelope_v4")
+          result = json.loads((root / "result.json").read_text(encoding="utf-8"))
+          protocol = Path("protocols/anytime_factor_envelope_v4.json")
+          protocol_digest = hashlib.sha256(protocol.read_bytes()).hexdigest()
+
+          assert result["decision"] == "factor-envelope-efficiency-supported"
+          assert result["mechanism_gate"]["passed"] is True
+          assert result["protocol_sha256"] == protocol_digest
+          assert result["design"]["seed_base"] == 2026091400
+          assert result["derived_comparison"][
+              "switching_null_envelope_crossing_probability"
+          ] <= 0.025
+          assert result["derived_comparison"][
+              "moderate_power_gain_envelope_minus_min_score"
+          ] >= 0.05
+
+          for name, scenario in result["scenarios"].items():
+              if scenario["group"] != "null":
+                  continue
+              for phase in scenario["phase_expectations"]:
+                  assert phase["maximum_expected_envelope_factor"] <= 1.0 + 1e-12, (
+                      name,
+                      phase,
+                  )
+
+          for csv_path in root.glob("*.csv"):
+              assert b"\r" not in csv_path.read_bytes(), csv_path
+          PY
+          sha256sum -c results/science/anytime_factor_envelope_v4/SHA256SUMS
+
+      - name: Commit formatted implementation and confirmation evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/anytime-factor-envelope-v4.yml
+          git add \
+            .github/workflows/anytime-factor-envelope-v4.yml \
+            docs/anytime_factor_envelope_v4.md \
+            protocols/anytime_factor_envelope_v4.json \
+            scripts/remote/run_anytime_factor_envelope_v4.py \
+            src/bayesian_phystwin/anytime_factor_envelope_v4.py \
+            src/bayesian_phystwin_experiments/anytime_factor_envelope_v4.py \
+            tests/test_anytime_factor_envelope_v4.py \
+            tests/test_anytime_factor_envelope_study_v4.py \
+            results/science/anytime_factor_envelope_v4
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "Expected factor-envelope changes are missing" >&2
+            exit 1
+          fi
+          git commit -m "Record factor-envelope confirmation evidence"
+          git push origin HEAD:science/anytime-valid-simulator-admission-v1
