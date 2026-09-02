@@ -53,7 +53,7 @@ jobs:
 
           expected = {
               "docs/interventional_cause_estimation_v1.md",
-              "scripts/science/run_interventional_cause_estimation_v1.py",
+              "scripts/science/run_interventional_cause_estimation_design_v1.py",
               "src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py",
               "tests/test_interventional_cause_estimation_controlled_v1.py",
               "tests/test_interventional_cause_estimation_v1.py",
@@ -78,7 +78,7 @@ jobs:
               "$RUNNER_TEMP/why-twin-v2/$relative" "$relative"
           done <<'EOF'
           docs/interventional_cause_estimation_v1.md
-          scripts/science/run_interventional_cause_estimation_v1.py
+          scripts/science/run_interventional_cause_estimation_design_v1.py
           src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
           tests/test_interventional_cause_estimation_controlled_v1.py
           tests/test_interventional_cause_estimation_v1.py
@@ -92,7 +92,7 @@ jobs:
           python -m pip check
           files=(
             src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
-            scripts/science/run_interventional_cause_estimation_v1.py
+            scripts/science/run_interventional_cause_estimation_design_v1.py
             tests/test_interventional_cause_estimation_v1.py
             tests/test_interventional_cause_estimation_controlled_v1.py
           )
@@ -105,7 +105,7 @@ jobs:
             tests/test_interventional_cause_estimation_controlled_v1.py
           python -m compileall -q \
             src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py \
-            scripts/science/run_interventional_cause_estimation_v1.py
+            scripts/science/run_interventional_cause_estimation_design_v1.py
 
       - name: Publish clean product commit
         shell: bash
@@ -121,7 +121,7 @@ jobs:
             .github/agent-payloads/interventional-cause-estimation-v1.tgz
             .github/workflows/materialize-interventional-cause-estimation-v1.yml
             docs/interventional_cause_estimation_v1.md
-            scripts/science/run_interventional_cause_estimation_v1.py
+            scripts/science/run_interventional_cause_estimation_design_v1.py
             src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
             tests/test_interventional_cause_estimation_controlled_v1.py
             tests/test_interventional_cause_estimation_v1.py
