@@ -1,0 +1,34 @@
+{
+  "contract": "deform-dlo45-conformal-regret-envelope-v1",
+  "schema_version": 1,
+  "parent_contract": "deform-dlo45-decision-identifiability-v1",
+  "parent_workflow_run_id": 33473378340,
+  "parent_source_result_sha256": "77332c323ddd09d945f65f57e3b83a12deedd9ea94509e43c13c9ca87f3cc353",
+  "dataset_repository": "roahmlab/DEFORM",
+  "dataset_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+  "calibration": {
+    "partition": "source_test",
+    "unit": "complete_trajectory",
+    "score": "maximum realized-minus-registered regret over all decisions and registered nonfallback actions",
+    "candidate_action_mask": [false, true, true],
+    "miscoverage_levels": [0.1, 0.2, 0.3],
+    "primary_miscoverage": 0.2,
+    "negative_radius_clipped_to_zero": true,
+    "per_dlo_is_primary": true,
+    "pooled_dlo_mixture_is_sensitivity_only": true
+  },
+  "decision": {
+    "fallback_action_index": 0,
+    "base_action_rule": "exact finite-support minimax certificate",
+    "regret_budget_grid": [0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
+    "primary_regret_budget": 0.3,
+    "report_complete_frontier": true,
+    "target_selection": "none"
+  },
+  "bootstrap": {
+    "unit": "complete_trajectory",
+    "replicates": 5000,
+    "seed": 20260902
+  },
+  "claim_boundary": "This retrospective source-sealed analysis calibrates a trajectory-marginal simultaneous regret inflation on official DEFORM training trajectories assigned to the pre-existing source-test partition and evaluates the complete frozen budget frontier on official held trajectories. Validity requires exchangeability of complete trajectories within the declared DLO stratum. It does not provide pointwise conditional validity, unseen-object or cross-material transport, arbitrary-action safety, calibrated state uncertainty, or deployment authorization."
+}
