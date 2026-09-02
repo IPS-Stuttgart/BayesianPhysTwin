@@ -9,20 +9,28 @@ on:
       - ".github/workflows/decision-capability-atlas-v1.yml"
       - "src/bayesian_phystwin/decision_capability_atlas_v1.py"
       - "src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py"
+      - "src/bayesian_phystwin/decision_capability_calibration_v1.py"
       - "tests/test_deform_dlo45_decision_capability_atlas_v1.py"
       - "tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py"
+      - "tests/test_decision_capability_calibration_v1.py"
       - "docs/decision_capability_atlas_v1.md"
+      - "docs/decision_capability_calibration_v1.md"
       - "experiments/decision_capability_atlas_v1/**"
+      - "experiments/decision_capability_calibration_v1/**"
   push:
     branches: [main]
     paths:
       - ".github/workflows/decision-capability-atlas-v1.yml"
       - "src/bayesian_phystwin/decision_capability_atlas_v1.py"
       - "src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py"
+      - "src/bayesian_phystwin/decision_capability_calibration_v1.py"
       - "tests/test_deform_dlo45_decision_capability_atlas_v1.py"
       - "tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py"
+      - "tests/test_decision_capability_calibration_v1.py"
       - "docs/decision_capability_atlas_v1.md"
+      - "docs/decision_capability_calibration_v1.md"
       - "experiments/decision_capability_atlas_v1/**"
+      - "experiments/decision_capability_calibration_v1/**"
   workflow_dispatch:
 
 permissions:
@@ -34,7 +42,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Exact atlas, objective robustness, and deterministic study
+    name: Exact atlas, objective robustness, and statistical calibration
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -61,66 +69,83 @@ jobs:
           files=(
             src/bayesian_phystwin/decision_capability_atlas_v1.py
             src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py
+            src/bayesian_phystwin/decision_capability_calibration_v1.py
             tests/test_deform_dlo45_decision_capability_atlas_v1.py
             tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py
+            tests/test_decision_capability_calibration_v1.py
             experiments/decision_capability_atlas_v1/run.py
+            experiments/decision_capability_calibration_v1/run.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
             src/bayesian_phystwin/decision_capability_atlas_v1.py \
-            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py
+            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py \
+            src/bayesian_phystwin/decision_capability_calibration_v1.py
 
       - name: Run focused tests with branch coverage
         run: |
           python -m pip install "coverage==7.13.3"
           source_csv="bayesian_phystwin.decision_capability_atlas_v1,"
-          source_csv+="bayesian_phystwin.decision_capability_task_uncertainty_v1"
+          source_csv+="bayesian_phystwin.decision_capability_task_uncertainty_v1,"
+          source_csv+="bayesian_phystwin.decision_capability_calibration_v1"
           python -m coverage run --branch \
             --source="$source_csv" \
             -m pytest -q \
             tests/test_deform_dlo45_decision_capability_atlas_v1.py \
-            tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py
+            tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py \
+            tests/test_decision_capability_calibration_v1.py
           python -m coverage report \
             --fail-under=90 \
             --show-missing \
             src/bayesian_phystwin/decision_capability_atlas_v1.py \
-            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py
+            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py \
+            src/bayesian_phystwin/decision_capability_calibration_v1.py
 
-      - name: Reproduce the controlled atlas byte-for-byte
+      - name: Reproduce controlled studies byte-for-byte
         shell: bash
         run: |
           set -euo pipefail
           build="$RUNNER_TEMP/decision-capability-atlas"
           mkdir -p "$build"
           python experiments/decision_capability_atlas_v1/run.py \
-            --output "$build/first.json" \
+            --output "$build/atlas-first.json" \
             --check experiments/decision_capability_atlas_v1/result.json
           python experiments/decision_capability_atlas_v1/run.py \
-            --output "$build/second.json"
-          cmp "$build/first.json" "$build/second.json"
-          cmp "$build/first.json" \
+            --output "$build/atlas-second.json"
+          cmp "$build/atlas-first.json" "$build/atlas-second.json"
+          cmp "$build/atlas-first.json" \
             experiments/decision_capability_atlas_v1/result.json
-          cp "$build/first.json" capability-atlas-result.json
+          cp "$build/atlas-first.json" capability-atlas-result.json
 
-      - name: Enforce the bounded scientific claim
+          python experiments/decision_capability_calibration_v1/run.py \
+            --output "$build/calibration-first.json" \
+            --check experiments/decision_capability_calibration_v1/result.json
+          python experiments/decision_capability_calibration_v1/run.py \
+            --output "$build/calibration-second.json"
+          cmp "$build/calibration-first.json" "$build/calibration-second.json"
+          cmp "$build/calibration-first.json" \
+            experiments/decision_capability_calibration_v1/result.json
+          cp "$build/calibration-first.json" capability-calibration-result.json
+
+      - name: Enforce bounded scientific claims
         run: |
           python - <<'PY'
           import json
+          import math
           from pathlib import Path
 
-          result = json.loads(
+          atlas = json.loads(
               Path("capability-atlas-result.json").read_text(encoding="utf-8")
           )
-          summary = result["summary"]
-          task_uncertainty = result["task_uncertainty"]
+          summary = atlas["summary"]
+          task_uncertainty = atlas["task_uncertainty"]
           fixed = task_uncertainty["fixed_box_atlas"]
           representatives = task_uncertainty["representative_task_sets"]
-          checks = result["checks"]
-          assert result["status"] == "complete"
-          assert result["schema_version"] == 2
-          assert result["regret_tolerance"] == 0.0
-          assert all(checks.values())
+          assert atlas["status"] == "complete"
+          assert atlas["schema_version"] == 2
+          assert atlas["regret_tolerance"] == 0.0
+          assert all(atlas["checks"].values())
           assert 0.0 < summary["certified_union_fraction"] < 1.0
           assert 0.0 < summary["fallback_fraction"] < 1.0
           assert summary["halfspace_count_per_action"] == {
@@ -128,9 +153,9 @@ jobs:
               "pull_left": 8,
               "pull_right": 8,
           }
-          assert result["representative_tasks"][-1]["robust_action"] is None
+          assert atlas["representative_tasks"][-1]["robust_action"] is None
           assert (
-              result["representative_tasks"][-1]["point_belief_action"]
+              atlas["representative_tasks"][-1]["point_belief_action"]
               == "pull_left"
           )
           assert fixed["robust_certified_union_fraction"] < (
@@ -147,11 +172,58 @@ jobs:
               "authorize deployment",
           ):
               assert phrase in task_boundary
-          boundary = result["claim_boundary"].lower()
+
+          calibrated = json.loads(
+              Path("capability-calibration-result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          calibration = calibrated["calibration"]
+          nominal = calibrated["nominal_atlas"]
+          statistical = calibrated["statistically_corrected_atlas"]
+          combined = calibrated[
+              "objective_and_statistically_corrected_atlas"
+          ]
+          assert calibrated["status"] == "complete"
+          assert all(calibrated["checks"].values())
+          assert calibration["calibration_group_count"] == 19
+          assert calibration["quantile_rank"] == 18
+          assert math.isclose(calibration["alpha"], 0.1)
+          assert math.isclose(calibration["correction"], 0.15)
+          assert math.isclose(
+              calibration["guaranteed_marginal_coverage"], 0.9
+          )
+          assert math.isclose(
+              nominal["certified_union_fraction"],
+              0.8165544836964501,
+          )
+          assert math.isclose(
+              statistical["certified_union_fraction"],
+              0.7308563684310553,
+          )
+          assert math.isclose(
+              combined["certified_union_fraction"],
+              0.5808124391851117,
+          )
+          assert (
+              nominal["certified_union_fraction"]
+              > statistical["certified_union_fraction"]
+              > combined["certified_union_fraction"]
+          )
+          assert calibrated["strictness_witness"]["nominal_actions"] == [
+              "pull_left"
+          ]
+          assert calibrated["strictness_witness"][
+              "statistically_corrected_actions"
+          ] == []
+          assert "controlled mechanism evidence" in calibrated[
+              "evidence_role"
+          ].lower()
+          boundary = calibrated["claim_boundary"].lower()
           for phrase in (
-              "does not validate the quotient",
-              "out-of-support validity",
-              "certify safety",
+              "exchangeability",
+              "pointwise safety",
+              "distribution shift",
               "authorize deployment",
           ):
               assert phrase in boundary
@@ -163,6 +235,8 @@ jobs:
           name: decision-capability-atlas-v1-${{ github.sha }}
           path: |
             capability-atlas-result.json
+            capability-calibration-result.json
             experiments/decision_capability_atlas_v1/result.json
+            experiments/decision_capability_calibration_v1/result.json
           if-no-files-found: error
           retention-days: 30
