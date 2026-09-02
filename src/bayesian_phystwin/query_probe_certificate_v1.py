@@ -2,7 +2,7 @@
 
 A registered query quotient may determine posterior mass only at the class level.
 The existing :mod:`query_decision_certificate_v1` computes exact worst-case
-regret for direct finite actions over every prior-supported complete lift.  This
+regret for direct finite actions over every prior-supported complete lift. This
 module extends the same support-function construction to finite probes.
 
 For probe outcome likelihood ``O_e[i, z]``, probe cost ``c_e``, and contingent
@@ -10,7 +10,7 @@ policy ``delta(z)``, define one hypothesis-wise meta-action loss
 
     G[i, (e, delta)] = c_e + sum_z O_e[i, z] L[i, delta(z)].
 
-Direct actions are meta-actions with ``G[i, a] = L[i, a]``.  Applying the direct
+Direct actions are meta-actions with ``G[i, a] = L[i, a]``. Applying the direct
 certificate to the *union* of direct and probe-contingent meta-actions gives the
 exact common-comparator regret
 
@@ -20,7 +20,7 @@ exact common-comparator regret
 
 Using one union is essential: direct-action regret and within-probe regret use
 different comparator classes and cannot in general be ranked against each
-other.  The resulting router acts or probes only when the selected union
+other. The resulting router acts or probes only when the selected union
 meta-action satisfies the registered regret tolerance; otherwise it returns the
 caller-registered fallback action.
 
@@ -32,6 +32,8 @@ context.
 from __future__ import annotations
 
 import itertools
+import math
+from collections.abc import Iterable
 from numbers import Integral, Real
 from typing import Final, NamedTuple, TypeAlias, cast
 
@@ -78,19 +80,19 @@ def _immutable_int64(value: object) -> IntArray:
 def _finite_nonnegative(value: object, *, name: str) -> float:
     if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
         raise ValueError(f"{name} must be a finite nonnegative real number")
-    result = float(value)
-    if not np.isfinite(result) or result < 0.0:
+    scalar: float = float(value)
+    if not math.isfinite(scalar) or scalar < 0.0:
         raise ValueError(f"{name} must be a finite nonnegative real number")
-    return result
+    return scalar
 
 
 def _positive_integer(value: object, *, name: str) -> int:
     if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral):
         raise ValueError(f"{name} must be a positive integer")
-    result = int(value)
-    if result <= 0:
+    scalar: int = int(value)
+    if scalar <= 0:
         raise ValueError(f"{name} must be a positive integer")
-    return result
+    return scalar
 
 
 def _loss_matrix(value: object) -> FloatArray:
@@ -127,8 +129,8 @@ def _likelihood_matrix(value: object, *, hypothesis_count: int) -> FloatArray:
     row_sum = np.sum(likelihood, axis=1, dtype=np.float64)
     if not np.allclose(row_sum, 1.0, rtol=0.0, atol=_PROBABILITY_ATOL):
         raise ValueError("every hypothesis likelihood row must sum to one")
-    likelihood = likelihood / row_sum[:, None]
-    return _immutable_float64(likelihood)
+    normalized = likelihood / row_sum[:, None]
+    return _immutable_float64(normalized)
 
 
 def _contingent_policies(
@@ -155,11 +157,9 @@ def _contingent_policies(
 
 
 def _probe_sequence(value: object) -> tuple[object, ...]:
-    try:
-        probes = tuple(cast(object, value))  # type: ignore[arg-type]
-    except TypeError as error:
-        raise ValueError("probe_likelihoods must be an iterable of matrices") from error
-    return probes
+    if isinstance(value, (str, bytes)) or not isinstance(value, Iterable):
+        raise ValueError("probe_likelihoods must be an iterable of matrices")
+    return tuple(cast(Iterable[object], value))
 
 
 def _probe_costs(value: object | None, *, probe_count: int) -> FloatArray:
@@ -291,7 +291,7 @@ def query_probe_certificate(
     """Build every contingent policy and its exact within-probe certificate.
 
     The returned meta-action loss includes the probe cost and can be concatenated
-    with direct actions and other probes.  The within-probe regret is descriptive
+    with direct actions and other probes. The within-probe regret is descriptive
     only; direct-versus-probe selection must use
     :func:`act_probe_fallback_certificate`, whose comparator class is common.
     """
@@ -316,21 +316,21 @@ def query_probe_certificate(
         dtype=np.float64,
     )
     meta_loss = expected_loss + cost
-    expected_loss = _immutable_float64(expected_loss)
-    meta_loss = _immutable_float64(meta_loss)
+    expected_loss_immutable = _immutable_float64(expected_loss)
+    meta_loss_immutable = _immutable_float64(meta_loss)
     decision = query_decision_certificate(
         prior_weights,
         quotient_weights,
         class_index,
-        meta_loss,
+        meta_loss_immutable,
         regret_tolerance=regret_tolerance,
     )
     minimax_policy = policies[decision.minimax_action_index]
     return QueryProbeCertificateV1(
         outcome_likelihood_by_hypothesis=likelihood,
         contingent_action_indices=policies,
-        expected_action_loss_by_hypothesis_policy=expected_loss,
-        meta_loss_by_hypothesis_policy=meta_loss,
+        expected_action_loss_by_hypothesis_policy=expected_loss_immutable,
+        meta_loss_by_hypothesis_policy=meta_loss_immutable,
         policy_decision_certificate=decision,
         probe_cost=cost,
         minimax_contingent_action_indices=_immutable_int64(minimax_policy),
@@ -356,8 +356,8 @@ def act_probe_fallback_certificate(
     """Certify the union of direct actions and finite contingent probe policies.
 
     Every direct action and every probe-contingent policy is represented by one
-    hypothesis-wise expected-loss column.  Probe costs therefore enter the same
-    pairwise comparisons as direct actions and other probes.  When no union
+    hypothesis-wise expected-loss column. Probe costs therefore enter the same
+    pairwise comparisons as direct actions and other probes. When no union
     meta-action satisfies ``regret_tolerance``, the result returns the supplied
     fallback action without representing it as certified.
     """
@@ -387,19 +387,21 @@ def act_probe_fallback_certificate(
         losses,
         regret_tolerance=regret_tolerance,
     )
-    probe_certificates = tuple(
-        query_probe_certificate(
-            prior_weights,
-            quotient_weights,
-            class_index,
-            losses,
-            likelihood,
-            probe_cost=float(cost),
-            regret_tolerance=regret_tolerance,
-            max_policy_count=policy_cap,
+    probe_certificate_list: list[QueryProbeCertificateV1] = []
+    for probe_index, likelihood in enumerate(probes):
+        probe_certificate_list.append(
+            query_probe_certificate(
+                prior_weights,
+                quotient_weights,
+                class_index,
+                losses,
+                likelihood,
+                probe_cost=float(costs[probe_index]),
+                regret_tolerance=regret_tolerance,
+                max_policy_count=policy_cap,
+            )
         )
-        for likelihood, cost in zip(probes, costs, strict=True)
-    )
+    probe_certificates = tuple(probe_certificate_list)
 
     meta_action_count = losses.shape[1] + sum(
         certificate.policy_count for certificate in probe_certificates
@@ -447,12 +449,13 @@ def act_probe_fallback_certificate(
         else:
             route = "probe"
             selected_direct = None
-            selected_probe = probe_indices[selected_meta]
-            probe_policy_index = policy_indices[selected_meta]
+            selected_probe_value = int(probe_indices[selected_meta])
+            probe_policy_index = int(policy_indices[selected_meta])
+            selected_probe = selected_probe_value
             selected_policy = _immutable_int64(
-                probe_certificates[selected_probe].contingent_action_indices[
-                    probe_policy_index
-                ]
+                probe_certificates[
+                    selected_probe_value
+                ].contingent_action_indices[probe_policy_index]
             )
     else:
         route = "fallback"
