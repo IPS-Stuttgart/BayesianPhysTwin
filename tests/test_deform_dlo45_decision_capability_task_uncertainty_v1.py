@@ -165,17 +165,15 @@ def test_norm_ball_dual_norms_and_outside_sign() -> None:
     assert l2.guaranteed_radius[1] == 0.0
     with pytest.raises(ValueError, match="task_norm"):
         norm_ball_capability_margin(
-            region, centers, task_norm="bad"  # type: ignore[arg-type]
+            region,
+            centers,
+            task_norm="bad",  # type: ignore[arg-type]
         )
 
 
 def test_uncertainty_atlas_preserves_unique_and_fallback_sets() -> None:
-    centers = np.array(
-        [[-1.2, 0.2], [0.0, 2.0], [1.2, 0.2], [-0.6, 0.0]]
-    )
-    widths = np.array(
-        [[0.2, 0.2], [0.2, 0.4], [0.2, 0.2], [0.06, 0.01]]
-    )
+    centers = np.array([[-1.2, 0.2], [0.0, 2.0], [1.2, 0.2], [-0.6, 0.0]])
+    widths = np.array([[0.2, 0.2], [0.2, 0.4], [0.2, 0.2], [0.06, 0.01]])
     reports = [box_task_set_capability(_region(a), centers, widths) for a in range(3)]
     mask = task_uncertainty_action_mask(reports)
     np.testing.assert_array_equal(
@@ -231,27 +229,19 @@ def test_zero_normal_infeasible_constraint_is_detected() -> None:
     [
         (lambda: box_task_set_capability(_region(0), [[0.0]], [0.1, 0.2]), "shape"),
         (
-            lambda: box_task_set_capability(
-                _region(0), [[0.0, 0.0]], [-0.1, 0.2]
-            ),
+            lambda: box_task_set_capability(_region(0), [[0.0, 0.0]], [-0.1, 0.2]),
             "nonnegative",
         ),
         (
-            lambda: box_task_set_capability(
-                _region(0), [[0.0, np.nan]], [0.1, 0.2]
-            ),
+            lambda: box_task_set_capability(_region(0), [[0.0, np.nan]], [0.1, 0.2]),
             "finite",
         ),
         (
-            lambda: ellipsoid_task_set_capability(
-                _region(0), [[0.0, 0.0]], np.eye(3)
-            ),
+            lambda: ellipsoid_task_set_capability(_region(0), [[0.0, 0.0]], np.eye(3)),
             "shape",
         ),
         (
-            lambda: ellipsoid_robust_center_halfspaces(
-                _region(0), [[1.0], [np.inf]]
-            ),
+            lambda: ellipsoid_robust_center_halfspaces(_region(0), [[1.0], [np.inf]]),
             "finite",
         ),
         (lambda: box_robust_center_halfspaces(_region(0), [0.1]), "one value"),
@@ -272,11 +262,7 @@ def test_outputs_are_immutable_and_report_roster_validation_is_strict() -> None:
         task_uncertainty_action_mask([])
     with pytest.raises(ValueError, match="contiguous"):
         task_uncertainty_action_mask(
-            [
-                box_task_set_capability(
-                    _region(1), [[0.0, 2.0]], [0.1, 0.1]
-                )
-            ]
+            [box_task_set_capability(_region(1), [[0.0, 2.0]], [0.1, 0.1])]
         )
 
 
@@ -288,9 +274,7 @@ def test_helper_input_boundaries_cover_malformed_arrays() -> None:
     with pytest.raises(ValueError, match="real numeric"):
         box_task_set_capability(_region(0), [[0.0, 0.0]], ["bad", "width"])
     with pytest.raises(ValueError, match="shape"):
-        box_task_set_capability(
-            _region(0), [[0.0, 0.0], [1.0, 1.0]], [[0.1, 0.2]]
-        )
+        box_task_set_capability(_region(0), [[0.0, 0.0], [1.0, 1.0]], [[0.1, 0.2]])
     with pytest.raises(ValueError, match="one- or two-dimensional"):
         box_task_set_capability(_region(0), [[0.0, 0.0]], [[[0.1, 0.2]]])
     with pytest.raises(ValueError, match="finite"):
@@ -357,9 +341,7 @@ def test_ellipsoid_malformed_contracts_cover_batched_branches() -> None:
     with pytest.raises(ValueError, match="two- or three-dimensional"):
         ellipsoid_task_set_capability(region, center, [0.1, 0.2])
     with pytest.raises(ValueError, match="finite"):
-        ellipsoid_task_set_capability(
-            region, center, np.array([[[np.inf], [0.0]]])
-        )
+        ellipsoid_task_set_capability(region, center, np.array([[[np.inf], [0.0]]]))
     with pytest.raises(ValueError, match="real numeric"):
         ellipsoid_robust_center_halfspaces(region, [["bad"], ["bad"]])
     with pytest.raises(ValueError, match="shape"):

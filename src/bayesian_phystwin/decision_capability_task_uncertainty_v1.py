@@ -109,9 +109,7 @@ def _batched_nonnegative(
         array = np.broadcast_to(array[None, :], (count, width)).copy()
     elif array.ndim == 2:
         if array.shape != (count, width):
-            raise ValueError(
-                f"{name} must have shape (task_set_count, task_dimension)"
-            )
+            raise ValueError(f"{name} must have shape (task_set_count, task_dimension)")
     else:
         raise ValueError(f"{name} must be one- or two-dimensional")
     if not np.all(np.isfinite(array)):
@@ -348,9 +346,7 @@ def _shifted_halfspaces(
         normal=_immutable_float64(halfspaces.normal),
         offset=_immutable_float64(halfspaces.offset - support),
         benchmark_action_index=_immutable_int64(halfspaces.benchmark_action_index),
-        witness_hypothesis_index=_immutable_int64(
-            halfspaces.witness_hypothesis_index
-        ),
+        witness_hypothesis_index=_immutable_int64(halfspaces.witness_hypothesis_index),
     )
 
 
@@ -386,9 +382,7 @@ def ellipsoid_robust_center_halfspaces(
         or matrix.shape[0] != region.task_dimension
         or matrix.shape[1] < 1
     ):
-        raise ValueError(
-            "generator must have shape (task_dimension, latent_dimension)"
-        )
+        raise ValueError("generator must have shape (task_dimension, latent_dimension)")
     if not np.all(np.isfinite(matrix)):
         raise ValueError("generator must be finite")
     return _shifted_halfspaces(
