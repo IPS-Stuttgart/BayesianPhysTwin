@@ -101,7 +101,9 @@ def _validated_halfspaces(value: object) -> AffineCapabilityHalfspacesV1:
         raise ValueError("halfspaces contain inconsistent witness metadata")
     if not np.all(np.isfinite(normal)) or not np.all(np.isfinite(offset)):
         raise ValueError("halfspaces must be finite")
-    if isinstance(value.action_index, bool) or not isinstance(value.action_index, Integral):
+    if isinstance(value.action_index, bool) or not isinstance(
+        value.action_index, Integral
+    ):
         raise ValueError("halfspaces action_index must be an integer")
     tolerance = float(value.regret_tolerance)
     if not np.isfinite(tolerance) or tolerance < 0.0:
@@ -265,8 +267,8 @@ def maximize_affine_lower_envelope_on_box(
             f"{active_set_limit}"
         )
 
-    matrix = np.zeros((constraint_count, variable_count), dtype=np.float64)
-    rhs = np.empty(constraint_count, dtype=np.float64)
+    matrix: FloatArray = np.zeros((constraint_count, variable_count), dtype=np.float64)
+    rhs: FloatArray = np.empty(constraint_count, dtype=np.float64)
     matrix[: intercept.size, :dimension] = -coefficient
     matrix[: intercept.size, dimension] = 1.0
     rhs[: intercept.size] = intercept
@@ -339,8 +341,7 @@ def affine_box_pairwise_undercoverage_score(
     )
     if coefficient.shape != (intercept.size, region.task_dimension):
         raise ValueError(
-            "realized_gap_coefficients must have shape "
-            "(action_count, task_dimension)"
+            "realized_gap_coefficients must have shape (action_count, task_dimension)"
         )
     benchmark = np.asarray(region.benchmark_action_index, dtype=np.int64)
     unique_benchmark = np.unique(benchmark)
@@ -358,7 +359,9 @@ def affine_box_pairwise_undercoverage_score(
     )
     for position, benchmark_action in enumerate(unique_benchmark):
         rows = benchmark == benchmark_action
-        model_intercept = float(region.regret_tolerance) - np.asarray(region.offset)[rows]
+        model_intercept = (
+            float(region.regret_tolerance) - np.asarray(region.offset)[rows]
+        )
         difference_intercept = intercept[benchmark_action] - model_intercept
         difference_coefficient = (
             coefficient[benchmark_action][None, :] - np.asarray(region.normal)[rows]
