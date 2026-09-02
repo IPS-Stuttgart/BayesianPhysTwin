@@ -1,0 +1,268 @@
+{
+  "actions": [
+    "pull_left",
+    "hold",
+    "pull_right"
+  ],
+  "capability_regions": [
+    {
+      "action": "pull_left",
+      "area": 1.1368847946139073,
+      "area_fraction": 0.09474039955115894,
+      "vertices": [
+        [
+          -1.5,
+          0.0
+        ],
+        [
+          -0.55,
+          0.0
+        ],
+        [
+          -0.6233215547703181,
+          0.3533568904593642
+        ],
+        [
+          -0.8519187358916478,
+          0.948081264108352
+        ],
+        [
+          -1.5,
+          2.0613496932515334
+        ]
+      ]
+    },
+    {
+      "action": "hold",
+      "area": 7.524884215129587,
+      "area_fraction": 0.6270736845941323,
+      "vertices": [
+        [
+          -0.29999999999999993,
+          0.0
+        ],
+        [
+          0.29999999999999993,
+          0.0
+        ],
+        [
+          0.5689768976897691,
+          0.46204620462046225
+        ],
+        [
+          0.7648033126293996,
+          1.0351966873706004
+        ],
+        [
+          1.3800000000000001,
+          4.0
+        ],
+        [
+          -1.38,
+          4.0
+        ],
+        [
+          -0.7648033126293996,
+          1.0351966873706
+        ],
+        [
+          -0.5689768976897692,
+          0.46204620462046253
+        ]
+      ]
+    },
+    {
+      "action": "pull_right",
+      "area": 1.1368847946139071,
+      "area_fraction": 0.09474039955115893,
+      "vertices": [
+        [
+          0.55,
+          0.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          1.5,
+          2.0613496932515334
+        ],
+        [
+          0.8519187358916473,
+          0.9480812641083509
+        ],
+        [
+          0.6233215547703181,
+          0.35335689045936447
+        ]
+      ]
+    }
+  ],
+  "checks": {
+    "all_three_actions_have_nonempty_regions": true,
+    "fallback_region_nonempty": true,
+    "left_right_symmetry": true,
+    "point_choice_fills_fallback_example": true
+  },
+  "claim_boundary": "The atlas is exact only for the supplied finite hypotheses, positive prior support, registered quotient masses, affine task-loss family, action set, and regret tolerance. It does not validate the quotient or task family, identify a physical state, justify the loss or tolerance, establish out-of-support validity, calibrate uncertainty, certify safety, or authorize deployment.",
+  "hypotheses": {
+    "class_index": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "physical_risk": [
+      [
+        0.4,
+        0.05,
+        0.8
+      ],
+      [
+        0.8,
+        0.05,
+        0.4
+      ],
+      [
+        0.5,
+        0.02,
+        0.9
+      ],
+      [
+        0.9,
+        0.02,
+        0.5
+      ]
+    ],
+    "predicted_displacement": [
+      [
+        -1.1,
+        -0.1,
+        0.7
+      ],
+      [
+        -0.7,
+        0.1,
+        1.1
+      ],
+      [
+        -1.0,
+        0.0,
+        0.6
+      ],
+      [
+        -0.6,
+        0.0,
+        1.0
+      ]
+    ],
+    "prior_weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "quotient_weights": [
+      0.5,
+      0.5
+    ]
+  },
+  "regret_tolerance": 0.0,
+  "representative_tasks": [
+    {
+      "point_belief_action": "pull_left",
+      "robust_action": "pull_left",
+      "task": [
+        -1.2,
+        0.2
+      ],
+      "worst_case_regret": [
+        0.0,
+        1.2969999999999997,
+        4.68
+      ]
+    },
+    {
+      "point_belief_action": "hold",
+      "robust_action": "hold",
+      "task": [
+        0.0,
+        2.0
+      ],
+      "worst_case_regret": [
+        2.05,
+        0.0,
+        2.05
+      ]
+    },
+    {
+      "point_belief_action": "pull_right",
+      "robust_action": "pull_right",
+      "task": [
+        1.2,
+        0.2
+      ],
+      "worst_case_regret": [
+        4.68,
+        1.2969999999999997,
+        0.0
+      ]
+    },
+    {
+      "point_belief_action": "pull_left",
+      "robust_action": null,
+      "task": [
+        -0.45,
+        0.0
+      ],
+      "worst_case_regret": [
+        0.20000000000000007,
+        0.21000000000000005,
+        2.21
+      ]
+    }
+  ],
+  "result_id": "a00518c4d4e0575128eee0c141181fa2672d6a3d80f2077a1a3910fdedda61a1",
+  "schema": "bayesian-phystwin/decision-capability-atlas-study-v1",
+  "schema_version": 1,
+  "status": "complete",
+  "summary": {
+    "action_area_fraction": {
+      "hold": 0.6270736845941323,
+      "pull_left": 0.09474039955115894,
+      "pull_right": 0.09474039955115893
+    },
+    "certified_union_area": 9.798653804357402,
+    "certified_union_fraction": 0.8165544836964501,
+    "domain_area": 12.0,
+    "fallback_area": 2.201346195642598,
+    "fallback_fraction": 0.18344551630354985,
+    "grid_exact_capability_count": 15863,
+    "grid_task_count": 19481,
+    "halfspace_count_per_action": {
+      "hold": 8,
+      "pull_left": 8,
+      "pull_right": 8
+    },
+    "point_policy_decides_outside_exact_capability_fraction": 0.18344551630354985
+  },
+  "task_family": {
+    "affine_reduction": "The action-independent target_displacement^2 term is dropped.",
+    "bounds": [
+      [
+        -1.5,
+        1.5
+      ],
+      [
+        0.0,
+        4.0
+      ]
+    ],
+    "loss": "(predicted_displacement-target_displacement)^2 + physical_risk_weight*physical_risk",
+    "parameters": [
+      "target_displacement",
+      "physical_risk_weight"
+    ]
+  }
+}

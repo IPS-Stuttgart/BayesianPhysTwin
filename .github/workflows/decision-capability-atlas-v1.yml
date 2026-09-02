@@ -1,0 +1,140 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Decision capability atlas v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/decision-capability-atlas-v1.yml"
+      - "src/bayesian_phystwin/decision_capability_atlas_v1.py"
+      - "tests/test_deform_dlo45_decision_capability_atlas_v1.py"
+      - "docs/decision_capability_atlas_v1.md"
+      - "experiments/decision_capability_atlas_v1/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/decision-capability-atlas-v1.yml"
+      - "src/bayesian_phystwin/decision_capability_atlas_v1.py"
+      - "tests/test_deform_dlo45_decision_capability_atlas_v1.py"
+      - "docs/decision_capability_atlas_v1.md"
+      - "experiments/decision_capability_atlas_v1/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: decision-capability-atlas-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Exact atlas, tests, and deterministic study
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install NumPy-only development environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Check source quality and types
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/decision_capability_atlas_v1.py \
+            tests/test_deform_dlo45_decision_capability_atlas_v1.py \
+            experiments/decision_capability_atlas_v1/run.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/decision_capability_atlas_v1.py \
+            tests/test_deform_dlo45_decision_capability_atlas_v1.py \
+            experiments/decision_capability_atlas_v1/run.py
+          python -m mypy \
+            src/bayesian_phystwin/decision_capability_atlas_v1.py
+
+      - name: Run focused tests with branch coverage
+        run: |
+          python -m pip install "coverage==7.13.3"
+          python -m coverage run --branch \
+            --source=bayesian_phystwin.decision_capability_atlas_v1 \
+            -m pytest -q \
+            tests/test_deform_dlo45_decision_capability_atlas_v1.py
+          python -m coverage report \
+            --fail-under=90 \
+            --show-missing \
+            src/bayesian_phystwin/decision_capability_atlas_v1.py
+
+      - name: Reproduce the controlled atlas byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          build="$RUNNER_TEMP/decision-capability-atlas"
+          mkdir -p "$build"
+          python experiments/decision_capability_atlas_v1/run.py \
+            --output "$build/first.json" \
+            --check experiments/decision_capability_atlas_v1/result.json
+          python experiments/decision_capability_atlas_v1/run.py \
+            --output "$build/second.json"
+          cmp "$build/first.json" "$build/second.json"
+          cmp "$build/first.json" \
+            experiments/decision_capability_atlas_v1/result.json
+          cp "$build/first.json" capability-atlas-result.json
+
+      - name: Enforce the bounded scientific claim
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path("capability-atlas-result.json").read_text(encoding="utf-8")
+          )
+          summary = result["summary"]
+          checks = result["checks"]
+          assert result["status"] == "complete"
+          assert result["regret_tolerance"] == 0.0
+          assert all(checks.values())
+          assert 0.0 < summary["certified_union_fraction"] < 1.0
+          assert 0.0 < summary["fallback_fraction"] < 1.0
+          assert summary["halfspace_count_per_action"] == {
+              "hold": 8,
+              "pull_left": 8,
+              "pull_right": 8,
+          }
+          assert result["representative_tasks"][-1]["robust_action"] is None
+          assert (
+              result["representative_tasks"][-1]["point_belief_action"]
+              == "pull_left"
+          )
+          boundary = result["claim_boundary"].lower()
+          for phrase in (
+              "does not validate the quotient",
+              "out-of-support validity",
+              "certify safety",
+              "authorize deployment",
+          ):
+              assert phrase in boundary
+          PY
+
+      - name: Upload deterministic study evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: decision-capability-atlas-v1-${{ github.sha }}
+          path: |
+            capability-atlas-result.json
+            experiments/decision_capability_atlas_v1/result.json
+          if-no-files-found: error
+          retention-days: 30
