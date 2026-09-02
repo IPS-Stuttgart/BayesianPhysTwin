@@ -18,7 +18,9 @@ RUNNER_PATH = ROOT / "scripts/science/run_rct_real_decision_confirmation_v1.py"
 
 
 def _module() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("rct_confirmation_runner", RUNNER_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "rct_confirmation_runner", RUNNER_PATH
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -43,7 +45,9 @@ def _write_plan(path: Path, runner: ModuleType) -> tuple[dict[str, object], str]
     return plan, hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_confirmation_plan_requires_every_authorization_boundary(tmp_path: Path) -> None:
+def test_confirmation_plan_requires_every_authorization_boundary(
+    tmp_path: Path,
+) -> None:
     runner = _module()
     path = tmp_path / "plan.json"
     plan, digest = _write_plan(path, runner)
@@ -86,7 +90,9 @@ def test_confirmation_filter_admits_only_registered_held_materials(
     lines = ["material_id,position,sensor,z_frame,raw_fz\n"]
     for material_id in CONFIRMATION_MATERIALS:
         lines.append(f"material_{material_id},3,3,1.2,-0.2\n")
-    lines.append("material_999999,SOURCE_SECRET,SOURCE_SECRET,SOURCE_SECRET,SOURCE_SECRET\n")
+    lines.append(
+        "material_999999,SOURCE_SECRET,SOURCE_SECRET,SOURCE_SECRET,SOURCE_SECRET\n"
+    )
     archive = tmp_path / "archive.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         bundle.writestr("force_metadata.csv", "".join(lines))
@@ -123,7 +129,9 @@ def test_confirmation_runner_requires_content_bound_passing_source_result(
     }
     result = {**identity, "source_result_id": content_id(identity)}
     path = tmp_path / "source-result.json"
-    path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     plan = {
         "source_result_path": str(path),
         "source_result_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),

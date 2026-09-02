@@ -70,7 +70,9 @@ def _selector_covariance() -> np.ndarray:
     return loadings @ loadings.T + 0.1 * np.eye(COORDINATE_COUNT)
 
 
-def test_adapter_skips_forbidden_rows_before_parsing_force_fields(tmp_path: Path) -> None:
+def test_adapter_skips_forbidden_rows_before_parsing_force_fields(
+    tmp_path: Path,
+) -> None:
     path = tmp_path / "force_metadata.csv"
     _write_force_csv(path)
 
@@ -149,7 +151,10 @@ def test_adaptive_traces_use_only_anchor_and_selected_probe_values() -> None:
 
     assert decision.probe_order[0] == (1, 2)
     assert identification.probe_order[0] == (2, 1)
-    assert all(set(state.observed_indices).isdisjoint((12, 13, 14)) for state in decision.states)
+    assert all(
+        set(state.observed_indices).isdisjoint((12, 13, 14))
+        for state in decision.states
+    )
     assert all(
         set(state.observed_indices).isdisjoint((12, 13, 14))
         for state in identification.states

@@ -61,7 +61,9 @@ def _git(repository: Path, *arguments: str) -> str:
     ).stdout.strip()
 
 
-def _load_content_bound(path: Path, *, schema: str, identity_field: str) -> dict[str, Any]:
+def _load_content_bound(
+    path: Path, *, schema: str, identity_field: str
+) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(payload, dict), f"{schema} must be an object")
     _require(payload.get("schema") == schema, f"{schema} schema changed")
@@ -120,7 +122,9 @@ def _load_archive_lock(path: Path, source_result: dict[str, Any]) -> dict[str, A
         schema=ARCHIVE_LOCK_SCHEMA,
         identity_field="lock_id",
     )
-    _require(lock["lock_id"] == source_result["archive_lock_id"], "archive lock changed")
+    _require(
+        lock["lock_id"] == source_result["archive_lock_id"], "archive lock changed"
+    )
     _require(lock.get("confirmation_opened") is False, "archive lock opened target")
     _require(lock.get("held_v8_accessed") is False, "archive lock accessed held-v8")
     return lock
@@ -131,7 +135,9 @@ def _implementation_lock(repository: Path, revision: str) -> dict[str, Any]:
     for label, relative_name in REGISTERED_PATHS.items():
         relative = Path(relative_name)
         current = repository / relative
-        _require(current.is_file() and not current.is_symlink(), f"missing path: {label}")
+        _require(
+            current.is_file() and not current.is_symlink(), f"missing path: {label}"
+        )
         expected = _sha256(current)
         committed = subprocess.run(
             ("git", "show", f"{revision}:{relative.as_posix()}"),
@@ -175,8 +181,13 @@ def _build_plan(
     method_seal = _load_method_seal(method_seal_path, source_result)
     archive_lock = _load_archive_lock(archive_lock_path, source_result)
     archive = archive.resolve(strict=True)
-    _require(archive.stat().st_size == archive_lock["archive_size_bytes"], "archive size changed")
-    _require(_sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed")
+    _require(
+        archive.stat().st_size == archive_lock["archive_size_bytes"],
+        "archive size changed",
+    )
+    _require(
+        _sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed"
+    )
     suffix = f"{revision[:8]}-{source_result['source_result_id'][:8]}"
     output_root = runtime_root / f"confirmation-run-{suffix}"
     attempt_path = runtime_root / "attempts" / f"confirmation-attempt-{suffix}.json"

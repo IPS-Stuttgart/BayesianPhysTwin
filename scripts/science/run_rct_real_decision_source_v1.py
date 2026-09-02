@@ -162,7 +162,9 @@ def _verify_implementation(plan: dict[str, Any]) -> dict[str, Any]:
         relative = Path(str(record["relative_path"]))
         current = (repository / relative).resolve(strict=True)
         if label == "runner":
-            _require(current == Path(__file__).resolve(strict=True), "runner path changed")
+            _require(
+                current == Path(__file__).resolve(strict=True), "runner path changed"
+            )
         expected = str(record["sha256"])
         _require(_sha256(current) == expected, f"{label} SHA-256 changed")
         committed = subprocess.run(
@@ -195,17 +197,21 @@ def _load_archive_lock(plan: dict[str, Any]) -> dict[str, Any]:
         schema_version=ARCHIVE_LOCK_VERSION,
         identity_field="lock_id",
     )
-    _require(lock.get("protocol_file_sha256") == plan["protocol_file_sha256"], "protocol lock changed")
     _require(
-        lock.get("clarification_file_sha256")
-        == plan["clarification_file_sha256"],
+        lock.get("protocol_file_sha256") == plan["protocol_file_sha256"],
+        "protocol lock changed",
+    )
+    _require(
+        lock.get("clarification_file_sha256") == plan["clarification_file_sha256"],
         "clarification lock changed",
     )
     _require(
         lock.get("amendment_v2_file_sha256") == plan["amendment_v2_file_sha256"],
         "amendment-v2 lock changed",
     )
-    _require(lock.get("confirmation_opened") is False, "archive lock opened confirmation")
+    _require(
+        lock.get("confirmation_opened") is False, "archive lock opened confirmation"
+    )
     _require(lock.get("held_v8_accessed") is False, "archive lock accessed held-v8")
     return lock
 
@@ -246,8 +252,13 @@ def _write_source_only_force_csv(
                 )
             if expected_header_columns is not None:
                 columns = header.rstrip(b"\r\n").decode("ascii").split(",")
-                _require(columns == expected_header_columns, "force metadata header changed")
-            _require(header.rstrip(b"\r\n").split(b",")[0] == b"material_id", "material_id is not the first CSV column")
+                _require(
+                    columns == expected_header_columns, "force metadata header changed"
+                )
+            _require(
+                header.rstrip(b"\r\n").split(b",")[0] == b"material_id",
+                "material_id is not the first CSV column",
+            )
             _require(b'"' not in header, "quoted force metadata header is unsupported")
             target.write(header)
             for line in source:
@@ -262,7 +273,9 @@ def _write_source_only_force_csv(
                 target.write(line)
             target.flush()
             os.fsync(target.fileno())
-    _require(skipped_materials == forbidden, "confirmation roster was not fully discarded")
+    _require(
+        skipped_materials == forbidden, "confirmation roster was not fully discarded"
+    )
     _require(
         admitted_materials.isdisjoint(forbidden),
         "confirmation material entered source CSV",
@@ -295,8 +308,7 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         "protocol configuration changed",
     )
     _require(
-        protocol_file_sha256(clarification_path)
-        == plan["clarification_file_sha256"],
+        protocol_file_sha256(clarification_path) == plan["clarification_file_sha256"],
         "clarification file changed",
     )
     load_rct_preoutcome_clarification(clarification_path)
@@ -308,8 +320,13 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
     cohort = cohort_from_protocol(protocol)
     archive_lock = _load_archive_lock(plan)
     archive = Path(plan["archive_path"]).resolve(strict=True)
-    _require(archive.stat().st_size == archive_lock["archive_size_bytes"], "archive size changed")
-    _require(_sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed")
+    _require(
+        archive.stat().st_size == archive_lock["archive_size_bytes"],
+        "archive size changed",
+    )
+    _require(
+        _sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed"
+    )
 
     source_csv = output_root / "force_metadata_source_only.csv"
     custody = _write_source_only_force_csv(

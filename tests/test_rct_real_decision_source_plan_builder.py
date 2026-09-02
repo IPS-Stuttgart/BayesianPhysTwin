@@ -14,7 +14,9 @@ BUILDER_PATH = ROOT / "scripts/development/build_rct_real_decision_source_plan_v
 
 
 def _module() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("rct_source_plan_builder", BUILDER_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "rct_source_plan_builder", BUILDER_PATH
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)

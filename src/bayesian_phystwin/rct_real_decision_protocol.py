@@ -11,9 +11,7 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 PROTOCOL_ID = "rct-real-decision-probe-protocol-v1"
-PREOUTCOME_CLARIFICATION_ID = (
-    "rct-real-decision-probe-preoutcome-clarification-v1"
-)
+PREOUTCOME_CLARIFICATION_ID = "rct-real-decision-probe-preoutcome-clarification-v1"
 PREOUTCOME_AMENDMENT_V2_ID = "rct-real-decision-probe-preoutcome-amendment-v2"
 RCT_CODE_REVISION = "8d2f2de96b08d7c1e4d754e327b974f3e41283b8"
 RCT_ARCHIVE_FILE_ID = 65037834
@@ -270,9 +268,7 @@ def _validate_method(payload: Mapping[str, Any]) -> None:
     )
     raw_probes = method.get("selectable_probes")
     _require(isinstance(raw_probes, Sequence), "selectable probes are missing")
-    probes = tuple(
-        _probe_tuple(value, name="selectable probe") for value in raw_probes
-    )
+    probes = tuple(_probe_tuple(value, name="selectable probe") for value in raw_probes)
     _require(probes == SELECTABLE_PROBES, "selectable probe roster changed")
     fit = method.get("fit")
     _require(isinstance(fit, Mapping), "fit method is missing")
@@ -309,7 +305,9 @@ def _validate_method(payload: Mapping[str, Any]) -> None:
 def _validate_decision(payload: Mapping[str, Any]) -> None:
     decision = payload.get("decision")
     _require(isinstance(decision, Mapping), "decision lock is missing")
-    action_grid = tuple(float(value) for value in decision.get("action_indentation_mm", ()))
+    action_grid = tuple(
+        float(value) for value in decision.get("action_indentation_mm", ())
+    )
     _require(action_grid == (0.0, *REGISTERED_INDENTATIONS_MM), "action grid changed")
     _require(
         _probe_tuple(decision.get("held_intervention"), name="held intervention")
@@ -346,7 +344,9 @@ def _validate_boundary(payload: Mapping[str, Any]) -> None:
     promotion = payload.get("promotion")
     _require(isinstance(promotion, Mapping), "promotion lock is missing")
     _require(promotion.get("target_authorized") is False, "target was authorized early")
-    _require(int(promotion.get("target_attempt_limit", -1)) == 1, "attempt limit changed")
+    _require(
+        int(promotion.get("target_attempt_limit", -1)) == 1, "attempt limit changed"
+    )
 
 
 def load_rct_real_decision_protocol(path: str | Path) -> dict[str, Any]:
@@ -430,8 +430,7 @@ def load_rct_preoutcome_clarification(path: str | Path) -> dict[str, Any]:
         "force-increment clarification changed",
     )
     _require(
-        protocol_config_sha256(payload)
-        == _PREOUTCOME_CLARIFICATION_CONFIG_SHA256,
+        protocol_config_sha256(payload) == _PREOUTCOME_CLARIFICATION_CONFIG_SHA256,
         "canonical clarification digest changed",
     )
     return dict(payload)
@@ -455,9 +454,7 @@ def load_rct_preoutcome_amendment_v2(path: str | Path) -> dict[str, Any]:
         payload.get("parent")
         == {
             "clarification_commit": _PREOUTCOME_CLARIFICATION_COMMIT,
-            "clarification_config_sha256": (
-                _PREOUTCOME_CLARIFICATION_CONFIG_SHA256
-            ),
+            "clarification_config_sha256": (_PREOUTCOME_CLARIFICATION_CONFIG_SHA256),
             "clarification_file_sha256": _PREOUTCOME_CLARIFICATION_FILE_SHA256,
             "protocol_config_sha256": _CANONICAL_CONFIG_SHA256,
             "protocol_file_sha256": _PROTOCOL_FILE_SHA256,

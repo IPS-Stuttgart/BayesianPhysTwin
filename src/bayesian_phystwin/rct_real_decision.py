@@ -69,11 +69,15 @@ class RCTMaterialResponse:
     def values_for(self, trajectory: Trajectory) -> np.ndarray:
         """Return the three registered force values for one press."""
 
-        return self.force_n[np.asarray(_coordinate_indices(trajectory), dtype=int)].copy()
+        return self.force_n[
+            np.asarray(_coordinate_indices(trajectory), dtype=int)
+        ].copy()
 
 
 def _registered_force_values(rows: Sequence[tuple[float, float]]) -> np.ndarray:
-    _require(len(rows) >= len(REGISTERED_INDENTATIONS_MM) + 1, "force trace is too short")
+    _require(
+        len(rows) >= len(REGISTERED_INDENTATIONS_MM) + 1, "force trace is too short"
+    )
     z = np.asarray([row[0] for row in rows], dtype=np.float64)
     raw_force = np.asarray([row[1] for row in rows], dtype=np.float64)
     _require(np.all(np.isfinite(z)), "z_frame contains non-finite values")
@@ -114,7 +118,9 @@ def load_rct_force_responses(
         _canonical_material_id(value) for value in forbidden_material_ids
     )
     _require(bool(allowed), "allowed material roster is empty")
-    _require(not (allowed & forbidden), "allowed and forbidden material rosters overlap")
+    _require(
+        not (allowed & forbidden), "allowed and forbidden material rosters overlap"
+    )
     grouped: dict[tuple[str, int, int], list[tuple[float, float]]] = {}
     seen_allowed: set[str] = set()
     with Path(force_metadata_csv).open("r", encoding="utf-8", newline="") as handle:
@@ -336,9 +342,8 @@ def _expected_action_utility(
     probability_unsafe = 1.0 - probability_safe
     density = np.exp(-0.5 * standardized_limit**2) / math.sqrt(2.0 * math.pi)
     expected_excess = (
-        (mean - force_limit_n) * probability_unsafe
-        + standard_deviation * density
-    )
+        mean - force_limit_n
+    ) * probability_unsafe + standard_deviation * density
     return (
         probability_safe * safe_utility
         - probability_unsafe
@@ -415,12 +420,12 @@ def decision_value_of_probe(
         draws.shape == (4096, len(REGISTERED_INDENTATIONS_MM)),
         "common-random-number shape changed",
     )
-    candidate_samples = candidate_mean + draws @ _stable_cholesky(
-        candidate_covariance
-    ).T
-    posterior_held_mean = state.mean[held] + (
-        candidate_samples - candidate_mean
-    ) @ gain[held, :].T
+    candidate_samples = (
+        candidate_mean + draws @ _stable_cholesky(candidate_covariance).T
+    )
+    posterior_held_mean = (
+        state.mean[held] + (candidate_samples - candidate_mean) @ gain[held, :].T
+    )
     held_covariance = posterior_covariance[np.ix_(held, held)]
     expected_action_values = np.zeros((len(draws), 1 + len(held)), dtype=np.float64)
     for action_index, indentation in enumerate(REGISTERED_INDENTATIONS_MM):
@@ -474,7 +479,9 @@ class RCTPolicyTrace:
 
     def __post_init__(self) -> None:
         _require(len(self.probe_order) == 3, "probe order length changed")
-        _require(set(self.probe_order) == set(SELECTABLE_PROBES), "probe roster changed")
+        _require(
+            set(self.probe_order) == set(SELECTABLE_PROBES), "probe roster changed"
+        )
         _require(len(self.states) == 4, "policy budget roster changed")
 
 
@@ -536,7 +543,9 @@ def trace_policy(
         )
         states.append(state)
         remaining.remove(selected)
-    return RCTPolicyTrace(selector=selector, probe_order=tuple(order), states=tuple(states))
+    return RCTPolicyTrace(
+        selector=selector, probe_order=tuple(order), states=tuple(states)
+    )
 
 
 def trace_probe_order(
@@ -583,9 +592,7 @@ def _all_registered_traces(
             selector="system_identification",
             force_limit_n=force_limit_n,
         ),
-        trace_policy(
-            twin, response, selector="fixed", force_limit_n=force_limit_n
-        ),
+        trace_policy(twin, response, selector="fixed", force_limit_n=force_limit_n),
     ]
     traces.extend(
         trace_probe_order(twin, response, order, selector=f"permutation_{index}")
@@ -606,7 +613,9 @@ def calibrate_simultaneous_force_multiplier(
     _require(coverage == 0.9, "conformal coverage changed")
     _require(len(calibration_responses) == 20, "calibration material count changed")
     material_ids = [response.material_id for response in calibration_responses]
-    _require(len(material_ids) == len(set(material_ids)), "calibration material repeated")
+    _require(
+        len(material_ids) == len(set(material_ids)), "calibration material repeated"
+    )
     held = np.asarray(HELD_INDICES, dtype=int)
     scores: list[float] = []
     for response in calibration_responses:
@@ -707,12 +716,16 @@ class RCTDecisionMethod:
             twin=RCTGaussianTwin.from_dict(twin),
             force_limit_n=float(payload["force_limit_n"]),
             conformal_multiplier=float(payload["conformal_multiplier"]),
-            calibration_scores=tuple(float(value) for value in payload["calibration_scores"]),
+            calibration_scores=tuple(
+                float(value) for value in payload["calibration_scores"]
+            ),
             conformal_rank=int(payload["conformal_rank"]),
         )
 
 
-def _realized_utility(force_n: float, indentation_mm: float, force_limit_n: float) -> float:
+def _realized_utility(
+    force_n: float, indentation_mm: float, force_limit_n: float
+) -> float:
     if indentation_mm == 0.0:
         return 0.0
     if force_n <= force_limit_n:
@@ -781,10 +794,7 @@ def _trace_result(
     method: RCTDecisionMethod,
 ) -> dict[str, Any]:
     actual = response.force_n[np.asarray(HELD_INDICES, dtype=int)]
-    budgets = [
-        _evaluate_state(state, actual, method)
-        for state in trace.states
-    ]
+    budgets = [_evaluate_state(state, actual, method) for state in trace.states]
     regrets = np.asarray([record["regret"] for record in budgets], dtype=np.float64)
     return {
         "probe_order": [
@@ -886,9 +896,13 @@ def summarize_evaluation(
     """Aggregate object-level regret, coverage, safety, and paired inference."""
 
     expected_count = 20 if require_confirmation_count else len(material_results)
-    _require(len(material_results) == expected_count, "evaluation material count changed")
+    _require(
+        len(material_results) == expected_count, "evaluation material count changed"
+    )
     material_ids = [str(record["material_id"]) for record in material_results]
-    _require(len(material_ids) == len(set(material_ids)), "evaluation material repeated")
+    _require(
+        len(material_ids) == len(set(material_ids)), "evaluation material repeated"
+    )
     decision_auc = np.asarray(
         [record["decision_directed"]["regret_auc"] for record in material_results],
         dtype=np.float64,
@@ -912,8 +926,7 @@ def summarize_evaluation(
     relative_improvement = (
         0.0
         if mean_identification <= 0.0
-        else (mean_identification - float(np.mean(decision_auc)))
-        / mean_identification
+        else (mean_identification - float(np.mean(decision_auc))) / mean_identification
     )
     interval = _bootstrap_mean_interval(differences)
     summary: dict[str, Any] = {

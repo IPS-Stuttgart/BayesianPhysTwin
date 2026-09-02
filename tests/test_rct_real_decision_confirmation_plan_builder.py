@@ -28,7 +28,9 @@ def _module() -> ModuleType:
     return module
 
 
-def _write_source_result(path: Path, builder: ModuleType, *, passed: bool) -> dict[str, object]:
+def _write_source_result(
+    path: Path, builder: ModuleType, *, passed: bool
+) -> dict[str, object]:
     identity = {
         "schema": builder.SOURCE_RESULT_SCHEMA,
         "schema_version": 1,

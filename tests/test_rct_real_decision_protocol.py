@@ -103,9 +103,10 @@ def test_practical_significance_amendment_is_frozen_before_force_access() -> Non
     assert protocol_file_sha256(AMENDMENT_V2_PATH) == AMENDMENT_V2_FILE_SHA256
     assert protocol_config_sha256(payload) == AMENDMENT_V2_CONFIG_SHA256
     assert payload["change"]["confirmation_minimum_relative_auc_improvement"] == 0.05
-    assert payload["scientific_effect"][
-        "changes_confirmation_effect_size_threshold"
-    ] is True
+    assert (
+        payload["scientific_effect"]["changes_confirmation_effect_size_threshold"]
+        is True
+    )
     assert payload["information_boundary"]["archive_download_complete"] is False
 
 
@@ -119,8 +120,7 @@ def test_probe_and_held_intervention_rosters_are_physically_disjoint() -> None:
         method["mandatory_anchor"]["sensor"],
     )
     probes = tuple(
-        (record["position"], record["sensor"])
-        for record in method["selectable_probes"]
+        (record["position"], record["sensor"]) for record in method["selectable_probes"]
     )
     held = (
         decision["held_intervention"]["position"],

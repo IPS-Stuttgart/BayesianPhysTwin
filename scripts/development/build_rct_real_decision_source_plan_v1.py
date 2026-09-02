@@ -63,11 +63,15 @@ def _git(repository: Path, *arguments: str) -> str:
 def _load_archive_lock(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(payload, dict), "archive lock must be an object")
-    _require(payload.get("schema") == ARCHIVE_LOCK_SCHEMA, "archive lock schema changed")
+    _require(
+        payload.get("schema") == ARCHIVE_LOCK_SCHEMA, "archive lock schema changed"
+    )
     identity = dict(payload)
     declared = identity.pop("lock_id", None)
     _require(declared == content_id(identity), "archive lock identity changed")
-    _require(payload.get("archive_integrity_verified") is True, "archive is not verified")
+    _require(
+        payload.get("archive_integrity_verified") is True, "archive is not verified"
+    )
     _require(
         payload.get("force_metadata_content_opened") is False,
         "force metadata was opened before source planning",
@@ -82,7 +86,9 @@ def _implementation_lock(repository: Path, revision: str) -> dict[str, Any]:
     for label, relative_name in REGISTERED_PATHS.items():
         relative = Path(relative_name)
         current = repository / relative
-        _require(current.is_file() and not current.is_symlink(), f"missing path: {label}")
+        _require(
+            current.is_file() and not current.is_symlink(), f"missing path: {label}"
+        )
         expected = _sha256(current)
         committed = subprocess.run(
             ("git", "show", f"{revision}:{relative.as_posix()}"),
@@ -120,8 +126,13 @@ def _build_plan(
     load_rct_preoutcome_amendment_v2(amendment_v2_path)
     archive_lock = _load_archive_lock(archive_lock_path)
     _require(archive.is_file() and not archive.is_symlink(), "archive path is invalid")
-    _require(archive.stat().st_size == archive_lock["archive_size_bytes"], "archive size changed")
-    _require(_sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed")
+    _require(
+        archive.stat().st_size == archive_lock["archive_size_bytes"],
+        "archive size changed",
+    )
+    _require(
+        _sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed"
+    )
     suffix = revision[:8]
     output_root = runtime_root / f"source-run-{suffix}"
     attempt_path = runtime_root / "attempts" / f"source-attempt-{suffix}.json"

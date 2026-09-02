@@ -165,7 +165,9 @@ def _verify_implementation(plan: dict[str, Any]) -> dict[str, Any]:
         relative = Path(str(record["relative_path"]))
         current = (repository / relative).resolve(strict=True)
         if label == "runner":
-            _require(current == Path(__file__).resolve(strict=True), "runner path changed")
+            _require(
+                current == Path(__file__).resolve(strict=True), "runner path changed"
+            )
         expected = str(record["sha256"])
         _require(_sha256(current) == expected, f"{label} SHA-256 changed")
         committed = subprocess.run(
@@ -200,7 +202,9 @@ def _load_source_result(plan: dict[str, Any]) -> dict[str, Any]:
     )
     _require(result.get("source_gate", {}).get("passed") is True, "source gate failed")
     _require(result.get("source_test_opened") is True, "source test was not completed")
-    _require(result.get("confirmation_opened") is False, "confirmation was opened early")
+    _require(
+        result.get("confirmation_opened") is False, "confirmation was opened early"
+    )
     _require(
         result.get("confirmation_force_fields_parsed") is False,
         "confirmation force fields were parsed early",
@@ -211,7 +215,9 @@ def _load_source_result(plan: dict[str, Any]) -> dict[str, Any]:
         result.get("replacement_or_retry_authorized") is False,
         "source result authorized a retry",
     )
-    _require(result.get("target_authorized") is False, "source runner authorized target")
+    _require(
+        result.get("target_authorized") is False, "source runner authorized target"
+    )
     _require(
         result.get("source_result_id") == plan["source_result_id"],
         "source result identity changed",
@@ -219,7 +225,9 @@ def _load_source_result(plan: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def _load_method(plan: dict[str, Any], source_result: dict[str, Any]) -> RCTDecisionMethod:
+def _load_method(
+    plan: dict[str, Any], source_result: dict[str, Any]
+) -> RCTDecisionMethod:
     path = Path(plan["method_seal_path"]).resolve(strict=True)
     _require(_sha256(path) == plan["method_seal_sha256"], "method seal SHA-256 changed")
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -244,7 +252,9 @@ def _load_method(plan: dict[str, Any], source_result: dict[str, Any]) -> RCTDeci
     return RCTDecisionMethod.from_dict(method)
 
 
-def _load_archive_lock(plan: dict[str, Any], source_result: dict[str, Any]) -> dict[str, Any]:
+def _load_archive_lock(
+    plan: dict[str, Any], source_result: dict[str, Any]
+) -> dict[str, Any]:
     lock = _load_content_bound_json(
         Path(plan["archive_lock_path"]).resolve(strict=True),
         str(plan["archive_lock_sha256"]),
@@ -252,7 +262,9 @@ def _load_archive_lock(plan: dict[str, Any], source_result: dict[str, Any]) -> d
         schema_version=ARCHIVE_LOCK_VERSION,
         identity_field="lock_id",
     )
-    _require(lock["lock_id"] == source_result["archive_lock_id"], "archive lock changed")
+    _require(
+        lock["lock_id"] == source_result["archive_lock_id"], "archive lock changed"
+    )
     _require(lock.get("confirmation_opened") is False, "archive lock opened target")
     _require(lock.get("held_v8_accessed") is False, "archive lock accessed held-v8")
     _require(
@@ -296,8 +308,13 @@ def _write_confirmation_only_force_csv(
                 )
             if expected_header_columns is not None:
                 columns = header.rstrip(b"\r\n").decode("ascii").split(",")
-                _require(columns == expected_header_columns, "force metadata header changed")
-            _require(header.rstrip(b"\r\n").split(b",")[0] == b"material_id", "material_id is not the first CSV column")
+                _require(
+                    columns == expected_header_columns, "force metadata header changed"
+                )
+            _require(
+                header.rstrip(b"\r\n").split(b",")[0] == b"material_id",
+                "material_id is not the first CSV column",
+            )
             _require(b'"' not in header, "quoted force metadata header is unsupported")
             target.write(header)
             for line in source:
@@ -312,7 +329,9 @@ def _write_confirmation_only_force_csv(
                 target.write(line)
             target.flush()
             os.fsync(target.fileno())
-    _require(admitted_materials == allowed, "confirmation roster was not fully admitted")
+    _require(
+        admitted_materials == allowed, "confirmation roster was not fully admitted"
+    )
     _require(
         admitted_materials.isdisjoint(discarded_materials),
         "confirmation and source rosters overlap",
@@ -343,9 +362,7 @@ def _confirmation_gate(summary: dict[str, Any]) -> dict[str, Any]:
         "simultaneous_force_coverage": (
             float(summary["decision_directed_simultaneous_force_coverage"]) >= 0.9
         ),
-        "false_safe_rate": (
-            float(summary["decision_directed_false_safe_rate"]) <= 0.1
-        ),
+        "false_safe_rate": (float(summary["decision_directed_false_safe_rate"]) <= 0.1),
         "unsafe_rate_noninferiority": (
             float(summary["decision_directed_unsafe_action_rate"])
             <= float(summary["system_identification_unsafe_action_rate"]) + 0.05
@@ -379,8 +396,7 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         "protocol configuration changed",
     )
     _require(
-        protocol_file_sha256(clarification_path)
-        == plan["clarification_file_sha256"],
+        protocol_file_sha256(clarification_path) == plan["clarification_file_sha256"],
         "clarification file changed",
     )
     load_rct_preoutcome_clarification(clarification_path)
@@ -393,8 +409,13 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
     method = _load_method(plan, source_result)
     archive_lock = _load_archive_lock(plan, source_result)
     archive = Path(plan["archive_path"]).resolve(strict=True)
-    _require(archive.stat().st_size == archive_lock["archive_size_bytes"], "archive size changed")
-    _require(_sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed")
+    _require(
+        archive.stat().st_size == archive_lock["archive_size_bytes"],
+        "archive size changed",
+    )
+    _require(
+        _sha256(archive) == archive_lock["archive_sha256"], "archive SHA-256 changed"
+    )
 
     confirmation_csv = output_root / "force_metadata_confirmation_only.csv"
     custody = _write_confirmation_only_force_csv(
@@ -405,7 +426,8 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         expected_header_columns=list(archive_lock["force_metadata_header_columns"]),
     )
     _require(
-        discover_rct_material_ids(confirmation_csv) == tuple(sorted(CONFIRMATION_MATERIALS)),
+        discover_rct_material_ids(confirmation_csv)
+        == tuple(sorted(CONFIRMATION_MATERIALS)),
         "confirmation material roster changed",
     )
     responses = load_rct_force_responses(

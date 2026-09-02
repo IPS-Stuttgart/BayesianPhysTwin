@@ -53,7 +53,9 @@ def _force_metadata_member(archive: Path) -> zipfile.ZipInfo:
     return member
 
 
-def _force_metadata_header(archive: Path, member: zipfile.ZipInfo) -> tuple[bytes, list[str]]:
+def _force_metadata_header(
+    archive: Path, member: zipfile.ZipInfo
+) -> tuple[bytes, list[str]]:
     with zipfile.ZipFile(archive) as bundle, bundle.open(member, "r") as stream:
         header = stream.readline(4097)
     _require(header.endswith((b"\n", b"\r")), "force metadata header is too long")
@@ -62,8 +64,7 @@ def _force_metadata_header(archive: Path, member: zipfile.ZipInfo) -> tuple[byte
     columns = header.rstrip(b"\r\n").decode("ascii").split(",")
     _require(columns[0] == "material_id", "material_id is not the first CSV column")
     _require(
-        {"material_id", "position", "sensor", "z_frame", "raw_fz"}
-        <= set(columns),
+        {"material_id", "position", "sensor", "z_frame", "raw_fz"} <= set(columns),
         "force metadata schema is missing a registered column",
     )
     return header, columns
