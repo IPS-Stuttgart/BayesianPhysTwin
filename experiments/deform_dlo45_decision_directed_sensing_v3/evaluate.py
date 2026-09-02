@@ -101,8 +101,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
     if not isinstance(roster, dict):
         raise ValueError("predecessor test roster must be an object")
     if (
-        predecessor.get("experiment")
-        != "deform-dlo45-decision-directed-sensing-v2"
+        predecessor.get("experiment") != "deform-dlo45-decision-directed-sensing-v2"
         or predecessor.get("result_id")
         != "a586cf3a2b5654b37e2acc62e3b8adb40942899e1b03cd45f70160170e0d9d39"
         or predecessor.get("fixed_likelihood_scale") != 2.0
@@ -117,8 +116,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
         or transport.get("calibration_unit") != "complete_trajectory"
         or transport.get("trajectory_nonconformity")
         != "mean_positive_realized_regret_minus_finite_support_certificate"
-        or acceptance.get("require_zero_predecessor_source_test_overlap")
-        is not True
+        or acceptance.get("require_zero_predecessor_source_test_overlap") is not True
         or statistics.get("multiple_comparison_correction") != "holm"
         or evaluation.get("official_evaluation_split_opened") is not False
         or evaluation.get("new_data_collection") is not False
@@ -126,9 +124,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
     ):
         raise ValueError("frozen v3 contract changed")
     alpha = float(transport["miscoverage_level"])
-    minimum_coverage = float(
-        acceptance["minimum_transport_coverage_fraction"]
-    )
+    minimum_coverage = float(acceptance["minimum_transport_coverage_fraction"])
     if not 0.0 < alpha < 1.0 or not 0.0 <= minimum_coverage <= 1.0:
         raise ValueError("invalid v3 risk levels")
     return value
@@ -194,13 +190,9 @@ def trajectory_certificate_scores(
                 "trajectory": trajectory,
                 "certified_decision_count": len(items),
                 "mean_realized_regret": float(np.mean(realized)),
-                "mean_finite_support_certificate": float(
-                    np.mean(certificate)
-                ),
+                "mean_finite_support_certificate": float(np.mean(certificate)),
                 "mean_excess": float(np.mean(excess)),
-                "mean_positive_excess": float(
-                    np.mean(np.maximum(excess, 0.0))
-                ),
+                "mean_positive_excess": float(np.mean(np.maximum(excess, 0.0))),
                 "maximum_excess": float(np.max(excess)),
             }
         )
@@ -307,8 +299,7 @@ def holm_adjust(p_values: dict[str, float]) -> dict[str, float]:
 def sign_test_summary(core_result: dict[str, Any], budget: int) -> dict[str, object]:
     decision = core_result["aggregate"]["decision_regret"][str(budget)]
     improvements = [
-        float(item["relative_improvement"])
-        for item in decision["per_trajectory"]
+        float(item["relative_improvement"]) for item in decision["per_trajectory"]
     ]
     fallback_wins = sum(value > ATOL for value in improvements)
     fallback_losses = sum(value < -ATOL for value in improvements)
@@ -325,12 +316,8 @@ def sign_test_summary(core_result: dict[str, Any], budget: int) -> dict[str, obj
             "ties": ties,
             "losses": losses,
             "one_sided_sign_test_p": p_value,
-            "mean_improvement_advantage": row[
-                "mean_trajectory_improvement_advantage"
-            ],
-            "bootstrap_95_interval": row[
-                "improvement_advantage_bootstrap_95_interval"
-            ],
+            "mean_improvement_advantage": row["mean_trajectory_improvement_advantage"],
+            "bootstrap_95_interval": row["improvement_advantage_bootstrap_95_interval"],
         }
     adjusted = holm_adjust(raw)
     for baseline, value in adjusted.items():
@@ -468,8 +455,7 @@ def render_summary(result: dict[str, Any]) -> str:
         f"- Calibration trajectories: {quantile['calibration_count']}",
         f"- Miscoverage level: {float(quantile['miscoverage_level']):.2f}",
         f"- Finite-sample rank: {quantile['finite_sample_rank']}",
-        f"- Additive normalized-regret slack: "
-        f"{float(quantile['additive_slack']):.6f}",
+        f"- Additive normalized-regret slack: {float(quantile['additive_slack']):.6f}",
         f"- Replication coverage: {transport['source_test_covered_count']}/"
         f"{transport['source_test_trajectory_count']} "
         f"({100.0 * float(transport['source_test_coverage_fraction']):.1f}%)",
@@ -532,9 +518,7 @@ def run(args: argparse.Namespace) -> int:
     output.mkdir(parents=True)
     protocol = load_protocol(protocol_path)
     repository_root = protocol_path.parents[2]
-    core_protocol = (
-        repository_root / str(protocol["core_protocol_path"])
-    ).resolve()
+    core_protocol = (repository_root / str(protocol["core_protocol_path"])).resolve()
     if not core_protocol.is_file():
         raise ValueError(f"missing core protocol: {core_protocol}")
     core_output = output / "core"
@@ -606,9 +590,7 @@ def run(args: argparse.Namespace) -> int:
             "source_test_trajectory_scores": len(
                 transport["source_test_trajectory_scores"]
             ),
-            "predecessor_source_test_overlap": overlap[
-                "total_overlap_count"
-            ],
+            "predecessor_source_test_overlap": overlap["total_overlap_count"],
             "official_evaluation_files_opened": False,
             "new_data_collected": False,
         },

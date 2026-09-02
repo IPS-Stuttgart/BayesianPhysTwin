@@ -24,9 +24,7 @@ def run(args: argparse.Namespace) -> int:
 
     protocol = analysis.load_protocol(protocol_path)
     repository_root = protocol_path.parents[2]
-    core_protocol = (
-        repository_root / str(protocol["core_protocol_path"])
-    ).resolve()
+    core_protocol = (repository_root / str(protocol["core_protocol_path"])).resolve()
     if not core_protocol.is_file():
         raise ValueError(f"missing core protocol: {core_protocol}")
 
@@ -57,9 +55,7 @@ def run(args: argparse.Namespace) -> int:
     ):
         raise ValueError("core operating point differs from frozen predecessor")
 
-    calibration_rows = analysis.read_jsonl(
-        nested_core / "calibration_cases.jsonl"
-    )
+    calibration_rows = analysis.read_jsonl(nested_core / "calibration_cases.jsonl")
     test_rows = analysis.read_jsonl(nested_core / "source_test_cases.jsonl")
     overlap = analysis.overlap_audit(core_result, protocol)
     transport = analysis.transport_calibration(
@@ -105,9 +101,7 @@ def run(args: argparse.Namespace) -> int:
             "source_test_trajectory_scores": len(
                 transport["source_test_trajectory_scores"]
             ),
-            "predecessor_source_test_overlap": overlap[
-                "total_overlap_count"
-            ],
+            "predecessor_source_test_overlap": overlap["total_overlap_count"],
             "official_evaluation_files_opened": False,
             "new_data_collected": False,
         },

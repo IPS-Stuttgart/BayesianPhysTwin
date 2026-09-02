@@ -11,16 +11,10 @@ from experiments.deform_dlo45_decision_directed_sensing_v3 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
-    ROOT
-    / "experiments"
-    / "deform_dlo45_decision_directed_sensing_v3"
-    / "protocol.json"
+    ROOT / "experiments" / "deform_dlo45_decision_directed_sensing_v3" / "protocol.json"
 )
 SCRIPT = (
-    ROOT
-    / "experiments"
-    / "deform_dlo45_decision_directed_sensing_v3"
-    / "evaluate.py"
+    ROOT / "experiments" / "deform_dlo45_decision_directed_sensing_v3" / "evaluate.py"
 )
 
 

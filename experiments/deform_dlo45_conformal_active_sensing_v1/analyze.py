@@ -244,9 +244,7 @@ def evaluate_frontier_point(
                 "envelope_exceed": execute and realized > inflated + ATOL,
                 "budget_exceed": execute and realized > regret_budget + ATOL,
                 "sensor_count": int(row["sensor_count"]),
-                "effective_hypothesis_count": float(
-                    row["effective_hypothesis_count"]
-                ),
+                "effective_hypothesis_count": float(row["effective_hypothesis_count"]),
             }
         )
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -257,9 +255,7 @@ def evaluate_frontier_point(
     trajectory_rows = []
     for (dlo, trajectory), items in sorted(grouped.items()):
         rmse = math.sqrt(float(np.mean([row["mse"] for row in items])))
-        fallback = math.sqrt(
-            float(np.mean([row["fallback_mse"] for row in items]))
-        )
+        fallback = math.sqrt(float(np.mean([row["fallback_mse"] for row in items])))
         trajectory_rows.append(
             {
                 "dlo": dlo,
@@ -312,17 +308,13 @@ def evaluate_frontier_point(
             int(row["sensor_count"]) > 0 for row in processed
         ),
         "mean_effective_hypotheses_when_acting": (
-            float(
-                np.mean([row["effective_hypothesis_count"] for row in selected])
-            )
+            float(np.mean([row["effective_hypothesis_count"] for row in selected]))
             if selected
             else None
         ),
         "state_ambiguous_fraction_when_acting": (
             float(
-                np.mean(
-                    [row["effective_hypothesis_count"] > 1.5 for row in selected]
-                )
+                np.mean([row["effective_hypothesis_count"] > 1.5 for row in selected])
             )
             if selected
             else None
@@ -362,10 +354,7 @@ def render_summary(result: Mapping[str, Any]) -> str:
             f"(95% bootstrap **[{100 * interval[0]:.2f}%, "
             f"{100 * interval[1]:.2f}%]**)."
         ),
-        (
-            "- Harmful nonfallback decisions: "
-            f"**{point['harmful_nonfallback_count']}**."
-        ),
+        (f"- Harmful nonfallback decisions: **{point['harmful_nonfallback_count']}**."),
         (
             "- Empirical simultaneous trajectory coverage: "
             f"**{100 * point['empirical_simultaneous_trajectory_coverage']:.2f}%**."
@@ -420,9 +409,7 @@ def run(parent_dir: Path, protocol_path: Path, output_dir: Path) -> dict[str, An
     scores = grouped_trajectory_scores(calibration_rows)
     alphas = [float(value) for value in protocol["calibration"]["miscoverage_levels"]]
     budgets = [float(value) for value in protocol["operational"]["regret_budgets"]]
-    envelopes = {
-        f"{alpha:.6g}": stratified_envelope(scores, alpha) for alpha in alphas
-    }
+    envelopes = {f"{alpha:.6g}": stratified_envelope(scores, alpha) for alpha in alphas}
     primary_alpha = float(protocol["operational"]["primary_miscoverage"])
     primary_envelope = envelopes[f"{primary_alpha:.6g}"]
     primary_budget = choose_primary_budget(
