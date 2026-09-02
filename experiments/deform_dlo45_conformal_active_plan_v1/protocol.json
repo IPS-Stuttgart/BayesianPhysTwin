@@ -1,0 +1,44 @@
+{
+  "calibration": {
+    "expected_trajectory_count": 18,
+    "finite_sample_quantile": "ceil((n+1)*(1-alpha)) order statistic; +infinity when unavailable",
+    "miscoverage": 0.2,
+    "score": "maximum over the frozen base policy's emitted nonfallback decisions of positive realized normalized regret minus finite-support certificate",
+    "unit": "complete_trajectory"
+  },
+  "claim_boundary": "Retrospective source-test evidence inside the public DEFORM training partition. The split-conformal statement is trajectory-marginal for one exchangeable future complete trajectory under the fixed active policy and registered loss semantics. It is simultaneous over that policy's emitted nonfallback decisions, not pointwise conditional, official-evaluation, unseen-object, learned-sensor, online-robot, arbitrary-action safety, or deployment evidence.",
+  "contract": "deform-dlo45-conformal-active-plan-v1",
+  "frontier": {
+    "miscoverage_levels": [0.1, 0.15, 0.2, 0.25, 0.3],
+    "operational_regret_tolerances": [0.25, 0.3, 0.35, 0.4, 0.5, 0.75, 1.0]
+  },
+  "information_order": {
+    "new_data_collection": false,
+    "official_evaluation_access": false,
+    "source_test_only": true,
+    "target_tuning": false
+  },
+  "operation": {
+    "base_measurement_budget": 4,
+    "base_policy": "decision_regret",
+    "fallback": "exact physical fallback from the base experiment",
+    "no_post_probe_action_reoptimization": true,
+    "primary_operational_regret_tolerance": 0.25,
+    "retention_rule": "retain the frozen base-policy action iff it is nonfallback and certificate_worst_case_regret + conformal_radius <= tolerance"
+  },
+  "predecessor": {
+    "artifact_id": 9839951506,
+    "artifact_sha256": "579972676099a536bc85033a07308df00a7fc121f450bfa99a692aab22d0759c",
+    "core_result_id": "50a4dbdb7547393da7d16cfb2e491308f24437bca54909924df87e7406422ee0",
+    "experiment": "deform-dlo45-decision-directed-sensing-v3",
+    "outer_result_id": "d4aeb724d7a23bcd0137c4e16999737c33c654511e0a7a17adf9727862abbd0f",
+    "source_revision": "56c31bc56b2fc3526f519f726ff7b922b909c65c",
+    "workflow_run_id": 33613192892
+  },
+  "schema_version": 1,
+  "statistics": {
+    "bootstrap_replicates": 20000,
+    "seed": 20260902,
+    "test_trajectory_count": 16
+  }
+}
