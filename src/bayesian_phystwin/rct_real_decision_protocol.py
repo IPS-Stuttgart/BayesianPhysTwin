@@ -1,0 +1,378 @@
+"""Validate the pre-outcome RCT real-decision probe protocol."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+SCHEMA_VERSION = 1
+PROTOCOL_ID = "rct-real-decision-probe-protocol-v1"
+RCT_CODE_REVISION = "8d2f2de96b08d7c1e4d754e327b974f3e41283b8"
+RCT_ARCHIVE_FILE_ID = 65037834
+RCT_ARCHIVE_SIZE_BYTES = 9_905_561_734
+REGISTERED_INDENTATIONS_MM = (0.4, 0.8, 1.2)
+MANDATORY_ANCHOR = (1, 1)
+SELECTABLE_PROBES = ((1, 2), (2, 1), (2, 2))
+HELD_INTERVENTION = (3, 3)
+CALIBRATION_MATERIALS = (
+    "0700120",
+    "0700300",
+    "0700340",
+    "0700490",
+    "0700680",
+    "0700750",
+    "0700830",
+    "0700970",
+    "0701320",
+    "0701430",
+    "0701650",
+    "0701850",
+    "0710070",
+    "0710100",
+    "0710200",
+    "0710310",
+    "0710330",
+    "0710530",
+    "0710550",
+    "710320",
+)
+SOURCE_TEST_MATERIALS = (
+    "0700140",
+    "0700170",
+    "070020",
+    "0700210",
+    "0700320",
+    "0700610",
+    "0700660",
+    "0701280",
+    "0701290",
+    "0701460",
+    "0701990",
+    "0710140",
+    "0710150",
+    "0710240",
+    "0710280",
+    "0710360",
+    "0710520",
+    "0710580",
+    "700870",
+    "700920",
+)
+CONFIRMATION_MATERIALS = (
+    "0700070",
+    "0700160",
+    "0700220",
+    "0700510",
+    "0700520",
+    "0700600",
+    "0700640",
+    "0700690",
+    "0700790",
+    "0700800",
+    "0701110",
+    "0701380",
+    "0701420",
+    "0701490",
+    "0701610",
+    "0701710",
+    "0710210",
+    "0710380",
+    "0710390",
+    "0710510",
+)
+OFFICIAL_SPLIT_SHA256 = {
+    "matholdout_K20_bal_seed0": (
+        "2813cbf7f76cfe4fc4116ce3abb5b1fc7edc8f5a0a2996f5016952cce6531111"
+    ),
+    "matholdout_K20_bal_seed42": (
+        "862d5c51d67265f661f330c93a116c6abb4c0eee6b4c3c53bbc8069b6b965421"
+    ),
+    "matholdout_K20_bal_seed7": (
+        "921c1799c3f70c4ff5e6c27bd6081deda8ed931fed17a80896c709ae65084adb"
+    ),
+}
+_CANONICAL_CONFIG_SHA256 = (
+    "6a6d0d0b52ed71cb530e0ad5cb5fe5898f202d6dd9ad099cab6b035fa063a140"
+)
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def _canonical_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def protocol_config_sha256(payload: Mapping[str, Any]) -> str:
+    """Return the canonical digest of a parsed RCT protocol."""
+
+    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+
+
+def protocol_file_sha256(path: str | Path) -> str:
+    """Return the byte digest of a protocol file."""
+
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+@dataclass(frozen=True)
+class RCTRealDecisionCohort:
+    """Material identities assigned before any registered force outcome is read."""
+
+    calibration: tuple[str, ...]
+    source_test: tuple[str, ...]
+    confirmation: tuple[str, ...]
+    expected_fit_count: int
+
+    @property
+    def reserved(self) -> frozenset[str]:
+        return frozenset(self.calibration + self.source_test + self.confirmation)
+
+    def role(self, material_id: str) -> str:
+        """Return the predeclared role of a released RCT material ID."""
+
+        if material_id in self.calibration:
+            return "calibration"
+        if material_id in self.source_test:
+            return "source_test"
+        if material_id in self.confirmation:
+            return "confirmation"
+        return "fit"
+
+
+def _material_ids(record: object, *, role: str) -> tuple[str, ...]:
+    _require(isinstance(record, Mapping), f"{role} cohort record is missing")
+    raw = record.get("material_ids")
+    _require(
+        isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)),
+        f"{role} material IDs must be a list",
+    )
+    values = tuple(str(value) for value in raw)
+    _require(len(values) == 20, f"{role} material count changed")
+    _require(len(values) == len(set(values)), f"{role} contains duplicate materials")
+    return values
+
+
+def _validate_dataset(payload: Mapping[str, Any]) -> None:
+    dataset = payload.get("dataset")
+    _require(isinstance(dataset, Mapping), "dataset lock is missing")
+    _require(
+        dataset.get("code_revision") == RCT_CODE_REVISION,
+        "RCT code revision changed",
+    )
+    _require(
+        dataset.get("official_split_manifests") == OFFICIAL_SPLIT_SHA256,
+        "official RCT split digests changed",
+    )
+    _require(dataset.get("license") == "CC BY 4.0", "dataset license changed")
+    counts = dataset.get("counts")
+    _require(
+        counts
+        == {
+            "force_traces": 1827,
+            "material_samples": 122,
+            "robot_press_sequences": 1832,
+            "tactile_frames": 29279,
+            "tactile_sensors": 3,
+        },
+        "RCT release counts changed",
+    )
+    archive = dataset.get("archive")
+    _require(isinstance(archive, Mapping), "archive lock is missing")
+    _require(
+        int(archive.get("file_id", -1)) == RCT_ARCHIVE_FILE_ID,
+        "archive file ID changed",
+    )
+    _require(
+        int(archive.get("size_bytes", -1)) == RCT_ARCHIVE_SIZE_BYTES,
+        "archive size changed",
+    )
+    _require(archive.get("expected_sha256") is None, "preaccess archive hash changed")
+    _require(
+        archive.get("status") == "download-in-progress-hash-required-before-extraction",
+        "preaccess archive status changed",
+    )
+
+
+def _validate_cohort(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
+    cohort = payload.get("cohort")
+    _require(isinstance(cohort, Mapping), "cohort lock is missing")
+    calibration = _material_ids(cohort.get("calibration"), role="calibration")
+    source_test = _material_ids(cohort.get("source_test"), role="source_test")
+    confirmation = _material_ids(cohort.get("confirmation"), role="confirmation")
+    _require(calibration == CALIBRATION_MATERIALS, "calibration cohort changed")
+    _require(source_test == SOURCE_TEST_MATERIALS, "source-test cohort changed")
+    _require(confirmation == CONFIRMATION_MATERIALS, "confirmation cohort changed")
+    _require(cohort.get("pairwise_disjoint") is True, "cohort disjointness changed")
+    reserved = calibration + source_test + confirmation
+    _require(len(set(reserved)) == 60, "registered cohorts overlap")
+    fit = cohort.get("fit")
+    _require(isinstance(fit, Mapping), "fit cohort rule is missing")
+    _require(int(fit.get("expected_material_count", -1)) == 62, "fit count changed")
+    _require(
+        fit.get("rule")
+        == "all released material IDs outside calibration, source_test, and confirmation",
+        "fit cohort rule changed",
+    )
+    return RCTRealDecisionCohort(
+        calibration=calibration,
+        source_test=source_test,
+        confirmation=confirmation,
+        expected_fit_count=62,
+    )
+
+
+def _probe_tuple(value: object, *, name: str) -> tuple[int, int]:
+    _require(isinstance(value, Mapping), f"{name} record is missing")
+    return int(value.get("position", -1)), int(value.get("sensor", -1))
+
+
+def _validate_method(payload: Mapping[str, Any]) -> None:
+    method = payload.get("method")
+    _require(isinstance(method, Mapping), "method lock is missing")
+    _require(
+        _probe_tuple(method.get("mandatory_anchor"), name="mandatory anchor")
+        == MANDATORY_ANCHOR,
+        "mandatory anchor changed",
+    )
+    raw_probes = method.get("selectable_probes")
+    _require(isinstance(raw_probes, Sequence), "selectable probes are missing")
+    probes = tuple(
+        _probe_tuple(value, name="selectable probe") for value in raw_probes
+    )
+    _require(probes == SELECTABLE_PROBES, "selectable probe roster changed")
+    fit = method.get("fit")
+    _require(isinstance(fit, Mapping), "fit method is missing")
+    _require(
+        float(fit.get("covariance_diagonal_shrinkage", -1.0)) == 0.25,
+        "covariance shrinkage changed",
+    )
+    _require(
+        float(fit.get("jitter_fraction_of_median_variance", -1.0)) == 1e-8,
+        "covariance jitter changed",
+    )
+    selectors = method.get("probe_selectors")
+    _require(isinstance(selectors, Mapping), "probe selectors are missing")
+    decision_directed = selectors.get("decision_directed")
+    _require(
+        isinstance(decision_directed, Mapping),
+        "decision-directed selector is missing",
+    )
+    _require(
+        int(decision_directed.get("predictive_draw_count", -1)) == 4096,
+        "predictive draw count changed",
+    )
+    _require(
+        int(decision_directed.get("predictive_seed", -1)) == 20260902,
+        "predictive seed changed",
+    )
+    guard = method.get("universal_conformal_guard")
+    _require(isinstance(guard, Mapping), "conformal guard is missing")
+    _require(float(guard.get("coverage", 0.0)) == 0.9, "guard coverage changed")
+    _require(guard.get("shared_across_methods") is True, "guard sharing changed")
+    _require(guard.get("uses_confirmation") is False, "confirmation entered guard")
+
+
+def _validate_decision(payload: Mapping[str, Any]) -> None:
+    decision = payload.get("decision")
+    _require(isinstance(decision, Mapping), "decision lock is missing")
+    action_grid = tuple(float(value) for value in decision.get("action_indentation_mm", ()))
+    _require(action_grid == (0.0, *REGISTERED_INDENTATIONS_MM), "action grid changed")
+    _require(
+        _probe_tuple(decision.get("held_intervention"), name="held intervention")
+        == HELD_INTERVENTION,
+        "held intervention changed",
+    )
+    force_limit = decision.get("force_limit")
+    _require(isinstance(force_limit, Mapping), "force-limit rule is missing")
+    _require(float(force_limit.get("quantile", -1.0)) == 0.6, "force limit changed")
+    _require(force_limit.get("fit_only") is True, "force limit is not fit-only")
+
+
+def _validate_boundary(payload: Mapping[str, Any]) -> None:
+    boundary = payload.get("information_boundary")
+    _require(isinstance(boundary, Mapping), "information boundary is missing")
+    for key in (
+        "calibration_force_rows_open_before_protocol_freeze",
+        "confirmation_descriptor_labels_used",
+        "confirmation_force_rows_open_before_authorization",
+        "confirmation_tactile_frames_used",
+        "held_v8_access_allowed",
+        "method_changes_after_source_test",
+        "source_test_force_rows_open_before_protocol_freeze",
+    ):
+        _require(boundary.get(key) is False, f"information boundary changed: {key}")
+    for key in (
+        "confirmation_material_ids_are_public_split_metadata",
+        "target_open_requires_archive_hash",
+        "target_open_requires_implementation_seal",
+        "target_open_requires_source_gate",
+        "target_open_requires_write_once_authorization",
+    ):
+        _require(boundary.get(key) is True, f"information boundary changed: {key}")
+    promotion = payload.get("promotion")
+    _require(isinstance(promotion, Mapping), "promotion lock is missing")
+    _require(promotion.get("target_authorized") is False, "target was authorized early")
+    _require(int(promotion.get("target_attempt_limit", -1)) == 1, "attempt limit changed")
+
+
+def load_rct_real_decision_protocol(path: str | Path) -> dict[str, Any]:
+    """Load the exact pre-outcome RCT protocol and reject any drift."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(isinstance(payload, Mapping), "protocol must be a JSON object")
+    _require(payload.get("schema_version") == SCHEMA_VERSION, "schema changed")
+    _require(payload.get("contract") == PROTOCOL_ID, "protocol ID changed")
+    _require(
+        payload.get("status") == "frozen-before-force-outcome-access",
+        "protocol status changed",
+    )
+    _validate_dataset(payload)
+    _validate_cohort(payload)
+    _validate_method(payload)
+    _validate_decision(payload)
+    _validate_boundary(payload)
+    _require(
+        protocol_config_sha256(payload) == _CANONICAL_CONFIG_SHA256,
+        "canonical RCT protocol digest changed",
+    )
+    return dict(payload)
+
+
+def cohort_from_protocol(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
+    """Return the validated material roles from an already parsed protocol."""
+
+    _require(payload.get("contract") == PROTOCOL_ID, "protocol ID changed")
+    return _validate_cohort(payload)
+
+
+__all__ = [
+    "CALIBRATION_MATERIALS",
+    "CONFIRMATION_MATERIALS",
+    "HELD_INTERVENTION",
+    "MANDATORY_ANCHOR",
+    "OFFICIAL_SPLIT_SHA256",
+    "PROTOCOL_ID",
+    "RCTRealDecisionCohort",
+    "SELECTABLE_PROBES",
+    "SOURCE_TEST_MATERIALS",
+    "cohort_from_protocol",
+    "load_rct_real_decision_protocol",
+    "protocol_config_sha256",
+    "protocol_file_sha256",
+]
