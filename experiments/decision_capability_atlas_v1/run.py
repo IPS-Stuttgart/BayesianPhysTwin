@@ -17,9 +17,17 @@ from bayesian_phystwin.decision_capability_atlas_v1 import (
     capability_polygon_2d,
     polygon_area_2d,
 )
+from bayesian_phystwin.decision_capability_task_uncertainty_v1 import (
+    TASK_UNCERTAINTY_CERTIFICATE_CLAIM_BOUNDARY,
+    box_robust_center_halfspaces,
+    box_task_set_capability,
+    norm_ball_capability_margin,
+    task_uncertainty_action_mask,
+)
 
 ACTIONS = ("pull_left", "hold", "pull_right")
 TASK_BOUNDS = np.array([[-1.5, 1.5], [0.0, 4.0]], dtype=np.float64)
+ROBUST_TASK_HALF_WIDTH = np.array([0.1, 0.2], dtype=np.float64)
 
 
 def canonical_bytes(value: object) -> bytes:
@@ -80,6 +88,7 @@ def generate_result() -> dict[str, Any]:
         intercept,
         coefficient,
     ) = controlled_family()
+    halfspaces_by_action = []
     polygons = []
     action_areas = []
     action_halfspace_counts = []
@@ -93,6 +102,7 @@ def generate_result() -> dict[str, Any]:
             action_index=action_index,
             regret_tolerance=0.0,
         )
+        halfspaces_by_action.append(halfspaces)
         polygon = capability_polygon_2d(halfspaces, TASK_BOUNDS)
         area = polygon_area_2d(polygon)
         polygons.append(
@@ -154,9 +164,107 @@ def generate_result() -> dict[str, Any]:
         regret_tolerance=0.0,
     )
     grid_exact_count = int(np.count_nonzero(grid_atlas.exact_capability_mask))
+
+    uncertain_centers = np.array(
+        [
+            [-1.2, 0.2],
+            [0.0, 2.0],
+            [1.2, 0.2],
+            [-0.6, 0.1],
+        ],
+        dtype=np.float64,
+    )
+    uncertain_half_widths = np.array(
+        [
+            [0.2, 0.2],
+            [0.2, 0.4],
+            [0.2, 0.2],
+            [0.04, 0.05],
+        ],
+        dtype=np.float64,
+    )
+    uncertain_reports = [
+        box_task_set_capability(
+            halfspaces,
+            uncertain_centers,
+            uncertain_half_widths,
+        )
+        for halfspaces in halfspaces_by_action
+    ]
+    uncertain_action_mask = task_uncertainty_action_mask(uncertain_reports)
+    nominal_uncertain_atlas = affine_decision_capability_atlas(
+        prior,
+        quotient,
+        classes,
+        intercept,
+        coefficient,
+        uncertain_centers,
+        regret_tolerance=0.0,
+    )
+    uncertain_records = []
+    for index, (center, half_width) in enumerate(
+        zip(uncertain_centers, uncertain_half_widths, strict=True)
+    ):
+        nominal_actions = np.flatnonzero(
+            nominal_uncertain_atlas.robustly_optimal_action_mask[index]
+        )
+        robust_actions = np.flatnonzero(uncertain_action_mask[index])
+        radii = [
+            float(
+                norm_ball_capability_margin(
+                    halfspaces,
+                    center[None, :],
+                    task_norm="l2",
+                ).normalized_constraint_margin[0]
+            )
+            for halfspaces in halfspaces_by_action
+        ]
+        uncertain_records.append(
+            {
+                "center": center.tolist(),
+                "half_width": half_width.tolist(),
+                "nominal_actions": [ACTIONS[int(value)] for value in nominal_actions],
+                "box_robust_actions": [ACTIONS[int(value)] for value in robust_actions],
+                "l2_constraint_margin_by_action": dict(
+                    zip(ACTIONS, radii, strict=True)
+                ),
+            }
+        )
+
+    center_bounds = TASK_BOUNDS.copy()
+    center_bounds[:, 0] += ROBUST_TASK_HALF_WIDTH
+    center_bounds[:, 1] -= ROBUST_TASK_HALF_WIDTH
+    center_domain_area = float(np.prod(center_bounds[:, 1] - center_bounds[:, 0]))
+    nominal_center_areas = []
+    robust_center_areas = []
+    robust_center_polygons = []
+    for action, halfspaces in zip(ACTIONS, halfspaces_by_action, strict=True):
+        nominal_polygon = capability_polygon_2d(halfspaces, center_bounds)
+        robust_halfspaces = box_robust_center_halfspaces(
+            halfspaces,
+            ROBUST_TASK_HALF_WIDTH,
+        )
+        robust_polygon = capability_polygon_2d(
+            robust_halfspaces,
+            center_bounds,
+        )
+        nominal_center_areas.append(polygon_area_2d(nominal_polygon))
+        robust_area = polygon_area_2d(robust_polygon)
+        robust_center_areas.append(robust_area)
+        robust_center_polygons.append(
+            {
+                "action": action,
+                "vertices": robust_polygon.tolist(),
+                "area": robust_area,
+                "area_fraction": robust_area / center_domain_area,
+            }
+        )
+    nominal_center_union = float(np.sum(nominal_center_areas))
+    robust_center_union = float(np.sum(robust_center_areas))
+
     result: dict[str, Any] = {
-        "schema": "bayesian-phystwin/decision-capability-atlas-study-v1",
-        "schema_version": 1,
+        "schema": "bayesian-phystwin/decision-capability-atlas-study-v2",
+        "schema_version": 2,
         "status": "complete",
         "task_family": {
             "parameters": ["target_displacement", "physical_risk_weight"],
@@ -199,6 +307,32 @@ def generate_result() -> dict[str, Any]:
             "grid_exact_capability_count": grid_exact_count,
         },
         "representative_tasks": probe_records,
+        "task_uncertainty": {
+            "semantics": (
+                "Each box contains all task objectives whose coordinates differ "
+                "from the center by at most the declared half-width."
+            ),
+            "claim_boundary": TASK_UNCERTAINTY_CERTIFICATE_CLAIM_BOUNDARY,
+            "representative_task_sets": uncertain_records,
+            "fixed_box_atlas": {
+                "half_width": ROBUST_TASK_HALF_WIDTH.tolist(),
+                "center_bounds": center_bounds.tolist(),
+                "center_domain_area": center_domain_area,
+                "nominal_certified_union_area": nominal_center_union,
+                "nominal_certified_union_fraction": (
+                    nominal_center_union / center_domain_area
+                ),
+                "robust_certified_union_area": robust_center_union,
+                "robust_certified_union_fraction": (
+                    robust_center_union / center_domain_area
+                ),
+                "robust_fallback_area": center_domain_area - robust_center_union,
+                "robust_fallback_fraction": (
+                    1.0 - robust_center_union / center_domain_area
+                ),
+                "capability_regions": robust_center_polygons,
+            },
+        },
         "checks": {
             "all_three_actions_have_nonempty_regions": all(
                 area > 0.0 for area in action_areas
@@ -208,6 +342,21 @@ def generate_result() -> dict[str, Any]:
             "point_choice_fills_fallback_example": (
                 probe_records[-1]["robust_action"] is None
                 and probe_records[-1]["point_belief_action"] == "pull_left"
+            ),
+            "uncertain_representatives_identify_left_hold_right": (
+                uncertain_records[0]["box_robust_actions"] == ["pull_left"]
+                and uncertain_records[1]["box_robust_actions"] == ["hold"]
+                and uncertain_records[2]["box_robust_actions"] == ["pull_right"]
+            ),
+            "nominally_capable_task_can_fail_under_objective_uncertainty": (
+                uncertain_records[3]["nominal_actions"] == ["pull_left"]
+                and uncertain_records[3]["box_robust_actions"] == []
+            ),
+            "objective_uncertainty_strictly_shrinks_capability": (
+                robust_center_union < nominal_center_union
+            ),
+            "robust_left_right_symmetry": (
+                abs(robust_center_areas[0] - robust_center_areas[2]) < 1e-12
             ),
         },
         "claim_boundary": DECISION_CAPABILITY_ATLAS_CLAIM_BOUNDARY,
