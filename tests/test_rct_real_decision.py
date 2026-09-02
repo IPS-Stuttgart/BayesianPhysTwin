@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import bayesian_phystwin.rct_real_decision as rct_real_decision
 from bayesian_phystwin.rct_real_decision import (
     COORDINATE_COUNT,
     GaussianState,
@@ -15,6 +16,7 @@ from bayesian_phystwin.rct_real_decision import (
     calibrate_simultaneous_force_multiplier,
     condition_gaussian,
     decision_value_of_probe,
+    evaluate_material,
     load_rct_force_responses,
     source_promotion_gate,
     summarize_evaluation,
@@ -206,6 +208,83 @@ def test_method_artifact_round_trip_preserves_frozen_numerics() -> None:
     assert restored.force_limit_n == method.force_limit_n
     assert restored.conformal_multiplier == method.conformal_multiplier
     assert restored.calibration_scores == method.calibration_scores
+
+
+def test_method_fit_derives_force_limit_from_fit_materials_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = np.linspace(0.1, 1.5, COORDINATE_COUNT)
+    fit = tuple(
+        RCTMaterialResponse(f"fit-{index}", base * (1.0 + 0.1 * index))
+        for index in range(4)
+    )
+    calibration = tuple(
+        RCTMaterialResponse(f"cal-{index:02d}", base * (1.2 + 0.01 * index))
+        for index in range(20)
+    )
+    seen: dict[str, object] = {}
+
+    def fake_calibration(
+        twin: RCTGaussianTwin,
+        responses: tuple[RCTMaterialResponse, ...],
+        *,
+        force_limit_n: float,
+        coverage: float = 0.9,
+    ) -> tuple[float, tuple[float, ...], int]:
+        seen.update(
+            twin=twin,
+            responses=responses,
+            force_limit_n=force_limit_n,
+            coverage=coverage,
+        )
+        return 1.25, tuple(float(index) for index in range(20)), 19
+
+    monkeypatch.setattr(
+        rct_real_decision,
+        "calibrate_simultaneous_force_multiplier",
+        fake_calibration,
+    )
+
+    method = RCTDecisionMethod.fit(fit, calibration)
+
+    expected_limit = float(
+        np.quantile(
+            np.asarray([response.force_n[-1] for response in fit]),
+            0.6,
+            method="linear",
+        )
+    )
+    assert method.force_limit_n == expected_limit
+    assert method.conformal_multiplier == 1.25
+    assert seen["responses"] == calibration
+    assert seen["force_limit_n"] == expected_limit
+    assert seen["coverage"] == 0.9
+
+
+def test_material_evaluation_reports_all_registered_policy_controls() -> None:
+    mean = np.full(COORDINATE_COUNT, 0.4, dtype=np.float64)
+    mean[-3:] = (0.3, 0.6, 0.9)
+    method = RCTDecisionMethod(
+        twin=RCTGaussianTwin(mean, _selector_covariance()),
+        force_limit_n=0.8,
+        conformal_multiplier=1.0,
+        calibration_scores=tuple(float(index) / 10.0 for index in range(20)),
+        conformal_rank=19,
+    )
+    response = RCTMaterialResponse("evaluation", np.maximum(mean, 0.05))
+
+    result = evaluate_material(method, response)
+
+    assert result["material_id"] == "evaluation"
+    assert len(result["decision_directed"]["budgets"]) == 4
+    assert len(result["system_identification"]["budgets"]) == 4
+    assert len(result["fixed"]["budgets"]) == 4
+    assert len(result["random_permutations"]) == 6
+    assert all(
+        {(probe["position"], probe["sensor"]) for probe in record["probe_order"]}
+        == set(SELECTABLE_PROBES)
+        for record in result["random_permutations"]
+    )
 
 
 def test_source_gate_is_fail_closed_and_never_authorizes_confirmation() -> None:
