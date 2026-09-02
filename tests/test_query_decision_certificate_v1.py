@@ -12,7 +12,7 @@ def test_query_decision_certificate_smoke() -> None:
         prior_weights=np.array([0.25, 0.25, 0.25, 0.25]),
         quotient_weights=np.array([0.5, 0.5]),
         class_index=np.array([0, 0, 1, 1]),
-        losses=np.array(
+        loss_by_hypothesis_action=np.array(
             [
                 [0.0, 1.0, 2.0],
                 [0.1, 1.1, 2.1],
