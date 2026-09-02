@@ -68,7 +68,7 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      - name: Validate theorem, contracts, and controlled falsification
+      - name: Format and validate theorem, contracts, and falsification
         shell: bash
         run: |
           set -euo pipefail
@@ -78,6 +78,8 @@ jobs:
             tests/test_interventional_cause_identifiability_v1.py
             tests/test_interventional_cause_attribution_controlled_v1.py
           )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           PYTHONPATH=src python -m pytest -q -p no:cacheprovider \
