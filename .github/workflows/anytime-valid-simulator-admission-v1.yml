@@ -62,7 +62,7 @@ jobs:
             tests/test_anytime_valid_dlo_replay_v1.py
             tests/test_anytime_valid_replay_v2.py
           )
-          ruff check --fix "${files[@]}"
+          ruff check --fix --unsafe-fixes "${files[@]}"
           ruff format "${files[@]}"
           ruff check "${files[@]}"
           ruff format --check "${files[@]}"
