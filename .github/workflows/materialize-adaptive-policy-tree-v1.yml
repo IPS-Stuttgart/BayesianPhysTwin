@@ -1,0 +1,108 @@
+name: Materialize adaptive stochastic policy tree
+
+on:
+  push:
+    branches:
+      - science/adaptive-stochastic-policy-tree-v1
+    paths:
+      - .github/workflows/materialize-adaptive-policy-tree-v1.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-adaptive-policy-tree-v1
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact payload revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          clean: true
+          persist-credentials: true
+
+      - name: Materialize and verify reviewed files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import hashlib
+          import io
+          import tarfile
+          import zlib
+          from pathlib import Path
+
+          part_root = Path('.github/materialization')
+          parts = sorted(part_root.glob('adaptive-policy-tree-v1.part*'))
+          if [path.name for path in parts] != [
+              f'adaptive-policy-tree-v1.part{index:02d}' for index in range(8)
+          ]:
+              raise SystemExit(f'unexpected payload roster: {[path.name for path in parts]}')
+
+          encoded = ''.join(path.read_text(encoding='utf-8').strip() for path in parts)
+          compressed = base64.b64decode(encoded, validate=True)
+          if hashlib.sha256(compressed).hexdigest() != (
+              '77d542323a37432b2bc3dad5f0876108922f20a0184afb4939e1f8c1f522f7c3'
+          ):
+              raise SystemExit('compressed payload digest mismatch')
+          archive_bytes = zlib.decompress(compressed)
+          if hashlib.sha256(archive_bytes).hexdigest() != (
+              'bd289fb07a9e276547f5df164d3b8cb2adb0aa7e7eff997933b0e926876ed67a'
+          ):
+              raise SystemExit('archive digest mismatch')
+
+          expected = {
+              'experiments/adaptive_act_sense_fallback_certificate_v1/README.md':
+                  '875f77ede19a34b27b3c58117ccc1e5531234336100f1a25e4352a0e05c8f7dd',
+              'experiments/adaptive_act_sense_fallback_certificate_v1/__init__.py':
+                  '73db8feed051114c707023c7149c4653b00a642aa11a764e9d9347c6f2979b8a',
+              'experiments/adaptive_act_sense_fallback_certificate_v1/run.py':
+                  '6e91720d918d089298287e2729eef69add7983b10f17ac4902800950602638c0',
+              'experiments/adaptive_act_sense_fallback_certificate_v1/result.json':
+                  '4259dd2d33ab075af5201390661425bc47e5f716463293e06d1ebba522d50d29',
+              'src/bayesian_phystwin/adaptive_act_sense_fallback_certificate_v1.py':
+                  '1752ed1bf729a329b122ee8ab7bd56a92032db2dc105990b57a7918ce58967b2',
+              'tests/test_adaptive_act_sense_fallback_certificate_v1.py':
+                  '5e41701731da5c02c28879a8b07c3a3e35d3aea4861a49958afbbf87e161c2a3',
+          }
+          with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode='r:') as archive:
+              members = {member.name: member for member in archive.getmembers()}
+              for relative, digest in expected.items():
+                  member = members.get(relative)
+                  if member is None or not member.isfile():
+                      raise SystemExit(f'missing expected archive member: {relative}')
+                  source = archive.extractfile(member)
+                  if source is None:
+                      raise SystemExit(f'cannot read archive member: {relative}')
+                  payload = source.read()
+                  if hashlib.sha256(payload).hexdigest() != digest:
+                      raise SystemExit(f'file digest mismatch: {relative}')
+                  destination = Path(relative)
+                  if destination.is_absolute() or '..' in destination.parts:
+                      raise SystemExit(f'unsafe destination: {relative}')
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  destination.write_bytes(payload)
+
+          for path in parts:
+              path.unlink()
+          Path('.github/workflows/materialize-adaptive-policy-tree-v1.yml').unlink()
+          PY
+
+          python -m py_compile \
+            src/bayesian_phystwin/adaptive_act_sense_fallback_certificate_v1.py \
+            experiments/adaptive_act_sense_fallback_certificate_v1/run.py \
+            tests/test_adaptive_act_sense_fallback_certificate_v1.py
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Add exact stochastic adaptive policy-tree certificate'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
