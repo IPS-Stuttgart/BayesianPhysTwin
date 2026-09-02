@@ -255,8 +255,8 @@ jobs:
               "source_test_trajectories": 16,
               "source_test_decision_windows": 304,
               "calibration_base_configurations": 9,
-              "calibration_grid_configurations": 72,
-              "calibration_case_rows": 24624,
+              "calibration_grid_configurations": 9,
+              "calibration_case_rows": 3078,
               "policies": 9,
               "budgets": 7,
               "source_test_case_rows": 19152,
@@ -272,16 +272,7 @@ jobs:
           selected = result["selected_calibration"]
           assert selected["sensor_log_likelihood_scale"] in {0.5, 1.0, 2.0}
           assert selected["action_prototype_scale"] in {0.5, 0.75, 1.0}
-          assert selected["regret_tolerance"] in {
-              0.0,
-              0.005,
-              0.01,
-              0.02,
-              0.05,
-              0.1,
-              0.2,
-              0.4,
-          }
+          assert selected["regret_tolerance"] == 0.05
           expected_policies = {
               "decision_regret",
               "bayes_risk",
