@@ -86,6 +86,7 @@ jobs:
             src/bayesian_phystwin/active_decision_probe_v1.py
             experiments/deform_dlo45_active_decision_probe_v1/_core.py
             experiments/deform_dlo45_active_decision_probe_v1/run.py
+            experiments/deform_dlo45_active_decision_probe_v1/validate_result.py
             tests/test_deform_dlo45_active_decision_probe_v1.py
           )
           python -m ruff check --fix "${files[@]}"
@@ -108,6 +109,8 @@ jobs:
           python -m experiments.deform_dlo45_active_decision_probe_v1.run \
             --dataset-root "${root}" \
             --output "${RESULT}"
+          python -m experiments.deform_dlo45_active_decision_probe_v1.validate_result \
+            "${RESULT}"
 
       - name: Upload exact result
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
@@ -126,6 +129,7 @@ jobs:
             src/bayesian_phystwin/active_decision_probe_v1.py
             experiments/deform_dlo45_active_decision_probe_v1/_core.py
             experiments/deform_dlo45_active_decision_probe_v1/run.py
+            experiments/deform_dlo45_active_decision_probe_v1/validate_result.py
             tests/test_deform_dlo45_active_decision_probe_v1.py
           )
           if git diff --quiet -- "${source_files[@]}" "${RESULT}" && git ls-files \
