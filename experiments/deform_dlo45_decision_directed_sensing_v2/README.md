@@ -60,11 +60,16 @@ Adaptive policies maximize expected metric reduction per measurement cost using
 the current local-support predictive mixture. This naturally accounts for
 previously acquired, redundant measurements.
 
-## Source calibration
+## Fixed risk requirement and source calibration
 
-A fixed grid selects one shared sensor likelihood scale, one shared action-
-prototype shrinkage, and one regret tolerance across DLO4 and DLO5. A candidate
-is eligible only when it:
+The normalized-regret tolerance is fixed at **0.05** as a task requirement. It is
+not selected to maximize RMSE. This corrects the first v2 run, whose loose
+calibrated tolerance admitted every action before any measurement and therefore
+collapsed all acquisition policies to the same zero-sensing policy.
+
+At this fixed risk budget, a grid selects one shared sensor likelihood scale and
+one shared action-prototype shrinkage across DLO4 and DLO5. A candidate is
+eligible only when it:
 
 1. produces at least 20 nonfallback calibration decisions;
 2. improves equal-trajectory task RMSE; and
