@@ -361,7 +361,10 @@ def _suite_claim(method: str) -> str:
             "finite support; realized held regret is reported separately."
         )
     if method == "oracle":
-        return CLAIM_BOUNDARY + " This comparator uses held outcomes and is diagnostic only."
+        return (
+            CLAIM_BOUNDARY
+            + " This comparator uses held outcomes and is diagnostic only."
+        )
     return (
         CLAIM_BOUNDARY
         + " This is a forecast-only comparator without a certificate claim."
@@ -424,10 +427,9 @@ def export_suites(
                     INTERNAL,
                     :,
                 ].copy()
-                actual_residual = (
-                    (truth - observation.baseline).reshape(-1)
-                    / observation.length_scale
-                )
+                actual_residual = (truth - observation.baseline).reshape(
+                    -1
+                ) / observation.length_scale
                 normalized_actions = (
                     model.action_scales[:, None] * evidence.correction[None, :]
                 )
