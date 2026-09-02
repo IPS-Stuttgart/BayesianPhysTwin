@@ -255,6 +255,71 @@ must preserve both failures and be frozen before launch. The source/method locks
 and full-hash-before-structure requirement are unchanged; no scientific claim
 follows from the implementation tests or these transport observations.
 
+### Quota diagnosis and prospective checkpoint recovery
+
+A later bounded transport diagnostic at
+`2026-09-02T17:08:20.674819+00:00` read only the 2,009-byte HTML error response,
+not archive content. It explicitly identified a Google Drive download-quota
+error. This new observation does not retroactively establish the exact contents
+of either failed run's response. The administrative recovery path now includes
+no further provider request before `2026-09-03T17:08:20.674819+00:00`; that is a
+conservative 24-hour pause, not a known reset time or permission to start a job.
+
+The checked server, local Linux, and Windows filesystems have less free space
+than the complete archive requires. Nothing was deleted or reallocated.
+`evidence/poseit-real-decision-v1/delivery-recovery-feasibility-v1.json` records
+these source-independent observations and a local synthetic prototype.
+
+`poseit_hash_checkpoint.py` explores durable hashing without retaining the
+archive or inventing a new SHA-256 implementation. It uses the upstream
+[RHash v1.4.6 export/import API](https://github.com/rhash/RHash/blob/v1.4.6/librhash/rhash.h),
+pinned to commit `6562de382954d9893442b89b0e8b5c513eea6a88`. Only the exact
+non-OpenSSL native ABI and a caller-supplied binary SHA-256 are accepted.
+Checkpointing is restricted to complete 64-byte blocks. The native input
+buffer must be zero; irrelevant structure padding is zeroed before storage.
+A final partial block is processed only transiently on a cloned context.
+Restoration checks the library binding, external checkpoint ID, native layout,
+byte counters, padding, and prefix digest before a state is returned.
+
+The 132-byte native state contains a derived hash state and counters, not an
+input fragment. Forty-seven local synthetic tests include Python `hashlib`
+agreement, multiple restarts, deterministic partitioning, the registered 32 MiB
+chunk size, a restart across 4 GiB, and corrupted metadata/native-state rejection.
+The complete PoseIt suite passes 149 tests with the explicit test library.
+These native tests are optional and skipped when that library is not provided;
+there is no system-library fallback. The upstream shared-library tests and
+strict MyPy for the new module also pass. No remote library was changed.
+
+This is not yet an acquisition runner or a transport amendment. Before it could
+be used on PoseIt, the next implementation must add atomic, hash-chained,
+write-once checkpoint/attempt custody; reject rollback, missing/reordered ranges,
+or a changed native library; preserve quota failures and the provider cooldown;
+and emit the existing full-archive proof only after every byte was hashed in
+order. A separately frozen transport amendment must bind those changes before
+one new acquisition is launched. The prior failed prefixes cannot be recovered,
+so that new attempt would still start at byte zero. Scientific choices and the
+full-hash-before-structure gate must remain unchanged throughout.
+
+To reproduce the synthetic native tests with the isolated source checkout:
+
+```bash
+git clone --depth 1 --branch v1.4.6 https://github.com/rhash/RHash.git /tmp/poseit-rhash-v1.4.6
+cd /tmp/poseit-rhash-v1.4.6
+git rev-parse HEAD
+./configure --disable-openssl --enable-lib-shared --disable-lib-static
+make -j2 lib-shared
+make -j2 test-lib-shared
+```
+
+Then, from the experiment worktree:
+
+```bash
+env PYTHONPATH=src \
+  POSEIT_TEST_RHASH_LIBRARY=/tmp/poseit-rhash-v1.4.6/librhash/librhash.so.1.4.6 \
+  uv run --no-project --python 3.12 --with pytest --with numpy --with scipy \
+  python -m pytest --capture=sys -q tests/test_poseit_*.py
+```
+
 ## Full-download and structure-only custody tools
 
 If a complete local copy becomes available, the alternate exact acquisition
