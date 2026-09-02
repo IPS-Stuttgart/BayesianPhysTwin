@@ -1,0 +1,75 @@
+{
+  "actions": [
+    "pull_left",
+    "pull_right",
+    "hold"
+  ],
+  "artifact_kind": "SupportRobustActSenseFallbackMechanismV1",
+  "claim_boundary": "The certificate is exact only for the supplied represented finite support, query quotient, deterministic probe maps, plan-loss model, upper bound on unknown-support probability, rectangular unknown plan-loss envelope, and regret tolerance. It does not estimate or validate the support-miss bound, unknown-domain loss envelope, probe physics, reset semantics, target transport, calibration, deployment, or safety.",
+  "interpretation": "The certificate acts when the terminal action is already identified, uses a cheap informative tug under represented support, switches to a costlier but support-robust camera under moderate misspecification, and returns the caller-owned hold fallback when no plan meets tolerance.",
+  "phase_diagram": [
+    {
+      "minimax_worst_case_regret": 0.08000000000000002,
+      "output_mode": "act",
+      "plan_count": 9,
+      "probe_name": null,
+      "resolved_left": true,
+      "selected_support_miss_budget": 0.3125,
+      "support_miss_probability_upper": 0.1,
+      "terminal_action_by_outcome": [],
+      "terminal_action_index": 0
+    },
+    {
+      "minimax_worst_case_regret": 0.0,
+      "output_mode": "sense",
+      "plan_count": 21,
+      "probe_name": "quick_tug",
+      "resolved_left": false,
+      "selected_support_miss_budget": 0.08928571428571429,
+      "support_miss_probability_upper": 0.0,
+      "terminal_action_by_outcome": [
+        0,
+        1
+      ],
+      "terminal_action_index": null
+    },
+    {
+      "minimax_worst_case_regret": 0.24000000000000002,
+      "output_mode": "sense",
+      "plan_count": 21,
+      "probe_name": "camera",
+      "resolved_left": false,
+      "selected_support_miss_budget": 0.11249999999999999,
+      "support_miss_probability_upper": 0.1,
+      "terminal_action_by_outcome": [
+        0,
+        1
+      ],
+      "terminal_action_index": null
+    },
+    {
+      "minimax_worst_case_regret": 0.32000000000000006,
+      "output_mode": "fallback",
+      "plan_count": 21,
+      "probe_name": null,
+      "resolved_left": false,
+      "selected_support_miss_budget": 0.0,
+      "support_miss_probability_upper": 0.2,
+      "terminal_action_by_outcome": [],
+      "terminal_action_index": 2
+    }
+  ],
+  "probes": [
+    "quick_tug",
+    "camera"
+  ],
+  "regret_tolerance": 0.25,
+  "result_id": "c31b84076cde53bb925beb5563190f97132481b431b09baf0a2332f9f953dae9",
+  "schema_version": 1,
+  "theorem": {
+    "ambiguity_class": "at-most-epsilon mixture with an axis-aligned unknown plan-loss box",
+    "at_most_epsilon_gap": "Delta_0 + epsilon * max(0, M - Delta_0)",
+    "represented_gap": "Delta_0(p,b)",
+    "unknown_box_gap": "M(p,b)=upper[p]-lower[b]"
+  }
+}
