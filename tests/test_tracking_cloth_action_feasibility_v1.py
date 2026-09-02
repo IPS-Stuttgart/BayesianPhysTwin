@@ -136,7 +136,7 @@ def test_source_grid_can_exercise_a_decision_probe() -> None:
     probes = np.asarray(
         [
             [0, 0, 0, 1, 0, 0, 0, 1],
-            [0, 1, 0, 1, 0, 1, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0],
             [1, 0, 1, 0, 1, 0, 1, 0],
         ],
         dtype=np.int64,
@@ -145,6 +145,11 @@ def test_source_grid_can_exercise_a_decision_probe() -> None:
     records, summary = decision_grid(blocks, losses, probes, protocol)
 
     assert len(records) == 16
+    assert summary["informative_probe_indices"] == [0, 2]
+    assert summary["informative_probe_names"] == [
+        "four_corners_normal",
+        "two_corners_normal",
+    ]
     selected = summary["selected_source_setting"]
     assert selected["mode_counts"]["sense"] >= 1
     assert selected["relative_gain_vs_fallback"] > 0.0
