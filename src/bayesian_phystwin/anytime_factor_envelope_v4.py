@@ -34,8 +34,9 @@ a physical-safety or causal-identification guarantee.
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Final, Iterable
+from typing import Final
 
 import numpy as np
 
@@ -110,11 +111,7 @@ def bernoulli_harm_factor(
     ceiling = _probability(maximum_harm_rate, label="maximum_harm_rate")
     fraction = _probability(alternative_fraction, label="alternative_fraction")
     alternative = ceiling * fraction
-    factor = (
-        alternative / ceiling
-        if harmful
-        else (1.0 - alternative) / (1.0 - ceiling)
-    )
+    factor = alternative / ceiling if harmful else (1.0 - alternative) / (1.0 - ceiling)
     if not math.isfinite(factor) or factor <= 0.0:
         raise AssertionError("harm factor must be positive and finite")
     return factor

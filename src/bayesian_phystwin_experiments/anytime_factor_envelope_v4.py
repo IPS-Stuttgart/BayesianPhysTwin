@@ -55,9 +55,7 @@ def _crossing_summary(first_crossing: np.ndarray) -> dict[str, object]:
         "crossing_count": count,
         "crossing_probability": count / total,
         "wilson_95_interval": wilson_interval(count, total),
-        "median_first_crossing": (
-            None if count == 0 else float(np.median(values))
-        ),
+        "median_first_crossing": (None if count == 0 else float(np.median(values))),
         "first_crossing_quantiles_10_90": (
             None
             if count == 0
@@ -99,9 +97,7 @@ def _phase_arrays(
         raise ValueError("gain scores must lie in [-1, 1]")
 
     scale = max(maximum_harm_rate, 1.0 - maximum_harm_rate)
-    harm_scores = (
-        maximum_harm_rate - harmful.astype(np.float64)
-    ) / scale
+    harm_scores = (maximum_harm_rate - harmful.astype(np.float64)) / scale
     robust_scores = np.minimum(gain_scores, harm_scores)
 
     alternatives = maximum_harm_rate * harm_fractions
@@ -121,18 +117,10 @@ def _phase_arrays(
     )
     diagnostics = {
         "expected_gain_score": float(np.sum(probabilities * gain_scores)),
-        "expected_harm_rate": float(
-            np.sum(probabilities * harmful.astype(np.float64))
-        ),
-        "expected_min_score": float(
-            np.sum(probabilities * robust_scores)
-        ),
-        "maximum_expected_envelope_factor": float(
-            np.max(expected_envelope)
-        ),
-        "minimum_expected_envelope_factor": float(
-            np.min(expected_envelope)
-        ),
+        "expected_harm_rate": float(np.sum(probabilities * harmful.astype(np.float64))),
+        "expected_min_score": float(np.sum(probabilities * robust_scores)),
+        "maximum_expected_envelope_factor": float(np.max(expected_envelope)),
+        "minimum_expected_envelope_factor": float(np.min(expected_envelope)),
     }
     return (
         duration,
@@ -237,9 +225,7 @@ def simulate_factor_envelope_scenario(
             harms = harmful[atoms]
             robust = robust_scores[atoms]
 
-            robust_log_wealth += np.log1p(
-                robust[:, None] * robust_bets[None, :]
-            )
+            robust_log_wealth += np.log1p(robust[:, None] * robust_bets[None, :])
             gain_factors = 1.0 + gains[:, None] * gain_bets[None, :]
             harm_factors = np.where(
                 harms[:, None],
@@ -256,9 +242,7 @@ def simulate_factor_envelope_scenario(
             envelope_log_e = _log_mixture(envelope_log_wealth)
             if observation >= minimum:
                 new_robust = (robust_first < 0) & (robust_log_e >= threshold)
-                new_envelope = (envelope_first < 0) & (
-                    envelope_log_e >= threshold
-                )
+                new_envelope = (envelope_first < 0) & (envelope_log_e >= threshold)
                 robust_first[new_robust] = observation
                 envelope_first[new_envelope] = observation
 
@@ -270,9 +254,7 @@ def simulate_factor_envelope_scenario(
             **_crossing_summary(robust_first),
             "component_alpha": alpha,
             "e_value_threshold": 1.0 / alpha,
-            "factor_family": (
-                "min(1 + lambda G, 1 + lambda S) with one shared lambda"
-            ),
+            "factor_family": ("min(1 + lambda G, 1 + lambda S) with one shared lambda"),
         },
         "switching_union_factor_envelope_v4": {
             **_crossing_summary(envelope_first),
@@ -373,12 +355,8 @@ def run_factor_envelope_study(
     moderate_power_gain = float(
         cast(Any, moderate_envelope["crossing_probability"])
     ) - float(cast(Any, moderate_min_score["crossing_probability"]))
-    envelope_median = float(
-        cast(Any, moderate_envelope["median_first_crossing"])
-    )
-    min_score_median = float(
-        cast(Any, moderate_min_score["median_first_crossing"])
-    )
+    envelope_median = float(cast(Any, moderate_envelope["median_first_crossing"]))
+    min_score_median = float(cast(Any, moderate_min_score["median_first_crossing"]))
     moderate_median_ratio = envelope_median / min_score_median
 
     requirements = cast(dict[str, object], protocol["mechanism_gate"])
@@ -394,9 +372,7 @@ def run_factor_envelope_study(
                 requirements["maximum_switching_null_envelope_crossing"],
             )
         ),
-        "moderate_power": float(
-            cast(Any, moderate_envelope["crossing_probability"])
-        )
+        "moderate_power": float(cast(Any, moderate_envelope["crossing_probability"]))
         >= float(cast(Any, requirements["minimum_moderate_envelope_power"])),
         "moderate_power_gain": moderate_power_gain
         >= float(cast(Any, requirements["minimum_moderate_power_gain"])),
@@ -407,9 +383,7 @@ def run_factor_envelope_study(
                 requirements["maximum_moderate_median_crossing_ratio"],
             )
         ),
-        "strong_power": float(
-            cast(Any, strong_envelope["crossing_probability"])
-        )
+        "strong_power": float(cast(Any, strong_envelope["crossing_probability"]))
         >= float(cast(Any, requirements["minimum_strong_envelope_power"])),
     }
     passed = all(gate_results.values())
@@ -436,12 +410,8 @@ def run_factor_envelope_study(
             "switching_null_envelope_crossing_probability": switching_envelope[
                 "crossing_probability"
             ],
-            "moderate_envelope_power": moderate_envelope[
-                "crossing_probability"
-            ],
-            "moderate_min_score_power": moderate_min_score[
-                "crossing_probability"
-            ],
+            "moderate_envelope_power": moderate_envelope["crossing_probability"],
+            "moderate_min_score_power": moderate_min_score["crossing_probability"],
             "moderate_power_gain_envelope_minus_min_score": moderate_power_gain,
             "moderate_median_crossing_ratio_envelope_over_min_score": (
                 moderate_median_ratio
