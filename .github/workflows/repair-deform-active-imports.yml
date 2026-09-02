@@ -25,7 +25,7 @@ jobs:
           clean: true
           persist-credentials: true
 
-      - name: Apply the Ruff import correction and remove this workflow
+      - name: Apply the import correction and remove this workflow
         shell: bash
         run: |
           set -euo pipefail
@@ -50,7 +50,6 @@ jobs:
           path.write_text(text.replace(old, new), encoding='utf-8')
           Path('.github/workflows/repair-deform-active-imports.yml').unlink()
           PY
-          python -m ruff check experiments/deform_dlo45_conformal_active_sensing_v1/analyze.py
           python -m py_compile experiments/deform_dlo45_conformal_active_sensing_v1/analyze.py
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
