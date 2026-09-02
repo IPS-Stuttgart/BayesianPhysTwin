@@ -243,11 +243,15 @@ def _rebuild_calibration_model(
     if not isinstance(parent_source_test, dict):
         raise ValueError(f"missing parent source-test record for {dlo}")
     _assert_source_test_parity(reconstructed, parent_source_test, dlo)
-    return model, source_test_paths, {
-        "partition": expected_partition,
-        "selected_settings": dict(settings),
-        "reconstructed_source_test": reconstructed,
-    }
+    return (
+        model,
+        source_test_paths,
+        {
+            "partition": expected_partition,
+            "selected_settings": dict(settings),
+            "reconstructed_source_test": reconstructed,
+        },
+    )
 
 
 def _assert_source_test_parity(
@@ -344,10 +348,9 @@ def _trajectory_tensors(
     for trajectory_index, name in enumerate(names):
         ordered = sorted(grouped[name], key=lambda item: item.current_frame)
         for decision_index, record in enumerate(ordered):
-            if (
-                record.realized_regret.shape != (action_count,)
-                or record.registered_regret.shape != (action_count,)
-            ):
+            if record.realized_regret.shape != (
+                action_count,
+            ) or record.registered_regret.shape != (action_count,):
                 raise ValueError("action count changed within trajectory records")
             realized[trajectory_index, decision_index] = record.realized_regret
             registered[trajectory_index, decision_index] = record.registered_regret
@@ -451,9 +454,7 @@ def run_source(
             train_paths, dlo, parent_protocol, parent_record
         )
         models[dlo] = model
-        measurements = _measure_paths(
-            source_test_paths, model, parent_protocol, dlo
-        )
+        measurements = _measure_paths(source_test_paths, model, parent_protocol, dlo)
         names, realized, registered, base_actions = _trajectory_tensors(
             measurements, len(model.action_scales)
         )
@@ -617,9 +618,7 @@ def _summarize_policy(
     trajectory_ratios = [
         math.sqrt(float(np.mean(selected)))
         / max(math.sqrt(float(np.mean(fallback))), 1e-12)
-        for selected, fallback in zip(
-            selected_grouped, fallback_grouped, strict=True
-        )
+        for selected, fallback in zip(selected_grouped, fallback_grouped, strict=True)
     ]
     selected_rmse = math.sqrt(float(np.mean(selected_array)))
     fallback_rmse_value = math.sqrt(float(np.mean(fallback_array)))
@@ -666,9 +665,7 @@ def _as_json(value: PolicySummary) -> dict[str, object]:
         "budget_violation_fraction_nonfallback": (
             value.budget_violation_fraction_nonfallback
         ),
-        "trajectory_budget_violation_count": (
-            value.trajectory_budget_violation_count
-        ),
+        "trajectory_budget_violation_count": (value.trajectory_budget_violation_count),
         "trajectory_budget_violation_fraction": (
             value.trajectory_budget_violation_fraction
         ),
@@ -774,8 +771,7 @@ def run_target(
         or seal.get("stage") != "source-seal"
         or seal.get("source_model_sha256") != sha256_file(models_path)
         or seal.get("source_envelope_sha256") != sha256_file(source_path)
-        or seal.get("envelope_protocol_sha256")
-        != sha256_file(envelope_protocol_path)
+        or seal.get("envelope_protocol_sha256") != sha256_file(envelope_protocol_path)
         or seal.get("request_sha256") != sha256_file(request_path)
     ):
         raise ValueError("source envelope seal mismatch")
@@ -875,9 +871,7 @@ def run_target(
                                 + 10000 * dlo_index
                                 + 1000 * int(round(alpha * 100))
                                 + 100 * int(grouping == "pooled")
-                                + 10 * int(
-                                    envelope_kind == "all_nonfallback_actions"
-                                )
+                                + 10 * int(envelope_kind == "all_nonfallback_actions")
                                 + budget_index
                             ),
                         )
@@ -886,9 +880,7 @@ def run_target(
                         policy_key = "/".join(
                             (grouping, alpha_key, envelope_kind, budget_key)
                         )
-                        combined_actions_by_policy[policy_key].extend(
-                            selected_actions
-                        )
+                        combined_actions_by_policy[policy_key].extend(selected_actions)
 
         for record_index, record in enumerate(records):
             per_decision.append(
@@ -901,9 +893,7 @@ def run_target(
                     "realized_regret": record.realized_regret.tolist(),
                     "physical_mse": record.physical_mse.tolist(),
                     "fallback_mse": record.fallback_mse,
-                    "base_certificate_action": (
-                        record.base_certificate_action
-                    ),
+                    "base_certificate_action": (record.base_certificate_action),
                     "target_order_within_dlo": record_index,
                 }
             )

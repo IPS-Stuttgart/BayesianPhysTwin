@@ -83,9 +83,7 @@ def test_support_robust_decision_selects_unique_admissible_nonfallback() -> None
     )
     assert result.selected_action_index == 1
     assert not result.used_fallback
-    np.testing.assert_allclose(
-        result.inflated_regret_upper_bound, [0.43, 0.05, 0.23]
-    )
+    np.testing.assert_allclose(result.inflated_regret_upper_bound, [0.43, 0.05, 0.23])
     np.testing.assert_array_equal(
         result.tolerance_admissible_action_mask, [False, True, False]
     )

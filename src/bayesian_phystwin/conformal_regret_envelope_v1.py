@@ -287,8 +287,7 @@ def support_robust_decision(
     inflated = registered + radius
     minimum = float(np.min(inflated[candidates]))
     minimizers = np.flatnonzero(
-        candidates
-        & np.isclose(inflated, minimum, rtol=0.0, atol=_NUMERICAL_ATOL)
+        candidates & np.isclose(inflated, minimum, rtol=0.0, atol=_NUMERICAL_ATOL)
     )
     admissible = np.zeros(registered.size, dtype=np.bool_)
     if np.isfinite(radius):
