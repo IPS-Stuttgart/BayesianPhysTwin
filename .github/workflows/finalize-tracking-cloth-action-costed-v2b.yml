@@ -1,0 +1,173 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Finalize Tracking Cloth action feasibility V2b
+
+on:
+  push:
+    branches: [science/tracking-cloth-active-decision-rep3-v1]
+    paths:
+      - ".github/requests/finalize-tracking-cloth-action-costed-v2b.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-tracking-cloth-action-costed-v2b
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+          clean: true
+
+      - name: Authorize one add-only repair request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/finalize-tracking-cloth-action-costed-v2b.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          value = json.loads(
+              Path(
+                  ".github/requests/finalize-tracking-cloth-action-costed-v2b.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert value == {
+              "schema": "bayesian-phystwin/source-finalization-request-v1",
+              "request_id": "finalize-tracking-cloth-action-costed-v2b-20260902",
+              "repair": "exclude-self-comparison-from-support-budget-test",
+              "target_outcomes_opened": False,
+          }
+          PY
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply idempotent theorem and custody repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          decision_path = Path(
+              "experiments/tracking_cloth_action_feasibility_costed_v2/_decision.py"
+          )
+          text = decision_path.read_text(encoding="utf-8")
+          return_line = "    return np.min(pair_budget, axis=1)"
+          diagonal_line = "    np.fill_diagonal(pair_budget, 1.0)"
+          if diagonal_line not in text:
+              if text.count(return_line) != 1:
+                  raise SystemExit("support-budget return marker changed")
+              text = text.replace(
+                  return_line,
+                  "    # A plan compared with itself has identically zero loss gap.\n"
+                  "    np.fill_diagonal(pair_budget, 1.0)\n"
+                  + return_line,
+                  1,
+              )
+              decision_path.write_text(text, encoding="utf-8")
+
+          workflow_path = Path(
+              ".github/workflows/tracking-cloth-action-feasibility-costed-v2.yml"
+          )
+          workflow = workflow_path.read_text(encoding="utf-8")
+          old = '          assert "rep3" not in source.lower()\n'
+          if old in workflow:
+              workflow = workflow.replace(
+                  old,
+                  '          assert "scoring_truth" not in source\n'
+                  '          assert "--stage target" not in source\n'
+                  '          assert "--stage predict" not in source\n'
+                  '          assert "--stage score" not in source\n',
+                  1,
+              )
+              workflow_path.write_text(workflow, encoding="utf-8")
+
+          test_path = Path(
+              "tests/test_tracking_cloth_action_feasibility_costed_v2.py"
+          )
+          test = test_path.read_text(encoding="utf-8")
+          old_loss = '        [[0.0, 1.0]],\n'
+          if old_loss in test:
+              if test.count(old_loss) != 1:
+                  raise SystemExit("support-budget test loss marker changed")
+              test = test.replace(old_loss, '        [[1.0, 0.0]],\n', 1)
+          old_lower = (
+              '        unknown_action_loss_lower=np.asarray([0.0, 0.0]),\n'
+              '        unknown_action_loss_upper=np.asarray([10.0, 0.0]),\n'
+          )
+          new_bounds = (
+              '        unknown_action_loss_lower=np.asarray([10.0, 0.0]),\n'
+              '        unknown_action_loss_upper=np.asarray([10.0, 10.0]),\n'
+          )
+          if old_lower in test:
+              test = test.replace(old_lower, new_bounds, 1)
+          elif new_bounds not in test:
+              raise SystemExit("support-budget test bound marker changed")
+          test_path.write_text(test, encoding="utf-8")
+          PY
+
+      - name: Canonicalize and validate V2
+        shell: bash
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m ruff format \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m ruff check \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py \
+            tests/test_support_robust_act_sense_fallback_certificate_v1.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py
+          python -m py_compile \
+            experiments/tracking_cloth_action_feasibility_costed_v2/_decision.py \
+            experiments/tracking_cloth_action_feasibility_costed_v2/run.py
+          git diff --check
+
+      - name: Commit validated V2 and retire both finalizers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/requests/finalize-tracking-cloth-action-costed-v2.json \
+            .github/requests/finalize-tracking-cloth-action-costed-v2b.json \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2.yml \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2b.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py \
+            .github/workflows/tracking-cloth-action-feasibility-costed-v2.yml \
+            .github/requests/finalize-tracking-cloth-action-costed-v2.json \
+            .github/requests/finalize-tracking-cloth-action-costed-v2b.json \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2.yml \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2b.yml
+          git commit -m 'Finalize cost-aware support-robust cloth source gate'
+          git push origin HEAD:science/tracking-cloth-active-decision-rep3-v1
