@@ -1,0 +1,34 @@
+{
+  "change": {
+    "confirmation_minimum_relative_auc_improvement": 0.05,
+    "definition": "(system_identification_mean_regret_auc - decision_directed_mean_regret_auc) / system_identification_mean_regret_auc",
+    "rationale": "A statistically significant but practically negligible improvement is insufficient for the registered scientific claim; confirmation must match the source gate's five-percent minimum effect size."
+  },
+  "contract": "rct-real-decision-probe-preoutcome-amendment-v2",
+  "information_boundary": {
+    "archive_download_complete": false,
+    "calibration_force_rows_opened": false,
+    "confirmation_force_rows_opened": false,
+    "held_v8_accessed": false,
+    "source_test_force_rows_opened": false
+  },
+  "parent": {
+    "clarification_commit": "46c44e22906196979bc27598181e31ab6046dfd8",
+    "clarification_config_sha256": "f9248258e40cd42cd718f1244658234777731681720afa1733c3c05f68346b05",
+    "clarification_file_sha256": "e05f77b571e3676cfd63fa8efcc73028859921a3b7c0f6516996220c4f5de87f",
+    "protocol_config_sha256": "6a6d0d0b52ed71cb530e0ad5cb5fe5898f202d6dd9ad099cab6b035fa063a140",
+    "protocol_file_sha256": "c6eac3371e379956c285fe0ea0743c2ba9b67eb40d09fe18a3642839188ba8bd"
+  },
+  "schema_version": 1,
+  "scientific_effect": {
+    "changes_action_grid": false,
+    "changes_cohort": false,
+    "changes_confirmation_effect_size_threshold": true,
+    "changes_force_limit": false,
+    "changes_method_parameters": false,
+    "changes_probe_roster": false,
+    "changes_source_gate": false,
+    "changes_statistical_test": false
+  },
+  "status": "frozen-before-force-outcome-access"
+}
