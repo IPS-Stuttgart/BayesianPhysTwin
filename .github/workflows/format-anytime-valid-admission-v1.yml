@@ -1,0 +1,237 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Format anytime-valid simulator admission v1
+
+on:
+  push:
+    branches: [science/anytime-valid-simulator-admission-v1]
+    paths:
+      - ".github/workflows/format-anytime-valid-admission-v1.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-anytime-valid-admission-v1
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/anytime-valid-simulator-admission-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Harden the frozen protocol loader and result computation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old: str, new: str, label: str) -> None:
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, got {count}')
+              text = text.replace(old, new)
+
+          replace_once(
+              '''    total_alpha_gain: float = 0.05
+              total_alpha_harm: float = 0.05
+              epoch_alpha_continuation: float = 0.5
+              minimum_resolved_trials: int = 25
+              null_world_count: int = 5_000
+          ''',
+              '''    total_alpha_gain: float = 0.025
+              total_alpha_harm: float = 0.025
+              epoch_alpha_continuation: float = 0.5
+              minimum_resolved_trials: int = 25
+              gain_bet_fractions: tuple[float, ...] = (
+                  0.05,
+                  0.10,
+                  0.20,
+                  0.40,
+                  0.60,
+                  0.80,
+              )
+              harm_alternative_fractions: tuple[float, ...] = (
+                  0.10,
+                  0.25,
+                  0.50,
+                  0.75,
+                  0.90,
+              )
+              null_world_count: int = 5_000
+          ''',
+              'config mixture fields',
+          )
+          replace_once(
+              '''            minimum_resolved_trials=self.minimum_resolved_trials,
+                  )
+          ''',
+              '''            minimum_resolved_trials=self.minimum_resolved_trials,
+                      gain_bet_fractions=self.gain_bet_fractions,
+                      harm_alternative_fractions=self.harm_alternative_fractions,
+                  )
+          ''',
+              'admission mixture forwarding',
+          )
+          replace_once(
+              '''    config = AnytimeRecursiveAdmissionV1Config(
+          ''',
+              '''    raw_gain_bets = admission.get("gain_bet_fractions")
+              raw_harm_alternatives = admission.get("harm_alternative_fractions")
+              if not isinstance(raw_gain_bets, list) or not all(
+                  isinstance(value, (int, float)) and not isinstance(value, bool)
+                  for value in raw_gain_bets
+              ):
+                  raise ValueError("gain_bet_fractions must be a numeric list")
+              if not isinstance(raw_harm_alternatives, list) or not all(
+                  isinstance(value, (int, float)) and not isinstance(value, bool)
+                  for value in raw_harm_alternatives
+              ):
+                  raise ValueError("harm_alternative_fractions must be a numeric list")
+              config = AnytimeRecursiveAdmissionV1Config(
+          ''',
+              'protocol numeric mixture parsing',
+          )
+          replace_once(
+              '''        minimum_resolved_trials=int(
+                      cast(Any, admission.get("minimum_resolved_trials"))
+                  ),
+                  null_world_count=int(cast(Any, calibration.get("world_count"))),
+          ''',
+              '''        minimum_resolved_trials=int(
+                      cast(Any, admission.get("minimum_resolved_trials"))
+                  ),
+                  gain_bet_fractions=tuple(float(value) for value in raw_gain_bets),
+                  harm_alternative_fractions=tuple(
+                      float(value) for value in raw_harm_alternatives
+                  ),
+                  null_world_count=int(cast(Any, calibration.get("world_count"))),
+          ''',
+              'protocol mixture assignment',
+          )
+          replace_once(
+              '''        or admission.get("authorize_when") != "both-current-e-processes-cross"
+                  or calibration.get("gain_null") != "iid-rademacher-bounded-score"
+          ''',
+              '''        or admission.get("authorize_when") != "both-current-e-processes-cross"
+                  or float(cast(Any, admission.get("combined_bad_regime_alpha")))
+                  != config.total_alpha_gain + config.total_alpha_harm
+                  or calibration.get("gain_null") != "iid-rademacher-bounded-score"
+          ''',
+              'combined alpha validation',
+          )
+          replace_once(
+              '''                alternative_fractions=(0.10, 0.25, 0.50, 0.75, 0.90),
+          ''',
+              '''                alternative_fractions=(
+                      config.harm_alternative_fractions
+                  ),
+          ''',
+              'null calibration mixture binding',
+          )
+          replace_once(
+              '''    terminal_snapshot = controller.snapshot()
+              return {
+          ''',
+              '''    terminal_snapshot = controller.snapshot()
+              gain_calibration = _gain_null_calibration(config)
+              harm_calibration = _harm_null_calibration(config)
+              return {
+          ''',
+              'single calibration computation',
+          )
+          replace_once(
+              '''            "candidate_losses": int(np.sum(candidate_losses > fallback_losses)),
+          ''',
+              '''            "candidate_loss_count": int(
+                      np.sum(candidate_losses > fallback_losses)
+                  ),
+          ''',
+              'unambiguous loss count',
+          )
+          replace_once(
+              '''        "gain_null_calibration": _gain_null_calibration(config),
+                  "harm_null_calibration": _harm_null_calibration(config),
+          ''',
+              '''        "gain_null_calibration": gain_calibration,
+                  "harm_null_calibration": harm_calibration,
+          ''',
+              'reuse calibration results',
+          )
+          replace_once(
+              '''                    _gain_null_calibration(config),
+          ''',
+              '''                    gain_calibration,
+          ''',
+              'reuse gain decision calibration',
+          )
+          replace_once(
+              '''                    _harm_null_calibration(config),
+          ''',
+              '''                    harm_calibration,
+          ''',
+              'reuse harm decision calibration',
+          )
+          path.write_text(text, encoding='utf-8')
+
+          runner = Path('scripts/science/run_anytime_recursive_admission_v1.py')
+          runner_text = runner.read_text(encoding='utf-8')
+          old = "{stream['candidate_wins']}/{stream['candidate_ties']}/{stream['candidate_losses']}"
+          new = "{stream['candidate_wins']}/{stream['candidate_ties']}/{stream['candidate_loss_count']}"
+          if runner_text.count(old) != 1:
+              raise SystemExit('runner candidate loss count replacement failed')
+          runner.write_text(runner_text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Apply exact Ruff formatting and safe fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.16.5
+          files=(
+            scripts/science/run_anytime_recursive_admission_v1.py
+            src/bayesian_phystwin/anytime_admission_v1.py
+            src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py
+            tests/test_anytime_admission_v1.py
+            tests/test_anytime_recursive_admission_v1.py
+          )
+          ruff check --fix "${files[@]}"
+          ruff format "${files[@]}"
+          ruff check "${files[@]}"
+          ruff format --check "${files[@]}"
+
+      - name: Remove one-shot workflow and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/format-anytime-valid-admission-v1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            scripts/science/run_anytime_recursive_admission_v1.py \
+            src/bayesian_phystwin/anytime_admission_v1.py \
+            src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py \
+            tests/test_anytime_admission_v1.py \
+            tests/test_anytime_recursive_admission_v1.py \
+            .github/workflows/format-anytime-valid-admission-v1.yml
+          git diff --cached --check
+          git commit -m 'Harden and format anytime-valid admission'
+          git push origin HEAD:science/anytime-valid-simulator-admission-v1
