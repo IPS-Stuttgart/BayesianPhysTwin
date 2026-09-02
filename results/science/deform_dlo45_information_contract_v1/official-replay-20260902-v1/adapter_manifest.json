@@ -1,0 +1,83 @@
+{
+  "benchmark": {
+    "commit": "f25b0cdb0a258e1b2ef276d25a723c2cf3a9fb4f",
+    "repository": "IPS-Stuttgart/Prob4D",
+    "suite_paths": {
+      "certificate": "certificate/suite.json",
+      "fallback": "fallback/suite.json",
+      "jeffrey_point": "jeffrey_point/suite.json",
+      "kernel_point": "kernel_point/suite.json",
+      "map_point": "map_point/suite.json",
+      "oracle": "oracle/suite.json"
+    },
+    "suite_sha256": {
+      "certificate": "920af532a3b450c9239e3f78f16d2a3245ddc60d1263ef4d7642ebd1c37317cd",
+      "fallback": "45792d697ba89ca78bff4c55a5accd0ca1b94b00a7b196c2d1d4805d30b366dd",
+      "jeffrey_point": "e51095dd04a8a81ae144801aa2da78e380663b15bf9045d3c9eb38306854bbf3",
+      "kernel_point": "16ec99c1a9e7cfc32e5b2b8beff46b979c0772b4548d69bd7c02b748c161597b",
+      "map_point": "8c41c8becf4b0a4ff9c22de45234b9201ec30be406715b57a32284d95e11c14c",
+      "oracle": "70848398a27cf12feaa04c29478284abbe4f56a2a6f046dd2b98484f15d09acc"
+    }
+  },
+  "case_count_per_method": 532,
+  "claim_boundary": "This adapter is a retrospective, exact re-expression of the previously completed source-frozen DLO4/DLO5 result. It opens no new target cohort, selects no replacement policy, and does not establish unseen-object generalization, target-domain regret coverage, calibration, robot safety, or state of the art.",
+  "classification": "retrospective exact benchmark adapter",
+  "contract": "deform-dlo45-information-contract-adapter-v1",
+  "dataset": {
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "eval_manifest_file_sha256": "2dfb1aedfbaaaf9177b60dc3be2c0fa06960345e8ad63deec13f60da436a06a2",
+    "eval_manifest_path": "dataset_manifest.json",
+    "eval_manifest_sha256": "93f7799700f56a2a3da08bc647114dc5aa258f866af21e9eb3ad196816952ffb",
+    "payloads_redistributed": false,
+    "repository": "roahmlab/DEFORM"
+  },
+  "independent_trajectory_count": 28,
+  "methods": [
+    "fallback",
+    "certificate",
+    "jeffrey_point",
+    "kernel_point",
+    "map_point",
+    "oracle"
+  ],
+  "new_target_outcomes_opened": false,
+  "reference_target": {
+    "git_blob_sha1": "71f6a2d627c25ba8a3cbfc2ba6cf980842f8bf7b",
+    "sha256": "d2343114e4c07af4f7126b6779bb65950ebd4cbf89b934b7a2689a7e7106248b"
+  },
+  "request": {
+    "contract": "deform-dlo45-information-contract-request-v1",
+    "deform_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "deform_repository": "roahmlab/DEFORM",
+    "new_target_outcomes_opened": false,
+    "payload_redistribution": false,
+    "prob4d_commit": "f25b0cdb0a258e1b2ef276d25a723c2cf3a9fb4f",
+    "prob4d_repository": "IPS-Stuttgart/Prob4D",
+    "reference_result_git_blob": "71f6a2d627c25ba8a3cbfc2ba6cf980842f8bf7b",
+    "reference_result_sha256": "d2343114e4c07af4f7126b6779bb65950ebd4cbf89b934b7a2689a7e7106248b",
+    "schema_version": 1,
+    "source_artifact_digest": "sha256:fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+    "source_artifact_id": 9787311310,
+    "source_head_sha": "38b2ea56471923e63b64cfe24bf3f691aad5d5e0",
+    "source_model_sha256": "a43aed43cd563ee47358e48cab84829dc7eebc77d97725721a11b228f3b6b7f0",
+    "source_result_sha256": "77332c323ddd09d945f65f57e3b83a12deedd9ea94509e43c13c9ca87f3cc353",
+    "source_run_id": 33473378340,
+    "source_seal_sha256": "bcf55e066fdf3b44c29329a8fdffc4f0ccc7e6166ae19a5593ab02f28c9c5e80",
+    "status": "authorized-retrospective-replay",
+    "target_retries": false,
+    "target_tuning": false
+  },
+  "request_sha256": "024a26a60a25db58ff82a8519213463ac8edae627a6d86eb6781d8414df614cd",
+  "schema_version": 1,
+  "source": {
+    "artifact_digest": "sha256:fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+    "artifact_id": 9787311310,
+    "head_sha": "38b2ea56471923e63b64cfe24bf3f691aad5d5e0",
+    "model_sha256": "a43aed43cd563ee47358e48cab84829dc7eebc77d97725721a11b228f3b6b7f0",
+    "result_sha256": "77332c323ddd09d945f65f57e3b83a12deedd9ea94509e43c13c9ca87f3cc353",
+    "run_id": 33473378340,
+    "seal_sha256": "bcf55e066fdf3b44c29329a8fdffc4f0ccc7e6166ae19a5593ab02f28c9c5e80"
+  },
+  "target_retries": false,
+  "target_tuning": false
+}
