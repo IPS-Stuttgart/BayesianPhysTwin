@@ -61,16 +61,17 @@ jobs:
           destination = Path(os.environ["DESTINATION"]).resolve()
           with tarfile.open(payload, "r:gz") as archive:
               members = archive.getmembers()
-              names = {member.name for member in members}
+              files = [member for member in members if member.isfile()]
+              names = {member.name for member in files}
               if names != expected:
                   raise SystemExit(f"payload roster changed: {sorted(names)}")
               for member in members:
-                  if not member.isfile():
-                      raise SystemExit(f"non-regular payload member: {member.name}")
                   target = (destination / member.name).resolve()
                   if not target.is_relative_to(destination):
                       raise SystemExit(f"payload escapes destination: {member.name}")
-              archive.extractall(destination)
+                  if not member.isfile() and not member.isdir():
+                      raise SystemExit(f"unsupported payload member: {member.name}")
+              archive.extractall(destination, filter="data")
           PY
           while IFS= read -r relative; do
             install -D -m 0644 \
