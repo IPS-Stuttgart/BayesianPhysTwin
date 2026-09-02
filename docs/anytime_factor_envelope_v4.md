@@ -150,7 +150,7 @@ the same \(\lambda\) is used for utility and harm. Version 4 permits
 \(\lambda_{\mathrm{gain}}\) and \(q_{\mathrm{harm}}\) to vary independently
 while preserving the same switching-union theorem.
 
-This is more than an implementation tweak. It separates two ideas:
+This separates two ideas:
 
 1. **validity**, supplied by the lower-envelope domination argument; and
 2. **power adaptation**, supplied by an outcome-independent mixture over
@@ -184,7 +184,7 @@ Scientific provenance is explicit:
   the version-4 gates;
 - the retained confirmation roster uses seed base `2026091400`;
 - the confirmation roster, thresholds, and gates were frozen before that
-  roster was opened;
+  roster was opened; and
 - no real outcomes are used.
 
 The comparison uses identical simulated outcomes for the version-3
@@ -194,12 +194,77 @@ moderate-case power, at least five percentage points of moderate-case power
 gain, no more than a 15% increase in method-specific median crossing time, and
 at least 0.99 strong-case power.
 
+## Sealed confirmation result
+
+The content-addressed result is
+`results/science/anytime_factor_envelope_v4/result.json`; its protocol digest is
+`8d7a406a944e0a5c38cdd2b4670a10a9f6424b0aad0e6b775194e3901492b026`.
+All preregistered gates passed.
+
+| Quantity | Registered result |
+|---|---:|
+| Maximum factor-envelope null Wilson upper bound | **0.010166** |
+| Switching-invalidity crossing probability | **0.0000** |
+| Moderate v3 minimum-score power | **0.7430** |
+| Moderate v4 factor-envelope power | **0.8334** |
+| Moderate power gain | **+0.0904** |
+| Moderate median crossing, v3 | **252** |
+| Moderate median crossing, v4 | **280** |
+| Median crossing ratio, v4/v3 | **1.1111** |
+| Strong v4 power | **1.0000** |
+
+Thus the independent factor grid recovers 9.04 percentage points of
+moderate-case power while retaining pointwise switching-null control. The gain
+is not obtained by hiding a materially slower test: the registered median-time
+ratio remains below the frozen 1.15 ceiling.
+
+The evidence workflow additionally verified that every registered null phase
+has maximum expected lower-envelope factor no larger than one, that the result
+is bound to the frozen protocol and seed roster, that CSV artifacts use
+canonical LF serialization, and that every retained artifact matches
+`SHA256SUMS`.
+
+## Integrated admission lifecycle
+
+The theorem is not left as a stand-alone numerical primitive. The deployable
+implementation is
+`src/bayesian_phystwin/anytime_factor_envelope_controller_v4.py`, containing:
+
+- `FactorEnvelopeAdmissionContractV4`;
+- `FactorEnvelopeAdmissionConfigV4`;
+- `FactorEnvelopePendingTrialV4`;
+- `FactorEnvelopeResolvedTrialV4`;
+- `FactorEnvelopeAdmissionSnapshotV4`; and
+- `FactorEnvelopeAdmissionControllerV4`.
+
+The controller adds the operational invariants required for a defensible
+physical-twin admission claim:
+
+- the candidate, exact fallback, score, harm definition, information set,
+  reveal policy, factor family, and parameter grids are hashed into one
+  decision-contract identity;
+- trials are registered before their paired outcomes mature;
+- a malformed reveal does not consume the pending trial and can be corrected
+  exactly once;
+- delayed outcomes from a closed epoch remain auditable but cannot update the
+  new epoch;
+- geometric alpha spending bounds an unbounded sequence of externally declared
+  epochs;
+- admission requires both the minimum resolved-trial count and an anytime
+  boundary crossing; and
+- selection returns the exact caller-owned fallback object unless the current
+  epoch is authorized.
+
+The integrated validation passed 55 focused tests spanning versions 1--4,
+contract hashing, delayed-outcome order, reveal atomicity, switching invalidity,
+exact object identity, and stable-suite registration.
+
 ## Claim boundary
 
-A positive confirmation supports the lower-envelope composition theorem's
-mechanism and the usefulness of independent factor tuning under the registered
-controlled distributions. It does not establish fresh real-world validity,
-physical safety, causal identification, universal power, or validity after
+The confirmation supports the lower-envelope composition mechanism and the
+usefulness of independent factor tuning under the registered controlled
+distributions. It does not establish fresh real-world validity, physical
+safety, causal identification, universal power, or validity after
 outcome-dependent redesign of the factor grid, candidate, fallback, score, or
 reveal policy.
 
@@ -214,4 +279,6 @@ A defensible paper statement is:
 > e-processes even when the active failure mode changes over time. Applied to
 > physical twins, this yields a single continuously monitored certificate for
 > utility and harmful-update rate without requiring a stable invalidity mode or
-> a common scalar betting parameter.
+> a common scalar betting parameter. In a frozen controlled confirmation,
+> independent tuning increased moderate-case admission power from 74.30% to
+> 83.34% while the registered null-control gates remained satisfied.
