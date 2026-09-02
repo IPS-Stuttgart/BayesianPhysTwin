@@ -1,0 +1,243 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth cross-action transport source-target v1
+
+on:
+  push:
+    branches:
+      - research/tracking-cloth-cross-action-transport-source-v1
+    paths:
+      - ".github/requests/tracking-cloth-cross-action-transport-source-v1.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tracking-cloth-cross-action-transport-source-v1
+  cancel-in-progress: false
+
+jobs:
+  contracts:
+    name: Validate frozen protocol and implementation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          clean: true
+
+      - name: Verify request-only trigger and frozen boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD)
+          test "${#changed[@]}" = 1
+          test "${changed[0]}" = ".github/requests/tracking-cloth-cross-action-transport-source-v1.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(
+              Path(
+                  ".github/requests/tracking-cloth-cross-action-transport-source-v1.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert request == {
+              "schema": "bayesian-phystwin.tracking-cloth-cross-action-transport.request",
+              "schema_version": 1,
+              "branch": "research/tracking-cloth-cross-action-transport-source-v1",
+              "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+              "execute_retrospective_rep2_score": True,
+              "numeric_rep3_access_authorized": False,
+          }
+          protocol = json.loads(
+              Path(
+                  "experiments/tracking_cloth_cross_action_transport_v1/protocol.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert protocol["model_repetition"] == 1
+          assert protocol["retrospective_target_repetition"] == 2
+          assert protocol["reserved_confirmation_repetition"] == 3
+          assert protocol["retrospective_status"] == {
+              "globally_fresh_target": False,
+              "reason": (
+                  "Repetition 2 has been available to earlier project analyses; "
+                  "this protocol supplies a newly frozen trajectory-geometry "
+                  "analysis but is not an independently blind confirmation."
+              ),
+              "rep3_confirmation_authorized": False,
+          }
+          PY
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development package
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Run focused quality gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff format --check \
+            experiments/tracking_cloth_cross_action_transport_v1 \
+            tests/test_tracking_cloth_cross_action_transport_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_cross_action_transport_v1 \
+            tests/test_tracking_cloth_cross_action_transport_v1.py
+          python -m pytest -q tests/test_tracking_cloth_cross_action_transport_v1.py
+          python -m compileall -q \
+            experiments/tracking_cloth_cross_action_transport_v1
+
+  source-target:
+    name: Seal then score real Tracking Cloth transport
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+      RUN_DIR: ${{ github.workspace }}/.run/tracking-cloth-cross-action-transport-source-v1
+      RESULT_DIR: results/science/tracking_cloth_cross_action_transport_v1/source-target-20260902-v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate runner and dataset mount
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -d "$DATASET_ROOT"
+          test -r "$DATASET_ROOT"
+          test -f experiments/tracking_cloth_cross_action_transport_v1/protocol.json
+          python3 --version
+          find "$DATASET_ROOT" -type f -name '*.csv' | wc -l
+
+      - name: Create isolated source runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUN_DIR"
+          mkdir -p "$RUN_DIR"
+          python3 -m venv --system-site-packages "$RUN_DIR/venv"
+          "$RUN_DIR/venv/bin/python" -m pip install --no-deps -e .
+          "$RUN_DIR/venv/bin/python" -m pip check
+
+      - name: Read rep1 and the selected rep2 diagnostic, then seal predictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE/src${PYTHONPATH:+:$PYTHONPATH}"
+          "$RUN_DIR/venv/bin/python" -m \
+            experiments.tracking_cloth_cross_action_transport_v1.run \
+            --stage seal \
+            --dataset-root "$DATASET_ROOT" \
+            --protocol experiments/tracking_cloth_cross_action_transport_v1/protocol.json \
+            --work-dir "$RUN_DIR/sealed"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          seal = json.loads(
+              Path(".run/tracking-cloth-cross-action-transport-source-v1/sealed/seal.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          assert seal["numeric_access"] == {
+              "repetition_1_cases": 12,
+              "repetition_2_diagnostic_cases": 4,
+              "repetition_2_held_target_cases": 0,
+              "repetition_3_cases": 0,
+          }
+          assert seal["target_outcomes_used_to_select_or_fit"] is False
+          assert seal["retrospective_target_repetition_previously_available_to_project"] is True
+          PY
+
+      - name: Verify seal, open rep2 held actions, and score exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE/src${PYTHONPATH:+:$PYTHONPATH}"
+          mkdir -p "$RUN_DIR/scored"
+          "$RUN_DIR/venv/bin/python" -m \
+            experiments.tracking_cloth_cross_action_transport_v1.run \
+            --stage score \
+            --dataset-root "$DATASET_ROOT" \
+            --protocol experiments/tracking_cloth_cross_action_transport_v1/protocol.json \
+            --work-dir "$RUN_DIR/sealed" \
+            --output "$RUN_DIR/scored/result.json" \
+            --report "$RUN_DIR/scored/report.md"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path(".run/tracking-cloth-cross-action-transport-source-v1/scored/result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          assert result["numeric_access"] == {
+              "repetition_1_cases": 12,
+              "repetition_2_diagnostic_cases_before_seal": 4,
+              "repetition_2_held_target_cases_after_seal": 8,
+              "repetition_3_cases": 0,
+          }
+          assert result["retrospective"] is True
+          assert result["independently_blind_confirmation"] is False
+          assert result["rep3_confirmation_authorized"] is False
+          assert result["decision"] in {
+              "cross-action-transport-source-gate-pass",
+              "cross-action-transport-source-gate-negative",
+          }
+          PY
+
+      - name: Publish compact evidence and retire one-shot trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RESULT_DIR"
+          cp "$RUN_DIR/scored/result.json" "$RESULT_DIR/result.json"
+          cp "$RUN_DIR/scored/report.md" "$RESULT_DIR/report.md"
+          cp "$RUN_DIR/sealed/seal.json" "$RESULT_DIR/prediction_seal.json"
+          cp experiments/tracking_cloth_cross_action_transport_v1/protocol.json \
+            "$RESULT_DIR/protocol.json"
+          cp experiments/tracking_cloth_cross_action_transport_v1/run.py \
+            "$RESULT_DIR/run.py"
+          cp .github/workflows/tracking-cloth-cross-action-transport-source-v1.yml \
+            "$RESULT_DIR/executed_workflow.yml"
+          rm -f \
+            .github/workflows/tracking-cloth-cross-action-transport-source-v1.yml \
+            .github/requests/tracking-cloth-cross-action-transport-source-v1.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Record Tracking Cloth cross-action transport evidence"
+          git push origin HEAD:research/tracking-cloth-cross-action-transport-source-v1
+
+      - name: Upload sealed arrays and compact result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tracking-cloth-cross-action-transport-${{ github.sha }}
+          path: |
+            .run/tracking-cloth-cross-action-transport-source-v1/sealed
+            .run/tracking-cloth-cross-action-transport-source-v1/scored
+          if-no-files-found: warn
+          retention-days: 30
