@@ -1,0 +1,179 @@
+name: Integrated factor-envelope controller v4
+
+on:
+  push:
+    branches:
+      - science/anytime-valid-simulator-admission-v1
+    paths:
+      - .github/workflows/anytime-factor-envelope-controller-v4.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: anytime-factor-envelope-controller-v4-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: science/anytime-valid-simulator-admission-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install focused environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest==9.0.2 ruff==0.16.5
+
+      - name: Repair v3 reveal atomicity and register stable coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          implementation = Path(
+              "src/bayesian_phystwin/anytime_switching_admission_v3.py"
+          )
+          source = implementation.read_text(encoding="utf-8")
+          early_delete = (
+              "        del self._pending[identifier]\n"
+              "        candidate = _nonnegative(candidate_loss, label=\"candidate_loss\")\n"
+          )
+          validated_first = (
+              "        candidate = _nonnegative(candidate_loss, label=\"candidate_loss\")\n"
+          )
+          source = source.replace(early_delete, validated_first)
+          consume_marker = "        result = SwitchingResolvedTrialV3(\n"
+          transactional_marker = (
+              "        del self._pending[identifier]\n"
+              "        result = SwitchingResolvedTrialV3(\n"
+          )
+          if transactional_marker not in source:
+              if consume_marker not in source:
+                  raise SystemExit("v3 result-construction marker not found")
+              source = source.replace(
+                  consume_marker,
+                  transactional_marker,
+                  1,
+              )
+          implementation.write_text(source, encoding="utf-8")
+
+          test_path = Path("tests/test_anytime_switching_admission_v3.py")
+          tests = test_path.read_text(encoding="utf-8")
+          test_name = "test_malformed_reveal_is_atomic_and_retryable_v3"
+          if test_name not in tests:
+              tests += '''
+
+
+def test_malformed_reveal_is_atomic_and_retryable_v3() -> None:
+    controller = SwitchingUnionAdmissionControllerV3(_config(), _contract())
+    controller.issue_trial(trial_id="retry", issued_step=0, maturity_step=1)
+
+    with pytest.raises(ValueError, match="candidate_loss"):
+        controller.resolve_trial(
+            trial_id="retry",
+            resolved_step=1,
+            candidate_loss=-1.0,
+            fallback_loss=1.0,
+        )
+
+    rejected = controller.snapshot()
+    assert rejected.pending_trial_count == 1
+    assert rejected.resolved_current_epoch_count == 0
+    result = controller.resolve_trial(
+        trial_id="retry",
+        resolved_step=1,
+        candidate_loss=0.0,
+        fallback_loss=1.0,
+    )
+    assert result.used_for_current_epoch is True
+    assert controller.snapshot().pending_trial_count == 0
+'''
+          test_path.write_text(tests, encoding="utf-8")
+
+          manifest_path = Path(".github/quality/test-suites.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          suite = manifest["suites"]["stable-core-coverage"]
+          additions = [
+              "tests/test_anytime_joint_admission_v2.py",
+              "tests/test_anytime_joint_admission_study_v2.py",
+              "tests/test_anytime_switching_admission_v3.py",
+              "tests/test_anytime_switching_admission_study_v3.py",
+              "tests/test_anytime_factor_envelope_v4.py",
+              "tests/test_anytime_factor_envelope_study_v4.py",
+              "tests/test_anytime_factor_envelope_controller_v4.py",
+          ]
+          for path in additions:
+              if path not in suite:
+                  suite.append(path)
+          manifest_path.write_text(
+              json.dumps(manifest, indent=2, sort_keys=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Format and validate integrated controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/anytime_factor_envelope_controller_v4.py
+            src/bayesian_phystwin/anytime_switching_admission_v3.py
+            tests/test_anytime_factor_envelope_controller_v4.py
+            tests/test_anytime_switching_admission_v3.py
+          )
+          ruff check --fix --unsafe-fixes "${files[@]}"
+          ruff format "${files[@]}"
+          ruff check "${files[@]}"
+          ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+          python -m json.tool .github/quality/test-suites.json >/dev/null
+
+      - name: Run lifecycle, theorem, and manifest regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest -q \
+            tests/test_anytime_admission_v1.py \
+            tests/test_anytime_joint_admission_v2.py \
+            tests/test_anytime_switching_admission_v3.py \
+            tests/test_anytime_factor_envelope_v4.py \
+            tests/test_anytime_factor_envelope_controller_v4.py \
+            tests/test_test_suite_manifest.py
+
+      - name: Commit integrated controller and coverage registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/anytime-factor-envelope-controller-v4.yml
+          git add \
+            .github/quality/test-suites.json \
+            .github/workflows/anytime-factor-envelope-controller-v4.yml \
+            src/bayesian_phystwin/anytime_factor_envelope_controller_v4.py \
+            src/bayesian_phystwin/anytime_switching_admission_v3.py \
+            tests/test_anytime_factor_envelope_controller_v4.py \
+            tests/test_anytime_switching_admission_v3.py
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "Expected integrated-controller changes are missing" >&2
+            exit 1
+          fi
+          git commit -m "Integrate factor envelope into fail-closed admission"
+          git push origin HEAD:science/anytime-valid-simulator-admission-v1
