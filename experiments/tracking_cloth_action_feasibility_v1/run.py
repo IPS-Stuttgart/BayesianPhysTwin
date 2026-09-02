@@ -16,72 +16,18 @@ from typing import Any
 
 import numpy as np
 
+from experiments.tracking_cloth_action_feasibility_v1._data import source_rows
 from experiments.tracking_cloth_action_feasibility_v1._decision import (
     _probe_binary_outcomes,
     decision_grid,
 )
 from experiments.tracking_cloth_action_feasibility_v1._metrics import (
-    causal_fill_truth,
     object_digest,
-    physical_action_metrics,
     read_protocol,
 )
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_PROTOCOL = HERE / "protocol.json"
-
-
-def source_rows(
-    root: Path,
-    protocol: dict[str, Any],
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    from experiments.tracking_cloth_self_collision_selective_twin_v1.data import (
-        audit_dataset,
-        prediction_input,
-        scoring_truth,
-    )
-
-    cases, inventory = audit_dataset(root, protocol)
-    allowed = set(int(value) for value in protocol["source_repetitions"])
-    source_cases = [case for case in cases if case.repetition in allowed]
-    expected_count = len(protocol["materials"]) * len(protocol["interactions"]) * 2
-    if len(source_cases) != expected_count:
-        raise ValueError("source roster is incomplete")
-
-    rows: list[dict[str, Any]] = []
-    for case in source_cases:
-        inputs = prediction_input(case, protocol)
-        raw_truth = scoring_truth(case, inputs)
-        truth, missing_fraction = causal_fill_truth(raw_truth)
-        metrics = physical_action_metrics(
-            truth,
-            cutoff=inputs.cutoff,
-            contact_distance_m=float(protocol["self_contact_distance_m"]),
-            edge_strain_weight=float(protocol["edge_strain_weight"]),
-            edge_strain_quantile=float(protocol["edge_strain_quantile"]),
-            initial_diameter_m=inputs.initial_diameter_m,
-        )
-        rows.append(
-            {
-                "case_id": case.case_id,
-                "material": case.material,
-                "interaction": case.interaction,
-                "repetition": case.repetition,
-                "native_dt_seconds": float(np.median(np.diff(inputs.times))),
-                "sample_count": int(inputs.times.size),
-                "prefix_sample_count": int(inputs.cutoff + 1),
-                "missing_coordinate_fraction_before_carry": missing_fraction,
-                **metrics,
-            }
-        )
-    rows.sort(
-        key=lambda item: (
-            item["material"],
-            item["repetition"],
-            item["interaction"],
-        )
-    )
-    return rows, inventory
 
 
 def _block_matrices(
