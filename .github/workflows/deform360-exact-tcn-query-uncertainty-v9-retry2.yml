@@ -1,0 +1,161 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #834
+# workflow-expiry: 2026-09-15
+name: Deform360 exact action-TCN query uncertainty v9 retry2
+
+on:
+  push:
+    branches:
+      - science/deform360-same-mean-query-covariance-v6
+    paths:
+      - .github/requests/deform360-exact-tcn-query-uncertainty-v9-retry2.json
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-exact-action-tcn-query-uncertainty-v9
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-exact-tcn-query-uncertainty-v9-retry2.json
+  TCN_RUN_ID: '33417883597'
+  TCN_ARTIFACT_ID: '9767812227'
+  TCN_ARTIFACT_SHA256: 68ff5fb8e2274f3e71a20ef79a7450d0baa0cf57985e88064b31e4c1edc2bca2
+  TCN_EXECUTION_REVISION: a32948698fe43e4e52a443a93c9c1604012a21cf
+  TCN_RESULT_SHA256: 4905c9958e1290f60abcae5b3248cbcca1ac1dfb824144ed4b76909cf5fa1333
+  TCN_CACHE_ROOT: /mnt/lexar4tb/datasets/deform360-tcn-carriers-v6-5ea8c5d3-e92deaf7
+  QUERY_RUN_ID: '33551155955'
+  QUERY_ARTIFACT_ID: '9817555660'
+  QUERY_ARTIFACT_SHA256: 31a6905426639c842b2dcbaf0028229f1f4869361d44e08d8d3373e70cae53e2
+  QUERY_RESULT_SHA256: b725a1e823292ccdbfafc67e4371aec7f6346f1e062f61100950f01564a9d8c7
+  DROPOUT_DRAWS: '32'
+  FOLD_COUNT: '5'
+  MATURITY_LAG_WINDOWS: '4'
+  BOOTSTRAP_REPETITIONS: '10000'
+  PYTHONHASHSEED: '0'
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  PIP_NO_CACHE_DIR: '1'
+  CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+  CUDA_VISIBLE_DEVICES: '0'
+  OMP_NUM_THREADS: '4'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  NUMEXPR_NUM_THREADS: '1'
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+      - name: Authorize evidence-based runner retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.event.forced }}" = false
+          test "${{ github.event.before }}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${{ github.event.before }}" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ['REQUEST_PATH']).read_text())
+          parent = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^'], text=True
+          ).strip()
+          expected = {
+              'schema': 'deform360-exact-tcn-query-uncertainty-request-v9',
+              'mode': 'reproduce-best-action-tcn-and-crossfit-causal-query-uncertainty',
+              'retry_of_run_id': 33553548077,
+              'technical_change': 'replace-hostname-assumption-with-exact-cache-runtime-and-result-reproduction',
+              'runner_label': 'gpuserver4090',
+              'runner_compatibility_rule': (
+                  'exact-cache-plus-python-3.12.3-plus-torch-2.8.0-cu128-plus-'
+                  'byte-identical-scientific-result-reproduction'
+              ),
+              'tcn_run_id': int(os.environ['TCN_RUN_ID']),
+              'tcn_artifact_id': int(os.environ['TCN_ARTIFACT_ID']),
+              'tcn_artifact_sha256': os.environ['TCN_ARTIFACT_SHA256'],
+              'tcn_execution_revision': os.environ['TCN_EXECUTION_REVISION'],
+              'tcn_result_sha256': os.environ['TCN_RESULT_SHA256'],
+              'tcn_cache_root': os.environ['TCN_CACHE_ROOT'],
+              'query_run_id': int(os.environ['QUERY_RUN_ID']),
+              'query_artifact_id': int(os.environ['QUERY_ARTIFACT_ID']),
+              'query_artifact_sha256': os.environ['QUERY_ARTIFACT_SHA256'],
+              'query_result_sha256': os.environ['QUERY_RESULT_SHA256'],
+              'query_dimension': 12,
+              'dropout_draws': int(os.environ['DROPOUT_DRAWS']),
+              'fold_count': int(os.environ['FOLD_COUNT']),
+              'maturity_lag_windows': int(os.environ['MATURITY_LAG_WINDOWS']),
+              'bootstrap_repetitions': int(os.environ['BOOTSTRAP_REPETITIONS']),
+              'dropout_blend_weights': [0.0, 0.25, 0.5, 0.75, 1.0],
+              'online_prior_strengths': [2.0, 4.0, 8.0, 16.0, 32.0, 64.0],
+              'exact_tcn_reproduction_required': True,
+              'same_predictive_mean_required': True,
+              'equal_object_weighting_required': True,
+              'current_or_future_outcome_forbidden': True,
+              'new_measurements_authorized': False,
+              'point_mean_retuning_authorized': False,
+              'globally_fresh_confirmation_authorized': False,
+              'paper_claim_authorized': False,
+              'expected_source_revision': parent,
+          }
+          if request != expected:
+              raise SystemExit('retry2 request differs from the frozen v9 contract')
+          PY
+
+  real-output-study:
+    needs: authorize
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 300
+    env:
+      OUT: /home/github-runner/.cache/workflows/deform360-exact-tcn-query-uncertainty-v9/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out exact control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Check out exact historical TCN source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TCN_EXECUTION_REVISION }}
+          path: _exact_tcn_v6
+          persist-credentials: false
+          clean: true
+      - name: Execute exact reproduction and frozen uncertainty study
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/science/execute_deform360_exact_tcn_query_uncertainty_v9.sh
+      - name: Upload compact final-result evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-exact-tcn-query-uncertainty-v9-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUT }}/study/result.json
+            ${{ env.OUT }}/study/report.md
+            ${{ env.OUT }}/study/capture-manifest.json
+            ${{ env.OUT }}/study/exact-tcn-query-capture-v9.npz
+            ${{ env.OUT }}/console.log
+            ${{ env.OUT }}/runtime.txt
+            ${{ env.OUT }}/compatibility.txt
+            ${{ env.OUT }}/sha256sums.txt
+            ${{ env.REQUEST_PATH }}
+          if-no-files-found: warn
+          retention-days: 90
