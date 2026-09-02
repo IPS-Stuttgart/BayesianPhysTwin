@@ -42,6 +42,24 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev]"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "src/bayesian_phystwin/decision_capability_calibration_v1.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              "    matrix = np.zeros((constraint_count, variable_count), dtype=np.float64)",
+              "    matrix: FloatArray = np.zeros("
+              "(constraint_count, variable_count), dtype=np.float64)",
+          )
+          text = text.replace(
+              "    rhs = np.empty(constraint_count, dtype=np.float64)",
+              "    rhs: FloatArray = np.empty(constraint_count, dtype=np.float64)",
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
           files=(
             src/bayesian_phystwin/decision_capability_calibration_v1.py
             tests/test_decision_capability_calibration_v1.py
