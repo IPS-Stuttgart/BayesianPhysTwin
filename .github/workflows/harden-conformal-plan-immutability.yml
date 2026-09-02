@@ -1,0 +1,116 @@
+name: Harden conformal complete-plan immutability
+
+on:
+  push:
+    branches:
+      - science/conformal-complete-plan-certificate-v1
+    paths:
+      - .github/workflows/harden-conformal-plan-immutability.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: harden-conformal-plan-immutability
+  cancel-in-progress: false
+
+jobs:
+  harden:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          clean: true
+          persist-credentials: true
+
+      - name: Replace reversible views with byte-backed immutable arrays
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          module = Path('src/bayesian_phystwin/conformal_complete_plan_certificate_v1.py')
+          text = module.read_text(encoding='utf-8')
+          old = '''def _immutable_float64(value: object) -> FloatArray:
+              array = np.ascontiguousarray(value, dtype=np.float64)
+              array.setflags(write=False)
+              return array
+
+
+          def _immutable_int64(value: object) -> IntArray:
+              array = np.ascontiguousarray(value, dtype=np.int64)
+              array.setflags(write=False)
+              return array
+
+
+          def _immutable_bool(value: object) -> BoolArray:
+              array = np.ascontiguousarray(value, dtype=np.bool_)
+              array.setflags(write=False)
+              return array
+          '''.replace('          ', '')
+          new = '''def _immutable_float64(value: object) -> FloatArray:
+              source = np.ascontiguousarray(value, dtype=np.float64)
+              return np.frombuffer(source.tobytes(order="C"), dtype=np.float64).reshape(
+                  source.shape
+              )
+
+
+          def _immutable_int64(value: object) -> IntArray:
+              source = np.ascontiguousarray(value, dtype=np.int64)
+              return np.frombuffer(source.tobytes(order="C"), dtype=np.int64).reshape(
+                  source.shape
+              )
+
+
+          def _immutable_bool(value: object) -> BoolArray:
+              source = np.ascontiguousarray(value, dtype=np.bool_)
+              return np.frombuffer(source.tobytes(order="C"), dtype=np.bool_).reshape(
+                  source.shape
+              )
+          '''.replace('          ', '')
+          if text.count(old) != 1:
+              raise SystemExit('expected immutable helper block was not found exactly once')
+          module.write_text(text.replace(old, new), encoding='utf-8')
+
+          tests = Path('tests/test_conformal_complete_plan_certificate_v1.py')
+          test_text = tests.read_text(encoding='utf-8')
+          marker = '''    assert not envelope.inflation_by_plan.flags.writeable
+              assert not envelope.trajectory_scores.flags.writeable
+          '''.replace('          ', '')
+          replacement = '''    assert not envelope.inflation_by_plan.flags.writeable
+              assert not envelope.trajectory_scores.flags.writeable
+              assert not envelope.plan_scales.flags.writeable
+              for immutable in (
+                  envelope.inflation_by_plan,
+                  envelope.trajectory_scores,
+                  envelope.plan_scales,
+              ):
+                  with pytest.raises(ValueError):
+                      immutable.setflags(write=True)
+          '''.replace('          ', '')
+          if test_text.count(marker) != 1:
+              raise SystemExit('expected immutability assertion block was not found exactly once')
+          tests.write_text(test_text.replace(marker, replacement), encoding='utf-8')
+
+          Path('.github/workflows/harden-conformal-plan-immutability.yml').unlink()
+          PY
+
+          python -m pip install --disable-pip-version-check -e '.[dev]'
+          python -m ruff format \
+            src/bayesian_phystwin/conformal_complete_plan_certificate_v1.py \
+            tests/test_conformal_complete_plan_certificate_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/conformal_complete_plan_certificate_v1.py \
+            tests/test_conformal_complete_plan_certificate_v1.py
+          python -m pytest -q tests/test_conformal_complete_plan_certificate_v1.py
+          python -m mypy src/bayesian_phystwin/conformal_complete_plan_certificate_v1.py
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Use byte-backed immutable conformal plan arrays'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
