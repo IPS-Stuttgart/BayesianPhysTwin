@@ -8,7 +8,9 @@ on:
     paths:
       - ".github/workflows/decision-capability-atlas-v1.yml"
       - "src/bayesian_phystwin/decision_capability_atlas_v1.py"
+      - "src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py"
       - "tests/test_deform_dlo45_decision_capability_atlas_v1.py"
+      - "tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py"
       - "docs/decision_capability_atlas_v1.md"
       - "experiments/decision_capability_atlas_v1/**"
   push:
@@ -16,7 +18,9 @@ on:
     paths:
       - ".github/workflows/decision-capability-atlas-v1.yml"
       - "src/bayesian_phystwin/decision_capability_atlas_v1.py"
+      - "src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py"
       - "tests/test_deform_dlo45_decision_capability_atlas_v1.py"
+      - "tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py"
       - "docs/decision_capability_atlas_v1.md"
       - "experiments/decision_capability_atlas_v1/**"
   workflow_dispatch:
@@ -30,7 +34,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Exact atlas, tests, and deterministic study
+    name: Exact atlas, objective robustness, and deterministic study
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -54,28 +58,34 @@ jobs:
 
       - name: Check source quality and types
         run: |
-          python -m ruff check \
-            src/bayesian_phystwin/decision_capability_atlas_v1.py \
-            tests/test_deform_dlo45_decision_capability_atlas_v1.py \
-            experiments/decision_capability_atlas_v1/run.py
-          python -m ruff format --check \
-            src/bayesian_phystwin/decision_capability_atlas_v1.py \
-            tests/test_deform_dlo45_decision_capability_atlas_v1.py \
-            experiments/decision_capability_atlas_v1/run.py
-          python -m mypy \
+          files=(
             src/bayesian_phystwin/decision_capability_atlas_v1.py
+            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py
+            tests/test_deform_dlo45_decision_capability_atlas_v1.py
+            tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py
+            experiments/decision_capability_atlas_v1/run.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/decision_capability_atlas_v1.py \
+            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py
 
       - name: Run focused tests with branch coverage
         run: |
           python -m pip install "coverage==7.13.3"
+          source_csv="bayesian_phystwin.decision_capability_atlas_v1,"
+          source_csv+="bayesian_phystwin.decision_capability_task_uncertainty_v1"
           python -m coverage run --branch \
-            --source=bayesian_phystwin.decision_capability_atlas_v1 \
+            --source="$source_csv" \
             -m pytest -q \
-            tests/test_deform_dlo45_decision_capability_atlas_v1.py
+            tests/test_deform_dlo45_decision_capability_atlas_v1.py \
+            tests/test_deform_dlo45_decision_capability_task_uncertainty_v1.py
           python -m coverage report \
             --fail-under=90 \
             --show-missing \
-            src/bayesian_phystwin/decision_capability_atlas_v1.py
+            src/bayesian_phystwin/decision_capability_atlas_v1.py \
+            src/bayesian_phystwin/decision_capability_task_uncertainty_v1.py
 
       - name: Reproduce the controlled atlas byte-for-byte
         shell: bash
@@ -103,8 +113,12 @@ jobs:
               Path("capability-atlas-result.json").read_text(encoding="utf-8")
           )
           summary = result["summary"]
+          task_uncertainty = result["task_uncertainty"]
+          fixed = task_uncertainty["fixed_box_atlas"]
+          representatives = task_uncertainty["representative_task_sets"]
           checks = result["checks"]
           assert result["status"] == "complete"
+          assert result["schema_version"] == 2
           assert result["regret_tolerance"] == 0.0
           assert all(checks.values())
           assert 0.0 < summary["certified_union_fraction"] < 1.0
@@ -119,6 +133,20 @@ jobs:
               result["representative_tasks"][-1]["point_belief_action"]
               == "pull_left"
           )
+          assert fixed["robust_certified_union_fraction"] < (
+              fixed["nominal_certified_union_fraction"]
+          )
+          assert fixed["robust_fallback_fraction"] > 0.30
+          assert representatives[-1]["nominal_actions"] == ["pull_left"]
+          assert representatives[-1]["box_robust_actions"] == []
+          task_boundary = task_uncertainty["claim_boundary"].lower()
+          for phrase in (
+              "does not validate the objective",
+              "model misspecification",
+              "certify safety",
+              "authorize deployment",
+          ):
+              assert phrase in task_boundary
           boundary = result["claim_boundary"].lower()
           for phrase in (
               "does not validate the quotient",
