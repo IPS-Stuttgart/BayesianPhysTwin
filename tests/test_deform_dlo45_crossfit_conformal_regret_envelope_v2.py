@@ -59,19 +59,16 @@ def test_nested_model_selection_never_uses_route_calibration() -> None:
 
 def test_target_route_is_deterministic_and_metadata_only() -> None:
     first = [
-        crossfit.target_route(f"{index}.pkl", "DLO4", protocol())
-        for index in range(50)
+        crossfit.target_route(f"{index}.pkl", "DLO4", protocol()) for index in range(50)
     ]
     second = [
-        crossfit.target_route(f"{index}.pkl", "DLO4", protocol())
-        for index in range(50)
+        crossfit.target_route(f"{index}.pkl", "DLO4", protocol()) for index in range(50)
     ]
     assert first == second
     assert set(first) == {0, 1}
     changed = replace(protocol(), target_route_domain="other")
     third = [
-        crossfit.target_route(f"{index}.pkl", "DLO4", changed)
-        for index in range(50)
+        crossfit.target_route(f"{index}.pkl", "DLO4", changed) for index in range(50)
     ]
     assert first != third
 
