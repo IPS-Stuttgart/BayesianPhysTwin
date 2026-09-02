@@ -1,0 +1,53 @@
+{
+  "contract": "deform-dlo45-conformal-active-sensing-v1",
+  "schema_version": 1,
+  "parent": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "pull_request": 896,
+    "scientific_revision": "56c31bc56b2fc3526f519f726ff7b922b909c65c",
+    "workflow_run": 33613192892,
+    "artifact_id": 9839951506,
+    "artifact_digest": "sha256:31ddbb20dc084514afb6b021ec4f6b0bdff72e22124c4734fb18b1952b347889",
+    "outer_result_id": "ba5f43a2ed1ca9c95a2a032e95679df06d3b6c6ec20cc3ad962ea6326f543fe0",
+    "core_result_id": "ac1626f7392c1de2d95ff4d5fa5e937d113f46c573c48b4dcef5fd3b38ef6ade",
+    "policy": "decision_regret",
+    "measurement_budget": 4
+  },
+  "calibration": {
+    "strata": [
+      "DLO4",
+      "DLO5"
+    ],
+    "unit": "complete_trajectory",
+    "score": "maximum_positive_realized_regret_minus_finite_support_bound_over_parent_nonfallback_decisions",
+    "miscoverage_levels": [
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ]
+  },
+  "operational": {
+    "regret_budgets": [
+      0.1,
+      0.2,
+      0.25,
+      0.3,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "primary_miscoverage": 0.2,
+    "primary_selection": "smallest_registered_budget_retaining_every_parent_nonfallback_calibration_action",
+    "fallback": "exact_physical_fallback"
+  },
+  "evaluation": {
+    "bootstrap_replicates": 20000,
+    "bootstrap_seed": 20260902,
+    "official_evaluation_split_opened": false,
+    "new_data_collection": false,
+    "target_tuning": false,
+    "source_test_outcomes_were_previously_opened_by_parent": true
+  },
+  "claim_boundary": "This is a retrospective trajectory-conformal wrapper around one fixed active virtual-sensing policy on source-test trajectories from two known DLOs. The split-conformal statement is marginal for one future complete trajectory exchangeable within its known DLO stratum and simultaneous only over the parent policy's nonfallback decisions on that trajectory. It does not calibrate the choice to sense before sensing cost is incurred, validate virtual measurements as deployable sensors, establish official evaluation-split or unseen-object performance, provide pointwise conditional validity, certify continuous control or robot safety, or authorize deployment."
+}
