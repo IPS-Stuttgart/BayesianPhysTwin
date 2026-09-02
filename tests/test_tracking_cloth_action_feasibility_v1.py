@@ -18,10 +18,7 @@ from experiments.tracking_cloth_action_feasibility_v1.run import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
-    ROOT
-    / "experiments"
-    / "tracking_cloth_action_feasibility_v1"
-    / "protocol.json"
+    ROOT / "experiments" / "tracking_cloth_action_feasibility_v1" / "protocol.json"
 )
 
 
