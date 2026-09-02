@@ -1,0 +1,26 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-mechanism-suite-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-mechanism-suite-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "seed": 41,
+  "trajectory_bootstrap_repetitions_per_case": 100,
+  "mechanisms": [
+    "shared_physics",
+    "object",
+    "backend",
+    "contact",
+    "actuation",
+    "sensor"
+  ],
+  "required_decisions": [
+    "identify the active mechanism in every controlled case",
+    "authorize only shared_physics for cross-object/cross-backend physical transfer",
+    "emit exact fallback for every out-of-scope mechanism",
+    "forbid sensor discrepancy from changing physical rollout state"
+  ],
+  "real_data_authorized": false,
+  "protected_dlo4_dlo5_result_authorized": false,
+  "target_dependent_diagnosis_authorized": false,
+  "failure_policy": "Retain every misdiagnosis or scope failure. Do not retune this protocol version after observing the suite result."
+}

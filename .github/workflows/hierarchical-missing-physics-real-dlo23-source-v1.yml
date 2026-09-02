@@ -1,0 +1,260 @@
+name: Hierarchical missing-physics real DLO2/DLO3 source v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_real_dlo23_source_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-real-dlo23-source-v1
+  cancel-in-progress: false
+
+jobs:
+  source-diagnosis:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 7200
+    env:
+      PLAN: evidence/hierarchical_missing_physics/source_panel_plan_v1/result.json
+      PLAN_RECEIPT: evidence/hierarchical_missing_physics/source_panel_plan_v1/receipt.json
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/real_dlo23_source_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate frozen plan and source-only implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test -f "$PLAN"
+          test -f "$PLAN_RECEIPT"
+          python3 -m json.tool "$PLAN" >/dev/null
+          python3 -m json.tool "$PLAN_RECEIPT" >/dev/null
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_real_dlo23_source_v1.json >/dev/null
+          python3 -m py_compile \
+            scripts/science/build_deform_dlo23_hierarchical_panel.py \
+            scripts/science/hierarchical_missing_physics_diagnosis.py
+          PLAN="$PLAN" RECEIPT="$PLAN_RECEIPT" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          plan_path = Path(os.environ["PLAN"])
+          plan = json.loads(plan_path.read_text(encoding="utf-8"))
+          receipt = json.loads(Path(os.environ["RECEIPT"]).read_text(encoding="utf-8"))
+          if hashlib.sha256(plan_path.read_bytes()).hexdigest() != receipt["result_sha256"]:
+              raise SystemExit("source-panel plan receipt mismatch")
+          if plan["plan_id"] != receipt["plan_id"]:
+              raise SystemExit("source-panel plan ID mismatch")
+          if plan["ready_for_panel_build"] is not True:
+              raise SystemExit("source-panel plan did not authorize a build")
+          if sorted(plan["selected_carriers"]) != ["DLO2", "DLO3"]:
+              raise SystemExit("source-panel plan selected an unexpected cohort")
+          if receipt["dlo4_dlo5_payload_read"] is not False:
+              raise SystemExit("source-panel plan crossed target boundary")
+          if receipt["target_scores_read"] is not False:
+              raise SystemExit("source-panel plan read target scores")
+          PY
+
+      - name: Build exact real DLO2/DLO3 residual panel
+        id: panel
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-real-dlo23-source"
+          mkdir -p "$work"
+          prefix="$work/dlo23_source_panel"
+          python3 scripts/science/build_deform_dlo23_hierarchical_panel.py \
+            --plan "$PLAN" \
+            --output-prefix "$prefix" \
+            --max-rows-per-trajectory 2000 \
+            | tee "$work/panel_summary.log"
+          PANEL="$prefix.npz" MANIFEST="$prefix.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          panel = Path(os.environ["PANEL"])
+          manifest_path = Path(os.environ["MANIFEST"])
+          value = json.loads(manifest_path.read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          if boundary["dlo4_payload_read"] is not False or boundary["dlo5_payload_read"] is not False:
+              raise SystemExit("real source panel crossed DLO4/DLO5 boundary")
+          if boundary["protected_parent_target_result_read"] is not False:
+              raise SystemExit("real source panel read protected target result")
+          if boundary["target_outcome_used_for_feature_choice"] is not False:
+              raise SystemExit("target outcome influenced source features")
+          if sorted(value["object_order"]) != ["DLO2", "DLO3"]:
+              raise SystemExit("real source panel contains an unexpected object")
+          if value["trajectory_count"] < 4:
+              raise SystemExit("real source panel has too few complete trajectories")
+          if value["sample_count"] < 256:
+              raise SystemExit("real source panel has too few rows")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"panel={panel}\n")
+              output.write(f"manifest={manifest_path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Real DLO2/DLO3 source panel\n\n")
+              summary.write(f"Panel ID: `{value['panel_id']}`\n\n")
+              summary.write(f"Samples: `{value['sample_count']}`\n\n")
+              summary.write(f"Complete trajectories: `{value['trajectory_count']}`\n\n")
+              summary.write(f"Blocks: `{value['block_dimensions']}`\n\n")
+              summary.write(f"Backends represented: `{value['backend_order']}`\n")
+          PY
+
+      - name: Run source-only Bayesian mechanism diagnosis with heartbeat
+        id: diagnosis
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-real-dlo23-source"
+          result="$work/source_diagnosis_result.json"
+          log="$work/source_diagnosis.log"
+          python3 scripts/science/hierarchical_missing_physics_diagnosis.py \
+            --panel "${{ steps.panel.outputs.panel }}" \
+            --manifest "${{ steps.panel.outputs.manifest }}" \
+            --bootstrap 200 \
+            --seed 73 \
+            --output "$result" >"$log" 2>&1 &
+          pid=$!
+          started=$(date +%s)
+          while kill -0 "$pid" 2>/dev/null; do
+            now=$(date +%s)
+            elapsed=$((now-started))
+            printf '[hierarchical-source-progress] {"elapsed_seconds":%s,"pid":%s,"rss_kib":%s,"cpu_percent":"%s"}\n' \
+              "$elapsed" "$pid" \
+              "$(ps -o rss= -p "$pid" | tr -d ' ' || true)" \
+              "$(ps -o %cpu= -p "$pid" | tr -d ' ' || true)"
+            tail -n 5 "$log" || true
+            sleep 300
+          done
+          wait "$pid"
+          cat "$log"
+          RESULT="$result" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          if boundary["target_outcomes_read"] is not False:
+              raise SystemExit("real source diagnosis read target outcomes")
+          if boundary["target_group_selection"] is not False:
+              raise SystemExit("real source diagnosis used target group selection")
+          if value["source_gate"]["fallback_identity_violations"] != 0:
+              raise SystemExit("source exact-fallback audit failed")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"result={path}\n")
+              output.write(
+                  f"passed={'true' if value['source_gate']['passed'] else 'false'}\n"
+              )
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("\n## Real DLO2/DLO3 source diagnosis\n\n")
+              summary.write(f"Result ID: `{value['result_id']}`\n\n")
+              summary.write(f"Source gate passed: `{value['source_gate']['passed']}`\n\n")
+              summary.write(
+                  f"Source-only transferable groups: "
+                  f"`{value['transferable_groups_selected_source_only']}`\n\n"
+              )
+              summary.write("| Arm | RMSE | Improvement vs physical | MAE |\n")
+              summary.write("|---|---:|---:|---:|\n")
+              for arm, metrics in sorted(value["aggregate"].items()):
+                  summary.write(
+                      f"| {arm} | {metrics['rmse']:.8g} | "
+                      f"{100.0 * metrics['relative_improvement_vs_physical']:.3f}% | "
+                      f"{metrics['mae']:.8g} |\n"
+                  )
+              summary.write("\n| Group | Bootstrap frequency | Effective df/output | NLL loss if removed | Supported |\n")
+              summary.write("|---|---:|---:|---:|---:|\n")
+              for group, metrics in sorted(value["group_diagnostics"].items()):
+                  summary.write(
+                      f"| {group} | {value['bootstrap_diagnosis_frequency'][group]:.3f} | "
+                      f"{metrics['effective_df_per_output']:.4g} | "
+                      f"{metrics['negative_log_score_increase_when_removed']:.4g} | "
+                      f"{metrics['source_supported']} |\n"
+                  )
+          PY
+
+      - name: Publish positive or negative real-source evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.panel.outputs.manifest }}" "$EVIDENCE_DIR/panel_manifest.json"
+          cp "${{ steps.diagnosis.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" MANIFEST="$EVIDENCE_DIR/panel_manifest.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["RESULT"])
+          manifest_path = Path(os.environ["MANIFEST"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-real-dlo23-source-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "panel_id": manifest["panel_id"],
+              "serialized_panel_sha256": manifest["serialized_npz_sha256"],
+              "panel_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+              "result_id": result["result_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "source_gate_passed": result["source_gate"]["passed"],
+              "transferable_groups_selected_source_only": result[
+                  "transferable_groups_selected_source_only"
+              ],
+              "dlo4_dlo5_payload_read": False,
+              "protected_target_result_read": False,
+              "target_authorized": False,
+              "claim_scope": (
+                  "real DLO2/DLO3 source diagnosis only; no cross-object target claim"
+              )
+          }
+          unsigned = json.dumps(
+              receipt, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical real-source evidence already committed."
+          else
+            git commit -m "Record real DLO2/DLO3 discrepancy diagnosis"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload complete real-source panel and diagnosis
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-real-dlo23-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-real-dlo23-source/
+            evidence/hierarchical_missing_physics/real_dlo23_source_v1/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,28 @@
+{
+  "schema": "bayesian-phystwin.deform-dlo23-source-panel-plan-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-source-panel-plan-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "execution_attempt": 2,
+  "source_census": "evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1/result.json",
+  "source_census_id": "959725ae468dd93deab8d8cad3eb0c86aa3e39fea88942142e518c77b0ffebd8",
+  "source_census_receipt_id": "385c05181c408f504a21db23a5c3b83e4d9697803d107c5df413aeab3faf79de",
+  "source_census_run_id": 33680159301,
+  "authorized_source_objects": ["DLO2", "DLO3"],
+  "forbidden_target_objects": ["DLO4", "DLO5"],
+  "selection_rules": {
+    "semantic_vocabulary_frozen_in_code": true,
+    "minimum_top_to_runner_up_score_margin": 5,
+    "requires_physical_or_state_feature_carrier": true,
+    "requires_recoverable_complete_trajectory_identity": true,
+    "requires_exact_source_artifact_sha256": true,
+    "ambiguous_auto_selection_allowed": false
+  },
+  "target_payload_read_authorized": false,
+  "protected_parent_result_read_authorized": false,
+  "target_outcome_semantic_mapping_authorized": false,
+  "automatic_target_follow_on": false,
+  "paper_claim_authorized": false,
+  "failure_policy": "Publish the negative or ambiguous adapter plan unchanged. Do not resolve ambiguity using DLO4/DLO5 or target errors."
+}

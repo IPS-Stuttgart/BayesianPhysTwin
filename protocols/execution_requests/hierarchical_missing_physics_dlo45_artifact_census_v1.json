@@ -1,0 +1,23 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-artifact-census-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-dlo45-artifact-census-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "authorization": "evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json",
+  "source_model": "evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model.json",
+  "parent_run": 33361441865,
+  "authorized_operations": [
+    "download retained parent-run artifacts",
+    "stream file bytes for SHA-256",
+    "read archive central directories",
+    "read NumPy headers for keys, shapes, dtypes, and order flags",
+    "parse allow-listed manifest, receipt, protocol, request, and seal metadata"
+  ],
+  "forbidden_operations": [
+    "load target numerical array values",
+    "parse target score, result, metric, or evaluation JSON values",
+    "compute a target performance metric",
+    "change source group selection, standardization, coefficients, or wrong-diagnosis control"
+  ],
+  "failure_policy": "Publish a negative census if no structurally usable target carrier exists. Do not inspect target values to resolve artifact ambiguity."
+}

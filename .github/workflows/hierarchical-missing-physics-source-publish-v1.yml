@@ -1,0 +1,206 @@
+name: Publish hierarchical missing-physics source evidence v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_source_publish_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-source-publish-v1
+  cancel-in-progress: false
+
+jobs:
+  source-evidence:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    env:
+      DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/source_inventory_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate frozen custody contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test -d "$DATASET_ROOT"
+          test ! -L "$DATASET_ROOT"
+          python3 -m json.tool protocols/hierarchical_missing_physics_diagnosis_v1.json >/dev/null
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_source_publish_v1.json >/dev/null
+          python3 -m py_compile \
+            scripts/science/hierarchical_missing_physics_diagnosis.py \
+            scripts/science/inventory_deform_dlo23_source_schema.py
+
+      - name: Run known-mechanism falsification smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-source-publish"
+          mkdir -p "$work"
+          python3 scripts/science/hierarchical_missing_physics_diagnosis.py \
+            --synthetic-smoke \
+            --bootstrap 50 \
+            --seed 7 \
+            --output "$work/synthetic_result.json" \
+            | tee "$work/synthetic_summary.log"
+          RESULT="$work/synthetic_result.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          if value["information_boundary"]["target_outcomes_read"] is not False:
+              raise SystemExit("target boundary violation")
+          if value["source_gate"]["fallback_identity_violations"] != 0:
+              raise SystemExit("fallback identity violation")
+          if "shared_physics" not in value["transferable_groups_selected_source_only"]:
+              raise SystemExit("known shared mechanism was not recovered")
+          if value["source_gate"]["passed"] is not True:
+              raise SystemExit("known-mechanism source gate failed")
+          PY
+
+      - name: Inventory only DLO2 and DLO3 source carriers
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-source-publish"
+          python3 scripts/science/inventory_deform_dlo23_source_schema.py \
+            --dataset-root "$DATASET_ROOT" \
+            --repository "$GITHUB_WORKSPACE" \
+            --output "$work/source_inventory.json" \
+            | tee "$work/source_inventory_summary.log"
+          RESULT="$work/source_inventory.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          if sorted(value["source_dlos"]) != ["DLO2", "DLO3"]:
+              raise SystemExit("unexpected source cohort")
+          boundary = value["information_boundary"]
+          forbidden = (
+              "dlo4_path_enumerated",
+              "dlo4_payload_read",
+              "dlo5_path_enumerated",
+              "dlo5_payload_read",
+              "protected_parent_target_result_read",
+              "target_dependent_model_choice",
+          )
+          if any(boundary[key] is not False for key in forbidden):
+              raise SystemExit("protected target boundary crossed")
+          PY
+
+      - name: Construct compact immutable evidence record
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-source-publish"
+          mkdir -p "$EVIDENCE_DIR"
+          WORK="$work" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          work = Path(os.environ["WORK"])
+          destination = Path(os.environ["EVIDENCE_DIR"])
+          inventory = json.loads((work / "source_inventory.json").read_text(encoding="utf-8"))
+          synthetic = json.loads((work / "synthetic_result.json").read_text(encoding="utf-8"))
+
+          def digest(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          record = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-source-evidence",
+              "schema_version": 1,
+              "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "inventory_id": inventory["inventory_id"],
+              "inventory_sha256": digest(work / "source_inventory.json"),
+              "synthetic_result_id": synthetic["result_id"],
+              "synthetic_result_sha256": digest(work / "synthetic_result.json"),
+              "synthetic_source_gate": synthetic["source_gate"],
+              "synthetic_transferable_groups": synthetic[
+                  "transferable_groups_selected_source_only"
+              ],
+              "source_dlo_summary": {
+                  dlo: {
+                      "file_count": value["file_count"],
+                      "total_bytes": value["total_bytes"],
+                      "suffix_counts": value["suffix_counts"],
+                      "directory_file_counts": value["directory_file_counts"],
+                  }
+                  for dlo, value in inventory["source_dlos"].items()
+              },
+              "repository_adapter_matches": inventory[
+                  "repository_adapter_matches"
+              ],
+              "information_boundary": inventory["information_boundary"],
+              "claim_authorized": "source-schema-and-mechanism-smoke-only",
+          }
+          unsigned = json.dumps(
+              record, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          record["evidence_id"] = hashlib.sha256(unsigned).hexdigest()
+
+          files = {
+              "result.json": json.dumps(
+                  record, indent=2, sort_keys=True, allow_nan=False
+              ) + "\n",
+              "source_inventory.json": json.dumps(
+                  inventory, indent=2, sort_keys=True, allow_nan=False
+              ) + "\n",
+              "synthetic_result.json": json.dumps(
+                  synthetic, indent=2, sort_keys=True, allow_nan=False
+              ) + "\n",
+          }
+          for name, text in files.items():
+              path = destination / name
+              if path.exists() and path.read_text(encoding="utf-8") != text:
+                  raise SystemExit(f"refusing to overwrite differing evidence: {path}")
+              path.write_text(text, encoding="utf-8")
+          print(json.dumps(record, indent=2, sort_keys=True))
+          PY
+
+      - name: Commit evidence without overwriting a prior result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical evidence already committed."
+            exit 0
+          fi
+          git commit -m "Record DLO2/DLO3 missing-physics source inventory"
+          git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+
+      - name: Upload full source-only evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-source-publish-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-source-publish/
+            evidence/hierarchical_missing_physics/source_inventory_v1/
+          if-no-files-found: error
+          retention-days: 90

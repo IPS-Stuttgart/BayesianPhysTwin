@@ -1,0 +1,21 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-runtime-root-map-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-runtime-root-map-v1-20260903",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "metadata_only": true,
+  "numeric_payload_read_authorized": false,
+  "pickle_deserialization_authorized": false,
+  "target_score_read_authorized": false,
+  "protected_paths_must_be_pruned_before_descent": true,
+  "purpose": "Select a bounded set of evidence-bearing DLO2/DLO3 runtime roots after the broad source census exceeded its fixed entry budget.",
+  "forbidden_identity": [
+    "DLO4",
+    "DLO5",
+    "DLO45",
+    "protected run 33361441865"
+  ],
+  "automatic_target_follow_on": false,
+  "paper_claim_authorized": false
+}

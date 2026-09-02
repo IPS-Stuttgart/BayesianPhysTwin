@@ -1,0 +1,143 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-diagnosis-protocol",
+  "schema_version": 1,
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "title": "Separating transferable missing physics from object-, backend-, contact-, actuation-, and sensor-specific discrepancy",
+  "status": "registered-source-only",
+  "scientific_question": "Can a Bayesian physical twin diagnose which mechanism generated a residual and transfer only the component representing persistent missing physics across physical objects and simulator backends?",
+  "primary_hypotheses": {
+    "H1_shared_physics": "A nonzero residual component is stable across source objects and remains beneficial without coefficient refitting on independently held-out DLOs.",
+    "H2_backend_specificity": "A simulator-specific component improves predictions only under the backend on which it was identified and is rejected after a backend change.",
+    "H3_object_specificity": "An object-specific component improves within-object held-out trajectories but does not transfer to a new object.",
+    "H4_mechanism_diagnosis": "The source-only posterior diagnosis predicts which discrepancy components will transfer; forcing an incompatible diagnosis removes or reverses the gain.",
+    "H5_exact_fallback": "When no transferable component passes the source-only evidence and support gates, the emitted target prediction is byte-identical to the registered physical fallback."
+  },
+  "additive_discrepancy_model": {
+    "equation": "delta = delta_shared_physics + delta_object + delta_backend + delta_contact + delta_actuation + delta_sensor + epsilon",
+    "groups": [
+      {
+        "name": "shared_physics",
+        "meaning": "persistent missing dynamics represented in normalized mechanical coordinates",
+        "transfer_scope": "object-and-backend",
+        "eligible_for_primary_claim": true
+      },
+      {
+        "name": "object",
+        "meaning": "DLO-specific material, geometry, or mounting remainder not represented by the physical backbone",
+        "transfer_scope": "same-object-only",
+        "eligible_for_primary_claim": false
+      },
+      {
+        "name": "backend",
+        "meaning": "numerical-discretization or simulator-family error",
+        "transfer_scope": "same-backend-only",
+        "eligible_for_primary_claim": false
+      },
+      {
+        "name": "contact",
+        "meaning": "unmodeled contact-regime effect conditional on an explicit contact-support signature",
+        "transfer_scope": "matching-contact-support-only",
+        "eligible_for_primary_claim": false
+      },
+      {
+        "name": "actuation",
+        "meaning": "command-to-motion discrepancy conditional on an explicit actuation-calibration identity",
+        "transfer_scope": "matching-actuation-calibration-only",
+        "eligible_for_primary_claim": false
+      },
+      {
+        "name": "sensor",
+        "meaning": "measurement-space bias or noise correlation that must not alter physical rollout state",
+        "transfer_scope": "same-sensor-calibration-only",
+        "eligible_for_primary_claim": false
+      }
+    ],
+    "inference": {
+      "family": "group automatic relevance determination Bayesian linear residual operator",
+      "source_only_standardization": true,
+      "source_grouped_validation_unit": "complete trajectory",
+      "diagnosis_outputs": [
+        "group posterior effective degrees of freedom",
+        "group coefficient energy",
+        "leave-group-out predictive log-score loss",
+        "source-bootstrap diagnosis frequency",
+        "transfer eligibility decision"
+      ]
+    }
+  },
+  "data_custody": {
+    "development_objects": ["DLO2", "DLO3"],
+    "development_payloads": "already-open source/calibration trajectories only",
+    "protected_object_targets": ["DLO4", "DLO5"],
+    "protected_parent_run": 33361441865,
+    "protected_target_rule": "No DLO4/DLO5 target score, target residual, or target-dependent hyperparameter may be opened until the parent run is terminal and its joint pre-score seal verifies.",
+    "backend_holdout": "A separately sealed alternate-backend rollout generated from the same released initial conditions and commands; backend identity is fixed before scoring.",
+    "independent_unit": "complete trajectory within each physical DLO, with DLO-stratified reporting",
+    "forbidden": [
+      "target-dependent basis selection",
+      "target-dependent group threshold selection",
+      "target-dependent coefficient sign changes",
+      "target-dependent source-seed selection",
+      "pooling DLO4 and DLO5 to conceal a failure",
+      "treating frames or nodes as independent samples",
+      "transferring sensor discrepancy into physical state",
+      "relabeling a failed diagnosis after target opening"
+    ]
+  },
+  "source_phase": {
+    "cohort": ["DLO2", "DLO3"],
+    "splitting": "leave-complete-trajectory-out and leave-one-source-DLO-out",
+    "required_arms": [
+      "physical fallback",
+      "monolithic residual",
+      "shared-physics-only",
+      "diagnosis-guided compatible components",
+      "all-components transfer",
+      "wrong-diagnosis transfer",
+      "object-label permutation",
+      "backend-label permutation",
+      "group-structure permutation"
+    ],
+    "promotion_gate": {
+      "shared_vs_physical_min_relative_improvement": 0.01,
+      "diagnosis_guided_vs_all_components_min_relative_improvement": 0.005,
+      "minimum_complete_trajectory_win_fraction_vs_physical": 0.60,
+      "maximum_worst_trajectory_ratio_vs_physical": 1.10,
+      "minimum_source_bootstrap_shared_diagnosis_frequency": 0.70,
+      "object_component_must_fail_unseen_object_transfer": true,
+      "backend_component_must_fail_changed_backend_transfer": true,
+      "sensor_component_must_not_change_physical_rollout": true,
+      "fallback_identity_violations_allowed": 0
+    }
+  },
+  "target_phase": {
+    "authorization": "Requires source gate pass, terminal protected parent run, verified parent joint seal, and a separately committed target request file.",
+    "primary_transfer": "Freeze shared_physics coefficients learned without DLO4/DLO5 and apply them without coefficient refitting.",
+    "required_reports": [
+      "DLO4 separately",
+      "DLO5 separately",
+      "alternate backend separately",
+      "complete-trajectory paired differences",
+      "DLO-stratified aggregate",
+      "worst-trajectory ratio",
+      "diagnosis confusion and abstention",
+      "fallback identity audit"
+    ],
+    "claim_gate": {
+      "each_DLO_min_relative_improvement_vs_physical": 0.01,
+      "each_DLO_min_win_count_of_14": 8,
+      "each_DLO_maximum_worst_trajectory_ratio": 1.10,
+      "diagnosis_guided_must_beat_all_components_transfer": true,
+      "shared_physics_must_beat_object_and_backend_placebos": true,
+      "alternate_backend_must_reject_source_backend_component": true,
+      "fallback_identity_violations_allowed": 0
+    }
+  },
+  "claim_ladder": {
+    "source_only": "The decomposition is identifiable enough on already-open DLO2/DLO3 to distinguish transferable from nontransferable residual mechanisms.",
+    "object_transfer": "A frozen shared missing-physics component improves DLO4 and DLO5 without residual coefficient refitting.",
+    "backend_transfer": "The same shared component survives a simulator-backend change while the diagnosed backend-specific component does not.",
+    "full_claim": "The twin separates reusable missing physics from object- and simulator-specific discrepancy and uses that diagnosis to decide what may safely transfer."
+  },
+  "failure_policy": "Every negative, mixed, or abstaining result is retained. A failed source gate forbids target opening. A failed target object or backend remains separate and cannot be repaired within this protocol version."
+}

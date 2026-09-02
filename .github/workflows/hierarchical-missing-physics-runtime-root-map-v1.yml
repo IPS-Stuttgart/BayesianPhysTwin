@@ -1,0 +1,268 @@
+name: Hierarchical missing-physics runtime root map v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_runtime_root_map_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-runtime-root-map-v1
+  cancel-in-progress: false
+
+jobs:
+  map:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    env:
+      REQUEST: protocols/execution_requests/hierarchical_missing_physics_runtime_root_map_v1.json
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/runtime_root_map_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate metadata-only request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = workstation1
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["REQUEST"]).read_text(encoding="utf-8"))
+          assert value["schema"] == "bayesian-phystwin.hierarchical-missing-physics-runtime-root-map-request"
+          assert value["schema_version"] == 1
+          assert value["requested_runner"] == "gpuserver4090"
+          assert value["metadata_only"] is True
+          assert value["numeric_payload_read_authorized"] is False
+          assert value["pickle_deserialization_authorized"] is False
+          assert value["target_score_read_authorized"] is False
+          assert value["protected_paths_must_be_pruned_before_descent"] is True
+          PY
+
+      - name: Map bounded evidence-bearing source directories
+        id: map
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-runtime-root-map"
+          test ! -e "$work"
+          mkdir -p "$work"
+          output="$work/result.json"
+          OUTPUT="$output" python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from collections import deque
+          from pathlib import Path
+
+          roots = [
+              Path("/home/github-runner/.cache"),
+              Path("/home/github-runner/actions-runner/_work"),
+              Path("/home/florianpfaff"),
+              Path("/mnt/seagate10tb/florianpfaff/datasets/deform"),
+          ]
+          forbidden = (
+              "dlo4", "dlo_4", "dlo-4", "dlo5", "dlo_5", "dlo-5",
+              "dlo45", "deform-dlo45", "33361441865",
+          )
+          descent = (
+              "action", "artifact", "bayesian", "cache", "dataset", "deform",
+              "dlo", "experiment", "github", "output", "phystwin", "pyelastica",
+              "result", "runner", "source", "workflow", "_work",
+          )
+          evidence = (
+              "artifact", "bayesian", "coefficient", "deform", "dlo2", "dlo3",
+              "output", "phystwin", "physical", "prediction", "pyelastica",
+              "residual", "result", "source",
+          )
+
+          def normalized(path: Path) -> str:
+              return path.as_posix().lower()
+
+          def blocked(path: Path) -> bool:
+              value = normalized(path)
+              return any(token in value for token in forbidden)
+
+          queue: deque[tuple[Path, int, Path]] = deque()
+          root_records = []
+          for supplied in roots:
+              if not supplied.exists() or not supplied.is_dir() or supplied.is_symlink():
+                  root_records.append({"path": supplied.as_posix(), "available": False})
+                  continue
+              resolved = supplied.resolve(strict=True)
+              if blocked(resolved):
+                  raise SystemExit(f"protected root requested: {resolved}")
+              root_records.append({"path": resolved.as_posix(), "available": True})
+              queue.append((resolved, 0, resolved))
+
+          max_depth = 4
+          max_directories = 20000
+          directories_seen = 0
+          entries_seen = 0
+          protected_pruned = 0
+          symlinks_skipped = 0
+          records = []
+          errors = []
+          while queue:
+              directory, depth, root = queue.popleft()
+              directories_seen += 1
+              if directories_seen > max_directories:
+                  raise SystemExit("root map exceeded bounded directory budget")
+              try:
+                  entries = sorted(os.scandir(directory), key=lambda item: item.name.lower())
+              except (PermissionError, FileNotFoundError, OSError) as error:
+                  errors.append({"path": directory.as_posix(), "error": repr(error)})
+                  continue
+              entries_seen += len(entries)
+              child_directories = []
+              direct_files = 0
+              for entry in entries:
+                  path = Path(entry.path)
+                  try:
+                      if entry.is_symlink():
+                          symlinks_skipped += 1
+                          continue
+                      if entry.is_dir(follow_symlinks=False):
+                          if blocked(path):
+                              protected_pruned += 1
+                              continue
+                          child_directories.append(path)
+                      elif entry.is_file(follow_symlinks=False):
+                          direct_files += 1
+                  except OSError as error:
+                      errors.append({"path": path.as_posix(), "error": repr(error)})
+              text = normalized(directory)
+              source_identity = any(token in text for token in ("dlo2", "dlo_2", "dlo-2", "dlo3", "dlo_3", "dlo-3"))
+              evidence_hint = source_identity or any(token in text for token in evidence)
+              if depth > 0 and evidence_hint:
+                  records.append(
+                      {
+                          "path": directory.as_posix(),
+                          "root": root.as_posix(),
+                          "depth": depth,
+                          "direct_directory_count": len(child_directories),
+                          "direct_file_count": direct_files,
+                          "source_identity_in_path": source_identity,
+                      }
+                  )
+              if depth >= max_depth:
+                  continue
+              for child in child_directories:
+                  child_text = normalized(child)
+                  if depth == 0 or any(token in child_text for token in descent):
+                      queue.append((child, depth + 1, root))
+
+          records.sort(
+              key=lambda item: (
+                  not item["source_identity_in_path"],
+                  item["depth"],
+                  item["path"],
+              )
+          )
+          result = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-runtime-root-map",
+              "schema_version": 1,
+              "roots": root_records,
+              "max_depth": max_depth,
+              "max_directories": max_directories,
+              "directories_seen": directories_seen,
+              "entries_seen": entries_seen,
+              "protected_directories_pruned_before_descent": protected_pruned,
+              "symlinks_skipped": symlinks_skipped,
+              "candidate_directories": records,
+              "errors": errors[:200],
+              "information_boundary": {
+                  "directory_names_and_direct_entry_counts_only": True,
+                  "numeric_payload_read": False,
+                  "file_content_read": False,
+                  "pickle_deserialized": False,
+                  "dlo4_directory_children_enumerated": False,
+                  "dlo5_directory_children_enumerated": False,
+                  "protected_run_33361441865_artifact_read": False,
+                  "target_scores_read": False,
+                  "target_dependent_model_selection": False,
+              },
+          }
+          unsigned = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+          result["root_map_id"] = hashlib.sha256(unsigned).hexdigest()
+          Path(os.environ["OUTPUT"]).write_text(
+              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "root_map_id": result["root_map_id"],
+              "directories_seen": directories_seen,
+              "entries_seen": entries_seen,
+              "candidate_directories": len(records),
+              "protected_directories_pruned_before_descent": protected_pruned,
+          }, sort_keys=True))
+          PY
+          echo "result=$output" >> "$GITHUB_OUTPUT"
+
+      - name: Commit metadata-only root map
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.map.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result_path = evidence / "result.json"
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          boundary = result["information_boundary"]
+          assert boundary["numeric_payload_read"] is False
+          assert boundary["file_content_read"] is False
+          assert boundary["dlo4_directory_children_enumerated"] is False
+          assert boundary["dlo5_directory_children_enumerated"] is False
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-runtime-root-map-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "root_map_id": result["root_map_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "target_payload_read": False,
+              "claim_scope": "metadata-only source-runtime root selection",
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          git commit -m "Map bounded DLO2/DLO3 runtime roots"
+          git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+
+      - name: Upload root map
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-runtime-root-map-${{ github.run_id }}-${{ github.run_attempt }}
+          path: evidence/hierarchical_missing_physics/runtime_root_map_v1/
+          if-no-files-found: error
+          retention-days: 90

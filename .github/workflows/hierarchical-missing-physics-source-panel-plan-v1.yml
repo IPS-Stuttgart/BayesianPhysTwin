@@ -1,0 +1,171 @@
+name: Hierarchical missing-physics DLO2/DLO3 panel plan v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_source_panel_plan_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-source-panel-plan-v1
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    env:
+      REQUEST: protocols/execution_requests/hierarchical_missing_physics_source_panel_plan_v1.json
+      CENSUS: evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1/result.json
+      CENSUS_RECEIPT: evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1/receipt.json
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/source_panel_plan_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate source-census provenance and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = workstation1
+          test -f "$CENSUS"
+          test -f "$CENSUS_RECEIPT"
+          python3 -m py_compile scripts/science/plan_deform_dlo23_hierarchical_panel.py
+          CENSUS="$CENSUS" RECEIPT="$CENSUS_RECEIPT" REQUEST="$REQUEST" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          census_path = Path(os.environ["CENSUS"])
+          census = json.loads(census_path.read_text(encoding="utf-8"))
+          receipt = json.loads(Path(os.environ["RECEIPT"]).read_text(encoding="utf-8"))
+          request = json.loads(Path(os.environ["REQUEST"]).read_text(encoding="utf-8"))
+          assert hashlib.sha256(census_path.read_bytes()).hexdigest() == receipt["result_sha256"]
+          assert census["census_id"] == receipt["census_id"]
+          assert request["source_census_id"] == receipt["census_id"]
+          assert request["source_census_receipt_id"] == receipt["receipt_id"]
+          assert receipt["dlo4_dlo5_payload_read"] is False
+          assert receipt["target_scores_read"] is False
+          assert request["target_payload_read_authorized"] is False
+          assert request["target_outcome_semantic_mapping_authorized"] is False
+          PY
+
+      - name: Prepare isolated pinned planner runtime
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="$RUNNER_TEMP/hmp-panel-plan-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install --disable-pip-version-check --no-input \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1" "numpy==2.2.6"
+          echo "python=$venv/bin/python" >> "$GITHUB_OUTPUT"
+          echo "venv=$venv" >> "$GITHUB_OUTPUT"
+
+      - name: Produce hash-bound fail-closed source adapter plan
+        id: plan
+        env:
+          PYTHON: ${{ steps.runtime.outputs.python }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-source-panel-plan"
+          test ! -e "$work"
+          mkdir -p "$work"
+          "$PYTHON" scripts/science/plan_deform_dlo23_hierarchical_panel.py \
+            --census "$CENSUS" --output "$work/result.json" | tee "$work/summary.log"
+          RESULT="$work/result.json" "$PYTHON" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          forbidden = (
+              "dlo4_payload_read", "dlo5_payload_read",
+              "protected_parent_target_result_read",
+              "target_outcome_used_for_semantic_mapping",
+              "ambiguous_carrier_auto_selected",
+          )
+          assert all(boundary[key] is False for key in forbidden)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"result={os.environ['RESULT']}\n")
+              output.write(f"ready={'true' if value['ready_for_panel_build'] else 'false'}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Hash-bound DLO2/DLO3 panel plan\n\n")
+              summary.write(f"Plan ID: `{value['plan_id']}`\n\n")
+              summary.write(f"Ready for panel build: `{value['ready_for_panel_build']}`\n\n")
+              for dlo, decision in sorted(value["decisions"].items()):
+                  summary.write(f"- {dlo}: `{decision['reason']}`; candidates `{decision['candidate_count']}`; margin `{decision['score_margin']}`\n")
+          PY
+
+      - name: Publish positive or negative plan evidence
+        env:
+          PYTHON: ${{ steps.runtime.outputs.python }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.plan.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" "$PYTHON" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["RESULT"])
+          value = json.loads(result_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.deform-dlo23-source-panel-plan-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "source_census_id": value["source_census_id"],
+              "plan_id": value["plan_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "ready_for_panel_build": value["ready_for_panel_build"],
+              "decisions": value["decisions"],
+              "dlo4_dlo5_payload_read": False,
+              "target_scores_read": False,
+              "claim_scope": "source-only adapter planning"
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (result_path.parent / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          git commit -m "Record DLO2/DLO3 hierarchical panel plan"
+          git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+
+      - name: Upload complete panel-plan evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-source-panel-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-source-panel-plan/
+            evidence/hierarchical_missing_physics/source_panel_plan_v1/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${{ steps.runtime.outputs.venv }}"

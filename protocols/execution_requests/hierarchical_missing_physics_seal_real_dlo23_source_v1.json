@@ -1,0 +1,24 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-seal-real-source-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-seal-real-dlo23-source-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "published_source_result": "evidence/hierarchical_missing_physics/real_dlo23_source_v1/result.json",
+  "published_source_panel_manifest": "evidence/hierarchical_missing_physics/real_dlo23_source_v1/panel_manifest.json",
+  "authorized_source_objects": ["DLO2", "DLO3"],
+  "forbidden_target_objects": ["DLO4", "DLO5"],
+  "required_invariants": [
+    "rebuilt panel ID and array hashes equal the published source panel",
+    "recomputed diagnosis result ID equals the published source result",
+    "selected groups are frozen before target access",
+    "source standardizers and coefficients are content-addressed",
+    "sensor discrepancy is absent from physical-transfer authorization"
+  ],
+  "trajectory_bootstrap_repetitions": 200,
+  "seed": 73,
+  "target_payload_read_authorized": false,
+  "target_result_read_authorized": false,
+  "target_scoring_authorized": false,
+  "failure_policy": "Fail closed if any rebuilt source quantity differs. Do not reseal with different hyperparameters or inspect DLO4/DLO5."
+}

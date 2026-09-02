@@ -1,0 +1,51 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-transfer-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-dlo45-transfer-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "protected_parent_run": 33361441865,
+  "source_model_prefix": "evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model",
+  "target_authorization": "evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json",
+  "target_plan": "evidence/hierarchical_missing_physics/dlo45_target_plan_v1/result.json",
+  "target_objects": ["DLO4", "DLO5"],
+  "execution_order": [
+    "download the retained parent artifacts under the existing authorization",
+    "open predictor-side physical state, action, contact, and trajectory-identity carriers only",
+    "generate every frozen prediction arm from the sealed DLO2/DLO3 source model",
+    "hash and upload a complete pre-score prediction seal",
+    "start a fresh scoring job",
+    "verify every source-model, target-plan, feature, prediction, and seal hash",
+    "only then open the registered DLO4 and DLO5 outcome carriers",
+    "score DLO4 and DLO5 separately and retain positive, mixed, or negative evidence"
+  ],
+  "frozen_arms": [
+    "physical fallback",
+    "shared_physics only",
+    "source diagnosis-guided transfer",
+    "all physical discrepancy components",
+    "source-frozen wrong-diagnosis placebo"
+  ],
+  "per_dlo_promotion_gate": {
+    "minimum_relative_improvement_vs_physical": 0.01,
+    "minimum_complete_trajectory_wins": 8,
+    "minimum_win_fraction_when_trajectory_count_differs_from_14": 0.60,
+    "maximum_worst_trajectory_ratio_vs_physical": 1.10,
+    "diagnosis_guided_must_beat_all_components": true,
+    "diagnosis_guided_or_shared_must_beat_wrong_diagnosis": true,
+    "fallback_identity_violations_allowed": 0
+  },
+  "joint_claim_gate": {
+    "DLO4_must_pass_separately": true,
+    "DLO5_must_pass_separately": true,
+    "pooling_to_hide_failure_authorized": false
+  },
+  "coefficient_refit_authorized": false,
+  "standardizer_refit_authorized": false,
+  "target_group_selection_authorized": false,
+  "target_feature_semantic_change_authorized": false,
+  "target_case_replacement_authorized": false,
+  "target_retry_based_on_score_authorized": false,
+  "sensor_discrepancy_to_physical_rollout_authorized": false,
+  "target_outcome_opening_before_prediction_seal_authorized": false,
+  "failure_policy": "Publish the result unchanged. A failed DLO remains a failed DLO, and no target-dependent remapping, refit, threshold change, retry, or replacement is permitted in this protocol version."
+}
