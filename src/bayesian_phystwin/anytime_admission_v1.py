@@ -439,16 +439,16 @@ class AnytimeAdmissionController:
             if trial_id in self._resolved_ids:
                 raise ValueError(f"trial_id was already resolved: {trial_id}")
             raise ValueError(f"unknown pending trial_id: {trial_id}")
-        trial = self._pending.pop(trial_id)
+        trial = self._pending[trial_id]
         resolved = _literal_nonnegative_integer(
             resolved_step,
             label="resolved_step",
         )
         if resolved < trial.maturity_step:
-            self._pending[trial_id] = trial
             raise ValueError("trial outcome cannot be resolved before maturity")
         candidate = _nonnegative(candidate_loss, label="candidate_loss")
         fallback = _nonnegative(fallback_loss, label="fallback_loss")
+        del self._pending[trial_id]
         capped_candidate = min(candidate, self.config.loss_cap)
         capped_fallback = min(fallback, self.config.loss_cap)
         denominator = self.config.loss_cap + self.config.minimum_mean_gain
