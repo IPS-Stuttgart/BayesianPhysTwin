@@ -60,10 +60,7 @@ def nonneighbor_pairs() -> np.ndarray:
         left_row, left_column = divmod(left, 4)
         for right in range(left + 1, 20):
             right_row, right_column = divmod(right, 4)
-            if (
-                max(abs(left_row - right_row), abs(left_column - right_column))
-                <= 1
-            ):
+            if max(abs(left_row - right_row), abs(left_column - right_column)) <= 1:
                 continue
             pairs.append((left, right))
     return np.asarray(pairs, dtype=np.int64)
@@ -72,11 +69,7 @@ def nonneighbor_pairs() -> np.ndarray:
 def pairwise_shape_change(points: np.ndarray, diameter: float) -> float:
     if points.ndim != 3 or points.shape[1:] != (20, 3) or points.shape[0] < 2:
         raise ValueError("points must have shape (time>=2, 20, 3)")
-    if (
-        not np.isfinite(points).all()
-        or not np.isfinite(diameter)
-        or diameter <= 0.0
-    ):
+    if not np.isfinite(points).all() or not np.isfinite(diameter) or diameter <= 0.0:
         raise ValueError("points and diameter must be finite")
     first = np.linalg.norm(points[0, :, None] - points[0, None, :], axis=2)
     last = np.linalg.norm(points[-1, :, None] - points[-1, None, :], axis=2)
