@@ -28,8 +28,8 @@ def test_protocol_binds_fresh_roster_and_statistical_contract(
     assert config.seeds[-1] == 200_399
     assert config.minimum_mean_gain_m == pytest.approx(0.00025)
     assert config.maximum_harm_rate == pytest.approx(0.10)
-    assert config.total_alpha_gain == pytest.approx(0.05)
-    assert config.total_alpha_harm == pytest.approx(0.05)
+    assert config.total_alpha_gain == pytest.approx(0.025)
+    assert config.total_alpha_harm == pytest.approx(0.025)
 
     payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     payload["information_boundary"]["fresh_seed_outcomes_opened_before_protocol"] = True

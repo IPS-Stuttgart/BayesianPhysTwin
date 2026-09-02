@@ -67,7 +67,7 @@ def _literal_positive_integer(value: int, *, label: str) -> int:
 def _weights(count: int) -> np.ndarray:
     if count < 1:
         raise ValueError("a mixture must contain at least one component")
-    result = np.full(count, 1.0 / count, dtype=np.float64)
+    result: np.ndarray = np.full(count, 1.0 / count, dtype=np.float64)
     result.setflags(write=False)
     return result
 
@@ -183,7 +183,7 @@ class BoundedGainMixtureEProcess:
             raise ValueError("bet fractions must be a finite vector in (0, 1)")
         self._bets = bets
         self._weights = _weights(len(bets))
-        self._log_wealth = np.zeros(len(bets), dtype=np.float64)
+        self._log_wealth: np.ndarray = np.zeros(len(bets), dtype=np.float64)
         self._count = 0
         self._maximum_log_e_value = 0.0
 
@@ -238,7 +238,7 @@ class BernoulliHarmMixtureEProcess:
         self._ceiling = ceiling
         self._alternatives = ceiling * fractions
         self._weights = _weights(len(fractions))
-        self._log_wealth = np.zeros(len(fractions), dtype=np.float64)
+        self._log_wealth: np.ndarray = np.zeros(len(fractions), dtype=np.float64)
         self._count = 0
         self._harm_count = 0
         self._maximum_log_e_value = 0.0
