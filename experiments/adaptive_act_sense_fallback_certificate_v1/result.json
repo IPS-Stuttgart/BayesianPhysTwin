@@ -1,0 +1,128 @@
+{
+  "adaptive_worst_case_improvement_over_best_fixed_two_probe": 0.3459999999999999,
+  "best_nonadaptive_fixed_two_probe": {
+    "first_probe_index": 0,
+    "second_probe_index": 3,
+    "terminal_action_by_joint_outcome": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "worst_case_loss": 0.475
+  },
+  "correct_action": "task_x when router=0; task_y when router=1",
+  "direct_only": {
+    "candidate_plan_index": 2,
+    "candidate_worst_case_regret": 0.45,
+    "claim_boundary": "The certificate is exact only for the supplied finite hypotheses, prior support, quotient masses, terminal losses, conditionally independent registered probe-outcome models, nonrepeatable probes, probe costs, finite horizon, retained policy class, and regret tolerance. It does not validate the physical support, quotient, sensor model, conditional independence, reset semantics, exchangeability, target transport, deployment, or safety.",
+    "output_mode": "fallback",
+    "output_node_count": 1,
+    "output_plan_index": 2,
+    "output_probe_depth": 0,
+    "raw_plan_count": 3,
+    "regret_tolerance": 0.25,
+    "retained_plan_count": 3,
+    "semantics": "exact-preprobe-quotient-regret-over-finite-stochastic-policy-trees-v1",
+    "used_fallback": true,
+    "version": 1
+  },
+  "fallback_loss": 0.45,
+  "hypothesis_count": 16,
+  "interpretation": "The exact pre-probe policy first measures the routing variable, then measures task_x or task_y according to the observed route. No direct or one-probe policy meets the regret tolerance. The cheaper, more accurate nuisance probe is ignored, and stochastic outcomes leave the complete physical state unidentified.",
+  "latent_state": [
+    "router",
+    "task_x",
+    "task_y",
+    "nuisance"
+  ],
+  "nuisance_probe_selected": false,
+  "one_probe": {
+    "candidate_plan_index": 2,
+    "candidate_worst_case_regret": 0.45,
+    "claim_boundary": "The certificate is exact only for the supplied finite hypotheses, prior support, quotient masses, terminal losses, conditionally independent registered probe-outcome models, nonrepeatable probes, probe costs, finite horizon, retained policy class, and regret tolerance. It does not validate the physical support, quotient, sensor model, conditional independence, reset semantics, exchangeability, target transport, deployment, or safety.",
+    "output_mode": "fallback",
+    "output_node_count": 1,
+    "output_plan_index": 2,
+    "output_probe_depth": 0,
+    "raw_plan_count": 51,
+    "regret_tolerance": 0.25,
+    "retained_plan_count": 21,
+    "semantics": "exact-preprobe-quotient-regret-over-finite-stochastic-policy-trees-v1",
+    "used_fallback": true,
+    "version": 1
+  },
+  "probe_accuracy": {
+    "nuisance": 0.999,
+    "router": 0.99,
+    "task_x": 0.95,
+    "task_y": 0.95
+  },
+  "probe_costs": {
+    "nuisance": 0.005,
+    "router": 0.02,
+    "task_x": 0.05,
+    "task_y": 0.05
+  },
+  "regret_tolerance": 0.25,
+  "result_id": "71bd764069dd64ffefbf5fdac0e07d1d33f03d3358f88cf073f34a4bbb8b9168",
+  "schema": "adaptive-act-sense-fallback-stochastic-router-v1",
+  "selected_policy_tree": [
+    1,
+    0,
+    [
+      [
+        1,
+        1,
+        [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      [
+        1,
+        2,
+        [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ]
+    ]
+  ],
+  "selected_second_probe_by_router_outcome": [
+    1,
+    2
+  ],
+  "state_remains_unidentified": true,
+  "two_probe": {
+    "candidate_plan_index": 45,
+    "candidate_worst_case_regret": 0.12900000000000006,
+    "claim_boundary": "The certificate is exact only for the supplied finite hypotheses, prior support, quotient masses, terminal losses, conditionally independent registered probe-outcome models, nonrepeatable probes, probe costs, finite horizon, retained policy class, and regret tolerance. It does not validate the physical support, quotient, sensor model, conditional independence, reset semantics, exchangeability, target transport, deployment, or safety.",
+    "output_mode": "sense",
+    "output_node_count": 7,
+    "output_plan_index": 45,
+    "output_probe_depth": 2,
+    "raw_plan_count": 1473,
+    "regret_tolerance": 0.25,
+    "retained_plan_count": 860,
+    "semantics": "exact-preprobe-quotient-regret-over-finite-stochastic-policy-trees-v1",
+    "used_fallback": false,
+    "version": 1
+  },
+  "two_probe_loss_range": [
+    0.12000000000000005,
+    0.12900000000000006
+  ]
+}
