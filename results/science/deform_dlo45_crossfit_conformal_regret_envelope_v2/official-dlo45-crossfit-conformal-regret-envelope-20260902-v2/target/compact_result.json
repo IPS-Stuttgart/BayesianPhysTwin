@@ -1,0 +1,880 @@
+{
+  "claim_boundary": "This retrospective cross-fitted analysis assigns each held trajectory to one metadata-only route whose model is trained and tuned on 28 disjoint source trajectories and whose split-conformal envelope is calibrated on the complementary 28 complete source trajectories. Under within-DLO trajectory exchangeability, each routed envelope has trajectory-marginal simultaneous coverage over the registered decisions and actions. It does not provide pointwise conditional validity, unseen-object or cross-material transport, arbitrary-action safety, calibrated state uncertainty, online robot performance, or deployment authorization.",
+  "combined_frontier": {
+    "0.050000": {
+      "0.050000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.100000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.200000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.300000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.500000": {
+        "action_counts": [
+          530,
+          1,
+          1
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5053329978882356,
+        "nonfallback_count": 2,
+        "nonfallback_fraction": 0.0037593984962406013,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.435616200958364,
+        "rmse_ratio_to_fallback": 0.9986429806460466,
+        "rmse_reduction": 0.0013570193539533815,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.004827492731440786
+        ],
+        "trajectory_improvement_mean": 0.001744356416560495
+      },
+      "0.750000": {
+        "action_counts": [
+          362,
+          118,
+          52
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.041176470588235294,
+        "harmful_nonfallback_count": 7,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.3964736896513507,
+        "nonfallback_count": 170,
+        "nonfallback_fraction": 0.31954887218045114,
+        "p95_realized_regret": 0.8099186810176996,
+        "rmse_mm": 32.62769543212445,
+        "rmse_ratio_to_fallback": 0.9462127475169543,
+        "rmse_reduction": 0.05378725248304572,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.03682214430116234,
+          0.09263532361054468
+        ],
+        "trajectory_improvement_mean": 0.0637694570007072
+      },
+      "1.000000": {
+        "action_counts": [
+          246,
+          223,
+          63
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.038461538461538464,
+        "harmful_nonfallback_count": 11,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.32169975628896325,
+        "nonfallback_count": 286,
+        "nonfallback_fraction": 0.5375939849624061,
+        "p95_realized_regret": 0.7814103284417903,
+        "rmse_mm": 31.513878386040265,
+        "rmse_ratio_to_fallback": 0.9139117261469657,
+        "rmse_reduction": 0.0860882738530343,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0712585994502947,
+          0.15204617942153686
+        ],
+        "trajectory_improvement_mean": 0.11037698436466233
+      }
+    },
+    "0.100000": {
+      "0.050000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.100000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.200000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.300000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.500000": {
+        "action_counts": [
+          443,
+          61,
+          28
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.02247191011235955,
+        "harmful_nonfallback_count": 2,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.4490488873801935,
+        "nonfallback_count": 89,
+        "nonfallback_fraction": 0.16729323308270677,
+        "p95_realized_regret": 0.8168376445881794,
+        "rmse_mm": 33.45935850468886,
+        "rmse_ratio_to_fallback": 0.9703312208101913,
+        "rmse_reduction": 0.029668779189808703,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.01310765568435859,
+          0.05461030343415616
+        ],
+        "trajectory_improvement_mean": 0.032208744261007706
+      },
+      "0.750000": {
+        "action_counts": [
+          55,
+          376,
+          101
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.03773584905660377,
+        "harmful_nonfallback_count": 18,
+        "maximum_trajectory_ratio": 0.9768552199343855,
+        "mean_realized_regret": 0.1807899883872731,
+        "nonfallback_count": 477,
+        "nonfallback_fraction": 0.8966165413533834,
+        "p95_realized_regret": 0.5319961995298611,
+        "rmse_mm": 28.002155629096755,
+        "rmse_ratio_to_fallback": 0.8120707351006369,
+        "rmse_reduction": 0.18792926489936312,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.16692729118418934,
+          0.22163193917653573
+        ],
+        "trajectory_improvement_mean": 0.19527003169391685
+      },
+      "1.000000": {
+        "action_counts": [
+          25,
+          406,
+          101
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.03550295857988166,
+        "harmful_nonfallback_count": 18,
+        "maximum_trajectory_ratio": 0.9383091167619868,
+        "mean_realized_regret": 0.16191929030804644,
+        "nonfallback_count": 507,
+        "nonfallback_fraction": 0.9530075187969925,
+        "p95_realized_regret": 0.31254490656771805,
+        "rmse_mm": 27.541769042151053,
+        "rmse_ratio_to_fallback": 0.7987193889027395,
+        "rmse_reduction": 0.20128061109726048,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.18157540912446798,
+          0.23124318181620876
+        ],
+        "trajectory_improvement_mean": 0.2075028814562216
+      }
+    },
+    "0.200000": {
+      "0.050000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.100000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.200000": {
+        "action_counts": [
+          532,
+          0,
+          0
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.5067188060983576,
+        "nonfallback_count": 0,
+        "nonfallback_fraction": 0.0,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.48240949801812,
+        "rmse_ratio_to_fallback": 1.0,
+        "rmse_reduction": 0.0,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.0,
+          0.0
+        ],
+        "trajectory_improvement_mean": 0.0
+      },
+      "0.300000": {
+        "action_counts": [
+          512,
+          18,
+          2
+        ],
+        "budget_violation_count_nonfallback": 2,
+        "budget_violation_fraction_nonfallback": 0.1,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.0,
+        "harmful_nonfallback_count": 0,
+        "maximum_trajectory_ratio": 1.0,
+        "mean_realized_regret": 0.4959071011686927,
+        "nonfallback_count": 20,
+        "nonfallback_fraction": 0.03759398496240601,
+        "p95_realized_regret": 0.8269872379974934,
+        "rmse_mm": 34.2473447778756,
+        "rmse_ratio_to_fallback": 0.9931830540973062,
+        "rmse_reduction": 0.006816945902693772,
+        "trajectory_budget_violation_count": 1,
+        "trajectory_budget_violation_fraction": 0.03571428571428571,
+        "trajectory_improvement_ci95": [
+          0.0025331747186923223,
+          0.009766741741695296
+        ],
+        "trajectory_improvement_mean": 0.005749333821590049
+      },
+      "0.500000": {
+        "action_counts": [
+          173,
+          275,
+          84
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.036211699164345405,
+        "harmful_nonfallback_count": 13,
+        "maximum_trajectory_ratio": 0.9652493034071014,
+        "mean_realized_regret": 0.26571030671682966,
+        "nonfallback_count": 359,
+        "nonfallback_fraction": 0.674812030075188,
+        "p95_realized_regret": 0.7265394931039895,
+        "rmse_mm": 29.517560364836335,
+        "rmse_ratio_to_fallback": 0.8560179173828576,
+        "rmse_reduction": 0.1439820826171424,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.1113008010528297,
+          0.16994007257471505
+        ],
+        "trajectory_improvement_mean": 0.1402877259256156
+      },
+      "0.750000": {
+        "action_counts": [
+          26,
+          405,
+          101
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.03557312252964427,
+        "harmful_nonfallback_count": 18,
+        "maximum_trajectory_ratio": 0.9383091167619868,
+        "mean_realized_regret": 0.16247904941811378,
+        "nonfallback_count": 506,
+        "nonfallback_fraction": 0.9511278195488722,
+        "p95_realized_regret": 0.3142184607769583,
+        "rmse_mm": 27.552117614929323,
+        "rmse_ratio_to_fallback": 0.799019500551807,
+        "rmse_reduction": 0.20098049944819296,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.18178875765497102,
+          0.2319296689930928
+        ],
+        "trajectory_improvement_mean": 0.20726388782756633
+      },
+      "1.000000": {
+        "action_counts": [
+          24,
+          407,
+          101
+        ],
+        "budget_violation_count_nonfallback": 0,
+        "budget_violation_fraction_nonfallback": 0.0,
+        "decision_count": 532,
+        "fallback_rmse_mm": 34.48240949801812,
+        "harmful_fraction_nonfallback": 0.03543307086614173,
+        "harmful_nonfallback_count": 18,
+        "maximum_trajectory_ratio": 0.9383091167619868,
+        "mean_realized_regret": 0.1612730631786836,
+        "nonfallback_count": 508,
+        "nonfallback_fraction": 0.9548872180451128,
+        "p95_realized_regret": 0.3107522669105915,
+        "rmse_mm": 27.520485870982274,
+        "rmse_ratio_to_fallback": 0.7981021706897836,
+        "rmse_reduction": 0.20189782931021638,
+        "trajectory_budget_violation_count": 0,
+        "trajectory_budget_violation_fraction": 0.0,
+        "trajectory_improvement_ci95": [
+          0.18215881025885883,
+          0.23184310024168495
+        ],
+        "trajectory_improvement_mean": 0.20798354294911162
+      }
+    }
+  },
+  "contract": "deform-dlo45-crossfit-conformal-regret-envelope-v2",
+  "coverage": {
+    "DLO4": {
+      "covered_trajectory_count": 13,
+      "empirical_trajectory_coverage": 0.9285714285714286,
+      "per_trajectory": [
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.3235251037038662,
+          "trajectory": "11.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.2399214449639623,
+          "trajectory": "16.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.2184412555724221,
+          "trajectory": "30.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.19161422727968114,
+          "trajectory": "35.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.1505096016236943,
+          "trajectory": "41.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.21670386033238792,
+          "trajectory": "5.pkl"
+        },
+        {
+          "covered": false,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.3495474139034009,
+          "trajectory": "56.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.2630392056361094,
+          "trajectory": "58.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.24110074111714658,
+          "trajectory": "66.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.27437217485503756,
+          "trajectory": "70.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.24045197749569644,
+          "trajectory": "81.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.3022236594311077,
+          "trajectory": "84.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3268359429362107,
+          "route": 1,
+          "score": 0.12086025149730913,
+          "trajectory": "93.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5207936285575194,
+          "route": 0,
+          "score": 0.35004877692788844,
+          "trajectory": "96.pkl"
+        }
+      ],
+      "routes": {
+        "0": {
+          "covered_trajectory_count": 7,
+          "empirical_trajectory_coverage": 1.0,
+          "trajectory_count": 7
+        },
+        "1": {
+          "covered_trajectory_count": 6,
+          "empirical_trajectory_coverage": 0.8571428571428571,
+          "trajectory_count": 7
+        }
+      },
+      "trajectory_count": 14
+    },
+    "DLO5": {
+      "covered_trajectory_count": 13,
+      "empirical_trajectory_coverage": 0.9285714285714286,
+      "per_trajectory": [
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.2369419679258469,
+          "trajectory": "18.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.26516955929664493,
+          "trajectory": "3.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.3069322071741583,
+          "trajectory": "31.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.2130162659406558,
+          "trajectory": "32.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.23203878364329555,
+          "trajectory": "33.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.22792861417403767,
+          "trajectory": "46.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3730614294695016,
+          "route": 0,
+          "score": -0.026307049967583374,
+          "trajectory": "56.pkl"
+        },
+        {
+          "covered": false,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.7230149079537878,
+          "trajectory": "58.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.2135508066963209,
+          "trajectory": "6.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3730614294695016,
+          "route": 0,
+          "score": 0.06848859023752407,
+          "trajectory": "72.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.23650259857090875,
+          "trajectory": "82.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.1937459762134486,
+          "trajectory": "85.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.5377593311737604,
+          "route": 1,
+          "score": 0.16435534741550695,
+          "trajectory": "9.pkl"
+        },
+        {
+          "covered": true,
+          "radius": 0.3730614294695016,
+          "route": 0,
+          "score": 0.01706749308705882,
+          "trajectory": "99.pkl"
+        }
+      ],
+      "routes": {
+        "0": {
+          "covered_trajectory_count": 3,
+          "empirical_trajectory_coverage": 1.0,
+          "trajectory_count": 3
+        },
+        "1": {
+          "covered_trajectory_count": 10,
+          "empirical_trajectory_coverage": 0.9090909090909091,
+          "trajectory_count": 11
+        }
+      },
+      "trajectory_count": 14
+    }
+  },
+  "primary": {
+    "action_counts": [
+      443,
+      61,
+      28
+    ],
+    "budget_violation_count_nonfallback": 0,
+    "budget_violation_fraction_nonfallback": 0.0,
+    "decision_count": 532,
+    "fallback_rmse_mm": 34.48240949801812,
+    "harmful_fraction_nonfallback": 0.02247191011235955,
+    "harmful_nonfallback_count": 2,
+    "maximum_trajectory_ratio": 1.0,
+    "mean_realized_regret": 0.4490488873801935,
+    "nonfallback_count": 89,
+    "nonfallback_fraction": 0.16729323308270677,
+    "p95_realized_regret": 0.8168376445881794,
+    "rmse_mm": 33.45935850468886,
+    "rmse_ratio_to_fallback": 0.9703312208101913,
+    "rmse_reduction": 0.029668779189808703,
+    "trajectory_budget_violation_count": 0,
+    "trajectory_budget_violation_fraction": 0.0,
+    "trajectory_improvement_ci95": [
+      0.01310765568435859,
+      0.05461030343415616
+    ],
+    "trajectory_improvement_mean": 0.032208744261007706
+  },
+  "primary_miscoverage": 0.1,
+  "primary_nominal_trajectory_coverage": 0.9,
+  "primary_regret_budget": 0.5,
+  "run_key": "official-dlo45-crossfit-conformal-regret-envelope-20260902-v2",
+  "schema_version": 2,
+  "status": "complete",
+  "target_route_counts": {
+    "DLO4": {
+      "0": 7,
+      "1": 7
+    },
+    "DLO5": {
+      "0": 3,
+      "1": 11
+    }
+  }
+}
