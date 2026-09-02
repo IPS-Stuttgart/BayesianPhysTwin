@@ -1,0 +1,179 @@
+name: Hierarchical missing-physics DLO4/DLO5 target plan v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_dlo45_target_plan_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-dlo45-target-plan-v1
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTHORIZATION: evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json
+      CENSUS: evidence/hierarchical_missing_physics/dlo45_artifact_census_v1/result.json
+      CENSUS_RECEIPT: evidence/hierarchical_missing_physics/dlo45_artifact_census_v1/receipt.json
+      SOURCE_PLAN: evidence/hierarchical_missing_physics/source_panel_plan_v1/result.json
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/dlo45_target_plan_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate value-blind inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in "$AUTHORIZATION" "$CENSUS" "$CENSUS_RECEIPT" "$SOURCE_PLAN"; do
+            test -f "$path"
+            python3 -m json.tool "$path" >/dev/null
+          done
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_dlo45_target_plan_v1.json >/dev/null
+          python3 -m py_compile scripts/science/plan_dlo45_hierarchical_target.py
+          CENSUS="$CENSUS" RECEIPT="$CENSUS_RECEIPT" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          census_path = Path(os.environ["CENSUS"])
+          census = json.loads(census_path.read_text(encoding="utf-8"))
+          receipt = json.loads(Path(os.environ["RECEIPT"]).read_text(encoding="utf-8"))
+          if hashlib.sha256(census_path.read_bytes()).hexdigest() != receipt["result_sha256"]:
+              raise SystemExit("target-census receipt mismatch")
+          if census["census_id"] != receipt["census_id"]:
+              raise SystemExit("target-census ID mismatch")
+          if receipt["target_numeric_values_loaded"] is not False:
+              raise SystemExit("target numerical values were loaded before planning")
+          if receipt["target_scores_parsed"] is not False:
+              raise SystemExit("target scores were parsed before planning")
+          if receipt["target_performance_metric_computed"] is not False:
+              raise SystemExit("target performance was computed before planning")
+          PY
+
+      - name: Freeze DLO4/DLO5 carrier mapping from headers only
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hmp-dlo45-target-plan"
+          mkdir -p "$work"
+          output="$work/result.json"
+          python3 scripts/science/plan_dlo45_hierarchical_target.py \
+            --census "$CENSUS" \
+            --authorization "$AUTHORIZATION" \
+            --source-plan "$SOURCE_PLAN" \
+            --output "$output" \
+            | tee "$work/summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          forbidden_true = (
+              "target_numerical_values_loaded",
+              "target_scores_parsed",
+              "target_performance_metric_computed",
+              "source_semantic_vocabulary_changed",
+              "source_residual_mode_changed",
+              "source_group_selection_changed",
+              "source_coefficients_changed",
+              "ambiguous_target_carrier_auto_selected",
+          )
+          if any(boundary[key] is not False for key in forbidden_true):
+              raise SystemExit("target planner crossed a frozen boundary")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+              stream.write(f"result={path}\n")
+              stream.write(
+                  f"ready={'true' if value['ready_for_prediction_seal'] else 'false'}\n"
+              )
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Value-blind DLO4/DLO5 target plan\n\n")
+              summary.write(f"Plan ID: `{value['plan_id']}`\n\n")
+              summary.write(f"Ready for prediction seal: `{value['ready_for_prediction_seal']}`\n\n")
+              summary.write(f"Source residual mode retained: `{value['required_residual_mode_from_source']}`\n\n")
+              summary.write("| DLO | Options | Top | Runner-up | Margin | Complete | Decision |\n")
+              summary.write("|---|---:|---:|---:|---:|---:|---|\n")
+              for dlo, decision in sorted(value["decisions"].items()):
+                  summary.write(
+                      f"| {dlo} | {decision['candidate_count']} | "
+                      f"{decision['top_score']} | {decision['runner_up_score']} | "
+                      f"{decision['score_margin']} | {decision['structurally_complete']} | "
+                      f"{decision['reason']} |\n"
+                  )
+          PY
+
+      - name: Publish positive or negative target plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.plan.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["RESULT"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          value = json.loads(result_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-target-plan-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "plan_id": value["plan_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "authorization_id": value["authorization_id"],
+              "source_model_id": value["source_model_id"],
+              "target_census_id": value["target_census_id"],
+              "ready_for_prediction_seal": value["ready_for_prediction_seal"],
+              "decisions": value["decisions"],
+              "target_numerical_values_loaded": False,
+              "target_performance_metric_computed": False,
+              "claim_scope": "value-blind target carrier planning"
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical target plan already committed."
+          else
+            git commit -m "Record value-blind DLO4/DLO5 target plan"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload target-plan evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-dlo45-target-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hmp-dlo45-target-plan/
+            evidence/hierarchical_missing_physics/dlo45_target_plan_v1/
+          if-no-files-found: error
+          retention-days: 90
