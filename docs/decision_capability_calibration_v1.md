@@ -118,6 +118,13 @@ irrelevant.
 Frames, windows, task points, and actions inside one physical group are not
 independent calibration observations.
 
+## Review integration
+
+The permanent pull-request workflow regenerates both the structural atlas and
+the statistical study at the exact reviewed merge revision. Retained result
+files must therefore match the code that would enter `main`, rather than only a
+stale branch-head environment.
+
 ## Claim boundary
 
 The correction is finite-sample marginal only under exchangeability of complete
