@@ -1,0 +1,99 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Validate and retain Transport4D confirmation design
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-confirmation-design-validate-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: transport4d-confirmation-design-validate-once
+  cancel-in-progress: false
+
+jobs:
+  validate-and-retain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact reviewed branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Rebase onto the current branch tip
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin research/transport4d-tiered-public-v1
+          git reset --hard origin/research/transport4d-tiered-public-v1
+
+      - name: Validate target-closed design and exact statistical thresholds
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            scripts/science/validate_transport4d_deform360_confirmation_design_v1.py
+          rm -rf evidence/transport4d_deform360_confirmation_design_v1
+          mkdir -p evidence/transport4d_deform360_confirmation_design_v1
+          python scripts/science/validate_transport4d_deform360_confirmation_design_v1.py \
+            --design protocols/transport4d_deform360_confirmation_design_v1.json \
+            --reserve evidence/transport4d_deform360_reserve_v1/result.json \
+            --support evidence/transport4d_deform360_support_v1/result.json \
+            --output-json evidence/transport4d_deform360_confirmation_design_v1/result.json \
+            --output-report evidence/transport4d_deform360_confirmation_design_v1/report.md
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("evidence/transport4d_deform360_confirmation_design_v1/result.json")
+          value = json.loads(path.read_text(encoding="utf-8"))
+          assert value["status"] == "confirmation-design-valid-and-target-closed"
+          assert value["supported_calibration_object_count"] == 15
+          assert value["supported_confirmation_object_count"] == 33
+          assert value["minimum_zero_harm_accepts_for_95pct_upper_below_10pct"] == 29
+          assert value["minimum_strict_wins_for_one_sided_33_object_sign_test"] == 22
+          assert value["confirmation_numeric_payload_opened"] is False
+          assert value["confirmation_authorized"] is False
+          assert value["paper_claim_authorized"] is False
+          PY
+          cat > evidence/transport4d_deform360_confirmation_design_v1/README.md <<'EOF'
+          # Frozen Transport4D confirmation design
+
+          This compact evidence validates the public Deform360 33-object
+          confirmation roster, target-closed information order, tier hierarchy,
+          joint prediction seal, and object-level statistical thresholds. It
+          opens no confirmation numerical payload and grants no authorization.
+          EOF
+          git diff --check
+
+      - name: Retain validation and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f .github/workflows/transport4d-confirmation-design-validate-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            protocols/transport4d_deform360_confirmation_design_v1.json \
+            scripts/science/validate_transport4d_deform360_confirmation_design_v1.py \
+            docs/transport4d_deform360_confirmation_design_v1.md \
+            evidence/transport4d_deform360_confirmation_design_v1 \
+            .github/workflows/transport4d-confirmation-design-validate-once.yml
+          git diff --cached --check
+          git commit -m "Retain validated Transport4D Deform360 confirmation design"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:research/transport4d-tiered-public-v1; then
+              exit 0
+            fi
+            git fetch origin research/transport4d-tiered-public-v1
+            git rebase origin/research/transport4d-tiered-public-v1
+          done
+          exit 1

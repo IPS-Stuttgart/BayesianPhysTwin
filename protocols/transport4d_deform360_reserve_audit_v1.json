@@ -1,0 +1,65 @@
+{
+  "additional_protected_object_ids": [
+    "085-scarf-cloth",
+    "170-spider",
+    "171-penguin"
+  ],
+  "claim_boundary": "This protocol reserves public object namespaces and a calibration/confirmation split using metadata only. It does not establish carrier completeness, authorize any numeric target payload, validate a transport tier, create a fresh-global dataset, or authorize a paper, deployment, or safety claim.",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "future_carrier_qualification": {
+    "carrier_identity_and_file_structure_only": true,
+    "confirmation_numeric_access_requires_separate_reviewed_protocol": true,
+    "metadata_split_must_remain_fixed": true,
+    "numeric_payload_may_not_select_support": true,
+    "replacement_allowed": false,
+    "support_negative_objects_retained": true
+  },
+  "information_boundary": {
+    "camera_pixel_opened": false,
+    "confirmation_authorized": false,
+    "directory_names_may_open": true,
+    "geometry_or_point_cloud_opened": false,
+    "metadata_json_may_open": true,
+    "paper_claim_authorized": false,
+    "robot_numeric_payload_opened": false,
+    "tactile_numeric_payload_opened": false,
+    "target_outcome_opened": false
+  },
+  "protocol_id": "a7d5f520ae3e4761452476af7af57fa023aea031114aa0239c2690bb531407c8",
+  "reservation": {
+    "include_every_remaining_metadata_object": true,
+    "maximum_metadata_bytes": 2000000,
+    "minimum_calibration_objects": 15,
+    "minimum_confirmation_objects": 29,
+    "preferred_calibration_fraction": 0.3333333333333333,
+    "replacement_allowed": false,
+    "split_changes_after_metadata_access_allowed": false,
+    "split_rule": "sha256-ranked-first-calibration-remainder-confirmation-v1",
+    "split_salt": "transport4d-deform360-public-reserve-v1-20260902"
+  },
+  "schema": "bayesian-phystwin.transport4d_deform360_reserve_protocol",
+  "schema_version": 1,
+  "status": "frozen-before-reserve-metadata-access",
+  "upstream_bindings": {
+    "action_kernel_v3": {
+      "path": "protocols/deform360_action_kernel_v3.json",
+      "protocol_id": "deform360-action-kernel-development-v3"
+    },
+    "causal4d_deform360_holdings_v1": {
+      "additional_protected_object_ids": [
+        "085-scarf-cloth",
+        "170-spider",
+        "171-penguin"
+      ],
+      "git_blob_sha1": "5cc7832ad61d7933fb3860463e920d918e687eda",
+      "path": "configs/causal4d_public/deform360_gpuserver6000_holdings_v1.json",
+      "repository": "IPS-Stuttgart/Causal4D",
+      "revision": "e071e3c14e3e318ccf20c2206c3640b8de496eff"
+    },
+    "untouched_confirmation_v5": {
+      "eligible_object_count": 92,
+      "path": "protocols/deform360_untouched_confirmation_v5.json",
+      "protocol_id": "deform360-study-relative-untouched-action-kernel-confirmation-v5"
+    }
+  }
+}

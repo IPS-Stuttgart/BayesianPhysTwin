@@ -1,0 +1,487 @@
+{
+  "case_count": 7,
+  "cases": [
+    {
+      "belief_transport_only": false,
+      "case": "same-object-cross-backend",
+      "certificate_id": "a79754ca46632efb3b67f57db95f73e596bca60519ad245b113d96566472aed7",
+      "expected_tier": "exact_coefficients",
+      "selected_action": "execute",
+      "selected_tier": "exact_coefficients",
+      "tier_evaluations": [
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "7dbe856427b221220d991a7729e90c55a401d2bb782e5b722c695aa02f29e943",
+          "failed_checks": [],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "mean-transport-and-action-certified",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": true,
+          "selected": true,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "1cfac719c965b35a0b9f954fa68ed559a16d493fd19895fed661a9728bc1765b",
+          "failed_checks": [],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "mean-transport-and-action-certified",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": true,
+          "selected": false,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "low_dimensional_correction"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "61389f483d2446ec2ff1f02402796f26dccc35684732d0202b7c6b62e2481283",
+          "failed_checks": [],
+          "minimax_regret_upper": null,
+          "reason_code": "procedure-only-refit-required",
+          "robust_regret_upper_by_action": [],
+          "selectable": true,
+          "selected": false,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "procedure_only"
+        }
+      ],
+      "used_exact_fallback": false
+    },
+    {
+      "belief_transport_only": false,
+      "case": "known-coordinate-pushforward",
+      "certificate_id": "a48a977c4efdf310508a870a231dafd3b7eb3c0ceb5dac0f821d5f36dd57fc34",
+      "expected_tier": "query_identifiable_effect",
+      "selected_action": "execute",
+      "selected_tier": "query_identifiable_effect",
+      "tier_evaluations": [
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "dd8a6dd608580d60f833341625a0ab1bb697233fafa3695bdca8cbd941a51413",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "cb79cec1a8a369c4c66d95280d4f17320ee2e32f9689f1c97558b53b209f3b5c",
+          "failed_checks": [],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "mean-transport-and-action-certified",
+          "robust_regret_upper_by_action": [
+            1.0,
+            0.0
+          ],
+          "selectable": true,
+          "selected": true,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "query_identifiable_effect"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "99144ae11fee7f581fcd3fed73b3ea7c1548f44a3d01cc2d88e55645ab5acbc5",
+          "failed_checks": [],
+          "minimax_regret_upper": null,
+          "reason_code": "procedure-only-refit-required",
+          "robust_regret_upper_by_action": [],
+          "selectable": true,
+          "selected": false,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "procedure_only"
+        }
+      ],
+      "used_exact_fallback": false
+    },
+    {
+      "belief_transport_only": false,
+      "case": "amplitude-recalibration",
+      "certificate_id": "17851339a77f1c458af73849c673b584ca676b876c8c717daf6c792a873a5100",
+      "expected_tier": "low_dimensional_correction",
+      "selected_action": "execute",
+      "selected_tier": "low_dimensional_correction",
+      "tier_evaluations": [
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "d9372ae2d6f1e14207755e68e5b85a2e8710f4588be1ceff104ea1a80e8c6a21",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "cb737486c169bee9f6fade5b68aabb23e954977dd09587f3d6ac9eb9faac3508",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "query_identifiable_effect"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "e08955e32ef2fd67a34e6c784b74e35ab42015ed33cdba45fd6b2fd482d53ae7",
+          "failed_checks": [],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "mean-transport-and-action-certified",
+          "robust_regret_upper_by_action": [
+            0.9500000000000001,
+            0.0
+          ],
+          "selectable": true,
+          "selected": true,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "low_dimensional_correction"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "e38afe36232d8e12b3a94848debfcaefd4a4fe8188f0868cd4df8c5acd4afbba",
+          "failed_checks": [],
+          "minimax_regret_upper": null,
+          "reason_code": "procedure-only-refit-required",
+          "robust_regret_upper_by_action": [],
+          "selectable": true,
+          "selected": false,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "procedure_only"
+        }
+      ],
+      "used_exact_fallback": false
+    },
+    {
+      "belief_transport_only": true,
+      "case": "mean-unsupported-dependence-retained",
+      "certificate_id": "90367fe0c272305af73067e20e9158b8d9975df7af73bcfdbfdac5da26c16956",
+      "expected_tier": "uncertainty_only",
+      "selected_action": "hold",
+      "selected_tier": "uncertainty_only",
+      "tier_evaluations": [
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "7b1abe35527c9f17b3c4f4a7a7576a1a3526df88ffc8c50bf1ce8f76853c2323",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "051d634e4f5e7539f7d38b55310fb3e486757a472573fe6c26ecca7f7f0065cb",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "low_dimensional_correction"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "db16fe667d5bf7376c3e5e0915439b1e80a84c44ecb52f4cfe1b11cd6966b7e0",
+          "failed_checks": [],
+          "minimax_regret_upper": null,
+          "reason_code": "belief-only-transport-eligible",
+          "robust_regret_upper_by_action": [],
+          "selectable": true,
+          "selected": true,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "uncertainty_only"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "6d5a6454b069eacf666b155e4667bf5f81aed1740e7aa7e34309d3d5c778cd43",
+          "failed_checks": [],
+          "minimax_regret_upper": null,
+          "reason_code": "procedure-only-refit-required",
+          "robust_regret_upper_by_action": [],
+          "selectable": true,
+          "selected": false,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "procedure_only"
+        }
+      ],
+      "used_exact_fallback": true
+    },
+    {
+      "belief_transport_only": false,
+      "case": "cross-object-coefficient-failure",
+      "certificate_id": "6c4eae6eb1340480308f2f9b9677d07dfd4ecf82450fe2546d94d31e6b769cae",
+      "expected_tier": "procedure_only",
+      "selected_action": "hold",
+      "selected_tier": "procedure_only",
+      "tier_evaluations": [
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "f5021dd0c56898ff007b5692ff47e2df2755f540abc04ece3ba37f3db180a531",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "7da3236031d633fccabbcceb00dbf60b2698d57036a068db80e15e34af06e22b",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "low_dimensional_correction"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "49b754083dabac71e4025a4001e439fb6439987ae778fb1fe93dc6daf45bc873",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": null,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "uncertainty_only"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "a2e037792ef6efd886929c755328b488b5de14925f0b3c2b52f7a343df0bbd56",
+          "failed_checks": [],
+          "minimax_regret_upper": null,
+          "reason_code": "procedure-only-refit-required",
+          "robust_regret_upper_by_action": [],
+          "selectable": true,
+          "selected": true,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "procedure_only"
+        }
+      ],
+      "used_exact_fallback": true
+    },
+    {
+      "belief_transport_only": false,
+      "case": "query-conditional-descent",
+      "certificate_id": "8bfc7a6bc6b6a32fc076c89e100e9388512e6b142afe3fbf9cc4dc060c24da05",
+      "expected_tier": "query_identifiable_effect",
+      "selected_action": "execute",
+      "selected_tier": "query_identifiable_effect",
+      "tier_evaluations": [
+        {
+          "action_certified": false,
+          "action_name": "execute",
+          "candidate_id": "80f92ee20f9f21d5db837c6c785284150a65df6bff95e20d09d67791971abe2e",
+          "failed_checks": [],
+          "minimax_regret_upper": 0.15000000000000002,
+          "reason_code": "regret-budget-exceeded",
+          "robust_regret_upper_by_action": [
+            0.25,
+            0.15000000000000002
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "73421115c487d30e5dbce22165ba796e22770397b06028d4343aad3541239161",
+          "failed_checks": [],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "mean-transport-and-action-certified",
+          "robust_regret_upper_by_action": [
+            0.9,
+            0.0
+          ],
+          "selectable": true,
+          "selected": true,
+          "structurally_eligible": true,
+          "target_outcome_blind": true,
+          "tier": "query_identifiable_effect"
+        }
+      ],
+      "used_exact_fallback": false
+    },
+    {
+      "belief_transport_only": false,
+      "case": "no-supported-transport",
+      "certificate_id": "5dd43aa94fe5ba3d56f3479edd920f369f088d5a9da8f8bb36b3124234cc7c14",
+      "expected_tier": null,
+      "selected_action": "hold",
+      "selected_tier": null,
+      "tier_evaluations": [
+        {
+          "action_certified": true,
+          "action_name": "execute",
+          "candidate_id": "9b07acd301619ea2e979e1f2a1706e344e698417884da225da1efad958f1f17c",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": 0.0,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [
+            1.1,
+            0.0
+          ],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "exact_coefficients"
+        },
+        {
+          "action_certified": false,
+          "action_name": null,
+          "candidate_id": "e9057686e478f71c9c232bccd3c9e095edf09470194d5f7da1abf51fdde36960",
+          "failed_checks": [
+            "family_or_transform_adequate",
+            "source_gate",
+            "target_query_supported"
+          ],
+          "minimax_regret_upper": null,
+          "reason_code": "registered-check-failed",
+          "robust_regret_upper_by_action": [],
+          "selectable": false,
+          "selected": false,
+          "structurally_eligible": false,
+          "target_outcome_blind": true,
+          "tier": "procedure_only"
+        }
+      ],
+      "used_exact_fallback": true
+    }
+  ],
+  "checks": {
+    "all_expected_tiers_selected": true,
+    "belief_and_procedure_cases_return_exact_fallback": true,
+    "query_conditional_descent_rejects_uncertain_exact_tier": true,
+    "unsupported_case_selects_no_transport_tier": true
+  },
+  "claim": "A physical twin can select the strongest source-justified query-conditional correction tier, descend when a more specific tier does not certify the pending action, and preserve exact fallback for uncertainty-only, procedure-only, and unsupported cases.",
+  "claim_boundary": "The certificate is exact only for the supplied tier candidates, evidence checks, query effects, Euclidean error radii, affine action losses, and regret tolerance. It does not validate a physical transformation, infer an error radius, establish exchangeability, prove nonlinear closure, authorize target-data access, certify deployment safety, or establish state of the art.",
+  "decision": "controlled-tier-separation-passed",
+  "expected_selection_count": 7,
+  "public_data_result": false,
+  "result_id": "b6ad44297e9370815fc97821934bd69602b01eeadae6256d5810d6fb4f7e4193",
+  "schema": "bayesian-phystwin/transport4d-tiered-controlled-result-v1",
+  "schema_version": 1,
+  "target_outcomes_used": false
+}

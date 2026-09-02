@@ -1,0 +1,167 @@
+name: Recover and trigger Transport4D calibration
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-calibration-trigger-recovery.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: transport4d-calibration-trigger-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact recovery revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Establish one clean durable stage and add-only authorization
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: research/transport4d-tiered-public-v1
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REPOSITORY}" = IPS-Stuttgart/BayesianPhysTwin
+          test "${GITHUB_REF}" = refs/heads/research/transport4d-tiered-public-v1
+
+          git fetch origin "${BRANCH}"
+          git reset --hard "origin/${BRANCH}"
+
+          recovery=.github/workflows/transport4d-calibration-trigger-recovery.yml
+          runner=scripts/science/run_transport4d_deform360_calibration_v1.py
+          protocol=protocols/transport4d_deform360_calibration_v1.json
+
+          # A retained numerical result is terminal; never generate a duplicate run.
+          if find evidence results -type f 2>/dev/null \
+              | grep -qE 'transport4d.*deform360.*calibration.*(result|manifest).*json'; then
+            git rm -f "${recovery}"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Remove completed Transport4D calibration recovery"
+            git push origin HEAD:"${BRANCH}"
+            exit 0
+          fi
+
+          if [[ ! -f "${runner}" || ! -f "${protocol}" ]]; then
+            test -f .github/transport4d_calibration_bootstrap.py
+            python .github/transport4d_calibration_bootstrap.py
+          fi
+          test -f "${runner}"
+          test -f "${protocol}"
+          python -m py_compile "${runner}"
+
+          mapfile -t workflows < <(
+            find .github/workflows -maxdepth 1 -type f \
+              \( -iname '*transport4d*calibration*.yml' -o -iname '*transport4d*calibration*.yaml' \) \
+              ! -name '*bootstrap*' ! -name '*recovery*' | sort
+          )
+          test "${#workflows[@]}" -eq 1
+          calibration_workflow="${workflows[0]}"
+
+          mapfile -t requests < <(
+            find .github/requests -maxdepth 1 -type f \
+              -iname '*transport4d*calibration*.json' | sort
+          )
+          test "${#requests[@]}" -eq 1
+          request="${requests[0]}"
+          cp "${request}" "${RUNNER_TEMP}/transport4d-calibration-request.json"
+
+          # If an active or successful run already exists, do not duplicate it.
+          workflow_name="$(basename "${calibration_workflow}")"
+          active="$({ gh run list \
+            --repo "${GITHUB_REPOSITORY}" \
+            --workflow "${workflow_name}" \
+            --branch "${BRANCH}" \
+            --limit 20 \
+            --json status,conclusion \
+            --jq '[.[] | select(.status == "queued" or .status == "in_progress" or .conclusion == "success")] | length'; } 2>/dev/null || echo 0)"
+          if [[ "${active}" =~ ^[1-9][0-9]*$ ]]; then
+            git rm -f "${recovery}"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Remove redundant Transport4D calibration recovery"
+            git push origin HEAD:"${BRANCH}"
+            exit 0
+          fi
+
+          # Commit a durable stage with the request absent. This makes the next
+          # request commit an unambiguous add-only authorization.
+          rm -f "${request}"
+          rm -rf \
+            .github/transport4d_calibration_bootstrap.py \
+            .github/transport4d_calibration_bundle \
+            .github/transport4d_calibration_bundle_b64 \
+            .github/workflows/transport4d-calibration-bootstrap.yml \
+            .github/workflows/transport4d-calibration-bootstrap-minimal.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "Establish durable frozen Transport4D calibration stage"
+            git push origin HEAD:"${BRANCH}"
+          fi
+
+          source_revision="$(git rev-parse HEAD)"
+          SOURCE_REVISION="${source_revision}" \
+          REQUEST_SOURCE="${RUNNER_TEMP}/transport4d-calibration-request.json" \
+          REQUEST_TARGET="${request}" \
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source = Path(os.environ["REQUEST_SOURCE"])
+          target = Path(os.environ["REQUEST_TARGET"])
+          value = json.loads(source.read_text(encoding="utf-8"))
+          if "expected_source_revision" in value:
+              value["expected_source_revision"] = os.environ["SOURCE_REVISION"]
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(
+              json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          git add "${request}"
+          mapfile -t changed < <(git diff --cached --name-status)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${request}"
+          git commit -m "Authorize frozen Transport4D Deform360 calibration"
+          authorization_sha="$(git rev-parse HEAD)"
+          git push origin HEAD:"${BRANCH}"
+
+          # Remove only this recovery workflow after the exact authorization
+          # commit has been published. The calibration run remains bound to that
+          # immutable commit even though the branch advances afterward.
+          git rm -f "${recovery}"
+          git commit -m "Remove Transport4D calibration trigger recovery"
+          git push origin HEAD:"${BRANCH}"
+
+          {
+            echo "### Transport4D calibration recovery"
+            echo
+            echo "- Durable source revision: \`${source_revision}\`"
+            echo "- Add-only authorization revision: \`${authorization_sha}\`"
+            echo "- Workflow: \`${calibration_workflow}\`"
+            echo "- Request: \`${request}\`"
+            echo "- Confirmation numerical access changed: \`false\`"
+          } >> "${GITHUB_STEP_SUMMARY}"

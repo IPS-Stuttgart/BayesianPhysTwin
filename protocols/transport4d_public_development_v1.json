@@ -1,0 +1,116 @@
+{
+  "claim_boundary": "The matrix establishes a public real-data motivation and strict positive/negative tier separation only. Every numerical outcome in this protocol was available before Transport4D was designed. It does not validate the tier selector on an untouched target, establish a harmful-transfer probability, prove cross-object transport, or authorize a paper, deployment, or safety claim.",
+  "evidence": {
+    "cross_object_operator": {
+      "exact_coefficients": {
+        "baseline_mean_l1_m": 0.00900246819861503,
+        "candidate_mean_l1_m": 0.010495986496749616,
+        "case_count": 28,
+        "losses": 28,
+        "maximum_case_ratio": 1.577831130359562,
+        "relative_improvement": -0.16590098017389865,
+        "supported": false,
+        "wins": 0
+      },
+      "source_object": "DEFORM DLO3",
+      "target_objects": [
+        "DEFORM DLO4",
+        "DEFORM DLO5"
+      ]
+    },
+    "hierarchical_transfer_artifact": {
+      "artifact_id": 9811886089,
+      "artifact_sha256": "bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0",
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "workflow_run_id": 33536420739
+    },
+    "matching_object_procedure": {
+      "prospective_target": {
+        "both_frozen_gates_passed": true,
+        "case_count": 28,
+        "losses": 0,
+        "relative_improvement": 0.06803465047699286,
+        "target_objects": [
+          "DEFORM DLO4",
+          "DEFORM DLO5"
+        ],
+        "wins": 28
+      },
+      "source_replication": {
+        "case_count": 16,
+        "losses": 0,
+        "relative_improvement": 0.05858410156919258,
+        "wins": 16
+      }
+    },
+    "same_object_cross_backend": {
+      "exact_coefficients": {
+        "baseline_mean_l1_m": 0.02285473015230799,
+        "candidate_mean_l1_m": 0.02217262067460067,
+        "case_count": 8,
+        "losses": 0,
+        "maximum_case_ratio": 0.9831173634554657,
+        "relative_improvement": 0.029845440010081936,
+        "supported": true,
+        "wins": 8
+      },
+      "one_scalar": {
+        "baseline_mean_l1_m": 0.02285473015230799,
+        "candidate_mean_l1_m": 0.022340514368693557,
+        "case_count": 8,
+        "losses": 2,
+        "maximum_case_ratio": 1.0894424442431108,
+        "median_alignment_cosine": 0.3707489826509323,
+        "median_scalar": 2.4653834557234795,
+        "positive_alignment_cases": 8,
+        "relative_improvement": 0.022499315467196745,
+        "supported": true,
+        "wins": 6
+      },
+      "source_backend": "DEFORM",
+      "source_object": "DEFORM DLO3",
+      "target_backend": "PyElastica"
+    },
+    "uncertainty_only_motivation": {
+      "artifact_id": 9811194776,
+      "artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+      "cross_domain_transport_confirmed": false,
+      "diagonal_brier": 0.1743,
+      "diagonal_decision_loss": 0.1195,
+      "full_brier": 0.1633,
+      "full_decision_loss": 0.1076,
+      "maximum_mean_mismatch": 2.78e-16,
+      "object_count": 92,
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "scrambled_brier": 0.1747,
+      "scrambled_decision_loss": 0.1198,
+      "workflow_run_id": 33528032875
+    }
+  },
+  "information_boundary": {
+    "all_numeric_outcomes_previously_opened": true,
+    "automatic_target_access": false,
+    "fresh_confirmation_claim": false,
+    "paper_claim_authorized": false,
+    "used_only_for_method_development": true
+  },
+  "next_public_confirmation": {
+    "metadata_only_reservation_before_numeric_access": true,
+    "minimum_zero_harm_accepted_objects_for_95pct_upper_below_10pct": 29,
+    "primary_dataset": "Deform360",
+    "replacement_allowed": false,
+    "selection_unit": "physical object"
+  },
+  "protocol_id": "622bbe59fb7feef2e7f774f346fa76ce6638844025fc8bd83c902578e8c987c7",
+  "schema": "bayesian-phystwin.transport4d_public_development_protocol",
+  "schema_version": 1,
+  "status": "retrospective-development-evidence-opened",
+  "tier_order": [
+    "exact_coefficients",
+    "query_identifiable_effect",
+    "low_dimensional_correction",
+    "uncertainty_only",
+    "procedure_only"
+  ],
+  "title": "Transport4D public real-data development matrix"
+}

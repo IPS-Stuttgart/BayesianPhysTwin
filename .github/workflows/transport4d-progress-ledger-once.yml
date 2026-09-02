@@ -1,0 +1,274 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Create Transport4D progress ledger
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-progress-ledger-once.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: transport4d-progress-ledger-once
+  cancel-in-progress: false
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Await calibration and design terminal records
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: research/transport4d-tiered-public-v1
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 180); do
+            git fetch origin "${BRANCH}" >/dev/null 2>&1 || true
+            git reset --hard "origin/${BRANCH}" >/dev/null 2>&1 || true
+            calibration=evidence/transport4d_deform360_calibration_v1/manifest.json
+            design=evidence/transport4d_deform360_confirmation_design_v1/result.json
+            if [[ -f "${calibration}" && -f "${design}" ]]; then
+              break
+            fi
+            sleep 10
+          done
+
+      - name: Materialize bounded status ledger
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: research/transport4d-tiered-public-v1
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/transport4d_progress_v1
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+          from typing import Any
+
+          root = Path.cwd()
+
+          def read(path: Path) -> dict[str, Any] | None:
+              if not path.is_file():
+                  return None
+              value = json.loads(path.read_text(encoding="utf-8"))
+              return value if isinstance(value, dict) else None
+
+          calibration_path = root / "evidence/transport4d_deform360_calibration_v1/manifest.json"
+          design_path = root / "evidence/transport4d_deform360_confirmation_design_v1/result.json"
+          reserve_path = root / "evidence/transport4d_deform360_reserve_v1/manifest.json"
+          support_path = root / "evidence/transport4d_deform360_support_v1/manifest.json"
+          calibration = read(calibration_path)
+          design = read(design_path)
+          reserve = read(reserve_path)
+          support = read(support_path)
+
+          api = json.loads(
+              subprocess.check_output(
+                  [
+                      "gh",
+                      "api",
+                      "-H",
+                      "Accept: application/vnd.github+json",
+                      f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs?"
+                      f"branch={os.environ['BRANCH']}&event=push&per_page=100",
+                  ],
+                  text=True,
+              )
+          )
+          calibration_runs = []
+          for row in api.get("workflow_runs", []):
+              text = f"{row.get('name', '')} {row.get('path', '')}".lower()
+              if "transport4d" not in text or "calibration" not in text:
+                  continue
+              if any(token in text for token in ("bootstrap", "recovery", "monitor")):
+                  continue
+              calibration_runs.append(
+                  {
+                      "run_id": row.get("id"),
+                      "name": row.get("name"),
+                      "path": row.get("path"),
+                      "head_sha": row.get("head_sha"),
+                      "status": row.get("status"),
+                      "conclusion": row.get("conclusion"),
+                      "created_at": row.get("created_at"),
+                      "updated_at": row.get("updated_at"),
+                  }
+              )
+          calibration_runs.sort(key=lambda row: str(row.get("created_at")), reverse=True)
+
+          extracted = []
+          explicit_gate_values = []
+          if calibration is not None:
+              for row in calibration.get("extracted_scalars", []):
+                  if not isinstance(row, dict):
+                      continue
+                  field = str(row.get("path", ""))
+                  value = row.get("value")
+                  lower = field.lower()
+                  if any(
+                      token in lower
+                      for token in (
+                          "decision",
+                          "gate",
+                          "promotion",
+                          "selected_operating",
+                          "selected_tier",
+                          "coverage",
+                          "harm",
+                          "improvement",
+                          "gain",
+                          "regret",
+                          "fallback",
+                      )
+                  ):
+                      extracted.append(row)
+                  if "gate" in lower or "promotion" in lower:
+                      explicit_gate_values.append({"path": field, "value": value})
+
+          confirmation_closed = True
+          for value in (calibration, design, reserve, support):
+              if value is None:
+                  continue
+              for key, item in value.items():
+                  lower = str(key).lower()
+                  if "confirmation" in lower and isinstance(item, bool) and item:
+                      confirmation_closed = False
+
+          status = "calibration-terminal-record-present" if calibration else (
+              "calibration-run-observed-without-retained-terminal-record"
+              if calibration_runs
+              else "calibration-run-not-observed"
+          )
+          ledger: dict[str, Any] = {
+              "schema": "bayesian-phystwin.transport4d_progress_ledger",
+              "schema_version": 1,
+              "branch": os.environ["BRANCH"],
+              "ledger_source_head": subprocess.check_output(
+                  ["git", "rev-parse", "HEAD"], text=True
+              ).strip(),
+              "status": status,
+              "reserve": {
+                  "present": reserve is not None,
+                  "reserve_id": reserve.get("reserve_id") if reserve else None,
+                  "calibration_object_count": reserve.get("calibration_object_count") if reserve else None,
+                  "confirmation_object_count": reserve.get("confirmation_object_count") if reserve else None,
+              },
+              "carrier_support": {
+                  "present": support is not None,
+                  "support_id": support.get("support_id") if support else None,
+                  "supported_calibration_object_count": support.get("supported_calibration_object_count") if support else None,
+                  "supported_confirmation_object_count": support.get("supported_confirmation_object_count") if support else None,
+              },
+              "calibration": {
+                  "terminal_manifest_present": calibration is not None,
+                  "workflow_run_id": calibration.get("workflow_run_id") if calibration else None,
+                  "run_conclusion": calibration.get("run_conclusion") if calibration else None,
+                  "evidence_id": calibration.get("evidence_id") if calibration else None,
+                  "artifact_count": calibration.get("artifact_count") if calibration else None,
+                  "explicit_gate_values": explicit_gate_values,
+                  "decision_records": extracted[:160],
+                  "recent_runs": calibration_runs[:10],
+              },
+              "confirmation_design": {
+                  "validated_result_present": design is not None,
+                  "status": design.get("status") if design else None,
+                  "validation_id": design.get("validation_id") if design else None,
+                  "minimum_zero_harm_accepts": design.get(
+                      "minimum_zero_harm_accepts_for_95pct_upper_below_10pct"
+                  ) if design else None,
+                  "minimum_sign_test_wins": design.get(
+                      "minimum_strict_wins_for_one_sided_33_object_sign_test"
+                  ) if design else None,
+              },
+              "confirmation_numeric_access_closed": confirmation_closed,
+              "confirmation_authorized": False,
+              "paper_claim_authorized": False,
+              "next_decision": (
+                  "classify-and-bind-calibration-policy-before-any-confirmation-access"
+                  if calibration is not None
+                  else "repair-or-complete-calibration-with-confirmation-closed"
+              ),
+              "claim_boundary": (
+                  "Operational progress ledger only. It cannot authorize confirmation, "
+                  "alter a tier policy, replace an object, reinterpret a negative result, "
+                  "or establish a paper or deployment claim."
+              ),
+          }
+          encoded = json.dumps(
+              ledger, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          ledger["ledger_id"] = hashlib.sha256(encoded).hexdigest()
+          destination = root / "evidence/transport4d_progress_v1/status.json"
+          destination.write_text(
+              json.dumps(ledger, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          lines = [
+              "# Transport4D progress ledger",
+              "",
+              f"Status: **{ledger['status']}**",
+              "",
+              f"- Carrier-supported calibration objects: **{ledger['carrier_support']['supported_calibration_object_count']}**",
+              f"- Carrier-supported confirmation objects: **{ledger['carrier_support']['supported_confirmation_object_count']}**",
+              f"- Calibration terminal manifest: **{str(ledger['calibration']['terminal_manifest_present']).lower()}**",
+              f"- Calibration run conclusion: **{ledger['calibration']['run_conclusion']}**",
+              f"- Confirmation design validated: **{str(ledger['confirmation_design']['validated_result_present']).lower()}**",
+              f"- Confirmation numerical access closed: **{str(ledger['confirmation_numeric_access_closed']).lower()}**",
+              f"- Confirmation authorized: **false**",
+              f"- Ledger ID: `{ledger['ledger_id']}`",
+              "",
+              "## Calibration gate records",
+              "",
+              "| Field | Value |",
+              "|---|---|",
+          ]
+          for row in explicit_gate_values[:80]:
+              lines.append(
+                  f"| `{row['path']}` | `{json.dumps(row['value'], ensure_ascii=False)}` |"
+              )
+          lines.extend(["", f"Next: **{ledger['next_decision']}**", "", ledger["claim_boundary"], ""])
+          (root / "evidence/transport4d_progress_v1/status.md").write_text(
+              "\n".join(lines), encoding="utf-8"
+          )
+          PY
+          git diff --check
+
+      - name: Commit ledger and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f .github/workflows/transport4d-progress-ledger-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence/transport4d_progress_v1 .github/workflows/transport4d-progress-ledger-once.yml
+          git diff --cached --check
+          git commit -m "Record terminal Transport4D progress ledger"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:research/transport4d-tiered-public-v1; then
+              exit 0
+            fi
+            git fetch origin research/transport4d-tiered-public-v1
+            git rebase origin/research/transport4d-tiered-public-v1
+          done
+          exit 1
