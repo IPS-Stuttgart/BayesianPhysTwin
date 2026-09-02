@@ -210,9 +210,7 @@ def test_breakpoint_caps_fail_closed() -> None:
 
 
 def test_maximum_admissible_epsilon_covers_all_boundary_modes() -> None:
-    above_at_zero = (
-        phase._EnvelopeSegment(0.0, 1.0, 0.3, 0.0, 0),
-    )
+    above_at_zero = (phase._EnvelopeSegment(0.0, 1.0, 0.3, 0.0, 0),)
     assert math.isnan(
         phase._maximum_admissible_epsilon(
             above_at_zero,
@@ -221,18 +219,14 @@ def test_maximum_admissible_epsilon_covers_all_boundary_modes() -> None:
         )
     )
 
-    admissible_everywhere = (
-        phase._EnvelopeSegment(0.0, 0.5, 0.1, 0.1, 0),
-    )
+    admissible_everywhere = (phase._EnvelopeSegment(0.0, 0.5, 0.1, 0.1, 0),)
     assert phase._maximum_admissible_epsilon(
         admissible_everywhere,
         tolerance=0.2,
         maximum_epsilon=0.5,
     ) == pytest.approx(0.5)
 
-    crossing = (
-        phase._EnvelopeSegment(0.0, 1.0, 0.1, 0.5, 0),
-    )
+    crossing = (phase._EnvelopeSegment(0.0, 1.0, 0.1, 0.5, 0),)
     assert phase._maximum_admissible_epsilon(
         crossing,
         tolerance=0.3,
