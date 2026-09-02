@@ -1,0 +1,204 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Diagnose self-collision source domain validity once
+
+on:
+  push:
+    branches:
+      - diagnostic/self-collision-domain-validity-v1
+    paths:
+      - ".github/workflows/diagnose-self-collision-domain-validity-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    env:
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Audit every rep1 and rep2 bank rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/self-collision-domain-validity-$GITHUB_RUN_ID"
+          mkdir -p "$out"
+          OUT="$out" python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          from collections import Counter, defaultdict
+          from pathlib import Path
+
+          import numpy as np
+
+          from experiments.tracking_cloth_self_collision_selective_twin_v1.data import (
+              audit_dataset,
+              prediction_input,
+              scoring_truth,
+          )
+          from experiments.tracking_cloth_self_collision_selective_twin_v1.model import (
+              contact_rollout,
+              parameter_bank,
+              trajectory_mse,
+          )
+
+          root = Path(os.environ["DATASET_ROOT"])
+          protocol_path = Path(
+              "experiments/tracking_cloth_self_collision_selective_twin_v1/protocol.json"
+          )
+          protocol = json.loads(protocol_path.read_text())
+          cases, inventory = audit_dataset(root, protocol)
+          bank = parameter_bank(protocol)
+          nominal = tuple(float(x) for x in protocol["nominal_parameters"])
+          rows = []
+          by_parameter = defaultdict(lambda: {"valid": 0, "invalid": 0, "losses": []})
+          by_case = []
+
+          for case in [item for item in cases if item.repetition in (1, 2)]:
+              inputs = prediction_input(case, protocol)
+              truth = scoring_truth(case, inputs)
+              axis = inputs.rod_prefix[-1, 1] - inputs.rod_prefix[-1, 0]
+              den = float(np.dot(axis, axis))
+              fraction = (
+                  (inputs.cloth_prefix[-1] - inputs.rod_prefix[-1, 0]) @ axis
+              ) / den
+              closest = inputs.rod_prefix[-1, 0] + np.clip(fraction, 0.0, 1.0)[:, None] * axis
+              prefix_min_rod_distance = float(
+                  np.min(np.linalg.norm(inputs.cloth_prefix[-1] - closest, axis=1))
+              )
+              valid_count = 0
+              errors = Counter()
+              case_losses = []
+              for parameters in bank:
+                  key = "|".join(f"{value:g}" for value in parameters)
+                  record = {
+                      "case_id": case.case_id,
+                      "recording": case.path.name,
+                      "repetition": case.repetition,
+                      "material": case.material,
+                      "interaction": case.interaction,
+                      "parameters": list(parameters),
+                  }
+                  try:
+                      prediction = contact_rollout(inputs, parameters, protocol)
+                      loss = trajectory_mse(prediction, truth, inputs)
+                      displacement = float(
+                          np.max(
+                              np.linalg.norm(
+                                  prediction - inputs.cloth_prefix[0].mean(axis=0), axis=2
+                              )
+                          )
+                      )
+                      record.update(
+                          {
+                              "valid": True,
+                              "error": None,
+                              "loss_m2": loss,
+                              "max_radius_m": displacement,
+                          }
+                      )
+                      valid_count += 1
+                      case_losses.append(loss)
+                      by_parameter[key]["valid"] += 1
+                      by_parameter[key]["losses"].append(loss)
+                  except ValueError as error:
+                      message = str(error)
+                      record.update(
+                          {
+                              "valid": False,
+                              "error": message,
+                              "loss_m2": None,
+                              "max_radius_m": None,
+                          }
+                      )
+                      errors[message] += 1
+                      by_parameter[key]["invalid"] += 1
+                  rows.append(record)
+              by_case.append(
+                  {
+                      "case_id": case.case_id,
+                      "recording": case.path.name,
+                      "repetition": case.repetition,
+                      "material": case.material,
+                      "interaction": case.interaction,
+                      "sampled_dt_s": float(np.median(np.diff(inputs.times))),
+                      "sample_count": len(inputs.times),
+                      "cutoff": inputs.cutoff,
+                      "initial_diameter_m": inputs.initial_diameter_m,
+                      "prefix_min_rod_distance_m": prefix_min_rod_distance,
+                      "valid_bank_count": valid_count,
+                      "invalid_bank_count": len(bank) - valid_count,
+                      "valid_loss_min_m2": min(case_losses) if case_losses else None,
+                      "valid_loss_max_m2": max(case_losses) if case_losses else None,
+                      "errors": dict(errors),
+                  }
+              )
+
+          parameter_summary = []
+          for parameters in bank:
+              key = "|".join(f"{value:g}" for value in parameters)
+              item = by_parameter[key]
+              parameter_summary.append(
+                  {
+                      "parameters": list(parameters),
+                      "valid_cases": item["valid"],
+                      "invalid_cases": item["invalid"],
+                      "mean_valid_loss_m2": (
+                          float(np.mean(item["losses"])) if item["losses"] else None
+                      ),
+                      "is_nominal": parameters == nominal,
+                  }
+              )
+
+          summary = {
+              "schema": "bayesian-phystwin.self-collision-source-domain-diagnostic.v1",
+              "source_revision": os.environ["GITHUB_SHA"],
+              "dataset_inventory_id": inventory["inventory_id"],
+              "rep3_numeric_outcomes_read": False,
+              "audited_repetitions": [1, 2],
+              "case_count": len(by_case),
+              "bank_size": len(bank),
+              "case_summary": by_case,
+              "parameter_summary": parameter_summary,
+              "all_cases_have_valid_particle": all(
+                  item["valid_bank_count"] > 0 for item in by_case
+              ),
+              "nominal_valid_all_cases": next(
+                  item["invalid_cases"] == 0
+                  for item in parameter_summary
+                  if item["is_nominal"]
+              ),
+          }
+          output = Path(os.environ["OUT"])
+          (output / "domain_diagnostic.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n"
+          )
+          (output / "rollout_rows.json").write_text(
+              json.dumps(rows, indent=2, sort_keys=True, allow_nan=False) + "\n"
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True, allow_nan=False))
+          PY
+          echo "SC_DIAGNOSTIC=$out" >> "$GITHUB_ENV"
+      - name: Upload source-only diagnostic
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: self-collision-source-domain-diagnostic-${{ github.run_id }}
+          path: ${{ env.SC_DIAGNOSTIC }}
+          retention-days: 30
