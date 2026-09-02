@@ -1,0 +1,141 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM DLO4/DLO5 support-aware outer certificate v1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/deform-dlo45-support-aware-outer-v1.yml"
+      - "experiments/deform_dlo45_support_aware_outer_v1/**"
+      - "tests/test_deform_dlo45_support_aware_outer_v1.py"
+      - "results/science/deform_dlo45_support_aware_outer_v1/**"
+      - "experiments/deform_dlo45_decision_identifiability_v1/**"
+      - "results/science/deform_dlo45_decision_gate_audit_v1/**"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform-dlo45-support-aware-outer-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    name: Reconstruct source and replay retrospective outer gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      SOURCE_ARTIFACT_ID: "9787311310"
+      SOURCE_ARTIFACT_SHA256: "fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee"
+      TARGET_DIR: results/science/deform_dlo45_decision_gate_audit_v1/official-dlo45-gate-risk-audit-20260902-v2-support-contract
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install focused runtime
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "numpy==2.2.6" \
+            "scikit-learn==1.8.0" \
+            "pytest>=8" \
+            "ruff==0.14.14"
+
+      - name: Validate focused source
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            experiments/deform_dlo45_support_aware_outer_v1 \
+            tests/test_deform_dlo45_support_aware_outer_v1.py
+          python -m ruff format --check \
+            experiments/deform_dlo45_support_aware_outer_v1 \
+            tests/test_deform_dlo45_support_aware_outer_v1.py
+          python -m pytest -q tests/test_deform_dlo45_support_aware_outer_v1.py
+
+      - name: Download immutable parent source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/support-aware-source"
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/IPS-Stuttgart/BayesianPhysTwin/actions/artifacts/${SOURCE_ARTIFACT_ID}/zip" \
+            > "$RUNNER_TEMP/source.zip"
+          echo "${SOURCE_ARTIFACT_SHA256}  $RUNNER_TEMP/source.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/source.zip" -d "$RUNNER_TEMP/support-aware-source"
+          test -f "$RUNNER_TEMP/support-aware-source/source_result.json"
+          test -f "$RUNNER_TEMP/support-aware-source/source_model.npz"
+
+      - name: Reconstruct source-only outer gate and score held audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/support-aware-result"
+          python -m experiments.deform_dlo45_support_aware_outer_v1.run \
+            --source-dir "$RUNNER_TEMP/support-aware-source" \
+            --target-dir "$TARGET_DIR" \
+            --output "$output"
+          echo "OUTPUT_DIR=$output" >> "$GITHUB_ENV"
+          cat "$output/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify retrospective prototype parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads((Path(os.environ["OUTPUT_DIR"]) / "result.json").read_text())
+          source = result["source"]
+          inner = result["held"]["inner_finite_support_certificate"]
+          outer = result["held"]["outer_support_gate_plus_inner_certificate"]
+          negative = result["strict_static_conformal_negative_control"]
+
+          assert source["complete_trajectory_count"] == 112
+          assert source["decision_count"] == 2128
+          assert source["inner_nonfallback_count"] == 332
+          assert 0.963 <= source["grouped_cross_validated_auc"] <= 0.965
+          assert source["source_selected_count"] == 161
+          assert source["source_block_bootstrap_upper_095"] <= 0.05
+
+          assert 0.932 <= result["held_discrimination_auc_descriptive_only"] <= 0.935
+          assert inner["selected_count"] == 82
+          assert inner["support_bound_violation_count"] == 45
+          assert inner["regret_tolerance_violation_count"] == 44
+          assert inner["harmful_count"] == 3
+
+          assert outer["selected_count"] == 27
+          assert outer["support_bound_violation_count"] == 2
+          assert outer["regret_tolerance_violation_count"] == 2
+          assert outer["harmful_count"] == 1
+          assert outer["normalized_regret_reduction_vs_fallback"] > 0.05
+          assert outer["fraction_of_inner_nonfallback_retained"] > 0.32
+          assert negative["held_accepted_count"] == 0
+          assert "Retrospective" in result["claim_boundary"]
+          PY
+
+      - name: Upload compact replay evidence
+        if: always() && env.OUTPUT_DIR != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-support-aware-outer-v1-${{ github.run_id }}
+          path: |
+            ${{ env.OUTPUT_DIR }}/result.json
+            ${{ env.OUTPUT_DIR }}/report.md
+          if-no-files-found: error
+          retention-days: 90
