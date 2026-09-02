@@ -51,7 +51,7 @@ jobs:
           persist-credentials: true
           clean: true
 
-      - name: Materialize payload, remove bootstrap data, and restore this workflow
+      - name: Materialize payload and retire bootstrap data
         shell: bash
         env:
           EXPECTED_PAYLOAD_SHA256: 8e02b8b6d016769a5bd1cd2fa64039849d28604914cfa66b3ea6605b57c4ed06
@@ -66,7 +66,8 @@ jobs:
           from pathlib import Path
 
           root = Path("ops/bootstrap/active-decision")
-          chunks = [root / f"chunk-{index:02d}.txt" for index in range(8)]
+          chunks = [root / f"chunk-{index:02d}.txt" for index in range(7)]
+          chunks += [root / f"chunk-07-part-{index:02d}.txt" for index in range(4)]
           missing = [str(path) for path in chunks if not path.is_file()]
           if missing:
               raise SystemExit(f"missing payload chunks: {missing}")
@@ -82,10 +83,10 @@ jobs:
                       raise SystemExit(f"unsafe payload member: {member.filename}")
               archive.extractall(Path.cwd())
           PY
+          rm -f .github/workflows/active-decision-acquisition-v1.yml
           git rm -r ops/bootstrap/active-decision
-          git checkout HEAD^ -- .github/workflows/changed-python-preflight.yml
+          git checkout origin/main -- .github/workflows/changed-python-preflight.yml
           git add \
-            .github/workflows/active-decision-acquisition-v1.yml \
             .github/workflows/changed-python-preflight.yml \
             docs/active-decision-acquisition-v1.md \
             experiments/active_decision_acquisition_v1/run.py \
