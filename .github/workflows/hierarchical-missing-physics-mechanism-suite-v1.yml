@@ -1,0 +1,154 @@
+name: Hierarchical missing-physics mechanism suite v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_mechanism_suite_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-mechanism-suite-v1
+  cancel-in-progress: false
+
+jobs:
+  mechanism-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/mechanism_suite_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Install bounded dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input \
+            numpy==2.2.6 pytest==8.3.5
+
+      - name: Run mechanism-suite regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pytest -q \
+            tests/test_hierarchical_missing_physics_diagnosis.py \
+            tests/test_hierarchical_missing_physics_transfer.py \
+            tests/test_hierarchical_missing_physics_mechanism_suite.py \
+            | tee "$RUNNER_TEMP/hierarchical-missing-physics-mechanism-tests.log"
+
+      - name: Run six-mechanism falsification suite
+        id: suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-mechanism-suite"
+          mkdir -p "$work"
+          output="$work/result.json"
+          python3 scripts/science/run_hierarchical_missing_physics_mechanism_suite.py \
+            --seed 41 \
+            --bootstrap 100 \
+            --output "$output" \
+            | tee "$work/summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          if value["gate"]["passed"] is not True:
+              raise SystemExit("six-mechanism gate failed")
+          if value["correct_diagnoses"] != value["total_diagnoses"]:
+              raise SystemExit("at least one mechanism was misdiagnosed")
+          if value["gate"]["fallback_identity_violations"] != 0:
+              raise SystemExit("fallback identity violation")
+          if value["information_boundary"]["real_data_read"] is not False:
+              raise SystemExit("controlled suite unexpectedly read real data")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+              stream.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Six-mechanism diagnosis and transfer-scope suite\n\n")
+              summary.write(f"Result ID: `{value['result_id']}`\n\n")
+              summary.write("| True mechanism | Diagnosed | Transfer eligible | Raw transfer improvement | Emitted action |\n")
+              summary.write("|---|---|---:|---:|---|\n")
+              for group, case in value["cases"].items():
+                  scope = case["scope_evaluation"]
+                  emitted = "correction" if scope[
+                      "admissible_for_cross_object_cross_backend_physical_transfer"
+                  ] else "exact fallback"
+                  summary.write(
+                      f"| {group} | {case['predicted_group']} | "
+                      f"{scope['admissible_for_cross_object_cross_backend_physical_transfer']} | "
+                      f"{100.0 * scope['raw_relative_improvement_vs_physical']:.2f}% | "
+                      f"{emitted} |\n"
+                  )
+          PY
+
+      - name: Publish immutable suite evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.suite.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result_path = Path(os.environ["RESULT"])
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-mechanism-suite-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "result_id": result["result_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "correct_diagnoses": result["correct_diagnoses"],
+              "total_diagnoses": result["total_diagnoses"],
+              "fallback_identity_violations": result["gate"][
+                  "fallback_identity_violations"
+              ],
+              "real_data_read": False,
+              "claim_scope": "controlled mechanism identifiability and transfer-scope falsification only"
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical mechanism-suite evidence already committed."
+          else
+            git commit -m "Record six-mechanism discrepancy diagnosis suite"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload full suite evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-mechanism-suite-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-mechanism-suite/
+            ${{ runner.temp }}/hierarchical-missing-physics-mechanism-tests.log
+            evidence/hierarchical_missing_physics/mechanism_suite_v1/
+          if-no-files-found: error
+          retention-days: 90
