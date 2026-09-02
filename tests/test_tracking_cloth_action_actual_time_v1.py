@@ -83,9 +83,7 @@ def test_source_trajectory_uses_recorded_irregular_timestamps(
     )
     view = action_data.source_trajectory(case, _protocol())
 
-    assert view.times.tolist() == pytest.approx(
-        [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
-    )
+    assert view.times.tolist() == pytest.approx([0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
     assert view.cutoff == 2
     assert np.diff(view.times).tolist() == pytest.approx([0.05] * 6)
     assert view.native_dt_max_seconds > 0.03
