@@ -75,6 +75,14 @@ def decision_grid(
     loss_scale = float(max(np.quantile(losses, 0.9), 1e-12))
     normalized_losses = losses / loss_scale
 
+    informative_probe_indices = [
+        index
+        for index, row in enumerate(probe_outcomes)
+        if np.unique(row).size >= 2
+    ]
+    informative_probe_outcomes = probe_outcomes[informative_probe_indices]
+    informative_probe_names = [actions[index] for index in informative_probe_indices]
+
     records: list[dict[str, Any]] = []
     for probe_cost in protocol["probe_cost_grid"]:
         for tolerance in protocol["regret_tolerance_grid"]:
@@ -90,29 +98,28 @@ def decision_grid(
                     quotient,
                     classes,
                     normalized_losses,
-                    probe_outcomes,
+                    informative_probe_outcomes,
                     np.full(
-                        len(actions),
+                        len(informative_probe_indices),
                         float(probe_cost),
                         dtype=np.float64,
                     ),
                     fallback_action_index=fallback,
                     regret_tolerance=float(tolerance),
-                    probe_names=actions,
+                    probe_names=informative_probe_names,
                     max_plan_count=int(protocol["max_plan_count"]),
                 )
                 block_indices = np.flatnonzero(classes == material_index[material])
                 chosen = _resolve_source_actions(
                     certificate,
-                    probe_outcomes,
+                    informative_probe_outcomes,
                     block_indices,
                 )
                 row_indices = block_indices
                 selected = losses[row_indices, chosen]
                 selected_losses.extend(float(value) for value in selected)
                 oracle_losses.extend(
-                    float(value)
-                    for value in np.min(losses[row_indices], axis=1)
+                    float(value) for value in np.min(losses[row_indices], axis=1)
                 )
                 fallback_losses.extend(
                     float(value) for value in losses[row_indices, fallback]
@@ -124,7 +131,9 @@ def decision_grid(
                         "selected_probe": (
                             None
                             if certificate.selected_probe_index is None
-                            else actions[certificate.selected_probe_index]
+                            else informative_probe_names[
+                                certificate.selected_probe_index
+                            ]
                         ),
                         "worst_case_regret": (
                             certificate.plan_certificate.minimax_worst_case_regret
@@ -190,5 +199,7 @@ def decision_grid(
     return records, {
         "fallback_action": actions[fallback],
         "loss_scale": loss_scale,
+        "informative_probe_indices": informative_probe_indices,
+        "informative_probe_names": informative_probe_names,
         "selected_source_setting": selected_setting,
     }
