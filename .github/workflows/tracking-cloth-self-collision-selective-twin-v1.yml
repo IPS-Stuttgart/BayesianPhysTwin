@@ -225,6 +225,7 @@ jobs:
           assert "[self-hosted, Linux, X64, gpuserver4090]" in action_job
           assert "--stage predict" not in action_job
           assert "--stage score" not in action_job
+          assert "jq " not in action_job
           assert "secrets" + "." not in action_job
           assert "contents:" + " write" not in workflow
           assert "git" + " push" not in workflow
@@ -523,12 +524,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          jq -e '.information_boundary.target_rep3_numeric_outcomes_read == false' \
-            "$ACTION_SOURCE_OUTPUT/result.json"
-          jq -e '.information_boundary.target_protocol_authorized == false' \
-            "$ACTION_SOURCE_OUTPUT/result.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["ACTION_SOURCE_OUTPUT"]) / "result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          boundary = result["information_boundary"]
+          if boundary["target_rep3_numeric_outcomes_read"] is not False:
+              raise SystemExit("rep3 numeric outcome boundary changed")
+          if boundary["target_protocol_authorized"] is not False:
+              raise SystemExit("target protocol became authorized")
+          print(
+              json.dumps(
+                  {
+                      "result_id": result["result_id"],
+                      "feasibility": result["feasibility"],
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
           cat "$ACTION_SOURCE_OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload source-only evidence
+        if: always() && env.ACTION_SOURCE_OUTPUT != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
           name: tracking-cloth-action-feasibility-${{ github.run_id }}-${{ github.run_attempt }}
