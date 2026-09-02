@@ -6,14 +6,18 @@ on:
   push:
     paths:
       - "src/bayesian_phystwin/active_decision_probe_v1.py"
+      - "src/bayesian_phystwin/outcome_certified_decision_probe_v1.py"
       - "tests/test_active_decision_probe_v1.py"
+      - "tests/test_outcome_certified_decision_probe_v1.py"
       - "docs/active_decision_probe_v1.md"
       - "experiments/active_decision_probe_v1/**"
       - ".github/workflows/active-decision-probe-v1.yml"
   pull_request:
     paths:
       - "src/bayesian_phystwin/active_decision_probe_v1.py"
+      - "src/bayesian_phystwin/outcome_certified_decision_probe_v1.py"
       - "tests/test_active_decision_probe_v1.py"
+      - "tests/test_outcome_certified_decision_probe_v1.py"
       - "docs/active_decision_probe_v1.md"
       - "experiments/active_decision_probe_v1/**"
       - ".github/workflows/active-decision-probe-v1.yml"
@@ -67,15 +71,19 @@ jobs:
 
           files=(
             src/bayesian_phystwin/active_decision_probe_v1.py
+            src/bayesian_phystwin/outcome_certified_decision_probe_v1.py
             tests/test_active_decision_probe_v1.py
+            tests/test_outcome_certified_decision_probe_v1.py
             experiments/active_decision_probe_v1/run_controlled.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
-            src/bayesian_phystwin/active_decision_probe_v1.py
+            src/bayesian_phystwin/active_decision_probe_v1.py \
+            src/bayesian_phystwin/outcome_certified_decision_probe_v1.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_active_decision_probe_v1.py \
+            tests/test_outcome_certified_decision_probe_v1.py \
             tests/test_query_quotient_belief_v1.py
           python -m experiments.active_decision_probe_v1.run_controlled \
             --check \
