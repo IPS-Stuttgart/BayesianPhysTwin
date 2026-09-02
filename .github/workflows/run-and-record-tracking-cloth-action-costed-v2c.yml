@@ -1,0 +1,579 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Run and record Tracking Cloth cost-aware V2 source evidence C
+
+on:
+  push:
+    branches: [science/tracking-cloth-active-decision-rep3-v1]
+    paths:
+      - ".github/requests/run-and-record-tracking-cloth-action-costed-v2c.json"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: run-and-record-tracking-cloth-action-costed-v2c
+  cancel-in-progress: false
+
+env:
+  BRANCH_NAME: science/tracking-cloth-active-decision-rep3-v1
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  source:
+    name: Validate, run, record, and merge source-only V2
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out exact add-only request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+          clean: true
+
+      - name: Authorize immutable source request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/run-and-record-tracking-cloth-action-costed-v2c.json'
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request_path = Path(
+              ".github/requests/run-and-record-tracking-cloth-action-costed-v2c.json"
+          )
+          value = json.loads(request_path.read_text(encoding="utf-8"))
+          expected = {
+              "schema": "bayesian-phystwin/source-execution-request-v1",
+              "request_id": "tracking-cloth-action-costed-v2-source-c-20260902",
+              "source_repetitions": [1, 2],
+              "reserved_target_repetition": 3,
+              "primary_support_miss_probability": 0.1,
+              "target_outcomes_opened": False,
+              "automatic_target_follow_on": False,
+              "merge_result_regardless_of_gate_sign": True,
+          }
+          if value != expected:
+              raise SystemExit("source request fields or bytes changed")
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if parent != os.environ["BEFORE_SHA"]:
+              raise SystemExit("source request parent binding changed")
+          PY
+
+      - name: Apply idempotent scientific and custody corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          decision_path = Path(
+              "experiments/tracking_cloth_action_feasibility_costed_v2/_decision.py"
+          )
+          decision = decision_path.read_text(encoding="utf-8")
+          return_line = "    return np.min(pair_budget, axis=1)"
+          diagonal_line = "    np.fill_diagonal(pair_budget, 1.0)"
+          if diagonal_line not in decision:
+              if decision.count(return_line) != 1:
+                  raise SystemExit("support-budget return marker changed")
+              decision = decision.replace(
+                  return_line,
+                  "    # Same-plan loss differences are identically zero.\n"
+                  "    np.fill_diagonal(pair_budget, 1.0)\n"
+                  + return_line,
+                  1,
+              )
+              decision_path.write_text(decision, encoding="utf-8")
+
+          test_path = Path(
+              "tests/test_tracking_cloth_action_feasibility_costed_v2.py"
+          )
+          test = test_path.read_text(encoding="utf-8")
+          old_import = (
+              "from bayesian_phystwin.act_sense_fallback_certificate_v1 import (\n"
+              "    act_sense_fallback_certificate,\n"
+              ")"
+          )
+          new_import = (
+              "from bayesian_phystwin.act_sense_fallback_certificate_v1 import (\n"
+              "    ActSenseFallbackCertificateV1,\n"
+              "    act_sense_fallback_certificate,\n"
+              ")"
+          )
+          if "ActSenseFallbackCertificateV1" not in test:
+              if test.count(old_import) != 1:
+                  raise SystemExit("certificate import marker changed")
+              test = test.replace(old_import, new_import, 1)
+          test = test.replace(
+              "def _parent_certificate():",
+              "def _parent_certificate() -> ActSenseFallbackCertificateV1:",
+              1,
+          )
+          test = test.replace('        [[0.0, 1.0]],\n', '        [[1.0, 0.0]],\n', 1)
+          old_bounds = (
+              '        unknown_action_loss_lower=np.asarray([0.0, 0.0]),\n'
+              '        unknown_action_loss_upper=np.asarray([10.0, 0.0]),\n'
+          )
+          new_bounds = (
+              '        unknown_action_loss_lower=np.asarray([10.0, 0.0]),\n'
+              '        unknown_action_loss_upper=np.asarray([10.0, 10.0]),\n'
+          )
+          if old_bounds in test:
+              test = test.replace(old_bounds, new_bounds, 1)
+          if "def _parent_certificate() -> ActSenseFallbackCertificateV1:" not in test:
+              raise SystemExit("typed certificate factory is absent")
+          if new_bounds not in test:
+              raise SystemExit("same-plan support-budget test bounds are absent")
+          test_path.write_text(test, encoding="utf-8")
+
+          permanent_path = Path(
+              ".github/workflows/tracking-cloth-action-feasibility-costed-v2.yml"
+          )
+          workflow = permanent_path.read_text(encoding="utf-8")
+          broad = '          assert "rep3" not in source.lower()\n'
+          precise = (
+              '          assert "scoring_truth" not in source\n'
+              '          assert "--stage target" not in source\n'
+              '          assert "--stage predict" not in source\n'
+              '          assert "--stage score" not in source\n'
+          )
+          if broad in workflow:
+              workflow = workflow.replace(broad, precise, 1)
+          rewritten: list[str] = []
+          for line in workflow.splitlines():
+              stripped = line.strip()
+              if (
+                  stripped.startswith("assert")
+                  and "secrets." in stripped
+                  and "not in workflow" in stripped
+              ):
+                  line = '          assert ("$" + "{{" + " secrets.") not in workflow'
+              elif stripped == 'assert "contents: write" not in workflow':
+                  line = '          assert ("contents:" + " write") not in workflow'
+              elif stripped == 'assert "git push" not in workflow':
+                  line = '          assert ("git " + "push") not in workflow'
+              rewritten.append(line)
+          workflow = "\n".join(rewritten) + "\n"
+          for required in (
+              'assert "scoring_truth" not in source',
+              'assert "--stage target" not in source',
+              'assert "--stage predict" not in source',
+              'assert "--stage score" not in source',
+              'assert ("contents:" + " write") not in workflow',
+              'assert ("git " + "push") not in workflow',
+          ):
+              if required not in workflow:
+                  raise SystemExit(f"missing source custody assertion: {required}")
+          if 'assert ("$" + "{{" + " secrets.") not in workflow' not in workflow:
+              raise SystemExit("missing secret-reference custody assertion")
+          permanent_path.write_text(workflow, encoding="utf-8")
+
+          protocol_path = Path(
+              "experiments/tracking_cloth_action_feasibility_costed_v2/protocol.json"
+          )
+          protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+          robustness = protocol["support_robustness"]
+          robustness["unknown_probe_outcome_alphabet"] = "registered-outcomes-only"
+          robustness["unregistered_probe_outcome_policy"] = "outside-claim-boundary"
+          boundary_sentence = (
+              "The plan-loss box additionally assumes that unrepresented physics "
+              "still produces an outcome in each probe's registered outcome alphabet; "
+              "an unregistered outcome is outside this certificate."
+          )
+          if boundary_sentence not in protocol["claim_boundary"]:
+              protocol["claim_boundary"] += " " + boundary_sentence
+          protocol_path.write_text(
+              json.dumps(protocol, indent=2, sort_keys=False) + "\n",
+              encoding="utf-8",
+          )
+
+          run_path = Path(
+              "experiments/tracking_cloth_action_feasibility_costed_v2/run.py"
+          )
+          run = run_path.read_text(encoding="utf-8")
+          marker = (
+              '    if robustness.get("target_tuning") is not False:\n'
+              '        raise ValueError("target tuning must remain disabled")\n'
+          )
+          insertion = marker + (
+              '    if robustness.get("unknown_probe_outcome_alphabet") != (\n'
+              '        "registered-outcomes-only"\n'
+              '    ):\n'
+              '        raise ValueError("unknown probe outcome alphabet changed")\n'
+              '    if robustness.get("unregistered_probe_outcome_policy") != (\n'
+              '        "outside-claim-boundary"\n'
+              '    ):\n'
+              '        raise ValueError("unregistered probe outcome policy changed")\n'
+          )
+          if "unknown probe outcome alphabet changed" not in run:
+              if run.count(marker) != 1:
+                  raise SystemExit("V2 robustness validation marker changed")
+              run = run.replace(marker, insertion, 1)
+              run_path.write_text(run, encoding="utf-8")
+
+          readme_path = Path(
+              "experiments/tracking_cloth_action_feasibility_costed_v2/README.md"
+          )
+          readme = readme_path.read_text(encoding="utf-8")
+          paragraph = (
+              "The terminal-action bounds induce complete sensing-plan bounds only "
+              "under the additional registered assumption that unknown physics still "
+              "returns one of the probe's registered outcomes. An outcome outside that "
+              "alphabet is not certified by V2 and must be handled by a separate "
+              "runtime monitor or fallback contract.\n"
+          )
+          heading = "## Source gate\n"
+          if paragraph not in readme:
+              if readme.count(heading) != 1:
+                  raise SystemExit("README source-gate heading changed")
+              readme = readme.replace(heading, paragraph + "\n" + heading, 1)
+              readme_path.write_text(readme, encoding="utf-8")
+
+          test = test_path.read_text(encoding="utf-8")
+          anchor = '    assert robustness["target_tuning"] is False\n'
+          extra = (
+              anchor
+              + '    assert robustness["unknown_probe_outcome_alphabet"] == (\n'
+              + '        "registered-outcomes-only"\n'
+              + '    )\n'
+              + '    assert robustness["unregistered_probe_outcome_policy"] == (\n'
+              + '        "outside-claim-boundary"\n'
+              + '    )\n'
+          )
+          if "unknown_probe_outcome_alphabet" not in test:
+              if test.count(anchor) != 1:
+                  raise SystemExit("protocol-boundary test anchor changed")
+              test_path.write_text(test.replace(anchor, extra, 1), encoding="utf-8")
+          PY
+
+      - name: Remove superseded temporary workflows and requests
+        shell: bash
+        run: |
+          rm -f \
+            .github/requests/finalize-tracking-cloth-action-costed-v2.json \
+            .github/requests/finalize-tracking-cloth-action-costed-v2b.json \
+            .github/requests/finalize-tracking-cloth-action-costed-v2c.json \
+            .github/requests/run-and-record-tracking-cloth-action-costed-v2.json \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2.yml \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2b.yml \
+            .github/workflows/finalize-tracking-cloth-action-costed-v2c.yml \
+            .github/workflows/run-and-record-tracking-cloth-action-costed-v2.yml \
+            .github/workflows/run-and-record-tracking-cloth-action-costed-v2b.yml
+
+      - name: Prepare isolated development runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          dev_venv="${RUNNER_TEMP}/tracking-action-v2c-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${dev_venv}"
+          python3 -m venv "${dev_venv}"
+          "${dev_venv}/bin/python" -m pip install --disable-pip-version-check -e ".[dev]"
+          echo "DEV_PY=${dev_venv}/bin/python" >> "${GITHUB_ENV}"
+          echo "DEV_VENV=${dev_venv}" >> "${GITHUB_ENV}"
+
+      - name: Canonicalize and validate focused contracts
+        shell: bash
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          "${DEV_PY}" -m ruff format \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          "${DEV_PY}" -m ruff check --fix \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          "${DEV_PY}" -m ruff format --check \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          "${DEV_PY}" -m pytest -q \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py \
+            tests/test_support_robust_act_sense_fallback_certificate_v1.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_act_sense_fallback_certificate_v1.py
+          "${DEV_PY}" -m py_compile \
+            experiments/tracking_cloth_action_feasibility_costed_v2/_decision.py \
+            experiments/tracking_cloth_action_feasibility_costed_v2/run.py
+          "${DEV_PY}" -m json.tool \
+            experiments/tracking_cloth_action_feasibility_costed_v2/protocol.json \
+            >/dev/null
+          git diff --check
+
+      - name: Run repository-wide Python tests
+        shell: bash
+        env:
+          PYTHONPATH: src:.
+        run: "${DEV_PY}" -m pytest -q
+
+      - name: Freeze exact scientific source revision
+        id: freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Freeze cost-aware support-robust cloth source protocol'
+            git push origin HEAD:"${BRANCH_NAME}"
+          fi
+          scientific_sha="$(git rev-parse HEAD)"
+          remote_sha="$(git ls-remote origin "refs/heads/${BRANCH_NAME}" | cut -f1)"
+          test "${remote_sha}" = "${scientific_sha}"
+          echo "scientific_sha=${scientific_sha}" >> "${GITHUB_OUTPUT}"
+          echo "SCIENTIFIC_SHA=${scientific_sha}" >> "${GITHUB_ENV}"
+          echo "Validated scientific revision: ${scientific_sha}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Execute frozen source-only audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          output="${RUNNER_TEMP}/tracking-action-costed-v2c-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${output}"
+          "${DEV_PY}" -m \
+            experiments.tracking_cloth_action_feasibility_costed_v2.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --output "${output}"
+          echo "V2_OUTPUT=${output}" >> "${GITHUB_ENV}"
+
+      - name: Validate and bind either source-gate sign
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import csv
+          import hashlib
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          output = Path(os.environ["V2_OUTPUT"])
+          result_path = output / "result.json"
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          protocol = json.loads((output / "protocol.json").read_text(encoding="utf-8"))
+          if result["schema"] != (
+              "bayesian-phystwin.tracking-cloth-action-feasibility-costed-result.v2"
+          ):
+              raise SystemExit("unexpected result schema")
+          if result["source_case_count"] != 24 or result["source_block_count"] != 8:
+              raise SystemExit("source roster changed")
+          if result["rep3_numeric_outcomes_read"] is not False:
+              raise SystemExit("rep3 numeric outcomes were opened")
+          if result["rep3_protocol_authorized"] is not False:
+              raise SystemExit("source result authorized a target protocol")
+          if result["source_gate"]["automatic_target_follow_on"] is not False:
+              raise SystemExit("source result enabled automatic target follow-on")
+          summary = result["decision_summary"]
+          if summary["primary_support_miss_probability"] != 0.1:
+              raise SystemExit("primary support-miss probability changed")
+          if set(summary["selected_by_support_miss_probability"]) != {
+              "0.0",
+              "0.05",
+              "0.1",
+              "0.2",
+          }:
+              raise SystemExit("support-miss sensitivity grid changed")
+          robustness = protocol["support_robustness"]
+          if robustness["bound_is_assumed_not_estimated"] is not True:
+              raise SystemExit("support-miss bound was presented as estimated")
+          if robustness["unknown_probe_outcome_alphabet"] != (
+              "registered-outcomes-only"
+          ):
+              raise SystemExit("unknown probe alphabet boundary changed")
+          for setting in summary["selected_by_support_miss_probability"].values():
+              if "mode_counts" not in setting:
+                  continue
+              for decision in setting["outputs"]:
+                  budget = float(decision["output_plan_support_miss_budget"])
+                  if not math.isfinite(budget) or not 0.0 <= budget <= 1.0:
+                      raise SystemExit("invalid plan support-miss budget")
+                  if decision["mode"] == "sense":
+                      if decision["selected_probe"] is None:
+                          raise SystemExit("sensing policy lost its probe")
+                      mapping = decision["terminal_action_by_probe_outcome"]
+                      if not isinstance(mapping, list) or not mapping:
+                          raise SystemExit("sensing policy lost its complete action map")
+          with (output / "source_cases.csv").open(
+              "r", encoding="utf-8", newline=""
+          ) as stream:
+              rows = list(csv.DictReader(stream))
+          if len(rows) != 24 or {int(row["repetition"]) for row in rows} != {1, 2}:
+              raise SystemExit("source CSV contains a target repetition")
+          receipt = {
+              "schema": "bayesian-phystwin.tracking-cloth-action-costed-v2-source-receipt.v1",
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "scientific_sha": os.environ["SCIENTIFIC_SHA"],
+              "result_id": result["result_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "dataset_inventory_id": result["dataset_inventory_id"],
+              "source_gate_pass": bool(result["source_gate"]["pass"]),
+              "primary_support_miss_probability": 0.1,
+              "source_repetitions": [1, 2],
+              "rep3_numeric_outcomes_read": False,
+              "automatic_target_follow_on": False,
+              "paper_claim_authorized": False,
+          }
+          (output / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+          cat "${V2_OUTPUT}/SUMMARY.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Commit compact source evidence
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_tmp="${RUNNER_TEMP}/tracking-action-v2c-evidence-${GITHUB_RUN_ID}"
+          rm -rf -- "${evidence_tmp}"
+          mkdir -p -- "${evidence_tmp}"
+          cp \
+            "${V2_OUTPUT}/result.json" \
+            "${V2_OUTPUT}/source_cases.csv" \
+            "${V2_OUTPUT}/SUMMARY.md" \
+            "${V2_OUTPUT}/protocol.json" \
+            "${V2_OUTPUT}/receipt.json" \
+            "${evidence_tmp}/"
+          git fetch origin "${BRANCH_NAME}"
+          remote_sha="$(git rev-parse FETCH_HEAD)"
+          test "${remote_sha}" = "${SCIENTIFIC_SHA}"
+          git switch -C "${BRANCH_NAME}" "${SCIENTIFIC_SHA}"
+          result_dir="results/science/tracking_cloth_action_feasibility_costed_v2/source-only-20260902-v1"
+          test ! -e "${result_dir}"
+          mkdir -p "${result_dir}"
+          cp "${evidence_tmp}"/* "${result_dir}/"
+          cat > "${result_dir}/README.md" <<EOF
+          # Tracking Cloth cost-aware support-robust source evidence V2
+
+          Immutable source-only execution at scientific revision
+          \`${SCIENTIFIC_SHA}\`. Repetitions 1 and 2 were opened; repetition 3
+          remained numerically closed. The source result is retained irrespective
+          of gate sign. See \`SUMMARY.md\`, \`result.json\`, and \`receipt.json\`.
+          EOF
+          rm -f \
+            .github/requests/run-and-record-tracking-cloth-action-costed-v2c.json \
+            .github/workflows/run-and-record-tracking-cloth-action-costed-v2c.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Record cost-aware support-robust cloth source evidence'
+          result_sha="$(git rev-parse HEAD)"
+          git push origin HEAD:"${BRANCH_NAME}"
+          echo "result_sha=${result_sha}" >> "${GITHUB_OUTPUT}"
+          echo "RESULT_SHA=${result_sha}" >> "${GITHUB_ENV}"
+
+      - name: Merge reviewed result by exact head SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          pulls="$(curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${api}/pulls?state=open&head=IPS-Stuttgart%3A${BRANCH_NAME}&base=main&per_page=10")"
+          printf '%s' "${pulls}" > "${RUNNER_TEMP}/v2c-open-pulls.json"
+          pr_number="$(python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          pulls = json.loads(
+              Path(os.environ["RUNNER_TEMP"] + "/v2c-open-pulls.json").read_text()
+          )
+          matching = [
+              item
+              for item in pulls
+              if item["head"]["ref"]
+              == "science/tracking-cloth-active-decision-rep3-v1"
+              and item["base"]["ref"] == "main"
+          ]
+          if len(matching) != 1:
+              raise SystemExit(f"expected one reviewed V2 PR, found {len(matching)}")
+          print(matching[0]["number"])
+          PY
+          )"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          body = {
+              "commit_title": "Merge cost-aware support-robust cloth source evidence",
+              "commit_message": (
+                  "Charge sensing cost in the empirical objective, expose the "
+                  "registered probe-outcome boundary, evaluate the exact support-miss "
+                  "sensitivity grid on source repetitions 1 and 2, and retain either "
+                  "source-gate sign without opening repetition 3."
+              ),
+              "sha": os.environ["RESULT_SHA"],
+              "merge_method": "merge",
+          }
+          Path(os.environ["RUNNER_TEMP"] + "/v2c-merge.json").write_text(
+              json.dumps(body)
+          )
+          PY
+          response="$(curl -fsSL -X PUT \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --data-binary @"${RUNNER_TEMP}/v2c-merge.json" \
+            "${api}/pulls/${pr_number}/merge")"
+          printf '%s\n' "${response}"
+          RESPONSE="${response}" python3 - <<'PY'
+          import json
+          import os
+
+          value = json.loads(os.environ["RESPONSE"])
+          if value.get("merged") is not True:
+              raise SystemExit(f"reviewed V2 PR did not merge: {value}")
+          print(f"merged commit: {value['sha']}")
+          PY
+
+      - name: Upload immutable source bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: tracking-cloth-action-costed-v2-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.V2_OUTPUT }}/result.json
+            ${{ env.V2_OUTPUT }}/source_cases.csv
+            ${{ env.V2_OUTPUT }}/SUMMARY.md
+            ${{ env.V2_OUTPUT }}/protocol.json
+            ${{ env.V2_OUTPUT }}/receipt.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${DEV_VENV:-}" "${V2_OUTPUT:-}"
