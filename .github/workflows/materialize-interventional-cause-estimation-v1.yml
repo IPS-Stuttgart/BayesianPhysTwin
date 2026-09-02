@@ -1,0 +1,136 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Materialize interventional cause estimation v1
+
+on:
+  push:
+    branches:
+      - research/interventional-cause-estimation-v1
+    paths:
+      - .github/agent-payloads/interventional-cause-estimation-v1.tgz
+      - .github/workflows/materialize-interventional-cause-estimation-v1.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-interventional-cause-estimation-v1
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/research/interventional-cause-estimation-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact payload commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Verify and extract bounded payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git branch --show-current)" = \
+            "research/interventional-cause-estimation-v1"
+          payload=.github/agent-payloads/interventional-cause-estimation-v1.tgz
+          printf '%s  %s\n' \
+            0a820bc368e84bdbd6c1e97474ae43632033dc1b9f0371856da46eb3a32c7c36 \
+            "$payload" | sha256sum --check --strict
+          rm -rf "$RUNNER_TEMP/why-twin-v2"
+          mkdir -p "$RUNNER_TEMP/why-twin-v2"
+          PAYLOAD="$payload" DESTINATION="$RUNNER_TEMP/why-twin-v2" python - <<'PY'
+          import os
+          import tarfile
+          from pathlib import Path
+
+          expected = {
+              "docs/interventional_cause_estimation_v1.md",
+              "scripts/science/run_interventional_cause_estimation_v1.py",
+              "src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py",
+              "tests/test_interventional_cause_estimation_controlled_v1.py",
+              "tests/test_interventional_cause_estimation_v1.py",
+          }
+          payload = Path(os.environ["PAYLOAD"])
+          destination = Path(os.environ["DESTINATION"]).resolve()
+          with tarfile.open(payload, "r:gz") as archive:
+              members = archive.getmembers()
+              names = {member.name for member in members}
+              if names != expected:
+                  raise SystemExit(f"payload roster changed: {sorted(names)}")
+              for member in members:
+                  if not member.isfile():
+                      raise SystemExit(f"non-regular payload member: {member.name}")
+                  target = (destination / member.name).resolve()
+                  if not target.is_relative_to(destination):
+                      raise SystemExit(f"payload escapes destination: {member.name}")
+              archive.extractall(destination)
+          PY
+          while IFS= read -r relative; do
+            install -D -m 0644 \
+              "$RUNNER_TEMP/why-twin-v2/$relative" "$relative"
+          done <<'EOF'
+          docs/interventional_cause_estimation_v1.md
+          scripts/science/run_interventional_cause_estimation_v1.py
+          src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
+          tests/test_interventional_cause_estimation_controlled_v1.py
+          tests/test_interventional_cause_estimation_v1.py
+          EOF
+
+      - name: Validate scientific product
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e '.[dev]'
+          python -m pip check
+          files=(
+            src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
+            scripts/science/run_interventional_cause_estimation_v1.py
+            tests/test_interventional_cause_estimation_v1.py
+            tests/test_interventional_cause_estimation_controlled_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_interventional_cause_identifiability_v1.py \
+            tests/test_interventional_cause_attribution_controlled_v1.py \
+            tests/test_interventional_cause_estimation_v1.py \
+            tests/test_interventional_cause_estimation_controlled_v1.py
+          python -m compileall -q \
+            src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py \
+            scripts/science/run_interventional_cause_estimation_v1.py
+
+      - name: Publish clean product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/agent-payloads/interventional-cause-estimation-v1.tgz \
+            .github/workflows/materialize-interventional-cause-estimation-v1.yml
+          rmdir .github/agent-payloads 2>/dev/null || true
+          git add --all
+          mapfile -t changed < <(git diff --cached --name-only)
+          expected=(
+            .github/agent-payloads/interventional-cause-estimation-v1.tgz
+            .github/workflows/materialize-interventional-cause-estimation-v1.yml
+            docs/interventional_cause_estimation_v1.md
+            scripts/science/run_interventional_cause_estimation_v1.py
+            src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
+            tests/test_interventional_cause_estimation_controlled_v1.py
+            tests/test_interventional_cause_estimation_v1.py
+          )
+          printf '%s\n' "${changed[@]}" > /tmp/changed
+          printf '%s\n' "${expected[@]}" > /tmp/expected
+          diff -u /tmp/expected /tmp/changed
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m 'Add quantitative interventional cause estimation'
+          git push origin \
+            HEAD:research/interventional-cause-estimation-v1
