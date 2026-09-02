@@ -1,0 +1,259 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expiry: 2026-09-15
+name: DEFORM DLO4/DLO5 conformal regret envelope
+
+on:
+  push:
+    paths:
+      - ".github/workflows/deform-dlo45-conformal-regret-envelope-v1.yml"
+      - ".github/requests/deform-dlo45-conformal-regret-envelope-v1.json"
+      - "src/bayesian_phystwin/conformal_regret_envelope_v1.py"
+      - "experiments/deform_dlo45_decision_identifiability_v1/support_envelope.py"
+      - "experiments/deform_dlo45_decision_identifiability_v1/support_envelope_protocol.json"
+      - "tests/test_conformal_regret_envelope_v1.py"
+      - "tests/test_deform_dlo45_conformal_regret_envelope_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deform-dlo45-conformal-regret-envelope-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  PARENT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/protocol.json
+  ENVELOPE_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/support_envelope_protocol.json
+  PARENT_SOURCE_RESULT: results/science/deform_dlo45_decision_identifiability_v1/official-dlo45-one-shot-20260901-v1/source_result.json
+  REQUEST: .github/requests/deform-dlo45-conformal-regret-envelope-v1.json
+  RUN_KEY: official-dlo45-conformal-regret-envelope-20260902-v1
+
+jobs:
+  source-calibration:
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Validate complete local DEFORM roster
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dlo in DLO4 DLO5; do
+            test -d "${DATASET_ROOT}/${dlo}/train"
+            test -d "${DATASET_ROOT}/${dlo}/eval"
+            test "$(find "${DATASET_ROOT}/${dlo}/train" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 56
+            test "$(find "${DATASET_ROOT}/${dlo}/eval" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 14
+            test "$(find "${DATASET_ROOT}/${dlo}" -type f | wc -l)" -eq 70
+          done
+          sha256sum "${PARENT_SOURCE_RESULT}" "${ENVELOPE_PROTOCOL}" "${REQUEST}"
+
+      - name: Install exact experiment revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/dlo45-conformal-venv"
+          python="${RUNNER_TEMP}/dlo45-conformal-venv/bin/python"
+          "${python}" -m pip install --disable-pip-version-check \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1" "numpy==2.2.6"
+          "${python}" -m pip install --disable-pip-version-check -e ".[dev]"
+          "${python}" -m pip check
+
+      - name: Validate generic and DEFORM-specific contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/dlo45-conformal-venv/bin/python"
+          "${python}" -m ruff check \
+            src/bayesian_phystwin/conformal_regret_envelope_v1.py \
+            experiments/deform_dlo45_decision_identifiability_v1/support_envelope.py \
+            tests/test_conformal_regret_envelope_v1.py \
+            tests/test_deform_dlo45_conformal_regret_envelope_v1.py
+          "${python}" -m ruff format --check \
+            src/bayesian_phystwin/conformal_regret_envelope_v1.py \
+            experiments/deform_dlo45_decision_identifiability_v1/support_envelope.py \
+            tests/test_conformal_regret_envelope_v1.py \
+            tests/test_deform_dlo45_conformal_regret_envelope_v1.py
+          "${python}" -m pytest -q -p no:cacheprovider \
+            tests/test_conformal_regret_envelope_v1.py \
+            tests/test_deform_dlo45_conformal_regret_envelope_v1.py \
+            tests/test_query_quotient_belief_v1.py \
+            tests/test_deform_dlo45_decision_identifiability_v1.py
+
+      - name: Calibrate trajectory-level envelope from source-test trajectories
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/dlo45-conformal-venv/bin/python"
+          output="${RUNNER_TEMP}/conformal-source"
+          rm -rf "${output}"
+          mkdir -p "${output}"
+          "${python}" -m \
+            experiments.deform_dlo45_decision_identifiability_v1.support_envelope \
+            source \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --envelope-protocol "${ENVELOPE_PROTOCOL}" \
+            --parent-source-result "${PARENT_SOURCE_RESULT}" \
+            --request "${REQUEST}" \
+            --dataset-root "${DATASET_ROOT}" \
+            --output-root "${output}" \
+            > "${output}/stdout.json"
+          test -s "${output}/calibration_models.npz"
+          test -s "${output}/source_envelope.json"
+          test -s "${output}/source_seal.json"
+          SOURCE_ENVELOPE="${output}/source_envelope.json" "${python}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["SOURCE_ENVELOPE"]).read_text())
+          assert value["contract"] == "deform-dlo45-conformal-regret-envelope-v1"
+          assert value["target_data_read"] is False
+          assert value["target_outcomes_used"] is False
+          for dlo in ("DLO4", "DLO5"):
+              assert value["dlos"][dlo]["calibration_trajectory_count"] == 8
+              assert value["dlos"][dlo]["decision_count_per_trajectory"] == 19
+          print(json.dumps({
+              dlo: value["dlos"][dlo]["envelopes"]
+                  ["0.200000"]["base_certificate_selected_action"]["radius"]
+              for dlo in ("DLO4", "DLO5")
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload sealed source-calibration artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dlo45-conformal-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/conformal-source
+          if-no-files-found: error
+          retention-days: 90
+
+  held-evaluation:
+    needs: source-calibration
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact target revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Install exact experiment revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/dlo45-conformal-venv"
+          python="${RUNNER_TEMP}/dlo45-conformal-venv/bin/python"
+          "${python}" -m pip install --disable-pip-version-check \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1" "numpy==2.2.6"
+          "${python}" -m pip install --disable-pip-version-check -e ".[dev]"
+          "${python}" -m pip check
+
+      - name: Download the source-sealed envelope
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dlo45-conformal-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/conformal-source
+
+      - name: Apply frozen envelopes to held trajectories
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/dlo45-conformal-venv/bin/python"
+          output="${RUNNER_TEMP}/conformal-target"
+          rm -rf "${output}"
+          mkdir -p "${output}"
+          "${python}" -m \
+            experiments.deform_dlo45_decision_identifiability_v1.support_envelope \
+            target \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --envelope-protocol "${ENVELOPE_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${DATASET_ROOT}" \
+            --source-root "${RUNNER_TEMP}/conformal-source" \
+            --output-root "${output}" \
+            > "${output}/stdout.json"
+          TARGET_RESULT="${output}/target_result.json" "${python}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["TARGET_RESULT"]).read_text())
+          assert value["status"] == "complete"
+          assert value["target_tuning"] is False
+          assert value["target_retries"] is False
+          assert value["primary_policy_key"] == (
+              "per_dlo/0.200000/base_certificate_selected_action/0.300000"
+          )
+          print(json.dumps({
+              "primary_policy": value["primary_policy"],
+              "DLO4_primary_coverage": value["dlos"]["DLO4"]["coverage"]
+                  ["per_dlo"]["0.200000"]
+                  ["base_certificate_selected_action"]
+                  ["empirical_trajectory_coverage"],
+              "DLO5_primary_coverage": value["dlos"]["DLO5"]["coverage"]
+                  ["per_dlo"]["0.200000"]
+                  ["base_certificate_selected_action"]
+                  ["empirical_trajectory_coverage"],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload complete held-evaluation artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dlo45-conformal-target-${{ github.run_id }}
+          path: ${{ runner.temp }}/conformal-target
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit immutable compact evidence to the branch
+        if: success() && github.event_name == 'push' && github.ref_type == 'branch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="results/science/deform_dlo45_conformal_regret_envelope_v1/${RUN_KEY}"
+          test ! -e "${destination}"
+          mkdir -p "${destination}/source" "${destination}/target"
+          cp "${RUNNER_TEMP}/conformal-source/source_envelope.json" \
+            "${destination}/source/source_envelope.json"
+          cp "${RUNNER_TEMP}/conformal-source/source_seal.json" \
+            "${destination}/source/source_seal.json"
+          cp "${RUNNER_TEMP}/conformal-target/target_result.json" \
+            "${destination}/target/target_result.json"
+          cp "${RUNNER_TEMP}/conformal-target/provenance.json" \
+            "${destination}/target/provenance.json"
+          cat > "${destination}/workflow_provenance.json" <<EOF
+          {
+            "repository_revision": "${GITHUB_SHA}",
+            "workflow_run_id": ${GITHUB_RUN_ID},
+            "workflow_run_attempt": ${GITHUB_RUN_ATTEMPT},
+            "runner_name": "${RUNNER_NAME}",
+            "dataset_root": "${DATASET_ROOT}",
+            "target_tuning": false,
+            "target_retries": false
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${destination}"
+          git diff --cached --check
+          git commit -m "Record DEFORM conformal regret-envelope evidence"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
