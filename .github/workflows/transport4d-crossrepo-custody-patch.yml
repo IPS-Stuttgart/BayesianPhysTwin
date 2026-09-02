@@ -1,0 +1,94 @@
+name: Apply Transport4D cross-repository custody repair
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-crossrepo-custody-patch.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: transport4d-crossrepo-custody-patch
+  cancel-in-progress: false
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Apply the reviewed custody repair
+        run: python .github/transport4d_crossrepo_patch.py
+      - name: Install focused tools
+        run: python -m pip install numpy==1.26.4 pytest ruff==0.14.14
+      - name: Validate patched files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check --fix \
+            src/bayesian_phystwin_experiments/transport4d_public_reserve_v1.py \
+            tests/test_transport4d_public_reserve_v1.py
+          python -m ruff format \
+            src/bayesian_phystwin_experiments/transport4d_public_reserve_v1.py \
+            tests/test_transport4d_public_reserve_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin_experiments/transport4d_public_reserve_v1.py \
+            tests/test_transport4d_public_reserve_v1.py
+          python -m ruff format --check \
+            src/bayesian_phystwin_experiments/transport4d_public_reserve_v1.py \
+            tests/test_transport4d_public_reserve_v1.py
+          python -m py_compile \
+            src/bayesian_phystwin_experiments/transport4d_public_reserve_v1.py \
+            tests/test_transport4d_public_reserve_v1.py
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_transport4d_public_reserve_v1.py \
+            tests/test_transport4d_tiered_certificate_v1.py \
+            tests/test_transport4d_tiered_controlled_v1.py \
+            tests/test_transport4d_public_development_v1.py
+          python -m json.tool \
+            protocols/transport4d_deform360_reserve_audit_v1.json >/dev/null
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path("protocols/transport4d_deform360_reserve_audit_v1.json")
+          value = json.loads(path.read_text())
+          supplied = value.pop("protocol_id")
+          encoded = json.dumps(
+              value, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          assert hashlib.sha256(encoded).hexdigest() == supplied
+          assert supplied == (
+              "a7d5f520ae3e4761452476af7af57fa023aea031114aa0239c2690bb531407c8"
+          )
+          assert value["additional_protected_object_ids"] == [
+              "085-scarf-cloth",
+              "170-spider",
+              "171-penguin",
+          ]
+          PY
+      - name: Commit clean scientific repair and remove bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/transport4d_crossrepo_patch.py \
+            .github/workflows/transport4d-crossrepo-custody-patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Bind cross-repository Deform360 reserve custody"
+          git push origin HEAD:research/transport4d-tiered-public-v1
