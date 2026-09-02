@@ -40,26 +40,43 @@ jobs:
       - name: Install focused validation tools
         run: python -m pip install numpy==1.26.4 pytest ruff==0.14.14
 
-      - name: Canonicalize and validate calibration stage
-        shell: bash
+      - name: Apply Ruff autofixes
         run: |
-          set -euo pipefail
           python -m ruff check --fix \
             scripts/science/run_transport4d_deform360_calibration_v1.py \
             tests/test_transport4d_deform360_calibration_v1.py
+
+      - name: Apply canonical Ruff formatting
+        run: |
           python -m ruff format \
             scripts/science/run_transport4d_deform360_calibration_v1.py \
             tests/test_transport4d_deform360_calibration_v1.py
+
+      - name: Verify Ruff lint is clean
+        run: |
           python -m ruff check \
             scripts/science/run_transport4d_deform360_calibration_v1.py \
             tests/test_transport4d_deform360_calibration_v1.py
+
+      - name: Verify Ruff formatting is clean
+        run: |
           python -m ruff format --check \
             scripts/science/run_transport4d_deform360_calibration_v1.py \
             tests/test_transport4d_deform360_calibration_v1.py
+
+      - name: Compile calibration sources
+        run: |
           python -m py_compile \
             scripts/science/run_transport4d_deform360_calibration_v1.py \
             tests/test_transport4d_deform360_calibration_v1.py
-          python -m pytest -q tests/test_transport4d_deform360_calibration_v1.py
+
+      - name: Run focused calibration tests
+        run: python -m pytest -q tests/test_transport4d_deform360_calibration_v1.py
+
+      - name: Validate frozen protocol identity and target closure
+        shell: bash
+        run: |
+          set -euo pipefail
           python -m json.tool protocols/transport4d_deform360_calibration_v1.json >/dev/null
           python - <<'PY'
           import hashlib
