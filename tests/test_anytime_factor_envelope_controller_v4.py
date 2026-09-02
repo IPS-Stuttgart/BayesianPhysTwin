@@ -212,9 +212,7 @@ def test_contract_digest_binds_factor_family_and_parameter_grids() -> None:
     assert first.decision_contract_digest != third.decision_contract_digest
     boundary = first.theorem_boundary()
     assert boundary["lifetime_false_admission_bound"] == 0.05
-    assert "caller-owned registered fallback object" in str(
-        boundary["fallback_rule"]
-    )
+    assert "caller-owned registered fallback object" in str(boundary["fallback_rule"])
 
 
 def test_duplicate_and_premature_trials_fail_closed() -> None:

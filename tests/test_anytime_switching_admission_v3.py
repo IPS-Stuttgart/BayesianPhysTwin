@@ -211,3 +211,28 @@ def test_contract_and_configuration_are_content_addressed() -> None:
     assert first.theorem_boundary()["lifetime_false_admission_bound"] == 0.05
     with pytest.raises(ValueError, match="must differ"):
         _contract(candidate_id="same", fallback_id="same")
+
+
+def test_malformed_reveal_is_atomic_and_retryable_v3() -> None:
+    controller = SwitchingUnionAdmissionControllerV3(_config(), _contract())
+    controller.issue_trial(trial_id="retry", issued_step=0, maturity_step=1)
+
+    with pytest.raises(ValueError, match="candidate_loss"):
+        controller.resolve_trial(
+            trial_id="retry",
+            resolved_step=1,
+            candidate_loss=-1.0,
+            fallback_loss=1.0,
+        )
+
+    rejected = controller.snapshot()
+    assert rejected.pending_trial_count == 1
+    assert rejected.resolved_current_epoch_count == 0
+    result = controller.resolve_trial(
+        trial_id="retry",
+        resolved_step=1,
+        candidate_loss=0.0,
+        fallback_loss=1.0,
+    )
+    assert result.used_for_current_epoch is True
+    assert controller.snapshot().pending_trial_count == 0

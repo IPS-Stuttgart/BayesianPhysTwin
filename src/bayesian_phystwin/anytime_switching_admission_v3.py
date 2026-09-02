@@ -366,7 +366,6 @@ class SwitchingUnionAdmissionControllerV3(Generic[T]):
         )
         if resolved < trial.maturity_step:
             raise ValueError("trial outcome cannot be resolved before maturity")
-        del self._pending[identifier]
         candidate = _nonnegative(candidate_loss, label="candidate_loss")
         fallback = _nonnegative(fallback_loss, label="fallback_loss")
         gain = bounded_gain_score(
@@ -394,6 +393,7 @@ class SwitchingUnionAdmissionControllerV3(Generic[T]):
                 self._ever_authorized = True
         else:
             self._ignored_closed_epoch_count += 1
+        del self._pending[identifier]
         result = SwitchingResolvedTrialV3(
             trial_id=trial.trial_id,
             epoch_index=trial.epoch_index,
