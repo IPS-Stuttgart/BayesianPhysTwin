@@ -119,9 +119,7 @@ def run() -> dict[str, Any]:
     unresolvable = _pipeline(
         signatures=ambiguous_signatures,
         residual=np.asarray([2.0]),
-        targets={
-            "state-gauge-difference": np.asarray([[1.0, 0.0, -1.0]])
-        },
+        targets={"state-gauge-difference": np.asarray([[1.0, 0.0, -1.0]])},
         candidates={
             "redundant-probe": np.asarray([[2.0, 0.0, 2.0]]),
         },
@@ -148,8 +146,7 @@ def run() -> dict[str, Any]:
         "unresolvable-target": unresolvable,
     }
     records = {
-        name: pipeline.to_record()
-        for name, pipeline in sorted(pipelines.items())
+        name: pipeline.to_record() for name, pipeline in sorted(pipelines.items())
     }
 
     phase_sum = phase.decision_for("already-transportable-sum")
@@ -194,18 +191,15 @@ def run() -> dict[str, Any]:
             phase_sum.disposition is DiagnosticDisposition.TRANSPORT_WITHOUT_CAUSE
         ),
         "sensitive_target_selects_only_state_gauge_probe": (
-            phase_difference.disposition
-            is DiagnosticDisposition.PROBE_THEN_REASSESS
-            and phase_difference.selected_interventions
-            == ("state-gauge-probe",)
+            phase_difference.disposition is DiagnosticDisposition.PROBE_THEN_REASSESS
+            and phase_difference.selected_interventions == ("state-gauge-probe",)
         ),
         "material_target_selects_only_material_probe": (
             phase_material.disposition is DiagnosticDisposition.PROBE_THEN_REASSESS
             and phase_material.selected_interventions == ("material-probe",)
         ),
         "target_directed_cost_is_two_thirds_lower_than_full_cause": (
-            metrics["relative_mean_cost_reduction_vs_full_cause"]
-            >= 2.0 / 3.0 - 1e-12
+            metrics["relative_mean_cost_reduction_vs_full_cause"] >= 2.0 / 3.0 - 1e-12
         ),
         "unmodeled_cause_never_reaches_probe_or_transport": (
             unknown_state.disposition is DiagnosticDisposition.NONE_OF_THE_ABOVE

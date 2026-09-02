@@ -44,9 +44,7 @@ def _report(
         target_transport_ids={target: SHA for target in target_maps},
         target_maps=target_maps,
         candidate_roster_id=SHA,
-        candidate_intervention_ids={
-            candidate: SHA for candidate in candidate_designs
-        },
+        candidate_intervention_ids={candidate: SHA for candidate in candidate_designs},
         candidate_designs=candidate_designs,
         intervention_costs=intervention_costs,
         artifact_id=artifact_id,
@@ -110,7 +108,9 @@ def test_unmodeled_cause_returns_none_of_the_above_without_probe() -> None:
     assert decision.selected_interventions == ()
     assert decision.transport_permitted is False
     fallback = object()
-    assert report.deploy_or_exact_fallback("state-target", fallback=fallback) is fallback
+    assert (
+        report.deploy_or_exact_fallback("state-target", fallback=fallback) is fallback
+    )
 
 
 def test_no_detectable_error_does_not_invent_a_correction() -> None:
@@ -206,9 +206,7 @@ def test_unresolvable_target_abstains_instead_of_forcing_a_cause() -> None:
 def test_partial_target_is_reported_but_not_deployed_as_a_full_target() -> None:
     report = _ambiguous_report(
         target_maps={
-            "sum-and-difference": np.asarray(
-                [[1.0, 0.0, 1.0], [1.0, 0.0, -1.0]]
-            )
+            "sum-and-difference": np.asarray([[1.0, 0.0, 1.0], [1.0, 0.0, -1.0]])
         },
         include_informative_probes=False,
     )
@@ -262,9 +260,7 @@ def test_target_roster_can_contain_all_operational_dispositions() -> None:
     assert report.decision_for("difference").selected_interventions == (
         "state-gauge-probe",
     )
-    assert report.decision_for("material").selected_interventions == (
-        "material-probe",
-    )
+    assert report.decision_for("material").selected_interventions == ("material-probe",)
     assert report.to_record()["disposition_counts"] == {
         "abstain": 0,
         "explain_and_transport": 0,

@@ -6,9 +6,7 @@ from scripts.science.run_explain_transport_probe_abstain_controlled_v1 import ru
 def test_controlled_phase_study_exercises_all_operational_outcomes() -> None:
     result = run()
 
-    assert result["decision"] == (
-        "explain-transport-probe-abstain-strict-separation"
-    )
+    assert result["decision"] == ("explain-transport-probe-abstain-strict-separation")
     assert all(result["checks"].values())
     metrics = result["metrics"]
     assert metrics["registered_phase_targets"] == 3
@@ -18,6 +16,4 @@ def test_controlled_phase_study_exercises_all_operational_outcomes() -> None:
     assert metrics["none_of_the_above_targets"] == 1
     assert metrics["unresolvable_abstentions"] == 1
     assert metrics["no_detectable_error_targets"] == 1
-    assert metrics["relative_mean_cost_reduction_vs_full_cause"] >= (
-        2.0 / 3.0 - 1e-12
-    )
+    assert metrics["relative_mean_cost_reduction_vs_full_cause"] >= (2.0 / 3.0 - 1e-12)

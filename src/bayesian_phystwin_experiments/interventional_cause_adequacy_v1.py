@@ -293,9 +293,8 @@ class InterventionalCauseFamilyAdequacyV1:
         rank = int(np.count_nonzero(singular_values > tolerance))
         coefficient_dimension = int(total.shape[1])
         if rank:
-            coefficients = (
-                right[:rank, :].T
-                @ ((left[:, :rank].T @ residual) / singular_values[:rank])
+            coefficients = right[:rank, :].T @ (
+                (left[:, :rank].T @ residual) / singular_values[:rank]
             )
             smallest_nonzero = float(singular_values[rank - 1])
             error_bound = noise_radius / smallest_nonzero
@@ -392,7 +391,9 @@ class InterventionalCauseFamilyAdequacyV1:
             )
             start = stop
 
-        metadata = json.loads(json.dumps(self.metadata, sort_keys=True, allow_nan=False))
+        metadata = json.loads(
+            json.dumps(self.metadata, sort_keys=True, allow_nan=False)
+        )
         immutable_signatures = {
             cause: _immutable(signatures[cause]) for cause in causes
         }
@@ -502,9 +503,7 @@ class InterventionalCauseFamilyAdequacyV1:
             "relative_rank_tolerance": self.relative_rank_tolerance,
             "absolute_rank_tolerance": self.absolute_rank_tolerance,
             "total_design": _array_record(self.total_design),
-            "minimum_norm_coefficients": _array_record(
-                self.minimum_norm_coefficients
-            ),
+            "minimum_norm_coefficients": _array_record(self.minimum_norm_coefficients),
             "fitted_residual": _array_record(self.fitted_residual),
             "unexplained_residual": _array_record(self.unexplained_residual),
             "coefficient_nullspace": _array_record(self.coefficient_nullspace),
@@ -515,9 +514,7 @@ class InterventionalCauseFamilyAdequacyV1:
             "residual_norm": self.residual_norm,
             "unexplained_norm": self.unexplained_norm,
             "explained_energy_fraction": self.explained_energy_fraction,
-            "smallest_nonzero_singular_value": (
-                self.smallest_nonzero_singular_value
-            ),
+            "smallest_nonzero_singular_value": (self.smallest_nonzero_singular_value),
             "identifiable_component_error_bound": (
                 self.identifiable_component_error_bound
             ),

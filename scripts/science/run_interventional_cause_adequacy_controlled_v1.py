@@ -109,9 +109,9 @@ def run(*, trials: int, seed: int) -> dict[str, Any]:
         cause: values[:3] for cause, values in cause_signatures.items()
     }
     broken_signatures = {
-        cause: np.concatenate(
-            [values[:3], values[6:9], values[3:6], values[9:12]]
-        )[:, None]
+        cause: np.concatenate([values[:3], values[6:9], values[3:6], values[9:12]])[
+            :, None
+        ]
         for cause, matrix in cause_signatures.items()
         for values in [matrix[:, 0]]
     }
@@ -135,16 +135,12 @@ def run(*, trials: int, seed: int) -> dict[str, Any]:
         truth = labels[index % len(labels)]
         amplitude = rng.uniform(0.8, 1.2) * rng.choice((-1.0, 1.0))
         signature = (
-            unknown_signature[:, None]
-            if truth == UNKNOWN
-            else cause_signatures[truth]
+            unknown_signature[:, None] if truth == UNKNOWN else cause_signatures[truth]
         )
         residual = amplitude * signature[:, 0] + rng.normal(0.0, sigma, 12)
 
         factual_residual = residual[:3]
-        factual_columns = np.hstack(
-            [factual_signatures[cause] for cause in CAUSES]
-        )
+        factual_columns = np.hstack([factual_signatures[cause] for cause in CAUSES])
         factual_coefficients = np.linalg.lstsq(
             factual_columns,
             factual_residual,
@@ -184,8 +180,7 @@ def run(*, trials: int, seed: int) -> dict[str, Any]:
         else:
             counts["registered_trials"] += 1
             counts["adequacy_registered_rejected"] += int(
-                adequacy_certificate.status
-                is CauseFamilyAdequacyStatus.UNMODELED_CAUSE
+                adequacy_certificate.status is CauseFamilyAdequacyStatus.UNMODELED_CAUSE
             )
             unexplained_registered.append(adequacy_certificate.unexplained_norm)
         if forced_certificate.status is CauseFamilyAdequacyStatus.NO_DETECTABLE_ERROR:
@@ -294,9 +289,7 @@ def main() -> int:
     )
     args.report.write_text(report(result), encoding="utf-8")
     print(
-        json.dumps(
-            {"decision": result["decision"], "result_id": result["result_id"]}
-        )
+        json.dumps({"decision": result["decision"], "result_id": result["result_id"]})
     )
     return 0 if all(result["checks"].values()) else 3
 

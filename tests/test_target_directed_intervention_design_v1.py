@@ -27,8 +27,7 @@ def _design(
         target_map=np.asarray(target, dtype=float),
         candidate_intervention_ids={item: SHA for item in candidates},
         candidate_designs={
-            item: np.asarray(value, dtype=float)
-            for item, value in candidates.items()
+            item: np.asarray(value, dtype=float) for item, value in candidates.items()
         },
         intervention_costs=costs,
         **kwargs,
@@ -158,7 +157,7 @@ def test_arrays_are_immutable_and_content_addressed() -> None:
         assert not value.flags.writeable
         with pytest.raises(ValueError):
             value.flat[0] = 0.0
-    assert design.source_design == pytest.approx([[1.0, 0.0]])
+    np.testing.assert_allclose(design.source_design, [[1.0, 0.0]])
     assert design.artifact_id == artifact_id
     assert design.to_record()["claim_boundary"] == (
         TARGET_DIRECTED_INTERVENTION_CLAIM_BOUNDARY

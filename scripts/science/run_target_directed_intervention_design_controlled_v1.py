@@ -111,12 +111,10 @@ def run() -> dict[str, Any]:
         ),
         "targets_total": len(records),
         "zero_probe_targets": sum(
-            not record["selected_interventions"]
-            for record in records.values()
+            not record["selected_interventions"] for record in records.values()
         ),
         "one_probe_targets": sum(
-            len(record["selected_interventions"]) == 1
-            for record in records.values()
+            len(record["selected_interventions"]) == 1 for record in records.values()
         ),
     }
     checks = {
@@ -131,8 +129,7 @@ def run() -> dict[str, Any]:
             == ["state-gauge-probe"]
         ),
         "material_query_selects_only_material_probe": (
-            records["material-effect"]["selected_interventions"]
-            == ["material-probe"]
+            records["material-effect"]["selected_interventions"] == ["material-probe"]
         ),
         "full_cause_identification_requires_both_informative_probes": all(
             set(record["minimum_full_cause_interventions"])
@@ -211,9 +208,7 @@ def main() -> int:
     )
     args.report.write_text(report(result), encoding="utf-8")
     print(
-        json.dumps(
-            {"decision": result["decision"], "result_id": result["result_id"]}
-        )
+        json.dumps({"decision": result["decision"], "result_id": result["result_id"]})
     )
     return 0 if all(result["checks"].values()) else 3
 

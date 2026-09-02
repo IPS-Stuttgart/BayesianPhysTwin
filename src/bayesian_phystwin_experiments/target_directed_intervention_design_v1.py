@@ -141,11 +141,7 @@ def _stable_pseudoinverse(
     left, singular_values, right = np.linalg.svd(design, full_matrices=False)
     if rank == 0:
         return np.zeros((design.shape[1], design.shape[0]), dtype=np.float64)
-    return (
-        right[:rank, :].T
-        @ np.diag(1.0 / singular_values[:rank])
-        @ left[:, :rank].T
-    )
+    return right[:rank, :].T @ np.diag(1.0 / singular_values[:rank]) @ left[:, :rank].T
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,9 +171,7 @@ class InterventionSubsetRecordV1:
             "target_identifiable_dimension": self.target_identifiable_dimension,
             "target_ambiguity_dimension": self.target_ambiguity_dimension,
             "target_fully_identifiable": self.target_fully_identifiable,
-            "target_ambiguity_spectral_norm": (
-                self.target_ambiguity_spectral_norm
-            ),
+            "target_ambiguity_spectral_norm": (self.target_ambiguity_spectral_norm),
             "target_stability_gain": self.target_stability_gain,
         }
 
@@ -316,9 +310,7 @@ class TargetDirectedInterventionDesignV1:
                     absolute=absolute,
                 )
                 ambiguity_rank = int(
-                    np.count_nonzero(
-                        ambiguity_singular > ambiguity_tolerance
-                    )
+                    np.count_nonzero(ambiguity_singular > ambiguity_tolerance)
                 )
                 target_dimension = target.shape[0]
                 identifiable_dimension = target_dimension - ambiguity_rank
@@ -377,8 +369,7 @@ class TargetDirectedInterventionDesignV1:
                 record
                 for record in count_best
                 if record.target_stability_gain is not None
-                and abs(record.target_stability_gain - minimum_gain)
-                <= cost_tolerance
+                and abs(record.target_stability_gain - minimum_gain) <= cost_tolerance
             ]
             optimal = sorted(optimal, key=lambda item: item.intervention_ids)
             selected = optimal[0]
@@ -429,9 +420,9 @@ class TargetDirectedInterventionDesignV1:
                     item.intervention_ids,
                 ),
             )
-            minimum_full_subset: tuple[str, ...] | None = (
-                minimum_full_records[0].intervention_ids
-            )
+            minimum_full_subset: tuple[str, ...] | None = minimum_full_records[
+                0
+            ].intervention_ids
         else:
             minimum_full_cost = None
             minimum_full_subset = None
@@ -540,9 +531,7 @@ class TargetDirectedInterventionDesignV1:
             "source_design": _array_record(self.source_design),
             "target_map": _array_record(self.target_map),
             "candidate_order": list(self.candidate_order),
-            "candidate_intervention_ids": dict(
-                self.candidate_intervention_ids
-            ),
+            "candidate_intervention_ids": dict(self.candidate_intervention_ids),
             "candidate_designs": {
                 item: _array_record(self.candidate_designs[item])
                 for item in self.candidate_order
@@ -576,9 +565,7 @@ class TargetDirectedInterventionDesignV1:
             "cost_saving_vs_full_cause_identification": (
                 self.cost_saving_vs_full_cause_identification
             ),
-            "subset_records": [
-                record.to_record() for record in self.subset_records
-            ],
+            "subset_records": [record.to_record() for record in self.subset_records],
             "metadata": self.metadata,
             "claim_boundary": TARGET_DIRECTED_INTERVENTION_CLAIM_BOUNDARY,
         }

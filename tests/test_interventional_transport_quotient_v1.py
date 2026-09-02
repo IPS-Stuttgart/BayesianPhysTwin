@@ -28,8 +28,7 @@ def _adequacy(
         whitening_id=SHA,
         cause_signature_ids={cause: SHA for cause in signatures},
         cause_signatures={
-            cause: np.asarray(value, dtype=float)
-            for cause, value in signatures.items()
+            cause: np.asarray(value, dtype=float) for cause, value in signatures.items()
         },
         whitened_residual=np.asarray(residual, dtype=float),
         noise_radius=noise_radius,
@@ -46,8 +45,7 @@ def _quotient(
         target_intervention_roster_id=SHA,
         target_transport_ids={target: SHA for target in targets},
         target_maps={
-            target: np.asarray(value, dtype=float)
-            for target, value in targets.items()
+            target: np.asarray(value, dtype=float) for target, value in targets.items()
         },
         **kwargs,
     )
@@ -116,8 +114,7 @@ def test_identifiable_effect_is_invariant_to_affine_representative() -> None:
     quotient = _quotient(adequacy, {"held-action": [[1.0, 1.0]]})
     record = quotient.record_for("held-action")
     alternative = (
-        adequacy.minimum_norm_coefficients
-        + 7.0 * adequacy.coefficient_nullspace[:, 0]
+        adequacy.minimum_norm_coefficients + 7.0 * adequacy.coefficient_nullspace[:, 0]
     )
 
     assert record.identifiable_effect == pytest.approx(
@@ -180,9 +177,7 @@ def test_noise_bound_controls_identifiable_target_perturbation() -> None:
     ).record_for("held-action")
 
     actual = float(
-        np.linalg.norm(
-            changed_record.identifiable_effect - record.identifiable_effect
-        )
+        np.linalg.norm(changed_record.identifiable_effect - record.identifiable_effect)
     )
     assert actual <= record.noise_error_bound + 1e-12
     assert record.stability_gain == pytest.approx(1.5)
@@ -203,11 +198,9 @@ def test_arrays_are_immutable_and_content_addressed() -> None:
         assert not value.flags.writeable
         with pytest.raises(ValueError):
             value.flat[0] = 0.0
-    assert quotient.target_maps["held-action"] == pytest.approx([[1.0, 1.0]])
+    np.testing.assert_allclose(quotient.target_maps["held-action"], [[1.0, 1.0]])
     assert quotient.artifact_id == artifact_id
-    assert quotient.to_record()["claim_boundary"] == (
-        TRANSPORT_QUOTIENT_CLAIM_BOUNDARY
-    )
+    assert quotient.to_record()["claim_boundary"] == (TRANSPORT_QUOTIENT_CLAIM_BOUNDARY)
 
     roundtrip = _quotient(
         _adequacy({"state": [[1.0]], "gauge": [[1.0]]}, [2.0]),

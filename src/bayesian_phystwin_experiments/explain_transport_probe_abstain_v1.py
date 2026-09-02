@@ -212,8 +212,7 @@ class ExplainTransportProbeAbstainV1:
             InterventionalCauseFamilyAdequacyV1,
         ):
             raise TypeError(
-                "adequacy_certificate must be an "
-                "InterventionalCauseFamilyAdequacyV1"
+                "adequacy_certificate must be an InterventionalCauseFamilyAdequacyV1"
             )
         _digest(
             self.adequacy_certificate.artifact_id,
@@ -363,18 +362,18 @@ class ExplainTransportProbeAbstainV1:
             else:
                 disposition = DiagnosticDisposition.TRANSPORT_WITHOUT_CAUSE
                 reason = "target-is-invariant-over-the-set-valued-cause-explanation"
-        elif design is not None and design.status is InterventionDesignStatus.TARGET_IDENTIFIED:
+        elif (
+            design is not None
+            and design.status is InterventionDesignStatus.TARGET_IDENTIFIED
+        ):
             disposition = DiagnosticDisposition.PROBE_THEN_REASSESS
             reason = "minimum-cost-registered-intervention-identifies-the-target"
             transport_permitted = False
             none_of_the_above = False
             selected_interventions = design.selected_interventions
-        elif (
-            target_record.status is TransportQuotientStatus.PARTIALLY_IDENTIFIABLE
-            or (
-                design is not None
-                and design.status is InterventionDesignStatus.PARTIAL_IMPROVEMENT
-            )
+        elif target_record.status is TransportQuotientStatus.PARTIALLY_IDENTIFIABLE or (
+            design is not None
+            and design.status is InterventionDesignStatus.PARTIAL_IMPROVEMENT
         ):
             disposition = DiagnosticDisposition.PARTIAL_ONLY_FALLBACK
             reason = "only-a-target-subspace-is-identifiable"

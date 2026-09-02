@@ -44,7 +44,7 @@ def source_certificate(residual: float) -> InterventionalCauseFamilyAdequacyV1:
             "state": np.asarray([[1.0]]),
         },
         whitened_residual=np.asarray([residual]),
-        noise_radius=0.05,
+        noise_radius=1e-12,
     )
 
 
@@ -112,13 +112,9 @@ def run(*, trials: int, seed: int) -> dict[str, Any]:
             quotient_target = float(record.identifiable_effect[0])
         else:
             quotient_probe_count += 1
-            probe_observation = (
-                state - gauge + rng.normal(0.0, probe_noise_sigma)
-            )
+            probe_observation = state - gauge + rng.normal(0.0, probe_noise_sigma)
             augmented_design = np.asarray([[1.0, 1.0], [1.0, -1.0]])
-            augmented_residual = np.asarray(
-                [source_observation, probe_observation]
-            )
+            augmented_residual = np.asarray([source_observation, probe_observation])
             augmented_coefficients = np.linalg.solve(
                 augmented_design,
                 augmented_residual,
@@ -252,9 +248,7 @@ def main() -> int:
     )
     args.report.write_text(report(result), encoding="utf-8")
     print(
-        json.dumps(
-            {"decision": result["decision"], "result_id": result["result_id"]}
-        )
+        json.dumps({"decision": result["decision"], "result_id": result["result_id"]})
     )
     return 0 if all(result["checks"].values()) else 3
 

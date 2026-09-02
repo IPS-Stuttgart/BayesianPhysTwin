@@ -23,9 +23,7 @@ from .interventional_cause_adequacy_v1 import (
     InterventionalCauseFamilyAdequacyV1,
 )
 
-TRANSPORT_QUOTIENT_SCHEMA: Final = (
-    "bayesian_phystwin.interventional_transport_quotient"
-)
+TRANSPORT_QUOTIENT_SCHEMA: Final = "bayesian_phystwin.interventional_transport_quotient"
 TRANSPORT_QUOTIENT_VERSION: Final = 1
 TRANSPORT_QUOTIENT_SEMANTICS: Final = (
     "held-intervention-query-invariance-over-cause-affine-set-v1"
@@ -125,11 +123,7 @@ def _stable_pseudoinverse(
     left, singular_values, right = np.linalg.svd(matrix, full_matrices=False)
     if rank == 0:
         return np.zeros((matrix.shape[1], matrix.shape[0]), dtype=np.float64)
-    return (
-        right[:rank, :].T
-        @ np.diag(1.0 / singular_values[:rank])
-        @ left[:, :rank].T
-    )
+    return right[:rank, :].T @ np.diag(1.0 / singular_values[:rank]) @ left[:, :rank].T
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,9 +170,7 @@ class TargetTransportQuotientV1:
             "representative_effect": _array_record(self.representative_effect),
             "identifiable_effect": _array_record(self.identifiable_effect),
             "ambiguity_map": _array_record(self.ambiguity_map),
-            "identifiable_projector": _array_record(
-                self.identifiable_projector
-            ),
+            "identifiable_projector": _array_record(self.identifiable_projector),
             "ambiguity_projector": _array_record(self.ambiguity_projector),
             "transport_operator": _array_record(self.transport_operator),
         }
@@ -206,8 +198,7 @@ class InterventionalTransportQuotientV1:
             InterventionalCauseFamilyAdequacyV1,
         ):
             raise TypeError(
-                "adequacy_certificate must be an "
-                "InterventionalCauseFamilyAdequacyV1"
+                "adequacy_certificate must be an InterventionalCauseFamilyAdequacyV1"
             )
         _digest(
             self.adequacy_certificate.artifact_id,
@@ -222,7 +213,9 @@ class InterventionalTransportQuotientV1:
         if not isinstance(self.target_transport_ids, Mapping):
             raise TypeError("target_transport_ids must be a mapping")
         targets = tuple(sorted(self.target_maps))
-        if not targets or any(type(target) is not str or not target for target in targets):
+        if not targets or any(
+            type(target) is not str or not target for target in targets
+        ):
             raise ValueError("target_maps must use nonempty literal string keys")
         if set(self.target_transport_ids) != set(targets):
             raise ValueError("target_transport_ids must cover exactly the targets")
@@ -297,14 +290,10 @@ class InterventionalTransportQuotientV1:
                     relative=relative,
                     absolute=absolute,
                 )
-                ambiguity_rank = int(
-                    np.count_nonzero(singular_values > tolerance)
-                )
+                ambiguity_rank = int(np.count_nonzero(singular_values > tolerance))
                 ambiguity_basis = left[:, :ambiguity_rank]
                 ambiguity_projector = ambiguity_basis @ ambiguity_basis.T
-                identifiable_projector = (
-                    np.eye(target_dimension) - ambiguity_projector
-                )
+                identifiable_projector = np.eye(target_dimension) - ambiguity_projector
                 if ambiguity_rank == 0:
                     status = TransportQuotientStatus.FULLY_IDENTIFIABLE
                 elif ambiguity_rank < target_dimension:
@@ -325,12 +314,8 @@ class InterventionalTransportQuotientV1:
             ambiguity_spectral = (
                 float(ambiguity_singular[0]) if ambiguity_singular.size else 0.0
             )
-            stability_gain = float(
-                np.linalg.norm(transport_operator, ord=2)
-            )
-            noise_error_bound = (
-                stability_gain * self.adequacy_certificate.noise_radius
-            )
+            stability_gain = float(np.linalg.norm(transport_operator, ord=2))
+            noise_error_bound = stability_gain * self.adequacy_certificate.noise_radius
             target_energy = float(np.linalg.norm(target_map, ord="fro") ** 2)
             identifiable_energy = float(
                 np.linalg.norm(identifiable_map, ord="fro") ** 2
@@ -339,9 +324,7 @@ class InterventionalTransportQuotientV1:
                 np.clip(identifiable_energy / target_energy, 0.0, 1.0)
             )
             identifiable_dimension = target_dimension - ambiguity_rank
-            full_permitted = (
-                status is TransportQuotientStatus.FULLY_IDENTIFIABLE
-            )
+            full_permitted = status is TransportQuotientStatus.FULLY_IDENTIFIABLE
             partial_available = status in {
                 TransportQuotientStatus.FULLY_IDENTIFIABLE,
                 TransportQuotientStatus.PARTIALLY_IDENTIFIABLE,
@@ -406,9 +389,7 @@ class InterventionalTransportQuotientV1:
             result[f"representative_effect::{prefix}"] = record.representative_effect
             result[f"identifiable_effect::{prefix}"] = record.identifiable_effect
             result[f"ambiguity_map::{prefix}"] = record.ambiguity_map
-            result[f"identifiable_projector::{prefix}"] = (
-                record.identifiable_projector
-            )
+            result[f"identifiable_projector::{prefix}"] = record.identifiable_projector
             result[f"ambiguity_projector::{prefix}"] = record.ambiguity_projector
             result[f"transport_operator::{prefix}"] = record.transport_operator
         return result
@@ -419,9 +400,7 @@ class InterventionalTransportQuotientV1:
             "schema_version": TRANSPORT_QUOTIENT_VERSION,
             "semantics": TRANSPORT_QUOTIENT_SEMANTICS,
             "adequacy_certificate_id": self.adequacy_certificate.artifact_id,
-            "target_intervention_roster_id": (
-                self.target_intervention_roster_id
-            ),
+            "target_intervention_roster_id": (self.target_intervention_roster_id),
             "target_order": list(self.target_order),
             "target_transport_ids": dict(self.target_transport_ids),
             "target_maps": {
@@ -430,9 +409,7 @@ class InterventionalTransportQuotientV1:
             },
             "relative_rank_tolerance": self.relative_rank_tolerance,
             "absolute_rank_tolerance": self.absolute_rank_tolerance,
-            "target_records": [
-                record.to_record() for record in self.target_records
-            ],
+            "target_records": [record.to_record() for record in self.target_records],
             "metadata": self.metadata,
             "claim_boundary": TRANSPORT_QUOTIENT_CLAIM_BOUNDARY,
         }

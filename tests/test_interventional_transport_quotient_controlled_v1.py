@@ -6,9 +6,7 @@ from scripts.science.run_interventional_transport_quotient_controlled_v1 import 
 def test_transport_can_be_known_before_cause_with_fewer_probes() -> None:
     result = run(trials=2_000, seed=20260902)
 
-    assert result["decision"] == (
-        "transport-known-before-cause-and-probe-use-reduced"
-    )
+    assert result["decision"] == ("transport-known-before-cause-and-probe-use-reduced")
     assert all(result["checks"].values())
     metrics = result["metrics"]
     assert metrics["source_unique_cause_coverage"] == 0.0

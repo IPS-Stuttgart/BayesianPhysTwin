@@ -26,8 +26,7 @@ def _certificate(
         whitening_id=SHA,
         cause_signature_ids={cause: SHA for cause in signatures},
         cause_signatures={
-            cause: np.asarray(value, dtype=float)
-            for cause, value in signatures.items()
+            cause: np.asarray(value, dtype=float) for cause, value in signatures.items()
         },
         whitened_residual=np.asarray(residual, dtype=float),
         noise_radius=noise_radius,
@@ -126,10 +125,7 @@ def test_status_is_invariant_to_invertible_within_cause_coordinates() -> None:
     transform = np.asarray([[2.0, 1.0], [0.0, 0.5]])
     transformed = _certificate(
         {
-            "material": np.asarray(
-                [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]
-            )
-            @ transform,
+            "material": np.asarray([[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]) @ transform,
             "bias": [[0.0], [0.0], [1.0]],
         },
         [2.0, -1.0, 0.5],

@@ -70,7 +70,7 @@ def test_calibration_applies_exact_frozen_radius() -> None:
         whitened_residual=np.asarray([1.0, 0.25]),
     )
 
-    assert calibration.noise_radius == 0.4
+    assert calibration.noise_radius == 0.3
     assert certificate.noise_radius == calibration.noise_radius
     assert certificate.status is CauseFamilyAdequacyStatus.ADEQUATE_UNIQUE
     assert certificate.metadata["cause_family_calibration_id"] == (

@@ -193,9 +193,7 @@ class CauseFamilyAdequacyCalibrationV1:
                 self.candidate_family_frozen_before_scores
             ),
             "target_outcomes_used": self.target_outcomes_used,
-            "source_score_order_statistics": list(
-                self.source_score_order_statistics
-            ),
+            "source_score_order_statistics": list(self.source_score_order_statistics),
             "quantile_index_one_based": self.quantile_index_one_based,
             "noise_radius": self.noise_radius,
             "finite_sample_coverage_lower_bound": (
