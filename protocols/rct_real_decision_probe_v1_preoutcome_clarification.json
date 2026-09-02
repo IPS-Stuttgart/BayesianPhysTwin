@@ -1,0 +1,34 @@
+{
+  "clarifications": {
+    "force_increment_n": "abs(raw_fz_frame - raw_fz_at_the_maximum_z_frame_within_the_same_trajectory)",
+    "force_increment_rationale": "This removes a grammatical ambiguity in the parent protocol's prose and matches a nonnegative change from the trajectory-local shallowest-frame baseline.",
+    "false_safe_rate": "number of certified selected nonzero actions whose realized force exceeds the limit divided by all material-budget decisions for that policy",
+    "selected_probe_count": "number of distinct first optional probes selected by the decision-directed policy across the 20 source-test materials",
+    "simultaneous_force_coverage": "fraction of materials for which every registered nonzero held action is upper-covered at all four probe budgets of the evaluated policy",
+    "trajectory_tie_break": "if maximum z_frame occurs more than once, use the first CSV row at that maximum"
+  },
+  "contract": "rct-real-decision-probe-preoutcome-clarification-v1",
+  "information_boundary": {
+    "archive_download_complete": false,
+    "calibration_force_rows_opened": false,
+    "confirmation_force_rows_opened": false,
+    "held_v8_accessed": false,
+    "source_test_force_rows_opened": false
+  },
+  "parent": {
+    "protocol_commit": "43b47d26a57c1340873a4136f4aea735e1febdd3",
+    "protocol_config_sha256": "6a6d0d0b52ed71cb530e0ad5cb5fe5898f202d6dd9ad099cab6b035fa063a140",
+    "protocol_file_sha256": "c6eac3371e379956c285fe0ea0743c2ba9b67eb40d09fe18a3642839188ba8bd"
+  },
+  "schema_version": 1,
+  "scientific_effect": {
+    "changes_action_grid": false,
+    "changes_cohort": false,
+    "changes_force_limit": false,
+    "changes_method_parameters": false,
+    "changes_probe_roster": false,
+    "changes_promotion_thresholds": false,
+    "changes_statistical_test": false
+  },
+  "status": "frozen-before-force-outcome-access"
+}

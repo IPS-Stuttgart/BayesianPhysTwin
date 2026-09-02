@@ -14,6 +14,7 @@ from bayesian_phystwin.rct_real_decision_protocol import (
     SELECTABLE_PROBES,
     SOURCE_TEST_MATERIALS,
     cohort_from_protocol,
+    load_rct_preoutcome_clarification,
     load_rct_real_decision_protocol,
     protocol_config_sha256,
     protocol_file_sha256,
@@ -29,6 +30,17 @@ PROTOCOL_FILE_SHA256 = (
 )
 PROTOCOL_CONFIG_SHA256 = (
     "6a6d0d0b52ed71cb530e0ad5cb5fe5898f202d6dd9ad099cab6b035fa063a140"
+)
+CLARIFICATION_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "protocols"
+    / "rct_real_decision_probe_v1_preoutcome_clarification.json"
+)
+CLARIFICATION_FILE_SHA256 = (
+    "e05f77b571e3676cfd63fa8efcc73028859921a3b7c0f6516996220c4f5de87f"
+)
+CLARIFICATION_CONFIG_SHA256 = (
+    "f9248258e40cd42cd718f1244658234777731681720afa1733c3c05f68346b05"
 )
 
 
@@ -61,6 +73,16 @@ def test_material_roles_are_pairwise_disjoint_and_exhaust_the_reserved_sixty() -
     assert cohort.role(SOURCE_TEST_MATERIALS[0]) == "source_test"
     assert cohort.role(CONFIRMATION_MATERIALS[0]) == "confirmation"
     assert cohort.role("unregistered-fit-material") == "fit"
+
+
+def test_source_independent_clarification_is_hash_locked_to_parent_protocol() -> None:
+    payload = load_rct_preoutcome_clarification(CLARIFICATION_PATH)
+
+    assert protocol_file_sha256(CLARIFICATION_PATH) == CLARIFICATION_FILE_SHA256
+    assert protocol_config_sha256(payload) == CLARIFICATION_CONFIG_SHA256
+    assert payload["parent"]["protocol_file_sha256"] == PROTOCOL_FILE_SHA256
+    assert payload["information_boundary"]["archive_download_complete"] is False
+    assert payload["information_boundary"]["confirmation_force_rows_opened"] is False
 
 
 def test_probe_and_held_intervention_rosters_are_physically_disjoint() -> None:

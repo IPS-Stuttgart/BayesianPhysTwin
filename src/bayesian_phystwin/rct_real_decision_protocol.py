@@ -11,6 +11,9 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 PROTOCOL_ID = "rct-real-decision-probe-protocol-v1"
+PREOUTCOME_CLARIFICATION_ID = (
+    "rct-real-decision-probe-preoutcome-clarification-v1"
+)
 RCT_CODE_REVISION = "8d2f2de96b08d7c1e4d754e327b974f3e41283b8"
 RCT_ARCHIVE_FILE_ID = 65037834
 RCT_ARCHIVE_SIZE_BYTES = 9_905_561_734
@@ -98,6 +101,13 @@ OFFICIAL_SPLIT_SHA256 = {
 _CANONICAL_CONFIG_SHA256 = (
     "6a6d0d0b52ed71cb530e0ad5cb5fe5898f202d6dd9ad099cab6b035fa063a140"
 )
+_PROTOCOL_FILE_SHA256 = (
+    "c6eac3371e379956c285fe0ea0743c2ba9b67eb40d09fe18a3642839188ba8bd"
+)
+_PREOUTCOME_CLARIFICATION_CONFIG_SHA256 = (
+    "f9248258e40cd42cd718f1244658234777731681720afa1733c3c05f68346b05"
+)
+_PREOUTCOME_PROTOCOL_COMMIT = "43b47d26a57c1340873a4136f4aea735e1febdd3"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -354,6 +364,71 @@ def load_rct_real_decision_protocol(path: str | Path) -> dict[str, Any]:
     return dict(payload)
 
 
+def load_rct_preoutcome_clarification(path: str | Path) -> dict[str, Any]:
+    """Load the source-independent clarification bound to the frozen protocol."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(isinstance(payload, Mapping), "clarification must be a JSON object")
+    _require(payload.get("schema_version") == 1, "clarification schema changed")
+    _require(
+        payload.get("contract") == PREOUTCOME_CLARIFICATION_ID,
+        "clarification ID changed",
+    )
+    _require(
+        payload.get("status") == "frozen-before-force-outcome-access",
+        "clarification status changed",
+    )
+    _require(
+        payload.get("parent")
+        == {
+            "protocol_commit": _PREOUTCOME_PROTOCOL_COMMIT,
+            "protocol_config_sha256": _CANONICAL_CONFIG_SHA256,
+            "protocol_file_sha256": _PROTOCOL_FILE_SHA256,
+        },
+        "clarification parent lock changed",
+    )
+    _require(
+        payload.get("information_boundary")
+        == {
+            "archive_download_complete": False,
+            "calibration_force_rows_opened": False,
+            "confirmation_force_rows_opened": False,
+            "held_v8_accessed": False,
+            "source_test_force_rows_opened": False,
+        },
+        "clarification information boundary changed",
+    )
+    _require(
+        payload.get("scientific_effect")
+        == {
+            "changes_action_grid": False,
+            "changes_cohort": False,
+            "changes_force_limit": False,
+            "changes_method_parameters": False,
+            "changes_probe_roster": False,
+            "changes_promotion_thresholds": False,
+            "changes_statistical_test": False,
+        },
+        "clarification scientific effect changed",
+    )
+    clarifications = payload.get("clarifications")
+    _require(isinstance(clarifications, Mapping), "clarifications are missing")
+    _require(
+        clarifications.get("force_increment_n")
+        == (
+            "abs(raw_fz_frame - "
+            "raw_fz_at_the_maximum_z_frame_within_the_same_trajectory)"
+        ),
+        "force-increment clarification changed",
+    )
+    _require(
+        protocol_config_sha256(payload)
+        == _PREOUTCOME_CLARIFICATION_CONFIG_SHA256,
+        "canonical clarification digest changed",
+    )
+    return dict(payload)
+
+
 def cohort_from_protocol(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
     """Return the validated material roles from an already parsed protocol."""
 
@@ -367,11 +442,13 @@ __all__ = [
     "HELD_INTERVENTION",
     "MANDATORY_ANCHOR",
     "OFFICIAL_SPLIT_SHA256",
+    "PREOUTCOME_CLARIFICATION_ID",
     "PROTOCOL_ID",
     "RCTRealDecisionCohort",
     "SELECTABLE_PROBES",
     "SOURCE_TEST_MATERIALS",
     "cohort_from_protocol",
+    "load_rct_preoutcome_clarification",
     "load_rct_real_decision_protocol",
     "protocol_config_sha256",
     "protocol_file_sha256",
