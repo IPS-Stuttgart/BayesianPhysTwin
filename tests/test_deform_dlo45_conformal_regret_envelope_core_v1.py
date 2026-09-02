@@ -110,7 +110,7 @@ def test_envelope_never_tightens_registered_bound() -> None:
     ("realized", "registered", "message"),
     [
         (
-            np.asarray([[['bad']]], dtype=object),
+            np.asarray([[["bad"]]], dtype=object),
             np.zeros((1, 1, 1)),
             "real numeric",
         ),
@@ -236,7 +236,9 @@ def test_support_robust_decision_falls_back_on_tied_minimum() -> None:
     )
 
 
-def test_support_robust_decision_falls_back_when_best_nonfallback_exceeds_budget() -> None:
+def test_support_robust_decision_falls_back_when_best_nonfallback_exceeds_budget() -> (
+    None
+):
     result = support_robust_decision(
         [0.5, 0.02, 0.2],
         conformal_radius=0.04,
