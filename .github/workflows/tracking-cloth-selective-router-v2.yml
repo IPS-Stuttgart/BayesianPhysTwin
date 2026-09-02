@@ -1,0 +1,265 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth nested selective router v2
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/tracking-cloth-selective-router-v2.yml"
+      - ".github/quality/workflow-inventory-budget-v1.json"
+      - ".github/requests/tracking-cloth-selective-router-v2.json"
+      - "experiments/tracking_cloth_selective_router_v2/**"
+      - "tests/test_tracking_cloth_selective_router_v2.py"
+      - "tests/test_workflow_inventory_budget.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/requests/tracking-cloth-selective-router-v2.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracking-cloth-selective-router-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/tracking-cloth-selective-router-v2.json
+  ARCHIVE_URL: "https://zenodo.org/records/14644526/files/tracking_dataset.zip?download=1"
+  ARCHIVE_MD5: b4868b702f8a42b2ea1069d0f1a3b8f6
+  ARCHIVE_SHA256: 14916efa89a26d991c024024cc9449397d3a6f654311e621bb91e9602e231e1a
+  PARENT_RESULT_ID: 25ab847afd8e4a90eef19c2a48cd4c257fe6bf88f6159f617ed5119fec7fa26f
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Nested-router contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: experiments/tracking_cloth_deformation_v1/requirements.txt
+      - name: Install focused dependencies
+        run: >-
+          python -m pip install
+          -r experiments/tracking_cloth_deformation_v1/requirements.txt
+          pytest ruff
+      - name: Validate nested router
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_tracking_cloth_selective_router_v2.py
+          python -m ruff check \
+            experiments/tracking_cloth_selective_router_v2 \
+            tests/test_tracking_cloth_selective_router_v2.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_selective_router_v2 \
+            tests/test_tracking_cloth_selective_router_v2.py
+      - name: Validate request when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test ! -f "$REQUEST_PATH"; then
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          expected = {
+              "schema": "tracking-cloth-selective-router-v2-request-v1",
+              "mode": "retrospective_nested_evaluate",
+              "archive_url": os.environ["ARCHIVE_URL"],
+              "archive_md5": os.environ["ARCHIVE_MD5"],
+              "archive_sha256": os.environ["ARCHIVE_SHA256"],
+              "parent_result_id": os.environ["PARENT_RESULT_ID"],
+              "dataset_record": "14644526",
+              "paper_claim_authorized": False,
+              "fresh_confirmation": False,
+          }
+          for key, value in expected.items():
+              assert request.get(key) == value, (key, request.get(key), value)
+          assert set(request) == set(expected) | {
+              "request_id",
+              "expected_source_revision",
+          }
+          assert request["request_id"]
+          revision = request["expected_source_revision"]
+          assert len(revision) == 40
+          assert set(revision) <= set("0123456789abcdef")
+          PY
+
+  authorize:
+    name: Authorize one retrospective nested run
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Require one newly added request file
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$PUSH_FORCED" = false
+          test "$BEFORE_SHA" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = \
+            $'A\t.github/requests/tracking-cloth-selective-router-v2.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"],
+              text=True,
+          ).strip()
+          if request["expected_source_revision"] != parent:
+              raise SystemExit("Request is not bound to its trigger parent")
+          PY
+
+  evaluate:
+    name: Nested selective routing / hosted public archive
+    needs: [contracts, authorize]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Materialize publisher-verified archive
+        shell: bash
+        env:
+          RUN_ROOT: ${{ runner.temp }}/tracking-cloth-router-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          dataset="$RUN_ROOT/dataset"
+          mkdir -p "$dataset"
+          archive="$dataset/tracking_dataset.zip"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --connect-timeout 30 "$ARCHIVE_URL" --output "$archive"
+          printf '%s  %s\n' "$ARCHIVE_MD5" "$archive" \
+            | md5sum --check --strict
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" \
+            | sha256sum --check --strict
+          DATASET_PATH="$dataset" python - <<'PY'
+          import os
+          import zipfile
+          from pathlib import Path
+
+          root = Path(os.environ["DATASET_PATH"]).resolve()
+          archive = root / "tracking_dataset.zip"
+          with zipfile.ZipFile(archive) as zipped:
+              bad = zipped.testzip()
+              if bad is not None:
+                  raise SystemExit(f"ZIP integrity failure: {bad}")
+              for entry in zipped.infolist():
+                  destination = (root / entry.filename).resolve()
+                  if not destination.is_relative_to(root):
+                      raise SystemExit(f"Unsafe ZIP member: {entry.filename}")
+              zipped.extractall(root)
+          PY
+          echo "ROUTER_RUN_ROOT=$RUN_ROOT" >> "$GITHUB_ENV"
+      - name: Install frozen scientific dependency
+        run: >-
+          python -m pip install
+          -r experiments/tracking_cloth_deformation_v1/requirements.txt
+      - name: Run nested retrospective evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m experiments.tracking_cloth_selective_router_v2.run \
+            --dataset-root "$ROUTER_RUN_ROOT/dataset" \
+            --output "$ROUTER_RUN_ROOT/output"
+          REQUEST_PATH="$GITHUB_WORKSPACE/$REQUEST_PATH" \
+          OUTPUT_PATH="$ROUTER_RUN_ROOT/output/evaluation_request.json" \
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          raw = Path(os.environ["REQUEST_PATH"]).read_bytes()
+          request = json.loads(raw)
+          request["request_sha256"] = hashlib.sha256(raw).hexdigest()
+          request["github_run_id"] = os.environ["GITHUB_RUN_ID"]
+          request["github_run_attempt"] = os.environ["GITHUB_RUN_ATTEMPT"]
+          Path(os.environ["OUTPUT_PATH"]).write_text(
+              json.dumps(request, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+      - name: Reject raw trajectory payloads
+        if: always() && env.ROUTER_RUN_ROOT != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$ROUTER_RUN_ROOT/output"
+          if test -d "$output" && \
+              find "$output" -type f \( -iname '*.npz' -o -iname '*.pkl' \) \
+              -print -quit | grep -q .; then
+            echo "Raw prediction or trajectory payload found" >&2
+            exit 3
+          fi
+      - name: Publish summary
+        if: always() && env.ROUTER_RUN_ROOT != ''
+        shell: bash
+        run: |
+          output="$ROUTER_RUN_ROOT/output"
+          if test -f "$output/report.md"; then
+            cat "$output/report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f "$output/failure.json"; then
+            echo "## Incomplete run: no scientific conclusion" \
+              >> "$GITHUB_STEP_SUMMARY"
+            cat "$output/failure.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload compact evidence
+        if: always() && env.ROUTER_RUN_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-selective-router-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.ROUTER_RUN_ROOT }}/output/*.json
+            ${{ env.ROUTER_RUN_ROOT }}/output/*.csv
+            ${{ env.ROUTER_RUN_ROOT }}/output/report.md
+            ${{ env.ROUTER_RUN_ROOT }}/output/DATA_LICENSE.txt
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Remove hosted execution
+        if: always()
+        shell: bash
+        run: rm -rf "${ROUTER_RUN_ROOT:-}"
