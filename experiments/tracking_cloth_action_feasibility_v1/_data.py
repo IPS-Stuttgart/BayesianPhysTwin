@@ -87,8 +87,7 @@ def _analysis_grid(
         atol=1e-9,
     ):
         raise ValueError(
-            "prefix plus forecast must be an integer multiple of the "
-            "analysis period"
+            "prefix plus forecast must be an integer multiple of the analysis period"
         )
     cutoff = int(round(prefix_seconds / period_seconds))
     if cutoff < 1 or not np.isclose(
@@ -133,7 +132,9 @@ def source_trajectory(
 
     allowed = {int(value) for value in protocol["source_repetitions"]}
     if case.repetition not in allowed:
-        raise ValueError("numeric trajectory access is restricted to source repetitions")
+        raise ValueError(
+            "numeric trajectory access is restricted to source repetitions"
+        )
 
     rows = list(_row_stream(case.path))
     marker_count = rows[0][3]
@@ -197,9 +198,7 @@ def source_trajectory(
         raise ValueError("insufficient source trajectory samples")
     native_dt = np.diff(raw_times)
     if not np.all(np.isfinite(native_dt)) or np.any(native_dt <= 0.0):
-        raise ValueError(
-            "recorded source timestamps must be finite and increasing"
-        )
+        raise ValueError("recorded source timestamps must be finite and increasing")
     median_dt = float(np.median(native_dt))
     coverage_slack = max(2.0 * median_dt, 0.05)
     if raw_times[-1] < target_times[-1] - coverage_slack:
@@ -240,9 +239,7 @@ def source_rows(
     allowed = {int(value) for value in protocol["source_repetitions"]}
     source_cases = [case for case in cases if case.repetition in allowed]
     expected_count = (
-        len(protocol["materials"])
-        * len(protocol["interactions"])
-        * len(allowed)
+        len(protocol["materials"]) * len(protocol["interactions"]) * len(allowed)
     )
     if len(source_cases) != expected_count:
         raise ValueError("source roster is incomplete")
