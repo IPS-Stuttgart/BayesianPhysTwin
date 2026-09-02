@@ -199,9 +199,7 @@ class QueryProbeCertificateV1(NamedTuple):
             ),
             "minimax_worst_case_regret": self.minimax_worst_case_regret,
             "total_regret_plus_cost": self.total_regret_plus_cost,
-            "has_tolerance_admissible_policy": (
-                self.has_tolerance_admissible_policy
-            ),
+            "has_tolerance_admissible_policy": (self.has_tolerance_admissible_policy),
             "claim_boundary": QUERY_PROBE_CERTIFICATE_CLAIM_BOUNDARY,
         }
 
@@ -230,9 +228,7 @@ class ActProbeFallbackDecisionV1(NamedTuple):
                 else self.contingent_action_indices.tolist()
             ),
             "fallback_action_index": self.fallback_action_index,
-            "direct_minimax_worst_case_regret": (
-                self.direct_minimax_worst_case_regret
-            ),
+            "direct_minimax_worst_case_regret": (self.direct_minimax_worst_case_regret),
             "selected_value": self.selected_value,
             "maximum_probe_total_value": self.maximum_probe_total_value,
             "claim_boundary": QUERY_PROBE_CERTIFICATE_CLAIM_BOUNDARY,
@@ -336,7 +332,9 @@ def act_probe_fallback_decision(
             raise ValueError("direct and probe action counts differ")
         nested = probe.policy_decision_certificate
         if (
-            not np.array_equal(nested.prior_support_mask, direct_certificate.prior_support_mask)
+            not np.array_equal(
+                nested.prior_support_mask, direct_certificate.prior_support_mask
+            )
             or not np.array_equal(nested.class_index, direct_certificate.class_index)
             or not np.allclose(
                 nested.quotient_weights,
@@ -391,7 +389,9 @@ def act_probe_fallback_decision(
         direct_minimax_worst_case_regret=float(
             direct_certificate.minimax_worst_case_regret
         ),
-        selected_value=float(direct_certificate.worst_case_regret[fallback_action_index]),
+        selected_value=float(
+            direct_certificate.worst_case_regret[fallback_action_index]
+        ),
         maximum_probe_total_value=threshold,
     )
 
