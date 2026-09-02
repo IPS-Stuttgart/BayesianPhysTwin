@@ -29,6 +29,55 @@ def _canonical_id(value: object) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _reject_drifted_candidates(
+    census: dict[str, object],
+) -> tuple[dict[str, object], list[dict[str, str]]]:
+    """Remove mutable records whose bytes no longer match the frozen census.
+
+    A changed candidate is ineligible rather than grounds for selecting its new
+    content.  The original census remains immutable and the complete rejection
+    list is retained in the derived plan.
+    """
+
+    records = census.get("ranked_candidates")
+    if not isinstance(records, list):
+        raise ValueError("source census has no ranked candidate list")
+    retained: list[object] = []
+    rejected: list[dict[str, str]] = []
+    for raw in records:
+        if not isinstance(raw, dict):
+            raise ValueError("source census candidate must be an object")
+        path_value = raw.get("path")
+        expected = raw.get("sha256")
+        if not isinstance(path_value, str) or not isinstance(expected, str):
+            raise ValueError("source census candidate lacks path or SHA-256")
+        path = Path(path_value)
+        if path.is_file() and not path.is_symlink():
+            observed = _sha256_file(path)
+            if observed != expected:
+                rejected.append(
+                    {
+                        "path": path.as_posix(),
+                        "expected_sha256": expected,
+                        "observed_sha256": observed,
+                        "reason": "source-artifact-changed-after-census",
+                    }
+                )
+                continue
+        retained.append(raw)
+    filtered = dict(census)
+    filtered["ranked_candidates"] = retained
+    return filtered, rejected
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--request", required=True, type=Path)
@@ -70,7 +119,13 @@ def main() -> int:
     if receipt.get("target_scores_read") is not False:
         raise ValueError("source census read target scores")
 
-    result = plan(census)
+    filtered_census, drift_rejections = _reject_drifted_candidates(census)
+    result = plan(filtered_census)
+    result.pop("plan_id", None)
+    result["source_artifact_drift_rejections"] = drift_rejections
+    result["source_artifact_drift_rejection_count"] = len(drift_rejections)
+    result["plan_id"] = _canonical_id(result)
+
     boundary = result["information_boundary"]
     forbidden_true = (
         "dlo4_payload_read",
@@ -101,6 +156,7 @@ def main() -> int:
         "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
         "ready_for_panel_build": result["ready_for_panel_build"],
         "decisions": result["decisions"],
+        "source_artifact_drift_rejection_count": len(drift_rejections),
         "dlo4_dlo5_payload_read": False,
         "target_scores_read": False,
         "claim_scope": "source-only adapter planning",
@@ -117,6 +173,7 @@ def main() -> int:
         f"- Plan ID: `{result['plan_id']}`",
         f"- Ready for panel build: `{str(result['ready_for_panel_build']).lower()}`",
         f"- Source census ID: `{result['source_census_id']}`",
+        f"- Hash-drifted candidates rejected: `{len(drift_rejections)}`",
         "- DLO4/DLO5 payload read: `false`",
         "- Target scores read: `false`",
         "",
@@ -139,6 +196,7 @@ def main() -> int:
                 "plan_id": result["plan_id"],
                 "ready_for_panel_build": result["ready_for_panel_build"],
                 "decisions": result["decisions"],
+                "source_artifact_drift_rejection_count": len(drift_rejections),
                 "receipt_id": retained_receipt["receipt_id"],
             },
             sort_keys=True,
