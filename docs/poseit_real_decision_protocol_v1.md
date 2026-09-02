@@ -375,20 +375,54 @@ and synthetic streams. No system library was installed or replaced. The exact
 file hashes, test observations, and remote build paths are recorded in
 `evidence/poseit-real-decision-v1/checkpoint-transport-qualification-v1.json`.
 
-The next admissible steps remain:
+### Frozen deployment and initial authorization
 
-1. Seal this implementation revision and bind the verified isolated native build
-   to its exact production deployment without contacting PoseIt.
-2. Freeze a separate transport amendment and one exact initial attempt
-   authorization. Preserve both old failures and start the new hash at byte zero.
-3. Do not contact the provider before `2026-09-03T17:08:20.674819+00:00`.
-   Launch only after all preceding checks pass; the cooldown is not a known
-   provider reset time and does not authorize a launch by itself.
-4. Obtain a complete archive hash, then pass the explicit structure-receipt
-   integration and existing structure/mapping gates before scientific access.
+The implementation is sealed at
+`8ba9f8668d66c887b94b86d30bc4075f6b6daae4`. A minimal 17-file code,
+protocol, and administrative-evidence archive from that commit has SHA-256
+`f207f7a7f9d12209a0021f37fce3038316920e145bb01157a9117862bdc3eeb0`.
+It is deployed at
+`/home/florianpfaff/source-only/poseit-real-decision-v1/source-checkpoint-8ba9f866`.
+Both the archive hash and the exact deployed file roster were independently
+rechecked on `gpuserver4090`; this is not a PoseIt data archive.
 
-No production amendment or third acquisition has been authorized by these
-implementation tests. No PoseIt scientific result exists.
+The separately committed transport amendment is
+`protocols/poseit_real_decision_probe_v1_checkpoint_transport_amendment.json`,
+SHA-256 `960a62785bce0b235644295f1c568f7bbdea462a3831cc53f673c72bbaccb43c`.
+The unconsumed initial authorization is
+`protocols/poseit_real_decision_probe_v1_checkpoint_attempt_000000.json`,
+SHA-256 `8d523d7713ed3b3ba965ca415cdfc0eb869bfc0964580147d0a997159fc733e9`.
+It binds attempt zero, an empty checkpoint prefix, and exactly one process to
+the deployed specification. It cannot reuse either older failed prefix.
+
+The actual server preflight and a separate read-only authorization/deployment
+check are retained in
+`evidence/poseit-real-decision-v1/checkpoint-deployment-v1/`. At
+`2026-09-02T18:27:48.888832+00:00`, the code/native/protocol bindings passed,
+the shared lock was available, the output root did not exist, the attempt count
+was zero, and the authorization was unconsumed. Both observations explicitly
+record no provider contact and no scientific authorization. Launch was not
+permitted because the provider cooldown had not elapsed.
+
+The exact future run and verification commands, log/launch custody, monitoring,
+and failure policy are frozen in
+`protocols/poseit_real_decision_probe_v1_checkpoint_execution_plan.json`.
+The new CLI holds the shared flock internally; do not add an outer flock on
+that same path. Do not overwrite or reuse a launch log, attempt, or checkpoint.
+
+The next admissible steps are:
+
+1. Wait until both current UTC and the server clock reach
+   `2026-09-03T17:08:20.674819+00:00`. Recheck code/environment identity,
+   process state, and unconsumed authorization before launching the frozen
+   command once. This time is not a known provider reset and does not guarantee
+   successful delivery.
+2. Preserve any failure without automatic retry. On clean completion, verify the
+   complete new-schema archive receipt and its custody chain.
+3. Qualify and authorize the explicit structure-receipt integration, then pass
+   the existing structure, mapping, source, and confirmation gates in order.
+
+No new acquisition has been launched. No PoseIt scientific result exists.
 
 ## Full-download and structure-only custody tools
 
