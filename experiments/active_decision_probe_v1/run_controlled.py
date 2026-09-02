@@ -115,12 +115,8 @@ def run() -> dict[str, object]:
                 "name": probe.name,
                 "cost": probe.cost,
                 "outcome_count": int(likelihood.shape[1]),
-                "minimax_worst_case_regret": (
-                    certificate.minimax_worst_case_regret
-                ),
-                "terminal_policy": (
-                    certificate.minimax_terminal_policy.tolist()
-                ),
+                "minimax_worst_case_regret": (certificate.minimax_worst_case_regret),
+                "terminal_policy": (certificate.minimax_terminal_policy.tolist()),
                 "expected_posterior_state_entropy_bits": (
                     expected_posterior_state_entropy(prior, likelihood)
                 ),
@@ -129,9 +125,7 @@ def run() -> dict[str, object]:
                     0.0,
                     abs_tol=1e-12,
                 ),
-                "decision_identified": (
-                    certificate.minimax_worst_case_regret <= 1e-12
-                ),
+                "decision_identified": (certificate.minimax_worst_case_regret <= 1e-12),
             }
         )
 
@@ -159,12 +153,15 @@ def main() -> None:
     parser.add_argument("--check", type=Path)
     args = parser.parse_args()
     result = run()
-    rendered = json.dumps(
-        result,
-        indent=2,
-        sort_keys=True,
-        allow_nan=False,
-    ) + "\n"
+    rendered = (
+        json.dumps(
+            result,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n"
+    )
     if args.check is not None:
         if args.check.read_text(encoding="utf-8") != rendered:
             raise SystemExit(f"result mismatch: {args.check}")

@@ -18,12 +18,9 @@ def passive_pairwise_gap(prior, quotient, classes, losses):
     for action in range(action_count):
         for benchmark in range(action_count):
             for class_id, mass in enumerate(quotient):
-                members = np.flatnonzero(
-                    (classes == class_id) & support
-                )
+                members = np.flatnonzero((classes == class_id) & support)
                 result[action, benchmark] += mass * np.max(
-                    losses[members, action]
-                    - losses[members, benchmark]
+                    losses[members, action] - losses[members, benchmark]
                 )
     return result
 
@@ -197,12 +194,10 @@ def test_fractional_support_matches_complete_belief_vertices():
                     if denominator <= 0.0:
                         continue
                     difference = (
-                        losses[:, outcome, action]
-                        - losses[:, outcome, benchmark]
+                        losses[:, outcome, action] - losses[:, outcome, benchmark]
                     )
                     values.append(
-                        float(q @ (likelihood[:, outcome] * difference))
-                        / denominator
+                        float(q @ (likelihood[:, outcome] * difference)) / denominator
                     )
                 brute[outcome, action, benchmark] = max(values)
 

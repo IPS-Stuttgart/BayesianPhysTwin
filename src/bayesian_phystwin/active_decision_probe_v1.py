@@ -366,7 +366,7 @@ def active_decision_probe_certificate(
     # is linear in the unknown complete belief.  With fixed mass lambda_c in
     # each quotient class, the worst supported belief independently puts that
     # class mass on its maximizing member.
-    pairwise_worst_case_gap = np.zeros(
+    pairwise_worst_case_gap: FloatArray = np.zeros(
         (policy_count, policy_count),
         dtype=np.float64,
     )
@@ -374,7 +374,7 @@ def active_decision_probe_certificate(
         members = expected_loss[(classes == class_id) & prior_support]
         if members.shape[0] == 0:
             continue
-        class_pairwise_max = np.full(
+        class_pairwise_max: FloatArray = np.full(
             (policy_count, policy_count),
             -np.inf,
             dtype=np.float64,

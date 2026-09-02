@@ -1,4 +1,3 @@
-
 import itertools
 
 import numpy as np
@@ -48,9 +47,7 @@ def test_no_probe_matches_passive_certificate():
         np.ones((4, 1)),
         losses,
     )
-    expected_regret, expected_action = passive_minimax(
-        prior, quotient, classes, losses
-    )
+    expected_regret, expected_action = passive_minimax(prior, quotient, classes, losses)
     assert active.minimax_worst_case_regret == pytest.approx(expected_regret)
     assert active.minimax_terminal_policy.tolist() == [expected_action]
 
@@ -155,8 +152,7 @@ def test_closed_form_matches_complete_belief_vertices():
             candidate_loss = sum(
                 q[i]
                 * sum(
-                    likelihood[i, outcome]
-                    * losses[i, outcome, policy[outcome]]
+                    likelihood[i, outcome] * losses[i, outcome, policy[outcome]]
                     for outcome in range(2)
                 )
                 for i in range(4)
@@ -165,8 +161,7 @@ def test_closed_form_matches_complete_belief_vertices():
                 sum(
                     q[i]
                     * sum(
-                        likelihood[i, outcome]
-                        * losses[i, outcome, benchmark[outcome]]
+                        likelihood[i, outcome] * losses[i, outcome, benchmark[outcome]]
                         for outcome in range(2)
                     )
                     for i in range(4)
@@ -176,9 +171,7 @@ def test_closed_form_matches_complete_belief_vertices():
             worst = max(worst, candidate_loss - best)
         brute_regret.append(worst)
     assert certificate.policy_worst_case_regret == pytest.approx(brute_regret)
-    assert certificate.minimax_worst_case_regret == pytest.approx(
-        min(brute_regret)
-    )
+    assert certificate.minimax_worst_case_regret == pytest.approx(min(brute_regret))
 
 
 def test_selector_prefers_cheapest_certifying_probe():
@@ -193,9 +186,7 @@ def test_selector_prefers_cheapest_certifying_probe():
             [1.0, 0.0],
         ]
     )
-    no_probe = decision_probe_candidate(
-        "no_probe", 0.0, np.ones((4, 1)), losses
-    )
+    no_probe = decision_probe_candidate("no_probe", 0.0, np.ones((4, 1)), losses)
     decision_probe = decision_probe_candidate(
         "decision_probe",
         1.0,
@@ -209,9 +200,7 @@ def test_selector_prefers_cheapest_certifying_probe():
         ),
         losses,
     )
-    state_probe = decision_probe_candidate(
-        "state_probe", 4.0, np.eye(4), losses
-    )
+    state_probe = decision_probe_candidate("state_probe", 4.0, np.eye(4), losses)
     selection = select_minimum_cost_decision_probe(
         prior,
         quotient,

@@ -107,9 +107,7 @@ def _class_index(value: object, *, expected_size: int) -> IntArray:
         raise ValueError("class_index must contain integer class labels")
     array = np.ascontiguousarray(raw, dtype=np.int64)
     if array.ndim != 1 or array.size != expected_size:
-        raise ValueError(
-            f"class_index must contain exactly {expected_size} entries"
-        )
+        raise ValueError(f"class_index must contain exactly {expected_size} entries")
     if np.any(array < 0):
         raise ValueError("class_index labels must be nonnegative")
     unique = np.unique(array)
@@ -131,9 +129,7 @@ def _finite_nonnegative(value: object, *, name: str) -> float:
 
 
 def _positive_integer(value: object, *, name: str) -> int:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(
-        value, (int, np.integer)
-    ):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be a positive integer")
     result = int(value)
     if result < 1:
@@ -152,13 +148,10 @@ def _outcome_likelihood(value: object, *, hypothesis_count: int) -> FloatArray:
         or likelihood.shape[1] < 1
     ):
         raise ValueError(
-            "outcome_likelihood must have shape "
-            "(hypothesis_count, outcome_count)"
+            "outcome_likelihood must have shape (hypothesis_count, outcome_count)"
         )
     if not np.all(np.isfinite(likelihood)) or np.any(likelihood < 0.0):
-        raise ValueError(
-            "outcome_likelihood must contain finite nonnegative values"
-        )
+        raise ValueError("outcome_likelihood must contain finite nonnegative values")
     totals = np.sum(likelihood, axis=1, dtype=np.float64)
     if not np.allclose(
         totals,
@@ -245,21 +238,19 @@ def _fractional_support_function(
             if mass <= 0.0:
                 continue
             members = (classes == class_id) & support
-            values = likelihood[members] * (
-                difference[members] - threshold
-            )
+            values = likelihood[members] * (difference[members] - threshold)
             result += float(mass) * float(np.max(values))
         return result
 
     scale = max(1.0, abs(lower), abs(upper))
     tolerance = root_tolerance * scale
-    if shifted_support(lower) <= tolerance:
+    if shifted_support(lower) <= 0.0:
         return lower
     lo = lower
     hi = upper
     for _ in range(root_iterations):
         middle = 0.5 * (lo + hi)
-        if shifted_support(middle) > tolerance:
+        if shifted_support(middle) > 0.0:
             lo = middle
         else:
             hi = middle
@@ -309,16 +300,12 @@ class OutcomeCertifiedDecisionProbeV1(NamedTuple):
             "version": OUTCOME_CERTIFIED_DECISION_PROBE_VERSION,
             "semantics": OUTCOME_CERTIFIED_DECISION_PROBE_SEMANTICS,
             "hypothesis_count": self.hypothesis_count,
-            "prior_support_count": int(
-                np.count_nonzero(self.prior_support_mask)
-            ),
+            "prior_support_count": int(np.count_nonzero(self.prior_support_mask)),
             "quotient_class_count": self.quotient_class_count,
             "outcome_count": self.outcome_count,
             "action_count": self.action_count,
             "reachable_outcome_mask": self.reachable_outcome_mask.tolist(),
-            "maximum_outcome_probability": (
-                self.maximum_outcome_probability.tolist()
-            ),
+            "maximum_outcome_probability": (self.maximum_outcome_probability.tolist()),
             "outcome_minimax_action_index": (
                 self.outcome_minimax_action_index.tolist()
             ),
@@ -329,15 +316,9 @@ class OutcomeCertifiedDecisionProbeV1(NamedTuple):
                 self.outcome_tolerance_certified_mask.tolist()
             ),
             "regret_tolerance": self.regret_tolerance,
-            "worst_reachable_outcome_regret": (
-                self.worst_reachable_outcome_regret
-            ),
-            "all_reachable_outcomes_certified": (
-                self.all_reachable_outcomes_certified
-            ),
-            "claim_boundary": (
-                OUTCOME_CERTIFIED_DECISION_PROBE_CLAIM_BOUNDARY
-            ),
+            "worst_reachable_outcome_regret": (self.worst_reachable_outcome_regret),
+            "all_reachable_outcomes_certified": (self.all_reachable_outcomes_certified),
+            "claim_boundary": (OUTCOME_CERTIFIED_DECISION_PROBE_CLAIM_BOUNDARY),
         }
 
 
@@ -401,19 +382,19 @@ def outcome_certified_decision_probe(
 
     outcome_count = int(likelihood.shape[1])
     action_count = int(losses.shape[2])
-    reachable = np.zeros(outcome_count, dtype=np.bool_)
-    maximum_probability = np.zeros(outcome_count, dtype=np.float64)
-    pairwise = np.zeros(
+    reachable: BoolArray = np.zeros(outcome_count, dtype=np.bool_)
+    maximum_probability: FloatArray = np.zeros(outcome_count, dtype=np.float64)
+    pairwise: FloatArray = np.zeros(
         (outcome_count, action_count, action_count),
         dtype=np.float64,
     )
-    action_regret = np.zeros(
+    action_regret: FloatArray = np.zeros(
         (outcome_count, action_count),
         dtype=np.float64,
     )
-    minimax_action = np.full(outcome_count, -1, dtype=np.int64)
-    minimax_regret = np.zeros(outcome_count, dtype=np.float64)
-    certified = np.zeros(outcome_count, dtype=np.bool_)
+    minimax_action: IntArray = np.full(outcome_count, -1, dtype=np.int64)
+    minimax_regret: FloatArray = np.zeros(outcome_count, dtype=np.float64)
+    certified: BoolArray = np.zeros(outcome_count, dtype=np.bool_)
 
     for outcome in range(outcome_count):
         outcome_likelihood_vector = likelihood[:, outcome]
@@ -430,17 +411,14 @@ def outcome_certified_decision_probe(
             for benchmark in range(action_count):
                 if action == benchmark:
                     continue
-                pairwise[outcome, action, benchmark] = (
-                    _fractional_support_function(
-                        losses[:, outcome, action]
-                        - losses[:, outcome, benchmark],
-                        outcome_likelihood_vector,
-                        classes,
-                        quotient,
-                        support,
-                        root_tolerance=ratio_tolerance,
-                        root_iterations=iterations,
-                    )
+                pairwise[outcome, action, benchmark] = _fractional_support_function(
+                    losses[:, outcome, action] - losses[:, outcome, benchmark],
+                    outcome_likelihood_vector,
+                    classes,
+                    quotient,
+                    support,
+                    root_tolerance=ratio_tolerance,
+                    root_iterations=iterations,
                 )
         action_regret[outcome] = np.maximum(
             np.max(pairwise[outcome], axis=1),
@@ -516,9 +494,7 @@ class OutcomeCertifiedProbeSelectionV1(NamedTuple):
             "selected_probe_index": self.selected_probe_index,
             "selected_probe_name": self.selected_probe_name,
             "fallback_required": self.fallback_required,
-            "claim_boundary": (
-                OUTCOME_CERTIFIED_DECISION_PROBE_CLAIM_BOUNDARY
-            ),
+            "claim_boundary": (OUTCOME_CERTIFIED_DECISION_PROBE_CLAIM_BOUNDARY),
         }
 
 
@@ -554,10 +530,7 @@ def select_minimum_cost_outcome_certified_probe(
         for probe in probes
     )
     admissible = np.asarray(
-        [
-            certificate.all_reachable_outcomes_certified
-            for certificate in certificates
-        ],
+        [certificate.all_reachable_outcomes_certified for certificate in certificates],
         dtype=np.bool_,
     )
     candidates = np.flatnonzero(admissible)
