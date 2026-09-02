@@ -1,0 +1,126 @@
+{
+  "cases": [
+    {
+      "direct_plan_count": 3,
+      "hypothesis_count": 6,
+      "minimax_worst_case_regret": 0.0,
+      "name": "state_ambiguous_action_identified",
+      "output_mode": "act",
+      "output_plan_index": 0,
+      "plan_count": 33,
+      "regret_tolerance": 0.25,
+      "selected_probe": null,
+      "sensing_plan_count": 30,
+      "state_entropy_nats": 1.791759469228055,
+      "state_identified": false,
+      "terminal_action_by_outcome": [],
+      "terminal_action_if_direct": "pull_left",
+      "used_fallback": false
+    },
+    {
+      "direct_plan_count": 3,
+      "hypothesis_count": 12,
+      "minimax_worst_case_regret": 0.2,
+      "name": "action_ambiguous_probe_resolves",
+      "output_mode": "sense",
+      "output_plan_index": 4,
+      "plan_count": 39,
+      "probe_diagnostics": {
+        "camera_texture": {
+          "best_contingent_plan_worst_case_regret": 1.55,
+          "outcome_count": 3,
+          "state_entropy_gain_nats": 1.0986122886681096
+        },
+        "decision_directed_probe": "tug_side",
+        "maximum_entropy_probe": "camera_texture",
+        "tug_side": {
+          "best_contingent_plan_worst_case_regret": 0.2,
+          "outcome_count": 2,
+          "state_entropy_gain_nats": 0.6931471805599453
+        }
+      },
+      "regret_tolerance": 0.25,
+      "selected_probe": "tug_side",
+      "sensing_plan_count": 36,
+      "state_entropy_nats": 2.4849066497880004,
+      "state_identified": false,
+      "terminal_action_by_outcome": [
+        "pull_left",
+        "pull_right"
+      ],
+      "terminal_action_if_direct": null,
+      "used_fallback": false
+    },
+    {
+      "direct_plan_count": 3,
+      "hypothesis_count": 12,
+      "minimax_worst_case_regret": 0.2,
+      "name": "action_ambiguous_probe_too_costly_for_tolerance",
+      "output_mode": "fallback",
+      "output_plan_index": 2,
+      "plan_count": 39,
+      "regret_tolerance": 0.1,
+      "selected_probe": null,
+      "sensing_plan_count": 36,
+      "state_entropy_nats": 2.4849066497880004,
+      "state_identified": false,
+      "terminal_action_by_outcome": [],
+      "terminal_action_if_direct": "hold",
+      "used_fallback": true
+    }
+  ],
+  "claim": "A finite physical twin can certify a direct action when unresolved state is decision-irrelevant, choose a lower-entropy diagnostic probe when it resolves the action ambiguity, and return an exact caller-owned fallback when no direct or contingent plan meets the registered regret tolerance.",
+  "claim_boundary": "The certificate is exact only for the supplied finite hypotheses, prior support, quotient masses, terminal loss matrix, deterministic registered probe-outcome maps, scalar probe costs, enumerated contingent plans, and regret tolerance. It does not validate the physical probe model, reset or repeatability assumptions, action losses, costs, quotient, provider, target-domain transport, online execution, calibration, deployment, or safety.",
+  "evidence_class": "controlled finite-hypothesis mechanism",
+  "headline": {
+    "decision_probe_selected": true,
+    "exact_fallback_when_tolerance_fails": true,
+    "higher_entropy_probe_rejected": true,
+    "state_ambiguous_but_act": true
+  },
+  "hypotheses": {
+    "count": 12,
+    "latent_factors": {
+      "friction": [
+        "low",
+        "high"
+      ],
+      "tether_side": [
+        "left",
+        "right"
+      ],
+      "texture": [
+        0,
+        1,
+        2
+      ]
+    },
+    "visible_geometry": "identical within each registered case"
+  },
+  "probes": [
+    {
+      "cost": 0.2,
+      "name": "tug_side",
+      "outcomes": 2,
+      "resolves": "tether_side"
+    },
+    {
+      "cost": 0.05,
+      "name": "camera_texture",
+      "outcomes": 3,
+      "resolves": "texture only"
+    }
+  ],
+  "real_robot_execution": false,
+  "result_id": "6300bb040876ef38d68e479a72ad9b24d430b340e8d39a115e88735b6a793ef7",
+  "safety_claim": false,
+  "schema": "bayesian-phystwin.act-sense-fallback-controlled-result.v1",
+  "schema_version": 1,
+  "study_id": "occluded-rope-decision-information-v1",
+  "target_domain_claim": false,
+  "terminal_actions": [
+    "pull_left",
+    "pull_right",
+    "hold"
+  ]
+}
