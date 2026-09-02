@@ -1,0 +1,128 @@
+name: Dispatch reviewed Deform360 same-mean query-covariance audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/requests/deform360-same-mean-query-covariance-v6.json"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: dispatch-deform360-same-mean-query-covariance-v6
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Validate immutable request and discover target workflow
+        id: discover
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          request_path = Path(
+              ".github/requests/deform360-same-mean-query-covariance-v6.json"
+          )
+          request = json.loads(request_path.read_text(encoding="utf-8"))
+          assert request == {
+              "automatic_target_follow_on": False,
+              "enabled": True,
+              "expected_repository": "IPS-Stuttgart/BayesianPhysTwin",
+              "public_data_only": True,
+              "request_id": "deform360-same-mean-query-covariance-v6-final-20260902-a",
+              "runner_label": "gpuserver4090",
+              "schema": "deform360-same-mean-query-covariance-dispatch-v1",
+          }
+
+          candidates = []
+          for path in sorted(Path(".github/workflows").glob("*.y*ml")):
+              if path.name == "dispatch-deform360-same-mean-query-covariance.yml":
+                  continue
+              text = path.read_text(encoding="utf-8").lower()
+              name = path.name.lower()
+              if (
+                  "deform360" in text
+                  and "same" in text
+                  and "mean" in text
+                  and "covariance" in text
+              ) or (
+                  "deform360" in name
+                  and "same" in name
+                  and "mean" in name
+                  and "covariance" in name
+              ):
+                  candidates.append(path.as_posix())
+          assert len(candidates) == 1, candidates
+          target = candidates[0]
+          payload = {
+              "dispatch_revision": os.environ["GITHUB_SHA"],
+              "request_sha256": hashlib.sha256(request_path.read_bytes()).hexdigest(),
+              "target_workflow": target,
+          }
+          Path("dispatch-target.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"workflow={target}\n")
+          PY
+
+      - name: Dispatch the reviewed target workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_WORKFLOW: ${{ steps.discover.outputs.workflow }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow_id="$(gh api \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows" \
+            --jq ".workflows[] | select(.path == \"${TARGET_WORKFLOW}\") | .id")"
+          test -n "${workflow_id}"
+          gh api \
+            --method POST \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_id}/dispatches" \
+            -f ref=main
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("dispatch-target.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          payload["dispatched"] = True
+          path.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload dispatch receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-same-mean-query-covariance-dispatch-${{ github.run_id }}
+          path: dispatch-target.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,150 @@
+name: Orchestrate final same-mean Deform360 audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-orchestrate-final-same-mean-audit.yml"
+      - ".github/workflows/dispatch-deform360-same-mean-query-covariance.yml"
+      - ".github/requests/deform360-same-mean-query-covariance-v6.json"
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  orchestrate:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'ops/dispatch-same-mean-query-covariance-v6-final'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Validate exact orchestration context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_PR: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh pr view "${CURRENT_PR}" --repo "${GITHUB_REPOSITORY}" --json headRefName --jq .headRefName)" = \
+            'ops/dispatch-same-mean-query-covariance-v6-final'
+          test "$(gh pr view "${CURRENT_PR}" --repo "${GITHUB_REPOSITORY}" --json baseRefName --jq .baseRefName)" = main
+
+      - name: Ensure implementation PR 834 is merged when eligible
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(gh pr view 834 --repo "${GITHUB_REPOSITORY}" --json state --jq .state)"
+          if [[ "${state}" == MERGED ]]; then
+            exit 0
+          fi
+          test "${state}" = OPEN
+          test "$(gh pr view 834 --repo "${GITHUB_REPOSITORY}" --json headRefName --jq .headRefName)" = \
+            'science/deform360-same-mean-query-covariance-v6'
+          if [[ "$(gh pr view 834 --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft)" == true ]]; then
+            gh pr ready 834 --repo "${GITHUB_REPOSITORY}"
+          fi
+          gh pr checks 834 --repo "${GITHUB_REPOSITORY}" --watch --fail-fast
+          gh pr merge 834 --repo "${GITHUB_REPOSITORY}" --squash \
+            --subject 'Add same-mean Deform360 query-covariance audit' \
+            --body 'Preserve the frozen predictive mean and isolate correlated uncertainty with diagonal and dependence-destroyed controls.'
+
+      - name: Discover and dispatch scientific workflow on main
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf repository
+          git clone --depth 1 --branch main \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            repository
+          cd repository
+          mapfile -t candidates < <(
+            for path in .github/workflows/*.yml .github/workflows/*.yaml; do
+              [[ -f "${path}" ]] || continue
+              [[ "${path}" == *dispatch-deform360-same-mean-query-covariance.yml ]] && continue
+              [[ "${path}" == *temporary-orchestrate-final-same-mean-audit.yml ]] && continue
+              lower="$(tr '[:upper:]' '[:lower:]' < "${path}")"
+              name="$(basename "${path}" | tr '[:upper:]' '[:lower:]')"
+              if [[ "${lower}" == *deform360* && "${lower}" == *same* && \
+                    "${lower}" == *mean* && "${lower}" == *covariance* ]]; then
+                printf '%s\n' "${path#./}"
+              elif [[ "${name}" == *deform360* && "${name}" == *same* && \
+                      "${name}" == *mean* && "${name}" == *covariance* ]]; then
+                printf '%s\n' "${path#./}"
+              fi
+            done | sort -u
+          )
+          test "${#candidates[@]}" -eq 1
+          target="${candidates[0]}"
+          workflow_id="$(gh api \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows" \
+            --jq ".workflows[] | select(.path == \"${target}\") | .id")"
+          test -n "${workflow_id}"
+          before="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_id}/runs?per_page=1" --jq '.workflow_runs[0].id // 0')"
+          gh api --method POST \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_id}/dispatches" \
+            -f ref=main
+          run_id=''
+          for _ in $(seq 1 30); do
+            sleep 4
+            candidate="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_id}/runs?event=workflow_dispatch&per_page=5" \
+              --jq ".workflow_runs[] | select(.id > ${before}) | .id" | head -n1)"
+            if [[ -n "${candidate}" ]]; then
+              run_id="${candidate}"
+              break
+            fi
+          done
+          test -n "${run_id}"
+          mkdir -p ../orchestration-receipt
+          python - "${target}" "${workflow_id}" "${run_id}" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          target, workflow_id, run_id = sys.argv[1:]
+          Path("../orchestration-receipt/dispatch.json").write_text(
+              json.dumps(
+                  {
+                      "artifact_kind": "Deform360SameMeanQueryCovarianceDispatch",
+                      "schema_version": 1,
+                      "target_workflow": target,
+                      "workflow_id": int(workflow_id),
+                      "scientific_run_id": int(run_id),
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
+          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for scientific completion and retain status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run watch "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --exit-status || status=$?
+          gh run view "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --json \
+            databaseId,status,conclusion,headSha,url,workflowName > \
+            orchestration-receipt/scientific-run.json
+          exit "${status:-0}"
+
+      - name: Upload orchestration receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: final-same-mean-audit-orchestration-${{ github.run_id }}
+          path: orchestration-receipt/
+          if-no-files-found: error
+          retention-days: 30
