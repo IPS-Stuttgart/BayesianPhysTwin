@@ -1,0 +1,166 @@
+name: Hierarchical missing-physics DLO4/DLO5 artifact census v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_dlo45_artifact_census_v1.json
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-dlo45-artifact-census-v1
+  cancel-in-progress: false
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      AUTHORIZATION: evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json
+      SOURCE_MODEL: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model.json
+      SOURCE_ARRAYS: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model.npz
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/dlo45_artifact_census_v1
+      PARENT_RUN_ID: 33361441865
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate authorization and census implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in "$AUTHORIZATION" "$SOURCE_MODEL" "$SOURCE_ARRAYS"; do
+            test -f "$path"
+          done
+          python3 -m json.tool "$AUTHORIZATION" >/dev/null
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_dlo45_artifact_census_v1.json >/dev/null
+          python3 -m py_compile scripts/science/inventory_dlo45_parent_artifacts.py
+
+      - name: Download retained parent-run artifacts after authorization
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.PARENT_RUN_ID }}
+          path: ${{ runner.temp }}/hmp-dlo45-parent-artifacts
+          merge-multiple: false
+
+      - name: Run header-only target artifact census
+        id: census
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hmp-dlo45-artifact-census"
+          mkdir -p "$work"
+          output="$work/result.json"
+          python3 scripts/science/inventory_dlo45_parent_artifacts.py \
+            --artifact-root "$RUNNER_TEMP/hmp-dlo45-parent-artifacts" \
+            --authorization "$AUTHORIZATION" \
+            --source-model "$SOURCE_MODEL" \
+            --source-arrays "$SOURCE_ARRAYS" \
+            --output "$output" \
+            | tee "$work/summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          if boundary["target_numeric_array_values_loaded"] is not False:
+              raise SystemExit("target array values were loaded during census")
+          if boundary["target_score_result_json_parsed"] is not False:
+              raise SystemExit("target score JSON was parsed during census")
+          if boundary["source_group_selection_changed"] is not False:
+              raise SystemExit("source group selection changed")
+          if boundary["source_coefficients_changed"] is not False:
+              raise SystemExit("source coefficients changed")
+          if boundary["target_performance_metric_computed"] is not False:
+              raise SystemExit("target performance was computed during census")
+          if value["numeric_container_count"] < 1:
+              raise SystemExit("parent artifacts contain no numerical container")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+              stream.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Authorized DLO4/DLO5 parent-artifact census\n\n")
+              summary.write(f"Census ID: `{value['census_id']}`\n\n")
+              summary.write(f"Files: `{value['file_count']}`\n\n")
+              summary.write(f"Numerical containers: `{value['numeric_container_count']}`\n\n")
+              summary.write(f"Target identities: `{value['target_identity_counts']}`\n\n")
+              summary.write("| Rank | Artifact path | Score | Kind | DLOs | Roles |\n")
+              summary.write("|---:|---|---:|---|---|---|\n")
+              for rank, record in enumerate(value["ranked_files"][:40], start=1):
+                  summary.write(
+                      f"| {rank} | `{record['relative_path']}` | {record['score']} | "
+                      f"{record['schema'].get('kind')} | {record['target_identities']} | "
+                      f"{record['roles']} |\n"
+                  )
+          PY
+
+      - name: Publish immutable target-census evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.census.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["RESULT"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-artifact-census-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "census_id": result["census_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "authorization_id": result["authorization_id"],
+              "source_model_id": result["source_model_id"],
+              "parent_run_id": result["parent_run_id"],
+              "target_numeric_values_loaded": False,
+              "target_scores_parsed": False,
+              "target_performance_metric_computed": False,
+              "claim_scope": "authorized header-only target artifact census"
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical DLO45 artifact census already committed."
+          else
+            git commit -m "Record authorized DLO4/DLO5 artifact census"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload complete target census
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-dlo45-artifact-census-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hmp-dlo45-artifact-census/
+            evidence/hierarchical_missing_physics/dlo45_artifact_census_v1/
+          if-no-files-found: error
+          retention-days: 90
