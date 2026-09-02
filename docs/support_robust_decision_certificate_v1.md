@@ -33,17 +33,6 @@ S_j = max over base nonfallback decisions d
 A trajectory containing only fallback decisions has score zero. Frames and
 windows are not treated as independent calibration units.
 
-The implementation also permits a nonnegative context prediction
-`m_jd`, fitted without the calibration trajectories. In that case the score is
-
-```text
-S_j = max_d max(0, R_jd(a_jd) - B_jd(a_jd) - m_jd).
-```
-
-The conformal radius then calibrates the prediction's remaining one-sided
-error. Version 1's DEFORM audit first evaluates the constant predictor `m=0`;
-a context-dependent support model is a separately attributable extension.
-
 ## Split-conformal radius
 
 For `n` exchangeable calibration trajectories and miscoverage `alpha`, define
@@ -67,12 +56,12 @@ No independence between decisions or frames inside a trajectory is required.
 
 ## Operational rule
 
-For a base nonfallback action with finite-support bound `B`, optional prefitted
-context prediction `m`, conformal radius `q`, and declared operational regret
-tolerance `epsilon`, execute the base action only when
+For a base nonfallback action with finite-support bound `B`, conformal radius
+`q`, and declared operational regret tolerance `epsilon`, execute the base
+action only when
 
 ```text
-B + m + q <= epsilon.
+B + q <= epsilon.
 ```
 
 Otherwise return the exact fallback. The wrapper does not select a different
