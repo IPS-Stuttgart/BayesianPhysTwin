@@ -206,6 +206,29 @@ parent protocol. Central-directory ranges remain closed until that receipt
 exists. Member payload ranges remain closed until the later structure and
 archive-specific mapping locks authorize them.
 
+### Retained pre-receipt transport failure
+
+On 2026-09-02 UTC, the first range-hash process was observed absent, with no
+completion receipt. Its retained traceback ends at the strict HTTP 206 guard.
+The actual response status and cause were not recorded, so neither a quota
+failure nor changed archive identity is inferred. The last persisted progress
+was 7,945 of 26,994 chunks (266,589,962,240 bytes). Its attempt count covers
+completed chunks, not all potentially issued concurrent requests. This prefix
+is not a full archive hash and cannot authorize structure or scientific access.
+
+The unchanged log and progress snapshot are preserved in
+`evidence/poseit-real-decision-v1/range-hash-v1-failure/`, together with a compact
+terminal observation. A subsequent single-response, header-only GET for byte
+0 passed the unchanged identity validator; its response body was not read.
+
+The already-frozen transport lock permits a replacement process from byte zero
+after preserving a pre-receipt failure. The exact v2 replacement command and
+parent evidence are bound in
+`protocols/poseit_real_decision_probe_v1_range_restart_v2.json`. It uses the same
+source deployment, lock, chunk sizes, retries, worker count, and full-archive
+receipt path, with distinct progress/log paths. It does not overwrite the first
+attempt, resume from an unverified prefix, or change any scientific choice.
+
 ## Full-download and structure-only custody tools
 
 If a complete local copy becomes available, the alternate exact acquisition

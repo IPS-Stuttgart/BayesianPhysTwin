@@ -1,0 +1,70 @@
+{
+  "schema": "bayesian-phystwin.poseit-range-hash-replacement",
+  "schema_version": 1,
+  "status": "frozen-before-one-replacement-process",
+  "authorization_basis": "existing range-transport lock permits replacement from byte zero after a preserved pre-receipt transport failure",
+  "parent_artifacts": {
+    "terminal_observation": {
+      "path": "evidence/poseit-real-decision-v1/range-hash-v1-failure/terminal_observation.json",
+      "file_sha256": "1186ced3e319a8186a804d954868537ef293280bccf1586ba2c8bbc43bbc0c16"
+    },
+    "recovery_headers": {
+      "path": "evidence/poseit-real-decision-v1/range-hash-v1-failure/recovery_headers.json",
+      "file_sha256": "6fca0b2bb30cc85f2d146dfd51794cd7c381abdfd22774f276f0abdd36c99f7e"
+    },
+    "transport_lock": {
+      "path": "protocols/poseit_real_decision_probe_v1_range_transport_lock.json",
+      "file_sha256": "8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a"
+    },
+    "range_transport_core": {
+      "path": "src/bayesian_phystwin_experiments/poseit_remote_archive.py",
+      "file_sha256": "2db9da81a84e3d1b7cc0ad4e0270aa18e19b64e42a1c72aade98b35228db0881"
+    },
+    "acquisition_script": {
+      "path": "scripts/science/acquire_poseit_gelsight_range_hash_v1.py",
+      "file_sha256": "45d19c6e84fc797f98d90ddad6aaa39bd657387410b8725a76d24eaf7f94df91"
+    }
+  },
+  "execution": {
+    "run_host": "gpuserver4090",
+    "cwd": "/home/florianpfaff/source-only/poseit-real-decision-v1/source-86ba5703",
+    "source_commit": "86ba5703e84bf6a96966bd1c5bcdbdc5234dba7b",
+    "source_archive_sha256": "ad28344388c9cbadb78bce25268732d0efc757e38a5e13674e32cdb41f428292",
+    "start_byte": 0,
+    "process_attempt_limit_for_this_record": 1,
+    "concurrent_process_limit": 1,
+    "overwrite_existing_files": false,
+    "scientific_method_changed": false,
+    "log_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/run-v2.log",
+    "progress_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/progress-v2.json",
+    "attempt_ledger_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/attempt-v2.json",
+    "launch_receipt_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/launch-v2.json",
+    "receipt_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/acquisition-receipt-v1.json",
+    "lock_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash.lock",
+    "command": [
+      "flock", "-n", "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash.lock",
+      "env", "PYTHONPATH=src", "python3",
+      "scripts/science/acquire_poseit_gelsight_range_hash_v1.py",
+      "--receipt", "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/acquisition-receipt-v1.json",
+      "--progress", "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/progress-v2.json",
+      "--protocol", "protocols/poseit_real_decision_probe_v1.json",
+      "--expected-protocol-sha256", "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4",
+      "--mapping-constraints", "protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json",
+      "--expected-mapping-constraints-sha256", "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210",
+      "--method-lock", "protocols/poseit_real_decision_probe_v1_method_lock.json",
+      "--expected-method-lock-sha256", "4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c",
+      "--transport-lock", "protocols/poseit_real_decision_probe_v1_range_transport_lock.json",
+      "--expected-transport-lock-sha256", "8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a",
+      "--range-transport-core", "src/bayesian_phystwin_experiments/poseit_remote_archive.py"
+    ]
+  },
+  "boundaries": {
+    "archive_member_names_opened": false,
+    "member_payload_bytes_opened": false,
+    "phase_labels_opened": false,
+    "shake_outcomes_opened": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "structure_access_authorized": false
+  }
+}

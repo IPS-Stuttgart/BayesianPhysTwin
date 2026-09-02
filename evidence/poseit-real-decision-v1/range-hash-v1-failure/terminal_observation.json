@@ -1,0 +1,50 @@
+{
+  "schema": "bayesian-phystwin.poseit-range-hash-terminal-observation",
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-02T16:46:10Z",
+  "run_host": "gpuserver4090",
+  "run_root": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash",
+  "status": "terminated-before-completion-receipt",
+  "pid_observation": {
+    "3884740": "absent",
+    "3884741": "absent",
+    "3884742": "absent"
+  },
+  "matching_acquisition_process_count": 0,
+  "completion_receipt_exists": false,
+  "exit_code": null,
+  "exit_time_utc": null,
+  "failure": {
+    "exception_type": "ValueError",
+    "message": "PoseIt range request did not return HTTP 206",
+    "actual_http_status": null,
+    "reason_for_non_206": "not recorded; no quota or identity-change cause inferred"
+  },
+  "retained_metadata": {
+    "progress-v1.json": "88bcd8195be64a6588ab987a2a5dd5c719e3194255f490eba7a1b0b9eb7827a4",
+    "run-v1.log": "5bf460e34533e127a8c4438f636182fb4407fe043852d8daa059c050968f6f0c"
+  },
+  "last_persisted_progress": {
+    "completed_chunks": 7945,
+    "total_chunks": 26994,
+    "bytes_hashed": 266589962240,
+    "archive_size_bytes": 905738058282,
+    "transport_attempts_for_completed_prefix": 7948,
+    "total_issued_transport_attempts": null,
+    "authoritative_result": false
+  },
+  "source_archive_sha256": "ad28344388c9cbadb78bce25268732d0efc757e38a5e13674e32cdb41f428292",
+  "range_transport_core_sha256": "2db9da81a84e3d1b7cc0ad4e0270aa18e19b64e42a1c72aade98b35228db0881",
+  "transport_lock_sha256": "8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a",
+  "archive_sha256": null,
+  "partial_prefix_is_not_an_acquisition_receipt": true,
+  "original_run_files_preserved": true,
+  "archive_member_names_opened": false,
+  "member_payload_bytes_opened": false,
+  "phase_labels_opened": false,
+  "shake_outcomes_opened": false,
+  "confirmation_opened": false,
+  "held_v8_accessed": false,
+  "structure_access_authorized": false,
+  "scientific_result": false
+}

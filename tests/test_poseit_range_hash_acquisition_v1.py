@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -207,3 +208,120 @@ def test_range_hash_rejects_incomplete_hasher_result(tmp_path: Path) -> None:
         _call(tmp_path, hasher=incomplete)
 
     assert not (tmp_path / "receipt.json").exists()
+
+
+def test_terminal_response_failure_preserves_progress_without_receipt(
+    tmp_path: Path,
+) -> None:
+    def failed_hasher(
+        expectation: RemoteArchiveExpectation, **kwargs: object
+    ) -> RemoteHashResult:
+        progress = kwargs["progress"]
+        assert callable(progress)
+        chunks = (
+            expectation.size_bytes + expectation.chunk_size_bytes - 1
+        ) // expectation.chunk_size_bytes
+        progress(
+            RemoteHashProgress(
+                completed_chunks=2,
+                total_chunks=chunks,
+                bytes_hashed=2 * expectation.chunk_size_bytes,
+                archive_size_bytes=expectation.size_bytes,
+                transport_attempts=3,
+            )
+        )
+        raise ValueError("PoseIt range request did not return HTTP 206")
+
+    with pytest.raises(ValueError, match="did not return HTTP 206"):
+        _call(tmp_path, hasher=failed_hasher)
+
+    assert not (tmp_path / "receipt.json").exists()
+    progress = json.loads((tmp_path / "progress.json").read_text(encoding="utf-8"))
+    assert progress["completed_chunks"] == 2
+    assert progress["transport_attempts"] == 3
+    for key in (
+        "authoritative_result",
+        "archive_member_names_opened",
+        "member_payload_bytes_opened",
+        "phase_labels_opened",
+        "shake_outcomes_opened",
+        "confirmation_opened",
+        "held_v8_accessed",
+    ):
+        assert progress[key] is False
+
+
+def test_registered_replacement_preserves_failure_and_exact_transport() -> None:
+    replacement = json.loads(
+        (
+            ROOT / "protocols/poseit_real_decision_probe_v1_range_restart_v2.json"
+        ).read_text(encoding="utf-8")
+    )
+    for binding in replacement["parent_artifacts"].values():
+        assert (
+            hashlib.sha256((ROOT / binding["path"]).read_bytes()).hexdigest()
+            == (binding["file_sha256"])
+        )
+    failure_root = ROOT / "evidence/poseit-real-decision-v1/range-hash-v1-failure"
+    terminal = json.loads(
+        (failure_root / "terminal_observation.json").read_text(encoding="utf-8")
+    )
+    for name, expected in terminal["retained_metadata"].items():
+        assert (
+            hashlib.sha256((failure_root / name).read_bytes()).hexdigest() == expected
+        )
+    progress = json.loads(
+        (failure_root / "progress-v1.json").read_text(encoding="utf-8")
+    )
+    assert progress["authoritative_result"] is False
+    assert terminal["archive_sha256"] is None
+    assert terminal["completion_receipt_exists"] is False
+    assert terminal["failure"]["actual_http_status"] is None
+    assert (
+        terminal["last_persisted_progress"]["total_issued_transport_attempts"] is None
+    )
+    assert terminal["structure_access_authorized"] is False
+    assert terminal["scientific_result"] is False
+    assert terminal["failure"]["message"] in (failure_root / "run-v1.log").read_text(
+        encoding="utf-8"
+    )
+    headers = json.loads(
+        (failure_root / "recovery_headers.json").read_text(encoding="utf-8")
+    )
+    assert headers["frozen_identity_headers_valid"] is True
+    assert headers["response_body_read"] is False
+
+    execution = replacement["execution"]
+    command = execution["command"]
+    assert command[:7] == [
+        "flock",
+        "-n",
+        execution["lock_path"],
+        "env",
+        "PYTHONPATH=src",
+        "python3",
+        "scripts/science/acquire_poseit_gelsight_range_hash_v1.py",
+    ]
+    arguments = dict(zip(command[7::2], command[8::2], strict=True))
+    for argument, path in (
+        ("protocol", PROTOCOL),
+        ("mapping-constraints", MAPPING),
+        ("method-lock", METHOD),
+        ("transport-lock", TRANSPORT),
+    ):
+        assert arguments[f"--{argument}"] == str(path.relative_to(ROOT))
+        assert (
+            arguments[f"--expected-{argument}-sha256"]
+            == hashlib.sha256(path.read_bytes()).hexdigest()
+        )
+    assert arguments["--receipt"] == execution["receipt_path"]
+    assert arguments["--progress"] == execution["progress_path"]
+    assert arguments["--range-transport-core"] == str(CORE.relative_to(ROOT))
+    assert execution["start_byte"] == 0
+    assert execution["process_attempt_limit_for_this_record"] == 1
+    assert execution["concurrent_process_limit"] == 1
+    assert execution["overwrite_existing_files"] is False
+    assert execution["scientific_method_changed"] is False
+    assert Path(execution["progress_path"]).name == "progress-v2.json"
+    assert Path(execution["log_path"]).name == "run-v2.log"
+    assert not any(replacement["boundaries"].values())
