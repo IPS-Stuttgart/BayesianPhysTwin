@@ -140,9 +140,7 @@ def source_record(
         "certificate_harmful_vs_fallback": bool(
             normalized_mse[certificate_action] > normalized_mse[0] + ATOL
         ),
-        "registered_worst_case_regret_by_action": (
-            decision.worst_case_regret.tolist()
-        ),
+        "registered_worst_case_regret_by_action": (decision.worst_case_regret.tolist()),
         "scores": {name: float(diagnostic.scores[name]) for name in SCORE_NAMES},
     }
 
@@ -478,16 +476,14 @@ def run(
         outer_selected,
         tolerance=SOURCE_SETTINGS["regret_tolerance"],
     )
-    outer_metrics["fraction_of_inner_nonfallback_retained"] = (
-        int(outer_metrics["selected_count"]) / int(inner_metrics["selected_count"])
-    )
+    outer_metrics["fraction_of_inner_nonfallback_retained"] = int(
+        outer_metrics["selected_count"]
+    ) / int(inner_metrics["selected_count"])
 
     by_dlo: dict[str, object] = {}
     for dlo in DLOS:
         mask = np.asarray([row["dlo"] == dlo for row in held_rows], dtype=bool)
-        local_rows = [
-            row for row, keep in zip(held_rows, mask, strict=True) if keep
-        ]
+        local_rows = [row for row, keep in zip(held_rows, mask, strict=True) if keep]
         by_dlo[dlo] = policy_metrics(
             local_rows,
             outer_selected[mask],
@@ -503,9 +499,7 @@ def run(
         dtype=np.float64,
     )
     conformal_accepted = int(
-        np.count_nonzero(
-            held_bounds + conformal <= SOURCE_SETTINGS["regret_tolerance"]
-        )
+        np.count_nonzero(held_bounds + conformal <= SOURCE_SETTINGS["regret_tolerance"])
     )
     result: dict[str, object] = {
         "schema": RESULT_SCHEMA,
@@ -542,15 +536,15 @@ def run(
         "Harm | Regret gain |\n"
         "|---|---:|---:|---:|---:|---:|\n"
         f"| Inner | {inner_metrics['selected_count']} | "
-        f"{100*float(inner_metrics['support_bound_violation_fraction_selected']):.2f}% | "
-        f"{100*float(inner_metrics['regret_tolerance_violation_fraction_selected']):.2f}% | "
-        f"{100*float(inner_metrics['harmful_fraction_selected']):.2f}% | "
-        f"{100*float(inner_metrics['normalized_regret_reduction_vs_fallback']):.2f}% |\n"
+        f"{100 * float(inner_metrics['support_bound_violation_fraction_selected']):.2f}% | "
+        f"{100 * float(inner_metrics['regret_tolerance_violation_fraction_selected']):.2f}% | "
+        f"{100 * float(inner_metrics['harmful_fraction_selected']):.2f}% | "
+        f"{100 * float(inner_metrics['normalized_regret_reduction_vs_fallback']):.2f}% |\n"
         f"| Outer + inner | {outer_metrics['selected_count']} | "
-        f"{100*float(outer_metrics['support_bound_violation_fraction_selected']):.2f}% | "
-        f"{100*float(outer_metrics['regret_tolerance_violation_fraction_selected']):.2f}% | "
-        f"{100*float(outer_metrics['harmful_fraction_selected']):.2f}% | "
-        f"{100*float(outer_metrics['normalized_regret_reduction_vs_fallback']):.2f}% |\n\n"
+        f"{100 * float(outer_metrics['support_bound_violation_fraction_selected']):.2f}% | "
+        f"{100 * float(outer_metrics['regret_tolerance_violation_fraction_selected']):.2f}% | "
+        f"{100 * float(outer_metrics['harmful_fraction_selected']):.2f}% | "
+        f"{100 * float(outer_metrics['normalized_regret_reduction_vs_fallback']):.2f}% |\n\n"
         f"Static 90% trajectory-maximum conformal inflation: **{conformal:.4f}**, "
         f"held accepted **{conformal_accepted}/{len(held_nonfallback)}**.\n\n"
         f"Result ID: `{result['result_id']}`\n\n{outer['claim_boundary']}\n"
@@ -570,9 +564,7 @@ def parse_args() -> argparse.Namespace:
         "--parent-protocol",
         type=Path,
         default=(
-            here.parent
-            / "deform_dlo45_decision_identifiability_v1"
-            / "protocol.json"
+            here.parent / "deform_dlo45_decision_identifiability_v1" / "protocol.json"
         ),
     )
     return parser.parse_args()
