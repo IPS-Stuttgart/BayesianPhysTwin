@@ -87,7 +87,8 @@ def _analysis_grid(
         atol=1e-9,
     ):
         raise ValueError(
-            "prefix plus forecast must be an integer multiple of the analysis period"
+            "prefix plus forecast must be an integer multiple of the "
+            "analysis period"
         )
     cutoff = int(round(prefix_seconds / period_seconds))
     if cutoff < 1 or not np.isclose(
@@ -98,8 +99,7 @@ def _analysis_grid(
     ):
         raise ValueError("prefix must be an integer multiple of the analysis period")
     times = start_time + period_seconds * np.arange(
-        interval_count + 1,
-        dtype=np.float64,
+        interval_count + 1, dtype=np.float64
     )
     times.setflags(write=False)
     return times, cutoff
@@ -133,9 +133,7 @@ def source_trajectory(
 
     allowed = {int(value) for value in protocol["source_repetitions"]}
     if case.repetition not in allowed:
-        raise ValueError(
-            "numeric trajectory access is restricted to source repetitions"
-        )
+        raise ValueError("numeric trajectory access is restricted to source repetitions")
 
     rows = list(_row_stream(case.path))
     marker_count = rows[0][3]
@@ -199,7 +197,9 @@ def source_trajectory(
         raise ValueError("insufficient source trajectory samples")
     native_dt = np.diff(raw_times)
     if not np.all(np.isfinite(native_dt)) or np.any(native_dt <= 0.0):
-        raise ValueError("recorded source timestamps must be finite and increasing")
+        raise ValueError(
+            "recorded source timestamps must be finite and increasing"
+        )
     median_dt = float(np.median(native_dt))
     coverage_slack = max(2.0 * median_dt, 0.05)
     if raw_times[-1] < target_times[-1] - coverage_slack:
