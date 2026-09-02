@@ -15,8 +15,9 @@ import hashlib
 import json
 import math
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 
