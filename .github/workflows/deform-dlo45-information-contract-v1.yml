@@ -84,7 +84,7 @@ jobs:
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform_dlo45_information_contract_v1.py \
             tests/test_deform_dlo45_decision_identifiability_v1.py \
-            tests/test_query_decision_certificate_v1.py
+            tests/test_query_quotient_belief_v1.py
           python "${ADAPTER}" export --help >/dev/null
           python "${ADAPTER}" validate --help >/dev/null
           git diff --exit-code
