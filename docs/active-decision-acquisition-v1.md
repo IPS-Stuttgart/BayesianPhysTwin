@@ -46,8 +46,9 @@ with minimum worst-case acquisition cost. Every node either:
 The solver is exponential in the number of candidate probes and refuses an
 oversized set. This is intentional: the exact implementation is a reference and
 a mechanism verifier for small sensor portfolios. It memoizes each compatible-
-hypothesis mask and remaining-probe subset exactly once. Larger portfolios can
-use a registered approximation while retaining the exact node certificate.
+hypothesis mask and remaining-probe subset exactly once and resolves equal-cost
+plans by stable registered order. Larger portfolios can use a registered
+approximation while retaining the exact node certificate.
 
 The companion weighted set-cover solver finds the minimum-cost nonadaptive probe
 set whose common refinement separates every currently confounded pair with a
