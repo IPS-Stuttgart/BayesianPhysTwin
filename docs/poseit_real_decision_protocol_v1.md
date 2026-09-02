@@ -79,3 +79,23 @@ Before any scientific execution, the acquisition stage must:
 Only then may fit and calibration outcomes open. Source-test outcomes open once,
 after predictions are sealed. Confirmation remains unauthorized until the
 registered source gate passes.
+
+## Structure-only custody tool
+
+Once the official archive is available, the first admissible command is:
+
+```bash
+PYTHONPATH=src python \
+  scripts/science/build_poseit_archive_structure_lock_v1.py \
+  --archive /home/fpfaff/source-only/poseit-real-decision-v1/archives/gelsight.zip \
+  --protocol protocols/poseit_real_decision_probe_v1.json \
+  --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4 \
+  --private-member-manifest /home/fpfaff/source-only/poseit-real-decision-v1/structure/private-member-manifest-v1.json \
+  --output /home/fpfaff/source-only/poseit-real-decision-v1/structure/archive-structure-lock-v1.json
+```
+
+The tool hashes the complete ZIP and reads its central directory. It rejects
+encrypted, duplicate, traversing, absolute, linked, and special members. It does
+not call `ZipFile.open`, decompress a member, verify member payload CRCs, decode a
+phase label, or read sensor data. Member names stay in the local private manifest;
+the compact lock contains only aggregate structure and domain-separated digests.
