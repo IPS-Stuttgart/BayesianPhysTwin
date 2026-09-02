@@ -209,9 +209,7 @@ def test_null_gain_simulation_does_not_systematically_cross() -> None:
     crossing_count = 0
     world_count = 200
     for world in range(world_count):
-        controller = AnytimeAdmissionController(
-            _config(minimum_resolved_trials=10)
-        )
+        controller = AnytimeAdmissionController(_config(minimum_resolved_trials=10))
         scores = rng.choice((-0.01, 0.01), size=120)
         for index, signed_gain in enumerate(scores):
             fallback = 0.01

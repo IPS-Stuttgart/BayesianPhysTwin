@@ -61,10 +61,25 @@ class AnytimeRecursiveAdmissionV1Config:
     minimum_mean_gain_m: float = 0.00025
     harmful_margin_m: float = 0.0
     maximum_harm_rate: float = 0.10
-    total_alpha_gain: float = 0.05
-    total_alpha_harm: float = 0.05
+    total_alpha_gain: float = 0.025
+    total_alpha_harm: float = 0.025
     epoch_alpha_continuation: float = 0.5
     minimum_resolved_trials: int = 25
+    gain_bet_fractions: tuple[float, ...] = (
+        0.05,
+        0.10,
+        0.20,
+        0.40,
+        0.60,
+        0.80,
+    )
+    harm_alternative_fractions: tuple[float, ...] = (
+        0.10,
+        0.25,
+        0.50,
+        0.75,
+        0.90,
+    )
     null_world_count: int = 5_000
     null_epoch_count: int = 4
     null_trials_per_epoch: int = 100
@@ -100,9 +115,7 @@ class AnytimeRecursiveAdmissionV1Config:
             self.minimum_mean_gain_m
         ):
             raise ValueError("minimum_mean_gain_m must be nonnegative and finite")
-        if self.harmful_margin_m < 0.0 or not math.isfinite(
-            self.harmful_margin_m
-        ):
+        if self.harmful_margin_m < 0.0 or not math.isfinite(self.harmful_margin_m):
             raise ValueError("harmful_margin_m must be nonnegative and finite")
         for name, value in (
             ("maximum_harm_rate", self.maximum_harm_rate),
@@ -128,6 +141,8 @@ class AnytimeRecursiveAdmissionV1Config:
             total_alpha_harm=self.total_alpha_harm,
             epoch_alpha_continuation=self.epoch_alpha_continuation,
             minimum_resolved_trials=self.minimum_resolved_trials,
+            gain_bet_fractions=self.gain_bet_fractions,
+            harm_alternative_fractions=self.harm_alternative_fractions,
         )
 
 
@@ -156,6 +171,18 @@ def load_anytime_recursive_protocol(
         isinstance(value, str) for value in conditions
     ):
         raise ValueError("stream conditions must be a string list")
+    raw_gain_bets = admission.get("gain_bet_fractions")
+    raw_harm_alternatives = admission.get("harm_alternative_fractions")
+    if not isinstance(raw_gain_bets, list) or not all(
+        isinstance(value, (int, float)) and not isinstance(value, bool)
+        for value in raw_gain_bets
+    ):
+        raise ValueError("gain_bet_fractions must be a numeric list")
+    if not isinstance(raw_harm_alternatives, list) or not all(
+        isinstance(value, (int, float)) and not isinstance(value, bool)
+        for value in raw_harm_alternatives
+    ):
+        raise ValueError("harm_alternative_fractions must be a numeric list")
     config = AnytimeRecursiveAdmissionV1Config(
         seed_start=int(cast(Any, stream.get("seed_start"))),
         seed_count=int(cast(Any, stream.get("seed_count"))),
@@ -164,9 +191,7 @@ def load_anytime_recursive_protocol(
         delay_max_episodes=int(cast(Any, stream.get("delay_max_episodes"))),
         delay_seed=int(cast(Any, stream.get("delay_seed"))),
         loss_cap_m=float(cast(Any, admission.get("loss_cap_m"))),
-        minimum_mean_gain_m=float(
-            cast(Any, admission.get("minimum_mean_gain_m"))
-        ),
+        minimum_mean_gain_m=float(cast(Any, admission.get("minimum_mean_gain_m"))),
         harmful_margin_m=float(cast(Any, admission.get("harmful_margin_m"))),
         maximum_harm_rate=float(cast(Any, admission.get("maximum_harm_rate"))),
         total_alpha_gain=float(cast(Any, admission.get("total_alpha_gain"))),
@@ -177,11 +202,13 @@ def load_anytime_recursive_protocol(
         minimum_resolved_trials=int(
             cast(Any, admission.get("minimum_resolved_trials"))
         ),
+        gain_bet_fractions=tuple(float(value) for value in raw_gain_bets),
+        harm_alternative_fractions=tuple(
+            float(value) for value in raw_harm_alternatives
+        ),
         null_world_count=int(cast(Any, calibration.get("world_count"))),
         null_epoch_count=int(cast(Any, calibration.get("epoch_count"))),
-        null_trials_per_epoch=int(
-            cast(Any, calibration.get("trials_per_epoch"))
-        ),
+        null_trials_per_epoch=int(cast(Any, calibration.get("trials_per_epoch"))),
         null_seed=int(cast(Any, calibration.get("seed"))),
     )
     if (
@@ -190,6 +217,8 @@ def load_anytime_recursive_protocol(
         or stream.get("statistical_unit") != "independent-seed-domain"
         or stream.get("loss") != "equal-condition-mean-rmse-m"
         or admission.get("authorize_when") != "both-current-e-processes-cross"
+        or float(cast(Any, admission.get("combined_bad_regime_alpha")))
+        != config.total_alpha_gain + config.total_alpha_harm
         or calibration.get("gain_null") != "iid-rademacher-bounded-score"
         or calibration.get("harm_null") != "iid-bernoulli-at-rate-ceiling"
         or boundary.get("fresh_seed_outcomes_opened_before_protocol") is not False
@@ -277,10 +306,7 @@ def _wilson_interval(successes: int, trials: int) -> list[float]:
     centre = (proportion + z2 / (2.0 * trials)) / denominator
     radius = (
         _Z975
-        * math.sqrt(
-            proportion * (1.0 - proportion) / trials
-            + z2 / (4.0 * trials**2)
-        )
+        * math.sqrt(proportion * (1.0 - proportion) / trials + z2 / (4.0 * trials**2))
         / denominator
     )
     return [max(0.0, centre - radius), min(1.0, centre + radius)]
@@ -346,13 +372,10 @@ def _harm_null_calibration(
         for epoch in range(config.null_epoch_count):
             process = BernoulliHarmMixtureEProcess(
                 maximum_harm_rate=config.maximum_harm_rate,
-                alternative_fractions=(0.10, 0.25, 0.50, 0.75, 0.90),
+                alternative_fractions=(config.harm_alternative_fractions),
             )
             threshold = -math.log(schedule.alpha_for_epoch(epoch))
-            harms = (
-                rng.random(config.null_trials_per_epoch)
-                < config.maximum_harm_rate
-            )
+            harms = rng.random(config.null_trials_per_epoch) < config.maximum_harm_rate
             for harmful in harms:
                 if process.update(bool(harmful)) >= threshold:
                     false_promotions += 1
@@ -449,7 +472,9 @@ def run_anytime_recursive_admission_v1(
         fallback_loss = float(cast(Any, evaluation["fallback_loss_m"]))
         candidate_forecast = cast(np.ndarray, evaluation["candidate_forecast"])
         fallback_forecast = cast(np.ndarray, evaluation["fallback_forecast"])
-        selected_forecast = candidate_forecast if authorized_before else fallback_forecast
+        selected_forecast = (
+            candidate_forecast if authorized_before else fallback_forecast
+        )
         exact_fallback_valid = True
         if not authorized_before:
             exact_fallback_valid = (
@@ -534,6 +559,8 @@ def run_anytime_recursive_admission_v1(
         if not bool(record["authorized_before_issue"])
     )
     terminal_snapshot = controller.snapshot()
+    gain_calibration = _gain_null_calibration(config)
+    harm_calibration = _harm_null_calibration(config)
     return {
         "schema": RESULT_SCHEMA,
         "schema_version": SCHEMA_VERSION,
@@ -549,8 +576,7 @@ def run_anytime_recursive_admission_v1(
                 "least maximum_harm_rate"
             ),
             "authorization": (
-                "both current epoch e-processes cross after the minimum evidence "
-                "count"
+                "both current epoch e-processes cross after the minimum evidence count"
             ),
             "epoch_familywise_control": (
                 "geometric alpha spending; theorem conditional on predictable "
@@ -575,7 +601,7 @@ def run_anytime_recursive_admission_v1(
             ),
             "candidate_wins": int(np.sum(candidate_losses < fallback_losses)),
             "candidate_ties": int(np.sum(candidate_losses == fallback_losses)),
-            "candidate_losses": int(np.sum(candidate_losses > fallback_losses)),
+            "candidate_loss_count": int(np.sum(candidate_losses > fallback_losses)),
             "candidate_harmful_episode_count": int(np.sum(candidate_harmful)),
             "selected_harmful_episode_count": int(np.sum(selected_harmful)),
             "authorized_deployment_count": int(np.sum(authorized_mask)),
@@ -590,8 +616,8 @@ def run_anytime_recursive_admission_v1(
             ),
             "terminal_evidence": terminal_snapshot.as_dict(),
         },
-        "gain_null_calibration": _gain_null_calibration(config),
-        "harm_null_calibration": _harm_null_calibration(config),
+        "gain_null_calibration": gain_calibration,
+        "harm_null_calibration": harm_calibration,
         "records": records,
         "resolution_records": resolution_records,
         "decision": {
@@ -606,13 +632,13 @@ def run_anytime_recursive_admission_v1(
             "gain_null_empirical_check_passed": bool(
                 cast(
                     Mapping[str, object],
-                    _gain_null_calibration(config),
+                    gain_calibration,
                 )["empirical_below_total_alpha"]
             ),
             "harm_null_empirical_check_passed": bool(
                 cast(
                     Mapping[str, object],
-                    _harm_null_calibration(config),
+                    harm_calibration,
                 )["empirical_below_total_alpha"]
             ),
             "paper_claim_authorized": False,

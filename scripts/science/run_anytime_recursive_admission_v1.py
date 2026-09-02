@@ -85,7 +85,7 @@ def _report(result: Mapping[str, object]) -> str:
         f"| Anytime-selected mean RMSE | {1000.0 * stream['selected_mean_loss_m']:.4f} mm |",
         f"| Shadow correction gain | {100.0 * stream['candidate_relative_improvement_over_fallback']:.2f}% |",
         f"| Anytime-selected gain | {100.0 * stream['selected_relative_improvement_over_fallback']:.2f}% |",
-        f"| Candidate wins/ties/losses | {stream['candidate_wins']}/{stream['candidate_ties']}/{stream['candidate_losses']} |",
+        f"| Candidate wins/ties/losses | {stream['candidate_wins']}/{stream['candidate_ties']}/{stream['candidate_loss_count']} |",
         f"| First authorized issue index | {first_text} |",
         f"| Candidate deployments | {stream['authorized_deployment_count']} |",
         f"| Exact fallback deployments | {stream['fallback_deployment_count']} |",
@@ -174,9 +174,7 @@ def main() -> int:
 
     result = run_anytime_recursive_admission_v1(config)
     result["method_seal"] = _identity(method_seal_path)
-    result["canonical_result_sha256_before_identity"] = canonical_result_digest(
-        result
-    )
+    result["canonical_result_sha256_before_identity"] = canonical_result_digest(result)
     result_path = output / "result.json"
     _write_json(result_path, result)
     _write_rows(

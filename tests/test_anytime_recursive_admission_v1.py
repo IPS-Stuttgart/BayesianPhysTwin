@@ -148,7 +148,7 @@ def test_canonical_digest_is_key_order_invariant() -> None:
 def test_runner_writes_method_seal_before_fresh_stream() -> None:
     source = RUNNER.read_text(encoding="utf-8")
 
-    seal_write = source.index('_write_json(method_seal_path, method_seal)')
+    seal_write = source.index("_write_json(method_seal_path, method_seal)")
     experiment_run = source.index("result = run_anytime_recursive_admission_v1(config)")
     assert seal_write < experiment_run
     assert '"fresh_seed_outcomes_opened": False' in source

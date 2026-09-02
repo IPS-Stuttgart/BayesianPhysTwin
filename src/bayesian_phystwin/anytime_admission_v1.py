@@ -97,9 +97,7 @@ class GeometricAlphaSpending:
         """Return alpha_k with sum_k alpha_k equal to ``total_alpha``."""
 
         index = _literal_nonnegative_integer(epoch_index, label="epoch_index")
-        return self.total_alpha * (1.0 - self.continuation) * (
-            self.continuation**index
-        )
+        return self.total_alpha * (1.0 - self.continuation) * (self.continuation**index)
 
     def cumulative_alpha_through(self, epoch_index: int) -> float:
         """Return the error budget allocated through the requested epoch."""
@@ -363,9 +361,7 @@ class AnytimeAdmissionController:
         self._epoch_index = -1
         self._epoch_reason = ""
         self._ever_authorized = False
-        self._gain_process = BoundedGainMixtureEProcess(
-            config.gain_bet_fractions
-        )
+        self._gain_process = BoundedGainMixtureEProcess(config.gain_bet_fractions)
         self._harm_process = BernoulliHarmMixtureEProcess(
             maximum_harm_rate=config.maximum_harm_rate,
             alternative_fractions=config.harm_alternative_fractions,
@@ -391,9 +387,7 @@ class AnytimeAdmissionController:
             raise ValueError("epoch reason must be a nonempty literal string")
         self._epoch_index += 1
         self._epoch_reason = reason.strip()
-        self._gain_process = BoundedGainMixtureEProcess(
-            self.config.gain_bet_fractions
-        )
+        self._gain_process = BoundedGainMixtureEProcess(self.config.gain_bet_fractions)
         self._harm_process = BernoulliHarmMixtureEProcess(
             maximum_harm_rate=self.config.maximum_harm_rate,
             alternative_fractions=self.config.harm_alternative_fractions,
@@ -459,9 +453,7 @@ class AnytimeAdmissionController:
         capped_fallback = min(fallback, self.config.loss_cap)
         denominator = self.config.loss_cap + self.config.minimum_mean_gain
         score = (
-            capped_fallback
-            - capped_candidate
-            - self.config.minimum_mean_gain
+            capped_fallback - capped_candidate - self.config.minimum_mean_gain
         ) / denominator
         score = float(np.clip(score, -1.0, 1.0))
         harmful = candidate > fallback + self.config.harmful_margin
