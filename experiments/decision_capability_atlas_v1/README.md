@@ -11,6 +11,16 @@ half-spaces. The uncovered region returns fallback. A canonical point belief
 always selects one action, including inside that uncovered region, and therefore
 illustrates unsupported decisiveness rather than a guarantee.
 
+The extended study also treats the task objective as uncertain. For a fixed
+axis-aligned objective box with half-width `(0.1, 0.2)`, exact support-function
+erosion constructs the region of centers whose *entire* task box admits the same
+action. On the valid center domain, nominal capability covers 83.18%, whereas
+objective-robust capability covers 66.33%; the robust fallback region is 33.67%.
+The task `(-0.6, 0.1)` is nominally certified for `pull_left`, but the box with
+half-width `(0.04, 0.05)` has no certified action. This is the intended
+strictness result: objective uncertainty can invalidate a nominal decision even
+when the physical quotient is unchanged.
+
 Reproduce with:
 
 ```bash
@@ -19,4 +29,5 @@ python experiments/decision_capability_atlas_v1/run.py \
 ```
 
 The result is controlled mechanism evidence. It does not validate a real
-provider, quotient, task family, or physical safety claim.
+provider, quotient, task family, task-uncertainty set, physical-model
+misspecification, or safety claim.
