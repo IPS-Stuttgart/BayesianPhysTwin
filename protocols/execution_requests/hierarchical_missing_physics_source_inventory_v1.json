@@ -1,0 +1,21 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-source-inventory-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-source-inventory-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "source_payloads_authorized": ["DLO2", "DLO3"],
+  "protected_payloads_forbidden": ["DLO4", "DLO5"],
+  "protected_parent_run": 33361441865,
+  "tasks": [
+    "run deterministic mechanism-recovery smoke",
+    "inventory DLO2/DLO3 source carrier schemas",
+    "identify existing repository adapters",
+    "emit a content-addressed source-only execution receipt"
+  ],
+  "target_scores_authorized": false,
+  "target_payloads_authorized": false,
+  "target_dependent_model_selection_authorized": false,
+  "failure_policy": "Fail closed without enumerating or opening DLO4/DLO5 payloads. Retain all negative source-only evidence."
+}
