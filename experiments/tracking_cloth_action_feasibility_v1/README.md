@@ -86,12 +86,15 @@ closed-loop robot control, deployment safety, or state of the art.
 
 ## Run
 
-The permanent workflow is:
+The audit shares the repository's existing permanent self-collision workflow:
 
 ```text
-.github/workflows/tracking-cloth-action-feasibility-v1.yml
+.github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml
 ```
 
-Pull requests run contract, lint, formatting, and target-closure checks on
-GitHub-hosted runners. A merge to `main` runs the source-only audit on
-`[self-hosted, Linux, X64, gpuserver4090]`.
+A push classifier keeps two custody paths mutually exclusive. Legacy immutable
+confirmation requests retain the original rep1--rep2--rep3 workflow. Changes to
+this source-only action audit launch only its rep1/rep2 job on
+`[self-hosted, Linux, X64, gpuserver4090]`; that job contains no prediction or
+scoring stage for repetition 3. Pull requests run the combined contract, lint,
+formatting, and target-closure checks on GitHub-hosted runners.
