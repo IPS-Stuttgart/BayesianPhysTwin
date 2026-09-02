@@ -230,3 +230,130 @@ def test_null_gain_simulation_does_not_systematically_cross() -> None:
                 break
 
     assert crossing_count <= 20
+
+
+def test_fail_closed_validation_and_defensive_branches() -> None:
+    import bayesian_phystwin.anytime_admission_v1 as admission
+
+    with pytest.raises(ValueError, match="positive and finite"):
+        admission._positive(float("nan"), label="positive")
+    with pytest.raises(ValueError, match="nonnegative and finite"):
+        admission._nonnegative(-1.0, label="nonnegative")
+    with pytest.raises(ValueError, match="positive"):
+        admission._literal_positive_integer(0, label="count")
+    with pytest.raises(ValueError, match="nonnegative literal integer"):
+        admission._literal_nonnegative_integer(True, label="index")
+    with pytest.raises(ValueError, match="at least one component"):
+        admission._weights(0)
+    with pytest.raises(ValueError, match="aligned one-dimensional"):
+        admission._log_mixture(
+            np.asarray([0.0]),
+            np.asarray([0.5, 0.5]),
+        )
+    assert admission._log_mixture(
+        np.asarray([-math.inf]),
+        np.asarray([1.0]),
+    ) == -math.inf
+
+
+def test_configuration_rejects_empty_duplicate_and_invalid_mixtures() -> None:
+    with pytest.raises(ValueError, match="gain_bet_fractions must not be empty"):
+        _config(gain_bet_fractions=())
+    with pytest.raises(ValueError, match="harm_alternative_fractions must not be empty"):
+        _config(harm_alternative_fractions=())
+    with pytest.raises(ValueError, match="gain bet fractions must be unique"):
+        _config(gain_bet_fractions=(0.2, 0.2))
+    with pytest.raises(ValueError, match="harm alternative fractions must be unique"):
+        _config(harm_alternative_fractions=(0.2, 0.2))
+    with pytest.raises(ValueError, match="harm alternative fractions"):
+        _config(harm_alternative_fractions=(0.0, 0.5))
+    with pytest.raises(ValueError, match="minimum_mean_gain"):
+        _config(minimum_mean_gain=-0.1)
+    with pytest.raises(ValueError, match="harmful_margin"):
+        _config(harmful_margin=-0.1)
+    with pytest.raises(ValueError, match="total_alpha_gain"):
+        _config(total_alpha_gain=float("nan"))
+
+
+def test_e_process_constructors_and_updates_reject_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="bet_fractions must not be empty"):
+        BoundedGainMixtureEProcess(())
+    with pytest.raises(ValueError, match="finite vector"):
+        BoundedGainMixtureEProcess((0.0,))
+    with pytest.raises(ValueError, match="alternative_fractions must not be empty"):
+        BernoulliHarmMixtureEProcess(
+            maximum_harm_rate=0.1,
+            alternative_fractions=(),
+        )
+    with pytest.raises(ValueError, match="alternative fractions"):
+        BernoulliHarmMixtureEProcess(
+            maximum_harm_rate=0.1,
+            alternative_fractions=(1.0,),
+        )
+
+    gain = BoundedGainMixtureEProcess((0.5,))
+    with pytest.raises(ValueError, match=r"\[-1, 1\]"):
+        gain.update(1.1)
+    with pytest.raises(ValueError, match=r"\[-1, 1\]"):
+        gain.update(float("nan"))
+
+    harm = BernoulliHarmMixtureEProcess(
+        maximum_harm_rate=0.1,
+        alternative_fractions=(0.5,),
+    )
+    with pytest.raises(ValueError, match="literal bool"):
+        harm.update(1)  # type: ignore[arg-type]
+
+    gain.__dict__["_bets"] = np.asarray((2.0,))
+    with pytest.raises(ValueError, match="not positive"):
+        gain.update(-1.0)
+    harm.__dict__["_alternatives"] = np.asarray((float("nan"),))
+    with pytest.raises(ValueError, match="invalid"):
+        harm.update(False)
+
+
+def test_controller_rejects_malformed_epoch_and_trial_operations() -> None:
+    with pytest.raises(TypeError, match="AnytimeAdmissionConfig"):
+        AnytimeAdmissionController(object())  # type: ignore[arg-type]
+
+    controller = AnytimeAdmissionController(_config())
+    assert controller.epoch_index == 0
+    assert controller.resolved_trials == ()
+    with pytest.raises(ValueError, match="nonempty literal string"):
+        controller.start_new_epoch(reason="")
+    with pytest.raises(ValueError, match="nonempty literal string"):
+        controller.start_new_epoch(reason=1)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="nonempty literal string"):
+        controller.issue_trial(trial_id="", issued_step=0, maturity_step=1)
+    with pytest.raises(ValueError, match="nonnegative literal integer"):
+        controller.issue_trial(trial_id="negative", issued_step=-1, maturity_step=1)
+    with pytest.raises(ValueError, match="nonnegative literal integer"):
+        controller.issue_trial(trial_id="bool", issued_step=True, maturity_step=1)
+    with pytest.raises(ValueError, match="strictly after"):
+        controller.issue_trial(trial_id="same", issued_step=1, maturity_step=1)
+
+    controller.issue_trial(trial_id="duplicate", issued_step=0, maturity_step=1)
+    with pytest.raises(ValueError, match="already registered"):
+        controller.issue_trial(trial_id="duplicate", issued_step=0, maturity_step=1)
+    with pytest.raises(ValueError, match="unknown pending"):
+        controller.resolve_trial(
+            trial_id="unknown",
+            resolved_step=1,
+            candidate_loss=0.0,
+            fallback_loss=0.0,
+        )
+    with pytest.raises(ValueError, match="candidate_loss"):
+        controller.resolve_trial(
+            trial_id="duplicate",
+            resolved_step=1,
+            candidate_loss=-1.0,
+            fallback_loss=0.0,
+        )
+    resolved = controller.resolve_trial(
+        trial_id="duplicate",
+        resolved_step=1,
+        candidate_loss=0.0,
+        fallback_loss=0.0,
+    )
+    assert resolved.trial_id == "duplicate"
+    assert len(controller.resolved_trials) == 1
