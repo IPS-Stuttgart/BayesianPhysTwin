@@ -1,0 +1,131 @@
+# Trajectory-conformal active sensing on DEFORM DLO4/DLO5
+
+## Question
+
+Can the fixed decision-directed virtual-sensing policy from the non-overlapping
+DEFORM replication retain its task benefit while adding a finite-sample regret
+envelope for support mismatch?
+
+The parent policy is immutable: decision-regret acquisition, at most four
+internal-node measurements, likelihood scale 2.0, action-prototype scale 1.0,
+and finite-support regret tolerance 0.05. This extension does not change its
+sensor order, stopping rule, action portfolio, source model, or split.
+
+## Certificate
+
+For complete calibration trajectory `j` and each decision `d` at which the
+parent policy emits a nonfallback action, let
+
+```text
+B[j,d] = exact worst-case regret over the registered finite support
+R[j,d] = realized normalized regret after the held future is opened
+```
+
+The trajectory nonconformity score is
+
+```text
+S[j] = max_d max(0, R[j,d] - B[j,d]).
+```
+
+One score is retained per complete trajectory. DLO4 and DLO5 are calibrated as
+known strata. For miscoverage `alpha`, the usual split-conformal order statistic
+provides radius `q_alpha`. For one new trajectory exchangeable within its DLO
+stratum,
+
+```text
+Pr[ R[new,d] <= B[new,d] + q_alpha
+    for every parent-policy nonfallback decision d ] >= 1 - alpha.
+```
+
+The terminal wrapper executes the already-frozen parent action only when
+
+```text
+B[new,d] + q_alpha <= registered regret budget;
+```
+
+otherwise it restores the exact physical fallback. The guarantee is simultaneous
+across decisions within one trajectory, rather than treating windows as
+independent samples.
+
+This wrapper is deliberately narrower than a conformal certificate for an
+entire contingent sensing plan. The parent policy may already have paid sensing
+cost before the terminal wrapper falls back. A future complete-plan extension
+must calibrate the probe/action response map before any probe is acquired.
+
+## Immutable parent evidence
+
+- repository: `IPS-Stuttgart/BayesianPhysTwin`;
+- scientific revision: `56c31bc56b2fc3526f519f726ff7b922b909c65c`;
+- workflow run: `33613192892`;
+- artifact: `9839951506`;
+- artifact digest:
+  `sha256:31ddbb20dc084514afb6b021ec4f6b0bdff72e22124c4734fb18b1952b347889`;
+- outer result ID:
+  `ba5f43a2ed1ca9c95a2a032e95679df06d3b6c6ec20cc3ad962ea6326f543fe0`;
+- core result ID:
+  `ac1626f7392c1de2d95ff4d5fa5e937d113f46c573c48b4dcef5fd3b38ef6ade`.
+
+## Result
+
+The source-only primary point is selected without source-test outcomes: at 80%
+nominal trajectory coverage, choose the smallest registered regret budget that
+retains every parent nonfallback action on the 18 calibration trajectories.
+This selects a budget of 0.30, with conformal radii 0.239244 for DLO4 and
+0.187091 for DLO5.
+
+On the 16 non-overlapping source-test trajectories:
+
+| Quantity | Result |
+|---|---:|
+| Decisions | 304 |
+| Nonfallback | 251 (82.57%) |
+| Task RMSE | 87.216 mm |
+| Physical-fallback RMSE | 167.806 mm |
+| Equal-trajectory RMSE reduction | 48.11% |
+| 95% trajectory bootstrap | [44.35%, 51.69%] |
+| Harmful nonfallback decisions | 0 / 251 |
+| Empirical simultaneous trajectory coverage | 13 / 16 (81.25%) |
+| Regret-budget exceeds | 2 decisions on 2 trajectories |
+| Mean acquired node blocks | 1.155 per decision |
+| Mean effective hypotheses when acting | 11.99 |
+| State-ambiguous acting cases | 97.61% |
+
+The empirical 81.25% simultaneous coverage is descriptive and consistent with
+the nominal 80% target; it is not a significance test. The result does not turn
+the two known DLOs into an unseen-object cohort.
+
+At 95% nominal coverage, nine calibration trajectories per DLO are insufficient
+for a finite split-conformal radius. The implementation returns an infinite
+radius and therefore exact fallback. This finite-sample abstention is retained
+rather than replacing the quantile convention or pooling windows.
+
+## Interpretation
+
+The result strengthens the claim from
+
+> the finite support certifies an action
+
+into
+
+> a fixed decision-directed sensing policy can retain a large real-data task
+> benefit while carrying a trajectory-level, simultaneous support-mismatch
+> envelope and exact fallback.
+
+It does not establish a pointwise conditional guarantee, arbitrary real-world
+safety, valid physical sensors, official evaluation performance, or zero-shot
+object transfer. Source-test outcomes had already been opened by the parent v3
+replication, so this wrapper is retrospective method development. Its correct
+next confirmation is a newly frozen object or dataset cohort.
+
+## Reproduction
+
+Download artifact `9839951506`, verify its SHA-256, extract it, and run:
+
+```bash
+python -m experiments.deform_dlo45_conformal_active_sensing_v1.analyze \
+  --parent-dir /path/to/deform-dlo45-v3-result-33613192892 \
+  --protocol experiments/deform_dlo45_conformal_active_sensing_v1/protocol.json \
+  --output-dir /tmp/deform-dlo45-conformal-active-v1
+```
+
+`compact_result.json` is regenerated byte-for-byte by the dedicated workflow.
