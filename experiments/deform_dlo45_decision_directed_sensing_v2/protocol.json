@@ -71,19 +71,13 @@
       1.0
     ],
     "regret_tolerances": [
-      0.0,
-      0.005,
-      0.01,
-      0.02,
-      0.05,
-      0.1,
-      0.2,
-      0.4
+      0.05
     ],
+    "regret_tolerance_status": "fixed-task-requirement-not-calibrated",
     "measurement_budget": 4,
     "maximum_nonfallback_harmful_fraction": 0.05,
     "minimum_nonfallback_decisions": 20,
-    "selection_objective": "maximize_equal_trajectory_task_rmse_improvement_then_nonfallback_then_minimize_measurement_cost",
+    "selection_objective": "maximize_equal_trajectory_task_rmse_improvement_then_nonfallback_then_minimize_measurement_cost_at_fixed_regret_budget",
     "shared_across_dlos": true,
     "fallback_when_no_candidate_is_eligible": "evaluate-deterministic-best-diagnostic-and-mark-calibration-gate-failed"
   },
@@ -144,5 +138,5 @@
     "target_tuning": false,
     "new_data_collection": false
   },
-  "claim_boundary": "Source-calibrated, source-test-only virtual sensing replay on existing public DEFORM training trajectories. A fixed global portfolio of genuinely competing source-response prototype actions, one shared sensor likelihood scale, one shared prototype shrinkage, and one regret tolerance are selected without official evaluation files. Internal-node readouts are masked and revealed from already recorded prefixes, and future internal-node outcomes are sliced only after all source-test measurement paths and actions are frozen. Exact regret is conditional on the registered finite local support and quotient; source-test target violations remain empirical. The result is exploratory because an earlier simpler source pilot motivated this stronger protocol. It is not unseen-object generalization, learned-vision validation, continuous-control certification, deployment safety, or state of the art."
+  "claim_boundary": "Source-calibrated, source-test-only virtual sensing replay on existing public DEFORM training trajectories. A fixed global portfolio of genuinely competing source-response prototype actions and one shared sensor likelihood scale and prototype shrinkage are selected without official evaluation files. The normalized-regret tolerance is a fixed 0.05 task requirement and is not optimized for RMSE. Internal-node readouts are masked and revealed from already recorded prefixes, and future internal-node outcomes are sliced only after all source-test measurement paths and actions are frozen. Exact regret is conditional on the registered finite local support and quotient; source-test target violations remain empirical. The result is exploratory because an earlier simpler source pilot and the first v2 run motivated this corrected protocol. It is not unseen-object generalization, learned-vision validation, continuous-control certification, deployment safety, or state of the art."
 }
