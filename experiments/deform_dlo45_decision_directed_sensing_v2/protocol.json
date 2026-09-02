@@ -55,13 +55,20 @@
     "query_projection_dimension": 8,
     "temperature_scale": 1.0,
     "kmeans_iterations": 50,
-    "minimum_class_support": 1
+    "minimum_class_support": 1,
+    "action_portfolio": "fallback-plus-global-source-response-prototype-per-class",
+    "predictive_sensor_quadrature": "current-local-support-hypothesis-mixture"
   },
   "calibration": {
     "sensor_log_likelihood_scales": [
+      0.5,
       1.0,
-      2.0,
-      4.0
+      2.0
+    ],
+    "action_prototype_scales": [
+      0.5,
+      0.75,
+      1.0
     ],
     "regret_tolerances": [
       0.0,
@@ -76,11 +83,16 @@
     "measurement_budget": 4,
     "maximum_nonfallback_harmful_fraction": 0.05,
     "minimum_nonfallback_decisions": 20,
-    "selection_objective": "maximize_equal_trajectory_task_rmse_improvement_then_nonfallback_then_minimize_measurements"
+    "selection_objective": "maximize_equal_trajectory_task_rmse_improvement_then_nonfallback_then_minimize_measurement_cost",
+    "shared_across_dlos": true,
+    "fallback_when_no_candidate_is_eligible": "evaluate-deterministic-best-diagnostic-and-mark-calibration-gate-failed"
   },
   "sensing": {
     "policies": [
       "decision_regret",
+      "bayes_risk",
+      "posterior_entropy",
+      "class_entropy",
       "state_variance",
       "query_variance",
       "center_out",
@@ -108,17 +120,29 @@
       9
     ],
     "measurement_block": "current line-relative position plus one-frame line-relative velocity",
-    "measurement_cost_per_internal_node": 1.0,
+    "measurement_costs_by_internal_node": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "adaptive_selection": "maximize_expected_metric_reduction_per_measurement_cost",
     "random_seed": 20260904
   },
   "evaluation": {
     "primary_stage": "source-test-only-competing-action-pilot",
     "evaluation_split_opened": false,
-    "bootstrap_unit": "complete source-test trajectory",
+    "bootstrap_unit": "complete_source_test_trajectory_stratified_by_dlo",
     "bootstrap_replicates": 2000,
     "bootstrap_seed": 20260905,
+    "paired_policy_comparisons": true,
+    "cost_rmse_frontiers": true,
     "target_tuning": false,
     "new_data_collection": false
   },
-  "claim_boundary": "Source-calibrated, source-test-only virtual sensing replay on existing public DEFORM training trajectories. Competing future-shape actions, the sensor likelihood scale, and the regret tolerance are fitted or selected without official evaluation files. Internal-node readouts are masked and revealed from already recorded prefixes, and future internal-node outcomes are sliced only after all measurement paths and actions are frozen. The result is exploratory because an earlier simpler pilot used a different action portfolio on source data. It is not unseen-object generalization, learned-vision validation, continuous-control certification, deployment safety, or state of the art."
+  "claim_boundary": "Source-calibrated, source-test-only virtual sensing replay on existing public DEFORM training trajectories. A fixed global portfolio of genuinely competing source-response prototype actions, one shared sensor likelihood scale, one shared prototype shrinkage, and one regret tolerance are selected without official evaluation files. Internal-node readouts are masked and revealed from already recorded prefixes, and future internal-node outcomes are sliced only after all source-test measurement paths and actions are frozen. Exact regret is conditional on the registered finite local support and quotient; source-test target violations remain empirical. The result is exploratory because an earlier simpler source pilot motivated this stronger protocol. It is not unseen-object generalization, learned-vision validation, continuous-control certification, deployment safety, or state of the art."
 }
