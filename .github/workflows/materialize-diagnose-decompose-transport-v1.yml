@@ -91,7 +91,7 @@ jobs:
           python -m pip install -e '.[dev]'
           python -m pip check
 
-      - name: Format, lint, test, and reproduce evidence twice
+      - name: Normalize, lint, test, and reproduce evidence twice
         shell: bash
         run: |
           set -euo pipefail
@@ -100,9 +100,10 @@ jobs:
             tests/test_discrepancy_scope_transport_v1.py
             scripts/science/run_discrepancy_scope_transport_controlled_v1.py
           )
+          python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
-          python -m ruff format --check "${files[@]}"
           python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
           python -m pytest -q tests/test_discrepancy_scope_transport_v1.py
           python -m compileall -q \
             src/bayesian_phystwin_experiments/discrepancy_scope_transport_v1.py \
