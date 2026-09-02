@@ -1,0 +1,103 @@
+{
+  "active_policy": {
+    "claim_boundary": "Exact only for the supplied finite hypotheses, prior support, quotient masses, deterministic probe partitions, costs, loss matrix, and regret tolerance. It does not validate a provider or probe model, establish physical-state identification, calibrate probabilities, guarantee held-out transport, certify continuous actions, authorize deployment, or certify safety.",
+    "cost_reduction_vs_full_state": 0.6666666666666667,
+    "costs_by_action_group": [
+      1.0,
+      2.0,
+      2.0
+    ],
+    "feasible": true,
+    "node_count": 360,
+    "policy_id": "85bf168394dc71a77761b9cefc290c2466462d5d0cd320b4355452c14192ca8e",
+    "probe_count": 6,
+    "regret_tolerance": 0.0,
+    "root_state_id": "bd0ca08154fbc4f70792d1d5f8e2f74aef5facdb87ba3d4b18d23bbd72db2cc8",
+    "root_worst_case_cost": 2.0,
+    "semantics": "exact-active-decision-certificate-over-conditioned-query-quotient-v1",
+    "uniform_expected_cost": 1.333333333333333,
+    "version": 1
+  },
+  "checks": {
+    "active_uniform_expected_cost": true,
+    "active_worst_case_cost": true,
+    "entropy_expected_cost": true,
+    "full_state_probe_cost": true,
+    "global_decision_probe_cost": true,
+    "loss_radius_0_49_feasible": true,
+    "loss_radius_0_51_feasible": true,
+    "unresolvable_control_feasible": true
+  },
+  "claim_boundary": "Controlled finite-hypothesis mechanism evidence only. It establishes exact active decision certification and a strict sensing-cost separation from full-state identification under the registered deterministic probe model. It does not validate a learned provider, camera model, physical experiment, held-out transport, continuous control, deployment safety, or state of the art.",
+  "decision": "controlled-active-decision-acquisition-passed",
+  "entropy_greedy": {
+    "uniform_expected_cost": 3.333333333333332,
+    "worst_case_cost": 4.0
+  },
+  "fixed_order_distribution": {
+    "maximum_uniform_expected_cost": 4.666666666666666,
+    "median_uniform_expected_cost": 3.0000000000000004,
+    "minimum_uniform_expected_cost": 1.333333333333333,
+    "order_count": 720
+  },
+  "full_state_probe_set": {
+    "selected_probe_ids": [
+      "decision-probe-0",
+      "decision-probe-1",
+      "nuisance-bit-0",
+      "nuisance-bit-1",
+      "nuisance-bit-2",
+      "nuisance-bit-3"
+    ],
+    "total_cost": 6.0
+  },
+  "global_decision_probe_set": {
+    "conflict_pair_count": 144,
+    "selected_probe_ids": [
+      "decision-probe-0",
+      "decision-probe-1"
+    ],
+    "total_cost": 2.0
+  },
+  "loss_radius_sweep": [
+    {
+      "feasible": true,
+      "radius": 0.0,
+      "worst_case_cost": 2.0
+    },
+    {
+      "feasible": true,
+      "radius": 0.25,
+      "worst_case_cost": 2.0
+    },
+    {
+      "feasible": true,
+      "radius": 0.49,
+      "worst_case_cost": 2.0
+    },
+    {
+      "feasible": false,
+      "radius": 0.51,
+      "worst_case_cost": null
+    }
+  ],
+  "problem": {
+    "action_count": 3,
+    "action_group_counts": [
+      16,
+      4,
+      4
+    ],
+    "hypothesis_count": 24,
+    "probe_count": 6
+  },
+  "protocol_id": "a92a25fc107f77e510061324eb3a31ed1dcf8e8125182491dc468f4c12016fdd",
+  "result_id": "3145f03d305760e842807896b6aeff7fe50fa803a46d43e3b84bb40b42dfebd0",
+  "schema": "bayesian-phystwin.active-decision-acquisition-result",
+  "schema_version": 1,
+  "unresolvable_control": {
+    "feasible": false,
+    "removed_probe": "decision-probe-1",
+    "root_worst_case_cost": null
+  }
+}
