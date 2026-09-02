@@ -30,9 +30,7 @@ def _enumerate_conditioned_pairwise_gap(
     class_options: list[list[int | None]] = []
     for class_id, mass in enumerate(quotient):
         supported = np.flatnonzero((classes == class_id) & (prior > 0.0))
-        retained = np.flatnonzero(
-            (classes == class_id) & (prior > 0.0) & consistent
-        )
+        retained = np.flatnonzero((classes == class_id) & (prior > 0.0) & consistent)
         if mass == 0.0 or retained.size == 0:
             class_options.append([None])
         elif retained.size == supported.size:
@@ -237,8 +235,7 @@ def test_exact_policy_prefers_cheaper_decision_probe_to_full_state_probe() -> No
         for _, child_id in root.outcome_children
     )
     assert (
-        policy.summary()["claim_boundary"]
-        == ACTIVE_DECISION_ACQUISITION_CLAIM_BOUNDARY
+        policy.summary()["claim_boundary"] == ACTIVE_DECISION_ACQUISITION_CLAIM_BOUNDARY
     )
 
 

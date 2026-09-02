@@ -11,8 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "protocols/active-decision-acquisition-study-v1.json"
 RESULT = (
-    ROOT
-    / "results/science/active_decision_acquisition_v1/controlled-v1/result.json"
+    ROOT / "results/science/active_decision_acquisition_v1/controlled-v1/result.json"
 )
 SCRIPT = ROOT / "experiments/active_decision_acquisition_v1/run.py"
 
@@ -42,9 +41,10 @@ def test_protocol_is_content_addressed_and_bounded() -> None:
     assert hashlib.sha256(encoded).hexdigest() == protocol_id
     assert protocol["study"]["hypothesis_count"] == 24
     assert protocol["study"]["action_group_sizes"] == [16, 4, 4]
-    assert "Controlled finite-hypothesis mechanism evidence only" in protocol[
-        "claim_boundary"
-    ]
+    assert (
+        "Controlled finite-hypothesis mechanism evidence only"
+        in protocol["claim_boundary"]
+    )
     assert "deployment safety" in protocol["claim_boundary"]
 
 

@@ -218,10 +218,14 @@ def _minimum_full_state_probe_cost(
     best: tuple[str, ...] = ()
     for size in range(len(probes) + 1):
         for selected in itertools.combinations(probes, size):
-            signatures = np.stack(
-                [probe.outcome_index for probe in selected],
-                axis=1,
-            ) if selected else np.zeros((probes[0].hypothesis_count, 0), dtype=int)
+            signatures = (
+                np.stack(
+                    [probe.outcome_index for probe in selected],
+                    axis=1,
+                )
+                if selected
+                else np.zeros((probes[0].hypothesis_count, 0), dtype=int)
+            )
             if np.unique(signatures, axis=0).shape[0] != signatures.shape[0]:
                 continue
             cost = float(sum(probe.cost for probe in selected))

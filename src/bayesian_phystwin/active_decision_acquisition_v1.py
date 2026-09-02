@@ -149,8 +149,7 @@ def _loss_radii(
     )
     if radii.shape != (hypotheses, actions):
         raise ValueError(
-            "loss_radius_by_hypothesis_action must match "
-            "loss_by_hypothesis_action"
+            "loss_radius_by_hypothesis_action must match loss_by_hypothesis_action"
         )
     if np.any(radii < 0.0):
         raise ValueError("loss_radius_by_hypothesis_action must be nonnegative")
@@ -380,10 +379,7 @@ def conditioned_query_decision_certificate(
     action_count = losses.shape[1]
     pairwise = np.zeros((action_count, action_count), dtype=np.float64)
     differences = (
-        losses[:, :, None]
-        - losses[:, None, :]
-        + radii[:, :, None]
-        + radii[:, None, :]
+        losses[:, :, None] - losses[:, None, :] + radii[:, :, None] + radii[:, None, :]
     )
     for action in range(action_count):
         for benchmark in range(action_count):
@@ -658,9 +654,7 @@ def synthesize_minimax_active_decision_policy(
         best_cost = math.inf
         best_probe: int | None = None
         best_children: tuple[tuple[int, bytes, tuple[int, ...]], ...] = ()
-        feasible_mask = mask & (prior > 0.0) & (
-            quotient[classes] > _PROBABILITY_ATOL
-        )
+        feasible_mask = mask & (prior > 0.0) & (quotient[classes] > _PROBABILITY_ATOL)
         for probe_index in remaining:
             probe = ordered[probe_index]
             outcomes = np.unique(probe.outcome_index[feasible_mask])
