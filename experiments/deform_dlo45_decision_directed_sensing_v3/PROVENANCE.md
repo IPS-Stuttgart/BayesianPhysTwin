@@ -15,4 +15,4 @@ This source-test-only replication is part of pull request #905. It retains the f
 
 The official DEFORM evaluation split is not opened by this study. The result is source-domain, source-test-only evidence using complete trajectories as statistical units. It does not establish unseen-object transfer, learned-sensor competence, online physical probing, continuous-control certification, deployment safety, or state of the art.
 
-The execution and materialization workflows and their consumed request files were removed before review. The retained scientific implementation, protocols, compact results, and tests remain reproducible without those one-shot launchers.
+The execution and materialization workflows and their consumed request files were removed before review. The retained scientific implementation, protocols, compact results, and tests remain reproducible without those one-shot launchers. Review cleanup also restored the v3 evaluator from the exact scientific merge, bound it to the retained predecessor result, and applied the repository-required `collections.abc` imports without changing any protocol or numerical evidence.
