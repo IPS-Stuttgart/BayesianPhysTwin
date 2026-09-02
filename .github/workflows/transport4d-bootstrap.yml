@@ -1,0 +1,91 @@
+name: Apply reviewed Transport4D source bundle
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-bootstrap.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: transport4d-reviewed-bundle-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact staging branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Materialize reviewed files
+        run: python .github/transport4d_bootstrap.py
+      - name: Install focused validation tools
+        run: python -m pip install numpy==1.26.4 pytest ruff==0.14.14
+      - name: Canonicalize and validate new Python files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find \
+            src/bayesian_phystwin_experiments \
+            scripts/science \
+            tests \
+            -maxdepth 1 -type f -name '*transport4d*' -print | sort)
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_transport4d_tiered_certificate_v1.py \
+            tests/test_transport4d_tiered_controlled_v1.py \
+            tests/test_transport4d_public_development_v1.py \
+            tests/test_transport4d_public_reserve_v1.py
+      - name: Reproduce compact evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$RUNNER_TEMP/transport4d-evidence"
+          mkdir -p "$tmp"
+          PYTHONPATH=src python \
+            scripts/science/run_transport4d_tiered_controlled_v1.py \
+            --output "$tmp/controlled.json" \
+            --report "$tmp/controlled.md"
+          cmp "$tmp/controlled.json" \
+            evidence/transport4d_tiered_controlled_v1/result.json
+          cmp "$tmp/controlled.md" \
+            evidence/transport4d_tiered_controlled_v1/report.md
+          python scripts/science/run_transport4d_public_development_v1.py \
+            --protocol protocols/transport4d_public_development_v1.json \
+            --output "$tmp/public.json" \
+            --report "$tmp/public.md"
+          cmp "$tmp/public.json" \
+            evidence/transport4d_public_development_v1/result.json
+          cmp "$tmp/public.md" \
+            evidence/transport4d_public_development_v1/report.md
+          python -m json.tool \
+            protocols/transport4d_deform360_reserve_audit_v1.json >/dev/null
+      - name: Replace bootstrap with reviewed Transport4D change
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf \
+            .github/transport4d_bootstrap.py \
+            .github/transport4d_bundle \
+            .github/workflows/transport4d-bootstrap.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Add tiered Transport4D public-data foundation"
+          git push origin HEAD:research/transport4d-tiered-public-v1
