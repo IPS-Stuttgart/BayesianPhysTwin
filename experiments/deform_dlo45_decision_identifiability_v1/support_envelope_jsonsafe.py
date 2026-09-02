@@ -105,7 +105,9 @@ def radius_from_record(
             raise ValueError("infinite radius record lacks fail-closed flag")
         return float("inf")
     if isinstance(radius, bool) or not isinstance(radius, (int, float)):
-        raise ValueError("source envelope radius is neither finite nor explicit infinity")
+        raise ValueError(
+            "source envelope radius is neither finite nor explicit infinity"
+        )
     result = float(radius)
     if not math.isfinite(result) or result < 0.0 or has_finite_radius is not True:
         raise ValueError("invalid finite source envelope radius")
