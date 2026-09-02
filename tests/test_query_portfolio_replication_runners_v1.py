@@ -41,3 +41,10 @@ def test_slingshot_wrapper_keeps_disjoint_calibration_and_self_workers() -> None
     assert wrapper.runner.V2_RUNNER.PARENT_ROOT == module.PARENT_ROOT
     assert wrapper.runner.V2_RUNNER.POLICY_V1_ROOT == module.POLICY_V1_ROOT
     assert module.RUNTIME_ROOT.name == "frozen-runtime"
+    for method in (module.method_v2, module.method_v3, module.method_v4):
+        assert method.COUNTS == {"calibration": 128, "evaluation": WORLD_COUNT}
+    assert module.method_v2.guarded_decisions.__globals__["COUNTS"] == {
+        "calibration": 128,
+        "evaluation": WORLD_COUNT,
+    }
+    assert module.method_v2.pre_future_checks.__globals__["COUNTS"]["evaluation"] == 320

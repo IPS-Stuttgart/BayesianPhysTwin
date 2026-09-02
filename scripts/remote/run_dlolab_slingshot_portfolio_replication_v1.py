@@ -17,6 +17,9 @@ from bayesian_phystwin.query_portfolio_replication_v1 import (
     WORLD_SEEDS,
 )
 from bayesian_phystwin_experiments import (
+    dlolab_slingshot_policy_certificate_source_v2 as method_v2,
+)
+from bayesian_phystwin_experiments import (
     dlolab_slingshot_policy_certificate_source_v3 as method_v3,
 )
 from bayesian_phystwin_experiments import (
@@ -51,8 +54,9 @@ CANONICAL_PARENT_LIBRARY_PATH = (
 
 
 def _configure_methods() -> None:
-    method_v4.COUNTS["calibration"] = 128
-    method_v4.COUNTS["evaluation"] = WORLD_COUNT
+    for method in (method_v2, method_v3, method_v4):
+        method.COUNTS["calibration"] = 128
+        method.COUNTS["evaluation"] = WORLD_COUNT
     world_seeds = WORLD_SEEDS["dlolab_slingshot_v4"]
     sensor_seeds = SENSOR_SEEDS["dlolab_slingshot_v4"]
     if isinstance(world_seeds, dict) and isinstance(sensor_seeds, dict):
@@ -65,8 +69,9 @@ def _configure_methods() -> None:
         method_v4.SENSOR_SEEDS["evaluation"] = sensor_seeds
     else:
         raise ValueError("Slingshot calibration/evaluation seeds changed")
-    method_v3.BOOTSTRAP_SEED = BOOTSTRAP_SEED + 1
-    method_v3.BOOTSTRAP_REPLICATES = BOOTSTRAP_REPLICATES
+    for method in (method_v2, method_v3):
+        method.BOOTSTRAP_SEED = BOOTSTRAP_SEED + 1
+        method.BOOTSTRAP_REPLICATES = BOOTSTRAP_REPLICATES
 
 
 def _load_runner() -> Any:
