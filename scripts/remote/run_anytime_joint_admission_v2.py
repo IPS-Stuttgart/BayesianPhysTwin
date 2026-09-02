@@ -61,6 +61,7 @@ def _write_summary_csv(path: Path, result: dict[str, object]) -> None:
                 "first_crossing_q10",
                 "first_crossing_q90",
             ],
+            lineterminator="\n",
         )
         writer.writeheader()
         for scenario_name, raw_scenario in scenarios.items():
