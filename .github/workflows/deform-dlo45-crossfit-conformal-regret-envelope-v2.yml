@@ -1,0 +1,234 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expiry: 2026-09-15
+name: DEFORM DLO4/DLO5 crossfit conformal envelope v2
+
+on:
+  push:
+    branches:
+      - science/crossfit-conformal-regret-envelope-v2
+    paths:
+      - ".github/workflows/deform-dlo45-crossfit-conformal-regret-envelope-v2.yml"
+      - ".github/requests/deform-dlo45-crossfit-conformal-regret-envelope-v2.json"
+      - "experiments/deform_dlo45_decision_identifiability_v1/support_envelope_crossfit.py"
+      - "experiments/deform_dlo45_decision_identifiability_v1/support_envelope_crossfit_protocol.json"
+      - "tests/test_deform_dlo45_crossfit_conformal_regret_envelope_v2.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform-dlo45-crossfit-conformal-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  PARENT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/protocol.json
+  CROSSFIT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/support_envelope_crossfit_protocol.json
+  REQUEST: .github/requests/deform-dlo45-crossfit-conformal-regret-envelope-v2.json
+
+jobs:
+  source-calibration:
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, gpuserver4090]
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Create isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/crossfit-envelope-venv"
+          python="${RUNNER_TEMP}/crossfit-envelope-venv/bin/python"
+          "${python}" -m pip install --disable-pip-version-check \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1" "numpy==2.2.6"
+          "${python}" -m pip install --disable-pip-version-check -e ".[dev]"
+          "${python}" -m pip check
+
+      - name: Run focused contracts and quality checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/crossfit-envelope-venv/bin/python"
+          "${python}" -m ruff check \
+            experiments/deform_dlo45_decision_identifiability_v1/support_envelope_crossfit.py \
+            tests/test_deform_dlo45_crossfit_conformal_regret_envelope_v2.py
+          "${python}" -m ruff format --check \
+            experiments/deform_dlo45_decision_identifiability_v1/support_envelope_crossfit.py \
+            tests/test_deform_dlo45_crossfit_conformal_regret_envelope_v2.py
+          "${python}" -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_crossfit_conformal_regret_envelope_v2.py \
+            tests/test_deform_dlo45_conformal_regret_envelope_core_v1.py \
+            tests/test_deform_dlo45_conformal_regret_envelope_v1.py \
+            tests/test_deform_dlo45_decision_identifiability_v1.py \
+            tests/test_query_quotient_belief_v1.py
+
+      - name: Stage source-only DEFORM view
+        id: source-data
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="${RUNNER_TEMP}/crossfit-source-data"
+          rm -rf "${stage}"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${DATASET_ROOT}/${dlo}/train" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 56
+            mkdir -p "${stage}/${dlo}"
+            ln -s "${DATASET_ROOT}/${dlo}/train" "${stage}/${dlo}/train"
+            test ! -e "${stage}/${dlo}/eval"
+          done
+          echo "root=${stage}" >> "${GITHUB_OUTPUT}"
+
+      - name: Fit routes and seal 28-trajectory conformal envelopes
+        shell: bash
+        env:
+          SOURCE_DATA_ROOT: ${{ steps.source-data.outputs.root }}
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/crossfit-envelope-venv/bin/python"
+          output="${RUNNER_TEMP}/crossfit-source"
+          rm -rf "${output}"
+          "${python}" -m experiments.deform_dlo45_decision_identifiability_v1.support_envelope_crossfit source \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --crossfit-protocol "${CROSSFIT_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${SOURCE_DATA_ROOT}" \
+            --output-root "${output}"
+          OUTPUT="${output}" "${python}" - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT"])
+          source = json.loads((root / "source_crossfit_envelope.json").read_text())
+          assert source["contract"] == "deform-dlo45-crossfit-conformal-regret-envelope-v2"
+          assert source["target_data_read"] is False
+          assert source["target_outcomes_used"] is False
+          for dlo in ("DLO4", "DLO5"):
+              for route in ("0", "1"):
+                  record = source["dlos"][dlo]["routes"][route]
+                  assert record["calibration_trajectory_count"] == 28
+                  assert record["calibration_data_used_for_model"] is False
+                  for alpha in ("0.050000", "0.100000", "0.200000"):
+                      radius = record["envelopes"][alpha]["radius"]
+                      assert math.isfinite(radius)
+          print(json.dumps(source["model_hashes"], indent=2, sort_keys=True))
+          PY
+
+      - name: Upload sealed source routes
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dlo45-crossfit-envelope-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/crossfit-source
+          if-no-files-found: error
+          retention-days: 90
+
+  held-target-audit:
+    needs: source-calibration
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, gpuserver4090]
+    timeout-minutes: 90
+    steps:
+      - name: Check out exact target revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Create isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/crossfit-envelope-venv"
+          python="${RUNNER_TEMP}/crossfit-envelope-venv/bin/python"
+          "${python}" -m pip install --disable-pip-version-check \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1" "numpy==2.2.6"
+          "${python}" -m pip install --disable-pip-version-check -e ".[dev]"
+          "${python}" -m pip check
+
+      - name: Download exact source artifact from this run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dlo45-crossfit-envelope-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/crossfit-source
+
+      - name: Stage held-only DEFORM view
+        id: target-data
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="${RUNNER_TEMP}/crossfit-target-data"
+          rm -rf "${stage}"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${DATASET_ROOT}/${dlo}/eval" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 14
+            mkdir -p "${stage}/${dlo}"
+            ln -s "${DATASET_ROOT}/${dlo}/eval" "${stage}/${dlo}/eval"
+            test ! -e "${stage}/${dlo}/train"
+          done
+          echo "root=${stage}" >> "${GITHUB_OUTPUT}"
+
+      - name: Apply metadata-routed envelopes to held trajectories
+        shell: bash
+        env:
+          TARGET_DATA_ROOT: ${{ steps.target-data.outputs.root }}
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/crossfit-envelope-venv/bin/python"
+          output="${RUNNER_TEMP}/crossfit-target"
+          rm -rf "${output}"
+          "${python}" -m experiments.deform_dlo45_decision_identifiability_v1.support_envelope_crossfit target \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --crossfit-protocol "${CROSSFIT_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${TARGET_DATA_ROOT}" \
+            --source-root "${RUNNER_TEMP}/crossfit-source" \
+            --output-root "${output}"
+          OUTPUT="${output}" "${python}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["OUTPUT"]) / "compact_result.json").read_text()
+          )
+          assert result["status"] == "complete"
+          assert result["primary_nominal_trajectory_coverage"] == 0.9
+          assert result["primary"]["decision_count"] == 532
+          assert sum(result["primary"]["action_counts"]) == 532
+          print(json.dumps(result, indent=2, sort_keys=True))
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as handle:
+              primary = result["primary"]
+              handle.write("# Cross-fitted conformal regret envelope v2\n\n")
+              handle.write(f"- Nonfallback: **{primary['nonfallback_count']}/532**\n")
+              handle.write(f"- RMSE reduction: **{100 * primary['rmse_reduction']:.2f}%**\n")
+              handle.write(
+                  f"- Harmful nonfallback: **{primary['harmful_nonfallback_count']}**\n"
+              )
+              handle.write(
+                  f"- Budget exceeds: **{primary['budget_violation_count_nonfallback']}**\n"
+              )
+          PY
+
+      - name: Upload complete target audit
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dlo45-crossfit-envelope-target-${{ github.run_id }}
+          path: ${{ runner.temp }}/crossfit-target
+          if-no-files-found: error
+          retention-days: 90
