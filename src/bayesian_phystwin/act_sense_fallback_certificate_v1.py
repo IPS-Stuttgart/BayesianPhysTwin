@@ -93,7 +93,7 @@ def _probe_outcomes(value: object, *, hypothesis_count: int) -> IntArray:
         raise ValueError("probe outcome labels must be nonnegative")
     for probe_index, row in enumerate(outcomes):
         unique = np.unique(row)
-        expected = np.arange(int(unique[-1]) + 1, dtype=np.int64)
+        expected: IntArray = np.arange(int(unique[-1]) + 1, dtype=np.int64)
         if not np.array_equal(unique, expected):
             raise ValueError(
                 f"probe {probe_index} outcome labels must be contiguous from zero"
@@ -324,7 +324,7 @@ def act_sense_fallback_certificate(
             )
         )
 
-    hypothesis_index = np.arange(hypothesis_count, dtype=np.int64)
+    hypothesis_index: IntArray = np.arange(hypothesis_count, dtype=np.int64)
     for probe_index, (outcome_row, outcome_count) in enumerate(
         zip(outcomes, outcome_counts, strict=True)
     ):
