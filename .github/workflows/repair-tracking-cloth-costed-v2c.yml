@@ -1,16 +1,16 @@
-name: Repair Tracking Cloth cost-aware V2c
+name: Repair Tracking Cloth cost-aware V2d
 
 on:
   push:
     branches: [science/tracking-cloth-active-decision-rep3-v1]
     paths:
-      - ".github/requests/repair-tracking-cloth-costed-v2c.json"
+      - ".github/requests/repair-tracking-cloth-costed-v2d.json"
 
 permissions:
   contents: write
 
 concurrency:
-  group: repair-tracking-cloth-costed-v2c
+  group: repair-tracking-cloth-costed-v2d
   cancel-in-progress: false
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
           test "$PUSH_FORCED" = false
           mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
           test "${#changed[@]}" -eq 1
-          test "${changed[0]}" = $'A\t.github/requests/repair-tracking-cloth-costed-v2c.json'
+          test "${changed[0]}" = $'A\t.github/requests/repair-tracking-cloth-costed-v2d.json'
           python - <<'PY'
           import json
           import os
@@ -42,14 +42,14 @@ jobs:
           from pathlib import Path
 
           request = json.loads(
-              Path(".github/requests/repair-tracking-cloth-costed-v2c.json").read_text()
+              Path(".github/requests/repair-tracking-cloth-costed-v2d.json").read_text()
           )
           parent = subprocess.check_output(
               ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
           ).strip()
           assert request == {
               "schema": "bayesian-phystwin/source-repair-request-v1",
-              "request_id": "repair-tracking-cloth-costed-v2c-20260902",
+              "request_id": "repair-tracking-cloth-costed-v2d-20260902",
               "pull_request": 893,
               "target_outcomes_opened": False,
               "scientific_protocol_changed": False,
@@ -71,9 +71,19 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev]"
-          python -m ruff check --fix             experiments/tracking_cloth_action_feasibility_costed_v2             tests/test_tracking_cloth_action_feasibility_costed_v2.py
-          python -m ruff format             experiments/tracking_cloth_action_feasibility_costed_v2             tests/test_tracking_cloth_action_feasibility_costed_v2.py
-          python -m pytest -q             tests/test_tracking_cloth_action_feasibility_costed_v2.py             tests/test_tracking_cloth_action_feasibility_v1.py             tests/test_tracking_cloth_action_actual_time_v1.py             tests/test_pull_request_workflow_integrity.py             tests/test_workflow_inventory_budget.py             tests/test_workflow_manifest_trigger_policy.py
+          python -m ruff check --fix \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m ruff format \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_workflow_inventory_budget.py \
+            tests/test_workflow_manifest_trigger_policy.py
           python - <<'PY'
           from pathlib import Path
           import yaml
@@ -87,7 +97,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f             .github/workflows/repair-tracking-cloth-costed-v2c.yml             .github/requests/repair-tracking-cloth-costed-v2c.json             tools/_repair_tracking_cloth_costed_v2c.py
+          rm -f \
+            .github/workflows/repair-tracking-cloth-costed-v2c.yml \
+            .github/requests/repair-tracking-cloth-costed-v2c.json \
+            .github/requests/repair-tracking-cloth-costed-v2d.json \
+            tools/_repair_tracking_cloth_costed_v2c.py \
+            tools/_tracking_cloth_v2_job.ymlfrag
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
