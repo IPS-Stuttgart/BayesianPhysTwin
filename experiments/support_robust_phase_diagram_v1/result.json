@@ -1,0 +1,238 @@
+{
+  "all_breakpoints": [
+    0.0,
+    0.047619047619047616,
+    0.08333333333333333,
+    0.16666666666666666,
+    0.25
+  ],
+  "camera_maximum_admissible_support_miss": 0.16666666666666666,
+  "camera_plan_index": 13,
+  "claim_boundary": "The phase diagram is exact only for the supplied finite hypotheses, prior support, quotient masses, terminal losses, deterministic probe outcomes, probe costs, regret tolerance, and axis-aligned unknown complete-plan loss box. Terminal-action bounds are converted to complete-plan bounds by allowing unknown physics to realize any registered probe outcome. The result does not estimate support-miss probability, validate the loss box, probe physics, reset semantics, quotient, provider, target transport, online execution, calibration, deployment, or safety.",
+  "compressed_output_regions": [
+    {
+      "has_admissible_plan": true,
+      "open_interval": true,
+      "output_mode": "sense",
+      "output_plan_index": 4,
+      "selected_probe_name": "quick_tug",
+      "support_miss_left": 0.0,
+      "support_miss_right": 0.047619047619047616
+    },
+    {
+      "has_admissible_plan": true,
+      "open_interval": true,
+      "output_mode": "sense",
+      "output_plan_index": 13,
+      "selected_probe_name": "camera",
+      "support_miss_left": 0.047619047619047616,
+      "support_miss_right": 0.16666666666666666
+    },
+    {
+      "has_admissible_plan": false,
+      "open_interval": true,
+      "output_mode": "fallback",
+      "output_plan_index": 2,
+      "selected_probe_name": null,
+      "support_miss_left": 0.16666666666666666,
+      "support_miss_right": 0.25
+    }
+  ],
+  "exact_fallback_switch_support_miss": 0.16666666666666666,
+  "exact_probe_switch_support_miss": 0.047619047619047616,
+  "hypothesis_count": 4,
+  "interpretation": {
+    "large_miss": "Every learned direct or sensing plan exceeds the registered regret tolerance, so the caller-owned hold action is returned.",
+    "moderate_miss": "The camera overtakes the quick tug because its declared unknown-physics plan-loss box is tighter despite positive cost.",
+    "zero_miss": "The represented support makes the zero-cost quick tug exactly decision-identifying."
+  },
+  "maximum_any_plan_admissible_support_miss": 0.16666666666666666,
+  "maximum_support_miss_probability": 0.25,
+  "open_interval_decisions": [
+    {
+      "decision": {
+        "active_benchmark_plan_index": 0,
+        "has_admissible_plan": true,
+        "minimax_plan_index": 4,
+        "minimax_worst_case_regret": 0.07142857142857142,
+        "output_mode": "sense",
+        "output_plan_index": 4,
+        "selected_probe_index": 0,
+        "selected_probe_name": "quick_tug",
+        "support_miss_probability": 0.023809523809523808,
+        "used_fallback": false
+      },
+      "open_interval": true,
+      "support_miss_left": 0.0,
+      "support_miss_right": 0.047619047619047616
+    },
+    {
+      "decision": {
+        "active_benchmark_plan_index": 0,
+        "has_admissible_plan": true,
+        "minimax_plan_index": 13,
+        "minimax_worst_case_regret": 0.15892857142857142,
+        "output_mode": "sense",
+        "output_plan_index": 13,
+        "selected_probe_index": 1,
+        "selected_probe_name": "camera",
+        "support_miss_probability": 0.06547619047619047,
+        "used_fallback": false
+      },
+      "open_interval": true,
+      "support_miss_left": 0.047619047619047616,
+      "support_miss_right": 0.08333333333333333
+    },
+    {
+      "decision": {
+        "active_benchmark_plan_index": 0,
+        "has_admissible_plan": true,
+        "minimax_plan_index": 13,
+        "minimax_worst_case_regret": 0.21250000000000002,
+        "output_mode": "sense",
+        "output_plan_index": 13,
+        "selected_probe_index": 1,
+        "selected_probe_name": "camera",
+        "support_miss_probability": 0.125,
+        "used_fallback": false
+      },
+      "open_interval": true,
+      "support_miss_left": 0.08333333333333333,
+      "support_miss_right": 0.16666666666666666
+    },
+    {
+      "decision": {
+        "active_benchmark_plan_index": 0,
+        "has_admissible_plan": false,
+        "minimax_plan_index": 13,
+        "minimax_worst_case_regret": 0.2875,
+        "output_mode": "fallback",
+        "output_plan_index": 2,
+        "selected_probe_index": null,
+        "selected_probe_name": null,
+        "support_miss_probability": 0.20833333333333331,
+        "used_fallback": true
+      },
+      "open_interval": true,
+      "support_miss_left": 0.16666666666666666,
+      "support_miss_right": 0.25
+    }
+  ],
+  "plan_count": 21,
+  "point_decisions": [
+    {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": true,
+      "minimax_plan_index": 4,
+      "minimax_worst_case_regret": 0.0,
+      "output_mode": "sense",
+      "output_plan_index": 4,
+      "selected_probe_index": 0,
+      "selected_probe_name": "quick_tug",
+      "support_miss_probability": 0.0,
+      "used_fallback": false
+    },
+    {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": true,
+      "minimax_plan_index": 4,
+      "minimax_worst_case_regret": 0.14285714285714285,
+      "output_mode": "sense",
+      "output_plan_index": 4,
+      "selected_probe_index": 0,
+      "selected_probe_name": "quick_tug",
+      "support_miss_probability": 0.047619047619047616,
+      "used_fallback": false
+    },
+    {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": true,
+      "minimax_plan_index": 13,
+      "minimax_worst_case_regret": 0.175,
+      "output_mode": "sense",
+      "output_plan_index": 13,
+      "selected_probe_index": 1,
+      "selected_probe_name": "camera",
+      "support_miss_probability": 0.08333333333333333,
+      "used_fallback": false
+    },
+    {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": true,
+      "minimax_plan_index": 13,
+      "minimax_worst_case_regret": 0.25,
+      "output_mode": "sense",
+      "output_plan_index": 13,
+      "selected_probe_index": 1,
+      "selected_probe_name": "camera",
+      "support_miss_probability": 0.16666666666666666,
+      "used_fallback": false
+    },
+    {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": false,
+      "minimax_plan_index": 13,
+      "minimax_worst_case_regret": 0.325,
+      "output_mode": "fallback",
+      "output_plan_index": 2,
+      "selected_probe_index": null,
+      "selected_probe_name": null,
+      "support_miss_probability": 0.25,
+      "used_fallback": true
+    }
+  ],
+  "probes": [
+    "quick_tug",
+    "camera"
+  ],
+  "quick_tug_maximum_admissible_support_miss": 0.08333333333333333,
+  "quick_tug_plan_index": 4,
+  "regret_tolerance": 0.25,
+  "result_id": "93077ebab540632d334972fd0f365c0f56fe348a4d63208fe9ad7f77720a7895",
+  "schema": "bayesian-phystwin.support-robust-phase-diagram-result.v1",
+  "schema_version": 1,
+  "selected_examples": {
+    "epsilon_0": {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": true,
+      "minimax_plan_index": 4,
+      "minimax_worst_case_regret": 0.0,
+      "output_mode": "sense",
+      "output_plan_index": 4,
+      "selected_probe_index": 0,
+      "selected_probe_name": "quick_tug",
+      "support_miss_probability": 0.0,
+      "used_fallback": false
+    },
+    "epsilon_0p1": {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": true,
+      "minimax_plan_index": 13,
+      "minimax_worst_case_regret": 0.19,
+      "output_mode": "sense",
+      "output_plan_index": 13,
+      "selected_probe_index": 1,
+      "selected_probe_name": "camera",
+      "support_miss_probability": 0.1,
+      "used_fallback": false
+    },
+    "epsilon_0p2": {
+      "active_benchmark_plan_index": 0,
+      "has_admissible_plan": false,
+      "minimax_plan_index": 13,
+      "minimax_worst_case_regret": 0.28,
+      "output_mode": "fallback",
+      "output_plan_index": 2,
+      "selected_probe_index": null,
+      "selected_probe_name": null,
+      "support_miss_probability": 0.2,
+      "used_fallback": true
+    }
+  },
+  "study_id": "support-robust-act-sense-fallback-phase-diagram-v1",
+  "terminal_actions": [
+    "pull_left",
+    "pull_right",
+    "hold"
+  ]
+}

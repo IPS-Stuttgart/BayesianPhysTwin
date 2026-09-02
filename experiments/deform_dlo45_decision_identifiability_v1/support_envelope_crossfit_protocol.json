@@ -1,0 +1,41 @@
+{
+  "contract": "deform-dlo45-crossfit-conformal-regret-envelope-v2",
+  "schema_version": 2,
+  "parent_contract": "deform-dlo45-decision-identifiability-v1",
+  "dataset_repository": "roahmlab/DEFORM",
+  "dataset_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+  "crossfit": {
+    "route_count": 2,
+    "training_count_per_route": 28,
+    "calibration_count_per_route": 28,
+    "nested_fit_count": 21,
+    "nested_tune_count": 7,
+    "source_split_domain": "bayesian-phystwin/deform-dlo45-crossfit-envelope-v2/source-halves",
+    "nested_split_domain": "bayesian-phystwin/deform-dlo45-crossfit-envelope-v2/nested-model-selection",
+    "target_route_domain": "bayesian-phystwin/deform-dlo45-crossfit-envelope-v2/target-route",
+    "target_route_uses_metadata_only": true,
+    "each_target_uses_one_ordinary_split_conformal_route": true
+  },
+  "calibration": {
+    "unit": "complete_trajectory",
+    "score": "maximum realized-minus-registered regret over all decisions and registered nonfallback actions",
+    "candidate_action_mask": [false, true, true],
+    "miscoverage_levels": [0.05, 0.1, 0.2],
+    "primary_miscoverage": 0.1,
+    "negative_radius_clipped_to_zero": true
+  },
+  "decision": {
+    "fallback_action_index": 0,
+    "base_action_rule": "exact finite-support minimax certificate",
+    "regret_budget_grid": [0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
+    "primary_regret_budget": 0.5,
+    "report_complete_frontier": true,
+    "target_selection": "none"
+  },
+  "bootstrap": {
+    "unit": "complete_trajectory",
+    "replicates": 5000,
+    "seed": 20260902
+  },
+  "claim_boundary": "This retrospective cross-fitted analysis assigns each held trajectory to one metadata-only route whose model is trained and tuned on 28 disjoint source trajectories and whose split-conformal envelope is calibrated on the complementary 28 complete source trajectories. Under within-DLO trajectory exchangeability, each routed envelope has trajectory-marginal simultaneous coverage over the registered decisions and actions. It does not provide pointwise conditional validity, unseen-object or cross-material transport, arbitrary-action safety, calibrated state uncertainty, online robot performance, or deployment authorization."
+}

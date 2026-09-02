@@ -1,0 +1,452 @@
+{
+  "checks": {
+    "cause_ambiguity_does_not_block_invariant_transport": true,
+    "material_target_selects_only_material_probe": true,
+    "no_detectable_error_does_not_create_correction": true,
+    "sensitive_target_selects_only_state_gauge_probe": true,
+    "target_directed_cost_is_two_thirds_lower_than_full_cause": true,
+    "unique_registered_explanation_is_separate": true,
+    "unmodeled_cause_never_reaches_probe_or_transport": true,
+    "unresolvable_target_abstains": true
+  },
+  "claim_boundary": "Deterministic local-linear mechanism evidence only. The result does not validate natural physical causes, nonlinear closure, real probe models, held-intervention transport, deployment, or safety.",
+  "decision": "explain-transport-probe-abstain-strict-separation",
+  "metrics": {
+    "full_cause_mean_intervention_cost": 2.0,
+    "no_detectable_error_targets": 1,
+    "none_of_the_above_targets": 1,
+    "registered_phase_targets": 3,
+    "relative_mean_cost_reduction_vs_full_cause": 0.6666666666666667,
+    "target_directed_mean_intervention_cost": 0.6666666666666666,
+    "target_directed_probe_targets": 2,
+    "transport_without_unique_cause": 1,
+    "unique_explanation_transport_targets": 1,
+    "unresolvable_abstentions": 1
+  },
+  "pipelines": {
+    "ambiguous-phase": {
+      "absolute_rank_tolerance": 1e-12,
+      "adequacy_certificate_id": "0bdb381117fc7d36b0daaff3c40c80b46bffe5d26462d19e310d209b769224c3",
+      "artifact_id": "8d13a4aaa953c4739df972b7571d9837ce0f4afabdc9577386eb21bb5271a1be",
+      "candidate_intervention_ids": {
+        "material-probe": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "redundant-probe": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "state-gauge-probe": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "candidate_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_boundary": "The report is exact only for the supplied local linear cause family, whitened residual, deterministic adequacy radius, held-intervention target maps, finite intervention roster, additive intervention costs, coordinates, and numerical tolerances. A unique registered coefficient vector is not a proof of natural physical causation. A probe recommendation does not authorize transport before its outcome is observed and the certificate is recomputed. The report does not validate nonlinear closure, physical probe models, held-out transport, unseen-object generalization, deployment safety, or state of the art.",
+      "cost_tolerance": 1e-12,
+      "disposition_counts": {
+        "abstain": 0,
+        "explain_and_transport": 0,
+        "no_detectable_error": 0,
+        "none_of_the_above": 0,
+        "partial_only_fallback": 0,
+        "probe_then_reassess": 2,
+        "transport_without_cause": 1
+      },
+      "intervention_costs": {
+        "material-probe": 1.0,
+        "redundant-probe": 0.1,
+        "state-gauge-probe": 1.0
+      },
+      "metadata": {},
+      "relative_rank_tolerance": 1e-10,
+      "schema": "bayesian_phystwin.explain_transport_probe_abstain",
+      "schema_version": 1,
+      "semantics": "cause-family-adequacy-target-transport-and-target-directed-probing-v1",
+      "target_decisions": [
+        {
+          "adequacy_status": "adequate_set_valued",
+          "coefficient_ambiguity_dimension": 2,
+          "disposition": "transport_without_cause",
+          "fallback_required_now": false,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "dab98fd18e82b0f8cf403a32d45b47e093e66ebc107f261cb12963a352f0a854",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": "already_identifiable",
+          "minimum_full_cause_identification_cost": 2.0,
+          "none_of_the_above": false,
+          "partial_target_available": true,
+          "reason": "target-is-invariant-over-the-set-valued-cause-explanation",
+          "registered_explanation_unique": false,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "dab98fd18e82b0f8cf403a32d45b47e093e66ebc107f261cb12963a352f0a854",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": 0.0,
+          "selected_interventions": [],
+          "target_ambiguity_dimension": 0,
+          "target_cost_saving_vs_full_cause_identification": 2.0,
+          "target_dimension": 1,
+          "target_id": "already-transportable-sum",
+          "target_identifiable_dimension": 1,
+          "transport_permitted": true,
+          "transport_status": "fully_identifiable"
+        },
+        {
+          "adequacy_status": "adequate_set_valued",
+          "coefficient_ambiguity_dimension": 2,
+          "disposition": "probe_then_reassess",
+          "fallback_required_now": true,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": "target_identified",
+          "minimum_full_cause_identification_cost": 2.0,
+          "none_of_the_above": false,
+          "partial_target_available": false,
+          "reason": "minimum-cost-registered-intervention-identifies-the-target",
+          "registered_explanation_unique": false,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": 1.0,
+          "selected_interventions": [
+            "material-probe"
+          ],
+          "target_ambiguity_dimension": 1,
+          "target_cost_saving_vs_full_cause_identification": 1.0,
+          "target_dimension": 1,
+          "target_id": "material-effect",
+          "target_identifiable_dimension": 0,
+          "transport_permitted": false,
+          "transport_status": "nonidentifiable"
+        },
+        {
+          "adequacy_status": "adequate_set_valued",
+          "coefficient_ambiguity_dimension": 2,
+          "disposition": "probe_then_reassess",
+          "fallback_required_now": true,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": "target_identified",
+          "minimum_full_cause_identification_cost": 2.0,
+          "none_of_the_above": false,
+          "partial_target_available": false,
+          "reason": "minimum-cost-registered-intervention-identifies-the-target",
+          "registered_explanation_unique": false,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "1f51d1f11a050d7ccffbc232534495d820c425df5e00b1a812908a12ad4b2133",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": 1.0,
+          "selected_interventions": [
+            "state-gauge-probe"
+          ],
+          "target_ambiguity_dimension": 1,
+          "target_cost_saving_vs_full_cause_identification": 1.0,
+          "target_dimension": 1,
+          "target_id": "state-gauge-difference",
+          "target_identifiable_dimension": 0,
+          "transport_permitted": false,
+          "transport_status": "nonidentifiable"
+        }
+      ],
+      "target_intervention_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_order": [
+        "already-transportable-sum",
+        "material-effect",
+        "state-gauge-difference"
+      ],
+      "transport_quotient_id": "e43acd182f375ca67ff0fd0b68e84f5fefc3ee4f359db290d7571f8b2c1f6eca"
+    },
+    "no-detectable-error": {
+      "absolute_rank_tolerance": 1e-12,
+      "adequacy_certificate_id": "fe78d1281d7299d1b3db4df56eb39b6694720e52800f8c5355b33150f3e6937c",
+      "artifact_id": "12bffdac7e67b2b7e5fb992be872681f804a74f3d9c961eeed122950163d8e81",
+      "candidate_intervention_ids": {},
+      "candidate_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_boundary": "The report is exact only for the supplied local linear cause family, whitened residual, deterministic adequacy radius, held-intervention target maps, finite intervention roster, additive intervention costs, coordinates, and numerical tolerances. A unique registered coefficient vector is not a proof of natural physical causation. A probe recommendation does not authorize transport before its outcome is observed and the certificate is recomputed. The report does not validate nonlinear closure, physical probe models, held-out transport, unseen-object generalization, deployment safety, or state of the art.",
+      "cost_tolerance": 1e-12,
+      "disposition_counts": {
+        "abstain": 0,
+        "explain_and_transport": 0,
+        "no_detectable_error": 1,
+        "none_of_the_above": 0,
+        "partial_only_fallback": 0,
+        "probe_then_reassess": 0,
+        "transport_without_cause": 0
+      },
+      "intervention_costs": {},
+      "metadata": {},
+      "relative_rank_tolerance": 1e-10,
+      "schema": "bayesian_phystwin.explain_transport_probe_abstain",
+      "schema_version": 1,
+      "semantics": "cause-family-adequacy-target-transport-and-target-directed-probing-v1",
+      "target_decisions": [
+        {
+          "adequacy_status": "no_detectable_error",
+          "coefficient_ambiguity_dimension": 1,
+          "disposition": "no_detectable_error",
+          "fallback_required_now": true,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": null,
+          "minimum_full_cause_identification_cost": null,
+          "none_of_the_above": false,
+          "partial_target_available": false,
+          "reason": "residual-is-within-the-registered-noise-radius",
+          "registered_explanation_unique": false,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "d487a34a754a6627df7709e443a02099407c5ecc3fc2982a24339bf08de28f9e",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": null,
+          "selected_interventions": [],
+          "target_ambiguity_dimension": 1,
+          "target_cost_saving_vs_full_cause_identification": null,
+          "target_dimension": 1,
+          "target_id": "sum",
+          "target_identifiable_dimension": 0,
+          "transport_permitted": false,
+          "transport_status": "no_detectable_error"
+        }
+      ],
+      "target_intervention_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_order": [
+        "sum"
+      ],
+      "transport_quotient_id": "6beda2d577825bee0f27379b79824f8dffac56f1d9a7f17f6cfaf17f7973faff"
+    },
+    "unique-explanation": {
+      "absolute_rank_tolerance": 1e-12,
+      "adequacy_certificate_id": "909895de3d4fbfdfe223c423dda20c8318a23a9833b67a603838c3b238112707",
+      "artifact_id": "199540b08f7e8532dcd563d7e8f878d6ac72b2696cf071f02f889419b9698eaf",
+      "candidate_intervention_ids": {},
+      "candidate_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_boundary": "The report is exact only for the supplied local linear cause family, whitened residual, deterministic adequacy radius, held-intervention target maps, finite intervention roster, additive intervention costs, coordinates, and numerical tolerances. A unique registered coefficient vector is not a proof of natural physical causation. A probe recommendation does not authorize transport before its outcome is observed and the certificate is recomputed. The report does not validate nonlinear closure, physical probe models, held-out transport, unseen-object generalization, deployment safety, or state of the art.",
+      "cost_tolerance": 1e-12,
+      "disposition_counts": {
+        "abstain": 0,
+        "explain_and_transport": 1,
+        "no_detectable_error": 0,
+        "none_of_the_above": 0,
+        "partial_only_fallback": 0,
+        "probe_then_reassess": 0,
+        "transport_without_cause": 0
+      },
+      "intervention_costs": {},
+      "metadata": {},
+      "relative_rank_tolerance": 1e-10,
+      "schema": "bayesian_phystwin.explain_transport_probe_abstain",
+      "schema_version": 1,
+      "semantics": "cause-family-adequacy-target-transport-and-target-directed-probing-v1",
+      "target_decisions": [
+        {
+          "adequacy_status": "adequate_unique",
+          "coefficient_ambiguity_dimension": 0,
+          "disposition": "explain_and_transport",
+          "fallback_required_now": false,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "3f710ac088db33363087de2b9a657541fe5447821debaa9fe5cbd538eb1a5f29",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": "already_identifiable",
+          "minimum_full_cause_identification_cost": 0.0,
+          "none_of_the_above": false,
+          "partial_target_available": true,
+          "reason": "unique-registered-explanation-and-invariant-target",
+          "registered_explanation_unique": true,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "3f710ac088db33363087de2b9a657541fe5447821debaa9fe5cbd538eb1a5f29",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": 0.0,
+          "selected_interventions": [],
+          "target_ambiguity_dimension": 0,
+          "target_cost_saving_vs_full_cause_identification": 0.0,
+          "target_dimension": 1,
+          "target_id": "state-effect",
+          "target_identifiable_dimension": 1,
+          "transport_permitted": true,
+          "transport_status": "fully_identifiable"
+        }
+      ],
+      "target_intervention_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_order": [
+        "state-effect"
+      ],
+      "transport_quotient_id": "a92cefdb0ed7b21f983e90e0c286f0f379cc976fc7cbbcc86b5ed0cb45361a1e"
+    },
+    "unmodeled-cause": {
+      "absolute_rank_tolerance": 1e-12,
+      "adequacy_certificate_id": "4a1b7d5658cab209cb960c71989716ae76c8f3510b28283d6147a1af11f0ac72",
+      "artifact_id": "a271a397da3466daeb13052812ddedf927a617e2d8941e4a1131f1afc3f1557d",
+      "candidate_intervention_ids": {
+        "state-gauge-probe": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "candidate_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_boundary": "The report is exact only for the supplied local linear cause family, whitened residual, deterministic adequacy radius, held-intervention target maps, finite intervention roster, additive intervention costs, coordinates, and numerical tolerances. A unique registered coefficient vector is not a proof of natural physical causation. A probe recommendation does not authorize transport before its outcome is observed and the certificate is recomputed. The report does not validate nonlinear closure, physical probe models, held-out transport, unseen-object generalization, deployment safety, or state of the art.",
+      "cost_tolerance": 1e-12,
+      "disposition_counts": {
+        "abstain": 0,
+        "explain_and_transport": 0,
+        "no_detectable_error": 0,
+        "none_of_the_above": 1,
+        "partial_only_fallback": 0,
+        "probe_then_reassess": 0,
+        "transport_without_cause": 0
+      },
+      "intervention_costs": {
+        "state-gauge-probe": 1.0
+      },
+      "metadata": {},
+      "relative_rank_tolerance": 1e-10,
+      "schema": "bayesian_phystwin.explain_transport_probe_abstain",
+      "schema_version": 1,
+      "semantics": "cause-family-adequacy-target-transport-and-target-directed-probing-v1",
+      "target_decisions": [
+        {
+          "adequacy_status": "unmodeled_cause",
+          "coefficient_ambiguity_dimension": 0,
+          "disposition": "none_of_the_above",
+          "fallback_required_now": true,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": null,
+          "minimum_full_cause_identification_cost": null,
+          "none_of_the_above": true,
+          "partial_target_available": false,
+          "reason": "residual-has-unexplained-energy-outside-the-cause-family",
+          "registered_explanation_unique": false,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": null,
+          "selected_interventions": [],
+          "target_ambiguity_dimension": 1,
+          "target_cost_saving_vs_full_cause_identification": null,
+          "target_dimension": 1,
+          "target_id": "state-effect",
+          "target_identifiable_dimension": 0,
+          "transport_permitted": false,
+          "transport_status": "family_inadequate"
+        }
+      ],
+      "target_intervention_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_order": [
+        "state-effect"
+      ],
+      "transport_quotient_id": "71f8345ab84f0fcb5310f4b725d57796eec7466bb92d9be7640a979fc6f88489"
+    },
+    "unresolvable-target": {
+      "absolute_rank_tolerance": 1e-12,
+      "adequacy_certificate_id": "0bdb381117fc7d36b0daaff3c40c80b46bffe5d26462d19e310d209b769224c3",
+      "artifact_id": "9adb08f95c9fa73f6de5917fa67fddee0da93ce24c94c5f2881059fb61e65ff2",
+      "candidate_intervention_ids": {
+        "redundant-probe": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "candidate_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_boundary": "The report is exact only for the supplied local linear cause family, whitened residual, deterministic adequacy radius, held-intervention target maps, finite intervention roster, additive intervention costs, coordinates, and numerical tolerances. A unique registered coefficient vector is not a proof of natural physical causation. A probe recommendation does not authorize transport before its outcome is observed and the certificate is recomputed. The report does not validate nonlinear closure, physical probe models, held-out transport, unseen-object generalization, deployment safety, or state of the art.",
+      "cost_tolerance": 1e-12,
+      "disposition_counts": {
+        "abstain": 1,
+        "explain_and_transport": 0,
+        "no_detectable_error": 0,
+        "none_of_the_above": 0,
+        "partial_only_fallback": 0,
+        "probe_then_reassess": 0,
+        "transport_without_cause": 0
+      },
+      "intervention_costs": {
+        "redundant-probe": 0.1
+      },
+      "metadata": {},
+      "relative_rank_tolerance": 1e-10,
+      "schema": "bayesian_phystwin.explain_transport_probe_abstain",
+      "schema_version": 1,
+      "semantics": "cause-family-adequacy-target-transport-and-target-directed-probing-v1",
+      "target_decisions": [
+        {
+          "adequacy_status": "adequate_set_valued",
+          "coefficient_ambiguity_dimension": 2,
+          "disposition": "abstain",
+          "fallback_required_now": true,
+          "identifiable_effect": {
+            "dtype": "<f8",
+            "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+            "shape": [
+              1
+            ]
+          },
+          "intervention_design_status": "unresolvable",
+          "minimum_full_cause_identification_cost": null,
+          "none_of_the_above": false,
+          "partial_target_available": false,
+          "reason": "no-registered-intervention-identifies-the-complete-target",
+          "registered_explanation_unique": false,
+          "representative_effect": {
+            "dtype": "<f8",
+            "sha256": "1f51d1f11a050d7ccffbc232534495d820c425df5e00b1a812908a12ad4b2133",
+            "shape": [
+              1
+            ]
+          },
+          "selected_intervention_cost": null,
+          "selected_interventions": [],
+          "target_ambiguity_dimension": 1,
+          "target_cost_saving_vs_full_cause_identification": null,
+          "target_dimension": 1,
+          "target_id": "state-gauge-difference",
+          "target_identifiable_dimension": 0,
+          "transport_permitted": false,
+          "transport_status": "nonidentifiable"
+        }
+      ],
+      "target_intervention_roster_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_order": [
+        "state-gauge-difference"
+      ],
+      "transport_quotient_id": "39c40a4ba948b5df9929fe0a740a5a7a16a92d282cb4bdcd5ad107b6c8974048"
+    }
+  },
+  "result_id": "7866af75a05f7e109dd38c0dc4bad0a7f4bb9a466dfc858f85b3bd0c293bc093",
+  "schema": "bayesian-phystwin.explain-transport-probe-abstain-controlled.v1"
+}
