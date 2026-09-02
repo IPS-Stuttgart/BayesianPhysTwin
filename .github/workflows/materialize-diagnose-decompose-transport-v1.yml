@@ -7,7 +7,7 @@ on:
     branches:
       - research/diagnose-decompose-transport-v1
     paths:
-      - .github/requests/materialize-diagnose-decompose-transport-v1.b64
+      - .github/requests/materialize-diagnose-decompose-transport-v1.part06
 
 permissions:
   contents: write
@@ -40,9 +40,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          request=.github/requests/materialize-diagnose-decompose-transport-v1.b64
+          request_prefix=.github/requests/materialize-diagnose-decompose-transport-v1.part
           archive="$RUNNER_TEMP/diagnose-decompose-transport-v1.tar.gz"
-          base64 --decode "$request" > "$archive"
+          for suffix in 00 01 02 03 04 05 06; do
+            test -f "${request_prefix}${suffix}"
+          done
+          cat "${request_prefix}"{00,01,02,03,04,05,06} | base64 --decode > "$archive"
           printf '%s  %s\n' \
             '0a64a631867f18a2f50bc954991d4b4bd22468ca64d4d3fa185b6f3a290cc8fe' \
             "$archive" | sha256sum --check --strict
@@ -123,7 +126,8 @@ jobs:
           set -euo pipefail
           rm -f \
             .github/workflows/materialize-diagnose-decompose-transport-v1.yml \
-            .github/requests/materialize-diagnose-decompose-transport-v1.b64
+            .github/requests/materialize-diagnose-decompose-transport-v1.b64 \
+            .github/requests/materialize-diagnose-decompose-transport-v1.part{00,01,02,03,04,05,06}
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
