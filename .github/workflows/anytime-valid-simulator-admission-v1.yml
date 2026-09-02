@@ -38,17 +38,29 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          python -m pip install numpy pytest ruff==0.16.5
+          python -m pip install -e . pytest==9.0.2 ruff==0.16.5
 
-      - name: Format and validate changed Python sources
+      - name: Format and validate every anytime-admission Python source
         shell: bash
         run: |
           set -euo pipefail
           files=(
             scripts/remote/run_anytime_valid_admission_v1.py
+            scripts/remote/run_anytime_valid_dlo_replay_v1.py
+            scripts/remote/run_anytime_valid_dlo_shift_replay_v1.py
+            scripts/remote/run_anytime_valid_dlo_shift_replay_v2.py
             scripts/remote/run_anytime_valid_loss_replay_v1.py
+            scripts/remote/run_anytime_valid_loss_replay_v2.py
+            scripts/remote/run_anytime_valid_simulator_admission_v1.py
+            scripts/science/run_anytime_recursive_admission_v1.py
+            src/bayesian_phystwin/anytime_admission_v1.py
+            src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py
             src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py
+            tests/test_anytime_admission_v1.py
+            tests/test_anytime_recursive_admission_v1.py
             tests/test_anytime_valid_admission_v1.py
+            tests/test_anytime_valid_dlo_replay_v1.py
+            tests/test_anytime_valid_replay_v2.py
           )
           ruff check --fix "${files[@]}"
           ruff format "${files[@]}"
@@ -56,13 +68,16 @@ jobs:
           ruff format --check "${files[@]}"
           python -m py_compile "${files[@]}"
 
-      - name: Run focused contract tests
+      - name: Run focused contract and replay tests
         shell: bash
-        env:
-          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           set -euo pipefail
-          pytest -q tests/test_anytime_valid_admission_v1.py
+          pytest -q \
+            tests/test_anytime_admission_v1.py \
+            tests/test_anytime_recursive_admission_v1.py \
+            tests/test_anytime_valid_admission_v1.py \
+            tests/test_anytime_valid_dlo_replay_v1.py \
+            tests/test_anytime_valid_replay_v2.py
 
       - name: Execute frozen controlled study
         shell: bash
@@ -100,14 +115,26 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             scripts/remote/run_anytime_valid_admission_v1.py \
+            scripts/remote/run_anytime_valid_dlo_replay_v1.py \
+            scripts/remote/run_anytime_valid_dlo_shift_replay_v1.py \
+            scripts/remote/run_anytime_valid_dlo_shift_replay_v2.py \
             scripts/remote/run_anytime_valid_loss_replay_v1.py \
+            scripts/remote/run_anytime_valid_loss_replay_v2.py \
+            scripts/remote/run_anytime_valid_simulator_admission_v1.py \
+            scripts/science/run_anytime_recursive_admission_v1.py \
+            src/bayesian_phystwin/anytime_admission_v1.py \
+            src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py \
             src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py \
+            tests/test_anytime_admission_v1.py \
+            tests/test_anytime_recursive_admission_v1.py \
             tests/test_anytime_valid_admission_v1.py \
+            tests/test_anytime_valid_dlo_replay_v1.py \
+            tests/test_anytime_valid_replay_v2.py \
             results/science/anytime_valid_simulator_admission_v1
           git diff --cached --check
           if git diff --cached --quiet; then
             echo 'No generated changes to commit.'
           else
-            git commit -m 'Validate anytime-valid simulator admission'
+            git commit -m 'Format and validate anytime-valid admission evidence'
             git push origin HEAD:science/anytime-valid-simulator-admission-v1
           fi
