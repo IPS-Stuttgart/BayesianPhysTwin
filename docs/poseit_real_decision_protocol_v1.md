@@ -59,6 +59,27 @@ exposed the public locator but refused byte acquisition due to its download
 quota. No archive member name, phase label, sensor payload, or shake outcome has
 been opened.
 
+## Preaccess mapping constraints
+
+The official paper fixes the scientifically consequential feature boundary
+without requiring archive access: prediction uses the grasp and pose phases,
+twenty evenly spaced pre-shake timesteps, RGB, GelSight tactile, raw wrist
+force/torque, and fixed gripper force. Tactile frames use pre-contact image
+subtraction before a frozen ImageNet-pretrained ResNet50 feature extractor. The
+shake phase supplies the later target and is never an input.
+
+Those author-defined constraints and the experiment's fit-only preprocessing
+rules are frozen in
+`protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json`.
+Its file SHA-256 is
+`8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210`.
+The clarification binds the original preregistration rather than modifying it.
+Only mechanical facts that cannot be known before central-directory inspection
+remain deferred: member path templates, released timestamp and phase-field
+names, cadence-aware deterministic resampling, structural missingness, and the
+resulting tensor layout. They must be frozen before any member payload is
+opened; labels and outcomes cannot inform them.
+
 The repository contains inconsistent license signals: its license file is CC0
 1.0, while its README displays CC BY-SA 4.0 and MIT badges. This does not prevent
 an attributed academic analysis, but raw archive bytes must not be redistributed
@@ -90,7 +111,9 @@ PYTHONPATH=src python \
   --archive /home/fpfaff/source-only/poseit-real-decision-v1/archives/gelsight.zip \
   --receipt /home/fpfaff/source-only/poseit-real-decision-v1/archives/acquisition-receipt-v1.json \
   --protocol protocols/poseit_real_decision_probe_v1.json \
-  --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4
+  --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4 \
+  --mapping-constraints protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json \
+  --expected-mapping-constraints-sha256 8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210
 ```
 
 The acquisition tool accepts only the frozen official Google Drive file ID and
@@ -109,6 +132,8 @@ PYTHONPATH=src python \
   --archive /home/fpfaff/source-only/poseit-real-decision-v1/archives/gelsight.zip \
   --protocol protocols/poseit_real_decision_probe_v1.json \
   --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4 \
+  --mapping-constraints protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json \
+  --expected-mapping-constraints-sha256 8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210 \
   --private-member-manifest /home/fpfaff/source-only/poseit-real-decision-v1/structure/private-member-manifest-v1.json \
   --output /home/fpfaff/source-only/poseit-real-decision-v1/structure/archive-structure-lock-v1.json
 ```

@@ -11,12 +11,18 @@ import pytest
 
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin_experiments.poseit_real_decision_protocol import (
+    poseit_mapping_constraints_file_sha256,
     poseit_protocol_file_sha256,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILDER_PATH = ROOT / "scripts/science/build_poseit_archive_structure_lock_v1.py"
 PROTOCOL_PATH = ROOT / "protocols/poseit_real_decision_probe_v1.json"
+MAPPING_CONSTRAINTS_PATH = (
+    ROOT
+    / "protocols"
+    / "poseit_real_decision_probe_v1_preaccess_mapping_constraints.json"
+)
 
 
 def _module() -> ModuleType:
@@ -49,7 +55,11 @@ def test_structure_lock_never_opens_a_member_payload(
     lock, private_bytes = builder._build_artifacts(
         archive,
         PROTOCOL_PATH,
+        MAPPING_CONSTRAINTS_PATH,
         expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL_PATH),
+        expected_mapping_constraints_sha256=(
+            poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH)
+        ),
     )
 
     private = json.loads(private_bytes)
@@ -62,6 +72,9 @@ def test_structure_lock_never_opens_a_member_payload(
     assert lock["structure"]["regular_member_count"] == 3
     assert lock["structure"]["top_level_component_count"] == 2
     assert lock["member_payload_bytes_opened"] is False
+    assert lock["mapping_constraints_file_sha256"] == (
+        poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH)
+    )
     assert lock["member_payload_integrity_verified"] is False
     assert lock["phase_labels_opened"] is False
     assert lock["sensor_payloads_opened"] is False
@@ -81,7 +94,25 @@ def test_structure_lock_rejects_protocol_drift(tmp_path: Path) -> None:
         builder._build_artifacts(
             archive,
             PROTOCOL_PATH,
+            MAPPING_CONSTRAINTS_PATH,
             expected_protocol_sha256="a" * 64,
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH)
+            ),
+        )
+
+
+def test_structure_lock_rejects_mapping_constraint_drift(tmp_path: Path) -> None:
+    builder = _module()
+    archive = _archive(tmp_path / "gelsight.zip")
+
+    with pytest.raises(ValueError, match="mapping-constraint file SHA-256"):
+        builder._build_artifacts(
+            archive,
+            PROTOCOL_PATH,
+            MAPPING_CONSTRAINTS_PATH,
+            expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL_PATH),
+            expected_mapping_constraints_sha256="a" * 64,
         )
 
 
@@ -106,7 +137,11 @@ def test_structure_lock_rejects_unsafe_member_paths(
         builder._build_artifacts(
             archive,
             PROTOCOL_PATH,
+            MAPPING_CONSTRAINTS_PATH,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL_PATH),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH)
+            ),
         )
 
 
@@ -122,7 +157,11 @@ def test_structure_lock_rejects_duplicate_members(tmp_path: Path) -> None:
         builder._build_artifacts(
             archive,
             PROTOCOL_PATH,
+            MAPPING_CONSTRAINTS_PATH,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL_PATH),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH)
+            ),
         )
 
 
@@ -139,7 +178,11 @@ def test_structure_lock_rejects_links(tmp_path: Path) -> None:
         builder._build_artifacts(
             archive,
             PROTOCOL_PATH,
+            MAPPING_CONSTRAINTS_PATH,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL_PATH),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH)
+            ),
         )
 
 
@@ -161,6 +204,10 @@ def test_cli_outputs_are_write_once(
             str(PROTOCOL_PATH),
             "--expected-protocol-sha256",
             poseit_protocol_file_sha256(PROTOCOL_PATH),
+            "--mapping-constraints",
+            str(MAPPING_CONSTRAINTS_PATH),
+            "--expected-mapping-constraints-sha256",
+            poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH),
             "--private-member-manifest",
             str(private),
             "--output",
@@ -189,6 +236,10 @@ def test_cli_writes_content_bound_structure_artifacts(
             str(PROTOCOL_PATH),
             "--expected-protocol-sha256",
             poseit_protocol_file_sha256(PROTOCOL_PATH),
+            "--mapping-constraints",
+            str(MAPPING_CONSTRAINTS_PATH),
+            "--expected-mapping-constraints-sha256",
+            poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS_PATH),
             "--private-member-manifest",
             str(private),
             "--output",

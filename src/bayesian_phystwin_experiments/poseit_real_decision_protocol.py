@@ -12,7 +12,10 @@ from typing import Any, cast
 
 SCHEMA_VERSION = 1
 PROTOCOL_ID = "poseit-real-decision-probe-protocol-v1"
+MAPPING_CONSTRAINTS_SCHEMA_VERSION = 1
+MAPPING_CONSTRAINTS_ID = "poseit-real-decision-preaccess-mapping-constraints-v1"
 POSEIT_REPOSITORY_REVISION = "5e290eb024f25b1f4aa602724e6869e512aca434"
+POSEIT_ARXIV_ID = "2209.05022"
 POSEIT_DRIVE_FOLDER_ID = "1CQiMPBEVvRMrDBSIRVeuwyuUOCOesfMc"
 POSEIT_GELSIGHT_FILE_ID = "1EitCcpHoPEQKnlpqWKp02io2WpIxBrEe"
 POSEIT_WEISS_FILE_ID = "124lVr6WTHDo5XbIGO-DWWcNpq7BBm8Mg"
@@ -27,6 +30,12 @@ SELECTABLE_POSES = tuple(range(2, 17))
 BUDGETS = (0, 1, 2, 3)
 _CANONICAL_CONFIG_SHA256 = (
     "fa49b7c2d20d02d554f9d38b6025839d583493bf2a28dbea29a17cb804e66504"
+)
+_PROTOCOL_FILE_SHA256 = (
+    "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4"
+)
+_CANONICAL_MAPPING_CONSTRAINTS_SHA256 = (
+    "75551bbdc63021d768bbc5f44ba9cc38a56592689306a11dff4912abf3f18682"
 )
 
 
@@ -63,6 +72,18 @@ def poseit_protocol_file_sha256(path: str | Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def poseit_mapping_constraints_config_sha256(payload: Mapping[str, Any]) -> str:
+    """Return the canonical digest of parsed preaccess mapping constraints."""
+
+    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+
+
+def poseit_mapping_constraints_file_sha256(path: str | Path) -> str:
+    """Return the byte digest of the preaccess mapping-constraint file."""
+
+    return poseit_protocol_file_sha256(path)
 
 
 def canonical_object_token(value: str) -> str:
@@ -312,15 +333,192 @@ def load_poseit_real_decision_protocol(path: str | Path) -> dict[str, Any]:
     return dict(payload)
 
 
+def load_poseit_preaccess_mapping_constraints(
+    path: str | Path,
+    *,
+    parent_protocol_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Load the source-independent PoseIt mapping constraints and reject drift."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(isinstance(payload, Mapping), "mapping constraints must be a JSON object")
+    _require(
+        payload.get("schema_version") == MAPPING_CONSTRAINTS_SCHEMA_VERSION,
+        "mapping-constraint schema changed",
+    )
+    _require(
+        payload.get("contract") == MAPPING_CONSTRAINTS_ID,
+        "mapping-constraint contract changed",
+    )
+    _require(
+        payload.get("status")
+        == "frozen-source-independently-before-archive-byte-acquisition",
+        "mapping-constraint status changed",
+    )
+
+    parent = _mapping(
+        payload.get("parent_protocol"),
+        message="mapping-constraint parent protocol is missing",
+    )
+    _require(parent.get("contract") == PROTOCOL_ID, "parent protocol changed")
+    _require(
+        parent.get("file_sha256") == _PROTOCOL_FILE_SHA256,
+        "parent protocol file digest changed",
+    )
+    _require(
+        parent.get("config_sha256") == _CANONICAL_CONFIG_SHA256,
+        "parent protocol config digest changed",
+    )
+    _require(
+        parent.get("freeze_commit") == "924dc8e68276d945842f73d9f941cd4ac8db59d6",
+        "parent protocol freeze commit changed",
+    )
+    _require(
+        parent.get("mapping_requirement")
+        == "the exact archive paths, timestamps, resampling, missingness encoding, "
+        "and fixed-dimensional feature map must be frozen after structure-only "
+        "inspection and before any label decode",
+        "parent mapping requirement changed",
+    )
+
+    official = _mapping(
+        payload.get("official_source_constraints"),
+        message="official source constraints are missing",
+    )
+    _require(
+        official.get("repository_revision") == POSEIT_REPOSITORY_REVISION,
+        "PoseIt source revision changed",
+    )
+    paper = _mapping(official.get("paper"), message="paper binding is missing")
+    _require(paper.get("arxiv_id") == POSEIT_ARXIV_ID, "paper ID changed")
+    _require(paper.get("arxiv_version") == 1, "paper version changed")
+    facts = _mapping(
+        official.get("paper_defined_facts"),
+        message="paper-defined facts are missing",
+    )
+    _require(facts.get("reference_pose") == MANDATORY_ANCHOR, "reference pose changed")
+    _require(
+        facts.get("standard_temporal_sample_count") == 20,
+        "paper-defined sample count changed",
+    )
+    _require(
+        facts.get("standard_temporal_window")
+        == "start of grasp through end of pose phase",
+        "paper-defined temporal window changed",
+    )
+    _require(
+        facts.get("prediction_target") == "stability during the later shaking phase",
+        "paper-defined prediction target changed",
+    )
+
+    fixed = _mapping(
+        payload.get("experiment_fixed_constraints"),
+        message="experiment-fixed constraints are missing",
+    )
+    context = _mapping(fixed.get("action_context"), message="action context is missing")
+    _require(
+        context.get("mandatory_reference_pose") == MANDATORY_ANCHOR,
+        "mandatory reference pose changed",
+    )
+    _require(
+        tuple(context.get("selectable_holding_poses", ())) == SELECTABLE_POSES,
+        "selectable poses changed",
+    )
+    temporal = _mapping(
+        fixed.get("temporal_sampling"), message="temporal sampling is missing"
+    )
+    _require(temporal.get("sample_count") == 20, "temporal sample count changed")
+    _require(temporal.get("future_samples_allowed") is False, "future samples opened")
+    _require(
+        temporal.get("shake_or_retract_samples_allowed") is False,
+        "shake or retract samples opened",
+    )
+    features = _mapping(
+        fixed.get("feature_family"), message="feature family is missing"
+    )
+    _require(
+        features.get("fit_only_coordinate_standardization") is True,
+        "fit-only standardization changed",
+    )
+    _require(
+        features.get("confirmation_derived_preprocessing") is False,
+        "confirmation entered preprocessing",
+    )
+    _require(
+        features.get("poseit_outcome_derived_preprocessing") is False,
+        "PoseIt outcomes entered preprocessing",
+    )
+    missingness = _mapping(
+        fixed.get("missingness"), message="missingness lock is missing"
+    )
+    _require(
+        missingness.get(
+            "exclude_structurally_unavailable_actions_from_policy_and_oracle_before_labels"
+        )
+        is True,
+        "structural action exclusion changed",
+    )
+    _require(
+        missingness.get("no_outcome_selected_imputation") is True,
+        "outcome-selected imputation was admitted",
+    )
+
+    deferred = _mapping(
+        payload.get("deferred_until_structure_only_inspection"),
+        message="deferred mapping boundary is missing",
+    )
+    _require(deferred.get("outcome_information_allowed") is False, "outcomes opened")
+    _require(
+        deferred.get("must_be_frozen_before")
+        == "opening any ZIP member payload, phase label, sensor value, or shake outcome",
+        "mapping freeze boundary changed",
+    )
+    _require(len(tuple(deferred.get("items", ()))) == 6, "deferred mapping set changed")
+
+    boundaries = _mapping(payload.get("boundaries"), message="boundaries are missing")
+    for key in (
+        "archive_member_names_opened",
+        "archive_payload_bytes_acquired",
+        "confirmation_opened",
+        "feature_or_mapping_choice_from_any_poseit_outcome",
+        "held_v8_accessed",
+        "phase_labels_opened",
+        "sensor_payloads_opened",
+    ):
+        _require(boundaries.get(key) is False, f"mapping boundary changed: {key}")
+
+    if parent_protocol_path is not None:
+        parent_protocol = load_poseit_real_decision_protocol(parent_protocol_path)
+        _require(
+            poseit_protocol_file_sha256(parent_protocol_path)
+            == parent.get("file_sha256"),
+            "bound parent protocol file changed",
+        )
+        _require(
+            poseit_protocol_config_sha256(parent_protocol)
+            == parent.get("config_sha256"),
+            "bound parent protocol config changed",
+        )
+
+    digest = poseit_mapping_constraints_config_sha256(payload)
+    _require(
+        digest == _CANONICAL_MAPPING_CONSTRAINTS_SHA256,
+        "mapping constraints drifted",
+    )
+    return dict(payload)
+
+
 __all__ = [
     "BUDGETS",
     "CALIBRATION_COUNT",
     "CONFIRMATION_COUNT",
     "FIT_COUNT",
     "MANDATORY_ANCHOR",
+    "MAPPING_CONSTRAINTS_ID",
     "OBJECT_COUNT",
     "POSEIT_DRIVE_FOLDER_ID",
     "POSEIT_GELSIGHT_FILE_ID",
+    "POSEIT_ARXIV_ID",
     "POSEIT_REPOSITORY_REVISION",
     "PROTOCOL_ID",
     "PoseItObjectCohort",
@@ -330,6 +528,9 @@ __all__ = [
     "canonical_object_token",
     "derive_poseit_object_cohort",
     "load_poseit_real_decision_protocol",
+    "load_poseit_preaccess_mapping_constraints",
+    "poseit_mapping_constraints_config_sha256",
+    "poseit_mapping_constraints_file_sha256",
     "poseit_protocol_config_sha256",
     "poseit_protocol_file_sha256",
 ]

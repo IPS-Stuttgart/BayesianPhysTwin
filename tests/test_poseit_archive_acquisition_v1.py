@@ -10,12 +10,18 @@ import pytest
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin_experiments.poseit_real_decision_protocol import (
     POSEIT_GELSIGHT_FILE_ID,
+    poseit_mapping_constraints_file_sha256,
     poseit_protocol_file_sha256,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/science/acquire_poseit_gelsight_archive_v1.py"
 PROTOCOL = ROOT / "protocols/poseit_real_decision_probe_v1.json"
+MAPPING_CONSTRAINTS = (
+    ROOT
+    / "protocols"
+    / "poseit_real_decision_probe_v1_preaccess_mapping_constraints.json"
+)
 
 
 def _module() -> ModuleType:
@@ -84,7 +90,11 @@ def test_acquisition_streams_exact_file_opaquely_and_writes_receipt(
         archive,
         receipt,
         PROTOCOL,
+        MAPPING_CONSTRAINTS,
         expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+        expected_mapping_constraints_sha256=(
+            poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+        ),
         opener=opener,
         timeout_seconds=7.0,
     )
@@ -98,6 +108,9 @@ def test_acquisition_streams_exact_file_opaquely_and_writes_receipt(
     assert receipt_id == content_id(identity)
     assert result["archive_bytes_streamed_opaquely"] is True
     assert result["zip_central_directory_parsed"] is False
+    assert result["mapping_constraints_file_sha256"] == (
+        poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+    )
     assert result["archive_member_names_opened"] is False
     assert result["member_payload_bytes_opened"] is False
     assert result["shake_outcomes_opened"] is False
@@ -118,7 +131,11 @@ def test_quota_html_is_not_persisted(tmp_path: Path) -> None:
             tmp_path / "gelsight.zip",
             tmp_path / "receipt.json",
             PROTOCOL,
+            MAPPING_CONSTRAINTS,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+            ),
             opener=lambda request, timeout: response,
         )
 
@@ -149,7 +166,11 @@ def test_interrupted_transfer_is_not_persisted(tmp_path: Path) -> None:
             tmp_path / "gelsight.zip",
             tmp_path / "receipt.json",
             PROTOCOL,
+            MAPPING_CONSTRAINTS,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+            ),
             opener=lambda request, timeout: response,
         )
 
@@ -186,7 +207,11 @@ def test_acquisition_rejects_unregistered_responses(
             tmp_path / "gelsight.zip",
             tmp_path / "receipt.json",
             PROTOCOL,
+            MAPPING_CONSTRAINTS,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+            ),
             opener=lambda request, timeout: response,
         )
 
@@ -204,7 +229,28 @@ def test_acquisition_is_write_once(tmp_path: Path) -> None:
             archive,
             tmp_path / "receipt.json",
             PROTOCOL,
+            MAPPING_CONSTRAINTS,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+            ),
+            opener=lambda request, timeout: pytest.fail("network was opened"),
+        )
+
+
+def test_acquisition_rejects_mapping_constraint_drift_before_network(
+    tmp_path: Path,
+) -> None:
+    acquisition = _module()
+
+    with pytest.raises(ValueError, match="mapping-constraint file SHA-256"):
+        acquisition._acquire(
+            tmp_path / "gelsight.zip",
+            tmp_path / "receipt.json",
+            PROTOCOL,
+            MAPPING_CONSTRAINTS,
+            expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256="a" * 64,
             opener=lambda request, timeout: pytest.fail("network was opened"),
         )
 
@@ -223,7 +269,11 @@ def test_acquisition_rejects_unregistered_redirect_host(tmp_path: Path) -> None:
             tmp_path / "gelsight.zip",
             tmp_path / "receipt.json",
             PROTOCOL,
+            MAPPING_CONSTRAINTS,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+            ),
             opener=lambda request, timeout: response,
         )
 
