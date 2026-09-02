@@ -1,0 +1,280 @@
+name: Authorize hierarchical missing-physics DLO4/DLO5 target v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_authorize_dlo45_target_v1.json
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-authorize-dlo45-target-v1
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PARENT_RUN_ID: 33361441865
+      SOURCE_MODEL: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model.json
+      SOURCE_ARRAYS: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model.npz
+      SOURCE_RECEIPT: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/receipt.json
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/dlo45_target_authorization_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate source seal and authorization request
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in "$SOURCE_MODEL" "$SOURCE_ARRAYS" "$SOURCE_RECEIPT"; do
+            test -f "$path"
+          done
+          python3 -m json.tool "$SOURCE_MODEL" >/dev/null
+          python3 -m json.tool "$SOURCE_RECEIPT" >/dev/null
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_authorize_dlo45_target_v1.json >/dev/null
+          MODEL="$SOURCE_MODEL" ARRAYS="$SOURCE_ARRAYS" RECEIPT="$SOURCE_RECEIPT" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          model_path = Path(os.environ["MODEL"])
+          arrays_path = Path(os.environ["ARRAYS"])
+          receipt = json.loads(Path(os.environ["RECEIPT"]).read_text(encoding="utf-8"))
+          model = json.loads(model_path.read_text(encoding="utf-8"))
+          if model["model_id"] != receipt["model_id"]:
+              raise SystemExit("source model ID/receipt mismatch")
+          if hashlib.sha256(model_path.read_bytes()).hexdigest() != receipt["model_manifest_sha256"]:
+              raise SystemExit("source model manifest hash mismatch")
+          if hashlib.sha256(arrays_path.read_bytes()).hexdigest() != receipt["model_arrays_sha256"]:
+              raise SystemExit("source model arrays hash mismatch")
+          if receipt["source_gate_passed"] is not True:
+              raise SystemExit("source gate did not pass")
+          if "shared_physics" not in receipt["selected_groups_frozen_before_target"]:
+              raise SystemExit("shared physics was not source-authorized")
+          if "sensor" in receipt["selected_groups_frozen_before_target"]:
+              raise SystemExit("sensor discrepancy was illegally source-authorized")
+          if receipt["dlo4_dlo5_payload_read"] is not False or receipt["target_result_read"] is not False:
+              raise SystemExit("source seal crossed target boundary")
+          PY
+
+      - name: Read only parent-run and artifact metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hmp-dlo45-authorization"
+          mkdir -p "$work"
+          api="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$api/actions/runs/$PARENT_RUN_ID" > "$work/run.json"
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$api/actions/runs/$PARENT_RUN_ID/jobs?per_page=100" > "$work/jobs.json"
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$api/actions/runs/$PARENT_RUN_ID/artifacts?per_page=100" > "$work/artifacts.json"
+
+      - name: Construct target authorization without opening artifact payloads
+        id: authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hmp-dlo45-authorization"
+          mkdir -p "$EVIDENCE_DIR"
+          RUN="$work/run.json" JOBS="$work/jobs.json" ARTIFACTS="$work/artifacts.json" MODEL="$SOURCE_MODEL" ARRAYS="$SOURCE_ARRAYS" RECEIPT="$SOURCE_RECEIPT" OUTPUT="$EVIDENCE_DIR/authorization.json" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          run = json.loads(Path(os.environ["RUN"]).read_text(encoding="utf-8"))
+          jobs = json.loads(Path(os.environ["JOBS"]).read_text(encoding="utf-8"))["jobs"]
+          artifacts = json.loads(Path(os.environ["ARTIFACTS"]).read_text(encoding="utf-8"))["artifacts"]
+          model_path = Path(os.environ["MODEL"])
+          arrays_path = Path(os.environ["ARRAYS"])
+          receipt = json.loads(Path(os.environ["RECEIPT"]).read_text(encoding="utf-8"))
+          model = json.loads(model_path.read_text(encoding="utf-8"))
+
+          if int(run["id"]) != 33361441865:
+              raise SystemExit("wrong parent run")
+          if run["status"] != "completed" or run["conclusion"] != "success":
+              raise SystemExit(
+                  f"parent run is not successfully terminal: {run['status']}/{run['conclusion']}"
+              )
+          target_jobs = [job for job in jobs if job["name"].lower() == "target"]
+          if len(target_jobs) != 1:
+              raise SystemExit(f"expected one target job, found {len(target_jobs)}")
+          target_job = target_jobs[0]
+          if target_job["status"] != "completed" or target_job["conclusion"] != "success":
+              raise SystemExit("parent target job is not successful")
+          step_names = [step["name"] for step in target_job.get("steps", [])]
+          if not any("seal" in name.lower() and "target" in name.lower() for name in step_names):
+              raise SystemExit("parent target job lacks an explicit pre-score seal step")
+          available = [artifact for artifact in artifacts if not artifact["expired"]]
+          if not available:
+              raise SystemExit("parent run has no retained artifact")
+          target_artifacts = [
+              artifact for artifact in available
+              if "target" in artifact["name"].lower()
+              or "dlo45" in artifact["name"].lower()
+          ]
+          if not target_artifacts:
+              raise SystemExit("parent run has no target/DLO45 artifact metadata")
+
+          metadata = {
+              "run": {
+                  "id": int(run["id"]),
+                  "workflow_id": int(run["workflow_id"]),
+                  "run_attempt": int(run["run_attempt"]),
+                  "head_sha": run["head_sha"],
+                  "status": run["status"],
+                  "conclusion": run["conclusion"],
+                  "created_at": run["created_at"],
+                  "updated_at": run["updated_at"],
+              },
+              "target_job": {
+                  "id": int(target_job["id"]),
+                  "name": target_job["name"],
+                  "status": target_job["status"],
+                  "conclusion": target_job["conclusion"],
+                  "started_at": target_job["started_at"],
+                  "completed_at": target_job["completed_at"],
+                  "step_names": step_names,
+              },
+              "artifacts": [
+                  {
+                      "id": int(artifact["id"]),
+                      "name": artifact["name"],
+                      "size_in_bytes": int(artifact["size_in_bytes"]),
+                      "created_at": artifact["created_at"],
+                      "expires_at": artifact["expires_at"],
+                      "expired": artifact["expired"],
+                  }
+                  for artifact in available
+              ],
+          }
+          metadata_id = hashlib.sha256(
+              json.dumps(metadata, sort_keys=True, separators=(",", ":")).encode()
+          ).hexdigest()
+          authorization = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-target-authorization",
+              "schema_version": 1,
+              "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+              "source_model_id": model["model_id"],
+              "source_model_manifest_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
+              "source_model_arrays_sha256": hashlib.sha256(arrays_path.read_bytes()).hexdigest(),
+              "source_result_id": receipt["source_result_id"],
+              "selected_groups_frozen_before_target": receipt[
+                  "selected_groups_frozen_before_target"
+              ],
+              "wrong_diagnosis_group_frozen_before_target": receipt[
+                  "wrong_diagnosis_group_frozen_before_target"
+              ],
+              "parent_run_metadata_id": metadata_id,
+              "parent": metadata,
+              "target_objects": ["DLO4", "DLO5"],
+              "target_artifact_payload_read_during_authorization": False,
+              "selection_frozen_before_target": True,
+              "coefficient_refit_authorized": False,
+              "standardizer_refit_authorized": False,
+              "target_semantic_vocabulary": "identical to source panel planner v1",
+              "target_artifact_census_authorized": True,
+              "target_prediction_sealing_authorized": True,
+              "target_scoring_authorized": True,
+              "target_pooling_to_hide_per_DLO_failure_authorized": False,
+              "sensor_to_physical_rollout_authorized": False,
+              "failure_policy": "Retain each DLO separately. Any ambiguous target carrier or seal mismatch fails closed without changing the source diagnosis."
+          }
+          unsigned = json.dumps(
+              authorization, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          authorization["authorization_id"] = hashlib.sha256(unsigned).hexdigest()
+          Path(os.environ["OUTPUT"]).write_text(
+              json.dumps(authorization, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "authorization_id": authorization["authorization_id"],
+              "source_model_id": authorization["source_model_id"],
+              "parent_run": authorization["parent"]["run"],
+              "target_job": authorization["parent"]["target_job"],
+              "artifacts": authorization["parent"]["artifacts"],
+              "target_artifact_payload_read_during_authorization": False,
+          }, indent=2, sort_keys=True))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"path={os.environ['OUTPUT']}\n")
+          PY
+
+      - name: Publish immutable target authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="${{ steps.authorization.outputs.path }}" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          authorization_path = Path(os.environ["AUTH"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          authorization = json.loads(authorization_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-authorization-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "authorization_id": authorization["authorization_id"],
+              "authorization_sha256": hashlib.sha256(authorization_path.read_bytes()).hexdigest(),
+              "source_model_id": authorization["source_model_id"],
+              "parent_run_id": authorization["parent"]["run"]["id"],
+              "target_artifact_payload_read": False,
+              "target_scoring_authorized": authorization["target_scoring_authorized"]
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical target authorization already committed."
+          else
+            git commit -m "Authorize sealed hierarchical DLO4/DLO5 evaluation"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload authorization evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-dlo45-authorization-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hmp-dlo45-authorization/
+            evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/
+          if-no-files-found: error
+          retention-days: 90
