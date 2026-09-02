@@ -66,13 +66,8 @@ jobs:
           venv="$RUNNER_TEMP/hmp-narrow-census-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           test ! -e "$venv"
           python3 -m venv "$venv"
-          "$venv/bin/python" -m pip install \
-            --disable-pip-version-check \
-            --no-input \
-            "pip==25.2" \
-            "setuptools==80.9.0" \
-            "wheel==0.45.1" \
-            "numpy==2.2.6"
+          "$venv/bin/python" -m pip install --disable-pip-version-check --no-input \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1" "numpy==2.2.6"
           echo "python=$venv/bin/python" >> "$GITHUB_OUTPUT"
           echo "venv=$venv" >> "$GITHUB_OUTPUT"
 
@@ -91,16 +86,12 @@ jobs:
             test -d "$root"
             test ! -L "$root"
             case "${root,,}" in
-              *dlo4*|*dlo5*|*dlo45*|*33361441865*)
-                echo "protected identity in source root: $root" >&2
-                exit 2
-                ;;
+              *dlo4*|*dlo5*|*dlo45*|*33361441865*) exit 2 ;;
             esac
           done < "$roots"
           echo "file=$roots" >> "$GITHUB_OUTPUT"
-          cat "$roots"
 
-      - name: Inventory only the selected source artifacts
+      - name: Inventory only selected source artifacts
         id: census
         env:
           PYTHON: ${{ steps.runtime.outputs.python }}
@@ -111,16 +102,10 @@ jobs:
           test ! -e "$work"
           mkdir -p "$work"
           args=()
-          while IFS= read -r root; do
-            args+=(--root "$root")
-          done < "${{ steps.roots.outputs.file }}"
+          while IFS= read -r root; do args+=(--root "$root"); done < "${{ steps.roots.outputs.file }}"
           "$PYTHON" scripts/science/inventory_deform_source_runtime_artifacts.py \
-            "${args[@]}" \
-            --max-depth 8 \
-            --max-entries 100000 \
-            --max-candidates 5000 \
-            --output "$work/result.json" \
-            | tee "$work/summary.log"
+            "${args[@]}" --max-depth 8 --max-entries 100000 --max-candidates 5000 \
+            --output "$work/result.json" | tee "$work/summary.log"
           RESULT="$work/result.json" "$PYTHON" - <<'PY'
           import json
           import os
@@ -129,27 +114,25 @@ jobs:
           result = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
           boundary = result["information_boundary"]
           forbidden = (
-              "dlo4_directory_children_enumerated",
-              "dlo4_payload_read",
-              "dlo5_directory_children_enumerated",
-              "dlo5_payload_read",
+              "dlo4_directory_children_enumerated", "dlo4_payload_read",
+              "dlo5_directory_children_enumerated", "dlo5_payload_read",
               "protected_parent_run_33361441865_artifact_read",
-              "pickle_bearing_payload_deserialized",
-              "target_scores_read",
+              "pickle_bearing_payload_deserialized", "target_scores_read",
               "target_dependent_model_selection",
           )
           assert all(boundary[key] is False for key in forbidden)
+          readiness = result["adapter_readiness"]
+          assert readiness["has_numeric_residual_candidate"] is True
+          assert readiness["has_coefficient_candidate"] is True
+          assert readiness["has_alternate_backend_candidate"] is True
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"result={os.environ['RESULT']}\n")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              ready = result["adapter_readiness"]
               summary.write("## Narrow DLO2/DLO3 runtime census\n\n")
               summary.write(f"Census ID: `{result['census_id']}`\n\n")
-              summary.write(f"Entries scanned: `{result['entries_seen']}`\n\n")
+              summary.write(f"Entries scanned: `{result['search_audit']['entries_seen']}`\n\n")
               summary.write(f"Candidates: `{len(result['ranked_candidates'])}`\n\n")
-              summary.write(f"Residual/physical arrays: `{ready['has_numeric_residual_candidate']}`\n\n")
-              summary.write(f"Coefficients: `{ready['has_coefficient_candidate']}`\n\n")
-              summary.write(f"Alternate backend: `{ready['has_alternate_backend_candidate']}`\n\n")
+              summary.write("All three adapter prerequisites were found; protected target access remained false.\n")
           PY
 
       - name: Commit source-only census and receipt
@@ -186,8 +169,7 @@ jobs:
           unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
           receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
           (result_path.parent / "receipt.json").write_text(
-              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
           )
           PY
           git config user.name "github-actions[bot]"
