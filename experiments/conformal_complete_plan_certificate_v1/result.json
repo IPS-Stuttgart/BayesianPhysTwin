@@ -1,0 +1,120 @@
+{
+  "actions": [
+    "pull_left",
+    "pull_right",
+    "hold"
+  ],
+  "artifact_kind": "ConformalCompletePlanMechanismV1",
+  "calibration": {
+    "coverage": "simultaneous over every candidate complete plan and registered decision on one exchangeable future trajectory",
+    "miscoverage": 0.25,
+    "score": "max over registered decisions and plans of positive excess regret divided by a fixed plan scale",
+    "trajectory_count": 4,
+    "unit": "complete trajectory"
+  },
+  "claim_boundary": "The split-conformal statement is marginal over one exchangeable future trajectory and conditional on a plan roster, candidate mask, plan scales, registered regret bounds, probe-outcome semantics, and all tuning choices fixed before calibration outcomes. It does not validate exchangeability, independence of calibration groups, the represented or unknown physical support, probe physics, reset semantics, action losses, support-miss bounds, target transport, deployment, or safety.",
+  "interpretation": "With a fixed 5% support-miss bound, low calibrated excess selects the cheap but fragile tug, moderate excess switches to the camera because its registered plan scale is smaller, and larger excess returns the exact hold fallback. When tether side is already decision-identified, the system acts directly.",
+  "phase_diagram": [
+    {
+      "calibrated_regret_upper": 0.08000000000000004,
+      "calibration_score_quantile": 0.050000000000000044,
+      "calibration_trajectory_count": 4,
+      "candidate_calibrated_regret_upper": 0.08000000000000004,
+      "candidate_plan_index": 0,
+      "conformal_inflation": 0.040000000000000036,
+      "fallback_reason": null,
+      "finite_sample_coverage_lower_bound": 0.8,
+      "miscoverage": 0.25,
+      "output_mode": "act",
+      "output_plan_index": 0,
+      "plan_scale": 0.8,
+      "probe_name": null,
+      "registered_regret": 0.04000000000000001,
+      "resolved_left": true,
+      "support_miss_probability_upper": 0.05,
+      "terminal_action_by_outcome": [],
+      "terminal_action_index": 0
+    },
+    {
+      "calibrated_regret_upper": 0.13999999999999999,
+      "calibration_score_quantile": 0.0,
+      "calibration_trajectory_count": 4,
+      "candidate_calibrated_regret_upper": 0.13999999999999999,
+      "candidate_plan_index": 4,
+      "conformal_inflation": 0.0,
+      "fallback_reason": null,
+      "finite_sample_coverage_lower_bound": 0.8,
+      "miscoverage": 0.25,
+      "output_mode": "sense",
+      "output_plan_index": 4,
+      "plan_scale": 2.8,
+      "probe_name": "quick_tug",
+      "registered_regret": 0.13999999999999999,
+      "resolved_left": false,
+      "support_miss_probability_upper": 0.05,
+      "terminal_action_by_outcome": [
+        0,
+        1
+      ],
+      "terminal_action_index": null
+    },
+    {
+      "calibrated_regret_upper": 0.2400000000000001,
+      "calibration_score_quantile": 0.05000000000000012,
+      "calibration_trajectory_count": 4,
+      "candidate_calibrated_regret_upper": 0.2400000000000001,
+      "candidate_plan_index": 13,
+      "conformal_inflation": 0.0400000000000001,
+      "fallback_reason": null,
+      "finite_sample_coverage_lower_bound": 0.8,
+      "miscoverage": 0.25,
+      "output_mode": "sense",
+      "output_plan_index": 13,
+      "plan_scale": 0.8,
+      "probe_name": "camera",
+      "registered_regret": 0.2,
+      "resolved_left": false,
+      "support_miss_probability_upper": 0.05,
+      "terminal_action_by_outcome": [
+        0,
+        1
+      ],
+      "terminal_action_index": null
+    },
+    {
+      "calibrated_regret_upper": 1.51,
+      "calibration_score_quantile": 0.10000000000000024,
+      "calibration_trajectory_count": 4,
+      "candidate_calibrated_regret_upper": 0.2800000000000002,
+      "candidate_plan_index": 13,
+      "conformal_inflation": 0.010000000000000024,
+      "fallback_reason": "calibrated-regret-exceeds-tolerance",
+      "finite_sample_coverage_lower_bound": 0.8,
+      "miscoverage": 0.25,
+      "output_mode": "fallback",
+      "output_plan_index": 2,
+      "plan_scale": 0.1,
+      "probe_name": null,
+      "registered_regret": 1.5,
+      "resolved_left": false,
+      "support_miss_probability_upper": 0.05,
+      "terminal_action_by_outcome": [],
+      "terminal_action_index": 2
+    }
+  ],
+  "plan_scale": "registered unknown-plan loss width with a 0.1 positive floor",
+  "probes": [
+    "quick_tug",
+    "camera"
+  ],
+  "regret_tolerance": 0.25,
+  "result_id": "82cb8fd2ab899d95dd79f73534b5ab6869385dc7532638370877eebd5f92327a",
+  "schema_version": 1,
+  "support_miss_probability_upper": 0.05,
+  "theorem": {
+    "calibrated_plan_upper": "B_new,dp + q_(1-alpha) * s_p",
+    "post_probe_rule": "apply the terminal action map frozen inside the selected plan; do not re-optimize after observing the probe",
+    "selection_rule": "execute the unique calibrated minimax complete plan only when its upper bound is within tolerance; otherwise reproduce fallback",
+    "trajectory_score": "S_j=max_{d,p in C} max(0,R_jdp-B_jdp)/s_p"
+  }
+}
