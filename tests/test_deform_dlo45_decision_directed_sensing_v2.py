@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 
 import numpy as np
 
-from experiments.deform_dlo45_decision_directed_sensing_v1 import evaluate as core
-from experiments.deform_dlo45_decision_directed_sensing_v2 import evaluate as module
+from experiments.deform_dlo45_decision_directed_sensing_v2 import (
+    evaluate as module,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
@@ -15,158 +17,270 @@ PROTOCOL = (
 SCRIPT = (
     ROOT / "experiments" / "deform_dlo45_decision_directed_sensing_v2" / "evaluate.py"
 )
-WORKFLOW = (
-    ROOT / ".github" / "workflows" / "deform-dlo45-decision-directed-sensing-v2.yml"
-)
 
 
-def test_protocol_uses_disjoint_source_calibration_and_test_splits() -> None:
-    raw = json.loads(PROTOCOL.read_text(encoding="utf-8"))
-    protocol = module.load_protocol(PROTOCOL)
-
-    assert raw["evaluation"]["evaluation_split_opened"] is False
-    assert raw["evaluation"]["new_data_collection"] is False
-    assert protocol.core_template.fit_count == 39
-    assert protocol.core_template.calibration_count == 9
-    assert protocol.core_template.source_test_count == 8
-    assert protocol.task_nodes == (4, 5, 6, 7)
-    assert protocol.likelihood_scales == (1.0, 2.0, 4.0)
-    assert protocol.regret_tolerances[-1] == 0.4
+def _protocol() -> module.Protocol:
+    return module.load_protocol(PROTOCOL)
 
 
-def test_task_index_projection_selects_only_registered_central_nodes() -> None:
-    protocol = module.load_protocol(PROTOCOL)
-    indices = module.task_flat_indices(protocol)
-    shaped = np.zeros(
-        (
-            protocol.core_template.horizon_frames,
-            8,
-            3,
+def _trajectory() -> np.ndarray:
+    trajectory = np.zeros((module.FRAME_COUNT, module.NODE_COUNT, 3))
+    trajectory[:, module.NODE_COUNT - 2 :, 0] = 1.0
+    weights = np.linspace(1.0 / 9.0, 8.0 / 9.0, 8)
+    trajectory[:, 2:10, 0] = weights[None, :]
+    return trajectory
+
+
+def _context() -> module.CaseContext:
+    sensor = np.zeros((4, 8, 1))
+    sensor[:, 0, 0] = np.asarray([-2.0, -2.0, 2.0, 2.0])
+    sensor[:, 1, 0] = np.asarray([-2.0, 2.0, -2.0, 2.0])
+    losses = np.asarray(
+        [
+            [3.0, 1.0, 3.0],
+            [2.0, 0.0, 0.0],
+            [5.0, 4.0, 5.0],
+            [0.0, 5.0, 2.0],
+        ]
+    )
+    return module.CaseContext(
+        support_indices=np.arange(4, dtype=np.int64),
+        base_logits=np.zeros(4),
+        support_sensor_features=sensor,
+        target_sensor_features=sensor[0],
+        support_classes=np.asarray([0, 0, 1, 1], dtype=np.int64),
+        support_global_classes=np.asarray([0, 0, 1, 1], dtype=np.int64),
+        support_state_representation=np.asarray(
+            [[-1.0], [-0.5], [0.5], [1.0]]
         ),
-        dtype=bool,
-    )
-    shaped.reshape(-1)[indices] = True
-
-    assert int(np.sum(shaped)) == (
-        protocol.core_template.horizon_frames * len(protocol.task_nodes) * 3
-    )
-    assert np.all(shaped[:, [2, 3, 4, 5], :])
-    assert not np.any(shaped[:, [0, 1, 6, 7], :])
-
-
-def _synthetic_model() -> core.SourceModel:
-    count = 16
-    residual_dimension = 25 * 8 * 3
-    base_features = np.linspace(-1.0, 1.0, count)[:, None]
-    sensor_features = np.zeros((count, 8, 6), dtype=np.float64)
-    residuals = np.zeros((count, residual_dimension), dtype=np.float64)
-    for index in range(count):
-        class_id = index // 4
-        sensor_features[index, :, 0] = class_id
-        residuals[index] = 0.1 * class_id
-    return core.SourceModel(
-        base_features=base_features,
-        sensor_features=sensor_features,
-        residuals=residuals,
-        class_labels=np.repeat(np.arange(4), 4),
-        state_representation=np.arange(count, dtype=np.float64)[:, None],
-        query_representation=np.repeat(
-            np.arange(4, dtype=np.float64),
-            4,
-        )[:, None],
-        base_mean=np.zeros(1),
-        base_scale=np.ones(1),
-        sensor_mean=np.zeros((8, 6)),
-        sensor_scale=np.ones((8, 6)),
-        loss_floor=1e-6,
+        support_query_representation=np.asarray(
+            [[-1.0], [-0.5], [0.5], [1.0]]
+        ),
+        support_task_residuals=np.zeros((4, 2)),
+        actions=np.zeros((3, 2)),
+        action_labels=("fallback", "left", "right"),
+        relative_losses=losses,
+        length_scale=1.0,
     )
 
 
-def test_competing_context_contains_fallback_and_class_actions() -> None:
-    protocol = module.load_protocol(PROTOCOL)
-    observation = core.Observation(
-        base_feature=np.zeros(1),
-        sensor_features=np.zeros((8, 6)),
-        baseline=np.zeros((25, 8, 3)),
-        length_scale=0.5,
+def test_protocol_freezes_competing_actions_and_source_only_evaluation() -> None:
+    raw = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    protocol = _protocol()
+    assert raw["evaluation"]["evaluation_split_opened"] is False
+    assert raw["evaluation"]["target_tuning"] is False
+    assert raw["evaluation"]["new_data_collection"] is False
+    assert raw["calibration"]["shared_across_dlos"] is True
+    assert protocol.policies == module.EXPECTED_POLICIES
+    assert protocol.task_internal_nodes == (4, 5, 6, 7)
+    assert protocol.budgets == (0, 1, 2, 3, 4, 6, 8)
+
+
+def test_endpoint_observation_does_not_touch_future_internal_outcomes() -> None:
+    protocol = _protocol()
+    trajectory = _trajectory()
+    current = protocol.first_current_frame
+    future = slice(current + 1, current + 1 + protocol.horizon_frames)
+    trajectory[future, module.INTERNAL, :] = np.nan
+
+    observation = module.extract_endpoint_observation(
+        trajectory, current, protocol
     )
-    context = module.make_competing_context(
-        observation,
-        _synthetic_model(),
+
+    assert np.all(np.isfinite(observation.base_feature))
+    assert np.all(np.isfinite(observation.sensor_features))
+    assert np.all(np.isfinite(observation.baseline))
+    target = module.extract_full_target_residual(
+        trajectory, current, observation, protocol
+    )
+    assert np.any(~np.isfinite(target))
+
+
+def test_task_residual_selects_only_registered_central_nodes() -> None:
+    protocol = _protocol()
+    full = np.arange(
+        protocol.horizon_frames * 8 * 3, dtype=np.float64
+    ).reshape(protocol.horizon_frames, 8, 3)
+    selected = module.task_residuals(full.reshape(-1), protocol)
+    expected = full[:, 2:6, :].reshape(-1)
+    np.testing.assert_array_equal(selected, expected)
+
+
+def test_source_split_is_deterministic_and_disjoint() -> None:
+    protocol = _protocol()
+    names = tuple(f"{index}.pkl" for index in range(56))
+    first = module.split_names(names, "DLO4", protocol)
+    second = module.split_names(names, "DLO4", protocol)
+    assert first == second
+    assert len(first["fit"]) == 39
+    assert len(first["calibration"]) == 9
+    assert len(first["source_test"]) == 8
+    assert not (set(first["fit"]) & set(first["calibration"]))
+    assert not (set(first["fit"]) & set(first["source_test"]))
+    assert not (set(first["calibration"]) & set(first["source_test"]))
+
+
+def test_decision_regret_selects_action_relevant_node() -> None:
+    protocol = dataclasses.replace(
+        _protocol(), measurement_costs=np.ones(8)
+    )
+    context = _context()
+    observations: dict[int, np.ndarray] = {}
+    selected = module.choose_candidate(
+        "decision_regret",
+        context,
+        observations,
+        (0, 1),
+        "synthetic",
+        2.0,
         protocol,
     )
-
-    assert context.fixed_actions.shape[0] >= 3
-    assert np.all(context.fixed_actions[0] == 0.0)
-    assert context.action_labels[0] == "physical_fallback"
-    assert context.relative_losses.shape == (
-        protocol.core_template.support_neighbors,
-        context.fixed_actions.shape[0],
+    class_sensor = module.expected_candidate_metric(
+        context, observations, 0, "decision_regret", 2.0
     )
-    assert np.array_equal(
-        np.unique(context.support_classes),
-        np.arange(len(np.unique(context.support_classes))),
+    within_class_sensor = module.expected_candidate_metric(
+        context, observations, 1, "decision_regret", 2.0
+    )
+    assert selected == 0
+    assert class_sensor < within_class_sensor
+
+
+def test_posterior_update_is_normalized_and_informative() -> None:
+    context = _context()
+    prior = module.posterior_weights(context, {}, 2.0)
+    posterior = module.posterior_weights(
+        context, {0: context.target_sensor_features[0]}, 2.0
+    )
+    assert np.isclose(np.sum(prior), 1.0)
+    assert np.isclose(np.sum(posterior), 1.0)
+    assert posterior[:2].sum() > 0.99
+    assert module._weighted_variance(
+        context.support_state_representation, posterior
+    ) < module._weighted_variance(
+        context.support_state_representation, prior
     )
 
 
-def test_scoring_preserves_task_and_full_fallbacks() -> None:
-    protocol = module.load_protocol(PROTOCOL)
-    dimension = 25 * 8 * 3
-    indices = module.task_flat_indices(protocol)
-    context = module.CompetingContext(
-        support_indices=np.arange(2, dtype=np.int64),
-        base_logits=np.zeros(2),
-        support_sensor_features=np.zeros((2, 8, 6)),
-        target_sensor_features=np.zeros((8, 6)),
-        support_residuals=np.zeros((2, dimension)),
-        support_classes=np.array([0, 1], dtype=np.int64),
-        support_state_representation=np.zeros((2, 1)),
-        support_query_representation=np.zeros((2, 1)),
-        fixed_actions=np.vstack(
-            (
-                np.zeros(dimension),
-                np.ones(dimension),
-            )
+def test_action_competition_reports_multiple_pointwise_winners() -> None:
+    prototypes = np.asarray([[-1.0, 1.0], [1.0, 1.0]])
+    task = np.asarray(
+        [
+            [-1.0, 1.0],
+            [-0.8, 1.1],
+            [1.0, 1.0],
+            [0.9, 1.2],
+        ]
+    )
+    model = module.SourceModel(
+        base_features=np.zeros((4, 1)),
+        sensor_features=np.zeros((4, 8, 1)),
+        full_residuals=np.zeros((4, 2)),
+        task_residuals=task,
+        class_labels=np.asarray([0, 0, 1, 1], dtype=np.int64),
+        action_prototypes=prototypes,
+        state_representation=np.zeros((4, 1)),
+        query_representation=np.zeros((4, 1)),
+        base_mean=np.zeros(1),
+        base_scale=np.ones(1),
+        sensor_mean=np.zeros((8, 1)),
+        sensor_scale=np.ones((8, 1)),
+        loss_floor=1e-6,
+        class_counts=np.asarray([2, 2], dtype=np.int64),
+    )
+    summary = module.action_competition_summary(model)
+    assert summary["action_count"] == 3
+    assert summary["pointwise_active_action_count"] >= 2
+    assert summary["minimum_pairwise_action_rmse"] > 0.0
+
+
+def test_calibration_selection_respects_harm_gate_and_tie_breaks() -> None:
+    summaries = [
+        {
+            "sensor_log_likelihood_scale": 1.0,
+            "action_prototype_scale": 1.0,
+            "regret_tolerance": 0.2,
+            "eligible": False,
+            "mean_trajectory_improvement": 0.20,
+            "nonfallback_fraction": 0.9,
+            "mean_measurement_cost": 1.0,
+            "nonfallback_harmful_fraction": 0.2,
+        },
+        {
+            "sensor_log_likelihood_scale": 2.0,
+            "action_prototype_scale": 0.75,
+            "regret_tolerance": 0.05,
+            "eligible": True,
+            "mean_trajectory_improvement": 0.10,
+            "nonfallback_fraction": 0.5,
+            "mean_measurement_cost": 2.0,
+            "nonfallback_harmful_fraction": 0.01,
+        },
+        {
+            "sensor_log_likelihood_scale": 1.0,
+            "action_prototype_scale": 0.5,
+            "regret_tolerance": 0.05,
+            "eligible": True,
+            "mean_trajectory_improvement": 0.10,
+            "nonfallback_fraction": 0.5,
+            "mean_measurement_cost": 1.0,
+            "nonfallback_harmful_fraction": 0.01,
+        },
+    ]
+    selected = module.select_calibration(summaries)
+    assert selected.gate_passed
+    assert selected.sensor_log_likelihood_scale == 1.0
+    assert selected.action_prototype_scale == 0.5
+
+
+def test_scoring_uses_the_frozen_action() -> None:
+    context = dataclasses.replace(
+        _context(),
+        actions=np.asarray(
+            [[0.0, 0.0], [1.0, 0.0], [-1.0, 0.0]]
         ),
-        relative_losses=np.zeros((2, 2)),
-        length_scale=0.1,
-        task_flat_indices=indices,
-        action_labels=("physical_fallback", "class_0"),
     )
-    target = np.ones(dimension)
-    plan = {
-        "action_index": 1,
-        "nonfallback": True,
-        "certified": True,
-        "sensor_count": 1,
-        "selected_internal_nodes": [5],
-    }
-    scored = module.score_plan(plan, context, target)
+    state = module.decision_state(context, {}, 1.0)
+    plan = module.FrozenPlan(
+        policy="decision_regret",
+        budget=1,
+        certified=True,
+        action_index=1,
+        sensor_count=1,
+        measurement_cost=1.0,
+        selected_internal_nodes=(5,),
+        state=state,
+    )
+    model = module.SourceModel(
+        base_features=np.zeros((1, 1)),
+        sensor_features=np.zeros((1, 8, 1)),
+        full_residuals=np.zeros((1, 2)),
+        task_residuals=np.zeros((1, 2)),
+        class_labels=np.zeros(1, dtype=np.int64),
+        action_prototypes=np.zeros((1, 2)),
+        state_representation=np.zeros((1, 1)),
+        query_representation=np.zeros((1, 1)),
+        base_mean=np.zeros(1),
+        base_scale=np.ones(1),
+        sensor_mean=np.zeros((8, 1)),
+        sensor_scale=np.ones((8, 1)),
+        loss_floor=1e-6,
+        class_counts=np.ones(1, dtype=np.int64),
+    )
+    scored = module.score_plan(
+        plan, context, np.asarray([1.0, 0.0]), model
+    )
+    assert scored["physical_task_mse"] == 0.0
+    assert scored["fallback_task_mse"] > 0.0
+    assert scored["harmful_vs_fallback"] is False
 
-    assert scored["task_mse"] == 0.0
-    assert scored["full_mse"] == 0.0
-    assert scored["task_fallback_mse"] > 0.0
-    assert scored["full_fallback_mse"] > 0.0
-    assert scored["harmful_vs_task_fallback"] is False
 
-
-def test_source_freezes_paths_before_slicing_future_internal_truth() -> None:
+def test_source_text_freezes_plans_before_target_residual_slice() -> None:
     text = SCRIPT.read_text(encoding="utf-8")
-    path_freeze = text.index("plans: list[dict[str, object]]")
-    target_slice = text.index("target = core.extract_target_residual")
-    assert path_freeze < target_slice
-    prefix = text[path_freeze:target_slice]
-    assert "full_acquisition_path(" in prefix
+    start = text.index("plans: list[FrozenPlan]")
+    target = text.index(
+        "full_target = extract_full_target_residual", start
+    )
+    assert start < target
+    prefix = text[start:target]
+    assert "acquisition_path(" in prefix
     assert "score_plan(" not in prefix
-
-
-def test_workflow_is_file_triggered_and_excludes_official_evaluation() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
-    assert "deform-dlo45-decision-directed-sensing-v2.json" in text
-    assert "runs-on: [self-hosted, gpuserver4090]" in text
-    assert 'test "$RUNNER_NAME" = "workstation1"' in text
-    assert 'test ! -e "$isolated/$dlo/eval"' in text
-    assert "new_data_collection_authorized" in text
-    assert "future_internal_outcome_access_before_action_selection" in text
-    assert "contents: write" not in text
-    assert "secrets." not in text
