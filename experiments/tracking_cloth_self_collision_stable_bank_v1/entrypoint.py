@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from experiments.tracking_cloth_self_collision_selective_twin_v1 import run as parent_run
+from experiments.tracking_cloth_self_collision_selective_twin_v1 import (
+    run as parent_run,
+)
 from experiments.tracking_cloth_self_collision_stable_bank_v1.model import (
     PhysicsFit,
     all_predictions,
