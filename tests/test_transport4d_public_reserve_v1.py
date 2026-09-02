@@ -36,6 +36,7 @@ def fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
         "opened-development",
         "protected-upstream-reserve",
         "opened-confirmation",
+        "cross-repo-protected",
         "new-object-a",
         "new-object-b",
     ):
@@ -77,8 +78,17 @@ def fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
                 "protocol_id": "untouched-test-v5",
                 "eligible_object_count": 1,
             },
+            "causal4d_deform360_holdings_v1": {
+                "repository": "IPS-Stuttgart/Causal4D",
+                "revision": "a" * 40,
+                "path": (
+                    "configs/causal4d_public/deform360_gpuserver6000_holdings_v1.json"
+                ),
+                "git_blob_sha1": "b" * 40,
+                "additional_protected_object_ids": ["cross-repo-protected"],
+            },
         },
-        "additional_protected_object_ids": [],
+        "additional_protected_object_ids": ["cross-repo-protected"],
         "reservation": {
             "include_every_remaining_metadata_object": True,
             "split_rule": "sha256-ranked-first-calibration-remainder-confirmation-v1",
@@ -141,6 +151,7 @@ def test_reserves_every_unprotected_metadata_object_before_numeric_access(
         result["confirmation_object_ids"]
     )
     assert result["reservation_ready"] is True
+    assert "cross-repo-protected" in result["protected_object_ids"]
     assert all(row["numeric_payload_opened"] is False for row in result["objects"])
     boundary = result["information_boundary"]
     assert boundary["target_outcome_opened"] is False
@@ -184,5 +195,22 @@ def test_upstream_roster_identity_mismatch_fails_closed(tmp_path: Path) -> None:
             data_root=root,
             reserve_protocol_path=protocol,
             action_kernel_protocol_path=action_path,
+            untouched_protocol_path=untouched,
+        )
+
+
+def test_cross_repository_roster_mismatch_fails_closed(tmp_path: Path) -> None:
+    root, protocol_path, action, untouched = fixture(tmp_path)
+    protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    protocol["additional_protected_object_ids"] = []
+    unsigned = {key: value for key, value in protocol.items() if key != "protocol_id"}
+    protocol["protocol_id"] = canonical_id(unsigned)
+    write_json(protocol_path, protocol)
+
+    with pytest.raises(ValueError, match="cross-repository protected object roster"):
+        audit_deform360_transport_reserve(
+            data_root=root,
+            reserve_protocol_path=protocol_path,
+            action_kernel_protocol_path=action,
             untouched_protocol_path=untouched,
         )

@@ -14,6 +14,8 @@ PYTHONPATH=src python \
 ```
 
 The command reads object-directory names and `metadata.json` only. It excludes
-every object used or protected by the two bound predecessor protocols and assigns
-all remaining namespaces to calibration or confirmation. It cannot authorize
-numeric payload access.
+every object used or protected by the two bound BayesianPhysTwin predecessor
+protocols and an exact Causal4D holdings binding. The latter conservatively
+protects `085-scarf-cloth`, `170-spider`, and `171-penguin`, which were reserved
+or explored outside the two local rosters. All remaining namespaces are assigned
+to calibration or confirmation. The audit cannot authorize numeric payload access.

@@ -136,8 +136,11 @@ def protected_object_ids(
         raise ValueError("reserve upstream bindings are missing")
     action_binding = upstream.get("action_kernel_v3")
     untouched_binding = upstream.get("untouched_confirmation_v5")
-    if not isinstance(action_binding, Mapping) or not isinstance(
-        untouched_binding, Mapping
+    causal4d_binding = upstream.get("causal4d_deform360_holdings_v1")
+    if (
+        not isinstance(action_binding, Mapping)
+        or not isinstance(untouched_binding, Mapping)
+        or not isinstance(causal4d_binding, Mapping)
     ):
         raise ValueError("reserve upstream protocol bindings are malformed")
     if (
@@ -153,6 +156,20 @@ def protected_object_ids(
         or untouched_protocol.get("protocol_id") != untouched_binding.get("protocol_id")
     ):
         raise ValueError("bound Deform360 untouched-confirmation protocol changed")
+    if causal4d_binding.get("repository") != "IPS-Stuttgart/Causal4D":
+        raise ValueError("Causal4D reserve repository binding changed")
+    if causal4d_binding.get("path") != (
+        "configs/causal4d_public/deform360_gpuserver6000_holdings_v1.json"
+    ):
+        raise ValueError("Causal4D reserve path binding changed")
+    for field_name in ("revision", "git_blob_sha1"):
+        value = causal4d_binding.get(field_name)
+        if (
+            type(value) is not str
+            or len(value) != 40
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError(f"invalid Causal4D reserve {field_name}")
     eligible = _literal_strings(
         untouched_protocol.get("eligible_object_ids"),
         name="untouched eligible_object_ids",
@@ -173,8 +190,17 @@ def protected_object_ids(
         )
     )
     protected.update(eligible)
-    additional = reserve_protocol.get("additional_protected_object_ids", [])
-    protected.update(_literal_strings(additional, name="additional protected objects"))
+    additional = _literal_strings(
+        reserve_protocol.get("additional_protected_object_ids", []),
+        name="additional protected objects",
+    )
+    causal4d_additional = _literal_strings(
+        causal4d_binding.get("additional_protected_object_ids"),
+        name="Causal4D additional protected objects",
+    )
+    if tuple(sorted(additional)) != tuple(sorted(causal4d_additional)):
+        raise ValueError("cross-repository protected object roster differs")
+    protected.update(additional)
     return tuple(sorted(protected))
 
 
