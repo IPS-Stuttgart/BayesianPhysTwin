@@ -1,0 +1,23 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-runtime-census-narrow-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-runtime-census-narrow-v1-20260903",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "root_map_receipt_id": "441a21d960d6b6454828462e1df08fc043e33764966be2fa3ff107d5009084e6",
+  "root_map_id": "f97e453ae01d4092b4498bd531bf3c6c1a2ec87dc8366e418a971a87e2450958",
+  "selected_roots": [
+    "/home/github-runner/.cache/workflows/deform-dlo3-cross-backend-scalar-v1/runs/33476871778-1",
+    "/home/github-runner/.cache/workflows/deform-dlo3-hierarchical-transfers-v1/runs/33536420739-1",
+    "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin"
+  ],
+  "maximum_total_entries": 100000,
+  "numeric_source_payload_read_authorized": true,
+  "pickle_deserialization_authorized": false,
+  "target_payload_read_authorized": false,
+  "target_score_read_authorized": false,
+  "target_dependent_model_selection_authorized": false,
+  "automatic_target_follow_on": false,
+  "paper_claim_authorized": false,
+  "failure_policy": "Retain an empty or partial source census without adding roots or opening any DLO4/DLO5 or protected target artifact."
+}
