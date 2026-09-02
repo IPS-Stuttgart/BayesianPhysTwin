@@ -41,9 +41,18 @@ jobs:
 
           part_root = Path('.github/materialization')
           parts = sorted(part_root.glob('adaptive-policy-tree-v1.part*'))
-          if [path.name for path in parts] != [
-              f'adaptive-policy-tree-v1.part{index:02d}' for index in range(8)
-          ]:
+          expected_parts = [
+              'adaptive-policy-tree-v1.part00',
+              'adaptive-policy-tree-v1.part01',
+              'adaptive-policy-tree-v1.part02',
+              'adaptive-policy-tree-v1.part03',
+              'adaptive-policy-tree-v1.part04a',
+              'adaptive-policy-tree-v1.part04b',
+              'adaptive-policy-tree-v1.part05',
+              'adaptive-policy-tree-v1.part06',
+              'adaptive-policy-tree-v1.part07',
+          ]
+          if [path.name for path in parts] != expected_parts:
               raise SystemExit(f'unexpected payload roster: {[path.name for path in parts]}')
 
           encoded = ''.join(path.read_text(encoding='utf-8').strip() for path in parts)
