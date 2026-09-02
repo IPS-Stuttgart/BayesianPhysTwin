@@ -40,7 +40,6 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$GITHUB_REF" = \
             "refs/heads/research/interventional-cause-estimation-v1"
-
           chunks=(
             .github/agent-payloads/interventional-cause-estimation-v1.part00.b64
             .github/agent-payloads/interventional-cause-estimation-v1.part01.b64
@@ -50,22 +49,12 @@ jobs:
             .github/agent-payloads/interventional-cause-estimation-v1.part05.b64
             .github/agent-payloads/interventional-cause-estimation-v1.part06.b64
           )
-          for chunk in "${chunks[@]}"; do
-            test -f "$chunk"
-            echo "chunk=$chunk bytes=$(wc -c < "$chunk") sha256=$(sha256sum "$chunk" | cut -d' ' -f1)"
-          done
-
+          for chunk in "${chunks[@]}"; do test -f "$chunk"; done
           payload="$RUNNER_TEMP/interventional-cause-estimation-v1.tgz"
           cat "${chunks[@]}" | tr -d '\r\n' | base64 --decode > "$payload"
-          actual_payload_sha="$(sha256sum "$payload" | cut -d' ' -f1)"
-          echo "payload_bytes=$(wc -c < "$payload")"
-          echo "payload_sha256=$actual_payload_sha"
-          echo "payload_members_begin"
-          tar -tzf "$payload"
-          echo "payload_members_end"
-          test "$actual_payload_sha" = \
-            9d8fd3aa7726a55ab7d79795290da704166d759a39cd2c141935a5b10a2b442d
-
+          printf '%s  %s\n' \
+            9d8fd3aa7726a55ab7d79795290da704166d759a39cd2c141935a5b10a2b442d \
+            "$payload" | sha256sum --check --strict
           destination="$RUNNER_TEMP/why-twin-v2"
           rm -rf "$destination"
           mkdir -p "$destination"
@@ -96,7 +85,6 @@ jobs:
                       raise SystemExit(f"payload escapes destination: {member.name}")
               archive.extractall(destination, filter="data")
           PY
-
           while IFS= read -r relative; do
             install -D -m 0644 "$destination/$relative" "$relative"
           done <<'EOF'
@@ -107,20 +95,32 @@ jobs:
           tests/test_interventional_cause_estimation_v1.py
           EOF
 
-      - name: Validate scientific product
+      - name: Install validation environment
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install -e '.[dev]'
           python -m pip check
+
+      - name: Canonicalize and lint scientific product
+        shell: bash
+        run: |
+          set -euo pipefail
           files=(
             src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
             scripts/science/run_interventional_cause_estimation_design_v1.py
             tests/test_interventional_cause_estimation_v1.py
             tests/test_interventional_cause_estimation_controlled_v1.py
           )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
+
+      - name: Run quantitative attribution tests
+        shell: bash
+        run: |
+          set -euo pipefail
           PYTHONPATH=src python -m pytest -q -p no:cacheprovider \
             tests/test_interventional_cause_identifiability_v1.py \
             tests/test_interventional_cause_attribution_controlled_v1.py \
@@ -173,5 +173,4 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git commit -m 'Add quantitative interventional cause estimation'
-          git push origin \
-            HEAD:research/interventional-cause-estimation-v1
+          git push origin HEAD:research/interventional-cause-estimation-v1
