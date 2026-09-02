@@ -7,7 +7,9 @@ import numpy as np
 import pytest
 
 from experiments.tracking_cloth_action_feasibility_v1 import _data as action_data
-from experiments.tracking_cloth_self_collision_selective_twin_v1.data import Case
+from experiments.tracking_cloth_self_collision_selective_twin_v1.data import (
+    Case,
+)
 
 
 def _protocol() -> dict[str, Any]:
