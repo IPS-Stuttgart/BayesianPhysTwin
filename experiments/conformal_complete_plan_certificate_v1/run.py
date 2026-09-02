@@ -87,9 +87,7 @@ def evaluate(*, resolved_left: bool, calibration_score: float) -> dict[str, Any]
     candidate = decision.candidate_plan_index
     return {
         "resolved_left": resolved_left,
-        "support_miss_probability_upper": (
-            certificate.support_miss_probability_upper
-        ),
+        "support_miss_probability_upper": (certificate.support_miss_probability_upper),
         "calibration_trajectory_count": envelope.trajectory_count,
         "miscoverage": envelope.miscoverage,
         "finite_sample_coverage_lower_bound": (
@@ -107,9 +105,7 @@ def evaluate(*, resolved_left: bool, calibration_score: float) -> dict[str, Any]
         "fallback_reason": decision.fallback_reason,
         "probe_name": plan.probe_name,
         "terminal_action_index": (
-            decision.terminal_action()
-            if decision.output_mode != "sense"
-            else None
+            decision.terminal_action() if decision.output_mode != "sense" else None
         ),
         "terminal_action_by_outcome": plan.terminal_action_by_outcome.tolist(),
         "registered_regret": float(
@@ -164,9 +160,7 @@ def build() -> dict[str, Any]:
         "probes": ["quick_tug", "camera"],
         "support_miss_probability_upper": 0.05,
         "regret_tolerance": 0.25,
-        "plan_scale": (
-            "registered unknown-plan loss width with a 0.1 positive floor"
-        ),
+        "plan_scale": ("registered unknown-plan loss width with a 0.1 positive floor"),
         "calibration": {
             "unit": "complete trajectory",
             "trajectory_count": 4,
@@ -182,9 +176,7 @@ def build() -> dict[str, Any]:
         },
         "phase_diagram": rows,
         "theorem": {
-            "trajectory_score": (
-                "S_j=max_{d,p in C} max(0,R_jdp-B_jdp)/s_p"
-            ),
+            "trajectory_score": ("S_j=max_{d,p in C} max(0,R_jdp-B_jdp)/s_p"),
             "calibrated_plan_upper": "B_new,dp + q_(1-alpha) * s_p",
             "selection_rule": (
                 "execute the unique calibrated minimax complete plan only when "

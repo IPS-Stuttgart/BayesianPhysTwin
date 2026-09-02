@@ -176,9 +176,7 @@ def _candidate_mask(value: object | None, *, size: int) -> BoolArray:
         raise ValueError("candidate_plan_mask must contain booleans")
     mask = np.ascontiguousarray(raw, dtype=np.bool_)
     if mask.ndim != 1 or mask.size != size:
-        raise ValueError(
-            f"candidate_plan_mask must contain exactly {size} entries"
-        )
+        raise ValueError(f"candidate_plan_mask must contain exactly {size} entries")
     if not np.any(mask):
         raise ValueError("candidate_plan_mask must select at least one plan")
     return _immutable_bool(mask)
@@ -354,9 +352,7 @@ def complete_plan_regret_tensor(
     )
     trajectory_count, decision_count, action_count = terminal.shape
     if action_count != represented.direct_plan_count:
-        raise ValueError(
-            "terminal loss action count does not match the certificate"
-        )
+        raise ValueError("terminal loss action count does not match the certificate")
     outcomes = _probe_outcome_tensor(
         probe_outcome_index_by_trajectory_decision_probe,
         trajectory_count=trajectory_count,
@@ -377,9 +373,7 @@ def complete_plan_regret_tensor(
         if plan.mode == "act":
             if plan.direct_action_index is None:
                 raise RuntimeError("direct plan is missing its terminal action")
-            plan_losses[:, :, plan_index] = terminal[
-                :, :, plan.direct_action_index
-            ]
+            plan_losses[:, :, plan_index] = terminal[:, :, plan.direct_action_index]
             continue
         if plan.mode != "sense" or plan.probe_index is None:
             raise RuntimeError("certificate contains an invalid complete plan")
@@ -408,9 +402,7 @@ def complete_plan_regret_tensor(
         probe_costs=costs,
         plan_loss_by_trajectory_decision_plan=_immutable_float64(plan_losses),
         best_plan_loss_by_trajectory_decision=_immutable_float64(best),
-        realized_regret_by_trajectory_decision_plan=_immutable_float64(
-            realized_regret
-        ),
+        realized_regret_by_trajectory_decision_plan=_immutable_float64(realized_regret),
     )
 
 
@@ -449,9 +441,7 @@ def scaled_trajectory_conformal_plan_envelope(
     candidates = _candidate_mask(candidate_plan_mask, size=plan_count)
     alpha = _open_unit_interval(miscoverage, name="miscoverage")
 
-    standardized_excess = (
-        realized - registered
-    ) / scales[None, None, :]
+    standardized_excess = (realized - registered) / scales[None, None, :]
     scores = np.max(
         standardized_excess[:, :, candidates],
         axis=(1, 2),
@@ -542,9 +532,7 @@ def conformal_act_sense_fallback_decision(
     else:
         candidate_plan_index = None
     minimizer_count = int(np.count_nonzero(minimizer_mask))
-    admissible = candidates & (
-        calibrated <= tolerance + _NUMERICAL_ATOL
-    )
+    admissible = candidates & (calibrated <= tolerance + _NUMERICAL_ATOL)
 
     if (
         candidate_plan_index is not None

@@ -149,9 +149,7 @@ def test_scaled_trajectory_envelope_uses_simultaneous_order_statistic() -> None:
     assert envelope.score_quantile == pytest.approx(0.4)
     assert envelope.inflation_by_plan.tolist() == pytest.approx([0.4, 0.8, 1.6])
     assert envelope.finite_sample_coverage_lower_bound == pytest.approx(0.8)
-    assert envelope.trajectory_scores.tolist() == pytest.approx(
-        [0.1, 0.2, 0.3, 0.4]
-    )
+    assert envelope.trajectory_scores.tolist() == pytest.approx([0.1, 0.2, 0.3, 0.4])
     assert not envelope.inflation_by_plan.flags.writeable
     assert not envelope.trajectory_scores.flags.writeable
 
@@ -257,6 +255,4 @@ def test_validation_and_claim_boundary_are_fail_closed() -> None:
             miscoverage=0.0,
         )
     assert "trajectory" in CONFORMAL_COMPLETE_PLAN_CERTIFICATE_CLAIM_BOUNDARY
-    assert "does not validate" in (
-        CONFORMAL_COMPLETE_PLAN_CERTIFICATE_CLAIM_BOUNDARY
-    )
+    assert "does not validate" in (CONFORMAL_COMPLETE_PLAN_CERTIFICATE_CLAIM_BOUNDARY)
