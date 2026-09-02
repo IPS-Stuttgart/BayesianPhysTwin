@@ -17,9 +17,12 @@ from bayesian_phystwin_experiments.poseit_real_decision_protocol import (
     POSEIT_GELSIGHT_FILE_ID,
     POSEIT_REPOSITORY_REVISION,
     load_poseit_preaccess_mapping_constraints,
+    load_poseit_real_decision_method_lock,
     load_poseit_real_decision_protocol,
     poseit_mapping_constraints_config_sha256,
     poseit_mapping_constraints_file_sha256,
+    poseit_method_lock_config_sha256,
+    poseit_method_lock_file_sha256,
     poseit_protocol_config_sha256,
     poseit_protocol_file_sha256,
 )
@@ -168,9 +171,11 @@ def _build_artifacts(
     archive: Path,
     protocol_path: Path,
     mapping_constraints_path: Path,
+    method_lock_path: Path,
     *,
     expected_protocol_sha256: str,
     expected_mapping_constraints_sha256: str,
+    expected_method_lock_sha256: str,
 ) -> tuple[dict[str, Any], bytes]:
     _require(archive.is_file() and not archive.is_symlink(), "archive path is invalid")
     _require(archive.name == ARCHIVE_FILE_NAME, "archive file name changed")
@@ -179,6 +184,7 @@ def _build_artifacts(
         len(expected_mapping_constraints_sha256) == 64,
         "mapping-constraint SHA-256 is malformed",
     )
+    _require(len(expected_method_lock_sha256) == 64, "method-lock SHA-256 is malformed")
     actual_protocol_sha256 = poseit_protocol_file_sha256(protocol_path)
     _require(
         actual_protocol_sha256 == expected_protocol_sha256,
@@ -195,6 +201,16 @@ def _build_artifacts(
     mapping_constraints = load_poseit_preaccess_mapping_constraints(
         mapping_constraints_path,
         parent_protocol_path=protocol_path,
+    )
+    method_lock_file_sha256 = poseit_method_lock_file_sha256(method_lock_path)
+    _require(
+        method_lock_file_sha256 == expected_method_lock_sha256,
+        "method-lock file SHA-256 changed",
+    )
+    method_lock = load_poseit_real_decision_method_lock(
+        method_lock_path,
+        parent_protocol_path=protocol_path,
+        mapping_constraints_path=mapping_constraints_path,
     )
     archive_sha256 = _sha256(archive)
     records, structure = _inventory_members(archive)
@@ -227,6 +243,8 @@ def _build_artifacts(
         "mapping_constraints_config_sha256": (
             poseit_mapping_constraints_config_sha256(mapping_constraints)
         ),
+        "method_lock_file_sha256": method_lock_file_sha256,
+        "method_lock_config_sha256": poseit_method_lock_config_sha256(method_lock),
         "private_member_manifest_sha256": _sha256_bytes(private_manifest_bytes),
         "structure": structure,
         "archive_byte_identity_recorded": True,
@@ -249,6 +267,8 @@ def main() -> int:
     parser.add_argument("--expected-protocol-sha256", required=True)
     parser.add_argument("--mapping-constraints", type=Path, required=True)
     parser.add_argument("--expected-mapping-constraints-sha256", required=True)
+    parser.add_argument("--method-lock", type=Path, required=True)
+    parser.add_argument("--expected-method-lock-sha256", required=True)
     parser.add_argument("--private-member-manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
@@ -262,10 +282,12 @@ def main() -> int:
         arguments.archive.resolve(strict=True),
         arguments.protocol.resolve(strict=True),
         arguments.mapping_constraints.resolve(strict=True),
+        arguments.method_lock.resolve(strict=True),
         expected_protocol_sha256=arguments.expected_protocol_sha256,
         expected_mapping_constraints_sha256=(
             arguments.expected_mapping_constraints_sha256
         ),
+        expected_method_lock_sha256=arguments.expected_method_lock_sha256,
     )
     private_output.parent.mkdir(parents=True, exist_ok=True)
     private_output.write_bytes(private_manifest_bytes)

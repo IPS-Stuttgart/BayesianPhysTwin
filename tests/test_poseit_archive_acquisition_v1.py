@@ -11,6 +11,7 @@ from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin_experiments.poseit_real_decision_protocol import (
     POSEIT_GELSIGHT_FILE_ID,
     poseit_mapping_constraints_file_sha256,
+    poseit_method_lock_file_sha256,
     poseit_protocol_file_sha256,
 )
 
@@ -22,6 +23,7 @@ MAPPING_CONSTRAINTS = (
     / "protocols"
     / "poseit_real_decision_probe_v1_preaccess_mapping_constraints.json"
 )
+METHOD_LOCK = ROOT / "protocols" / "poseit_real_decision_probe_v1_method_lock.json"
 
 
 def _module() -> ModuleType:
@@ -91,10 +93,12 @@ def test_acquisition_streams_exact_file_opaquely_and_writes_receipt(
         receipt,
         PROTOCOL,
         MAPPING_CONSTRAINTS,
+        METHOD_LOCK,
         expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
         expected_mapping_constraints_sha256=(
             poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
         ),
+        expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
         opener=opener,
         timeout_seconds=7.0,
     )
@@ -110,6 +114,9 @@ def test_acquisition_streams_exact_file_opaquely_and_writes_receipt(
     assert result["zip_central_directory_parsed"] is False
     assert result["mapping_constraints_file_sha256"] == (
         poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+    )
+    assert result["method_lock_file_sha256"] == poseit_method_lock_file_sha256(
+        METHOD_LOCK
     )
     assert result["archive_member_names_opened"] is False
     assert result["member_payload_bytes_opened"] is False
@@ -132,10 +139,12 @@ def test_quota_html_is_not_persisted(tmp_path: Path) -> None:
             tmp_path / "receipt.json",
             PROTOCOL,
             MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
             expected_mapping_constraints_sha256=(
                 poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
             ),
+            expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
             opener=lambda request, timeout: response,
         )
 
@@ -167,10 +176,12 @@ def test_interrupted_transfer_is_not_persisted(tmp_path: Path) -> None:
             tmp_path / "receipt.json",
             PROTOCOL,
             MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
             expected_mapping_constraints_sha256=(
                 poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
             ),
+            expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
             opener=lambda request, timeout: response,
         )
 
@@ -208,10 +219,12 @@ def test_acquisition_rejects_unregistered_responses(
             tmp_path / "receipt.json",
             PROTOCOL,
             MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
             expected_mapping_constraints_sha256=(
                 poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
             ),
+            expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
             opener=lambda request, timeout: response,
         )
 
@@ -230,10 +243,12 @@ def test_acquisition_is_write_once(tmp_path: Path) -> None:
             tmp_path / "receipt.json",
             PROTOCOL,
             MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
             expected_mapping_constraints_sha256=(
                 poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
             ),
+            expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
             opener=lambda request, timeout: pytest.fail("network was opened"),
         )
 
@@ -249,8 +264,31 @@ def test_acquisition_rejects_mapping_constraint_drift_before_network(
             tmp_path / "receipt.json",
             PROTOCOL,
             MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
             expected_mapping_constraints_sha256="a" * 64,
+            expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
+            opener=lambda request, timeout: pytest.fail("network was opened"),
+        )
+
+
+def test_acquisition_rejects_method_lock_drift_before_network(
+    tmp_path: Path,
+) -> None:
+    acquisition = _module()
+
+    with pytest.raises(ValueError, match="method-lock file SHA-256"):
+        acquisition._acquire(
+            tmp_path / "gelsight.zip",
+            tmp_path / "receipt.json",
+            PROTOCOL,
+            MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
+            expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
+            expected_mapping_constraints_sha256=(
+                poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
+            ),
+            expected_method_lock_sha256="a" * 64,
             opener=lambda request, timeout: pytest.fail("network was opened"),
         )
 
@@ -270,10 +308,12 @@ def test_acquisition_rejects_unregistered_redirect_host(tmp_path: Path) -> None:
             tmp_path / "receipt.json",
             PROTOCOL,
             MAPPING_CONSTRAINTS,
+            METHOD_LOCK,
             expected_protocol_sha256=poseit_protocol_file_sha256(PROTOCOL),
             expected_mapping_constraints_sha256=(
                 poseit_mapping_constraints_file_sha256(MAPPING_CONSTRAINTS)
             ),
+            expected_method_lock_sha256=poseit_method_lock_file_sha256(METHOD_LOCK),
             opener=lambda request, timeout: response,
         )
 

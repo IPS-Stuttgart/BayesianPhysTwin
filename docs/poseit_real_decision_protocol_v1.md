@@ -99,6 +99,48 @@ an otherwise valid family. This is implementation evidence only. The joint
 belief cannot be fitted, calibrated, or scientifically evaluated until the
 archive-specific feature mapping has passed its earlier gates.
 
+## Source-independent method lock
+
+The remaining fit and analysis choices are frozen in
+`protocols/poseit_real_decision_probe_v1_method_lock.json`, before archive byte
+acquisition. Its file SHA-256 is
+`4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c`.
+It binds the parent protocol, preaccess mapping constraints, and selector-kernel
+revision.
+
+The exact method uses fit-only coordinate standardization and an
+outcome-independent, sign-canonical eight-component PCA over all structurally
+present fit-pose records. Complete fit families form action-major rows in a
+joint Gaussian twin: eight projected pre-shake coordinates and one latent shake
+stability coordinate per pose. `Pass` maps to +1 and all unstable labels map to
+-1. The empirical covariance uses 25% diagonal shrinkage and fixed relative
+jitter. If a fit family is not structurally complete across all 16 poses, the
+archive gate must fail before an outcome payload is opened.
+
+Five calibration objects supply one shared simultaneous certificate. For each
+object, the score is the maximum positive standardized latent-response
+shortfall over every valid-anchor family, selector, budget, and available
+action. The 80% finite-sample rank is the fifth of five object scores. Subtracting
+that multiplier in standardized latent space yields a lower stability
+probability through the standard-normal CDF. A policy takes the lexicographically
+first pose whose lower bound reaches 0.5 and otherwise abstains. The same
+certificate is used by both adaptive selectors and all controls.
+
+The random-order control is also no longer underspecified. It is the exact mean
+over 256 full pose orders derived by the locked SHA-256 rule; the order-roster
+digest is
+`889f81c2ec6b1f33e3f55e7a2d9e6f4e879b9bf511ec8a5ead9933d45fc9bee3`.
+Family regret is integrated over budgets 0--3, then averaged within object
+before inference. False-safe rate is conditional on taking a certified action;
+unsafe-action rate uses every family-budget decision, including abstentions.
+Object-level coverage requires simultaneous coverage across every family,
+selector, budget, and available action.
+
+`poseit_real_decision_analysis.py` implements this fit, calibration, evaluation,
+source gate, and one-shot confirmation analysis. Its tests use synthetic
+families only. They do not fit PoseIt, inspect an archive member, or constitute
+scientific evidence.
+
 The repository contains inconsistent license signals: its license file is CC0
 1.0, while its README displays CC BY-SA 4.0 and MIT badges. This does not prevent
 an attributed academic analysis, but raw archive bytes must not be redistributed
@@ -132,7 +174,9 @@ PYTHONPATH=src python \
   --protocol protocols/poseit_real_decision_probe_v1.json \
   --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4 \
   --mapping-constraints protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json \
-  --expected-mapping-constraints-sha256 8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210
+  --expected-mapping-constraints-sha256 8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210 \
+  --method-lock protocols/poseit_real_decision_probe_v1_method_lock.json \
+  --expected-method-lock-sha256 4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c
 ```
 
 The acquisition tool accepts only the frozen official Google Drive file ID and
@@ -153,6 +197,8 @@ PYTHONPATH=src python \
   --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4 \
   --mapping-constraints protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json \
   --expected-mapping-constraints-sha256 8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210 \
+  --method-lock protocols/poseit_real_decision_probe_v1_method_lock.json \
+  --expected-method-lock-sha256 4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c \
   --private-member-manifest /home/fpfaff/source-only/poseit-real-decision-v1/structure/private-member-manifest-v1.json \
   --output /home/fpfaff/source-only/poseit-real-decision-v1/structure/archive-structure-lock-v1.json
 ```

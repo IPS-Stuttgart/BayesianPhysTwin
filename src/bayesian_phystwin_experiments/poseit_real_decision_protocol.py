@@ -14,6 +14,8 @@ SCHEMA_VERSION = 1
 PROTOCOL_ID = "poseit-real-decision-probe-protocol-v1"
 MAPPING_CONSTRAINTS_SCHEMA_VERSION = 1
 MAPPING_CONSTRAINTS_ID = "poseit-real-decision-preaccess-mapping-constraints-v1"
+METHOD_LOCK_SCHEMA_VERSION = 1
+METHOD_LOCK_ID = "poseit-real-decision-method-lock-v1"
 POSEIT_REPOSITORY_REVISION = "5e290eb024f25b1f4aa602724e6869e512aca434"
 POSEIT_ARXIV_ID = "2209.05022"
 POSEIT_DRIVE_FOLDER_ID = "1CQiMPBEVvRMrDBSIRVeuwyuUOCOesfMc"
@@ -36,6 +38,12 @@ _PROTOCOL_FILE_SHA256 = (
 )
 _CANONICAL_MAPPING_CONSTRAINTS_SHA256 = (
     "75551bbdc63021d768bbc5f44ba9cc38a56592689306a11dff4912abf3f18682"
+)
+_METHOD_LOCK_FILE_SHA256 = (
+    "4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c"
+)
+_CANONICAL_METHOD_LOCK_SHA256 = (
+    "96ca3eb18ced1d01a42aeadc3ec71aa1042719be3b2f524d9b60df675eb5d148"
 )
 
 
@@ -82,6 +90,18 @@ def poseit_mapping_constraints_config_sha256(payload: Mapping[str, Any]) -> str:
 
 def poseit_mapping_constraints_file_sha256(path: str | Path) -> str:
     """Return the byte digest of the preaccess mapping-constraint file."""
+
+    return poseit_protocol_file_sha256(path)
+
+
+def poseit_method_lock_config_sha256(payload: Mapping[str, Any]) -> str:
+    """Return the canonical digest of a parsed PoseIt method lock."""
+
+    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+
+
+def poseit_method_lock_file_sha256(path: str | Path) -> str:
+    """Return the byte digest of the PoseIt method lock."""
 
     return poseit_protocol_file_sha256(path)
 
@@ -508,6 +528,200 @@ def load_poseit_preaccess_mapping_constraints(
     return dict(payload)
 
 
+def load_poseit_real_decision_method_lock(
+    path: str | Path,
+    *,
+    parent_protocol_path: str | Path | None = None,
+    mapping_constraints_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Load the source-independent fit, calibration, and analysis lock."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(isinstance(payload, Mapping), "method lock must be a JSON object")
+    _require(
+        payload.get("schema_version") == METHOD_LOCK_SCHEMA_VERSION,
+        "method-lock schema changed",
+    )
+    _require(payload.get("contract") == METHOD_LOCK_ID, "method-lock ID changed")
+    _require(
+        payload.get("status")
+        == "frozen-source-independently-before-archive-byte-acquisition",
+        "method-lock status changed",
+    )
+
+    parents = _mapping(
+        payload.get("parent_artifacts"), message="method-lock parents are missing"
+    )
+    protocol = _mapping(
+        parents.get("protocol"), message="method-lock protocol parent is missing"
+    )
+    _require(protocol.get("contract") == PROTOCOL_ID, "parent protocol changed")
+    _require(
+        protocol.get("file_sha256") == _PROTOCOL_FILE_SHA256,
+        "parent protocol file digest changed",
+    )
+    _require(
+        protocol.get("config_sha256") == _CANONICAL_CONFIG_SHA256,
+        "parent protocol config digest changed",
+    )
+    mapping = _mapping(
+        parents.get("mapping_constraints"),
+        message="method-lock mapping parent is missing",
+    )
+    _require(
+        mapping.get("contract") == MAPPING_CONSTRAINTS_ID,
+        "parent mapping contract changed",
+    )
+    _require(
+        mapping.get("file_sha256")
+        == "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210",
+        "parent mapping file digest changed",
+    )
+    _require(
+        mapping.get("config_sha256") == _CANONICAL_MAPPING_CONSTRAINTS_SHA256,
+        "parent mapping config digest changed",
+    )
+    selector = _mapping(
+        parents.get("selector_kernel"),
+        message="method-lock selector parent is missing",
+    )
+    _require(
+        selector.get("file_sha256")
+        == "12da0efa6af9abd8b9be0122a626e318283d5d1472df339bd8c43badf84bc15f",
+        "selector-kernel digest changed",
+    )
+    _require(
+        selector.get("freeze_commit") == "aedb37e59067346ca4e93daa5e39188f748ad632",
+        "selector-kernel freeze commit changed",
+    )
+
+    preprocessing = _mapping(
+        payload.get("preprocessing"), message="preprocessing lock is missing"
+    )
+    standardization = _mapping(
+        preprocessing.get("fit_only_standardization"),
+        message="standardization lock is missing",
+    )
+    _require(
+        standardization.get("uses_outcome") is False,
+        "outcome entered standardization",
+    )
+    reduction = _mapping(
+        preprocessing.get("dimension_reduction"),
+        message="dimension-reduction lock is missing",
+    )
+    _require(reduction.get("component_count") == 8, "PCA component count changed")
+
+    twin = _mapping(
+        payload.get("latent_response_twin"), message="latent twin lock is missing"
+    )
+    _require(
+        twin.get("selectors_share_exact_state") is True,
+        "selectors no longer share one state",
+    )
+    latent = _mapping(
+        twin.get("latent_shake_stability"), message="latent label map is missing"
+    )
+    _require(
+        latent == {"Pass": 1.0, "Slip": -1.0, "Drop": -1.0, "Not present": -1.0},
+        "latent label map changed",
+    )
+    covariance = _mapping(
+        twin.get("covariance"), message="twin covariance lock is missing"
+    )
+    _require(
+        covariance.get("diagonal_shrinkage") == 0.25,
+        "covariance shrinkage changed",
+    )
+
+    calibration = _mapping(
+        payload.get("calibration"), message="calibration lock is missing"
+    )
+    _require(
+        calibration.get("calibration_object_count") == CALIBRATION_COUNT,
+        "calibration object count changed",
+    )
+    _require(calibration.get("coverage") == 0.8, "coverage changed")
+    _require(calibration.get("split_conformal_rank") == 5, "calibration rank changed")
+    _require(
+        calibration.get("shared_across_methods") is True,
+        "certificate is no longer shared",
+    )
+    _require(
+        calibration.get("uses_confirmation") is False,
+        "confirmation entered calibration",
+    )
+
+    aggregation = _mapping(
+        payload.get("decision_and_aggregation"),
+        message="decision aggregation lock is missing",
+    )
+    fixed = _mapping(
+        aggregation.get("fixed_order_control"),
+        message="fixed-order control is missing",
+    )
+    _require(fixed.get("count") == 256, "fixed-order count changed")
+    _require(
+        fixed.get("domain_separator") == "poseit-real-decision-fixed-probe-order-v1",
+        "fixed-order domain changed",
+    )
+    _require(
+        fixed.get("roster_sha256")
+        == "889f81c2ec6b1f33e3f55e7a2d9e6f4e879b9bf511ec8a5ead9933d45fc9bee3",
+        "fixed-order roster changed",
+    )
+
+    boundaries = _mapping(payload.get("boundaries"), message="boundaries are missing")
+    for key in (
+        "archive_member_names_opened",
+        "archive_payload_bytes_acquired",
+        "confirmation_opened",
+        "held_v8_accessed",
+        "method_choice_from_any_poseit_outcome",
+        "phase_labels_opened",
+        "sensor_payloads_opened",
+    ):
+        _require(boundaries.get(key) is False, f"method boundary changed: {key}")
+
+    if parent_protocol_path is not None:
+        parent_protocol = load_poseit_real_decision_protocol(parent_protocol_path)
+        _require(
+            poseit_protocol_file_sha256(parent_protocol_path)
+            == protocol.get("file_sha256"),
+            "bound parent protocol file changed",
+        )
+        _require(
+            poseit_protocol_config_sha256(parent_protocol)
+            == protocol.get("config_sha256"),
+            "bound parent protocol config changed",
+        )
+    if mapping_constraints_path is not None:
+        parent_mapping = load_poseit_preaccess_mapping_constraints(
+            mapping_constraints_path,
+            parent_protocol_path=parent_protocol_path,
+        )
+        _require(
+            poseit_mapping_constraints_file_sha256(mapping_constraints_path)
+            == mapping.get("file_sha256"),
+            "bound mapping-constraint file changed",
+        )
+        _require(
+            poseit_mapping_constraints_config_sha256(parent_mapping)
+            == mapping.get("config_sha256"),
+            "bound mapping-constraint config changed",
+        )
+
+    _require(
+        poseit_method_lock_file_sha256(path) == _METHOD_LOCK_FILE_SHA256,
+        "method-lock file bytes drifted",
+    )
+    _require(
+        poseit_method_lock_config_sha256(payload) == _CANONICAL_METHOD_LOCK_SHA256,
+        "method-lock configuration drifted",
+    )
+    return dict(payload)
+
+
 __all__ = [
     "BUDGETS",
     "CALIBRATION_COUNT",
@@ -515,6 +729,7 @@ __all__ = [
     "FIT_COUNT",
     "MANDATORY_ANCHOR",
     "MAPPING_CONSTRAINTS_ID",
+    "METHOD_LOCK_ID",
     "OBJECT_COUNT",
     "POSEIT_DRIVE_FOLDER_ID",
     "POSEIT_GELSIGHT_FILE_ID",
@@ -529,8 +744,11 @@ __all__ = [
     "derive_poseit_object_cohort",
     "load_poseit_real_decision_protocol",
     "load_poseit_preaccess_mapping_constraints",
+    "load_poseit_real_decision_method_lock",
     "poseit_mapping_constraints_config_sha256",
     "poseit_mapping_constraints_file_sha256",
+    "poseit_method_lock_config_sha256",
+    "poseit_method_lock_file_sha256",
     "poseit_protocol_config_sha256",
     "poseit_protocol_file_sha256",
 ]

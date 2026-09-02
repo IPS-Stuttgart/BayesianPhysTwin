@@ -18,9 +18,12 @@ from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin_experiments.poseit_real_decision_protocol import (
     POSEIT_GELSIGHT_FILE_ID,
     load_poseit_preaccess_mapping_constraints,
+    load_poseit_real_decision_method_lock,
     load_poseit_real_decision_protocol,
     poseit_mapping_constraints_config_sha256,
     poseit_mapping_constraints_file_sha256,
+    poseit_method_lock_config_sha256,
+    poseit_method_lock_file_sha256,
     poseit_protocol_config_sha256,
     poseit_protocol_file_sha256,
 )
@@ -140,9 +143,11 @@ def _acquire(
     receipt: Path,
     protocol_path: Path,
     mapping_constraints_path: Path,
+    method_lock_path: Path,
     *,
     expected_protocol_sha256: str,
     expected_mapping_constraints_sha256: str,
+    expected_method_lock_sha256: str,
     opener: _Opener = _default_open,
     timeout_seconds: float = 60.0,
 ) -> dict[str, Any]:
@@ -156,6 +161,7 @@ def _acquire(
         len(expected_mapping_constraints_sha256) == 64,
         "mapping-constraint SHA-256 is malformed",
     )
+    _require(len(expected_method_lock_sha256) == 64, "method-lock SHA-256 is malformed")
     protocol_file_sha256 = poseit_protocol_file_sha256(protocol_path)
     _require(
         protocol_file_sha256 == expected_protocol_sha256,
@@ -172,6 +178,16 @@ def _acquire(
     mapping_constraints = load_poseit_preaccess_mapping_constraints(
         mapping_constraints_path,
         parent_protocol_path=protocol_path,
+    )
+    method_lock_file_sha256 = poseit_method_lock_file_sha256(method_lock_path)
+    _require(
+        method_lock_file_sha256 == expected_method_lock_sha256,
+        "method-lock file SHA-256 changed",
+    )
+    method_lock = load_poseit_real_decision_method_lock(
+        method_lock_path,
+        parent_protocol_path=protocol_path,
+        mapping_constraints_path=mapping_constraints_path,
     )
 
     archive.parent.mkdir(parents=True, exist_ok=True)
@@ -211,6 +227,8 @@ def _acquire(
             "mapping_constraints_config_sha256": (
                 poseit_mapping_constraints_config_sha256(mapping_constraints)
             ),
+            "method_lock_file_sha256": method_lock_file_sha256,
+            "method_lock_config_sha256": poseit_method_lock_config_sha256(method_lock),
             "archive_bytes_streamed_opaquely": True,
             "zip_central_directory_parsed": False,
             "archive_member_names_opened": False,
@@ -253,6 +271,8 @@ def main() -> int:
     parser.add_argument("--expected-protocol-sha256", required=True)
     parser.add_argument("--mapping-constraints", type=Path, required=True)
     parser.add_argument("--expected-mapping-constraints-sha256", required=True)
+    parser.add_argument("--method-lock", type=Path, required=True)
+    parser.add_argument("--expected-method-lock-sha256", required=True)
     parser.add_argument("--timeout-seconds", type=float, default=60.0)
     arguments = parser.parse_args()
     result = _acquire(
@@ -260,10 +280,12 @@ def main() -> int:
         arguments.receipt.resolve(),
         arguments.protocol.resolve(strict=True),
         arguments.mapping_constraints.resolve(strict=True),
+        arguments.method_lock.resolve(strict=True),
         expected_protocol_sha256=arguments.expected_protocol_sha256,
         expected_mapping_constraints_sha256=(
             arguments.expected_mapping_constraints_sha256
         ),
+        expected_method_lock_sha256=arguments.expected_method_lock_sha256,
         timeout_seconds=arguments.timeout_seconds,
     )
     print(
