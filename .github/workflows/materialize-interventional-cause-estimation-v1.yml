@@ -52,13 +52,19 @@ jobs:
           )
           for chunk in "${chunks[@]}"; do
             test -f "$chunk"
+            echo "chunk=$chunk bytes=$(wc -c < "$chunk") sha256=$(sha256sum "$chunk" | cut -d' ' -f1)"
           done
 
           payload="$RUNNER_TEMP/interventional-cause-estimation-v1.tgz"
           cat "${chunks[@]}" | tr -d '\r\n' | base64 --decode > "$payload"
-          printf '%s  %s\n' \
-            dbd571abd146231b3fa6d2e2c4b4be40907ca875ec6eecc52a0c016a425b53c5 \
-            "$payload" | sha256sum --check --strict
+          actual_payload_sha="$(sha256sum "$payload" | cut -d' ' -f1)"
+          echo "payload_bytes=$(wc -c < "$payload")"
+          echo "payload_sha256=$actual_payload_sha"
+          echo "payload_members_begin"
+          tar -tzf "$payload"
+          echo "payload_members_end"
+          test "$actual_payload_sha" = \
+            dbd571abd146231b3fa6d2e2c4b4be40907ca875ec6eecc52a0c016a425b53c5
 
           destination="$RUNNER_TEMP/why-twin-v2"
           rm -rf "$destination"
