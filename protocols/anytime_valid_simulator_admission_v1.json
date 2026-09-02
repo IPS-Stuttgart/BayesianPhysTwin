@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "contract": "anytime-valid-simulator-admission-validation-v1",
+  "status": "frozen-before-controlled-execution",
+  "scientific_question": "Can a physical-twin correction be continuously monitored, promoted, revoked, and optionally re-entered while controlling the probability of any false promotion under optional stopping for a registered clipped paired loss?",
+  "guarantee": {
+    "null": "For every fallback epoch, the conditional mean clipped normalized fallback-minus-candidate gain is at most gain_margin given the revealed past.",
+    "e_process": "A fixed convex mixture of products prod_t(1+lambda*x_t), where x_t=(gain_t-gain_margin)/(1+gain_margin).",
+    "admission_boundary": "1/alpha_epoch",
+    "epoch_budget": "alpha/(epoch*(epoch+1))",
+    "familywise_statement": "Ville's inequality within each epoch and the telescoping alpha budget bound the probability of at least one false admission over arbitrarily many monitored times and re-entry epochs by alpha.",
+    "delayed_feedback": "The candidate and fallback forecasts are both frozen before each outcome; paired loss is revealed later and can change deployment only for subsequent decisions.",
+    "boundary": "The guarantee applies to the registered clipped loss and conditional-mean null. It is not an unclipped-risk, arbitrary-distribution, causal-identification, physical-validity, deployment-safety, or collision-safety guarantee."
+  },
+  "controller": {
+    "alpha": 0.05,
+    "beta": 0.05,
+    "loss_cap": 1.0,
+    "gain_margin": 0.0,
+    "harm_margin": 0.0,
+    "allow_reentry": true,
+    "lambdas": [0.01, 0.025, 0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9]
+  },
+  "controlled_validation": {
+    "master_seed": 20260902,
+    "replications": 2000,
+    "horizon": 500,
+    "minimum_naive_monitoring_step": 10,
+    "naive_one_sided_z": 1.6448536269514722,
+    "scenarios": [
+      {
+        "name": "iid_zero_mean_null",
+        "kind": "bernoulli_gain",
+        "positive_gain": 0.2,
+        "negative_gain": -0.2,
+        "positive_probability": 0.5
+      },
+      {
+        "name": "adaptive_amplitude_zero_mean_null",
+        "kind": "adaptive_rademacher_gain",
+        "low_amplitude": 0.05,
+        "high_amplitude": 0.45,
+        "switch_on_positive_running_sum": true
+      },
+      {
+        "name": "negative_mean_null",
+        "kind": "bernoulli_gain",
+        "positive_gain": 0.2,
+        "negative_gain": -0.2,
+        "positive_probability": 0.4
+      },
+      {
+        "name": "beneficial_small",
+        "kind": "bernoulli_gain",
+        "positive_gain": 0.2,
+        "negative_gain": -0.2,
+        "positive_probability": 0.65
+      },
+      {
+        "name": "beneficial_large_then_harmful_shift",
+        "kind": "piecewise_bernoulli_gain",
+        "positive_gain": 0.2,
+        "negative_gain": -0.2,
+        "pre_shift_positive_probability": 0.8,
+        "post_shift_positive_probability": 0.2,
+        "shift_step": 250
+      }
+    ]
+  },
+  "comparators": {
+    "naive_repeated_z": "A conventional one-sided z threshold is checked after every reveal without multiplicity correction; it is intentionally not anytime-valid.",
+    "fixed_horizon_z": "The same one-sided z threshold is evaluated only once at the registered horizon.",
+    "unguarded": "Deploy the candidate from the first decision and never revoke.",
+    "fixed_source_guard": "A one-time source decision that cannot react to a later domain shift."
+  },
+  "primary_readouts": [
+    "ever-admitted fraction under each null",
+    "naive repeated-test false-admission fraction",
+    "fixed-horizon false-positive fraction",
+    "power and median admission delay under beneficial gain",
+    "revocation fraction and delay after abrupt harmful shift",
+    "post-shift harmful candidate exposures",
+    "cumulative clipped regret relative to exact fallback",
+    "exact fallback object-identity violations"
+  ],
+  "promotion_gate": {
+    "implementation": [
+      "all focused unit tests pass",
+      "zero exact-fallback identity violations",
+      "every emitted e-value and boundary is finite or positive infinity by contract"
+    ],
+    "controlled_mechanism": [
+      "anytime-valid admission is no more frequent than the naive repeated test in both zero-mean nulls",
+      "beneficial_small has nonzero admission power",
+      "the shifted scenario has nonzero admission and nonzero subsequent revocation",
+      "re-entry epoch budgets are strictly decreasing and have total at most alpha"
+    ],
+    "claim_boundary": "Passing supports the sequential mechanism and optional-stopping theorem implementation. It does not by itself establish real-data utility or make a deployment-safety claim."
+  },
+  "real_replay_contract": {
+    "required_columns": [
+      "stream_id",
+      "reveal_order",
+      "candidate_loss",
+      "fallback_loss"
+    ],
+    "optional_columns": [
+      "decision_id",
+      "domain",
+      "shift_label"
+    ],
+    "requirements": [
+      "candidate and fallback forecasts must both be frozen before outcome access",
+      "loss_cap and all thresholds must be selected without target-outcome tuning",
+      "reveal order must be chronological or generated independently of outcome values",
+      "candidate identity must remain fixed inside one evidence stream"
+    ]
+  },
+  "paper_claim_authorized": false
+}
