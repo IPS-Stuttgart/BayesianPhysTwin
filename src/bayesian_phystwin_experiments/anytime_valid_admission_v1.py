@@ -572,7 +572,7 @@ class AnytimeAdmissionController(Generic[T]):
                 "probability of any false admission by alpha. The heavy-tailed "
                 "restart mixture gives an anytime-valid revocation monitor for "
                 "an unknown post-admission change time under its reverse-gain "
-                "null. These are not deployment-safety or unclipped-loss "
-                "guarantees."
+                "null. This is not a deployment-safety or unclipped-loss "
+                "guarantee."
             ),
         }
