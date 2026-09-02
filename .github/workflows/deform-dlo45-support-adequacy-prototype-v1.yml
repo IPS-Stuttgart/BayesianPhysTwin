@@ -1,0 +1,322 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #868
+# workflow-expiry: 2026-09-15
+name: DEFORM DLO4/DLO5 support-adequacy prototype
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-support-adequacy-prototype-v1
+    paths:
+      - ".github/workflows/deform-dlo45-support-adequacy-prototype-v1.yml"
+      - ".github/requests/deform-dlo45-support-adequacy-v1.json"
+      - ".github/quality/workflow-inventory-budget-v1.json"
+      - "experiments/deform_dlo45_decision_identifiability_v1/support_adequacy_audit.py"
+      - "experiments/deform_dlo45_decision_identifiability_v1/support_adequacy_protocol.json"
+      - "tests/test_deform_dlo45_support_adequacy_v1.py"
+      - "tests/test_workflow_inventory_budget.py"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: deform-dlo45-support-adequacy-prototype-v1
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PARENT_RUN_ID: "33473378340"
+  PARENT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/protocol.json
+  GATE_AUDIT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/gate_audit_protocol.json
+  SUPPORT_PROTOCOL: experiments/deform_dlo45_decision_identifiability_v1/support_adequacy_protocol.json
+  REQUEST: .github/requests/deform-dlo45-support-adequacy-v1.json
+  DEFORM_COMMIT: b73b8b8ecc033caefa693fab7898741d4e6dbeff
+  RUN_KEY: official-dlo45-support-adequacy-prototype-20260902-v1
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact prototype revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Set up pinned Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install and validate prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            experiments/deform_dlo45_decision_identifiability_v1/support_adequacy_audit.py
+            tests/test_deform_dlo45_support_adequacy_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_support_adequacy_v1.py \
+            tests/test_deform_dlo45_decision_gate_audit_v1.py \
+            tests/test_deform_dlo45_decision_identifiability_v1.py \
+            tests/test_query_quotient_belief_v1.py \
+            tests/test_workflow_inventory_budget.py
+          python -m \
+            experiments.deform_dlo45_decision_identifiability_v1.support_adequacy_audit \
+            self-test
+
+      - name: Verify frozen public-data boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          protocol = json.loads(Path(os.environ["SUPPORT_PROTOCOL"]).read_text())
+          request = json.loads(Path(os.environ["REQUEST"]).read_text())
+          assert protocol["contract"] == "deform-dlo45-support-adequacy-audit-v1"
+          assert protocol["parent_workflow_run_id"] == int(os.environ["PARENT_RUN_ID"])
+          assert protocol["dataset_commit"] == os.environ["DEFORM_COMMIT"]
+          assert protocol["target_tuning"] is False
+          assert protocol["target_outcomes_used_for_policy"] is False
+          assert protocol["future_residual_distance_used_for_policy"] is False
+          assert protocol["paper_claim_authorized"] is False
+          assert request["status"] == "authorized-retrospective-development"
+          assert request["source_only_policy_selection"] is True
+          assert request["target_tuning"] is False
+          assert request["target_retries"] is False
+          assert request["paper_claim_authorized"] is False
+          PY
+
+      - name: Download exact parent artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          run-id: ${{ env.PARENT_RUN_ID }}
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: ${{ runner.temp }}/parent
+
+      - name: Resolve and verify parent evidence
+        id: parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/parent"
+          source_model="$(find "${root}" -type f -name source_model.npz -print -quit)"
+          test -n "${source_model}"
+          source_dir="$(dirname "${source_model}")"
+          source_result="${source_dir}/source_result.json"
+          source_seal="${source_dir}/source_seal.json"
+          target_result="$(find "${root}" -type f -name target_result.json -print -quit)"
+          for path in \
+            "${source_model}" \
+            "${source_result}" \
+            "${source_seal}" \
+            "${target_result}"; do
+            test -s "${path}"
+          done
+          SOURCE_MODEL="${source_model}" \
+          SOURCE_RESULT="${source_result}" \
+          SOURCE_SEAL="${source_seal}" \
+          TARGET_RESULT="${target_result}" \
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def digest(path: str) -> str:
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          source_result = json.loads(Path(os.environ["SOURCE_RESULT"]).read_text())
+          source_seal = json.loads(Path(os.environ["SOURCE_SEAL"]).read_text())
+          target = json.loads(Path(os.environ["TARGET_RESULT"]).read_text())
+          assert source_result["contract"] == "deform-dlo45-decision-identifiability-v1"
+          assert source_result["stage"] == "source"
+          assert source_seal["source_model_sha256"] == digest(os.environ["SOURCE_MODEL"])
+          assert source_seal["source_result_sha256"] == digest(os.environ["SOURCE_RESULT"])
+          assert target["aggregate"]["decision_count"] == 532
+          assert target["aggregate"]["certificate_nonfallback_count"] == 82
+          PY
+          echo "source_model=${source_model}" >> "${GITHUB_OUTPUT}"
+          echo "source_result=${source_result}" >> "${GITHUB_OUTPUT}"
+          echo "source_seal=${source_seal}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out source-only DEFORM partitions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: roahmlab/DEFORM
+          ref: ${{ env.DEFORM_COMMIT }}
+          path: upstream-source
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/train
+            data_set/DLO5/train
+          sparse-checkout-cone-mode: false
+
+      - name: Fit and seal support-adequacy policy on source trajectories
+        shell: bash
+        env:
+          SOURCE_MODEL: ${{ steps.parent.outputs.source_model }}
+          SOURCE_RESULT: ${{ steps.parent.outputs.source_result }}
+          SOURCE_SEAL: ${{ steps.parent.outputs.source_seal }}
+        run: |
+          set -euo pipefail
+          root="${GITHUB_WORKSPACE}/upstream-source/data_set"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/train" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 56
+            test ! -e "${root}/${dlo}/eval"
+          done
+          source_out="${RUNNER_TEMP}/support-adequacy-source"
+          test ! -e "${source_out}"
+          python -m \
+            experiments.deform_dlo45_decision_identifiability_v1.support_adequacy_audit \
+            source \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --gate-audit-protocol "${GATE_AUDIT_PROTOCOL}" \
+            --support-protocol "${SUPPORT_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${root}" \
+            --output-root "${source_out}" \
+            --parent-source-model "${SOURCE_MODEL}" \
+            --parent-source-result "${SOURCE_RESULT}" \
+            --parent-source-seal "${SOURCE_SEAL}"
+          test -s "${source_out}/source_result.json"
+          test -s "${source_out}/policy.json"
+          test -s "${source_out}/source_seal.json"
+          jq -e '.target_data_read == false' "${source_out}/source_result.json"
+          jq -e '.target_outcomes_used_for_policy == false' \
+            "${source_out}/source_result.json"
+          rm -rf upstream-source
+          test ! -e upstream-source
+
+      - name: Check out held DEFORM partitions after source sealing
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: roahmlab/DEFORM
+          ref: ${{ env.DEFORM_COMMIT }}
+          path: upstream-target
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/eval
+            data_set/DLO5/eval
+          sparse-checkout-cone-mode: false
+
+      - name: Apply frozen outer policy to held trajectories
+        shell: bash
+        env:
+          SOURCE_MODEL: ${{ steps.parent.outputs.source_model }}
+          SOURCE_SEAL: ${{ steps.parent.outputs.source_seal }}
+        run: |
+          set -euo pipefail
+          root="${GITHUB_WORKSPACE}/upstream-target/data_set"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/eval" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 14
+            test ! -e "${root}/${dlo}/train"
+          done
+          source_out="${RUNNER_TEMP}/support-adequacy-source"
+          target_out="${RUNNER_TEMP}/support-adequacy-target"
+          test ! -e "${target_out}"
+          python -m \
+            experiments.deform_dlo45_decision_identifiability_v1.support_adequacy_audit \
+            target \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --gate-audit-protocol "${GATE_AUDIT_PROTOCOL}" \
+            --support-protocol "${SUPPORT_PROTOCOL}" \
+            --request "${REQUEST}" \
+            --dataset-root "${root}" \
+            --output-root "${target_out}" \
+            --parent-source-model "${SOURCE_MODEL}" \
+            --parent-source-seal "${SOURCE_SEAL}" \
+            --source-result "${source_out}/source_result.json" \
+            --policy "${source_out}/policy.json" \
+            --source-seal "${source_out}/source_seal.json"
+          jq -e '.status == "completed"' "${target_out}/result.json"
+          jq -e '.target_policy_tuning == false' "${target_out}/result.json"
+          jq -e '.target_outcomes_used_for_policy == false' \
+            "${target_out}/result.json"
+          cat "${target_out}/README.md" >> "${GITHUB_STEP_SUMMARY}"
+          rm -rf upstream-target
+
+      - name: Upload complete prototype evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dlo45-support-adequacy-prototype-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/support-adequacy-source/source_result.json
+            ${{ runner.temp }}/support-adequacy-source/policy.json
+            ${{ runner.temp }}/support-adequacy-source/source_seal.json
+            ${{ runner.temp }}/support-adequacy-target/result.json
+            ${{ runner.temp }}/support-adequacy-target/per_decision.jsonl
+            ${{ runner.temp }}/support-adequacy-target/README.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit compact prototype result
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="results/science/deform_dlo45_support_adequacy_v1/${RUN_KEY}"
+          test ! -e "${destination}"
+          mkdir -p "${destination}"
+          cp "${RUNNER_TEMP}/support-adequacy-source/source_result.json" \
+            "${destination}/source_result.json"
+          cp "${RUNNER_TEMP}/support-adequacy-source/policy.json" \
+            "${destination}/policy.json"
+          cp "${RUNNER_TEMP}/support-adequacy-source/source_seal.json" \
+            "${destination}/source_seal.json"
+          cp "${RUNNER_TEMP}/support-adequacy-target/result.json" \
+            "${destination}/result.json"
+          cp "${RUNNER_TEMP}/support-adequacy-target/per_decision.jsonl" \
+            "${destination}/per_decision.jsonl"
+          cp "${RUNNER_TEMP}/support-adequacy-target/README.md" \
+            "${destination}/README.md"
+          cat > "${destination}/provenance.json" <<EOF
+          {
+            "prototype_revision": "${GITHUB_SHA}",
+            "workflow_run_id": ${GITHUB_RUN_ID},
+            "parent_workflow_run_id": ${PARENT_RUN_ID},
+            "dataset_repository": "roahmlab/DEFORM",
+            "dataset_commit": "${DEFORM_COMMIT}",
+            "target_tuning": false,
+            "target_outcomes_used_for_policy": false,
+            "target_retries": false,
+            "paper_claim_authorized": false
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${destination}"
+          git diff --cached --check
+          git commit -m "Record DEFORM support-adequacy prototype result"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
