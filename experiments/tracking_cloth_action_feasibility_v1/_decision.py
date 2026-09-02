@@ -76,9 +76,7 @@ def decision_grid(
     normalized_losses = losses / loss_scale
 
     informative_probe_indices = [
-        index
-        for index, row in enumerate(probe_outcomes)
-        if np.unique(row).size >= 2
+        index for index, row in enumerate(probe_outcomes) if np.unique(row).size >= 2
     ]
     informative_probe_outcomes = probe_outcomes[informative_probe_indices]
     informative_probe_names = [actions[index] for index in informative_probe_indices]
@@ -166,8 +164,7 @@ def decision_grid(
     candidates = [
         item
         for item in records
-        if item["mode_counts"]["sense"] > 0
-        and item["relative_gain_vs_fallback"] > 0.0
+        if item["mode_counts"]["sense"] > 0 and item["relative_gain_vs_fallback"] > 0.0
     ]
     if candidates:
         selected = min(
