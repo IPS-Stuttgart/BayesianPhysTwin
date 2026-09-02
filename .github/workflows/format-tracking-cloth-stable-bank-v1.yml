@@ -1,0 +1,67 @@
+name: Format Tracking Cloth stable-bank v1
+
+on:
+  push:
+    branches: [science/tracking-cloth-self-collision-stable-bank-source-v1]
+    paths:
+      - ".github/requests/format-tracking-cloth-stable-bank-v1.json"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+          clean: true
+      - name: Authorize one add-only formatting request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/format-tracking-cloth-stable-bank-v1.json'
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Apply exact Ruff layout and revalidate
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==1.26.4 pytest ruff==0.14.14
+          python -m ruff format \
+            experiments/tracking_cloth_self_collision_stable_bank_v1/model.py \
+            experiments/tracking_cloth_self_collision_stable_bank_v1/entrypoint.py \
+            tests/test_tracking_cloth_self_collision_stable_bank_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_self_collision_stable_bank_v1/model.py \
+            experiments/tracking_cloth_self_collision_stable_bank_v1/entrypoint.py \
+            tests/test_tracking_cloth_self_collision_stable_bank_v1.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_self_collision_stable_bank_v1.py \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py \
+            tests/test_tracking_cloth_self_collision_workflow_v1.py
+          git diff --check
+      - name: Commit canonical source layout
+        run: |
+          set -euo pipefail
+          rm -f .github/requests/format-tracking-cloth-stable-bank-v1.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            experiments/tracking_cloth_self_collision_stable_bank_v1/model.py \
+            experiments/tracking_cloth_self_collision_stable_bank_v1/entrypoint.py \
+            tests/test_tracking_cloth_self_collision_stable_bank_v1.py \
+            .github/requests/format-tracking-cloth-stable-bank-v1.json
+          git commit -m 'Format Tracking Cloth stable-bank source wrapper'
+          git push origin HEAD:science/tracking-cloth-self-collision-stable-bank-source-v1
