@@ -290,15 +290,11 @@ These native tests are optional and skipped when that library is not provided;
 there is no system-library fallback. The upstream shared-library tests and
 strict MyPy for the new module also pass. No remote library was changed.
 
-This is not yet an acquisition runner or a transport amendment. Before it could
-be used on PoseIt, the next implementation must add atomic, hash-chained,
-write-once checkpoint/attempt custody; reject rollback, missing/reordered ranges,
-or a changed native library; preserve quota failures and the provider cooldown;
-and emit the existing full-archive proof only after every byte was hashed in
-order. A separately frozen transport amendment must bind those changes before
-one new acquisition is launched. The prior failed prefixes cannot be recovered,
-so that new attempt would still start at byte zero. Scientific choices and the
-full-hash-before-structure gate must remain unchanged throughout.
+That initial prototype did not provide an acquisition runner or authorize a
+transport amendment. The checkpointed runner described below is a subsequent
+software-only development. It does not recover either prior failed prefix,
+so a future initial checkpointed attempt must still start at byte zero.
+Scientific choices and the full-hash-before-structure gate are unchanged.
 
 To reproduce the synthetic native tests with the isolated source checkout:
 
@@ -319,6 +315,80 @@ env PYTHONPATH=src \
   uv run --no-project --python 3.12 --with pytest --with numpy --with scipy \
   python -m pytest --capture=sys -q tests/test_poseit_*.py
 ```
+
+### Checkpointed transport implementation
+
+`poseit_checkpoint_acquisition.py` now implements ordered range hashing with
+immutable per-range native checkpoints, content-bound attempt authorizations,
+start and terminal records, and a separate completion receipt. Every range
+still passes the original exact HTTP 206 and archive-identity validator before
+its body is read. The wrapper also treats an HTTP error raised by Python's
+opener as a terminal rejected response, not as a retryable socket failure.
+Only the unchanged bounded socket/transport retries remain inside an attempt.
+Once a worker fails, new provider requests stop and already-inflight workers
+are joined before a failure is published.
+
+A new attempt must provide an externally pinned authorization for the exact
+previous terminal record, checkpoint count and tip, and an elapsed cooldown.
+The shared external flock and write-once attempt directory prohibit duplicate
+execution under the same authorization. Resume validation rejects altered,
+missing, reordered, linked, or orphaned custody records. The new attempt starts
+at the first uncommitted range; prior records are never overwritten. A missing
+terminal record after an abrupt process loss is not permission to resume.
+
+Only complete SHA blocks enter persisted native states. The final partial tail
+is hashed transiently; no archive bytes or decoded contents are retained.
+The acquisition producer computes the full archive SHA-256. Later offline
+verification checks the stored chain and native checkpoint bindings; it does
+not pretend to rehash unavailable raw bytes. A crash after complete terminal
+custody but before receipt publication can be repaired without network access.
+Unknown transport attempts for uncommitted concurrent work remain explicitly
+unknown rather than being counted as zero.
+
+`scripts/science/acquire_poseit_checkpointed_range_hash_v1.py` provides separate
+`preflight`, `run`, `verify`, and `publish` modes. It requires the exact external
+SHA-256 of a separately frozen transport amendment. That amendment must bind
+the implementation files and revision, unchanged protocol and failure evidence,
+exact imported source tree, isolated native library, host, output directory,
+shared lock, and cooldown. There is no output-root override, implicit attempt
+authorization, system-native-library fallback, or automatic restart. Preflight
+loads only code and administrative metadata and grants no execution permission.
+
+The new completion schema is deliberately distinct from the old range-hash
+receipt. It is not silently accepted by the existing structure executor. An
+explicit, reviewed structure-receipt integration is required before it could
+authorize central-directory inspection, even after a full hash is available.
+
+The tests use only synthetic byte streams and mocked command dispatch. They
+exercise ordered hashing with out-of-order parallel responses, interruptions
+and separately authorized resumptions, exact `hashlib` agreement, terminal
+HTTP/identity failures without body reads, bounded socket retries, rollback and
+authorization rejection, shared-lock exclusion, and offline receipt recovery.
+They establish transport behavior, not the scientific decision-regret claim.
+
+The final local PoseIt suite passed 230 tests with the explicitly selected
+native library. An independently built isolated RHash library on
+`gpuserver4090` (`workstation1`) has the identical binary SHA-256 and passed
+upstream shared-library tests. The 128 native/checkpoint/command tests also
+passed on that host using only a minimal code/protocol/administrative bundle
+and synthetic streams. No system library was installed or replaced. The exact
+file hashes, test observations, and remote build paths are recorded in
+`evidence/poseit-real-decision-v1/checkpoint-transport-qualification-v1.json`.
+
+The next admissible steps remain:
+
+1. Seal this implementation revision and bind the verified isolated native build
+   to its exact production deployment without contacting PoseIt.
+2. Freeze a separate transport amendment and one exact initial attempt
+   authorization. Preserve both old failures and start the new hash at byte zero.
+3. Do not contact the provider before `2026-09-03T17:08:20.674819+00:00`.
+   Launch only after all preceding checks pass; the cooldown is not a known
+   provider reset time and does not authorize a launch by itself.
+4. Obtain a complete archive hash, then pass the explicit structure-receipt
+   integration and existing structure/mapping gates before scientific access.
+
+No production amendment or third acquisition has been authorized by these
+implementation tests. No PoseIt scientific result exists.
 
 ## Full-download and structure-only custody tools
 
