@@ -186,7 +186,8 @@ def generate_result() -> dict[str, Any]:
             "fallback_area": fallback_area,
             "fallback_fraction": fallback_area / box_area,
             "action_area_fraction": {
-                action: area / box_area for action, area in zip(ACTIONS, action_areas, strict=True)
+                action: area / box_area
+                for action, area in zip(ACTIONS, action_areas, strict=True)
             },
             "halfspace_count_per_action": dict(
                 zip(ACTIONS, action_halfspace_counts, strict=True)

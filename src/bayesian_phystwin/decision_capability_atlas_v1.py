@@ -342,9 +342,7 @@ def affine_decision_capability_atlas(
         for class_id, class_mass in enumerate(family.quotient_weights):
             if class_mass <= 0.0:
                 continue
-            members = (
-                (family.class_index == class_id) & family.prior_support_mask
-            )
+            members = (family.class_index == class_id) & family.prior_support_mask
             if not np.any(members):  # guarded by query_decision_certificate
                 raise RuntimeError("posterior-supported class lost prior support")
             batch_pairwise += float(class_mass) * np.max(
@@ -477,8 +475,7 @@ def affine_capability_halfspaces(
             )
             normal.append(np.einsum("c,cd->d", masses, coefficient_difference))
             offset.append(
-                family.regret_tolerance
-                - float(np.dot(masses, intercept_difference))
+                family.regret_tolerance - float(np.dot(masses, intercept_difference))
             )
             benchmark.append(benchmark_action)
             witness.append(tuple(int(value) for value in selected))
