@@ -32,18 +32,17 @@ jobs:
           python-version: "3.12"
       - name: Install package
         run: python -m pip install -e .
-      - name: Audit every rep1 and rep2 bank rollout
+      - name: Evaluate source gate after deterministic particle qualification
         shell: bash
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/self-collision-domain-validity-$GITHUB_RUN_ID"
+          out="$RUNNER_TEMP/self-collision-qualified-source-$GITHUB_RUN_ID"
           mkdir -p "$out"
           OUT="$out" python - <<'PY'
           from __future__ import annotations
 
           import json
           import os
-          from collections import Counter, defaultdict
           from pathlib import Path
 
           import numpy as np
@@ -54,9 +53,19 @@ jobs:
               scoring_truth,
           )
           from experiments.tracking_cloth_self_collision_selective_twin_v1.model import (
+              PHYSICS_ARM,
               contact_rollout,
+              kinematic_predictions,
               parameter_bank,
               trajectory_mse,
+          )
+          from experiments.tracking_cloth_self_collision_selective_twin_v1.selection import (
+              apply_policy,
+              fit_cross_material_policies,
+              incremental_summary,
+              score_case,
+              source_gate,
+              summarize_policy_rows,
           )
 
           root = Path(os.environ["DATASET_ROOT"])
@@ -66,139 +75,118 @@ jobs:
           protocol = json.loads(protocol_path.read_text())
           cases, inventory = audit_dataset(root, protocol)
           bank = parameter_bank(protocol)
-          nominal = tuple(float(x) for x in protocol["nominal_parameters"])
-          rows = []
-          by_parameter = defaultdict(lambda: {"valid": 0, "invalid": 0, "losses": []})
-          by_case = []
+          rep1 = [case for case in cases if case.repetition == 1]
+          rep2 = [case for case in cases if case.repetition == 2]
 
-          for case in [item for item in cases if item.repetition in (1, 2)]:
+          def key(case):
+              return f"{case.material}|{case.interaction}"
+
+          fits = {}
+          fit_summary = []
+          for case in rep1:
               inputs = prediction_input(case, protocol)
               truth = scoring_truth(case, inputs)
-              axis = inputs.rod_prefix[-1, 1] - inputs.rod_prefix[-1, 0]
-              den = float(np.dot(axis, axis))
-              fraction = (
-                  (inputs.cloth_prefix[-1] - inputs.rod_prefix[-1, 0]) @ axis
-              ) / den
-              closest = inputs.rod_prefix[-1, 0] + np.clip(fraction, 0.0, 1.0)[:, None] * axis
-              prefix_min_rod_distance = float(
-                  np.min(np.linalg.norm(inputs.cloth_prefix[-1] - closest, axis=1))
-              )
-              valid_count = 0
-              errors = Counter()
-              case_losses = []
+              valid_parameters = []
+              valid_predictions = []
+              valid_losses = []
+              rejected = []
               for parameters in bank:
-                  key = "|".join(f"{value:g}" for value in parameters)
-                  record = {
-                      "case_id": case.case_id,
-                      "recording": case.path.name,
-                      "repetition": case.repetition,
-                      "material": case.material,
-                      "interaction": case.interaction,
-                      "parameters": list(parameters),
-                  }
                   try:
                       prediction = contact_rollout(inputs, parameters, protocol)
-                      loss = trajectory_mse(prediction, truth, inputs)
-                      displacement = float(
-                          np.max(
-                              np.linalg.norm(
-                                  prediction - inputs.cloth_prefix[0].mean(axis=0), axis=2
-                              )
-                          )
-                      )
-                      record.update(
-                          {
-                              "valid": True,
-                              "error": None,
-                              "loss_m2": loss,
-                              "max_radius_m": displacement,
-                          }
-                      )
-                      valid_count += 1
-                      case_losses.append(loss)
-                      by_parameter[key]["valid"] += 1
-                      by_parameter[key]["losses"].append(loss)
                   except ValueError as error:
-                      message = str(error)
-                      record.update(
-                          {
-                              "valid": False,
-                              "error": message,
-                              "loss_m2": None,
-                              "max_radius_m": None,
-                          }
+                      rejected.append(
+                          {"parameters": list(parameters), "reason": str(error)}
                       )
-                      errors[message] += 1
-                      by_parameter[key]["invalid"] += 1
-                  rows.append(record)
-              by_case.append(
+                      continue
+                  valid_parameters.append(parameters)
+                  valid_predictions.append(prediction)
+                  valid_losses.append(trajectory_mse(prediction, truth, inputs))
+              if not valid_parameters:
+                  raise RuntimeError(f"no domain-valid source particle: {case.case_id}")
+              losses = np.asarray(valid_losses, dtype=float)
+              temperature = max(
+                  float(np.min(losses)),
+                  float(protocol["measurement_floor_m"]) ** 2,
+              )
+              logits = -losses / (2.0 * temperature)
+              weights = np.exp(logits - np.max(logits))
+              weights /= weights.sum()
+              fits[key(case)] = {
+                  "parameters": tuple(valid_parameters),
+                  "weights": weights,
+                  "temperature_m2": temperature,
+              }
+              fit_summary.append(
                   {
                       "case_id": case.case_id,
-                      "recording": case.path.name,
-                      "repetition": case.repetition,
-                      "material": case.material,
-                      "interaction": case.interaction,
-                      "sampled_dt_s": float(np.median(np.diff(inputs.times))),
-                      "sample_count": len(inputs.times),
-                      "cutoff": inputs.cutoff,
-                      "initial_diameter_m": inputs.initial_diameter_m,
-                      "prefix_min_rod_distance_m": prefix_min_rod_distance,
-                      "valid_bank_count": valid_count,
-                      "invalid_bank_count": len(bank) - valid_count,
-                      "valid_loss_min_m2": min(case_losses) if case_losses else None,
-                      "valid_loss_max_m2": max(case_losses) if case_losses else None,
-                      "errors": dict(errors),
+                      "valid_particle_count": len(valid_parameters),
+                      "rejected_particle_count": len(rejected),
+                      "valid_parameters": [list(item) for item in valid_parameters],
+                      "minimum_loss_m2": float(np.min(losses)),
+                      "maximum_loss_m2": float(np.max(losses)),
+                      "temperature_m2": temperature,
+                      "rejected": rejected,
                   }
               )
 
-          parameter_summary = []
-          for parameters in bank:
-              key = "|".join(f"{value:g}" for value in parameters)
-              item = by_parameter[key]
-              parameter_summary.append(
+          rep2_rows = []
+          case_arm_mse = []
+          for case in rep2:
+              inputs = prediction_input(case, protocol)
+              truth = scoring_truth(case, inputs)
+              fit = fits[key(case)]
+              predictions = kinematic_predictions(inputs, protocol)
+              bank_predictions = np.stack(
+                  [
+                      contact_rollout(inputs, parameters, protocol)
+                      for parameters in fit["parameters"]
+                  ],
+                  axis=0,
+              )
+              predictions[PHYSICS_ARM] = np.einsum(
+                  "k,ktnd->tnd", fit["weights"], bank_predictions
+              )
+              rep2_rows.extend(score_case(predictions, truth, inputs, protocol))
+              case_arm_mse.append(
                   {
-                      "parameters": list(parameters),
-                      "valid_cases": item["valid"],
-                      "invalid_cases": item["invalid"],
-                      "mean_valid_loss_m2": (
-                          float(np.mean(item["losses"])) if item["losses"] else None
-                      ),
-                      "is_nominal": parameters == nominal,
+                      "case_id": case.case_id,
+                      "arm_mse_m2": {
+                          arm: trajectory_mse(prediction, truth, inputs)
+                          for arm, prediction in predictions.items()
+                      },
                   }
               )
 
-          summary = {
-              "schema": "bayesian-phystwin.self-collision-source-domain-diagnostic.v1",
+          policy = fit_cross_material_policies(rep2_rows, protocol)
+          policy_rows = apply_policy(rep2_rows, policy)
+          summaries = summarize_policy_rows(policy_rows, protocol)
+          incremental = incremental_summary(policy_rows, protocol)
+          gate = source_gate(summaries, incremental, protocol)
+          result = {
+              "schema": "bayesian-phystwin.self-collision-qualified-source-diagnostic.v1",
               "source_revision": os.environ["GITHUB_SHA"],
               "dataset_inventory_id": inventory["inventory_id"],
               "rep3_numeric_outcomes_read": False,
-              "audited_repetitions": [1, 2],
-              "case_count": len(by_case),
-              "bank_size": len(bank),
-              "case_summary": by_case,
-              "parameter_summary": parameter_summary,
-              "all_cases_have_valid_particle": all(
-                  item["valid_bank_count"] > 0 for item in by_case
+              "qualification_rule": (
+                  "retain exactly those parameter particles whose rep1 rollout remains "
+                  "finite and inside the pre-existing five-metre domain"
               ),
-              "nominal_valid_all_cases": next(
-                  item["invalid_cases"] == 0
-                  for item in parameter_summary
-                  if item["is_nominal"]
-              ),
+              "fit_summary": fit_summary,
+              "case_arm_mse": case_arm_mse,
+              "summaries": summaries,
+              "incremental": incremental,
+              "source_gate": gate,
           }
           output = Path(os.environ["OUT"])
-          (output / "domain_diagnostic.json").write_text(
-              json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n"
+          (output / "qualified_source_result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
           )
-          (output / "rollout_rows.json").write_text(
-              json.dumps(rows, indent=2, sort_keys=True, allow_nan=False) + "\n"
-          )
-          print(json.dumps(summary, indent=2, sort_keys=True, allow_nan=False))
+          print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
           PY
           echo "SC_DIAGNOSTIC=$out" >> "$GITHUB_ENV"
       - name: Upload source-only diagnostic
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
         with:
-          name: self-collision-source-domain-diagnostic-${{ github.run_id }}
+          name: self-collision-qualified-source-${{ github.run_id }}
           path: ${{ env.SC_DIAGNOSTIC }}
           retention-days: 30
