@@ -1,0 +1,113 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Anytime-valid simulator admission v1
+
+on:
+  push:
+    branches: [science/anytime-valid-simulator-admission-v1]
+    paths:
+      - ".github/workflows/anytime-valid-simulator-admission-v1.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: anytime-valid-simulator-admission-v1
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/anytime-valid-simulator-admission-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install focused validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install numpy pytest ruff==0.16.5
+
+      - name: Format and validate changed Python sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/remote/run_anytime_valid_admission_v1.py
+            scripts/remote/run_anytime_valid_loss_replay_v1.py
+            src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py
+            tests/test_anytime_valid_admission_v1.py
+          )
+          ruff check --fix "${files[@]}"
+          ruff format "${files[@]}"
+          ruff check "${files[@]}"
+          ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+
+      - name: Run focused contract tests
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          set -euo pipefail
+          pytest -q tests/test_anytime_valid_admission_v1.py
+
+      - name: Execute frozen controlled study
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          set -euo pipefail
+          output=results/science/anytime_valid_simulator_admission_v1
+          rm -rf "$output"
+          python scripts/remote/run_anytime_valid_admission_v1.py \
+            --protocol protocols/anytime_valid_simulator_admission_v1.json \
+            --output-root "$output"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('results/science/anytime_valid_simulator_admission_v1/result.json')
+          result = json.loads(path.read_text(encoding='utf-8'))
+          if result['decision'] != 'controlled-mechanism-pass':
+              raise SystemExit(f"controlled mechanism failed: {result['gates']}")
+          if result['exact_fallback_identity_violations'] != 0:
+              raise SystemExit('exact fallback identity violation')
+          print(json.dumps({
+              'decision': result['decision'],
+              'gates': result['gates'],
+              'budget_audit': result['budget_audit'],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Commit formatted implementation and controlled evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            scripts/remote/run_anytime_valid_admission_v1.py \
+            scripts/remote/run_anytime_valid_loss_replay_v1.py \
+            src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py \
+            tests/test_anytime_valid_admission_v1.py \
+            results/science/anytime_valid_simulator_admission_v1
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No generated changes to commit.'
+          else
+            git commit -m 'Validate anytime-valid simulator admission'
+            git push origin HEAD:science/anytime-valid-simulator-admission-v1
+          fi
