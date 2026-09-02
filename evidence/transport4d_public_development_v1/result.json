@@ -1,0 +1,68 @@
+{
+  "checks": {
+    "cross_object_exact_transfer_negative": true,
+    "dependence_changes_decisions_at_fixed_means": true,
+    "matching_object_procedure_positive": true,
+    "opened_development_not_mislabeled_confirmation": true,
+    "same_object_exact_transfer_positive": true,
+    "same_object_scalar_transfer_positive": true
+  },
+  "claim_boundary": "The matrix establishes a public real-data motivation and strict positive/negative tier separation only. Every numerical outcome in this protocol was available before Transport4D was designed. It does not validate the tier selector on an untouched target, establish a harmful-transfer probability, prove cross-object transport, or authorize a paper, deployment, or safety claim.",
+  "decision": "public-development-tier-separation-established",
+  "development_matrix": [
+    {
+      "case_count": 8,
+      "relative_improvement": 0.029845440010081936,
+      "shift": "same-object-cross-backend",
+      "supported": true,
+      "tested_tier": "exact_coefficients",
+      "wins": 8
+    },
+    {
+      "case_count": 8,
+      "relative_improvement": 0.022499315467196745,
+      "shift": "same-object-cross-backend",
+      "supported": true,
+      "tested_tier": "low_dimensional_correction",
+      "wins": 6
+    },
+    {
+      "case_count": 28,
+      "relative_improvement": -0.16590098017389865,
+      "shift": "cross-object-operator",
+      "supported": false,
+      "tested_tier": "exact_coefficients",
+      "wins": 0
+    },
+    {
+      "case_count": 28,
+      "relative_improvement": 0.06803465047699286,
+      "shift": "cross-object-operator",
+      "supported": true,
+      "tested_tier": "procedure_only",
+      "wins": 28
+    }
+  ],
+  "information_boundary": {
+    "all_numeric_outcomes_previously_opened": true,
+    "automatic_target_access": false,
+    "fresh_confirmation_claim": false,
+    "paper_claim_authorized": false,
+    "used_only_for_method_development": true
+  },
+  "next_required_evidence": {
+    "kind": "outcome-blind-object-level-public-confirmation",
+    "primary_dataset": "Deform360",
+    "replacement_allowed": false,
+    "tier_decisions_frozen_before_target_outcomes": true
+  },
+  "protocol_id": "622bbe59fb7feef2e7f774f346fa76ce6638844025fc8bd83c902578e8c987c7",
+  "result_id": "39d837e85a191417fa14b111ef7637cab15b87559e5d6a018fcebed50be4cfa3",
+  "schema": "bayesian-phystwin.transport4d_public_development",
+  "schema_version": 1,
+  "strongest_supported_tier_by_shift": {
+    "cross-object-operator": "procedure_only",
+    "same-object-cross-backend": "exact_coefficients"
+  },
+  "uncertainty_only_tier_status": "motivated-by-same-mean-dependence-value-not-yet-cross-domain-confirmed"
+}
