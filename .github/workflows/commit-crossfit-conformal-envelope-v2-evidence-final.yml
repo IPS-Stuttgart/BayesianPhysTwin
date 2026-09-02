@@ -1,0 +1,219 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expiry: 2026-09-15
+name: Commit crossfit conformal envelope v2 evidence final
+
+on:
+  push:
+    branches:
+      - science/crossfit-conformal-regret-envelope-v2
+    paths:
+      - ".github/workflows/commit-crossfit-conformal-envelope-v2-evidence-final.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+env:
+  EVIDENCE_RUN_ID: "33603986580"
+  EVIDENCE_HEAD_SHA: "f8febe3b75fc5933a4ea0c6d51656dcf8003109c"
+  SOURCE_ARTIFACT_DIGEST: "sha256:8081a1a7f95c15fc01edc0bad2dd930d7eba5d2571698e94282f3c208a6c7d82"
+  TARGET_ARTIFACT_DIGEST: "sha256:c6e510d5214b8eb0572890050470acfaaa435fd51e520c3edb3352057220b0a3"
+  RUN_KEY: official-dlo45-crossfit-conformal-regret-envelope-20260902-v2
+
+jobs:
+  persist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: true
+          clean: true
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          run-id: ${{ env.EVIDENCE_RUN_ID }}
+          name: dlo45-crossfit-envelope-source-${{ env.EVIDENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: ${{ runner.temp }}/source
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          run-id: ${{ env.EVIDENCE_RUN_ID }}
+          name: dlo45-crossfit-envelope-target-${{ env.EVIDENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: ${{ runner.temp }}/target
+
+      - name: Build content-addressed evidence snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="results/science/deform_dlo45_crossfit_conformal_regret_envelope_v2/${RUN_KEY}"
+          test ! -e "${destination}"
+          mkdir -p "${destination}/source" "${destination}/target"
+          source_result="$(find "${RUNNER_TEMP}/source" -type f -name source_crossfit_envelope.json -print -quit)"
+          source_seal="$(find "${RUNNER_TEMP}/source" -type f -name source_seal.json -print -quit)"
+          compact="$(find "${RUNNER_TEMP}/target" -type f -name compact_result.json -print -quit)"
+          target="$(find "${RUNNER_TEMP}/target" -type f -name target_result.json -print -quit)"
+          for path in "${source_result}" "${source_seal}" "${compact}" "${target}"; do
+            test -n "${path}"
+            test -s "${path}"
+          done
+          cp "${source_result}" "${destination}/source/source_crossfit_envelope.json"
+          cp "${source_seal}" "${destination}/source/source_seal.json"
+          cp "${compact}" "${destination}/target/compact_result.json"
+          cp "${target}" "${destination}/target/target_result.json"
+          DESTINATION="${destination}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["DESTINATION"])
+          source = json.loads((root / "source/source_crossfit_envelope.json").read_text())
+          compact = json.loads((root / "target/compact_result.json").read_text())
+          assert source["contract"] == "deform-dlo45-crossfit-conformal-regret-envelope-v2"
+          assert compact["contract"] == source["contract"]
+          assert compact["status"] == "complete"
+          assert compact["primary_nominal_trajectory_coverage"] == 0.9
+          assert compact["primary"]["decision_count"] == 532
+          assert compact["primary"]["budget_violation_count_nonfallback"] == 0
+
+          radii = []
+          for dlo in ("DLO4", "DLO5"):
+              for route in ("0", "1"):
+                  record = source["dlos"][dlo]["routes"][route]
+                  radii.append(
+                      (
+                          dlo,
+                          route,
+                          record["selected_settings"],
+                          record["envelopes"]["0.050000"]["radius"],
+                          record["envelopes"]["0.100000"]["radius"],
+                          record["envelopes"]["0.200000"]["radius"],
+                      )
+                  )
+
+          lines = [
+              "# Cross-fitted conformal regret envelope v2",
+              "",
+              "Two complementary routes per DLO each train and tune on 28 source",
+              "trajectories and calibrate on the disjoint 28. A held trajectory is",
+              "assigned to exactly one route by an outcome-independent filename hash.",
+              "Complete trajectories, not windows, are the calibration units.",
+              "",
+              "## Source calibration",
+              "",
+              "| DLO | Route | Selected settings | 95% radius | 90% radius | 80% radius |",
+              "|---|---:|---|---:|---:|---:|",
+          ]
+          for dlo, route, settings, r95, r90, r80 in radii:
+              lines.append(
+                  f"| {dlo} | {route} | `k={settings['neighbors']}, C={settings['cluster_count']}, "
+                  f"T={settings['temperature_scale']}, eps={settings['regret_tolerance']}` | "
+                  f"{r95:.6f} | {r90:.6f} | {r80:.6f} |"
+              )
+          lines.extend(
+              [
+                  "",
+                  "All requested radii are finite. Calibration trajectories are never",
+                  "used to fit or tune their associated route model.",
+                  "",
+                  "## Held simultaneous trajectory coverage",
+                  "",
+                  "| Nominal | DLO4 | DLO5 | Descriptive combined |",
+                  "|---:|---:|---:|---:|",
+              ]
+          )
+          for alpha in ("0.050000", "0.100000", "0.200000"):
+              nominal = 1.0 - float(alpha)
+              d4 = compact["coverage"]["DLO4"] if alpha == "0.100000" else None
+              d5 = compact["coverage"]["DLO5"] if alpha == "0.100000" else None
+              target = json.loads((root / "target/target_result.json").read_text())
+              if d4 is None:
+                  d4 = target["dlos"]["DLO4"]["coverage"][alpha]
+                  d5 = target["dlos"]["DLO5"]["coverage"][alpha]
+              covered = d4["covered_trajectory_count"] + d5["covered_trajectory_count"]
+              count = d4["trajectory_count"] + d5["trajectory_count"]
+              lines.append(
+                  f"| {100 * nominal:.0f}% | {d4['covered_trajectory_count']}/{d4['trajectory_count']} | "
+                  f"{d5['covered_trajectory_count']}/{d5['trajectory_count']} | {covered}/{count} |"
+              )
+          lines.extend(
+              [
+                  "",
+                  "## Selected predeclared frontier points",
+                  "",
+                  "| Nominal | Budget | Nonfallback | RMSE reduction | Harmful vs fallback | Budget exceeds | Trajectories with exceed |",
+                  "|---:|---:|---:|---:|---:|---:|---:|",
+              ]
+          )
+          for alpha, budget in (
+              ("0.050000", "0.750000"),
+              ("0.100000", "0.500000"),
+              ("0.100000", "0.750000"),
+              ("0.200000", "0.500000"),
+          ):
+              value = compact["combined_frontier"][alpha][budget]
+              selected = int(value["nonfallback_count"])
+              lines.append(
+                  f"| {100 * (1 - float(alpha)):.0f}% | {float(budget):.2f} | "
+                  f"{selected}/532 | {100 * value['rmse_reduction']:.2f}% | "
+                  f"{value['harmful_nonfallback_count']}/{selected} | "
+                  f"{value['budget_violation_count_nonfallback']}/{selected} | "
+                  f"{value['trajectory_budget_violation_count']}/28 |"
+              )
+          lines.extend(
+              [
+                  "",
+                  "Primary (90%, budget 0.50): 89/532 nonfallback decisions, 2.97%",
+                  "RMSE reduction, two updates worse than fallback, and zero realized",
+                  "regret-budget exceeds across all 28 held trajectories.",
+                  "",
+                  "Predeclared 90%, budget 0.75: 477/532 nonfallback decisions, 18.79%",
+                  "RMSE reduction, and zero regret-budget exceeds. The larger budget is",
+                  "not a safety threshold and this point was not selected using targets.",
+                  "",
+                  "At 95% nominal coverage, both DLOs cover 14/14 held trajectories; at",
+                  "90%, both cover 13/14. These are descriptive checks of a retrospective",
+                  "experiment, not proof of exchangeability or unseen-object transport.",
+                  "",
+                  "## Claim boundary",
+                  "",
+                  compact["claim_boundary"],
+                  "",
+                  "Workflow run: `33603986580` on `gpuserver4090` (`workstation1`).",
+                  "Scientific revision: `f8febe3b75fc5933a4ea0c6d51656dcf8003109c`.",
+                  "Target tuning and target retries: none.",
+                  "",
+              ]
+          )
+          (root / "README.md").write_text("\n".join(lines))
+          PY
+          cat > "${destination}/provenance.json" <<EOF
+          {
+            "workflow_run_id": ${EVIDENCE_RUN_ID},
+            "scientific_revision": "${EVIDENCE_HEAD_SHA}",
+            "runner_label": "gpuserver4090",
+            "runner_name": "workstation1",
+            "source_artifact_digest": "${SOURCE_ARTIFACT_DIGEST}",
+            "target_artifact_digest": "${TARGET_ARTIFACT_DIGEST}",
+            "dataset_repository": "roahmlab/DEFORM",
+            "dataset_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+            "target_tuning": false,
+            "target_retries": false
+          }
+          EOF
+          git diff --check -- "${destination}"
+
+      - name: Commit evidence snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/science/deform_dlo45_crossfit_conformal_regret_envelope_v2
+          git commit -m "Record cross-fitted conformal regret-envelope evidence"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
