@@ -1,0 +1,65 @@
+{
+  "contract": "deform-dlo45-support-aware-outer-certificate-v1",
+  "schema_version": 1,
+  "parent": {
+    "decision_workflow_run_id": 33473378340,
+    "source_artifact_id": 9787311310,
+    "source_artifact_sha256": "fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+    "gate_audit_workflow_run_id": 33540426989,
+    "gate_audit_artifact_id": 9813375113,
+    "gate_audit_artifact_sha256": "d8a758dd4102b0d44c9567e3bf4c7f0ded4436a6c2bb180b9d4cf44d826fcd37",
+    "decision_execution_revision": "38b2ea56471923e63b64cfe24bf3f691aad5d5e0"
+  },
+  "source_reconstruction": {
+    "official_training_trajectory_count": 112,
+    "windows_per_trajectory": 19,
+    "rule": "leave-one-complete-trajectory-out within DLO, refit the frozen parent settings to the other 55 same-DLO trajectories, evaluate all windows of the omitted trajectory",
+    "parent_settings": {
+      "cluster_count": 16,
+      "neighbors": 16,
+      "temperature_scale": 1.0,
+      "regret_tolerance": 0.05
+    }
+  },
+  "outer_model": {
+    "family": "standardized-degree-2-logistic-regression",
+    "logistic_c": 0.05,
+    "class_weight": "balanced",
+    "grouped_cross_validation_folds": 5,
+    "features": [
+      "certificate_source_regret_bound",
+      "quotient_concentration",
+      "maximum_quotient_mass",
+      "maximum_kernel_weight",
+      "expected_fallback_advantage",
+      "expected_action_gap",
+      "hypothesis_action_agreement",
+      "negative_residual_disagreement",
+      "negative_unsupported_specificity",
+      "normalized_decision_time",
+      "dlo5_indicator",
+      "certificate_full_action_indicator",
+      "candidate_full_action_indicator",
+      "registered_worst_case_regret_by_action"
+    ],
+    "held_outcome_features_forbidden": true
+  },
+  "source_operating_point": {
+    "risk_cap": 0.05,
+    "bootstrap_unit": "complete_trajectory",
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20260902,
+    "selection_rule": "largest out-of-fold probability threshold whose equal-trajectory bootstrap 95th-percentile selected support-violation fraction is at most the risk cap"
+  },
+  "held_evaluation": {
+    "decision_count": 532,
+    "target_outcomes_used_for_model_selection": false,
+    "target_outcomes_used_for_threshold_selection": false,
+    "target_outcomes_used_for_descriptive_scoring": true
+  },
+  "negative_control": {
+    "kind": "trajectory-maximum-split-conformal-regret-inflation",
+    "coverage": 0.90
+  },
+  "claim_boundary": "Retrospective method-development evidence on an already opened public DLO4/DLO5 held panel. The source operating point uses a trajectory-block bootstrap rather than a distribution-free selective-risk theorem. This protocol does not establish fresh confirmation, unseen-object generalization, deployment safety, or a population-level regret guarantee."
+}
