@@ -125,9 +125,7 @@ def load_support_protocol(path: Path) -> SupportProtocol:
     if not isinstance(model, dict) or not isinstance(gates, dict):
         raise ValueError("support protocol model/gate records missing")
     lambdas = tuple(float(item) for item in model.get("ridge_lambdas", ()))
-    if not lambdas or any(
-        item <= 0.0 or not math.isfinite(item) for item in lambdas
-    ):
+    if not lambdas or any(item <= 0.0 or not math.isfinite(item) for item in lambdas):
         raise ValueError("invalid ridge grid")
     fractions = (
         float(gates["minimum_retained_fraction"]),
@@ -139,9 +137,7 @@ def load_support_protocol(path: Path) -> SupportProtocol:
         raise ValueError("invalid source selection fractions")
     return SupportProtocol(
         parent_workflow_run_id=int(value["parent_workflow_run_id"]),
-        parent_source_artifact_digest=str(
-            value["parent_source_artifact_digest"]
-        ),
+        parent_source_artifact_digest=str(value["parent_source_artifact_digest"]),
         dataset_repository=str(value["dataset_repository"]),
         dataset_commit=str(value["dataset_commit"]),
         ridge_lambdas=lambdas,
@@ -160,8 +156,7 @@ def validate_request(path: Path, protocol: SupportProtocol) -> dict[str, object]
         value.get("contract") != REQUEST_CONTRACT
         or value.get("schema_version") != 1
         or value.get("status") != "authorized-retrospective-development"
-        or value.get("parent_workflow_run_id")
-        != protocol.parent_workflow_run_id
+        or value.get("parent_workflow_run_id") != protocol.parent_workflow_run_id
         or value.get("source_only_policy_selection") is not True
         or value.get("target_tuning") is not False
         or value.get("target_retries") is not False
@@ -180,11 +175,7 @@ def _trajectory_key(record: WindowRecord) -> str:
 def _feature_vector(record: WindowRecord) -> np.ndarray:
     decision = record.decision
     distances = np.asarray(decision.selected_distances, dtype=np.float64)
-    if (
-        distances.ndim != 1
-        or not len(distances)
-        or not np.all(np.isfinite(distances))
-    ):
+    if distances.ndim != 1 or not len(distances) or not np.all(np.isfinite(distances)):
         raise ValueError("invalid outcome-free selected feature distances")
     scores = decision.scores
     values = np.asarray(
@@ -248,19 +239,20 @@ def fit_ridge(
     weights = _group_weights(groups)
     weight_sum = float(np.sum(weights))
     mean = np.einsum("i,ij->j", weights, x) / weight_sum
-    variance = np.einsum(
-        "i,ij,ij->j",
-        weights,
-        x - mean,
-        x - mean,
-    ) / weight_sum
+    variance = (
+        np.einsum(
+            "i,ij,ij->j",
+            weights,
+            x - mean,
+            x - mean,
+        )
+        / weight_sum
+    )
     scale = np.sqrt(np.maximum(variance, 1e-12))
     standardized = (x - mean) / scale
     design = np.column_stack((np.ones(len(x)), standardized))
     gram = design.T @ (weights[:, None] * design)
-    penalty = np.eye(design.shape[1], dtype=np.float64) * float(
-        regularization
-    )
+    penalty = np.eye(design.shape[1], dtype=np.float64) * float(regularization)
     penalty[0, 0] = 0.0
     coefficients = np.linalg.solve(
         gram + penalty,
@@ -321,9 +313,7 @@ def cross_fitted_ridge_scores(
             regularization,
         )
         predictions[test] = predict_ridge(model, features[test])
-        group_max_residuals.append(
-            float(np.max(excess[test] - predictions[test]))
-        )
+        group_max_residuals.append(float(np.max(excess[test] - predictions[test])))
     final_model = fit_ridge(
         features,
         excess,
@@ -347,8 +337,7 @@ def _source_policy_metrics(
         (
             record.decision.decision.certificate_action
             if (
-                record.decision.decision.certificate_action
-                != FALLBACK_ACTION
+                record.decision.decision.certificate_action != FALLBACK_ACTION
                 and float(risk_by_id[record.stable_id]) <= threshold
             )
             else FALLBACK_ACTION
@@ -397,18 +386,14 @@ def _per_dlo_no_regression(
             (
                 record.decision.decision.certificate_action
                 if (
-                    record.decision.decision.certificate_action
-                    != FALLBACK_ACTION
+                    record.decision.decision.certificate_action != FALLBACK_ACTION
                     and float(risk_by_id[record.stable_id]) <= threshold
                 )
                 else FALLBACK_ACTION
             )
             for record in subset
         ]
-        if (
-            summarize_method(subset, actions)["rmse_ratio_to_fallback"]
-            > 1.0 + ATOL
-        ):
+        if summarize_method(subset, actions)["rmse_ratio_to_fallback"] > 1.0 + ATOL:
             return False
     return True
 
@@ -499,9 +484,7 @@ def _fit_source_policies(
     # Structural hypothesis: tolerance-certified full corrections may be more
     # transport-stable than compromise half corrections.
     structural_risk = {
-        record.stable_id: float(
-            record.decision.decision.certificate_action != 2
-        )
+        record.stable_id: float(record.decision.decision.certificate_action != 2)
         for record in eligible
     }
     register(
@@ -518,14 +501,10 @@ def _fit_source_policies(
     # Generic current-observation support baseline. This uses distance in the
     # registered feature space, never future residual distance.
     distance_risk = {
-        record.stable_id: float(
-            np.median(record.decision.selected_distances)
-        )
+        record.stable_id: float(np.median(record.decision.selected_distances))
         for record in eligible
     }
-    for index, threshold in enumerate(
-        _threshold_candidates(distance_risk.values())
-    ):
+    for index, threshold in enumerate(_threshold_candidates(distance_risk.values())):
         register(
             {
                 "candidate_id": f"feature_distance_{index}",
@@ -537,9 +516,7 @@ def _fit_source_policies(
             distance_risk,
         )
 
-    eligible_features = np.vstack(
-        [_feature_vector(record) for record in eligible]
-    )
+    eligible_features = np.vstack([_feature_vector(record) for record in eligible])
     for regularization in protocol.ridge_lambdas:
         oof, final_model, envelope_offset = cross_fitted_ridge_scores(
             records,
@@ -556,9 +533,7 @@ def _fit_source_policies(
             "leave_trajectory_out_max_residual_offset": envelope_offset,
         }
 
-        for index, threshold in enumerate(
-            _threshold_candidates(oof_risk.values())
-        ):
+        for index, threshold in enumerate(_threshold_candidates(oof_risk.values())):
             metrics = _source_policy_metrics(
                 records,
                 oof_risk,
@@ -611,26 +586,16 @@ def _fit_source_policies(
             envelope_risk,
         )
 
-    strict = [
-        item for item in candidates if bool(item["strict_source_gate"])
-    ]
-    exploratory = [
-        item
-        for item in candidates
-        if bool(item["exploratory_source_gate"])
-    ]
+    strict = [item for item in candidates if bool(item["strict_source_gate"])]
+    exploratory = [item for item in candidates if bool(item["exploratory_source_gate"])]
     pool = strict or exploratory
     if pool:
         selected = max(pool, key=_policy_rank_key)
         selection_class = (
-            "strict-source-selected"
-            if strict
-            else "exploratory-source-selected"
+            "strict-source-selected" if strict else "exploratory-source-selected"
         )
     else:
-        selected = next(
-            item for item in candidates if item["kind"] == "structural"
-        )
+        selected = next(item for item in candidates if item["kind"] == "structural")
         selection_class = "no-source-gate-passed-structural-diagnostic"
 
     def deployable(item: Mapping[str, object]) -> dict[str, object]:
@@ -648,12 +613,8 @@ def _fit_source_policies(
         }
         kind = str(deployed["kind"])
         if kind == "ridge":
-            deployed["threshold"] = float(
-                deployed.pop("full_fit_threshold")
-            )
-            deployed["model"] = ridge_records[str(deployed["name"])][
-                "model"
-            ]
+            deployed["threshold"] = float(deployed.pop("full_fit_threshold"))
+            deployed["model"] = ridge_records[str(deployed["name"])]["model"]
         elif kind == "conformal":
             ridge_key = f"ridge_{float(deployed['regularization']):g}"
             deployed["model"] = ridge_records[ridge_key]["model"]
@@ -669,8 +630,7 @@ def _fit_source_policies(
         kind_pool = [
             item
             for item in candidates
-            if item["kind"] == kind
-            and bool(item["exploratory_source_gate"])
+            if item["kind"] == kind and bool(item["exploratory_source_gate"])
         ]
         if kind_pool:
             best = max(kind_pool, key=_policy_rank_key)
@@ -703,9 +663,7 @@ def _policy_risk(record: WindowRecord, policy: Mapping[str, object]) -> float:
         if not isinstance(model_value, Mapping):
             raise ValueError("ridge model record is malformed")
         model = RidgeModel.from_record(model_value)
-        prediction = float(
-            predict_ridge(model, _feature_vector(record)[None, :])[0]
-        )
+        prediction = float(predict_ridge(model, _feature_vector(record)[None, :])[0])
         if kind == "conformal":
             return (
                 record.certificate_source_regret_bound
@@ -772,11 +730,7 @@ def _diagnostics(
         ),
         "exact_fallback_violation_count": exact_fallback_violations,
         "accepted_risk_mean": (
-            float(
-                np.mean(
-                    [risks[record.stable_id] for record, _ in accepted]
-                )
-            )
+            float(np.mean([risks[record.stable_id] for record, _ in accepted]))
             if accepted
             else None
         ),
@@ -784,10 +738,7 @@ def _diagnostics(
     if str(policy["kind"]) == "conformal":
         violations = sum(
             record.certificate_regret_excess
-            > (
-                float(risks[record.stable_id])
-                - record.certificate_source_regret_bound
-            )
+            > (float(risks[record.stable_id]) - record.certificate_source_regret_bound)
             + ATOL
             for record, _ in accepted
         )
@@ -831,37 +782,29 @@ def _summarize_policy(
                     "dlo": record.dlo,
                     "trajectory": record.trajectory,
                     "current_frame": record.current_frame,
-                    "inner_action": (
-                        record.decision.decision.certificate_action
-                    ),
+                    "inner_action": (record.decision.decision.certificate_action),
                     "deployed_action": action,
-                    "risk_score": risks[record.stable_id],
-                    "source_regret_bound": (
-                        record.certificate_source_regret_bound
+                    "risk_score": (
+                        risks[record.stable_id]
+                        if math.isfinite(risks[record.stable_id])
+                        else None
                     ),
-                    "realized_regret": float(
-                        record.normalized_regret[action]
-                    ),
-                    "inner_regret_excess": (
-                        record.certificate_regret_excess
-                    ),
+                    "source_regret_bound": (record.certificate_source_regret_bound),
+                    "realized_regret": float(record.normalized_regret[action]),
+                    "inner_regret_excess": (record.certificate_regret_excess),
                     "harmful_vs_fallback": bool(
-                        record.physical_mse[action]
-                        > record.fallback_mse + ATOL
+                        record.physical_mse[action] > record.fallback_mse + ATOL
                     ),
                 }
             )
     combined = _combine_method(by_dlo, audit, seed_offset)
-    accepted = [
-        item for item in all_diagnostics if item["deployed_action"] != 0
-    ]
+    accepted = [item for item in all_diagnostics if item["deployed_action"] != 0]
     inner_exceeded = sum(
         item["realized_regret"] > item["source_regret_bound"] + ATOL
         for item in accepted
     )
     tolerance_exceeded = sum(
-        item["realized_regret"] > tolerance + ATOL
-        for item in accepted
+        item["realized_regret"] > tolerance + ATOL for item in accepted
     )
     combined.update(
         {
@@ -871,13 +814,10 @@ def _summarize_policy(
             ),
             "realized_tolerance_violation_count": tolerance_exceeded,
             "realized_tolerance_violation_fraction": (
-                tolerance_exceeded / len(accepted)
-                if accepted
-                else 0.0
+                tolerance_exceeded / len(accepted) if accepted else 0.0
             ),
             "exact_fallback_violation_count": sum(
-                item["deployed_action"] == 0
-                and item["harmful_vs_fallback"]
+                item["deployed_action"] == 0 and item["harmful_vs_fallback"]
                 for item in all_diagnostics
             ),
         }
@@ -936,15 +876,11 @@ def source_command(args: argparse.Namespace) -> int:
         "source_decision_counts": source_counts,
         "policy": policy,
         "parent_source_model_sha256": sha256_file(args.parent_source_model),
-        "parent_source_result_sha256": sha256_file(
-            args.parent_source_result
-        ),
+        "parent_source_result_sha256": sha256_file(args.parent_source_result),
         "parent_source_seal_sha256": sha256_file(args.parent_source_seal),
         "parent_protocol_sha256": sha256_file(args.parent_protocol),
         "support_protocol_sha256": sha256_file(args.support_protocol),
-        "gate_audit_protocol_sha256": sha256_file(
-            args.gate_audit_protocol
-        ),
+        "gate_audit_protocol_sha256": sha256_file(args.gate_audit_protocol),
         "request_sha256": sha256_file(args.request),
         "target_data_read": False,
         "target_outcomes_used_for_policy": False,
@@ -991,13 +927,9 @@ def source_command(args: argparse.Namespace) -> int:
         "schema_version": 1,
         "stage": "source-seal",
         "run_key": request["run_key"],
-        "source_result_sha256": sha256_file(
-            output / "source_result.json"
-        ),
+        "source_result_sha256": sha256_file(output / "source_result.json"),
         "policy_sha256": sha256_file(output / "policy.json"),
-        "parent_source_model_sha256": sha256_file(
-            args.parent_source_model
-        ),
+        "parent_source_model_sha256": sha256_file(args.parent_source_model),
     }
     seal["seal_id"] = canonical_sha256(seal)
     write_json(output / "source_seal.json", seal)
@@ -1019,8 +951,7 @@ def target_command(args: argparse.Namespace) -> int:
         or policy_record.get("stage") != "deployment-policy"
         or seal.get("contract") != CONTRACT
         or seal.get("stage") != "source-seal"
-        or seal.get("source_result_sha256")
-        != sha256_file(args.source_result)
+        or seal.get("source_result_sha256") != sha256_file(args.source_result)
         or seal.get("policy_sha256") != sha256_file(args.policy)
         or seal.get("parent_source_model_sha256")
         != sha256_file(args.parent_source_model)
@@ -1071,9 +1002,7 @@ def target_command(args: argparse.Namespace) -> int:
             "regularization": float(key.split("_", 1)[1]),
             "threshold": protocol.tolerance,
             "model": value["model"],
-            "conformal_offset": value[
-                "leave_trajectory_out_max_residual_offset"
-            ],
+            "conformal_offset": value["leave_trajectory_out_max_residual_offset"],
         }
 
     # Existing inner certificate expressed as a pass-through structural policy.
@@ -1114,26 +1043,18 @@ def target_command(args: argparse.Namespace) -> int:
     assert isinstance(selected, dict)
     assert isinstance(full_only, dict)
     big_gate = {
-        "strict_source_gate_passed": bool(
-            policy_record["strict_source_gate_passed"]
-        ),
+        "strict_source_gate_passed": bool(policy_record["strict_source_gate_passed"]),
         "positive_rmse_gain": float(selected["rmse_reduction"]) > 0.0,
         "at_least_30_nonfallback": int(selected["nonfallback_count"]) >= 30,
         "realized_tolerance_violation_at_most_10pct": (
-            float(selected["realized_tolerance_violation_fraction"])
-            <= 0.10 + ATOL
+            float(selected["realized_tolerance_violation_fraction"]) <= 0.10 + ATOL
         ),
         "fewer_tolerance_violations_than_inner": (
             int(selected["realized_tolerance_violation_count"])
             < int(inner["realized_tolerance_violation_count"])
         ),
         "no_dlo_regression": all(
-            float(
-                selected_record["dlos"][dlo][
-                    "rmse_ratio_to_fallback"
-                ]
-            )
-            <= 1.0 + ATOL
+            float(selected_record["dlos"][dlo]["rmse_ratio_to_fallback"]) <= 1.0 + ATOL
             for dlo in DLOS
         ),
         "zero_exact_fallback_violations": (
@@ -1147,9 +1068,7 @@ def target_command(args: argparse.Namespace) -> int:
         "status": "completed",
         "run_key": request["run_key"],
         "source_selection_class": policy_record["selection_class"],
-        "strict_source_gate_passed": policy_record[
-            "strict_source_gate_passed"
-        ],
+        "strict_source_gate_passed": policy_record["strict_source_gate_passed"],
         "methods": summaries,
         "big_result_gate": {
             "criteria": big_gate,
@@ -1176,9 +1095,7 @@ def target_command(args: argparse.Namespace) -> int:
         "target_outcomes_used_for_policy": False,
         "target_retries": False,
         "paper_claim_authorized": False,
-        "classification": (
-            "retrospective-source-frozen-support-adequacy-development"
-        ),
+        "classification": ("retrospective-source-frozen-support-adequacy-development"),
         "claim_boundary": protocol.claim_boundary,
     }
     output = args.output_root.resolve()
@@ -1203,14 +1120,8 @@ def target_command(args: argparse.Namespace) -> int:
         "# DEFORM support-aware outer certificate",
         "",
         f"Source selection: **{policy_record['selection_class']}**",
-        (
-            "Strict source gate: "
-            f"**{policy_record['strict_source_gate_passed']}**"
-        ),
-        (
-            "Big-result development gate: "
-            f"**{result['big_result_gate']['passed']}**"
-        ),
+        (f"Strict source gate: **{policy_record['strict_source_gate_passed']}**"),
+        (f"Big-result development gate: **{result['big_result_gate']['passed']}**"),
         "",
         "| Method | Nonfallback | RMSE gain | Tolerance violations | "
         "Inner-bound exceedances | Harm |",
@@ -1302,14 +1213,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.parent_source_result is None:
             raise ValueError("source command requires parent source result")
         return source_command(args)
-    if (
-        args.source_result is None
-        or args.policy is None
-        or args.source_seal is None
-    ):
-        raise ValueError(
-            "target command requires source result, policy, and seal"
-        )
+    if args.source_result is None or args.policy is None or args.source_seal is None:
+        raise ValueError("target command requires source result, policy, and seal")
     return target_command(args)
 
 

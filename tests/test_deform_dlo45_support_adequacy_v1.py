@@ -24,12 +24,7 @@ PROTOCOL = (
     / "deform_dlo45_decision_identifiability_v1"
     / "support_adequacy_protocol.json"
 )
-REQUEST = (
-    ROOT
-    / ".github"
-    / "requests"
-    / "deform-dlo45-support-adequacy-v1.json"
-)
+REQUEST = ROOT / ".github" / "requests" / "deform-dlo45-support-adequacy-v1.json"
 
 
 def test_protocol_and_request_keep_target_selection_closed() -> None:
