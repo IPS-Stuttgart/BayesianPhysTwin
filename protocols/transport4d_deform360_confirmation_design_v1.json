@@ -1,0 +1,241 @@
+{
+  "schema": "bayesian-phystwin.transport4d_deform360_confirmation_design",
+  "schema_version": 1,
+  "protocol_id": "transport4d-deform360-confirmation-design-v1-20260902",
+  "status": "frozen-before-calibration-policy-binding-and-before-confirmation-numeric-access",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "study_role": "prospective-public-object-level-confirmation-of-tiered-transport-selection",
+  "reserve_binding": {
+    "reserve_result_path": "evidence/transport4d_deform360_reserve_v1/result.json",
+    "reserve_id": "0fba6a0cda4ac23fc8f900ca4632d73a22ae0559d42e48cc2ec8c5ea79030dc4",
+    "metadata_object_count": 190,
+    "protected_object_count": 120,
+    "calibration_object_count": 23,
+    "confirmation_object_count": 47
+  },
+  "support_binding": {
+    "support_result_path": "evidence/transport4d_deform360_support_v1/result.json",
+    "support_id": "57aaea3215ad1cdf76accfc455c173bb5d84a926bfed013fa64b6ec3625befed",
+    "full_support_result_sha256": "db6737e04d40144d18f1f0d316d3035705384c4069546449d0567ee231dc2334",
+    "supported_calibration_object_count": 15,
+    "supported_confirmation_object_count": 33,
+    "include_every_supported_confirmation_object": true,
+    "support_negative_objects_retained": true,
+    "replacement_allowed": false,
+    "split_movement_allowed": false
+  },
+  "calibration_policy_binding": {
+    "required_before_any_confirmation_numeric_access": true,
+    "required_calibration_evidence_schema": "bayesian-phystwin.transport4d_deform360_calibration_evidence",
+    "required_terminal_run_conclusion": "success",
+    "explicit_positive_calibration_gate_required": true,
+    "selected_operating_point_must_be_source_frozen": true,
+    "selected_operating_point_must_be_unique": true,
+    "policy_and_prediction_code_content_binding_required": true,
+    "calibration_object_ids_must_match_support_result": true,
+    "confirmation_object_ids_must_match_support_result": true,
+    "binding_may_not_change_this_design": true,
+    "automatic_confirmation_authorization": false
+  },
+  "registered_query": {
+    "name": "tactile-response-query16-v1",
+    "dimension": 16,
+    "per_sensor_components": [
+      "log-positive-response-mass",
+      "active-taxel-fraction",
+      "positive-response-row-centroid",
+      "positive-response-column-centroid"
+    ],
+    "sensor_count": 4,
+    "future_horizon_frames": 32,
+    "target_window_start_frame": 16,
+    "target_frame": 48,
+    "prefix_tactile_indices": [0, 12, 15, 16],
+    "known_future_robot_segment_is_intervention_input": true,
+    "future_target_tactile_is_scoring_only": true
+  },
+  "fixed_transport_tiers": [
+    {
+      "tier": "exact_coefficients",
+      "adaptation_dimension": 0,
+      "target_object_source_episodes_may_fit_coefficients": false,
+      "transports_mean": true,
+      "transports_uncertainty": true
+    },
+    {
+      "tier": "query_identifiable_effect",
+      "adaptation_dimension": 0,
+      "target_object_source_episodes_may_fit_coefficients": false,
+      "transports_mean": true,
+      "transports_uncertainty": true
+    },
+    {
+      "tier": "low_dimensional_correction",
+      "adaptation_dimension": 1,
+      "target_object_source_episodes_may_fit_coefficients": true,
+      "target_fit_scope": "one-scalar-amplitude-on-nontarget-episodes-only",
+      "transports_mean": true,
+      "transports_uncertainty": true
+    },
+    {
+      "tier": "uncertainty_only",
+      "adaptation_dimension": 0,
+      "target_object_source_episodes_may_fit_coefficients": false,
+      "transports_mean": false,
+      "transports_uncertainty": true
+    },
+    {
+      "tier": "procedure_only",
+      "adaptation_dimension": "registered-full-target-local-fit",
+      "target_object_source_episodes_may_fit_coefficients": true,
+      "target_fit_scope": "all-carrier-complete-nontarget-episodes-only",
+      "transports_mean": true,
+      "transports_uncertainty": true
+    },
+    {
+      "tier": "unsupported",
+      "adaptation_dimension": 0,
+      "transports_mean": false,
+      "transports_uncertainty": false,
+      "action": "exact-registered-fallback"
+    }
+  ],
+  "target_episode_rule": {
+    "rule": "fixed-target-episode-from-support-manifest",
+    "source_episodes": "all-other-carrier-complete-episodes-of-the-same-object",
+    "target_episode_may_not_be_reselected": true,
+    "target_action_may_not_be_reselected": true,
+    "source_episode_failure_makes_object-support-negative": true,
+    "support_negative_object_may_not_be_replaced": true
+  },
+  "information_order": [
+    {
+      "stage": "bind-calibration-policy",
+      "may_open": [
+        "retained-calibration-evidence",
+        "frozen-support-identities",
+        "source-frozen-model-and-threshold-record"
+      ],
+      "may_not_open": [
+        "confirmation-robot-numeric-payloads",
+        "confirmation-tactile-numeric-payloads",
+        "confirmation-camera-pixels",
+        "confirmation-geometry",
+        "confirmation-target-outcomes"
+      ]
+    },
+    {
+      "stage": "confirmation-fit-and-predict",
+      "may_open": [
+        "registered-confirmation-nontarget-episode-robot-payloads",
+        "registered-confirmation-nontarget-episode-tactile-payloads",
+        "registered-target-prefix-tactile-indices",
+        "registered-target-future-robot-intervention-segment"
+      ],
+      "may_not_open": [
+        "registered-target-future-tactile-response",
+        "camera-pixels",
+        "geometry-or-point-clouds"
+      ]
+    },
+    {
+      "stage": "joint-prediction-seal",
+      "required_contents": [
+        "complete-33-object-roster",
+        "all-tier-prediction-identities",
+        "selected-tier-per-object",
+        "selected-action-or-fallback-per-object",
+        "source-frozen-score-and-threshold-per-object",
+        "fallback-prediction-identity",
+        "policy-code-identity",
+        "calibration-evidence-identity",
+        "support-identity"
+      ],
+      "all_objects_must_be_sealed_before_any_target_outcome": true
+    },
+    {
+      "stage": "confirmation-score-once",
+      "may_open": [
+        "registered-target-future-tactile-response"
+      ],
+      "target_tuning_allowed": false,
+      "tier_reselection_allowed": false,
+      "object_replacement_allowed": false,
+      "retry_after_scientific_outcome_allowed": false
+    }
+  ],
+  "loss_and_harm": {
+    "primary_loss": "object-balanced-query16-normalized-rmse",
+    "secondary_losses": [
+      "active-field-rmse",
+      "query16-gaussian-nll",
+      "query16-energy-score",
+      "decision-regret-relative-to-hindsight-permitted-tier"
+    ],
+    "practical_harm_definition": "selected-loss-greater-than-fallback-loss-by-more-than-one-percent-of-fallback-loss",
+    "harm_margin_fraction": 0.01,
+    "false_upgrade_definition": "selected-tier-is-stronger-than-the-strongest-hindsight-tier-within-the-registered-practical-equivalence-margin",
+    "practical_equivalence_margin_fraction": 0.01
+  },
+  "comparators": [
+    "always-exact-coefficients",
+    "always-query-identifiable-effect",
+    "always-one-scalar-correction",
+    "always-uncertainty-only-with-fallback-mean",
+    "always-procedure-only-refit",
+    "always-exact-fallback",
+    "source-support-distance-gate-at-matched-coverage",
+    "ensemble-disagreement-gate-at-matched-coverage",
+    "physics-residual-disagreement-gate-at-matched-coverage",
+    "deterministic-random-tier-at-matched-coverage",
+    "hindsight-best-permitted-tier-diagnostic-only"
+  ],
+  "statistics": {
+    "independent_unit": "physical-object",
+    "registered_confirmation_object_count": 33,
+    "frames_windows_queries_and_tactile_cells_are_nested_not-independent": true,
+    "paired_object_bootstrap_repetitions": 10000,
+    "bootstrap_seed": 90233,
+    "sign_test": "exact-one-sided-binomial-on-object-level-win-tie-loss-after-splitting-ties-equally-only-for-descriptive-reporting",
+    "harm_bound": "exact-one-sided-95-percent-clopper-pearson-on-accepted-objects",
+    "minimum_accepted_objects_for-sub-10-percent-zero-harm-bound": 29,
+    "zero_harm_upper_bound_if_all_33_are_accepted": 0.0868153866,
+    "multiple_operating_points_on_confirmation": false,
+    "calibration_selected_operating_point_only": true
+  },
+  "primary_confirmation_gate": {
+    "all_33_supported_confirmation_objects_must_be_scored_or-retained-support-negative": true,
+    "zero_roster_replacements": true,
+    "zero_prediction_seal_violations": true,
+    "zero_exact_fallback_identity_violations": true,
+    "selected_policy_mean_loss_below_always_fallback": true,
+    "selected_policy_mean_loss_below_best_single-fixed-tier-chosen-on-calibration": true,
+    "paired_object_bootstrap_upper_endpoint_below_zero_against_best-single-fixed-tier": true,
+    "exact_sign_test_pvalue_at_most": 0.05,
+    "minimum_distinct_selected_nonfallback_tiers": 2,
+    "target_threshold_or-model_changes": 0,
+    "scientific_target_retries": 0
+  },
+  "guarded_transport_claim_gate": {
+    "separate_from_primary_utility_gate": true,
+    "minimum_accepted_objects": 29,
+    "maximum_harmful_accepted_objects": 0,
+    "one_sided_95_percent_harm_upper_bound_at_most": 0.1,
+    "zero_false_strong-tier-promotions_required": false,
+    "false_upgrade_rate_report_required": true
+  },
+  "information_boundary": {
+    "calibration_numeric_payloads_previously_authorized_separately": true,
+    "confirmation_directory_names_and_file_sizes_previously_opened": true,
+    "confirmation_robot_numeric_payloads_opened": false,
+    "confirmation_tactile_numeric_payloads_opened": false,
+    "confirmation_camera_pixels_opened": false,
+    "confirmation_geometry_or_point_cloud_opened": false,
+    "confirmation_target_outcomes_opened": false,
+    "confirmation_predictions_sealed": false,
+    "confirmation_authorized": false,
+    "paper_claim_authorized": false,
+    "deployment_authorized": false
+  },
+  "claim_boundary": "This design freezes the roster, information order, tiers, query, losses, comparators, statistical unit, prediction-seal semantics, and success gates for a later public Deform360 confirmation. It does not bind a passing calibration policy, authorize confirmation numerical access, establish tier-selection utility, validate transport, certify a harmful-transfer rate, authorize deployment, or support a paper claim."
+}
