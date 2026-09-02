@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install ruff==0.16.5 pytest numpy
+          python -m pip install -e . ruff==0.16.5 pytest
           python -m ruff format \
             src/bayesian_phystwin/query_probe_certificate_v1.py \
             tests/test_query_probe_certificate_v1.py
