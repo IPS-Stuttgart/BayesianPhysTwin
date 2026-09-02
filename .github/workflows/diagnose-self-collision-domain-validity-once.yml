@@ -15,7 +15,7 @@ permissions:
 jobs:
   diagnose:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
       DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
       PYTHONUNBUFFERED: "1"
@@ -32,161 +32,18 @@ jobs:
           python-version: "3.12"
       - name: Install package
         run: python -m pip install -e .
-      - name: Evaluate source gate after deterministic particle qualification
+      - name: Evaluate triangle-contact source variants
         shell: bash
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/self-collision-qualified-source-$GITHUB_RUN_ID"
-          mkdir -p "$out"
-          OUT="$out" python - <<'PY'
-          from __future__ import annotations
-
-          import json
-          import os
-          from pathlib import Path
-
-          import numpy as np
-
-          from experiments.tracking_cloth_self_collision_selective_twin_v1.data import (
-              audit_dataset,
-              prediction_input,
-              scoring_truth,
-          )
-          from experiments.tracking_cloth_self_collision_selective_twin_v1.model import (
-              PHYSICS_ARM,
-              contact_rollout,
-              kinematic_predictions,
-              parameter_bank,
-              trajectory_mse,
-          )
-          from experiments.tracking_cloth_self_collision_selective_twin_v1.selection import (
-              apply_policy,
-              fit_cross_material_policies,
-              incremental_summary,
-              score_case,
-              source_gate,
-              summarize_policy_rows,
-          )
-
-          root = Path(os.environ["DATASET_ROOT"])
-          protocol_path = Path(
-              "experiments/tracking_cloth_self_collision_selective_twin_v1/protocol.json"
-          )
-          protocol = json.loads(protocol_path.read_text())
-          cases, inventory = audit_dataset(root, protocol)
-          bank = parameter_bank(protocol)
-          rep1 = [case for case in cases if case.repetition == 1]
-          rep2 = [case for case in cases if case.repetition == 2]
-
-          def key(case):
-              return f"{case.material}|{case.interaction}"
-
-          fits = {}
-          fit_summary = []
-          for case in rep1:
-              inputs = prediction_input(case, protocol)
-              truth = scoring_truth(case, inputs)
-              valid_parameters = []
-              valid_predictions = []
-              valid_losses = []
-              rejected = []
-              for parameters in bank:
-                  try:
-                      prediction = contact_rollout(inputs, parameters, protocol)
-                  except ValueError as error:
-                      rejected.append(
-                          {"parameters": list(parameters), "reason": str(error)}
-                      )
-                      continue
-                  valid_parameters.append(parameters)
-                  valid_predictions.append(prediction)
-                  valid_losses.append(trajectory_mse(prediction, truth, inputs))
-              if not valid_parameters:
-                  raise RuntimeError(f"no domain-valid source particle: {case.case_id}")
-              losses = np.asarray(valid_losses, dtype=float)
-              temperature = max(
-                  float(np.min(losses)),
-                  float(protocol["measurement_floor_m"]) ** 2,
-              )
-              logits = -losses / (2.0 * temperature)
-              weights = np.exp(logits - np.max(logits))
-              weights /= weights.sum()
-              fits[key(case)] = {
-                  "parameters": tuple(valid_parameters),
-                  "weights": weights,
-                  "temperature_m2": temperature,
-              }
-              fit_summary.append(
-                  {
-                      "case_id": case.case_id,
-                      "valid_particle_count": len(valid_parameters),
-                      "rejected_particle_count": len(rejected),
-                      "valid_parameters": [list(item) for item in valid_parameters],
-                      "minimum_loss_m2": float(np.min(losses)),
-                      "maximum_loss_m2": float(np.max(losses)),
-                      "temperature_m2": temperature,
-                      "rejected": rejected,
-                  }
-              )
-
-          rep2_rows = []
-          case_arm_mse = []
-          for case in rep2:
-              inputs = prediction_input(case, protocol)
-              truth = scoring_truth(case, inputs)
-              fit = fits[key(case)]
-              predictions = kinematic_predictions(inputs, protocol)
-              bank_predictions = np.stack(
-                  [
-                      contact_rollout(inputs, parameters, protocol)
-                      for parameters in fit["parameters"]
-                  ],
-                  axis=0,
-              )
-              predictions[PHYSICS_ARM] = np.einsum(
-                  "k,ktnd->tnd", fit["weights"], bank_predictions
-              )
-              rep2_rows.extend(score_case(predictions, truth, inputs, protocol))
-              case_arm_mse.append(
-                  {
-                      "case_id": case.case_id,
-                      "arm_mse_m2": {
-                          arm: trajectory_mse(prediction, truth, inputs)
-                          for arm, prediction in predictions.items()
-                      },
-                  }
-              )
-
-          policy = fit_cross_material_policies(rep2_rows, protocol)
-          policy_rows = apply_policy(rep2_rows, policy)
-          summaries = summarize_policy_rows(policy_rows, protocol)
-          incremental = incremental_summary(policy_rows, protocol)
-          gate = source_gate(summaries, incremental, protocol)
-          result = {
-              "schema": "bayesian-phystwin.self-collision-qualified-source-diagnostic.v1",
-              "source_revision": os.environ["GITHUB_SHA"],
-              "dataset_inventory_id": inventory["inventory_id"],
-              "rep3_numeric_outcomes_read": False,
-              "qualification_rule": (
-                  "retain exactly those parameter particles whose rep1 rollout remains "
-                  "finite and inside the pre-existing five-metre domain"
-              ),
-              "fit_summary": fit_summary,
-              "case_arm_mse": case_arm_mse,
-              "summaries": summaries,
-              "incremental": incremental,
-              "source_gate": gate,
-          }
-          output = Path(os.environ["OUT"])
-          (output / "qualified_source_result.json").write_text(
-              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
-          )
-          print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
-          PY
+          out="$RUNNER_TEMP/self-collision-triangle-contact-$GITHUB_RUN_ID"
+          python -m experiments.tracking_cloth_self_collision_selective_twin_v1.source_triangle_contact_diagnostic \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$out"
           echo "SC_DIAGNOSTIC=$out" >> "$GITHUB_ENV"
       - name: Upload source-only diagnostic
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
         with:
-          name: self-collision-qualified-source-${{ github.run_id }}
+          name: self-collision-triangle-contact-${{ github.run_id }}
           path: ${{ env.SC_DIAGNOSTIC }}
           retention-days: 30
