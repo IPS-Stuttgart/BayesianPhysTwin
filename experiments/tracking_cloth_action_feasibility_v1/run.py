@@ -44,9 +44,7 @@ def source_rows(
     cases, inventory = audit_dataset(root, protocol)
     allowed = set(int(value) for value in protocol["source_repetitions"])
     source_cases = [case for case in cases if case.repetition in allowed]
-    expected_count = (
-        len(protocol["materials"]) * len(protocol["interactions"]) * 2
-    )
+    expected_count = len(protocol["materials"]) * len(protocol["interactions"]) * 2
     if len(source_cases) != expected_count:
         raise ValueError("source roster is incomplete")
 
