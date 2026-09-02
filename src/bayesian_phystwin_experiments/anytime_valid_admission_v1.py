@@ -1,12 +1,13 @@
-"""Anytime-valid admission and revocation for shadow-evaluated simulator corrections.
+"""Anytime-valid admission and revocation for shadow-evaluated corrections.
 
 The controller treats a candidate correction and the caller-owned physical
-fallback as a paired sequential experiment.  It promotes the candidate only
-when a nonnegative e-process crosses an alpha-spending boundary.  A second
-one-sided e-process can revoke an admitted candidate after evidence of harm.
+fallback as a paired sequential experiment. It promotes the candidate only when
+a nonnegative e-process crosses an alpha-spending boundary. A restart-mixture
+one-sided e-process can revoke an admitted candidate after evidence of harm at
+an unknown change time.
 
 The guarantee concerns the registered clipped paired gain, not universal
-physical safety.  Candidate and fallback losses must both be computed when the
+physical safety. Candidate and fallback losses must both be computed when the
 delayed outcome becomes available, even if the candidate was not deployed.
 """
 
@@ -35,10 +36,10 @@ class AnytimeAdmissionConfig:
     """Frozen configuration for an anytime-valid admission stream.
 
     ``gain_margin`` is the minimum normalized expected gain that admission is
-    required to establish.  ``harm_margin`` is the tolerated normalized loss
-    disadvantage after admission.  Both are expressed relative to
-    ``loss_cap``.  The registered loss is clipped before testing, so all
-    guarantees are explicitly about that clipped loss.
+    required to establish. ``harm_margin`` is the tolerated normalized loss
+    disadvantage after admission. Both are expressed relative to ``loss_cap``.
+    The registered loss is clipped before testing, so every guarantee is about
+    that clipped loss.
     """
 
     alpha: float = 0.05
@@ -70,15 +71,17 @@ class AnytimeAdmissionConfig:
             raise ValueError("gain_margin must lie in [0, 1)")
         if not 0.0 <= self.harm_margin < 1.0:
             raise ValueError("harm_margin must lie in [0, 1)")
-        if not self.lambdas:
-            raise ValueError("at least one betting fraction is required")
-        if any(
-            not math.isfinite(value) or not 0.0 < value < 1.0
-            for value in self.lambdas
-        ):
-            raise ValueError("every betting fraction must lie in (0, 1)")
-        if len(set(self.lambdas)) != len(self.lambdas):
-            raise ValueError("betting fractions must be unique")
+        _validated_lambdas(self.lambdas)
+
+
+@dataclass(frozen=True)
+class BettingMixtureConfig:
+    """Backward-compatible fixed betting-mixture configuration."""
+
+    lambdas: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        _validated_lambdas(self.lambdas)
 
 
 @dataclass(frozen=True)
@@ -111,6 +114,28 @@ class AdmissionRecord:
     clipped: bool
 
 
+def _validated_lambdas(values: tuple[float, ...]) -> np.ndarray:
+    array = np.asarray(values, dtype=np.float64)
+    if (
+        array.ndim != 1
+        or len(array) == 0
+        or not np.isfinite(array).all()
+        or np.any(array <= 0.0)
+        or np.any(array >= 1.0)
+    ):
+        raise ValueError("lambdas must be a finite nonempty vector in (0, 1)")
+    if len(set(float(value) for value in array)) != len(array):
+        raise ValueError("betting fractions must be unique")
+    return array
+
+
+def _logsumexp(values: np.ndarray) -> float:
+    maximum = float(np.max(values))
+    if maximum == -math.inf:
+        return -math.inf
+    return maximum + math.log(float(np.sum(np.exp(values - maximum))))
+
+
 class MixtureBettingEProcess:
     """Convex mixture of fixed-fraction betting e-processes.
 
@@ -119,40 +144,57 @@ class MixtureBettingEProcess:
 
     ``prod_i (1 + lambda * X_i)``
 
-    is a nonnegative supermartingale for ``lambda in (0, 1)``.  A fixed convex
-    mixture is therefore an e-process as well.  Ville's inequality permits
-    arbitrary stopping and continuous monitoring.
+    is a nonnegative supermartingale for ``lambda in (0, 1)``. A fixed convex
+    mixture is therefore an e-process. Ville's inequality permits arbitrary
+    stopping and continuous monitoring.
     """
 
-    def __init__(self, lambdas: tuple[float, ...]) -> None:
-        values = np.asarray(lambdas, dtype=np.float64)
-        if (
-            values.ndim != 1
-            or len(values) == 0
-            or not np.isfinite(values).all()
-            or np.any(values <= 0.0)
-            or np.any(values >= 1.0)
-        ):
-            raise ValueError("lambdas must be a finite nonempty vector in (0, 1)")
-        self._lambdas = values
-        self._log_components = np.zeros_like(values)
-        self._log_weights = np.full_like(values, -math.log(len(values)))
+    def __init__(
+        self,
+        config: BettingMixtureConfig | AnytimeAdmissionConfig | tuple[float, ...],
+    ) -> None:
+        lambdas = config.lambdas if hasattr(config, "lambdas") else config
+        self._lambdas = _validated_lambdas(tuple(lambdas))
+        self._log_components = np.zeros_like(self._lambdas)
+        self._log_weights = np.full_like(
+            self._lambdas,
+            -math.log(len(self._lambdas)),
+        )
         self._count = 0
+        self._maximum_log_e_value = 0.0
 
     @property
     def observation_count(self) -> int:
         return self._count
 
     @property
+    def count(self) -> int:
+        """Backward-compatible alias for ``observation_count``."""
+
+        return self._count
+
+    @property
     def log_e_value(self) -> float:
-        terms = self._log_weights + self._log_components
-        maximum = float(np.max(terms))
-        return maximum + math.log(float(np.sum(np.exp(terms - maximum))))
+        return _logsumexp(self._log_weights + self._log_components)
 
     @property
     def e_value(self) -> float:
         value = self.log_e_value
         return math.inf if value >= math.log(np.finfo(float).max) else math.exp(value)
+
+    @property
+    def maximum_log_e_value(self) -> float:
+        return self._maximum_log_e_value
+
+    @property
+    def maximum_e_value(self) -> float:
+        value = self._maximum_log_e_value
+        return math.inf if value >= math.log(np.finfo(float).max) else math.exp(value)
+
+    def crossed(self, alpha: float) -> bool:
+        if not 0.0 < alpha < 1.0:
+            raise ValueError("alpha must lie in (0, 1)")
+        return self._maximum_log_e_value >= -math.log(alpha)
 
     def update(self, evidence: float) -> EProcessRecord:
         if not math.isfinite(evidence) or not -1.0 <= evidence <= 1.0:
@@ -162,11 +204,20 @@ class MixtureBettingEProcess:
             raise AssertionError("betting increment lost nonnegativity")
         self._log_components += np.log(increments)
         self._count += 1
+        current_log_e = self.log_e_value
+        self._maximum_log_e_value = max(
+            self._maximum_log_e_value,
+            current_log_e,
+        )
         return EProcessRecord(
             observation_count=self._count,
             evidence=float(evidence),
-            log_e_value=self.log_e_value,
-            e_value=self.e_value,
+            log_e_value=current_log_e,
+            e_value=(
+                math.inf
+                if current_log_e >= math.log(np.finfo(float).max)
+                else math.exp(current_log_e)
+            ),
         )
 
     def snapshot(self) -> dict[str, object]:
@@ -177,14 +228,135 @@ class MixtureBettingEProcess:
             "observation_count": self._count,
             "log_e_value": self.log_e_value,
             "e_value": self.e_value,
+            "maximum_log_e_value": self.maximum_log_e_value,
+            "maximum_e_value": self.maximum_e_value,
         }
+
+
+class ChangePointMixtureBettingEProcess:
+    """Heavy-tailed mixture over every possible evidence-change start time.
+
+    Component ``s`` stays at wealth one before observation ``s`` and then runs
+    a fixed-fraction betting mixture from ``s`` onward. The telescoping prior
+    ``pi_s = 1 / (s * (s + 1))`` and unresolved future mass ``1 / (t + 1)``
+    sum to one. The resulting mixture remains an e-process under the same null,
+    but unlike a monitor started only at promotion it can detect a later change
+    without carrying all favorable pre-change evidence into the reverse test.
+    """
+
+    def __init__(
+        self,
+        config: BettingMixtureConfig | AnytimeAdmissionConfig | tuple[float, ...],
+    ) -> None:
+        lambdas = config.lambdas if hasattr(config, "lambdas") else config
+        self._config = BettingMixtureConfig(tuple(lambdas))
+        self._processes: list[MixtureBettingEProcess] = []
+        self._count = 0
+        self._maximum_log_e_value = 0.0
+
+    @property
+    def observation_count(self) -> int:
+        return self._count
+
+    @property
+    def count(self) -> int:
+        return self._count
+
+    @property
+    def log_e_value(self) -> float:
+        terms = [math.log(1.0 / (self._count + 1.0))]
+        terms.extend(
+            math.log(1.0 / (start * (start + 1.0))) + process.log_e_value
+            for start, process in enumerate(self._processes, start=1)
+        )
+        return _logsumexp(np.asarray(terms, dtype=np.float64))
+
+    @property
+    def e_value(self) -> float:
+        value = self.log_e_value
+        return math.inf if value >= math.log(np.finfo(float).max) else math.exp(value)
+
+    @property
+    def maximum_log_e_value(self) -> float:
+        return self._maximum_log_e_value
+
+    @property
+    def maximum_e_value(self) -> float:
+        value = self._maximum_log_e_value
+        return math.inf if value >= math.log(np.finfo(float).max) else math.exp(value)
+
+    def crossed(self, alpha: float) -> bool:
+        if not 0.0 < alpha < 1.0:
+            raise ValueError("alpha must lie in (0, 1)")
+        return self._maximum_log_e_value >= -math.log(alpha)
+
+    def update(self, evidence: float) -> EProcessRecord:
+        if not math.isfinite(evidence) or not -1.0 <= evidence <= 1.0:
+            raise ValueError("evidence must be finite and lie in [-1, 1]")
+        for process in self._processes:
+            process.update(evidence)
+        new_process = MixtureBettingEProcess(self._config)
+        new_process.update(evidence)
+        self._processes.append(new_process)
+        self._count += 1
+        current_log_e = self.log_e_value
+        self._maximum_log_e_value = max(
+            self._maximum_log_e_value,
+            current_log_e,
+        )
+        return EProcessRecord(
+            observation_count=self._count,
+            evidence=float(evidence),
+            log_e_value=current_log_e,
+            e_value=(
+                math.inf
+                if current_log_e >= math.log(np.finfo(float).max)
+                else math.exp(current_log_e)
+            ),
+        )
+
+    def snapshot(self) -> dict[str, object]:
+        return {
+            "start_prior": "1/(s*(s+1))",
+            "future_start_mass": 1.0 / (self._count + 1.0),
+            "start_count": len(self._processes),
+            "observation_count": self._count,
+            "log_e_value": self.log_e_value,
+            "e_value": self.e_value,
+            "maximum_log_e_value": self.maximum_log_e_value,
+            "maximum_e_value": self.maximum_e_value,
+            "start_component_e_values": [
+                process.e_value for process in self._processes
+            ],
+        }
+
+
+def geometric_alpha(
+    total_alpha: float,
+    epoch_index: int,
+    *,
+    continuation: float = 0.5,
+) -> float:
+    """Return a zero-indexed geometric alpha allocation.
+
+    The allocations ``total_alpha * (1-continuation) * continuation**j`` sum to
+    ``total_alpha`` over all nonnegative epoch indices.
+    """
+
+    if not 0.0 < total_alpha < 1.0:
+        raise ValueError("total_alpha must lie in (0, 1)")
+    if isinstance(epoch_index, bool) or epoch_index < 0:
+        raise ValueError("epoch_index must be a nonnegative integer")
+    if not 0.0 < continuation < 1.0:
+        raise ValueError("continuation must lie in (0, 1)")
+    return total_alpha * (1.0 - continuation) * continuation**epoch_index
 
 
 def epoch_budget(total: float, epoch: int, *, allow_reentry: bool) -> float:
     """Allocate a summable error budget to a one-indexed admission epoch.
 
     With re-entry, ``total / (epoch * (epoch + 1))`` telescopes and sums to
-    ``total`` over infinitely many epochs.  Without re-entry, the only epoch
+    ``total`` over infinitely many epochs. Without re-entry, the only epoch
     receives the full budget.
     """
 
@@ -195,6 +367,26 @@ def epoch_budget(total: float, epoch: int, *, allow_reentry: bool) -> float:
     if not allow_reentry and epoch != 1:
         raise ValueError("non-reentrant controllers have only one epoch")
     return total if not allow_reentry else total / (epoch * (epoch + 1))
+
+
+def symmetric_relative_gain(
+    *,
+    candidate_loss: float,
+    fallback_loss: float,
+) -> float:
+    """Return bounded symmetric fallback-minus-candidate relative gain."""
+
+    if (
+        not math.isfinite(candidate_loss)
+        or not math.isfinite(fallback_loss)
+        or candidate_loss < 0.0
+        or fallback_loss < 0.0
+    ):
+        raise ValueError("losses must be finite and nonnegative")
+    denominator = candidate_loss + fallback_loss
+    if denominator == 0.0:
+        return 0.0
+    return float((fallback_loss - candidate_loss) / denominator)
 
 
 def clipped_gain(
@@ -239,8 +431,8 @@ def margin_evidence(value: float, margin: float) -> float:
 class AnytimeAdmissionController(Generic[T]):
     """Fail-closed sequential controller for one fixed candidate correction.
 
-    Outcomes may be delayed.  The controller's deployment choice changes only
-    after ``observe`` receives the paired candidate and fallback losses, so the
+    Outcomes may be delayed. The controller's deployment choice changes only
+    after ``observe`` receives paired candidate and fallback losses, so the
     newly crossed boundary affects the next decision rather than the decision
     whose outcome supplied the evidence.
     """
@@ -258,8 +450,8 @@ class AnytimeAdmissionController(Generic[T]):
         self.state = DeploymentState.FALLBACK
         self.epoch = 1
         self.reveal_index = 0
-        self._promotion = MixtureBettingEProcess(config.lambdas)
-        self._harm: MixtureBettingEProcess | None = None
+        self._promotion = MixtureBettingEProcess(config)
+        self._harm: ChangePointMixtureBettingEProcess | None = None
         self._history: list[AdmissionRecord] = []
         self._closed = False
 
@@ -311,9 +503,9 @@ class AnytimeAdmissionController(Generic[T]):
             update = self._promotion.update(evidence)
             budget = self.current_alpha
             boundary = 1.0 / budget
-            if update.e_value >= boundary:
+            if self._promotion.crossed(budget):
                 self.state = DeploymentState.CANDIDATE
-                self._harm = MixtureBettingEProcess(self.config.lambdas)
+                self._harm = ChangePointMixtureBettingEProcess(self.config)
                 event = "admit"
             else:
                 event = "remain-fallback"
@@ -324,12 +516,12 @@ class AnytimeAdmissionController(Generic[T]):
             update = self._harm.update(evidence)
             budget = self.current_beta
             boundary = 1.0 / budget
-            if update.e_value >= boundary:
+            if self._harm.crossed(budget):
                 self.state = DeploymentState.FALLBACK
                 event = "revoke"
                 if self.config.allow_reentry:
                     self.epoch += 1
-                    self._promotion = MixtureBettingEProcess(self.config.lambdas)
+                    self._promotion = MixtureBettingEProcess(self.config)
                     self._harm = None
                 else:
                     self._closed = True
@@ -338,7 +530,11 @@ class AnytimeAdmissionController(Generic[T]):
 
         record = AdmissionRecord(
             reveal_index=self.reveal_index,
-            epoch=self.epoch if event != "revoke" else self.epoch - int(self.config.allow_reentry),
+            epoch=(
+                self.epoch
+                if event != "revoke"
+                else self.epoch - int(self.config.allow_reentry)
+            ),
             state_before=state_before.value,
             state_after=self.state.value,
             event=event,
@@ -373,7 +569,10 @@ class AnytimeAdmissionController(Generic[T]):
             "guarantee_boundary": (
                 "Under the registered clipped-gain null and predictable delayed "
                 "feedback, Ville plus the summable epoch budget bounds the "
-                "probability of any false admission by alpha. This is not a "
-                "deployment-safety or unclipped-loss guarantee."
+                "probability of any false admission by alpha. The heavy-tailed "
+                "restart mixture gives an anytime-valid revocation monitor for "
+                "an unknown post-admission change time under its reverse-gain "
+                "null. These are not deployment-safety or unclipped-loss "
+                "guarantees."
             ),
         }
