@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import math
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -59,9 +58,7 @@ FloatArray = npt.NDArray[np.float64]
 IntArray = npt.NDArray[np.int64]
 
 CONTRACT: Final = "deform-dlo45-crossfit-conformal-regret-envelope-v2"
-REQUEST_CONTRACT: Final = (
-    "deform-dlo45-crossfit-conformal-regret-envelope-request-v2"
-)
+REQUEST_CONTRACT: Final = "deform-dlo45-crossfit-conformal-regret-envelope-request-v2"
 PARENT_CONTRACT: Final = "deform-dlo45-decision-identifiability-v1"
 ROUTE_COUNT: Final = 2
 SOURCE_RESULT_NAME: Final = "source_crossfit_envelope.json"
@@ -124,12 +121,8 @@ def load_crossfit_protocol(path: Path) -> CrossfitProtocol:
         source_split_domain=str(crossfit["source_split_domain"]),
         nested_split_domain=str(crossfit["nested_split_domain"]),
         target_route_domain=str(crossfit["target_route_domain"]),
-        candidate_action_mask=_tuple_of(
-            calibration["candidate_action_mask"], bool
-        ),
-        miscoverage_levels=_tuple_of(
-            calibration["miscoverage_levels"], float
-        ),
+        candidate_action_mask=_tuple_of(calibration["candidate_action_mask"], bool),
+        miscoverage_levels=_tuple_of(calibration["miscoverage_levels"], float),
         primary_miscoverage=float(calibration["primary_miscoverage"]),
         regret_budget_grid=_tuple_of(decision["regret_budget_grid"], float),
         primary_regret_budget=float(decision["primary_regret_budget"]),
@@ -188,7 +181,7 @@ def validate_request(
 
 
 def _hash_key(domain: str, dlo: str, name: str, suffix: str = "") -> bytes:
-    payload = f"{domain}\0{dlo}\0{name}\0{suffix}".encode("utf-8")
+    payload = f"{domain}\0{dlo}\0{name}\0{suffix}".encode()
     return hashlib.sha256(payload).digest()
 
 
@@ -250,9 +243,7 @@ def target_route(name: str, dlo: str, protocol: CrossfitProtocol) -> int:
     return int.from_bytes(digest[:8], "big") % protocol.route_count
 
 
-def _paths_for_names(
-    paths: Sequence[Path], names: Sequence[str]
-) -> tuple[Path, ...]:
+def _paths_for_names(paths: Sequence[Path], names: Sequence[str]) -> tuple[Path, ...]:
     by_name = {path.name: path for path in paths}
     result = tuple(by_name[name] for name in names)
     if len(result) != len(names):
@@ -456,12 +447,16 @@ def run_source(
             _save_model(model_path, model)
             relative_model_path = str(model_path.relative_to(output_root))
             model_hashes[relative_model_path] = sha256_file(model_path)
-            route_records[str(route)] = selection | calibration | {
-                "calibration_names": list(split["calibration"]),
-                "model_path": relative_model_path,
-                "model_sha256": model_hashes[relative_model_path],
-                "calibration_data_used_for_model": False,
-            }
+            route_records[str(route)] = (
+                selection
+                | calibration
+                | {
+                    "calibration_names": list(split["calibration"]),
+                    "model_path": relative_model_path,
+                    "model_sha256": model_hashes[relative_model_path],
+                    "calibration_data_used_for_model": False,
+                }
+            )
         source_dlos[dlo] = {
             "routes": route_records,
             "source_trajectory_count": len(paths),
@@ -598,9 +593,7 @@ def _coverage_by_route(
     return {
         "trajectory_count": len(per_trajectory),
         "covered_trajectory_count": covered_count,
-        "empirical_trajectory_coverage": (
-            covered_count / max(len(per_trajectory), 1)
-        ),
+        "empirical_trajectory_coverage": (covered_count / max(len(per_trajectory), 1)),
         "routes": route_summaries,
         "per_trajectory": per_trajectory,
     }
@@ -644,8 +637,7 @@ def _verify_source_seal(
         or seal.get("contract") != CONTRACT
         or seal.get("stage") != "source-seal"
         or seal.get("source_result_sha256") != sha256_file(source_path)
-        or seal.get("crossfit_protocol_sha256")
-        != sha256_file(crossfit_protocol_path)
+        or seal.get("crossfit_protocol_sha256") != sha256_file(crossfit_protocol_path)
         or seal.get("request_sha256") != sha256_file(request_path)
     ):
         raise ValueError("crossfit source seal mismatch")
@@ -791,10 +783,7 @@ def run_target(
                 regret_budget=budget,
                 bootstrap_replicates=protocol.bootstrap_replicates,
                 bootstrap_seed=(
-                    protocol.bootstrap_seed
-                    + 90000
-                    + 100 * alpha_index
-                    + budget_index
+                    protocol.bootstrap_seed + 90000 + 100 * alpha_index + budget_index
                 ),
             )
             budgets[budget_key] = _as_json(summary)
@@ -828,15 +817,12 @@ def run_target(
         "status": "complete",
         "run_key": request["run_key"],
         "primary_miscoverage": protocol.primary_miscoverage,
-        "primary_nominal_trajectory_coverage": (
-            1.0 - protocol.primary_miscoverage
-        ),
+        "primary_nominal_trajectory_coverage": (1.0 - protocol.primary_miscoverage),
         "primary_regret_budget": protocol.primary_regret_budget,
         "primary": result["primary"],
         "combined_frontier": combined,
         "coverage": {
-            dlo: result_dlos[dlo]["coverage"][primary_alpha_key]
-            for dlo in DLOS
+            dlo: result_dlos[dlo]["coverage"][primary_alpha_key] for dlo in DLOS
         },
         "target_route_counts": {
             dlo: result_dlos[dlo]["target_route_counts"] for dlo in DLOS
