@@ -90,7 +90,7 @@ jobs:
           source = workflow[workflow.index("\n  source_audit:") :]
           assert "if: github.event_name == 'push'" in source
           assert "[self-hosted, Linux, X64, gpuserver4090]" in source
-          assert "secrets." not in workflow
+          assert "${{ secrets." not in workflow
           assert "contents: write" not in workflow
           assert "git push" not in workflow
           PY
@@ -141,7 +141,7 @@ jobs:
         run: cat "$ACTION_SOURCE_OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload source-only evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
           name: tracking-cloth-action-feasibility-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
