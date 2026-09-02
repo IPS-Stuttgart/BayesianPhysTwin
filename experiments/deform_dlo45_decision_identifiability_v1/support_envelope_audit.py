@@ -278,14 +278,20 @@ def summarize_actions(
     if len(records) != len(actions) or not records:
         raise ValueError("records/actions mismatch")
     method_mse = np.asarray(
-        [record.physical_mse[action] for record, action in zip(records, actions)],
+        [
+            record.physical_mse[action]
+            for record, action in zip(records, actions, strict=True)
+        ],
         dtype=np.float64,
     )
     fallback_mse = np.asarray(
         [record.fallback_mse for record in records], dtype=np.float64
     )
     regrets = np.asarray(
-        [record.normalized_regret[action] for record, action in zip(records, actions)],
+        [
+            record.normalized_regret[action]
+            for record, action in zip(records, actions, strict=True)
+        ],
         dtype=np.float64,
     )
     nonfallback = np.asarray(actions, dtype=np.int64) != 0
@@ -611,7 +617,11 @@ def run_target(
         aggregate_policy_actions["source_retention"].extend(retained_actions)
 
         for record, base, fixed, retained in zip(
-            records, base_actions, fixed_actions, retained_actions
+            records,
+            base_actions,
+            fixed_actions,
+            retained_actions,
+            strict=True,
         ):
             per_decision.append(
                 {
