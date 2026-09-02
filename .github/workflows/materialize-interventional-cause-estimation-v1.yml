@@ -38,11 +38,11 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git branch --show-current)" = \
-            "research/interventional-cause-estimation-v1"
+          test "$GITHUB_REF" = \
+            "refs/heads/research/interventional-cause-estimation-v1"
           payload=.github/agent-payloads/interventional-cause-estimation-v1.tgz
           printf '%s  %s\n' \
-            0a820bc368e84bdbd6c1e97474ae43632033dc1b9f0371856da46eb3a32c7c36 \
+            cec1000950cf34474e13b50c8cef6bcfbb8d39202a483ab2c44415973f071594 \
             "$payload" | sha256sum --check --strict
           rm -rf "$RUNNER_TEMP/why-twin-v2"
           mkdir -p "$RUNNER_TEMP/why-twin-v2"
