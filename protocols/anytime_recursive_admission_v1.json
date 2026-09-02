@@ -34,8 +34,9 @@
     "minimum_mean_gain_m": 0.00025,
     "harmful_margin_m": 0.0,
     "maximum_harm_rate": 0.1,
-    "total_alpha_gain": 0.05,
-    "total_alpha_harm": 0.05,
+    "total_alpha_gain": 0.025,
+    "total_alpha_harm": 0.025,
+    "combined_bad_regime_alpha": 0.05,
     "epoch_alpha_continuation": 0.5,
     "minimum_resolved_trials": 25,
     "gain_bet_fractions": [0.05, 0.1, 0.2, 0.4, 0.6, 0.8],
@@ -60,7 +61,7 @@
     "harm_null": "For every revealed trial i, P(H_i=1 | F_{i-1}) >= q for the registered harm event and ceiling q.",
     "predictability": "Candidate, fallback, trial inclusion, cap, margin, bet mixtures, epoch index, and reveal order are fixed or predictable before the corresponding target loss is revealed.",
     "epoch_statement": "For either null, the probability of any threshold crossing over an unbounded externally restarted epoch sequence is at most the corresponding total alpha budget.",
-    "combined_statement": "Because authorization requires both crossings, if either registered null holds throughout each active epoch, the probability of ever authorizing in those null epochs is at most that null's total alpha budget.",
+    "combined_statement": "If at least one registered null holds in every active epoch, but the active null may differ between epochs, a union bound gives a lifetime false-authorization probability no larger than total_alpha_gain plus total_alpha_harm, here 0.05. If one fixed null holds throughout all epochs, its corresponding 0.025 budget applies.",
     "multiple_candidates": "A family of correction candidates requires a separate preregistered alpha allocation or an e-value merger; this protocol evaluates one fixed candidate."
   },
   "information_boundary": {
