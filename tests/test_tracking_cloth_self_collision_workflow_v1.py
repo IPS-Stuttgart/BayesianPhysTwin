@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 WORKFLOW = Path(
     ".github/workflows/tracking-cloth-self-collision-stable-bank-source-v1.yml"
 )
