@@ -82,9 +82,10 @@ def validate(path: Path) -> dict[str, object]:
         positive_probe = sum(
             int(duration_counts[str(frame)]) for frame in probe_frames if frame > 0
         )
-        expected_frames = sum(
-            frame * int(duration_counts[str(frame)]) for frame in probe_frames
-        ) / decisions
+        expected_frames = (
+            sum(frame * int(duration_counts[str(frame)]) for frame in probe_frames)
+            / decisions
+        )
         active_aggregate = _aggregate(record, "active_minimum_cost")
         if not math.isclose(
             expected_frames,
