@@ -1,0 +1,75 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Temporary active-decision payload bootstrap
+
+on:
+  push:
+    branches: [feature/active-decision-acquisition-v1]
+    paths:
+      - ".github/workflows/temporary-active-decision-bootstrap.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-active-decision-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: feature/active-decision-acquisition-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Apply content-addressed payload and retire bootstrap
+        shell: bash
+        env:
+          EXPECTED_PAYLOAD_SHA256: 8e02b8b6d016769a5bd1cd2fa64039849d28604914cfa66b3ea6605b57c4ed06
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import hashlib
+          import io
+          import os
+          import zipfile
+          from pathlib import Path
+
+          chunks = sorted(Path("ops/bootstrap/active-decision").glob("chunk-*.txt"))
+          if len(chunks) != 8:
+              raise SystemExit(f"expected 8 payload chunks, found {len(chunks)}")
+          encoded = "".join(path.read_text(encoding="ascii").strip() for path in chunks)
+          raw = base64.b64decode(encoded, validate=True)
+          if hashlib.sha256(raw).hexdigest() != os.environ["EXPECTED_PAYLOAD_SHA256"]:
+              raise SystemExit("active-decision payload digest mismatch")
+          with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+              for member in archive.infolist():
+                  path = Path(member.filename)
+                  if path.is_absolute() or ".." in path.parts:
+                      raise SystemExit(f"unsafe payload member: {member.filename}")
+              archive.extractall(Path.cwd())
+          PY
+          git rm -r \
+            .github/workflows/temporary-active-decision-bootstrap.yml \
+            ops/bootstrap/active-decision
+          git add \
+            .github/workflows/active-decision-acquisition-v1.yml \
+            docs/active-decision-acquisition-v1.md \
+            experiments/active_decision_acquisition_v1/run.py \
+            protocols/active-decision-acquisition-study-v1.json \
+            results/science/active_decision_acquisition_v1/controlled-v1/result.json \
+            results/science/active_decision_acquisition_v1/controlled-v1/summary.md \
+            src/bayesian_phystwin/active_decision_acquisition_v1.py \
+            tests/test_active_decision_acquisition_study_v1.py \
+            tests/test_active_decision_acquisition_v1.py
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Add exact active decision acquisition"
+          git push origin HEAD:feature/active-decision-acquisition-v1
