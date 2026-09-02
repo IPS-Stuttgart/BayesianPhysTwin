@@ -1,0 +1,176 @@
+name: Hierarchical missing-physics runtime census gpuserver4090 v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_runtime_census_gpuserver4090_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-runtime-census-gpuserver4090-v1
+  cancel-in-progress: false
+
+jobs:
+  census:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    env:
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate source-only census contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_runtime_census_gpuserver4090_v1.json >/dev/null
+          python3 -m py_compile scripts/science/inventory_deform_source_runtime_artifacts.py
+          grep -F '"dlo4_payload_read": False' scripts/science/inventory_deform_source_runtime_artifacts.py
+          grep -F '"dlo5_payload_read": False' scripts/science/inventory_deform_source_runtime_artifacts.py
+          grep -F '"protected_parent_run_33361441865_artifact_read": False' scripts/science/inventory_deform_source_runtime_artifacts.py
+
+      - name: Select only existing bounded source roots
+        id: roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          roots_file="$RUNNER_TEMP/hmp-runtime-roots.txt"
+          : > "$roots_file"
+          for candidate in \
+            /home/github-runner/.cache \
+            /home/florianpfaff \
+            /mnt/seagate10tb/florianpfaff/datasets/deform; do
+            if [[ -d "$candidate" && ! -L "$candidate" ]]; then
+              printf '%s\n' "$candidate" >> "$roots_file"
+            fi
+          done
+          test -s "$roots_file"
+          cat "$roots_file"
+          echo "file=$roots_file" >> "$GITHUB_OUTPUT"
+
+      - name: Inventory retained DLO2/DLO3 artifacts without opening DLO4/DLO5
+        id: census
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-runtime-census"
+          mkdir -p "$work"
+          args=()
+          while IFS= read -r root; do
+            args+=(--root "$root")
+          done < "${{ steps.roots.outputs.file }}"
+          output="$work/result.json"
+          python3 scripts/science/inventory_deform_source_runtime_artifacts.py \
+            "${args[@]}" \
+            --max-depth 8 \
+            --max-entries 250000 \
+            --max-candidates 5000 \
+            --output "$output" \
+            | tee "$work/summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          forbidden = (
+              "dlo4_directory_children_enumerated",
+              "dlo4_payload_read",
+              "dlo5_directory_children_enumerated",
+              "dlo5_payload_read",
+              "protected_parent_run_33361441865_artifact_read",
+              "pickle_bearing_payload_deserialized",
+              "target_scores_read",
+              "target_dependent_model_selection",
+          )
+          if any(boundary[key] is not False for key in forbidden):
+              raise SystemExit("runtime census crossed a protected boundary")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output_stream:
+              output_stream.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              readiness = value["adapter_readiness"]
+              summary.write("## DLO2/DLO3 retained-runtime census\n\n")
+              summary.write(f"Census ID: `{value['census_id']}`\n\n")
+              summary.write(f"Candidates: `{len(value['ranked_candidates'])}`\n\n")
+              summary.write(f"Numeric residual/physical-prediction candidate: `{readiness['has_numeric_residual_candidate']}`\n\n")
+              summary.write(f"Coefficient candidate: `{readiness['has_coefficient_candidate']}`\n\n")
+              summary.write(f"Alternate-backend candidate: `{readiness['has_alternate_backend_candidate']}`\n\n")
+              summary.write("| Rank | Candidate | Score | Kind |\n")
+              summary.write("|---:|---|---:|---|\n")
+              for rank, candidate in enumerate(value["ranked_candidates"][:30], start=1):
+                  summary.write(
+                      f"| {rank} | `{candidate['path']}` | {candidate['score']} | "
+                      f"{candidate['schema'].get('kind')} |\n"
+                  )
+          PY
+
+      - name: Publish immutable source-runtime census evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.census.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["RESULT"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-runtime-census-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "census_id": result["census_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "adapter_readiness": result["adapter_readiness"],
+              "dlo4_dlo5_payload_read": False,
+              "target_scores_read": False,
+              "claim_scope": "source-only retained-artifact discovery"
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical runtime census already committed."
+          else
+            git commit -m "Record retained DLO2/DLO3 runtime artifacts"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload complete runtime census
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-runtime-census-gpuserver4090-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-runtime-census/
+            evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1/
+          if-no-files-found: error
+          retention-days: 90
