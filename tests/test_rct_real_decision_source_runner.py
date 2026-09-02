@@ -104,6 +104,14 @@ def test_raw_custody_filter_discards_confirmation_before_csv_force_parsing(
     assert custody["skipped_confirmation_row_count"] == 20
     assert custody["confirmation_force_fields_parsed"] is False
 
+    with pytest.raises(ValueError, match="header SHA-256"):
+        runner._write_source_only_force_csv(
+            archive,
+            member_name,
+            tmp_path / "wrong-header.csv",
+            expected_header_sha256="0" * 64,
+        )
+
 
 def test_raw_custody_filter_rejects_nonfirst_material_column(tmp_path: Path) -> None:
     runner = _module()

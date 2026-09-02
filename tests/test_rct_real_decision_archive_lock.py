@@ -30,7 +30,10 @@ def test_archive_lock_hashes_without_opening_force_member(tmp_path: Path) -> Non
     builder = _module()
     archive = tmp_path / "rct_dataset.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
-        bundle.writestr("metadata/force_metadata.csv", "SECRET_FORCE_OUTCOME")
+        bundle.writestr(
+            "metadata/force_metadata.csv",
+            "material_id,position,sensor,z_frame,raw_fz\nSECRET_FORCE_OUTCOME",
+        )
         bundle.writestr("README.md", "metadata only")
 
     lock = builder._build_lock(
@@ -44,8 +47,15 @@ def test_archive_lock_hashes_without_opening_force_member(tmp_path: Path) -> Non
     declared = identity.pop("lock_id")
     assert declared == content_id(identity)
     assert lock["force_metadata_member"] == "metadata/force_metadata.csv"
-    assert lock["force_metadata_uncompressed_size"] == len("SECRET_FORCE_OUTCOME")
+    assert lock["force_metadata_header_columns"] == [
+        "material_id",
+        "position",
+        "sensor",
+        "z_frame",
+        "raw_fz",
+    ]
     assert lock["archive_integrity_verified"] is True
+    assert lock["force_metadata_header_opened"] is True
     assert lock["force_metadata_content_opened"] is False
     assert lock["confirmation_opened"] is False
     assert lock["held_v8_accessed"] is False

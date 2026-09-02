@@ -218,6 +218,9 @@ def _write_source_only_force_csv(
     archive: Path,
     member_name: str,
     output_path: Path,
+    *,
+    expected_header_sha256: str | None = None,
+    expected_header_columns: list[str] | None = None,
 ) -> dict[str, Any]:
     """Discard registered confirmation lines before CSV force fields are parsed."""
 
@@ -231,6 +234,14 @@ def _write_source_only_force_csv(
         _require(member.flag_bits & 0x1 == 0, "force metadata member is encrypted")
         with bundle.open(member, "r") as source, output_path.open("xb") as target:
             header = source.readline()
+            if expected_header_sha256 is not None:
+                _require(
+                    hashlib.sha256(header).hexdigest() == expected_header_sha256,
+                    "force metadata header SHA-256 changed",
+                )
+            if expected_header_columns is not None:
+                columns = header.rstrip(b"\r\n").decode("ascii").split(",")
+                _require(columns == expected_header_columns, "force metadata header changed")
             _require(header.rstrip(b"\r\n").split(b",")[0] == b"material_id", "material_id is not the first CSV column")
             _require(b'"' not in header, "quoted force metadata header is unsupported")
             target.write(header)
@@ -294,6 +305,8 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         archive,
         str(archive_lock["force_metadata_member"]),
         source_csv,
+        expected_header_sha256=str(archive_lock["force_metadata_header_sha256"]),
+        expected_header_columns=list(archive_lock["force_metadata_header_columns"]),
     )
     source_material_ids = discover_rct_material_ids(source_csv)
     _require(len(source_material_ids) == 102, "source material count changed")
