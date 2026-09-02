@@ -1,0 +1,473 @@
+name: Apply Tracking Cloth stable-bank source repair v2
+
+on:
+  push:
+    branches: [repair/tracking-cloth-self-collision-stable-bank-v2]
+    paths:
+      - ".github/requests/apply-tracking-cloth-stable-bank-v2.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-tracking-cloth-stable-bank-v2
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+
+      - name: Authorize exact add-only repair request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/apply-tracking-cloth-stable-bank-v2.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path('.github/requests/apply-tracking-cloth-stable-bank-v2.json')
+          value = json.loads(path.read_text(encoding='utf-8'))
+          expected = {
+              'schema': 'bayesian-phystwin/source-repair-request-v1',
+              'request_id': 'tracking-cloth-stable-bank-v2-20260902',
+              'failed_run_id': 33588967510,
+              'failed_job_id': 100118938186,
+              'target_outcomes_opened': False,
+              'repair': 'prune-only-explicitly-unstable-source-hypotheses',
+              'minimum_valid_physics_fraction': 0.5,
+              'nominal_hypothesis_required': True,
+          }
+          for key, expected_value in expected.items():
+              if value.get(key) != expected_value:
+                  raise SystemExit(f'invalid {key}: {value.get(key)!r}')
+          if set(value) != set(expected) | {'expected_source_revision'}:
+              raise SystemExit('repair request fields changed')
+          parent = subprocess.check_output(
+              ['git', 'rev-parse', f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if value['expected_source_revision'] != parent:
+              raise SystemExit('repair request is not bound to its exact parent')
+          PY
+
+      - name: Apply source-only stable-bank repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          model_path = Path(
+              'experiments/tracking_cloth_self_collision_selective_twin_v1/model.py'
+          )
+          text = model_path.read_text(encoding='utf-8')
+          start = text.index('@dataclass(frozen=True)\nclass PhysicsFit:')
+          end = text.index('\n\ndef parameter_bank', start)
+          replacement = '''class UnstablePhysicsHypothesisError(ValueError):
+              """A parameter hypothesis left the registered numerical domain."""
+
+
+          @dataclass(frozen=True)
+          class PhysicsFit:
+              parameters: tuple[tuple[float, float, float], ...]
+              weights: np.ndarray
+              losses_m2: np.ndarray
+              temperature_m2: float
+              rejected_parameters: tuple[tuple[float, float, float], ...] = ()
+              rejection_reasons: tuple[str, ...] = ()
+              candidate_count: int | None = None
+
+              @property
+              def valid_fraction(self) -> float:
+                  total = (
+                      self.candidate_count
+                      if self.candidate_count is not None
+                      else len(self.parameters) + len(self.rejected_parameters)
+                  )
+                  if total <= 0:
+                      raise ValueError("physics fit contains no registered candidates")
+                  return len(self.parameters) / total
+
+              def record(self) -> dict[str, Any]:
+                  total = (
+                      self.candidate_count
+                      if self.candidate_count is not None
+                      else len(self.parameters) + len(self.rejected_parameters)
+                  )
+                  if total != len(self.parameters) + len(self.rejected_parameters):
+                      raise ValueError("physics fit candidate accounting changed")
+                  if len(self.rejected_parameters) != len(self.rejection_reasons):
+                      raise ValueError("physics fit rejection accounting changed")
+                  return {
+                      "parameters": [list(item) for item in self.parameters],
+                      "weights": self.weights.tolist(),
+                      "losses_m2": self.losses_m2.tolist(),
+                      "temperature_m2": self.temperature_m2,
+                      "rejected_parameters": [
+                          list(item) for item in self.rejected_parameters
+                      ],
+                      "rejection_reasons": list(self.rejection_reasons),
+                      "candidate_count": total,
+                      "valid_fraction": self.valid_fraction,
+                  }
+
+              @classmethod
+              def from_record(cls, value: dict[str, Any]) -> PhysicsFit:
+                  parameters = tuple(
+                      tuple(float(x) for x in row) for row in value["parameters"]
+                  )
+                  rejected = tuple(
+                      tuple(float(x) for x in row)
+                      for row in value.get("rejected_parameters", ())
+                  )
+                  reasons = tuple(str(item) for item in value.get("rejection_reasons", ()))
+                  weights = np.asarray(value["weights"], dtype=float)
+                  losses = np.asarray(value["losses_m2"], dtype=float)
+                  temperature = float(value["temperature_m2"])
+                  candidate_count = int(
+                      value.get("candidate_count", len(parameters) + len(rejected))
+                  )
+                  if len(parameters) != len(weights) or weights.shape != losses.shape:
+                      raise ValueError("physics fit dimensions changed")
+                  if not parameters or candidate_count != len(parameters) + len(rejected):
+                      raise ValueError("physics fit candidate accounting changed")
+                  if len(rejected) != len(reasons):
+                      raise ValueError("physics fit rejection accounting changed")
+                  if set(parameters).intersection(rejected):
+                      raise ValueError("physics fit valid and rejected candidates overlap")
+                  valid_weights = (
+                      np.isfinite(weights).all()
+                      and not np.any(weights < 0)
+                      and np.isclose(weights.sum(), 1)
+                  )
+                  if not valid_weights or not np.isfinite(losses).all():
+                      raise ValueError("invalid physics fit values")
+                  if not np.isfinite(temperature) or temperature <= 0:
+                      raise ValueError("invalid physics temperature")
+                  return cls(
+                      parameters,
+                      weights,
+                      losses,
+                      temperature,
+                      rejected,
+                      reasons,
+                      candidate_count,
+                  )
+          '''
+          replacement = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in replacement.splitlines()
+          )
+          text = text[:start] + replacement + text[end:]
+          text = text.replace(
+              'raise ValueError("nonfinite contact rollout")',
+              'raise UnstablePhysicsHypothesisError("nonfinite contact rollout")',
+          )
+          text = text.replace(
+              'raise ValueError("contact rollout escaped the registered domain")',
+              'raise UnstablePhysicsHypothesisError(\n'
+              '                "contact rollout escaped the registered domain"\n'
+              '            )',
+          )
+          fit_start = text.index('def fit_physics(\n')
+          fit_end = text.index('\n\ndef all_predictions', fit_start)
+          fit_replacement = '''def fit_physics(
+              inputs: InputView,
+              truth: np.ndarray,
+              protocol: dict[str, Any],
+          ) -> PhysicsFit:
+              candidates = parameter_bank(protocol)
+              minimum_fraction = float(protocol["minimum_valid_physics_fraction"])
+              if not 0.0 < minimum_fraction <= 1.0:
+                  raise ValueError("minimum_valid_physics_fraction must lie in (0, 1]")
+              valid_parameters: list[tuple[float, float, float]] = []
+              predictions: list[np.ndarray] = []
+              rejected_parameters: list[tuple[float, float, float]] = []
+              rejection_reasons: list[str] = []
+              for item in candidates:
+                  try:
+                      prediction = contact_rollout(inputs, item, protocol)
+                  except UnstablePhysicsHypothesisError as error:
+                      rejected_parameters.append(item)
+                      rejection_reasons.append(str(error))
+                      continue
+                  valid_parameters.append(item)
+                  predictions.append(prediction)
+
+              nominal = tuple(float(value) for value in protocol["nominal_parameters"])
+              if nominal not in valid_parameters:
+                  raise ValueError(
+                      "nominal contact hypothesis is numerically unstable on source data"
+                  )
+              valid_fraction = len(valid_parameters) / len(candidates)
+              if valid_fraction + 1e-12 < minimum_fraction:
+                  raise ValueError(
+                      "stable source physics bank is below the registered minimum: "
+                      f"{len(valid_parameters)}/{len(candidates)}"
+                  )
+              losses = np.asarray(
+                  [
+                      trajectory_mse(prediction, truth, inputs)
+                      for prediction in predictions
+                  ],
+                  dtype=float,
+              )
+              temperature = max(
+                  float(np.min(losses)),
+                  float(protocol["measurement_floor_m"]) ** 2,
+              )
+              logits = -losses / (2.0 * temperature)
+              weights = np.exp(logits - np.max(logits))
+              weights /= weights.sum()
+              return PhysicsFit(
+                  tuple(valid_parameters),
+                  weights,
+                  losses,
+                  temperature,
+                  tuple(rejected_parameters),
+                  tuple(rejection_reasons),
+                  len(candidates),
+              )
+          '''
+          fit_replacement = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in fit_replacement.splitlines()
+          )
+          text = text[:fit_start] + fit_replacement + text[fit_end:]
+          model_path.write_text(text, encoding='utf-8')
+
+          protocol_path = Path(
+              'experiments/tracking_cloth_self_collision_selective_twin_v1/protocol.json'
+          )
+          protocol = json.loads(protocol_path.read_text(encoding='utf-8'))
+          protocol['minimum_valid_physics_fraction'] = 0.5
+          protocol['claim_boundary'] = (
+              protocol['claim_boundary']
+              + ' Numerically unstable source hypotheses are pruned only after an '
+              'explicit registered-domain failure; the nominal hypothesis must remain '
+              'valid and at least half of the preregistered bank must survive.'
+          )
+          protocol_path.write_text(
+              json.dumps(protocol, indent=2, sort_keys=False) + '\n',
+              encoding='utf-8',
+          )
+
+          run_path = Path(
+              'experiments/tracking_cloth_self_collision_selective_twin_v1/run.py'
+          )
+          run_text = run_path.read_text(encoding='utf-8')
+          marker = '''    if protocol.get("confirmation_repetition") != 3:
+              raise ValueError("confirmation repetition must remain rep3")
+          '''
+          marker = '\n'.join(
+              line[4:] if line.startswith('    ') else line
+              for line in marker.splitlines()
+          )
+          insertion = marker + '''
+              if protocol.get("minimum_valid_physics_fraction") != 0.5:
+                  raise ValueError("minimum valid physics-bank fraction changed")
+          '''
+          insertion = '\n'.join(
+              line[4:] if line.startswith('    ') else line
+              for line in insertion.splitlines()
+          )
+          if run_text.count(marker) != 1:
+              raise SystemExit('run protocol marker changed')
+          run_path.write_text(run_text.replace(marker, insertion, 1), encoding='utf-8')
+
+          test_path = Path('tests/test_tracking_cloth_self_collision_selective_twin_v1.py')
+          test_text = test_path.read_text(encoding='utf-8')
+          test_text = test_text.replace(
+              'import numpy as np\n',
+              'import numpy as np\nimport pytest\n',
+              1,
+          )
+          old_import = '''from experiments.tracking_cloth_self_collision_selective_twin_v1.model import (
+              PhysicsFit,
+              all_predictions,
+              parameter_bank,
+          )'''
+          old_import = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in old_import.splitlines()
+          )
+          new_import = '''from experiments.tracking_cloth_self_collision_selective_twin_v1 import (
+              model as model_module,
+          )
+          from experiments.tracking_cloth_self_collision_selective_twin_v1.model import (
+              PhysicsFit,
+              UnstablePhysicsHypothesisError,
+              all_predictions,
+              fit_physics,
+              parameter_bank,
+          )'''
+          new_import = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in new_import.splitlines()
+          )
+          if test_text.count(old_import) != 1:
+              raise SystemExit('test import marker changed')
+          test_text = test_text.replace(old_import, new_import, 1)
+          test_text = test_text.replace(
+              '        "measurement_floor_m": 0.001,\n',
+              '        "minimum_valid_physics_fraction": 0.5,\n'
+              '        "measurement_floor_m": 0.001,\n',
+              1,
+          )
+          appendix = '''
+
+          def _bank_protocol() -> dict:
+              return {
+                  "stiffness_per_mass": [100.0, 400.0, 1600.0],
+                  "damping_per_mass": [2.0],
+                  "self_collision_stiffness_per_mass": [0.0],
+                  "nominal_parameters": [400.0, 2.0, 0.0],
+                  "minimum_valid_physics_fraction": 0.5,
+                  "measurement_floor_m": 0.001,
+              }
+
+
+          def test_fit_prunes_only_explicit_unstable_hypotheses(monkeypatch) -> None:
+              protocol = _bank_protocol()
+
+              def fake_rollout(inputs, parameters, supplied_protocol):
+                  del inputs, supplied_protocol
+                  if parameters[0] == 100.0:
+                      raise UnstablePhysicsHypothesisError("escaped")
+                  return np.full((1, 1, 1), parameters[0] / 1000.0)
+
+              monkeypatch.setattr(model_module, "contact_rollout", fake_rollout)
+              monkeypatch.setattr(
+                  model_module,
+                  "trajectory_mse",
+                  lambda prediction, truth, inputs: float(prediction[0, 0, 0]),
+              )
+              fit = fit_physics(object(), np.zeros(1), protocol)
+              assert fit.parameters == ((400.0, 2.0, 0.0), (1600.0, 2.0, 0.0))
+              assert fit.rejected_parameters == ((100.0, 2.0, 0.0),)
+              assert fit.rejection_reasons == ("escaped",)
+              assert fit.candidate_count == 3
+              assert fit.valid_fraction == pytest.approx(2.0 / 3.0)
+              assert fit.weights.sum() == pytest.approx(1.0)
+              assert PhysicsFit.from_record(fit.record()).record() == fit.record()
+
+
+          def test_fit_fails_closed_when_nominal_is_unstable(monkeypatch) -> None:
+              protocol = _bank_protocol()
+
+              def fake_rollout(inputs, parameters, supplied_protocol):
+                  del inputs, supplied_protocol
+                  if parameters[0] == 400.0:
+                      raise UnstablePhysicsHypothesisError("nominal escaped")
+                  return np.zeros((1, 1, 1))
+
+              monkeypatch.setattr(model_module, "contact_rollout", fake_rollout)
+              monkeypatch.setattr(model_module, "trajectory_mse", lambda *args: 1.0)
+              with pytest.raises(ValueError, match="nominal contact hypothesis"):
+                  fit_physics(object(), np.zeros(1), protocol)
+
+
+          def test_fit_fails_closed_below_registered_valid_fraction(monkeypatch) -> None:
+              protocol = _bank_protocol()
+
+              def fake_rollout(inputs, parameters, supplied_protocol):
+                  del inputs, supplied_protocol
+                  if parameters[0] != 400.0:
+                      raise UnstablePhysicsHypothesisError("escaped")
+                  return np.zeros((1, 1, 1))
+
+              monkeypatch.setattr(model_module, "contact_rollout", fake_rollout)
+              monkeypatch.setattr(model_module, "trajectory_mse", lambda *args: 1.0)
+              with pytest.raises(ValueError, match="below the registered minimum"):
+                  fit_physics(object(), np.zeros(1), protocol)
+
+
+          def test_non_instability_errors_are_not_silently_pruned(monkeypatch) -> None:
+              protocol = _bank_protocol()
+
+              def invalid_input(*args):
+                  raise ValueError("invalid input geometry")
+
+              monkeypatch.setattr(model_module, "contact_rollout", invalid_input)
+              with pytest.raises(ValueError, match="invalid input geometry"):
+                  fit_physics(object(), np.zeros(1), protocol)
+          '''
+          appendix = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in appendix.splitlines()
+          )
+          test_path.write_text(test_text.rstrip() + appendix + '\n', encoding='utf-8')
+
+          readme_path = Path(
+              'experiments/tracking_cloth_self_collision_selective_twin_v1/README.md'
+          )
+          readme = readme_path.read_text(encoding='utf-8').rstrip()
+          readme += '''
+
+          ## Stable source-bank rule
+
+          A numerically unstable parameter member no longer aborts the entire source
+          fit. Only `UnstablePhysicsHypothesisError`, emitted for nonfinite state or
+          escape from the registered five-metre numerical domain, is pruned. Input,
+          parsing, geometry, and other value errors remain fatal. The nominal member
+          must survive and at least 50% of the preregistered 18-member bank must remain.
+          The complete rejected roster and reason strings are stored in each rep1 fit.
+          This repair was frozen after run 33588967510 failed in rep1 and before any
+          rep3 target outcome, prediction seal, or target score existed.
+          '''
+          readme = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in readme.splitlines()
+          )
+          readme_path.write_text(readme + '\n', encoding='utf-8')
+          PY
+
+      - name: Validate focused source repair
+        run: |
+          python -m pip install --disable-pip-version-check numpy==1.26.4 pytest ruff==0.14.14
+          python -m ruff format \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/run.py \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/run.py \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py
+          PYTHONPATH=src:. python -m pytest -q \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py \
+            tests/test_tracking_cloth_self_collision_workflow_v1.py
+          python -m py_compile \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/run.py
+          git diff --check
+
+      - name: Commit validated source-only repair
+        run: |
+          set -euo pipefail
+          rm -f .github/requests/apply-tracking-cloth-stable-bank-v2.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/model.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/protocol.json \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/run.py \
+            experiments/tracking_cloth_self_collision_selective_twin_v1/README.md \
+            tests/test_tracking_cloth_self_collision_selective_twin_v1.py \
+            .github/requests/apply-tracking-cloth-stable-bank-v2.json
+          git commit -m 'Prune explicitly unstable source physics hypotheses'
+          git push origin HEAD:repair/tracking-cloth-self-collision-stable-bank-v2
