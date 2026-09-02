@@ -80,6 +80,25 @@ names, cadence-aware deterministic resampling, structural missingness, and the
 resulting tensor layout. They must be frozen before any member payload is
 opened; labels and outcomes cannot inform them.
 
+## Shared selector kernel
+
+`poseit_real_decision_selectors.py` implements the target-blind policy core over
+one joint Gaussian belief containing per-pose pre-shake features and a separate
+latent shake-stability coordinate. Conditioning can accept only a pose's
+pre-shake feature vector; no selector or policy-trace function accepts a shake
+label or outcome. The decision-directed objective integrates the expected
+increase in best downstream Bayes utility, including zero-utility abstention,
+using the registered 4,096 antithetic predictive draws. The task-agnostic
+control instead maximizes Gaussian information gain about the same complete
+latent stability vector. Both use the same posterior state and lowest-pose tie
+break.
+
+Synthetic contract tests demonstrate that the objectives can select different
+probes and that structurally unavailable actions are excluded without dropping
+an otherwise valid family. This is implementation evidence only. The joint
+belief cannot be fitted, calibrated, or scientifically evaluated until the
+archive-specific feature mapping has passed its earlier gates.
+
 The repository contains inconsistent license signals: its license file is CC0
 1.0, while its README displays CC BY-SA 4.0 and MIT badges. This does not prevent
 an attributed academic analysis, but raw archive bytes must not be redistributed
