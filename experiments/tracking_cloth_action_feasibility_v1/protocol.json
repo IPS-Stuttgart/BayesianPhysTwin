@@ -1,0 +1,57 @@
+{
+  "schema": "bayesian-phystwin.tracking-cloth-action-feasibility.v1",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-self-collision-act-sense-fallback-source-v1",
+  "dataset_record": "14644526",
+  "archive_md5": "b4868b702f8a42b2ea1069d0f1a3b8f6",
+  "archive_sha256": "14916efa89a26d991c024024cc9449397d3a6f654311e621bb91e9602e231e1a",
+  "expected_csv_count": 120,
+  "expected_self_collision_count": 36,
+  "materials": [
+    "cotton",
+    "denim",
+    "polyester",
+    "wool"
+  ],
+  "interactions": [
+    "four_corners_normal",
+    "four_corners_parallel",
+    "two_corners_normal"
+  ],
+  "source_repetitions": [
+    1,
+    2
+  ],
+  "reserved_target_repetition": 3,
+  "prefix_seconds": 0.5,
+  "forecast_seconds": 3.0,
+  "sample_stride": 4,
+  "initial_complete_frame_deadline_seconds": 0.25,
+  "self_contact_distance_m": 0.035,
+  "edge_strain_weight": 0.25,
+  "edge_strain_quantile": 0.95,
+  "probe_feature": "prefix_pairwise_shape_change",
+  "probe_cost_grid": [
+    0.0,
+    0.01,
+    0.025,
+    0.05
+  ],
+  "regret_tolerance_grid": [
+    0.0,
+    0.02,
+    0.05,
+    0.1
+  ],
+  "max_plan_count": 100000,
+  "information_boundary": {
+    "source_rep1_numeric_outcomes_read": true,
+    "source_rep2_numeric_outcomes_read": true,
+    "target_rep3_numeric_outcomes_read": false,
+    "target_rep3_file_hashes_may_be_verified": true,
+    "target_protocol_authorized": false,
+    "raw_trajectory_upload": false
+  },
+  "claim_boundary": "Source-only feasibility audit of the public Tracking Cloth 4-material x 3-physical-interaction x 3-repetition self-collision factorial. It tests whether the three physically executed release configurations form a nontrivial finite action task and whether a resettable 0.5 s source probe can reduce quotient decision ambiguity. Rep3 is reserved and is not numerically read. No held-out action-choice, online probe, reset fidelity, robot-control, deployment, safety, or state-of-the-art claim is authorized.",
+  "missing_marker_policy": "causal-last-observation-carry-forward-after-complete-initial-frame"
+}
