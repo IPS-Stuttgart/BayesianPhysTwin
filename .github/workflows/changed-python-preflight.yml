@@ -54,7 +54,7 @@ jobs:
       - name: Materialize payload and retire bootstrap data
         shell: bash
         env:
-          EXPECTED_PAYLOAD_SHA256: 8e02b8b6d016769a5bd1cd2fa64039849d28604914cfa66b3ea6605b57c4ed06
+          EXPECTED_PAYLOAD_SHA256: bf7bc9c7f53e22138711314671d9b9256dee09c78c11f05aa6d77a45f5515177
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -76,7 +76,23 @@ jobs:
           digest = hashlib.sha256(raw).hexdigest()
           if digest != os.environ["EXPECTED_PAYLOAD_SHA256"]:
               raise SystemExit(f"active-decision payload digest mismatch: {digest}")
+          expected = {
+              ".github/workflows/active-decision-acquisition-v1.yml",
+              "docs/active-decision-acquisition-v1.md",
+              "experiments/active_decision_acquisition_v1/run.py",
+              "protocols/active-decision-acquisition-study-v1.json",
+              "results/science/active_decision_acquisition_v1/controlled-v1/result.json",
+              "results/science/active_decision_acquisition_v1/controlled-v1/summary.md",
+              "src/bayesian_phystwin/active_decision_acquisition_v1.py",
+              "tests/test_active_decision_acquisition_study_v1.py",
+              "tests/test_active_decision_v1.py",
+          }
           with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+              if archive.testzip() is not None:
+                  raise SystemExit("active-decision payload ZIP failed CRC validation")
+              members = [member.filename for member in archive.infolist() if not member.is_dir()]
+              if len(members) != len(expected) or set(members) != expected:
+                  raise SystemExit(f"unexpected payload members: {members}")
               for member in archive.infolist():
                   path = Path(member.filename)
                   if path.is_absolute() or ".." in path.parts:
@@ -95,7 +111,7 @@ jobs:
             results/science/active_decision_acquisition_v1/controlled-v1/summary.md \
             src/bayesian_phystwin/active_decision_acquisition_v1.py \
             tests/test_active_decision_acquisition_study_v1.py \
-            tests/test_active_decision_acquisition_v1.py
+            tests/test_active_decision_v1.py
           test -z "$(git status --short | grep '^??' || true)"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
