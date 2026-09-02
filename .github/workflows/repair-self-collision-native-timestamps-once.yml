@@ -102,8 +102,10 @@ jobs:
           ) -> None:
               path = tmp_path / "cotton_A2_four_normal_rep3.csv"
               _write_case(path, future_numeric=False, native_hz=100.0)
+              protocol = _small_protocol()
+              protocol["sample_stride"] = 4
               inputs = prediction_input(
-                  Case(path, "cotton", "four_corners_normal", 3), _small_protocol()
+                  Case(path, "cotton", "four_corners_normal", 3), protocol
               )
               assert np.allclose(np.diff(inputs.times), 0.04, rtol=0.05, atol=1e-4)
 
