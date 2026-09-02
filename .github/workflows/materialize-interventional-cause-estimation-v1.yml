@@ -7,7 +7,7 @@ on:
     branches:
       - research/interventional-cause-estimation-v1
     paths:
-      - .github/agent-payloads/interventional-cause-estimation-v1.tgz
+      - .github/agent-payloads/interventional-cause-estimation-v1.part*.b64
       - .github/workflows/materialize-interventional-cause-estimation-v1.yml
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out exact payload commit
+      - name: Check out exact chunk commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -33,19 +33,37 @@ jobs:
           persist-credentials: true
           clean: true
 
-      - name: Verify and extract bounded payload
+      - name: Reconstruct and extract bounded payload
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$GITHUB_REF" = \
             "refs/heads/research/interventional-cause-estimation-v1"
-          payload=.github/agent-payloads/interventional-cause-estimation-v1.tgz
-          test "$(git hash-object "$payload")" = \
-            ed5112492e960fdc2fe1e156a58f9d543e9ce37e
-          rm -rf "$RUNNER_TEMP/why-twin-v2"
-          mkdir -p "$RUNNER_TEMP/why-twin-v2"
-          PAYLOAD="$payload" DESTINATION="$RUNNER_TEMP/why-twin-v2" python - <<'PY'
+
+          chunks=(
+            .github/agent-payloads/interventional-cause-estimation-v1.part00.b64
+            .github/agent-payloads/interventional-cause-estimation-v1.part01.b64
+            .github/agent-payloads/interventional-cause-estimation-v1.part02.b64
+            .github/agent-payloads/interventional-cause-estimation-v1.part03.b64
+            .github/agent-payloads/interventional-cause-estimation-v1.part04.b64
+            .github/agent-payloads/interventional-cause-estimation-v1.part05.b64
+            .github/agent-payloads/interventional-cause-estimation-v1.part06.b64
+          )
+          for chunk in "${chunks[@]}"; do
+            test -f "$chunk"
+          done
+
+          payload="$RUNNER_TEMP/interventional-cause-estimation-v1.tgz"
+          cat "${chunks[@]}" | tr -d '\r\n' | base64 --decode > "$payload"
+          printf '%s  %s\n' \
+            dbd571abd146231b3fa6d2e2c4b4be40907ca875ec6eecc52a0c016a425b53c5 \
+            "$payload" | sha256sum --check --strict
+
+          destination="$RUNNER_TEMP/why-twin-v2"
+          rm -rf "$destination"
+          mkdir -p "$destination"
+          PAYLOAD="$payload" DESTINATION="$destination" python - <<'PY'
           import os
           import tarfile
           from pathlib import Path
@@ -61,21 +79,20 @@ jobs:
           destination = Path(os.environ["DESTINATION"]).resolve()
           with tarfile.open(payload, "r:gz") as archive:
               members = archive.getmembers()
-              files = [member for member in members if member.isfile()]
-              names = {member.name for member in files}
+              names = {member.name for member in members}
               if names != expected:
                   raise SystemExit(f"payload roster changed: {sorted(names)}")
               for member in members:
+                  if not member.isfile():
+                      raise SystemExit(f"non-regular payload member: {member.name}")
                   target = (destination / member.name).resolve()
                   if not target.is_relative_to(destination):
                       raise SystemExit(f"payload escapes destination: {member.name}")
-                  if not member.isfile() and not member.isdir():
-                      raise SystemExit(f"unsupported payload member: {member.name}")
               archive.extractall(destination, filter="data")
           PY
+
           while IFS= read -r relative; do
-            install -D -m 0644 \
-              "$RUNNER_TEMP/why-twin-v2/$relative" "$relative"
+            install -D -m 0644 "$destination/$relative" "$relative"
           done <<'EOF'
           docs/interventional_cause_estimation_v1.md
           scripts/science/run_interventional_cause_estimation_design_v1.py
@@ -113,22 +130,40 @@ jobs:
           set -euo pipefail
           rm -f \
             .github/agent-payloads/interventional-cause-estimation-v1.tgz \
+            .github/agent-payloads/interventional-cause-estimation-v1.part*.b64 \
             .github/workflows/materialize-interventional-cause-estimation-v1.yml
           rmdir .github/agent-payloads 2>/dev/null || true
           git add --all
-          mapfile -t changed < <(git diff --cached --name-only)
-          expected=(
-            .github/agent-payloads/interventional-cause-estimation-v1.tgz
-            .github/workflows/materialize-interventional-cause-estimation-v1.yml
-            docs/interventional_cause_estimation_v1.md
-            scripts/science/run_interventional_cause_estimation_design_v1.py
-            src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py
-            tests/test_interventional_cause_estimation_controlled_v1.py
-            tests/test_interventional_cause_estimation_v1.py
+          python - <<'PY'
+          import subprocess
+
+          changed = set(
+              subprocess.check_output(
+                  ["git", "diff", "--cached", "--name-only"], text=True
+              ).splitlines()
           )
-          printf '%s\n' "${changed[@]}" > /tmp/changed
-          printf '%s\n' "${expected[@]}" > /tmp/expected
-          diff -u /tmp/expected /tmp/changed
+          expected = {
+              ".github/agent-payloads/interventional-cause-estimation-v1.tgz",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part00.b64",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part01.b64",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part02.b64",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part03.b64",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part04.b64",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part05.b64",
+              ".github/agent-payloads/interventional-cause-estimation-v1.part06.b64",
+              ".github/workflows/materialize-interventional-cause-estimation-v1.yml",
+              "docs/interventional_cause_estimation_v1.md",
+              "scripts/science/run_interventional_cause_estimation_design_v1.py",
+              "src/bayesian_phystwin_experiments/interventional_cause_estimation_v1.py",
+              "tests/test_interventional_cause_estimation_controlled_v1.py",
+              "tests/test_interventional_cause_estimation_v1.py",
+          }
+          if changed != expected:
+              raise SystemExit(
+                  f"unexpected product diff: missing={sorted(expected-changed)}, "
+                  f"extra={sorted(changed-expected)}"
+              )
+          PY
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git commit -m 'Add quantitative interventional cause estimation'
