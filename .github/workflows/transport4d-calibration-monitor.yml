@@ -1,0 +1,315 @@
+name: Monitor and retain Transport4D calibration evidence
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-calibration-monitor.yml"
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: transport4d-calibration-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Check out monitoring revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Locate and await the frozen calibration run
+        id: locate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: research/transport4d-tiered-public-v1
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+          selected=""
+          for attempt in $(seq 1 120); do
+            selected="$({ gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "repos/${repo}/actions/runs?branch=${BRANCH}&event=push&per_page=100" \
+              --jq '[.workflow_runs[] | select((.path | ascii_downcase | contains("transport4d")) and (.path | ascii_downcase | contains("calibration")) and ((.path | ascii_downcase | contains("bootstrap")) | not) and ((.path | ascii_downcase | contains("recovery")) | not) and ((.path | ascii_downcase | contains("monitor")) | not))] | sort_by(.created_at) | reverse | .[0] | if . == null then "" else [.id,.status,(.conclusion // ""),.name,.path,.head_sha] | @tsv end'; } 2>/dev/null || true)"
+            if [[ -n "${selected}" ]]; then
+              break
+            fi
+            sleep 10
+          done
+          test -n "${selected}"
+          IFS=$'\t' read -r run_id status conclusion workflow_name workflow_path run_head <<<"${selected}"
+          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
+          echo "workflow_name=${workflow_name}" >> "${GITHUB_OUTPUT}"
+          echo "workflow_path=${workflow_path}" >> "${GITHUB_OUTPUT}"
+          echo "run_head=${run_head}" >> "${GITHUB_OUTPUT}"
+
+          for attempt in $(seq 1 180); do
+            row="$(gh api -H 'Accept: application/vnd.github+json' \
+              "repos/${repo}/actions/runs/${run_id}" \
+              --jq '[.status,(.conclusion // "")] | @tsv')"
+            IFS=$'\t' read -r status conclusion <<<"${row}"
+            if [[ "${status}" = completed ]]; then
+              break
+            fi
+            sleep 10
+          done
+          test "${status}" = completed
+          echo "conclusion=${conclusion}" >> "${GITHUB_OUTPUT}"
+          echo "Located calibration run ${run_id}: ${conclusion}"
+
+      - name: Download all retained calibration artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.locate.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/transport4d-calibration-${RUN_ID}"
+          mkdir -p "${root}/downloaded"
+          echo "CAPTURE_ROOT=${root}" >> "${GITHUB_ENV}"
+          gh api -H 'Accept: application/vnd.github+json' \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+            > "${root}/run.json"
+          gh api -H 'Accept: application/vnd.github+json' \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+            > "${root}/jobs.json"
+          gh api -H 'Accept: application/vnd.github+json' \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts?per_page=100" \
+            > "${root}/artifacts.json"
+          artifact_count="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ['CAPTURE_ROOT'])
+          print(json.loads((root / 'artifacts.json').read_text())['total_count'])
+          PY
+          )"
+          if [[ "${artifact_count}" -gt 0 ]]; then
+            gh run download "${RUN_ID}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --dir "${root}/downloaded"
+          fi
+
+      - name: Validate custody and build compact scientific evidence
+        shell: bash
+        env:
+          RUN_ID: ${{ steps.locate.outputs.run_id }}
+          RUN_CONCLUSION: ${{ steps.locate.outputs.conclusion }}
+          RUN_HEAD: ${{ steps.locate.outputs.run_head }}
+          WORKFLOW_NAME: ${{ steps.locate.outputs.workflow_name }}
+          WORKFLOW_PATH: ${{ steps.locate.outputs.workflow_path }}
+        run: |
+          set -euo pipefail
+          evidence="evidence/transport4d_deform360_calibration_v1"
+          rm -rf "${evidence}"
+          mkdir -p "${evidence}/files"
+          EVIDENCE_ROOT="${evidence}" python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import shutil
+          from pathlib import Path
+          from typing import Any
+
+          capture = Path(os.environ["CAPTURE_ROOT"])
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          downloaded = capture / "downloaded"
+          allowed_suffixes = {".json", ".md", ".txt", ".csv", ".tsv"}
+          maximum_file_bytes = 8_000_000
+          maximum_total_bytes = 24_000_000
+          maximum_files = 160
+          selected: list[dict[str, Any]] = []
+          skipped: list[dict[str, Any]] = []
+          total = 0
+
+          all_files = [capture / "run.json", capture / "jobs.json", capture / "artifacts.json"]
+          if downloaded.exists():
+              all_files.extend(sorted(path for path in downloaded.rglob("*") if path.is_file()))
+          for path in all_files:
+              relative = path.relative_to(capture).as_posix()
+              size = path.stat().st_size
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              record = {"path": relative, "bytes": size, "sha256": digest}
+              suffix = path.suffix.lower()
+              safe = (
+                  suffix in allowed_suffixes
+                  and size <= maximum_file_bytes
+                  and total + size <= maximum_total_bytes
+                  and len(selected) < maximum_files
+              )
+              if safe:
+                  destination = evidence / "files" / relative
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(path, destination)
+                  selected.append(record)
+                  total += size
+              else:
+                  skipped.append(record)
+
+          scalars: list[dict[str, Any]] = []
+          key_pattern = re.compile(
+              r"decision|status|gate|tier|coverage|harm|improvement|gain|rmse|nll|"
+              r"regret|selected|fallback|policy_id|result_id|seal|confirmation",
+              re.IGNORECASE,
+          )
+
+          def visit(value: Any, path: str, source: str) -> None:
+              if len(scalars) >= 240:
+                  return
+              if isinstance(value, dict):
+                  for key in sorted(value):
+                      child = f"{path}.{key}" if path else str(key)
+                      visit(value[key], child, source)
+              elif isinstance(value, list):
+                  if len(value) <= 12:
+                      for index, item in enumerate(value):
+                          visit(item, f"{path}[{index}]", source)
+              elif isinstance(value, (str, int, float, bool)) or value is None:
+                  key = path.rsplit(".", 1)[-1]
+                  if key_pattern.search(key):
+                      scalars.append({"source": source, "path": path, "value": value})
+
+          for record in selected:
+              if not record["path"].endswith(".json"):
+                  continue
+              source_path = capture / record["path"]
+              try:
+                  payload = json.loads(source_path.read_text(encoding="utf-8"))
+              except (UnicodeDecodeError, json.JSONDecodeError):
+                  continue
+              visit(payload, "", record["path"])
+
+          run = json.loads((capture / "run.json").read_text(encoding="utf-8"))
+          artifacts = json.loads((capture / "artifacts.json").read_text(encoding="utf-8"))
+          boundary_false = {
+              row["path"]: row["value"]
+              for row in scalars
+              if "confirmation" in row["path"].lower()
+              and isinstance(row["value"], bool)
+          }
+          if any(boundary_false.values()):
+              raise SystemExit("a retained artifact reports confirmation authorization/access")
+
+          manifest: dict[str, Any] = {
+              "schema": "bayesian-phystwin.transport4d_deform360_calibration_evidence",
+              "schema_version": 1,
+              "workflow_run_id": int(os.environ["RUN_ID"]),
+              "workflow_name": os.environ["WORKFLOW_NAME"],
+              "workflow_path": os.environ["WORKFLOW_PATH"],
+              "source_head_sha": os.environ["RUN_HEAD"],
+              "run_conclusion": os.environ["RUN_CONCLUSION"],
+              "run_created_at": run.get("created_at"),
+              "run_updated_at": run.get("updated_at"),
+              "artifact_count": artifacts.get("total_count", 0),
+              "selected_file_count": len(selected),
+              "selected_total_bytes": total,
+              "selected_files": selected,
+              "skipped_files": skipped,
+              "confirmation_boolean_records": boundary_false,
+              "confirmation_numeric_payload_opened": False,
+              "confirmation_authorized": False,
+              "paper_claim_authorized": False,
+              "extracted_scalars": scalars,
+              "claim_boundary": (
+                  "Calibration-only numerical evidence on the 15 frozen public Deform360 "
+                  "calibration objects. The 33 fixed confirmation objects remain numerically "
+                  "closed. This evidence cannot establish unseen-object confirmation, target "
+                  "risk, deployment safety, or a paper claim."
+              ),
+          }
+          encoded = json.dumps(
+              manifest, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          manifest["evidence_id"] = hashlib.sha256(encoded).hexdigest()
+          (evidence / "manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          lines = [
+              "# Transport4D Deform360 calibration evidence",
+              "",
+              f"- Workflow run: **{manifest['workflow_run_id']}**",
+              f"- Conclusion: **{manifest['run_conclusion']}**",
+              f"- Source revision: `{manifest['source_head_sha']}`",
+              f"- Retained artifacts: **{manifest['artifact_count']}**",
+              f"- Compact files retained: **{manifest['selected_file_count']}**",
+              f"- Evidence ID: `{manifest['evidence_id']}`",
+              "- Confirmation numerical access: **false**",
+              "- Confirmation authorization: **false**",
+              "",
+              "## Extracted decision-bearing records",
+              "",
+              "| Source | Field | Value |",
+              "|---|---|---|",
+          ]
+          for row in scalars[:120]:
+              value = json.dumps(row["value"], ensure_ascii=False)
+              if len(value) > 180:
+                  value = value[:177] + "..."
+              lines.append(f"| `{row['source']}` | `{row['path']}` | `{value}` |")
+          lines.extend(["", manifest["claim_boundary"], ""])
+          (evidence / "report.md").write_text("\n".join(lines), encoding="utf-8")
+          (evidence / "README.md").write_text(
+              "# Retained Transport4D calibration evidence\n\n"
+              "This directory is generated from one terminal GitHub Actions run. "
+              "It preserves bounded text/JSON evidence and hashes every omitted carrier. "
+              "The confirmation cohort was not numerically opened.\n",
+              encoding="utf-8",
+          )
+          PY
+          git diff --check
+
+      - name: Retire one-shot authorization and publish compact evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: research/transport4d-tiered-public-v1
+        run: |
+          set -euo pipefail
+          monitor=.github/workflows/transport4d-calibration-monitor.yml
+          workflow="${{ steps.locate.outputs.workflow_path }}"
+          mapfile -t requests < <(
+            find .github/requests -maxdepth 1 -type f \
+              -iname '*transport4d*calibration*.json' | sort
+          )
+          for request in "${requests[@]}"; do
+            git rm -f "${request}"
+          done
+          if [[ -f "${workflow}" ]] && grep -q 'workflow-lifecycle: temporary-one-shot' "${workflow}"; then
+            git rm -f "${workflow}"
+          fi
+          git rm -f "${monitor}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Retain terminal Transport4D Deform360 calibration evidence"
+          git push origin HEAD:"${BRANCH}"
+
+      - name: Publish calibration summary to PR 902
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ -f evidence/transport4d_deform360_calibration_v1/report.md ]]; then
+            gh pr comment 902 \
+              --repo "${GITHUB_REPOSITORY}" \
+              --body-file evidence/transport4d_deform360_calibration_v1/report.md
+          fi
