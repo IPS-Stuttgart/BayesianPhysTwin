@@ -154,6 +154,22 @@ def load_rct_force_responses(
     return tuple(responses)
 
 
+def discover_rct_material_ids(force_metadata_csv: str | Path) -> tuple[str, ...]:
+    """Return material IDs from an already custody-filtered source CSV."""
+
+    material_ids: set[str] = set()
+    with Path(force_metadata_csv).open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        _require(
+            reader.fieldnames is not None and "material_id" in reader.fieldnames,
+            "RCT force metadata material_id column is missing",
+        )
+        for row in reader:
+            material_ids.add(_canonical_material_id(row["material_id"]))
+    _require(bool(material_ids), "RCT force metadata material roster is empty")
+    return tuple(sorted(material_ids))
+
+
 @dataclass(frozen=True)
 class GaussianState:
     """Conditional material-response belief."""
@@ -986,6 +1002,7 @@ __all__ = [
     "calibrate_simultaneous_force_multiplier",
     "condition_gaussian",
     "decision_value_of_probe",
+    "discover_rct_material_ids",
     "evaluate_material",
     "load_rct_force_responses",
     "source_promotion_gate",
