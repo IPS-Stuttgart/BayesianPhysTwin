@@ -103,7 +103,11 @@
     "all_three_actions_have_nonempty_regions": true,
     "fallback_region_nonempty": true,
     "left_right_symmetry": true,
-    "point_choice_fills_fallback_example": true
+    "nominally_capable_task_can_fail_under_objective_uncertainty": true,
+    "objective_uncertainty_strictly_shrinks_capability": true,
+    "point_choice_fills_fallback_example": true,
+    "robust_left_right_symmetry": true,
+    "uncertain_representatives_identify_left_hold_right": true
   },
   "claim_boundary": "The atlas is exact only for the supplied finite hypotheses, positive prior support, registered quotient masses, affine task-loss family, action set, and regret tolerance. It does not validate the quotient or task family, identify a physical state, justify the loss or tolerance, establish out-of-support validity, calibrate uncertainty, certify safety, or authorize deployment.",
   "hypotheses": {
@@ -217,15 +221,15 @@
         0.0
       ],
       "worst_case_regret": [
-        0.20000000000000007,
-        0.21000000000000005,
+        0.20000000000000004,
+        0.21000000000000008,
         2.21
       ]
     }
   ],
-  "result_id": "a00518c4d4e0575128eee0c141181fa2672d6a3d80f2077a1a3910fdedda61a1",
-  "schema": "bayesian-phystwin/decision-capability-atlas-study-v1",
-  "schema_version": 1,
+  "result_id": "84283668eaa108911e3063cbf2dc372ce3f1ca90a106a8c1d6f93c0c70aeb3f8",
+  "schema": "bayesian-phystwin/decision-capability-atlas-study-v2",
+  "schema_version": 2,
   "status": "complete",
   "summary": {
     "action_area_fraction": {
@@ -264,5 +268,203 @@
       "target_displacement",
       "physical_risk_weight"
     ]
+  },
+  "task_uncertainty": {
+    "claim_boundary": "The task-set certificate is exact only for the supplied affine capability half-spaces and declared convex task-uncertainty set. It inherits the finite-support, quotient, loss-family, action-set, and regret-tolerance conditions of the underlying atlas. It does not validate the objective or uncertainty set, cover model misspecification, certify safety, or authorize deployment.",
+    "fixed_box_atlas": {
+      "capability_regions": [
+        {
+          "action": "pull_left",
+          "area": 0.4757630870113143,
+          "area_fraction": 0.04719871894953516,
+          "vertices": [
+            [
+              -1.4,
+              0.2
+            ],
+            [
+              -0.7412500000000001,
+              0.2
+            ],
+            [
+              -0.9519187358916481,
+              0.7480812641083527
+            ],
+            [
+              -1.4,
+              1.5177914110429447
+            ]
+          ]
+        },
+        {
+          "action": "hold",
+          "area": 5.734084215129587,
+          "area_fraction": 0.5688575610247607,
+          "vertices": [
+            [
+              -0.19999999999999996,
+              0.2
+            ],
+            [
+              0.2,
+              0.2
+            ],
+            [
+              0.46897689768976913,
+              0.6620462046204623
+            ],
+            [
+              0.6648033126293996,
+              1.2351966873706004
+            ],
+            [
+              1.197,
+              3.8
+            ],
+            [
+              -1.197,
+              3.8
+            ],
+            [
+              -0.6648033126294003,
+              1.2351966873706024
+            ],
+            [
+              -0.468976897689769,
+              0.6620462046204622
+            ]
+          ]
+        },
+        {
+          "action": "pull_right",
+          "area": 0.4757630870113143,
+          "area_fraction": 0.04719871894953516,
+          "vertices": [
+            [
+              0.7412500000000001,
+              0.2
+            ],
+            [
+              1.4,
+              0.2
+            ],
+            [
+              1.4,
+              1.5177914110429445
+            ],
+            [
+              0.9519187358916482,
+              0.7480812641083529
+            ]
+          ]
+        }
+      ],
+      "center_bounds": [
+        [
+          -1.4,
+          1.4
+        ],
+        [
+          0.2,
+          3.8
+        ]
+      ],
+      "center_domain_area": 10.079999999999998,
+      "half_width": [
+        0.1,
+        0.2
+      ],
+      "nominal_certified_union_area": 8.38487606553181,
+      "nominal_certified_union_fraction": 0.8318329430091083,
+      "robust_certified_union_area": 6.685610389152216,
+      "robust_certified_union_fraction": 0.663254998923831,
+      "robust_fallback_area": 3.3943896108477825,
+      "robust_fallback_fraction": 0.336745001076169
+    },
+    "representative_task_sets": [
+      {
+        "box_robust_actions": [
+          "pull_left"
+        ],
+        "center": [
+          -1.2,
+          0.2
+        ],
+        "half_width": [
+          0.2,
+          0.2
+        ],
+        "l2_constraint_margin_by_action": {
+          "hold": -0.6818552536509764,
+          "pull_left": 0.5933055734980129,
+          "pull_right": -1.7541347317499265
+        },
+        "nominal_actions": [
+          "pull_left"
+        ]
+      },
+      {
+        "box_robust_actions": [
+          "hold"
+        ],
+        "center": [
+          0.0,
+          2.0
+        ],
+        "half_width": [
+          0.2,
+          0.4
+        ],
+        "l2_constraint_margin_by_action": {
+          "hold": 0.9448730204513978,
+          "pull_left": -1.265474291589118,
+          "pull_right": -1.265474291589118
+        },
+        "nominal_actions": [
+          "hold"
+        ]
+      },
+      {
+        "box_robust_actions": [
+          "pull_right"
+        ],
+        "center": [
+          1.2,
+          0.2
+        ],
+        "half_width": [
+          0.2,
+          0.2
+        ],
+        "l2_constraint_margin_by_action": {
+          "hold": -0.6818552536509764,
+          "pull_left": -1.7541347317499265,
+          "pull_right": 0.5933055734980129
+        },
+        "nominal_actions": [
+          "pull_right"
+        ]
+      },
+      {
+        "box_robust_actions": [],
+        "center": [
+          -0.6,
+          0.1
+        ],
+        "half_width": [
+          0.04,
+          0.05
+        ],
+        "l2_constraint_margin_by_action": {
+          "hold": -0.2089575842453251,
+          "pull_left": 0.028639933521454174,
+          "pull_right": -1.146331698127952
+        },
+        "nominal_actions": [
+          "pull_left"
+        ]
+      }
+    ],
+    "semantics": "Each box contains all task objectives whose coordinates differ from the center by at most the declared half-width."
   }
 }
