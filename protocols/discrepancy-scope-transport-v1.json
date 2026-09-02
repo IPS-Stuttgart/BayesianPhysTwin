@@ -1,0 +1,127 @@
+{
+  "schema": "bayesian_phystwin.discrepancy-scope-transport-protocol",
+  "schema_version": 1,
+  "protocol_id": "diagnose-decompose-transport-v1",
+  "status": "controlled-method-complete-public-development-bound-confirmation-closed",
+  "scientific_question": "Which part of a learned physical-model discrepancy is transferable across objects and simulator backends, and may that tier be used after an interventional cause diagnosis?",
+  "cause_diagnosis": {
+    "source_schema": "bayesian_phystwin.explain_transport_probe_abstain",
+    "source_schema_version": 1,
+    "transporting_dispositions": [
+      "explain_and_transport",
+      "transport_without_cause"
+    ],
+    "probe_disposition": "probe_then_reassess",
+    "family_inadequacy_disposition": "none_of_the_above",
+    "fallback_dispositions": [
+      "partial_only_fallback",
+      "abstain"
+    ],
+    "no_correction_disposition": "no_detectable_error"
+  },
+  "registered_exact_coefficient_scopes": {
+    "shared_physics": {
+      "same_object_same_backend": true,
+      "same_object_new_backend": true,
+      "new_object_same_backend": true,
+      "new_object_new_backend": true
+    },
+    "object_specific_backend_stable": {
+      "same_object_same_backend": true,
+      "same_object_new_backend": true,
+      "new_object_same_backend": false,
+      "new_object_new_backend": false
+    },
+    "backend_specific_object_stable": {
+      "same_object_same_backend": true,
+      "same_object_new_backend": false,
+      "new_object_same_backend": true,
+      "new_object_new_backend": false
+    },
+    "object_backend_local": {
+      "same_object_same_backend": true,
+      "same_object_new_backend": false,
+      "new_object_same_backend": false,
+      "new_object_new_backend": false
+    }
+  },
+  "transport_tier_order": [
+    "exact_coefficients",
+    "query_effect",
+    "scalar_amplitude",
+    "uncertainty_structure",
+    "procedure_only"
+  ],
+  "decision_rules": {
+    "direct_evidence_required_on_requested_axis": true,
+    "unavailable_axis_extrapolation_forbidden": true,
+    "procedure_only_requires_refit_before_use": true,
+    "probe_requires_observation_and_complete_reassessment": true,
+    "unmodeled_cause_overrides_transfer_evidence": true,
+    "incompatible_scope_pattern": "none_of_the_above",
+    "rejection_output": "exact_caller_owned_fallback"
+  },
+  "public_deform_development_binding": {
+    "workflow_run_id": 33536420739,
+    "artifact_id": 9811886089,
+    "artifact_sha256": "bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0",
+    "same_object_new_backend_exact": {
+      "relative_improvement": 0.02985,
+      "wins": 8,
+      "total": 8,
+      "disposition": "supported"
+    },
+    "same_object_new_backend_scalar": {
+      "relative_improvement": 0.0225,
+      "wins": 6,
+      "total": 8,
+      "disposition": "supported"
+    },
+    "new_object_same_backend_exact": {
+      "relative_improvement": -0.1659,
+      "wins": 0,
+      "total": 28,
+      "disposition": "rejected"
+    },
+    "new_object_same_backend_procedure": {
+      "relative_improvement": 0.06803,
+      "wins": 28,
+      "total": 28,
+      "disposition": "supported"
+    },
+    "new_object_new_backend_exact": {
+      "disposition": "unavailable"
+    },
+    "diagnosis": "object_specific_backend_stable_on_tested_DLO3_axes",
+    "operational_authorization": false
+  },
+  "fresh_public_confirmation_reserve": {
+    "dataset": "Deform360",
+    "reserve_id": "0fba6a0cda4ac23fc8f900ca4632d73a22ae0559d42e48cc2ec8c5ea79030dc4",
+    "support_id": "57aaea3215ad1cdf76accfc455c173bb5d84a926bfed013fa64b6ec3625befed",
+    "supported_calibration_objects": 15,
+    "supported_confirmation_objects": 33,
+    "confirmation_objects_replaceable": false,
+    "numerical_confirmation_authorized": false,
+    "target_retry_authorized": false
+  },
+  "future_cause_family": [
+    "physical_state_or_initial_condition",
+    "material_or_persistent_physical_parameter",
+    "realized_contact_or_intervention",
+    "observation_or_gauge_bias",
+    "backend_specific_discrepancy",
+    "object_specific_discrepancy",
+    "shared_discrepancy",
+    "unmodeled_cause"
+  ],
+  "future_information_order": [
+    "fit cause signatures and tier gates on 15 calibration objects",
+    "freeze query portfolio and all thresholds",
+    "construct all 33 confirmation predictions",
+    "jointly seal predictions and diagnostic records",
+    "open confirmation outcomes once",
+    "retain positive, set-valued, none-of-the-above, and negative outcomes"
+  ],
+  "claim_boundary": "The controlled certificate and retrospective DEFORM matrix do not establish a natural causal decomposition, universal transferable missing physics, fresh confirmation, unseen-object plus unseen-backend benefit, deployment safety, or state of the art."
+}
