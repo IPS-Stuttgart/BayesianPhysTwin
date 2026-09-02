@@ -52,8 +52,13 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test -f "$RUNNER_TEMP/canonical/files/src/bayesian_phystwin_experiments/explain_transport_probe_abstain_v1.py"
-          cp -a "$RUNNER_TEMP/canonical/files/." .
+          mapfile -t roots < <(find "$RUNNER_TEMP/canonical" -mindepth 1 -maxdepth 1 -type d -print)
+          test "${#roots[@]}" = 1
+          canonical_root="${roots[0]}"
+          test -f "$canonical_root/files/src/bayesian_phystwin_experiments/explain_transport_probe_abstain_v1.py"
+          test -f "$canonical_root/paths.txt"
+          cp -a "$canonical_root/files/." .
+          echo "CANONICAL_ROOT=$canonical_root" >> "$GITHUB_ENV"
           git show origin/main:.github/workflows/changed-python-preflight.yml \
             > .github/workflows/changed-python-preflight.yml
           rm -f \
@@ -70,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < "$RUNNER_TEMP/canonical/paths.txt"
+          mapfile -t files < "$CANONICAL_ROOT/paths.txt"
           python -m ruff format --check "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m pytest -q \
