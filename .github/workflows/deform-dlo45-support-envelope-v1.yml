@@ -61,7 +61,7 @@ jobs:
           python -m pytest -q \
             tests/test_support_robust_decision_certificate_v1.py \
             tests/test_deform_dlo45_support_envelope_audit.py \
-            tests/test_query_decision_certificate_v1.py
+            tests/test_query_quotient_belief_v1.py
           python -m ruff check \
             src/bayesian_phystwin/support_robust_decision_certificate_v1.py \
             experiments/deform_dlo45_decision_identifiability_v1/support_envelope_audit.py \
@@ -175,6 +175,12 @@ jobs:
       needs.authorize.result == 'success'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 90
+    env:
+      ENVELOPE_VENV: ${{ runner.temp }}/dlo45-support-envelope-venv-${{ github.run_id }}-${{ github.run_attempt }}
+      ENVELOPE_WORK: ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}
+      ENVELOPE_PY: ${{ runner.temp }}/dlo45-support-envelope-venv-${{ github.run_id }}-${{ github.run_attempt }}/bin/python
+      ENVELOPE_SOURCE_OUT: ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}/source-envelope
+      ENVELOPE_TARGET_OUT: ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}/target-audit
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -198,31 +204,25 @@ jobs:
           test -d "$DATASET_ROOT/DLO4/eval"
           test -d "$DATASET_ROOT/DLO5/train"
           test -d "$DATASET_ROOT/DLO5/eval"
-          venv="$RUNNER_TEMP/dlo45-support-envelope-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          work="$RUNNER_TEMP/dlo45-support-envelope-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          test ! -e "$venv"
-          test ! -e "$work"
-          python -m venv "$venv"
-          "$venv/bin/python" -m pip install -e .
-          mkdir -p "$work/parent-source" "$work/parent-target"
+          test ! -e "$ENVELOPE_VENV"
+          test ! -e "$ENVELOPE_WORK"
+          python -m venv "$ENVELOPE_VENV"
+          "$ENVELOPE_PY" -m pip install -e .
+          mkdir -p "$ENVELOPE_WORK/parent-source" "$ENVELOPE_WORK/parent-target"
           curl --fail --location --silent --show-error \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$SOURCE_ARTIFACT_ID/zip" \
-            --output "$work/parent-source.zip"
-          echo "$SOURCE_ARTIFACT_SHA256  $work/parent-source.zip" | sha256sum --check
-          unzip -q "$work/parent-source.zip" -d "$work/parent-source"
+            --output "$ENVELOPE_WORK/parent-source.zip"
+          echo "$SOURCE_ARTIFACT_SHA256  $ENVELOPE_WORK/parent-source.zip" | sha256sum --check
+          unzip -q "$ENVELOPE_WORK/parent-source.zip" -d "$ENVELOPE_WORK/parent-source"
           curl --fail --location --silent --show-error \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$TARGET_ARTIFACT_ID/zip" \
-            --output "$work/parent-target.zip"
-          echo "$TARGET_ARTIFACT_SHA256  $work/parent-target.zip" | sha256sum --check
-          unzip -q "$work/parent-target.zip" -d "$work/parent-target"
-          echo "ENVELOPE_PY=$venv/bin/python" >> "$GITHUB_ENV"
-          echo "ENVELOPE_WORK=$work" >> "$GITHUB_ENV"
-          echo "ENVELOPE_SOURCE_OUT=$work/source-envelope" >> "$GITHUB_ENV"
-          echo "ENVELOPE_TARGET_OUT=$work/target-audit" >> "$GITHUB_ENV"
+            --output "$ENVELOPE_WORK/parent-target.zip"
+          echo "$TARGET_ARTIFACT_SHA256  $ENVELOPE_WORK/parent-target.zip" | sha256sum --check
+          unzip -q "$ENVELOPE_WORK/parent-target.zip" -d "$ENVELOPE_WORK/parent-target"
 
       - name: Calibrate source-only complete-trajectory envelope
         shell: bash
@@ -291,13 +291,13 @@ jobs:
               print(
                   f"- fixed epsilon={record['fixed_epsilon']}: "
                   f"{fixed['nonfallback_count']} nonfallback, "
-                  f"{100*fixed['rmse_reduction_fraction']:.2f}% RMSE reduction, "
+                  f"{100 * fixed['rmse_reduction_fraction']:.2f}% RMSE reduction, "
                   f"{fixed['harmful_nonfallback_count']} harmful"
               )
               print(
                   f"- source-retention epsilon={record['source_retention_epsilon']:.6f}: "
                   f"{retained['nonfallback_count']} nonfallback, "
-                  f"{100*retained['rmse_reduction_fraction']:.2f}% RMSE reduction, "
+                  f"{100 * retained['rmse_reduction_fraction']:.2f}% RMSE reduction, "
                   f"{retained['harmful_nonfallback_count']} harmful"
               )
               print()
@@ -318,7 +318,7 @@ jobs:
               print(
                   f"  empirical coverage={record['empirical_base_policy_trajectory_coverage']:.3f}, "
                   f"fixed-epsilon nonfallback={fixed['nonfallback_count']}, "
-                  f"RMSE reduction={100*fixed['rmse_reduction_fraction']:.2f}%."
+                  f"RMSE reduction={100 * fixed['rmse_reduction_fraction']:.2f}%."
               )
           PY
 
@@ -328,9 +328,9 @@ jobs:
         with:
           name: deform-dlo45-support-envelope-v1-${{ github.run_id }}
           path: |
-            ${{ env.ENVELOPE_SOURCE_OUT }}
-            ${{ env.ENVELOPE_TARGET_OUT }}
-            ${{ env.ENVELOPE_WORK }}/support_envelope_protocol.json
-            ${{ env.ENVELOPE_WORK }}/github_run.json
+            ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}/source-envelope
+            ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}/target-audit
+            ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}/support_envelope_protocol.json
+            ${{ runner.temp }}/dlo45-support-envelope-${{ github.run_id }}-${{ github.run_attempt }}/github_run.json
           if-no-files-found: warn
           retention-days: 90
