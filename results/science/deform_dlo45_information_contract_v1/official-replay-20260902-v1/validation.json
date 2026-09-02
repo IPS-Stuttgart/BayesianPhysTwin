@@ -1,0 +1,158 @@
+{
+  "all_reference_metrics_reproduced": true,
+  "case_rosters_identical": true,
+  "certificate_contract_all_cases_pass": true,
+  "certificate_harmful_nonfallback_count": 3,
+  "certificate_nonfallback_count": 82,
+  "claim_boundary": "This adapter is a retrospective, exact re-expression of the previously completed source-frozen DLO4/DLO5 result. It opens no new target cohort, selects no replacement policy, and does not establish unseen-object generalization, target-domain regret coverage, calibration, robot safety, or state of the art.",
+  "classification": "exact replay validation",
+  "contract": "deform-dlo45-information-contract-adapter-v1",
+  "methods": {
+    "certificate": {
+      "case_count": 532,
+      "per_dlo": {
+        "DLO4": {
+          "action_counts": [
+            221,
+            27,
+            18
+          ],
+          "rmse_mm": 29.60521116889918,
+          "trajectory_count": 14
+        },
+        "DLO5": {
+          "action_counts": [
+            229,
+            19,
+            18
+          ],
+          "rmse_mm": 36.095028818083705,
+          "trajectory_count": 14
+        }
+      },
+      "trajectory_count": 28
+    },
+    "fallback": {
+      "case_count": 532,
+      "per_dlo": {
+        "DLO4": {
+          "action_counts": [
+            266,
+            0,
+            0
+          ],
+          "rmse_mm": 31.296959565407025,
+          "trajectory_count": 14
+        },
+        "DLO5": {
+          "action_counts": [
+            266,
+            0,
+            0
+          ],
+          "rmse_mm": 37.39750595346296,
+          "trajectory_count": 14
+        }
+      },
+      "trajectory_count": 28
+    },
+    "jeffrey_point": {
+      "case_count": 532,
+      "per_dlo": {
+        "DLO4": {
+          "action_counts": [
+            0,
+            146,
+            120
+          ],
+          "rmse_mm": 22.330509255629416,
+          "trajectory_count": 14
+        },
+        "DLO5": {
+          "action_counts": [
+            3,
+            164,
+            99
+          ],
+          "rmse_mm": 27.22473877885045,
+          "trajectory_count": 14
+        }
+      },
+      "trajectory_count": 28
+    },
+    "kernel_point": {
+      "case_count": 532,
+      "per_dlo": {
+        "DLO4": {
+          "action_counts": [
+            0,
+            148,
+            118
+          ],
+          "rmse_mm": 22.36987364331378,
+          "trajectory_count": 14
+        },
+        "DLO5": {
+          "action_counts": [
+            3,
+            156,
+            107
+          ],
+          "rmse_mm": 26.999256914603198,
+          "trajectory_count": 14
+        }
+      },
+      "trajectory_count": 28
+    },
+    "map_point": {
+      "case_count": 532,
+      "per_dlo": {
+        "DLO4": {
+          "action_counts": [
+            19,
+            44,
+            203
+          ],
+          "rmse_mm": 20.903078551611472,
+          "trajectory_count": 14
+        },
+        "DLO5": {
+          "action_counts": [
+            7,
+            36,
+            223
+          ],
+          "rmse_mm": 24.285552079133613,
+          "trajectory_count": 14
+        }
+      },
+      "trajectory_count": 28
+    },
+    "oracle": {
+      "case_count": 532,
+      "per_dlo": {
+        "DLO4": {
+          "action_counts": [
+            5,
+            34,
+            227
+          ],
+          "rmse_mm": 19.544128090436974,
+          "trajectory_count": 14
+        },
+        "DLO5": {
+          "action_counts": [
+            1,
+            17,
+            248
+          ],
+          "rmse_mm": 23.436421294853588,
+          "trajectory_count": 14
+        }
+      },
+      "trajectory_count": 28
+    }
+  },
+  "payloads_retained_for_publication": false,
+  "schema_version": 1
+}
