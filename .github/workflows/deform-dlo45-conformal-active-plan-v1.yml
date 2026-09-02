@@ -1,0 +1,249 @@
+# workflow-lifecycle: temporary-source-replication
+name: DEFORM DLO4-DLO5 trajectory-conformal active policy v1
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-conformal-active-plan-v1
+    paths:
+      - .github/requests/deform-dlo45-conformal-active-plan-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo45-conformal-active-plan-v1
+  cancel-in-progress: false
+
+jobs:
+  contracts:
+    name: Source-only contract and focused tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out reviewed branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate one-shot request and source boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          request_path = Path(
+              ".github/requests/deform-dlo45-conformal-active-plan-v1.json"
+          )
+          protocol_path = Path(
+              "experiments/deform_dlo45_conformal_active_plan_v1/protocol.json"
+          )
+          request = json.loads(request_path.read_text(encoding="utf-8"))
+          protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+          assert request == {
+              "branch": "science/deform-dlo45-conformal-active-plan-v1",
+              "contract": "deform-dlo45-conformal-active-plan-v1",
+              "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+              "official_evaluation_access": False,
+              "predecessor_source_revision": "56c31bc56b2fc3526f519f726ff7b922b909c65c",
+              "public_training_source_only": True,
+              "request_id": "2026-09-02-deform-dlo45-conformal-active-plan-v1",
+              "runner": "gpuserver4090",
+          }
+          assert protocol["contract"] == request["contract"]
+          assert protocol["information_order"] == {
+              "new_data_collection": False,
+              "official_evaluation_access": False,
+              "source_test_only": True,
+              "target_tuning": False,
+          }
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", "HEAD^", "HEAD"], text=True
+          ).splitlines()
+          assert changed == [str(request_path)], changed
+          PY
+
+      - name: Run focused static and unit checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check \
+            numpy==2.2.6 pytest==8.4.2 ruff==0.12.11
+          python3 -m ruff check \
+            experiments/deform_dlo45_conformal_active_plan_v1 \
+            tests/test_deform_dlo45_conformal_active_plan_v1.py
+          python3 -m py_compile \
+            experiments/deform_dlo45_conformal_active_plan_v1/evaluate.py \
+            tests/test_deform_dlo45_conformal_active_plan_v1.py
+          python3 -m pytest -q \
+            tests/test_deform_dlo45_conformal_active_plan_v1.py
+
+  execute:
+    name: Reproduce v3 and calibrate complete active policy
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, nvidia-smi, gpuserver4090]
+    timeout-minutes: 60
+    env:
+      DLO_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+      V3_SOURCE_REVISION: 56c31bc56b2fc3526f519f726ff7b922b909c65c
+      SOURCE_VIEW: ${{ runner.temp }}/deform-dlo45-conformal-v1-source-view
+      V3_CHECKOUT: ${{ runner.temp }}/deform-dlo45-conformal-v1-v3-checkout
+      PREDECESSOR_OUTPUT: ${{ runner.temp }}/deform-dlo45-conformal-v1-predecessor
+      OUTPUT_DIR: ${{ github.workspace }}/artifacts/deform-dlo45-conformal-active-plan-v1
+      PYTHONUNBUFFERED: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - name: Check out reviewed branch with predecessor history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          clean: true
+          persist-credentials: false
+
+      - name: Revalidate request and source-only filesystem view
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(
+              Path(
+                  ".github/requests/deform-dlo45-conformal-active-plan-v1.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert request["runner"] == "gpuserver4090"
+          assert request["public_training_source_only"] is True
+          assert request["official_evaluation_access"] is False
+          PY
+          test -d "${DLO_ROOT}/DLO4/train"
+          test -d "${DLO_ROOT}/DLO5/train"
+          test -d "${DLO_ROOT}/DLO4/eval"
+          test -d "${DLO_ROOT}/DLO5/eval"
+          rm -rf "${SOURCE_VIEW}" "${V3_CHECKOUT}" "${PREDECESSOR_OUTPUT}" "${OUTPUT_DIR}"
+          mkdir -p "${SOURCE_VIEW}/DLO4" "${SOURCE_VIEW}/DLO5"
+          ln -s "${DLO_ROOT}/DLO4/train" "${SOURCE_VIEW}/DLO4/train"
+          ln -s "${DLO_ROOT}/DLO5/train" "${SOURCE_VIEW}/DLO5/train"
+          test ! -e "${SOURCE_VIEW}/DLO4/eval"
+          test ! -e "${SOURCE_VIEW}/DLO5/eval"
+          echo "runner_name=${RUNNER_NAME}"
+          echo "event_sha=${GITHUB_SHA}"
+          git status --short
+
+      - name: Create isolated numerical environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/deform-dlo45-conformal-v1-venv"
+          python="${RUNNER_TEMP}/deform-dlo45-conformal-v1-venv/bin/python"
+          "${python}" -m pip install --disable-pip-version-check --upgrade pip
+          "${python}" -m pip install --disable-pip-version-check \
+            numpy==2.2.6 pytest==8.4.2 ruff==0.12.11
+          "${python}" -m pip check
+
+      - name: Reproduce immutable v3 predecessor at exact source revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/deform-dlo45-conformal-v1-venv/bin/python"
+          git worktree add --detach "${V3_CHECKOUT}" "${V3_SOURCE_REVISION}"
+          (
+            cd "${V3_CHECKOUT}"
+            PYTHONPATH="${V3_CHECKOUT}" "${python}" -m \
+              experiments.deform_dlo45_decision_directed_sensing_v3.execute \
+              --dataset-root "${SOURCE_VIEW}" \
+              --protocol \
+                "${V3_CHECKOUT}/experiments/deform_dlo45_decision_directed_sensing_v3/protocol.json" \
+              --output-dir "${PREDECESSOR_OUTPUT}" \
+              --source-revision "${V3_SOURCE_REVISION}"
+          )
+          "${python}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["PREDECESSOR_OUTPUT"])
+          outer = json.loads((root / "result.json").read_text(encoding="utf-8"))
+          core = json.loads((root / "core" / "result.json").read_text(encoding="utf-8"))
+          assert outer["result_id"] == (
+              "d4aeb724d7a23bcd0137c4e16999737c33c654511e0a7a17adf9727862abbd0f"
+          )
+          assert core["result_id"] == (
+              "50a4dbdb7547393da7d16cfb2e491308f24437bca54909924df87e7406422ee0"
+          )
+          assert outer["overlap_audit"]["total_overlap_count"] == 0
+          assert core["evaluation"]["official_evaluation_split_opened"] is False
+          PY
+
+      - name: Apply trajectory-conformal active-policy envelope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/deform-dlo45-conformal-v1-venv/bin/python"
+          "${python}" -m ruff check \
+            experiments/deform_dlo45_conformal_active_plan_v1 \
+            tests/test_deform_dlo45_conformal_active_plan_v1.py
+          "${python}" -m pytest -q \
+            tests/test_deform_dlo45_conformal_active_plan_v1.py
+          "${python}" \
+            experiments/deform_dlo45_conformal_active_plan_v1/evaluate.py \
+            --predecessor-output "${PREDECESSOR_OUTPUT}" \
+            --protocol \
+              experiments/deform_dlo45_conformal_active_plan_v1/protocol.json \
+            --output-dir "${OUTPUT_DIR}" \
+            --source-revision "${V3_SOURCE_REVISION}"
+          cp \
+            experiments/deform_dlo45_conformal_active_plan_v1/protocol.json \
+            "${OUTPUT_DIR}/protocol.json"
+          printf '%s\n' "${GITHUB_SHA}" > "${OUTPUT_DIR}/wrapper-revision.txt"
+          printf '%s\n' "${V3_SOURCE_REVISION}" > "${OUTPUT_DIR}/predecessor-revision.txt"
+          cat "${OUTPUT_DIR}/SUMMARY.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify bounded positive result and custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="${RUNNER_TEMP}/deform-dlo45-conformal-v1-venv/bin/python"
+          "${python}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["OUTPUT_DIR"]) / "result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          primary = result["primary"]
+          assert result["all_checks_passed"] is True
+          assert result["classification"] == (
+              "positive-trajectory-conformal-active-policy"
+          )
+          assert result["accounting"]["official_evaluation_files_opened"] is False
+          assert primary["nonfallback_count"] > 0
+          assert primary["harmful_nonfallback_count"] == 0
+          assert primary["regret_budget_exceed_count"] == 0
+          assert primary["trajectories_with_regret_budget_exceed"] == 0
+          assert primary["state_ambiguous_nonfallback_fraction"] == 1.0
+          assert primary["trajectory_improvement_bootstrap_95_interval"]["lower"] > 0
+          print(json.dumps(primary, indent=2, sort_keys=True))
+          PY
+          find "${OUTPUT_DIR}" -type f -maxdepth 1 -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "${OUTPUT_DIR}/SHA256SUMS"
+
+      - name: Upload complete source-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deform-dlo45-conformal-active-plan-v1-${{ github.run_id }}
+          path: artifacts/deform-dlo45-conformal-active-plan-v1
+          if-no-files-found: error
+          retention-days: 30
