@@ -46,6 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install \
+            -e . \
             "numpy==2.2.6" \
             "scikit-learn==1.8.0" \
             "pytest>=8" \
