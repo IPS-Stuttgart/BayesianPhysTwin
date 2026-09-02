@@ -22,10 +22,7 @@ from experiments.tracking_cloth_action_feasibility_v1._decision import (
 )
 from experiments.tracking_cloth_action_feasibility_v1._metrics import (
     causal_fill_truth,
-    cloth_grid_edges,
-    nonneighbor_pairs,
     object_digest,
-    pairwise_shape_change,
     physical_action_metrics,
     read_protocol,
 )
