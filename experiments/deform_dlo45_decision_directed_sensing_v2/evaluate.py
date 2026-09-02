@@ -248,8 +248,7 @@ def load_protocol(path: Path) -> Protocol:
         or int(data.get("evaluation_trajectory_count", -1)) != 14
         or tuple(data.get("known_endpoint_nodes", ())) != (0, 1, -2, -1)
         or tuple(data.get("candidate_internal_nodes", ())) != tuple(range(2, 10))
-        or evaluation.get("primary_stage")
-        != "source-test-only-competing-action-pilot"
+        or evaluation.get("primary_stage") != "source-test-only-competing-action-pilot"
         or evaluation.get("evaluation_split_opened") is not False
         or evaluation.get("target_tuning") is not False
         or evaluation.get("new_data_collection") is not False
@@ -283,9 +282,7 @@ def load_protocol(path: Path) -> Protocol:
         maximum_nonfallback_harmful_fraction=float(
             calibration["maximum_nonfallback_harmful_fraction"]
         ),
-        minimum_nonfallback_decisions=int(
-            calibration["minimum_nonfallback_decisions"]
-        ),
+        minimum_nonfallback_decisions=int(calibration["minimum_nonfallback_decisions"]),
         selection_objective=str(calibration["selection_objective"]),
         policies=_tuple_of(sensing["policies"], str),
         budgets=_tuple_of(sensing["measurement_budgets"], int),
@@ -364,9 +361,7 @@ def split_names(
 
 def window_starts(protocol: Protocol) -> tuple[int, ...]:
     stop = FRAME_COUNT - protocol.horizon_frames
-    starts = tuple(
-        range(protocol.first_current_frame, stop, protocol.stride_frames)
-    )
+    starts = tuple(range(protocol.first_current_frame, stop, protocol.stride_frames))
     if not starts:
         raise ValueError("protocol yields no windows")
     return starts
@@ -768,9 +763,7 @@ def posterior_weights(
     logits = context.base_logits.copy()
     for sensor_index, value in observations.items():
         difference = context.support_sensor_features[:, sensor_index, :] - value
-        logits -= sensor_log_likelihood_scale * np.mean(
-            np.square(difference), axis=1
-        )
+        logits -= sensor_log_likelihood_scale * np.mean(np.square(difference), axis=1)
     return _softmax(logits)
 
 
@@ -791,9 +784,7 @@ def decision_state(
     observations: dict[int, FloatArray],
     sensor_log_likelihood_scale: float,
 ) -> DecisionState:
-    weights = posterior_weights(
-        context, observations, sensor_log_likelihood_scale
-    )
+    weights = posterior_weights(context, observations, sensor_log_likelihood_scale)
     quotient = _class_masses(weights, context.support_classes)
     prior = np.full(len(weights), 1.0 / len(weights), dtype=np.float64)
     certificate = query_decision_certificate(
@@ -851,9 +842,7 @@ def expected_candidate_metric(
     metric: str,
     sensor_log_likelihood_scale: float,
 ) -> float:
-    current = posterior_weights(
-        context, observations, sensor_log_likelihood_scale
-    )
+    current = posterior_weights(context, observations, sensor_log_likelihood_scale)
     total = 0.0
     for outcome_index, probability in enumerate(current):
         if probability <= 0.0:
@@ -888,9 +877,7 @@ def choose_candidate(
     protocol: Protocol,
 ) -> int:
     if policy in ADAPTIVE_POLICIES:
-        current = decision_state(
-            context, observations, sensor_log_likelihood_scale
-        )
+        current = decision_state(context, observations, sensor_log_likelihood_scale)
         current_value = _metric_value(current, policy)
         scores: list[tuple[float, float, float, int]] = []
         for candidate in remaining:
@@ -910,9 +897,7 @@ def choose_candidate(
         for candidate in remaining:
             hypothetical = dict(observations)
             hypothetical[candidate] = context.target_sensor_features[candidate]
-            state = decision_state(
-                context, hypothetical, sensor_log_likelihood_scale
-            )
+            state = decision_state(context, hypothetical, sensor_log_likelihood_scale)
             scores.append(
                 (
                     state.certificate.minimax_worst_case_regret,
@@ -943,9 +928,7 @@ def acquisition_path(
     """Generate the full path; tolerance changes only the stopping rule."""
 
     observations: dict[int, FloatArray] = {}
-    states = [
-        decision_state(context, observations, sensor_log_likelihood_scale)
-    ]
+    states = [decision_state(context, observations, sensor_log_likelihood_scale)]
     selected: list[int] = []
     while len(selected) < protocol.maximum_measurements:
         remaining = tuple(index for index in range(8) if index not in observations)
@@ -995,9 +978,7 @@ def _budget_plan(
         state = states[certified_step]
         certified = True
     selected_nodes = tuple(selected[index] + 2 for index in range(sensor_count))
-    cost = float(
-        sum(protocol.measurement_costs[node - 2] for node in selected_nodes)
-    )
+    cost = float(sum(protocol.measurement_costs[node - 2] for node in selected_nodes))
     return FrozenPlan(
         policy=policy,
         budget=budget,
@@ -1052,8 +1033,7 @@ def score_plan(
         "certificate_target_evaluable": certificate_evaluable,
         "certificate_excess_regret": certificate_excess,
         "certificate_target_violation": bool(
-            certificate_evaluable
-            and realized_regret > certificate_radius + ATOL
+            certificate_evaluable and realized_regret > certificate_radius + ATOL
         ),
         "pointwise_best_action_index": pointwise_best,
         "pointwise_action_correct": action == pointwise_best,
@@ -1080,9 +1060,7 @@ def _evaluate_calibration_trajectory(
         key = f"calibration/{dlo}/{path.name}/{current}"
         frozen: list[tuple[float, float, float, CaseContext, FrozenPlan]] = []
         for prototype_scale in protocol.action_prototype_scales:
-            context = make_context(
-                observation, model, prototype_scale, protocol
-            )
+            context = make_context(observation, model, prototype_scale, protocol)
             for sensor_scale in protocol.sensor_log_likelihood_scales:
                 states, selected = acquisition_path(
                     "decision_regret",
@@ -1217,12 +1195,8 @@ def _trajectory_aggregate(
     physical_values: list[float] = []
     fallback_values: list[float] = []
     for (dlo, trajectory), items in sorted(by_trajectory.items()):
-        physical = np.asarray(
-            [float(item["physical_task_mse"]) for item in items]
-        )
-        fallback = np.asarray(
-            [float(item["fallback_task_mse"]) for item in items]
-        )
+        physical = np.asarray([float(item["physical_task_mse"]) for item in items])
+        fallback = np.asarray([float(item["fallback_task_mse"]) for item in items])
         physical_values.extend(physical.tolist())
         fallback_values.extend(fallback.tolist())
         rmse = math.sqrt(float(np.mean(physical)))
@@ -1235,8 +1209,7 @@ def _trajectory_aggregate(
                 "decision_count": len(items),
                 "task_rmse_mm": 1000.0 * rmse,
                 "fallback_task_rmse_mm": 1000.0 * fallback_rmse,
-                "relative_improvement": 1.0
-                - rmse / max(fallback_rmse, ATOL),
+                "relative_improvement": 1.0 - rmse / max(fallback_rmse, ATOL),
                 "nonfallback_fraction": float(
                     np.mean([bool(item["nonfallback"]) for item in items])
                 ),
@@ -1255,10 +1228,7 @@ def _trajectory_aggregate(
                 "nonfallback_harmful_fraction": (
                     float(
                         np.mean(
-                            [
-                                bool(item["harmful_vs_fallback"])
-                                for item in nonfallback
-                            ]
+                            [bool(item["harmful_vs_fallback"]) for item in nonfallback]
                         )
                     )
                     if nonfallback
@@ -1294,15 +1264,12 @@ def summarize_rows(
             node_counts[str(node)] += 1
         label = str(item["action_label"])
         action_counts[label] = action_counts.get(label, 0) + 1
-    interval = _bootstrap_interval(
-        improvements, bootstrap_replicates, bootstrap_seed
-    )
+    interval = _bootstrap_interval(improvements, bootstrap_replicates, bootstrap_seed)
     return {
         "decision_count": len(rows),
         "trajectory_count": len(trajectories),
         "pooled_task_rmse_mm": 1000.0 * math.sqrt(float(np.mean(physical))),
-        "pooled_fallback_task_rmse_mm": 1000.0
-        * math.sqrt(float(np.mean(fallback))),
+        "pooled_fallback_task_rmse_mm": 1000.0 * math.sqrt(float(np.mean(fallback))),
         "mean_trajectory_improvement": float(np.mean(improvements)),
         "trajectory_bootstrap_95_interval": list(interval),
         "nonfallback_count": len(nonfallback),
@@ -1322,11 +1289,7 @@ def summarize_rows(
             np.mean([bool(item["harmful_vs_fallback"]) for item in rows])
         ),
         "nonfallback_harmful_fraction": (
-            float(
-                np.mean(
-                    [bool(item["harmful_vs_fallback"]) for item in nonfallback]
-                )
-            )
+            float(np.mean([bool(item["harmful_vs_fallback"]) for item in nonfallback]))
             if nonfallback
             else 0.0
         ),
@@ -1363,10 +1326,7 @@ def summarize_rows(
         "nonfallback_effective_hypothesis_count": (
             float(
                 np.mean(
-                    [
-                        float(item["effective_hypothesis_count"])
-                        for item in nonfallback
-                    ]
+                    [float(item["effective_hypothesis_count"]) for item in nonfallback]
                 )
             )
             if nonfallback
@@ -1374,9 +1334,7 @@ def summarize_rows(
         ),
         "nonfallback_effective_class_count": (
             float(
-                np.mean(
-                    [float(item["effective_class_count"]) for item in nonfallback]
-                )
+                np.mean([float(item["effective_class_count"]) for item in nonfallback])
             )
             if nonfallback
             else 0.0
@@ -1420,8 +1378,7 @@ def aggregate_calibration_rows(
             protocol.bootstrap_seed + index,
         )
         eligible = bool(
-            int(summary["nonfallback_count"])
-            >= protocol.minimum_nonfallback_decisions
+            int(summary["nonfallback_count"]) >= protocol.minimum_nonfallback_decisions
             and float(summary["nonfallback_harmful_fraction"])
             <= protocol.maximum_nonfallback_harmful_fraction + ATOL
             and float(summary["mean_trajectory_improvement"]) > 0.0
@@ -1459,9 +1416,7 @@ def select_calibration(
 
     selected = min(pool, key=key)
     return CalibrationChoice(
-        sensor_log_likelihood_scale=float(
-            selected["sensor_log_likelihood_scale"]
-        ),
+        sensor_log_likelihood_scale=float(selected["sensor_log_likelihood_scale"]),
         action_prototype_scale=float(selected["action_prototype_scale"]),
         regret_tolerance=float(selected["regret_tolerance"]),
         gate_passed=bool(eligible),
@@ -1562,9 +1517,9 @@ def paired_comparisons(
                     decision_records[key]["relative_improvement"]
                 ) - float(other_records[key]["relative_improvement"])
                 improvement_differences.append((dlo, difference))
-                saving = float(
-                    other_records[key]["mean_measurement_cost"]
-                ) - float(decision_records[key]["mean_measurement_cost"])
+                saving = float(other_records[key]["mean_measurement_cost"]) - float(
+                    decision_records[key]["mean_measurement_cost"]
+                )
                 cost_savings.append((dlo, saving))
                 if difference > ATOL:
                     wins += 1
@@ -1596,9 +1551,7 @@ def paired_comparisons(
                     improvement_interval
                 ),
                 "mean_measurement_cost_saving": float(np.mean(cost_values)),
-                "measurement_cost_saving_bootstrap_95_interval": list(
-                    cost_interval
-                ),
+                "measurement_cost_saving_bootstrap_95_interval": list(cost_interval),
                 "trajectory_wins_ties_losses": [wins, ties, losses],
                 "decision_nonfallback_fraction_advantage": float(
                     decision["nonfallback_fraction"]
@@ -1643,10 +1596,8 @@ def cost_rmse_frontiers(
         frontier = []
         for point in points:
             dominated = any(
-                other["mean_measurement_cost"]
-                <= point["mean_measurement_cost"] + ATOL
-                and other["pooled_task_rmse_mm"]
-                <= point["pooled_task_rmse_mm"] + ATOL
+                other["mean_measurement_cost"] <= point["mean_measurement_cost"] + ATOL
+                and other["pooled_task_rmse_mm"] <= point["pooled_task_rmse_mm"] + ATOL
                 and (
                     other["mean_measurement_cost"]
                     < point["mean_measurement_cost"] - ATOL
@@ -1746,8 +1697,7 @@ def render_summary(
         f"- Gate passed: **{selected['gate_passed']}**",
         f"- Sensor log-likelihood scale: "
         f"{float(selected['sensor_log_likelihood_scale']):.4g}",
-        f"- Action-prototype scale: "
-        f"{float(selected['action_prototype_scale']):.4g}",
+        f"- Action-prototype scale: {float(selected['action_prototype_scale']):.4g}",
         f"- Regret tolerance: {float(selected['regret_tolerance']):.4g}",
         f"- Classification: **{classification['label']}**",
         "",
@@ -1758,9 +1708,7 @@ def render_summary(
         "Effective hypotheses when acting |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    shown_budgets = tuple(
-        value for value in protocol.budgets if value in {0, 2, 4, 8}
-    )
+    shown_budgets = tuple(value for value in protocol.budgets if value in {0, 2, 4, 8})
     for policy in protocol.policies:
         policy_result = aggregate[policy]
         assert isinstance(policy_result, dict)
@@ -1937,9 +1885,7 @@ def run(args: argparse.Namespace) -> int:
     aggregate = aggregate_source_test_rows(source_test_rows, protocol)
     comparisons = paired_comparisons(aggregate, protocol)
     frontiers = cost_rmse_frontiers(aggregate, protocol)
-    classification = result_classification(
-        choice, aggregate, comparisons, protocol
-    )
+    classification = result_classification(choice, aggregate, comparisons, protocol)
     status = (
         "source-test-only-exploratory-result"
         if choice.gate_passed
@@ -1955,9 +1901,7 @@ def run(args: argparse.Namespace) -> int:
         "source_split": split_records,
         "source": source_records,
         "selected_calibration": {
-            "sensor_log_likelihood_scale": (
-                choice.sensor_log_likelihood_scale
-            ),
+            "sensor_log_likelihood_scale": (choice.sensor_log_likelihood_scale),
             "action_prototype_scale": choice.action_prototype_scale,
             "regret_tolerance": choice.regret_tolerance,
             "gate_passed": choice.gate_passed,
@@ -1971,9 +1915,7 @@ def run(args: argparse.Namespace) -> int:
         "classification": classification,
         "accounting": {
             "fit_trajectories": 2 * protocol.fit_count,
-            "fit_windows": 2
-            * protocol.fit_count
-            * len(window_starts(protocol)),
+            "fit_windows": 2 * protocol.fit_count * len(window_starts(protocol)),
             "calibration_trajectories": 2 * protocol.calibration_count,
             "calibration_windows": 2
             * protocol.calibration_count
@@ -2001,14 +1943,10 @@ def run(args: argparse.Namespace) -> int:
     _write_json(output_dir / "result.json", result)
     _write_json(output_dir / "compact_result.json", _compact_result(result, protocol))
     _write_json(output_dir / "calibration_grid.json", calibration_grid)
-    with (output_dir / "source_test_cases.jsonl").open(
-        "w", encoding="utf-8"
-    ) as stream:
+    with (output_dir / "source_test_cases.jsonl").open("w", encoding="utf-8") as stream:
         for row in source_test_rows:
             stream.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
-    with (output_dir / "calibration_cases.jsonl").open(
-        "w", encoding="utf-8"
-    ) as stream:
+    with (output_dir / "calibration_cases.jsonl").open("w", encoding="utf-8") as stream:
         for row in calibration_rows:
             stream.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
     (output_dir / "SUMMARY.md").write_text(

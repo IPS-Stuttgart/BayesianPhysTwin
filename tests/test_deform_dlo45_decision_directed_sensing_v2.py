@@ -50,12 +50,8 @@ def _context() -> module.CaseContext:
         target_sensor_features=sensor[0],
         support_classes=np.asarray([0, 0, 1, 1], dtype=np.int64),
         support_global_classes=np.asarray([0, 0, 1, 1], dtype=np.int64),
-        support_state_representation=np.asarray(
-            [[-1.0], [-0.5], [0.5], [1.0]]
-        ),
-        support_query_representation=np.asarray(
-            [[-1.0], [-0.5], [0.5], [1.0]]
-        ),
+        support_state_representation=np.asarray([[-1.0], [-0.5], [0.5], [1.0]]),
+        support_query_representation=np.asarray([[-1.0], [-0.5], [0.5], [1.0]]),
         support_task_residuals=np.zeros((4, 2)),
         actions=np.zeros((3, 2)),
         action_labels=("fallback", "left", "right"),
@@ -83,9 +79,7 @@ def test_endpoint_observation_does_not_touch_future_internal_outcomes() -> None:
     future = slice(current + 1, current + 1 + protocol.horizon_frames)
     trajectory[future, module.INTERNAL, :] = np.nan
 
-    observation = module.extract_endpoint_observation(
-        trajectory, current, protocol
-    )
+    observation = module.extract_endpoint_observation(trajectory, current, protocol)
 
     assert np.all(np.isfinite(observation.base_feature))
     assert np.all(np.isfinite(observation.sensor_features))
@@ -98,9 +92,9 @@ def test_endpoint_observation_does_not_touch_future_internal_outcomes() -> None:
 
 def test_task_residual_selects_only_registered_central_nodes() -> None:
     protocol = _protocol()
-    full = np.arange(
-        protocol.horizon_frames * 8 * 3, dtype=np.float64
-    ).reshape(protocol.horizon_frames, 8, 3)
+    full = np.arange(protocol.horizon_frames * 8 * 3, dtype=np.float64).reshape(
+        protocol.horizon_frames, 8, 3
+    )
     selected = module.task_residuals(full.reshape(-1), protocol)
     expected = full[:, 2:6, :].reshape(-1)
     np.testing.assert_array_equal(selected, expected)
@@ -121,9 +115,7 @@ def test_source_split_is_deterministic_and_disjoint() -> None:
 
 
 def test_decision_regret_selects_action_relevant_node() -> None:
-    protocol = dataclasses.replace(
-        _protocol(), measurement_costs=np.ones(8)
-    )
+    protocol = dataclasses.replace(_protocol(), measurement_costs=np.ones(8))
     context = _context()
     observations: dict[int, np.ndarray] = {}
     selected = module.choose_candidate(
@@ -156,9 +148,7 @@ def test_posterior_update_is_normalized_and_informative() -> None:
     assert posterior[:2].sum() > 0.99
     assert module._weighted_variance(
         context.support_state_representation, posterior
-    ) < module._weighted_variance(
-        context.support_state_representation, prior
-    )
+    ) < module._weighted_variance(context.support_state_representation, prior)
 
 
 def test_action_competition_reports_multiple_pointwise_winners() -> None:
@@ -235,9 +225,7 @@ def test_calibration_selection_respects_harm_gate_and_tie_breaks() -> None:
 def test_scoring_uses_the_frozen_action() -> None:
     context = dataclasses.replace(
         _context(),
-        actions=np.asarray(
-            [[0.0, 0.0], [1.0, 0.0], [-1.0, 0.0]]
-        ),
+        actions=np.asarray([[0.0, 0.0], [1.0, 0.0], [-1.0, 0.0]]),
     )
     state = module.decision_state(context, {}, 1.0)
     plan = module.FrozenPlan(
@@ -266,9 +254,7 @@ def test_scoring_uses_the_frozen_action() -> None:
         loss_floor=1e-6,
         class_counts=np.ones(1, dtype=np.int64),
     )
-    scored = module.score_plan(
-        plan, context, np.asarray([1.0, 0.0]), model
-    )
+    scored = module.score_plan(plan, context, np.asarray([1.0, 0.0]), model)
     assert scored["physical_task_mse"] == 0.0
     assert scored["fallback_task_mse"] > 0.0
     assert scored["harmful_vs_fallback"] is False
@@ -277,9 +263,7 @@ def test_scoring_uses_the_frozen_action() -> None:
 def test_source_text_freezes_plans_before_target_residual_slice() -> None:
     text = SCRIPT.read_text(encoding="utf-8")
     start = text.index("plans: list[FrozenPlan]")
-    target = text.index(
-        "full_target = extract_full_target_residual", start
-    )
+    target = text.index("full_target = extract_full_target_residual", start)
     assert start < target
     prefix = text[start:target]
     assert "acquisition_path(" in prefix
