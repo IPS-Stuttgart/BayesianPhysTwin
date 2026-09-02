@@ -54,6 +54,13 @@ different action-loss-difference signature. If no available probe separates one
 such pair, global decision identification is impossible under the registered
 sensor family.
 
+The exact dynamic program and the minimum nonadaptive set are complementary
+certificates. The first proves the least contingent sensing cost for the supplied
+predictive prior and chosen worst-case/expected objective. The second proves the
+least fixed sensor-set cost required to identify every represented decision.
+Their gap quantifies the value of adapting later measurements to earlier
+outcomes; neither objective requires complete state identification.
+
 ## Controlled evidence
 
 The registered controlled study uses 24 physical hypotheses, three optimal
@@ -76,22 +83,27 @@ the policy reports infeasibility rather than inventing confidence.
 The exact result is under
 `results/science/active_decision_acquisition_v1/controlled-v1/`.
 
-## Public-data route
+## Existing-data validation route
 
-The intended real-data companion is sequential normal-view acquisition on DOT
-rope. Development must use already-open `R11--R20`; normal images and 3-D
-outcomes for `R21--R70` remain outside this source stage. The earlier fixed
-rank-six model is not reused: the routed CUT3R source result observed rank seven
-on nine of ten sequences. Each camera must instead emit a rank-agnostic query
-belief or prior-anchored query message, with unknown cross-camera dependence
-handled conservatively.
+No new recording is required. The primary real-data companion is the existing
+DEFORM DLO4/DLO5 virtual-sensing protocol: internal-node position and velocity
+readouts are masked and revealed one at a time, while future internal-node
+trajectories remain unavailable until every sensing path and action is frozen.
+The practical decision-regret policy can be compared with the exact dynamic
+program on a deliberately bounded probe subset, giving both an empirical result
+and an optimality-gap certificate.
 
-The source study should compare certificate-directed camera acquisition against
-best fixed camera, random order, hypothesis entropy, query-variance reduction,
-and all-view reference. The primary outcome is camera cost at matched physical
-decision quality. Complete sequence is the statistical unit. Provider outputs
-must seal before 3-D marker truth is opened, and source completion cannot
-implicitly authorize `R21--R30`.
+A complementary Tracking Cloth replay can treat already recorded marker prefixes
+as diagnostic probes and the logged release configurations as terminal physical
+actions. That study must preserve repetition-level source/confirmation custody
+and must be described as resettable logged-action replay rather than online robot
+control.
+
+The central evaluation quantities are sensing cost, certified-action coverage,
+realized regret, exact-fallback frequency, physical hypotheses remaining at the
+time of action, and the ratio between practical and exact minimum sensing cost.
+The desired mechanism is action certification while multiple physical states
+remain compatible—not reconstruction of a unique state.
 
 ## Claim boundary
 
