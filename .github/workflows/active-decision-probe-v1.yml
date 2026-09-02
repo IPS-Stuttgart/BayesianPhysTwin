@@ -103,6 +103,10 @@ jobs:
                       "    minimax_regret: FloatArray = np.zeros(outcome_count, dtype=np.float64)",
                   "    certified = np.zeros(outcome_count, dtype=np.bool_)":
                       "    certified: BoolArray = np.zeros(outcome_count, dtype=np.bool_)",
+                  "    if shifted_support(lower) <= tolerance:":
+                      "    if shifted_support(lower) <= 0.0:",
+                  "        if shifted_support(middle) > tolerance:":
+                      "        if shifted_support(middle) > 0.0:",
               },
           }
           for path, mapping in replacements.items():
