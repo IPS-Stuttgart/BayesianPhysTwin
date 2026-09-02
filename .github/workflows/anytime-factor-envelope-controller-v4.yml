@@ -77,33 +77,34 @@ jobs:
           tests = test_path.read_text(encoding="utf-8")
           test_name = "test_malformed_reveal_is_atomic_and_retryable_v3"
           if test_name not in tests:
-              tests += '''
-
-
-def test_malformed_reveal_is_atomic_and_retryable_v3() -> None:
-    controller = SwitchingUnionAdmissionControllerV3(_config(), _contract())
-    controller.issue_trial(trial_id="retry", issued_step=0, maturity_step=1)
-
-    with pytest.raises(ValueError, match="candidate_loss"):
-        controller.resolve_trial(
-            trial_id="retry",
-            resolved_step=1,
-            candidate_loss=-1.0,
-            fallback_loss=1.0,
-        )
-
-    rejected = controller.snapshot()
-    assert rejected.pending_trial_count == 1
-    assert rejected.resolved_current_epoch_count == 0
-    result = controller.resolve_trial(
-        trial_id="retry",
-        resolved_step=1,
-        candidate_loss=0.0,
-        fallback_loss=1.0,
-    )
-    assert result.used_for_current_epoch is True
-    assert controller.snapshot().pending_trial_count == 0
-'''
+              test_lines = [
+                  "",
+                  "",
+                  "def test_malformed_reveal_is_atomic_and_retryable_v3() -> None:",
+                  "    controller = SwitchingUnionAdmissionControllerV3(_config(), _contract())",
+                  "    controller.issue_trial(trial_id=\"retry\", issued_step=0, maturity_step=1)",
+                  "",
+                  "    with pytest.raises(ValueError, match=\"candidate_loss\"):",
+                  "        controller.resolve_trial(",
+                  "            trial_id=\"retry\",",
+                  "            resolved_step=1,",
+                  "            candidate_loss=-1.0,",
+                  "            fallback_loss=1.0,",
+                  "        )",
+                  "",
+                  "    rejected = controller.snapshot()",
+                  "    assert rejected.pending_trial_count == 1",
+                  "    assert rejected.resolved_current_epoch_count == 0",
+                  "    result = controller.resolve_trial(",
+                  "        trial_id=\"retry\",",
+                  "        resolved_step=1,",
+                  "        candidate_loss=0.0,",
+                  "        fallback_loss=1.0,",
+                  "    )",
+                  "    assert result.used_for_current_epoch is True",
+                  "    assert controller.snapshot().pending_trial_count == 0",
+              ]
+              tests += "\n".join(test_lines) + "\n"
           test_path.write_text(tests, encoding="utf-8")
 
           manifest_path = Path(".github/quality/test-suites.json")
