@@ -1,35 +1,39 @@
-"""Exact finite-hypothesis certificates for act, probe, or fallback decisions.
+"""Exact finite certificates for acting, probing, or returning a fallback.
 
-A query quotient may identify posterior mass only at the class level.  The
-existing :mod:`query_decision_certificate_v1` computes exact worst-case regret
-for a direct finite action over every prior-supported complete lift.  This
-module lifts the same construction to a registered finite probe.
+A registered query quotient may determine posterior mass only at the class level.
+The existing :mod:`query_decision_certificate_v1` computes exact worst-case
+regret for direct finite actions over every prior-supported complete lift.  This
+module extends the same support-function construction to finite probes.
 
-For probe outcome likelihood ``O[i, z]`` and contingent policy ``delta(z)``,
-define the hypothesis-wise policy loss
+For probe outcome likelihood ``O_e[i, z]``, probe cost ``c_e``, and contingent
+policy ``delta(z)``, define one hypothesis-wise meta-action loss
 
-    G[i, delta] = sum_z O[i, z] L[i, delta(z)].
+    G[i, (e, delta)] = c_e + sum_z O_e[i, z] L[i, delta(z)].
 
-A contingent policy is simply a finite meta-action.  Therefore its exact
-worst-case regret over all complete beliefs compatible with the registered
-quotient masses is obtained by applying the direct certificate to ``G``.  In
-expanded form,
+Direct actions are meta-actions with ``G[i, a] = L[i, a]``.  Applying the direct
+certificate to the *union* of direct and probe-contingent meta-actions gives the
+exact common-comparator regret
 
-    Reg_bar(delta)
-      = max_delta' sum_c lambda[c]
-          max_{i in c: p[i] > 0}
-            sum_z O[i,z] (L[i,delta(z)] - L[i,delta'(z)]).
+    Reg_bar(m)
+      = max_m' sum_c lambda[c]
+          max_{i in c: p[i] > 0} (G[i, m] - G[i, m']).
 
-The result supports an auditable act/probe/fallback router.  It does not validate
-the probe likelihood, physical hypothesis set, quotient, loss, cost, population,
-or deployment context.
+Using one union is essential: direct-action regret and within-probe regret use
+different comparator classes and cannot in general be ranked against each
+other.  The resulting router acts or probes only when the selected union
+meta-action satisfies the registered regret tolerance; otherwise it returns the
+caller-registered fallback action.
+
+The result does not validate the physical hypotheses, quotient, probe
+likelihood, action loss, probe cost, population, transport, or deployment
+context.
 """
 
 from __future__ import annotations
 
 import itertools
 from numbers import Integral, Real
-from typing import Final, NamedTuple, TypeAlias
+from typing import Final, NamedTuple, TypeAlias, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -44,19 +48,19 @@ IntArray: TypeAlias = npt.NDArray[np.int64]
 
 QUERY_PROBE_CERTIFICATE_VERSION: Final = 1
 QUERY_PROBE_CERTIFICATE_SEMANTICS: Final = (
-    "exact-ex-ante-worst-case-regret-for-finite-contingent-probe-policies-v1"
+    "exact-common-comparator-regret-for-direct-and-finite-probe-meta-actions-v1"
 )
 QUERY_PROBE_CERTIFICATE_CLAIM_BOUNDARY: Final = (
     "The certificate is exact only for the supplied finite hypotheses, positive "
-    "prior support, quotient masses, action losses, and probe-outcome likelihood. "
-    "It is an ex-ante expected-regret statement. It does not validate the physical "
-    "hypotheses, quotient, likelihood, costs, outcome model, exchangeability, "
-    "transport, calibration, deployment context, or safety."
+    "prior support, quotient masses, direct-action losses, probe costs, and "
+    "probe-outcome likelihoods. It is an ex-ante expected-loss statement. It "
+    "does not validate the physical hypotheses, quotient, likelihoods, costs, "
+    "outcome model, transport, calibration, deployment context, or safety."
 )
 
 _PROBABILITY_ATOL: Final = 1e-12
-_ARRAY_ATOL: Final = 1e-12
 _DEFAULT_MAX_POLICY_COUNT: Final = 100_000
+_DEFAULT_MAX_META_ACTION_COUNT: Final = 250_000
 
 
 def _immutable_float64(value: object) -> FloatArray:
@@ -150,17 +154,39 @@ def _contingent_policies(
     return _immutable_int64(policies)
 
 
+def _probe_sequence(value: object) -> tuple[object, ...]:
+    try:
+        probes = tuple(cast(object, value))  # type: ignore[arg-type]
+    except TypeError as error:
+        raise ValueError("probe_likelihoods must be an iterable of matrices") from error
+    return probes
+
+
+def _probe_costs(value: object | None, *, probe_count: int) -> FloatArray:
+    if value is None:
+        return _immutable_float64(np.zeros(probe_count, dtype=np.float64))
+    raw = np.asarray(value)
+    if raw.dtype.kind not in "iuf":
+        raise ValueError("probe_costs must contain real numeric values")
+    costs = np.ascontiguousarray(raw, dtype=np.float64)
+    if costs.ndim != 1 or costs.size != probe_count:
+        raise ValueError("probe_costs must contain one entry per probe")
+    if not np.all(np.isfinite(costs)) or np.any(costs < 0.0):
+        raise ValueError("probe_costs must be finite and nonnegative")
+    return _immutable_float64(costs)
+
+
 class QueryProbeCertificateV1(NamedTuple):
-    """Exact ex-ante certificate for one registered finite probe."""
+    """Exact within-probe certificate and hypothesis-wise meta-action losses."""
 
     outcome_likelihood_by_hypothesis: FloatArray
     contingent_action_indices: IntArray
-    policy_loss_by_hypothesis: FloatArray
+    expected_action_loss_by_hypothesis_policy: FloatArray
+    meta_loss_by_hypothesis_policy: FloatArray
     policy_decision_certificate: QueryDecisionCertificateV1
     probe_cost: float
     minimax_contingent_action_indices: IntArray
-    minimax_worst_case_regret: float
-    total_regret_plus_cost: float
+    minimax_within_probe_worst_case_regret: float
 
     @property
     def hypothesis_count(self) -> int:
@@ -178,10 +204,6 @@ class QueryProbeCertificateV1(NamedTuple):
     def action_count(self) -> int:
         return int(np.max(self.contingent_action_indices)) + 1
 
-    @property
-    def has_tolerance_admissible_policy(self) -> bool:
-        return self.policy_decision_certificate.has_tolerance_admissible_action
-
     def summary(self) -> dict[str, object]:
         return {
             "version": QUERY_PROBE_CERTIFICATE_VERSION,
@@ -191,46 +213,66 @@ class QueryProbeCertificateV1(NamedTuple):
             "action_count": self.action_count,
             "policy_count": self.policy_count,
             "probe_cost": self.probe_cost,
-            "minimax_policy_index": (
+            "within_probe_minimax_policy_index": (
                 self.policy_decision_certificate.minimax_action_index
             ),
-            "minimax_contingent_action_indices": (
+            "within_probe_minimax_contingent_action_indices": (
                 self.minimax_contingent_action_indices.tolist()
             ),
-            "minimax_worst_case_regret": self.minimax_worst_case_regret,
-            "total_regret_plus_cost": self.total_regret_plus_cost,
-            "has_tolerance_admissible_policy": (self.has_tolerance_admissible_policy),
+            "within_probe_minimax_worst_case_regret": (
+                self.minimax_within_probe_worst_case_regret
+            ),
             "claim_boundary": QUERY_PROBE_CERTIFICATE_CLAIM_BOUNDARY,
         }
 
 
-class ActProbeFallbackDecisionV1(NamedTuple):
-    """Deterministic routing decision from direct and probe certificates."""
+class ActProbeFallbackCertificateV1(NamedTuple):
+    """Exact certificate over one common direct/probe meta-action class."""
 
-    route: str
-    direct_action_index: int | None
-    probe_index: int | None
-    contingent_action_indices: IntArray | None
+    direct_decision_certificate: QueryDecisionCertificateV1
+    probe_certificates: tuple[QueryProbeCertificateV1, ...]
+    meta_loss_by_hypothesis: FloatArray
+    meta_action_kind: tuple[str, ...]
+    meta_direct_action_index: IntArray
+    meta_probe_index: IntArray
+    meta_probe_policy_index: IntArray
+    meta_decision_certificate: QueryDecisionCertificateV1
     fallback_action_index: int
-    direct_minimax_worst_case_regret: float
-    selected_value: float
-    maximum_probe_total_value: float
+    route: str
+    selected_meta_action_index: int | None
+    selected_direct_action_index: int | None
+    selected_probe_index: int | None
+    selected_contingent_action_indices: IntArray | None
+    selected_worst_case_regret: float
+
+    @property
+    def certified(self) -> bool:
+        return self.route != "fallback"
+
+    @property
+    def meta_action_count(self) -> int:
+        return int(self.meta_loss_by_hypothesis.shape[1])
 
     def summary(self) -> dict[str, object]:
         return {
             "version": QUERY_PROBE_CERTIFICATE_VERSION,
+            "semantics": QUERY_PROBE_CERTIFICATE_SEMANTICS,
             "route": self.route,
-            "direct_action_index": self.direct_action_index,
-            "probe_index": self.probe_index,
-            "contingent_action_indices": (
-                None
-                if self.contingent_action_indices is None
-                else self.contingent_action_indices.tolist()
-            ),
+            "certified": self.certified,
             "fallback_action_index": self.fallback_action_index,
-            "direct_minimax_worst_case_regret": (self.direct_minimax_worst_case_regret),
-            "selected_value": self.selected_value,
-            "maximum_probe_total_value": self.maximum_probe_total_value,
+            "direct_action_count": self.direct_decision_certificate.action_count,
+            "probe_count": len(self.probe_certificates),
+            "meta_action_count": self.meta_action_count,
+            "selected_meta_action_index": self.selected_meta_action_index,
+            "selected_direct_action_index": self.selected_direct_action_index,
+            "selected_probe_index": self.selected_probe_index,
+            "selected_contingent_action_indices": (
+                None
+                if self.selected_contingent_action_indices is None
+                else self.selected_contingent_action_indices.tolist()
+            ),
+            "selected_worst_case_regret": self.selected_worst_case_regret,
+            "regret_tolerance": self.meta_decision_certificate.regret_tolerance,
             "claim_boundary": QUERY_PROBE_CERTIFICATE_CLAIM_BOUNDARY,
         }
 
@@ -246,13 +288,12 @@ def query_probe_certificate(
     regret_tolerance: float = 0.0,
     max_policy_count: int = _DEFAULT_MAX_POLICY_COUNT,
 ) -> QueryProbeCertificateV1:
-    """Certify every contingent finite-action policy for one finite probe.
+    """Build every contingent policy and its exact within-probe certificate.
 
-    ``outcome_likelihood_by_hypothesis[i, z]`` is the registered probability of
-    outcome ``z`` under hypothesis ``i``.  A policy commits before probing to one
-    action for each possible outcome.  The returned minimax policy minimizes
-    exact ex-ante worst-case regret over every prior-supported complete belief
-    compatible with the supplied quotient masses.
+    The returned meta-action loss includes the probe cost and can be concatenated
+    with direct actions and other probes.  The within-probe regret is descriptive
+    only; direct-versus-probe selection must use
+    :func:`act_probe_fallback_certificate`, whose comparator class is common.
     """
 
     losses = _loss_matrix(loss_by_hypothesis_action)
@@ -269,130 +310,176 @@ def query_probe_certificate(
     )
 
     selected_loss = np.take(losses, policies, axis=1)
-    policy_loss = np.sum(
+    expected_loss = np.sum(
         selected_loss * likelihood[:, None, :],
         axis=2,
         dtype=np.float64,
     )
-    policy_loss = _immutable_float64(policy_loss)
+    meta_loss = expected_loss + cost
+    expected_loss = _immutable_float64(expected_loss)
+    meta_loss = _immutable_float64(meta_loss)
     decision = query_decision_certificate(
         prior_weights,
         quotient_weights,
         class_index,
-        policy_loss,
+        meta_loss,
         regret_tolerance=regret_tolerance,
     )
     minimax_policy = policies[decision.minimax_action_index]
-    regret = float(decision.minimax_worst_case_regret)
     return QueryProbeCertificateV1(
         outcome_likelihood_by_hypothesis=likelihood,
         contingent_action_indices=policies,
-        policy_loss_by_hypothesis=policy_loss,
+        expected_action_loss_by_hypothesis_policy=expected_loss,
+        meta_loss_by_hypothesis_policy=meta_loss,
         policy_decision_certificate=decision,
         probe_cost=cost,
         minimax_contingent_action_indices=_immutable_int64(minimax_policy),
-        minimax_worst_case_regret=regret,
-        total_regret_plus_cost=cost + regret,
+        minimax_within_probe_worst_case_regret=float(
+            decision.minimax_worst_case_regret
+        ),
     )
 
 
-def act_probe_fallback_decision(
-    direct_certificate: QueryDecisionCertificateV1,
-    probe_certificates: object,
+def act_probe_fallback_certificate(
+    prior_weights: object,
+    quotient_weights: object,
+    class_index: object,
+    loss_by_hypothesis_action: object,
+    probe_likelihoods: object,
     *,
+    probe_costs: object | None = None,
     fallback_action_index: int,
-    maximum_probe_total_value: float,
-) -> ActProbeFallbackDecisionV1:
-    """Route to a certified direct action, best affordable probe, or fallback.
+    regret_tolerance: float = 0.0,
+    max_policy_count_per_probe: int = _DEFAULT_MAX_POLICY_COUNT,
+    max_meta_action_count: int = _DEFAULT_MAX_META_ACTION_COUNT,
+) -> ActProbeFallbackCertificateV1:
+    """Certify the union of direct actions and finite contingent probe policies.
 
-    Direct action has priority when the direct certificate contains an action at
-    its registered regret tolerance.  Otherwise the lowest-index probe among
-    ties is selected when ``probe_cost + exact minimax regret`` does not exceed
-    ``maximum_probe_total_value``.  If neither condition holds, the caller-owned
-    fallback action is returned.
+    Every direct action and every probe-contingent policy is represented by one
+    hypothesis-wise expected-loss column.  Probe costs therefore enter the same
+    pairwise comparisons as direct actions and other probes.  When no union
+    meta-action satisfies ``regret_tolerance``, the result returns the supplied
+    fallback action without representing it as certified.
     """
 
+    losses = _loss_matrix(loss_by_hypothesis_action)
     if (
         isinstance(fallback_action_index, (bool, np.bool_))
         or not isinstance(fallback_action_index, Integral)
-        or not 0 <= int(fallback_action_index) < direct_certificate.action_count
+        or not 0 <= int(fallback_action_index) < losses.shape[1]
     ):
         raise ValueError("fallback_action_index is outside the direct action set")
-    threshold = _finite_nonnegative(
-        maximum_probe_total_value,
-        name="maximum_probe_total_value",
+    policy_cap = _positive_integer(
+        max_policy_count_per_probe,
+        name="max_policy_count_per_probe",
     )
-    probes = tuple(probe_certificates)
-    for probe in probes:
-        if not isinstance(probe, QueryProbeCertificateV1):
-            raise ValueError("probe_certificates must contain QueryProbeCertificateV1")
-        if probe.hypothesis_count != direct_certificate.hypothesis_count:
-            raise ValueError("direct and probe hypothesis counts differ")
-        if probe.action_count != direct_certificate.action_count:
-            raise ValueError("direct and probe action counts differ")
-        nested = probe.policy_decision_certificate
-        if (
-            not np.array_equal(
-                nested.prior_support_mask, direct_certificate.prior_support_mask
-            )
-            or not np.array_equal(nested.class_index, direct_certificate.class_index)
-            or not np.allclose(
-                nested.quotient_weights,
-                direct_certificate.quotient_weights,
-                rtol=0.0,
-                atol=_ARRAY_ATOL,
-            )
-        ):
-            raise ValueError("direct and probe ambiguity sets differ")
+    meta_cap = _positive_integer(
+        max_meta_action_count,
+        name="max_meta_action_count",
+    )
+    probes = _probe_sequence(probe_likelihoods)
+    costs = _probe_costs(probe_costs, probe_count=len(probes))
 
-    if direct_certificate.has_tolerance_admissible_action:
-        action = int(direct_certificate.minimax_action_index)
-        return ActProbeFallbackDecisionV1(
-            route="act",
-            direct_action_index=action,
-            probe_index=None,
-            contingent_action_indices=None,
-            fallback_action_index=int(fallback_action_index),
-            direct_minimax_worst_case_regret=float(
-                direct_certificate.minimax_worst_case_regret
-            ),
-            selected_value=float(direct_certificate.minimax_worst_case_regret),
-            maximum_probe_total_value=threshold,
+    direct = query_decision_certificate(
+        prior_weights,
+        quotient_weights,
+        class_index,
+        losses,
+        regret_tolerance=regret_tolerance,
+    )
+    probe_certificates = tuple(
+        query_probe_certificate(
+            prior_weights,
+            quotient_weights,
+            class_index,
+            losses,
+            likelihood,
+            probe_cost=float(cost),
+            regret_tolerance=regret_tolerance,
+            max_policy_count=policy_cap,
+        )
+        for likelihood, cost in zip(probes, costs, strict=True)
+    )
+
+    meta_action_count = losses.shape[1] + sum(
+        certificate.policy_count for certificate in probe_certificates
+    )
+    if meta_action_count > meta_cap:
+        raise ValueError(
+            f"meta-action count {meta_action_count} exceeds cap {meta_cap}"
         )
 
-    if probes:
-        values = np.asarray(
-            [probe.total_regret_plus_cost for probe in probes], dtype=np.float64
-        )
-        probe_index = int(np.argmin(values))
-        selected = probes[probe_index]
-        if selected.total_regret_plus_cost <= threshold + _ARRAY_ATOL:
-            return ActProbeFallbackDecisionV1(
-                route="probe",
-                direct_action_index=None,
-                probe_index=probe_index,
-                contingent_action_indices=selected.minimax_contingent_action_indices,
-                fallback_action_index=int(fallback_action_index),
-                direct_minimax_worst_case_regret=float(
-                    direct_certificate.minimax_worst_case_regret
-                ),
-                selected_value=float(selected.total_regret_plus_cost),
-                maximum_probe_total_value=threshold,
-            )
+    columns: list[FloatArray] = [losses]
+    kinds = ["act"] * losses.shape[1]
+    direct_indices = list(range(losses.shape[1]))
+    probe_indices = [-1] * losses.shape[1]
+    policy_indices = [-1] * losses.shape[1]
+    for probe_index, certificate in enumerate(probe_certificates):
+        columns.append(certificate.meta_loss_by_hypothesis_policy)
+        kinds.extend(["probe"] * certificate.policy_count)
+        direct_indices.extend([-1] * certificate.policy_count)
+        probe_indices.extend([probe_index] * certificate.policy_count)
+        policy_indices.extend(range(certificate.policy_count))
 
-    return ActProbeFallbackDecisionV1(
-        route="fallback",
-        direct_action_index=None,
-        probe_index=None,
-        contingent_action_indices=None,
+    meta_loss = _immutable_float64(np.concatenate(columns, axis=1))
+    meta_decision = query_decision_certificate(
+        prior_weights,
+        quotient_weights,
+        class_index,
+        meta_loss,
+        regret_tolerance=regret_tolerance,
+    )
+
+    selected_meta: int | None
+    selected_direct: int | None
+    selected_probe: int | None
+    selected_policy: IntArray | None
+    if meta_decision.has_tolerance_admissible_action:
+        selected_meta = int(meta_decision.minimax_action_index)
+        selected_worst_case_regret = float(
+            meta_decision.worst_case_regret[selected_meta]
+        )
+        if kinds[selected_meta] == "act":
+            route = "act"
+            selected_direct = direct_indices[selected_meta]
+            selected_probe = None
+            selected_policy = None
+        else:
+            route = "probe"
+            selected_direct = None
+            selected_probe = probe_indices[selected_meta]
+            probe_policy_index = policy_indices[selected_meta]
+            selected_policy = _immutable_int64(
+                probe_certificates[selected_probe].contingent_action_indices[
+                    probe_policy_index
+                ]
+            )
+    else:
+        route = "fallback"
+        selected_meta = None
+        selected_direct = None
+        selected_probe = None
+        selected_policy = None
+        selected_worst_case_regret = float(
+            meta_decision.worst_case_regret[int(fallback_action_index)]
+        )
+
+    return ActProbeFallbackCertificateV1(
+        direct_decision_certificate=direct,
+        probe_certificates=probe_certificates,
+        meta_loss_by_hypothesis=meta_loss,
+        meta_action_kind=tuple(kinds),
+        meta_direct_action_index=_immutable_int64(direct_indices),
+        meta_probe_index=_immutable_int64(probe_indices),
+        meta_probe_policy_index=_immutable_int64(policy_indices),
+        meta_decision_certificate=meta_decision,
         fallback_action_index=int(fallback_action_index),
-        direct_minimax_worst_case_regret=float(
-            direct_certificate.minimax_worst_case_regret
-        ),
-        selected_value=float(
-            direct_certificate.worst_case_regret[fallback_action_index]
-        ),
-        maximum_probe_total_value=threshold,
+        route=route,
+        selected_meta_action_index=selected_meta,
+        selected_direct_action_index=selected_direct,
+        selected_probe_index=selected_probe,
+        selected_contingent_action_indices=selected_policy,
+        selected_worst_case_regret=selected_worst_case_regret,
     )
 
 
@@ -400,8 +487,8 @@ __all__ = [
     "QUERY_PROBE_CERTIFICATE_CLAIM_BOUNDARY",
     "QUERY_PROBE_CERTIFICATE_SEMANTICS",
     "QUERY_PROBE_CERTIFICATE_VERSION",
-    "ActProbeFallbackDecisionV1",
+    "ActProbeFallbackCertificateV1",
     "QueryProbeCertificateV1",
-    "act_probe_fallback_decision",
+    "act_probe_fallback_certificate",
     "query_probe_certificate",
 ]
