@@ -334,10 +334,13 @@ def act_sense_fallback_certificate(
         ):
             mapping = _immutable_int64(mapping_tuple)
             terminal_actions = mapping[outcome_row]
-            total_loss = costs[probe_index] + losses[
-                hypothesis_index,
-                terminal_actions,
-            ]
+            total_loss = (
+                costs[probe_index]
+                + losses[
+                    hypothesis_index,
+                    terminal_actions,
+                ]
+            )
             plan_losses.append(_immutable_float64(total_loss))
             plans.append(
                 ContingentPlanV1(
