@@ -1,0 +1,126 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Apply explain-transport-probe-abstain canonical source
+
+on:
+  push:
+    branches:
+      - research/explain-transport-probe-abstain-v1
+    paths:
+      - ".github/requests/apply-explain-transport-probe-abstain-canonical-v1.json"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: apply-explain-transport-probe-abstain-canonical-v1
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply exact Ruff artifact and validate integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact trigger revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Download exact canonical Ruff artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: "9844369443"
+          path: ${{ runner.temp }}/canonical
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          run-id: "33624855178"
+
+      - name: Apply canonical files and restore permanent workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -f "$RUNNER_TEMP/canonical/files/src/bayesian_phystwin_experiments/explain_transport_probe_abstain_v1.py"
+          cp -a "$RUNNER_TEMP/canonical/files/." .
+          git show origin/main:.github/workflows/changed-python-preflight.yml \
+            > .github/workflows/changed-python-preflight.yml
+          rm -f \
+            .github/workflows/apply-explain-transport-probe-abstain-canonical-v1.yml \
+            .github/requests/apply-explain-transport-probe-abstain-canonical-v1.json
+
+      - name: Install exact development package
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate canonical source and focused scientific suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < "$RUNNER_TEMP/canonical/paths.txt"
+          python -m ruff format --check "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m pytest -q \
+            tests/test_interventional_cause_adequacy_v1.py \
+            tests/test_interventional_cause_adequacy_calibration_v1.py \
+            tests/test_interventional_cause_adequacy_controlled_v1.py \
+            tests/test_interventional_transport_quotient_v1.py \
+            tests/test_interventional_transport_quotient_controlled_v1.py \
+            tests/test_target_directed_intervention_design_v1.py \
+            tests/test_target_directed_intervention_design_controlled_v1.py \
+            tests/test_explain_transport_probe_abstain_v1.py \
+            tests/test_explain_transport_probe_abstain_controlled_v1.py
+          python -m compileall -q \
+            src/bayesian_phystwin_experiments \
+            scripts/science/run_explain_transport_probe_abstain_controlled_v1.py
+
+      - name: Generate and verify controlled evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=evidence/explain_transport_probe_abstain_controlled_v1/result.json
+          report=evidence/explain_transport_probe_abstain_controlled_v1/report.md
+          PYTHONPATH=src python \
+            scripts/science/run_explain_transport_probe_abstain_controlled_v1.py \
+            --output "$result" \
+            --report "$report"
+          first_result=$(sha256sum "$result" | awk '{print $1}')
+          first_report=$(sha256sum "$report" | awk '{print $1}')
+          tmp="$RUNNER_TEMP/explain-transport-probe-abstain-second"
+          mkdir -p "$tmp"
+          PYTHONPATH=src python \
+            scripts/science/run_explain_transport_probe_abstain_controlled_v1.py \
+            --output "$tmp/result.json" \
+            --report "$tmp/report.md"
+          test "$first_result" = "$(sha256sum "$tmp/result.json" | awk '{print $1}')"
+          test "$first_report" = "$(sha256sum "$tmp/report.md" | awk '{print $1}')"
+          cmp "$result" "$tmp/result.json"
+          cmp "$report" "$tmp/report.md"
+
+      - name: Commit only the validated final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/apply-explain-transport-probe-abstain-canonical-v1.yml
+          test ! -e .github/requests/apply-explain-transport-probe-abstain-canonical-v1.json
+          test "$(git hash-object .github/workflows/changed-python-preflight.yml)" = \
+            "$(git rev-parse origin/main:.github/workflows/changed-python-preflight.yml)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Canonicalize and validate explain-transport-probe-abstain"
+          git push origin HEAD:research/explain-transport-probe-abstain-v1
