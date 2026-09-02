@@ -1,0 +1,197 @@
+{
+  "claim_boundary": "A positive result supports the independently tuned lower-envelope mechanism under the registered controlled distributions and confirmation seed roster. It does not establish fresh real-world validity, universal power, physical safety, or validity after outcome-dependent factor-grid redesign.",
+  "contract": "anytime-factor-envelope-development-v4",
+  "design": {
+    "epoch_alpha_continuation": 0.5,
+    "gain_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "harm_alternative_fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "maximum_harm_rate": 0.1,
+    "minimum_resolved_trials": 20,
+    "replication_count": {
+      "alternative": 5000,
+      "null": 10000
+    },
+    "robust_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "seed_base": 2026091400,
+    "total_alpha": 0.05
+  },
+  "development_disclosure": {
+    "confirmation_seed_base": 2026091400,
+    "confirmation_seed_roster_opened_before_protocol_commit": false,
+    "pilot_seed_base": 2026090400,
+    "pilot_used_only_for_gate_design": true,
+    "real_outcomes_used": false,
+    "scenario_families_inherited_from_version_3": true,
+    "version_3_results_observed_before_design": true
+  },
+  "information_boundary": {
+    "controlled_synthetic_study": true,
+    "paper_claim_authorized": false,
+    "real_outcomes_used": false,
+    "scenario_families_observed_before_v4_design": true,
+    "v4_confirmation_parameters_frozen_before_confirmation_execution": true
+  },
+  "mechanism_gate": {
+    "decision": "conjunctive",
+    "maximum_envelope_null_wilson_upper": 0.025,
+    "maximum_moderate_median_crossing_ratio": 1.15,
+    "maximum_switching_null_envelope_crossing": 0.025,
+    "minimum_moderate_envelope_power": 0.78,
+    "minimum_moderate_power_gain": 0.05,
+    "minimum_strong_envelope_power": 0.99
+  },
+  "scenarios": {
+    "moderate_safe_benefit": {
+      "group": "alternative",
+      "phases": [
+        {
+          "active_null_component": null,
+          "duration": 500,
+          "gain_scores": [
+            0.1,
+            -0.05
+          ],
+          "harmful": [
+            false,
+            true
+          ],
+          "name": "moderate-positive-low-harm",
+          "probabilities": [
+            0.95,
+            0.05
+          ]
+        }
+      ],
+      "registered_null": null
+    },
+    "stable_gain_boundary": {
+      "group": "null",
+      "phases": [
+        {
+          "active_null_component": "mean-gain",
+          "duration": 500,
+          "gain_scores": [
+            0.05,
+            -0.95
+          ],
+          "harmful": [
+            false,
+            true
+          ],
+          "name": "gain-boundary-low-harm",
+          "probabilities": [
+            0.95,
+            0.05
+          ]
+        }
+      ],
+      "registered_null": "mean-gain component holds throughout"
+    },
+    "stable_harm_boundary": {
+      "group": "null",
+      "phases": [
+        {
+          "active_null_component": "harm-rate",
+          "duration": 500,
+          "gain_scores": [
+            0.2,
+            -0.1
+          ],
+          "harmful": [
+            false,
+            true
+          ],
+          "name": "positive-gain-harm-boundary",
+          "probabilities": [
+            0.9,
+            0.1
+          ]
+        }
+      ],
+      "registered_null": "harm-rate component holds throughout"
+    },
+    "strong_safe_benefit": {
+      "group": "alternative",
+      "phases": [
+        {
+          "active_null_component": null,
+          "duration": 500,
+          "gain_scores": [
+            0.1,
+            -0.05
+          ],
+          "harmful": [
+            false,
+            true
+          ],
+          "name": "strong-positive-low-harm",
+          "probabilities": [
+            0.98,
+            0.02
+          ]
+        }
+      ],
+      "registered_null": null
+    },
+    "switching_invalidity": {
+      "group": "null",
+      "phases": [
+        {
+          "active_null_component": "harm-rate",
+          "duration": 50,
+          "gain_scores": [
+            0.5,
+            -0.05
+          ],
+          "harmful": [
+            false,
+            true
+          ],
+          "name": "useful-but-excessively-harmful",
+          "probabilities": [
+            0.8,
+            0.2
+          ]
+        },
+        {
+          "active_null_component": "mean-gain",
+          "duration": 450,
+          "gain_scores": [
+            -0.05
+          ],
+          "harmful": [
+            false
+          ],
+          "name": "harmless-but-negative-gain",
+          "probabilities": [
+            1.0
+          ]
+        }
+      ],
+      "registered_null": "at every reveal one component null holds, but the active component changes after observation 50"
+    }
+  },
+  "schema_version": 4,
+  "scientific_question": "Can a lower envelope of independently tuned component e-factors retain pointwise switching-union validity while recovering power lost by the shared-fraction minimum-score certificate?",
+  "status": "frozen-before-v4-confirmation-execution"
+}

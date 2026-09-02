@@ -1,0 +1,11 @@
+scenario,group,registered_null,method,component_count,replication_count,crossing_count,crossing_probability,wilson_95_lower,wilson_95_upper,median_first_crossing,first_crossing_q10,first_crossing_q90
+stable_gain_boundary,null,mean-gain component holds throughout,switching_union_min_score_v3,,10000,46,0.0046,0.0034506598701977897,0.006129805715468581,210.0,132.0,438.5
+stable_gain_boundary,null,mean-gain component holds throughout,switching_union_factor_envelope_v4,30,10000,28,0.0028,0.001938005730685637,0.004043842249115168,226.0,142.0,439.0
+stable_harm_boundary,null,harm-rate component holds throughout,switching_union_min_score_v3,,10000,128,0.0128,0.010776367996168325,0.015197800016218949,116.0,61.0,332.19999999999993
+stable_harm_boundary,null,harm-rate component holds throughout,switching_union_factor_envelope_v4,30,10000,82,0.0082,0.006611596600786796,0.010166104196610706,124.0,60.0,314.0
+switching_invalidity,null,"at every reveal one component null holds, but the active component changes after observation 50",switching_union_min_score_v3,,10000,0,0.0,0.0,0.00038399837067659573,,,
+switching_invalidity,null,"at every reveal one component null holds, but the active component changes after observation 50",switching_union_factor_envelope_v4,30,10000,0,0.0,0.0,0.00038399837067659573,,,
+moderate_safe_benefit,alternative,,switching_union_min_score_v3,,5000,3715,0.743,0.7307044329595329,0.7549224638951693,252.0,108.0,437.0
+moderate_safe_benefit,alternative,,switching_union_factor_envelope_v4,30,5000,4167,0.8334,0.8228165771361255,0.8434715192069104,280.0,140.0,444.0
+strong_safe_benefit,alternative,,switching_union_min_score_v3,,5000,5000,1.0,0.9992322980549431,1.0,108.0,67.0,166.0
+strong_safe_benefit,alternative,,switching_union_factor_envelope_v4,30,5000,5000,1.0,0.9992322980549431,1.0,122.0,78.0,191.0

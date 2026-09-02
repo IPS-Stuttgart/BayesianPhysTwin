@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "contract": "anytime-valid-dlo-retrospective-replay-v1",
+  "status": "frozen-after-terminal-outcomes-retrospective-only",
+  "scientific_question": "When terminal real-trajectory loss pairs are revealed sequentially in a frozen deterministic order, does the anytime-valid guard promote the operator-specific correction procedure and refuse a coefficient field whose transport later becomes harmful?",
+  "artifacts": {
+    "dlo45_prospective_target": {
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "workflow_run_id": 33361441865,
+      "artifact_id": 9811788200,
+      "artifact_digest": "sha256:84ec488d3326d8ff1e81e627775c076ca562d8b2a542f2807d246fe6a75910c4",
+      "expected_case_count": 28,
+      "expected_relative_improvement": 0.06803465047699286,
+      "expected_wins": 28,
+      "expected_ties": 0,
+      "expected_losses": 0
+    },
+    "hierarchical_transfer": {
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "workflow_run_id": 33536420739,
+      "artifact_id": 9811886089,
+      "artifact_digest": "sha256:bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0",
+      "pyelastica": {
+        "expected_case_count": 8,
+        "expected_relative_improvement": 0.029845440010081936,
+        "expected_wins": 8,
+        "expected_ties": 0,
+        "expected_losses": 0
+      },
+      "cross_operator": {
+        "expected_case_count": 28,
+        "expected_relative_improvement": -0.16590098017389865,
+        "expected_wins": 0,
+        "expected_ties": 0,
+        "expected_losses": 28
+      }
+    }
+  },
+  "streams": {
+    "procedure_replication": {
+      "candidate_identity": "frozen-source-fitting-and-local-discrepancy-procedure",
+      "fallback_identity": "matched-physical-operator",
+      "case_order": "lexicographic-normalized-trajectory-name",
+      "primary_score": "paired-win-sign",
+      "secondary_score": "symmetric-relative-paired-gain",
+      "interpretation": "procedure-level sequential evidence across named DLO4/DLO5 contracts"
+    },
+    "universal_coefficient_transport": {
+      "candidate_identity": "unchanged-equal-seed-DLO3-coefficient-field",
+      "fallback_identity": "matched-raw-physical-backend",
+      "case_order": [
+        "pyelastica-lexicographic",
+        "dlo45-cross-operator-lexicographic"
+      ],
+      "primary_score": "paired-win-sign",
+      "secondary_score": "symmetric-relative-paired-gain",
+      "shift_boundary_after_case": 8,
+      "interpretation": "retrospective backend-to-operator transport-shift stress test"
+    }
+  },
+  "e_process": {
+    "lambdas": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "weights": "uniform",
+    "global_promotion_alpha": 0.05,
+    "global_revocation_alpha": 0.05,
+    "epoch_alpha_schedule": "alpha_j=alpha_total*2^(-(j+1))",
+    "minimum_promotion_observations": 5,
+    "minimum_revocation_observations": 5,
+    "deployment_change_applies_to_next_case": true
+  },
+  "comparators": {
+    "single_epoch_full_alpha": 0.05,
+    "immediate_unguarded": true,
+    "fixed_horizon_only": true
+  },
+  "expected_mechanism_outcomes": {
+    "procedure_sign_process_promotes": true,
+    "procedure_post_promotion_losses": 0,
+    "universal_field_not_active_at_cross_operator_boundary": true,
+    "universal_field_harmful_cross_operator_deployments": 0,
+    "maximum_exact_fallback_identity_violations": 0
+  },
+  "information_boundary": {
+    "outcomes_previously_opened": true,
+    "retrospective_replay": true,
+    "order_selected_from_outcomes": false,
+    "artifact_native_or_lexicographic_order_only": true,
+    "fresh_validation_claim_authorized": false,
+    "deployment_safety_claim_authorized": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A passed replay is retrospective mechanism evidence that the registered anytime-valid controller can promote a repeatedly successful correction procedure and can remain on exact fallback for a bounded coefficient-transport stream that later fails. It does not provide fresh optional-stopping validation, prospective deployment evidence, exchangeability across operators, physical safety, unseen-object generalization, or state of the art."
+}

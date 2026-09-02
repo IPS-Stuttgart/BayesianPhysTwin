@@ -1,0 +1,80 @@
+{
+  "schema": "bayesian-phystwin.anytime-recursive-admission-v1",
+  "schema_version": 1,
+  "status": "frozen-before-fresh-seed-generation",
+  "scientific_question": "Can a deformable physical twin continuously monitor a shadow learned correction, authorize it at an optional stopping time under delayed outcomes, and retain a bounded lifetime false-promotion budget across externally restarted epochs?",
+  "stream": {
+    "benchmark": "recursive-corruption-v2",
+    "seed_start": 200000,
+    "seed_count": 400,
+    "conditions": [
+      "missing_burst",
+      "outlier_burst",
+      "coherent_drift",
+      "identity_switch",
+      "delayed_observation",
+      "density_drop",
+      "reliability_false_negative",
+      "reliability_false_positive",
+      "timestamp_jitter",
+      "partial_stale",
+      "mixed_identity"
+    ],
+    "candidate": "guarded_recursive",
+    "fallback": "physical_baseline",
+    "statistical_unit": "independent-seed-domain",
+    "loss": "equal-condition-mean-rmse-m",
+    "delay_min_episodes": 1,
+    "delay_max_episodes": 12,
+    "delay_seed": 20260902,
+    "deployment_rule": "use-current-evidence-before-opening-current-seed-domain"
+  },
+  "admission": {
+    "loss_cap_m": 0.015,
+    "minimum_mean_gain_m": 0.00025,
+    "harmful_margin_m": 0.0,
+    "maximum_harm_rate": 0.1,
+    "total_alpha_gain": 0.025,
+    "total_alpha_harm": 0.025,
+    "combined_bad_regime_alpha": 0.05,
+    "epoch_alpha_continuation": 0.5,
+    "minimum_resolved_trials": 25,
+    "gain_bet_fractions": [0.05, 0.1, 0.2, 0.4, 0.6, 0.8],
+    "harm_alternative_fractions": [0.1, 0.25, 0.5, 0.75, 0.9],
+    "authorize_when": "both-current-e-processes-cross",
+    "authorization_is_latched": false,
+    "closed_epoch_outcomes_update_new_epoch": false
+  },
+  "null_calibration": {
+    "world_count": 5000,
+    "epoch_count": 4,
+    "trials_per_epoch": 100,
+    "seed": 20260903,
+    "gain_null": "iid-rademacher-bounded-score",
+    "harm_null": "iid-bernoulli-at-rate-ceiling",
+    "monitoring": "after-every-outcome",
+    "stopping": "first-threshold-crossing",
+    "purpose": "implementation calibration only; the mathematical guarantee is supplied by the e-process construction and Ville's inequality"
+  },
+  "theorem_contract": {
+    "gain_null": "For every revealed trial i, E[X_i | F_{i-1}] <= 0 for the registered bounded gain score X_i in [-1,1].",
+    "harm_null": "For every revealed trial i, P(H_i=1 | F_{i-1}) >= q for the registered harm event and ceiling q.",
+    "predictability": "Candidate, fallback, trial inclusion, cap, margin, bet mixtures, epoch index, and reveal order are fixed or predictable before the corresponding target loss is revealed.",
+    "epoch_statement": "For either null, the probability of any threshold crossing over an unbounded externally restarted epoch sequence is at most the corresponding total alpha budget.",
+    "combined_statement": "If at least one registered null holds in every active epoch, but the active null may differ between epochs, a union bound gives a lifetime false-authorization probability no larger than total_alpha_gain plus total_alpha_harm, here 0.05. If one fixed null holds throughout all epochs, its corresponding 0.025 budget applies.",
+    "multiple_candidates": "A family of correction candidates requires a separate preregistered alpha allocation or an e-value merger; this protocol evaluates one fixed candidate."
+  },
+  "information_boundary": {
+    "development_seed_roster": "100000:100200",
+    "fresh_seed_roster": "200000:200400",
+    "fresh_seed_outcomes_opened_before_protocol": false,
+    "fresh_seed_retry": false,
+    "fresh_seed_replacement": false,
+    "threshold_retuning_after_fresh_result": false,
+    "real_object_claim": false,
+    "deployment_safety_claim": false,
+    "universal_optional_stopping_claim": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A passing result supports a controlled mechanism claim that the registered e-process admission rule can authorize a beneficial shadow correction under delayed feedback while empirical null simulations remain below the alpha-spent false-promotion budget. The theorem remains conditional on the registered bounded scores, predictable information order, and conditional nulls. It does not establish real-object performance, arbitrary nonstationarity, universal safety, or state of the art."
+}

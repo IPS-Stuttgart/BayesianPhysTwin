@@ -1,0 +1,11 @@
+scenario,group,registered_null,method,replication_count,crossing_count,crossing_probability,wilson_95_lower,wilson_95_upper,median_first_crossing,first_crossing_q10,first_crossing_q90
+stable_gain_boundary,null,mean-gain component holds throughout,latched_shared_alpha_iut,20000,159,0.00795,0.0068101987906726315,0.00927878389213993,237.0,167.0,400.0
+stable_gain_boundary,null,mean-gain component holds throughout,switching_union_min_score,20000,106,0.0053,0.004384346067834761,0.006405654406075155,210.0,132.0,372.0
+stable_harm_boundary,null,harm-rate component holds throughout,latched_shared_alpha_iut,20000,296,0.0148,0.013217242781221848,0.016569109007622082,94.0,51.0,329.0
+stable_harm_boundary,null,harm-rate component holds throughout,switching_union_min_score,20000,225,0.01125,0.009879306387020732,0.012808408857821536,150.0,61.0,383.0
+switching_invalidity,null,"at every reveal one component null holds, but the active component changes after observation 50",latched_shared_alpha_iut,20000,20000,1.0,0.9998079639438954,0.9999999999999999,229.0,167.0,287.0
+switching_invalidity,null,"at every reveal one component null holds, but the active component changes after observation 50",switching_union_min_score,20000,0,0.0,0.0,0.00019203605610462553,,,
+moderate_safe_benefit,alternative,,latched_shared_alpha_iut,10000,8947,0.8947,0.8885317763353614,0.9005650953508265,214.0,73.0,410.0
+moderate_safe_benefit,alternative,,switching_union_min_score,10000,7359,0.7359,0.7271700429333284,0.7444487866353863,252.0,108.0,437.0
+strong_safe_benefit,alternative,,latched_shared_alpha_iut,10000,10000,1.0,0.9996160016293234,1.0,73.0,67.0,133.80000000000655
+strong_safe_benefit,alternative,,switching_union_min_score,10000,10000,1.0,0.9996160016293234,1.0,108.0,67.0,166.0
