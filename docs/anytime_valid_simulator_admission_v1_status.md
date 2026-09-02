@@ -6,14 +6,29 @@ The statistical core, delayed-outcome controller, frozen fresh-stream protocol,
 claim-bearing runner, theorem note, and focused tests are implemented in PR
 #872.
 
-The source-formatting and protocol-hardening pass completed successfully at
-revision `2931d28da3c9a51575177e1b530f6a22114391da`. The subsequent typing repair
-completed at revision `f9b508053f3fc962c0f2d4ffdf9291a69f1277df` with:
+The implementation has now passed three exact pre-execution hardening stages:
 
-- exact Ruff lint and formatting checks passing;
-- mypy passing for the packaged anytime-admission core; and
-- all 15 focused statistical, delayed-outcome, information-order, and
-  exact-fallback tests passing.
+- source formatting and protocol binding at
+  `2931d28da3c9a51575177e1b530f6a22114391da`;
+- NumPy-state typing and focused validation at
+  `f9b508053f3fc962c0f2d4ffdf9291a69f1277df`; and
+- fail-closed coverage registration at
+  `dd112a6f0f376a2e4e8ff5ee06f0c8a8a1333afc`.
+
+The last stage passed:
+
+- exact Ruff checks and formatting;
+- mypy for the packaged anytime-admission core;
+- all **19** focused statistical, delayed-outcome, information-order,
+  null-monitoring, and exact-fallback tests;
+- **100.00% line coverage** of the 307-statement core module; and
+- **100.00% branch coverage** over its 72 measured branches.
+
+That review also found and fixed a fail-closed atomicity defect: a malformed
+revealed loss could previously remove a pending trial before loss validation.
+The controller now validates maturity and both loss values before deleting the
+pending record, and a regression test verifies that a rejected reveal can be
+corrected and resolved exactly once.
 
 ## Frozen evidence boundary
 
@@ -33,9 +48,9 @@ completed at revision `f9b508053f3fc962c0f2d4ffdf9291a69f1277df` with:
 
 ## Remaining pre-execution gate
 
-The repository-wide test, packaging, coverage, and security matrices must pass
-on this human-authored head revision. Only then may a one-shot evidence workflow
-execute the frozen fresh roster.
+The repository-wide test, packaging, stable-core coverage, and security matrices
+must pass on this human-authored head revision. Only then may a one-shot evidence
+workflow execute the frozen fresh roster.
 
 A complete result must report the candidate, fallback, and actually selected
 stream; first authorization time; harmful selected episodes; exact-fallback
