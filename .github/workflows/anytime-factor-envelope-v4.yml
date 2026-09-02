@@ -111,7 +111,10 @@ jobs:
           for csv_path in root.glob("*.csv"):
               assert b"\r" not in csv_path.read_bytes(), csv_path
           PY
-          sha256sum -c results/science/anytime_factor_envelope_v4/SHA256SUMS
+          (
+            cd results/science/anytime_factor_envelope_v4
+            sha256sum -c SHA256SUMS
+          )
 
       - name: Commit formatted implementation and confirmation evidence
         shell: bash
