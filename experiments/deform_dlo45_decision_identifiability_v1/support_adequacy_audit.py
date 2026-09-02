@@ -10,7 +10,6 @@ is retrospective and target-frozen; it is not a deployment guarantee.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 from collections import Counter
@@ -98,7 +97,7 @@ class RidgeModel:
         }
 
     @classmethod
-    def from_record(cls, value: Mapping[str, object]) -> "RidgeModel":
+    def from_record(cls, value: Mapping[str, object]) -> RidgeModel:
         if tuple(value.get("feature_names", ())) != FEATURE_NAMES:
             raise ValueError("ridge feature order changed")
         return cls(
