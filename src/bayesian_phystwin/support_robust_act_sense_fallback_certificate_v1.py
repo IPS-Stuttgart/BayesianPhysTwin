@@ -124,12 +124,8 @@ def _unknown_plan_loss_box(
         if actions.size == 0:
             raise RuntimeError("sensing plan contains no terminal actions")
         probe = plan.probe_index
-        lower[plan_index] = probe_lower[probe] + float(
-            np.min(terminal_lower[actions])
-        )
-        upper[plan_index] = probe_upper[probe] + float(
-            np.max(terminal_upper[actions])
-        )
+        lower[plan_index] = probe_lower[probe] + float(np.min(terminal_lower[actions]))
+        upper[plan_index] = probe_upper[probe] + float(np.max(terminal_upper[actions]))
     if np.any(lower > upper + _NUMERICAL_ATOL):
         raise RuntimeError("derived unknown plan-loss box is invalid")
     return _immutable_float64(lower), _immutable_float64(upper)
@@ -381,9 +377,7 @@ def support_robust_act_sense_fallback_certificate(
         unknown_plan_loss_lower=plan_lower,
         unknown_plan_loss_upper=plan_upper,
         unknown_pairwise_max_loss_gap=_immutable_float64(unknown_pairwise),
-        support_robust_pairwise_worst_case_loss_gap=_immutable_float64(
-            robust_pairwise
-        ),
+        support_robust_pairwise_worst_case_loss_gap=_immutable_float64(robust_pairwise),
         support_robust_worst_case_regret=_immutable_float64(robust_regret),
         maximum_admissible_support_miss_probability=budgets,
         tolerance_admissible_plan_mask=_immutable_bool(tolerance_mask),

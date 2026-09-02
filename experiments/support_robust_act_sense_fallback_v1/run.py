@@ -118,9 +118,7 @@ def build() -> dict[str, Any]:
         "theorem": {
             "represented_gap": "Delta_0(p,b)",
             "unknown_box_gap": "M(p,b)=upper[p]-lower[b]",
-            "at_most_epsilon_gap": (
-                "Delta_0 + epsilon * max(0, M - Delta_0)"
-            ),
+            "at_most_epsilon_gap": ("Delta_0 + epsilon * max(0, M - Delta_0)"),
             "ambiguity_class": (
                 "at-most-epsilon mixture with an axis-aligned unknown plan-loss box"
             ),
