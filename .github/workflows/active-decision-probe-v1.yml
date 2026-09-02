@@ -1,0 +1,157 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Active decision-identifying probes
+
+on:
+  push:
+    paths:
+      - "src/bayesian_phystwin/active_decision_probe_v1.py"
+      - "src/bayesian_phystwin/outcome_certified_decision_probe_v1.py"
+      - "tests/test_active_decision_probe_v1.py"
+      - "tests/test_outcome_certified_decision_probe_v1.py"
+      - "docs/active_decision_probe_v1.md"
+      - "experiments/active_decision_probe_v1/**"
+      - ".github/workflows/active-decision-probe-v1.yml"
+  pull_request:
+    paths:
+      - "src/bayesian_phystwin/active_decision_probe_v1.py"
+      - "src/bayesian_phystwin/outcome_certified_decision_probe_v1.py"
+      - "tests/test_active_decision_probe_v1.py"
+      - "tests/test_outcome_certified_decision_probe_v1.py"
+      - "docs/active_decision_probe_v1.md"
+      - "experiments/active_decision_probe_v1/**"
+      - ".github/workflows/active-decision-probe-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: active-decision-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: ${{ github.event_name == 'push' }}
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Normalize and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+          files=(
+            src/bayesian_phystwin/active_decision_probe_v1.py
+            src/bayesian_phystwin/outcome_certified_decision_probe_v1.py
+            tests/test_active_decision_probe_v1.py
+            tests/test_outcome_certified_decision_probe_v1.py
+            experiments/active_decision_probe_v1/run_controlled.py
+          )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path("src/bayesian_phystwin/active_decision_probe_v1.py"): {
+                  "    pairwise_worst_case_gap = np.zeros(":
+                      "    pairwise_worst_case_gap: FloatArray = np.zeros(",
+                  "        class_pairwise_max = np.full(":
+                      "        class_pairwise_max: FloatArray = np.full(",
+              },
+              Path("src/bayesian_phystwin/outcome_certified_decision_probe_v1.py"): {
+                  "    reachable = np.zeros(outcome_count, dtype=np.bool_)":
+                      "    reachable: BoolArray = np.zeros(outcome_count, dtype=np.bool_)",
+                  "    maximum_probability = np.zeros(outcome_count, dtype=np.float64)":
+                      "    maximum_probability: FloatArray = np.zeros(outcome_count, dtype=np.float64)",
+                  "    pairwise = np.zeros(":
+                      "    pairwise: FloatArray = np.zeros(",
+                  "    action_regret = np.zeros(":
+                      "    action_regret: FloatArray = np.zeros(",
+                  "    minimax_action = np.full(outcome_count, -1, dtype=np.int64)":
+                      "    minimax_action: IntArray = np.full(outcome_count, -1, dtype=np.int64)",
+                  "    minimax_regret = np.zeros(outcome_count, dtype=np.float64)":
+                      "    minimax_regret: FloatArray = np.zeros(outcome_count, dtype=np.float64)",
+                  "    certified = np.zeros(outcome_count, dtype=np.bool_)":
+                      "    certified: BoolArray = np.zeros(outcome_count, dtype=np.bool_)",
+                  "    if shifted_support(lower) <= tolerance:":
+                      "    if shifted_support(lower) <= 0.0:",
+                  "        if shifted_support(middle) > tolerance:":
+                      "        if shifted_support(middle) > 0.0:",
+              },
+          }
+          for path, mapping in replacements.items():
+              text = path.read_text(encoding="utf-8")
+              for old, new in mapping.items():
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(
+                          f"expected one occurrence of {old!r} in {path}, got {count}"
+                      )
+                  text = text.replace(old, new)
+              path.write_text(text, encoding="utf-8")
+          PY
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/active_decision_probe_v1.py \
+            src/bayesian_phystwin/outcome_certified_decision_probe_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_active_decision_probe_v1.py \
+            tests/test_outcome_certified_decision_probe_v1.py \
+            tests/test_query_quotient_belief_v1.py
+          python -m experiments.active_decision_probe_v1.run_controlled \
+            --check \
+            experiments/active_decision_probe_v1/controlled_result.json
+
+      - name: Commit normalized active-probe sources
+        if: github.event_name == 'push' && github.ref_type == 'branch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/active_decision_probe_v1.py
+            src/bayesian_phystwin/outcome_certified_decision_probe_v1.py
+            tests/test_active_decision_probe_v1.py
+            tests/test_outcome_certified_decision_probe_v1.py
+            experiments/active_decision_probe_v1/run_controlled.py
+          )
+          if git diff --quiet -- "${files[@]}"; then
+            echo "Active-probe sources are already normalized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          git commit -m "Normalize active decision-probe sources"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
