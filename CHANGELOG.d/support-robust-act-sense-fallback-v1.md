@@ -1,0 +1,1 @@
+- Add an exact support-robust act--sense--fallback certificate for a declared at-most-epsilon miss of the represented physical support, with per-plan miss budgets and a controlled act/tug/camera/fallback phase diagram.
