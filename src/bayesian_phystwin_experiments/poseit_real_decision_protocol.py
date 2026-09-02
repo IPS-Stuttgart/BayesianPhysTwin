@@ -16,6 +16,8 @@ MAPPING_CONSTRAINTS_SCHEMA_VERSION = 1
 MAPPING_CONSTRAINTS_ID = "poseit-real-decision-preaccess-mapping-constraints-v1"
 METHOD_LOCK_SCHEMA_VERSION = 1
 METHOD_LOCK_ID = "poseit-real-decision-method-lock-v1"
+RANGE_TRANSPORT_LOCK_SCHEMA_VERSION = 1
+RANGE_TRANSPORT_LOCK_ID = "poseit-real-decision-range-transport-lock-v1"
 POSEIT_REPOSITORY_REVISION = "5e290eb024f25b1f4aa602724e6869e512aca434"
 POSEIT_ARXIV_ID = "2209.05022"
 POSEIT_DRIVE_FOLDER_ID = "1CQiMPBEVvRMrDBSIRVeuwyuUOCOesfMc"
@@ -44,6 +46,15 @@ _METHOD_LOCK_FILE_SHA256 = (
 )
 _CANONICAL_METHOD_LOCK_SHA256 = (
     "96ca3eb18ced1d01a42aeadc3ec71aa1042719be3b2f524d9b60df675eb5d148"
+)
+_RANGE_TRANSPORT_LOCK_FILE_SHA256 = (
+    "8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a"
+)
+_CANONICAL_RANGE_TRANSPORT_LOCK_SHA256 = (
+    "3829b4fe9fa87964eb127838645288a9619df2fc695bfc6ca884602e5b1ac6da"
+)
+_RANGE_TRANSPORT_CORE_FILE_SHA256 = (
+    "2db9da81a84e3d1b7cc0ad4e0270aa18e19b64e42a1c72aade98b35228db0881"
 )
 
 
@@ -102,6 +113,18 @@ def poseit_method_lock_config_sha256(payload: Mapping[str, Any]) -> str:
 
 def poseit_method_lock_file_sha256(path: str | Path) -> str:
     """Return the byte digest of the PoseIt method lock."""
+
+    return poseit_protocol_file_sha256(path)
+
+
+def poseit_range_transport_lock_config_sha256(payload: Mapping[str, Any]) -> str:
+    """Return the canonical digest of a parsed PoseIt range-transport lock."""
+
+    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+
+
+def poseit_range_transport_lock_file_sha256(path: str | Path) -> str:
+    """Return the byte digest of the PoseIt range-transport lock."""
 
     return poseit_protocol_file_sha256(path)
 
@@ -722,6 +745,207 @@ def load_poseit_real_decision_method_lock(
     return dict(payload)
 
 
+def load_poseit_range_transport_lock(
+    path: str | Path,
+    *,
+    parent_protocol_path: str | Path | None = None,
+    mapping_constraints_path: str | Path | None = None,
+    method_lock_path: str | Path | None = None,
+    range_transport_core_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Load the source-independent remote range-transport lock."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(isinstance(payload, Mapping), "range-transport lock must be a JSON object")
+    _require(
+        payload.get("schema_version") == RANGE_TRANSPORT_LOCK_SCHEMA_VERSION,
+        "range-transport schema changed",
+    )
+    _require(
+        payload.get("contract") == RANGE_TRANSPORT_LOCK_ID,
+        "range-transport lock ID changed",
+    )
+    _require(
+        payload.get("status")
+        == "frozen-before-full-range-hash-and-before-central-directory-access",
+        "range-transport status changed",
+    )
+
+    parents = _mapping(
+        payload.get("parent_artifacts"),
+        message="range-transport parents are missing",
+    )
+    protocol = _mapping(
+        parents.get("protocol"), message="range-transport protocol parent is missing"
+    )
+    _require(
+        protocol.get("file_sha256") == _PROTOCOL_FILE_SHA256,
+        "range-transport protocol file digest changed",
+    )
+    _require(
+        protocol.get("config_sha256") == _CANONICAL_CONFIG_SHA256,
+        "range-transport protocol config digest changed",
+    )
+    mapping = _mapping(
+        parents.get("mapping_constraints"),
+        message="range-transport mapping parent is missing",
+    )
+    _require(
+        mapping.get("file_sha256")
+        == "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210",
+        "range-transport mapping file digest changed",
+    )
+    _require(
+        mapping.get("config_sha256") == _CANONICAL_MAPPING_CONSTRAINTS_SHA256,
+        "range-transport mapping config digest changed",
+    )
+    method = _mapping(
+        parents.get("method_lock"),
+        message="range-transport method parent is missing",
+    )
+    _require(
+        method.get("file_sha256") == _METHOD_LOCK_FILE_SHA256,
+        "range-transport method file digest changed",
+    )
+    _require(
+        method.get("config_sha256") == _CANONICAL_METHOD_LOCK_SHA256,
+        "range-transport method config digest changed",
+    )
+    core = _mapping(
+        parents.get("range_transport_core"),
+        message="range-transport core parent is missing",
+    )
+    _require(
+        core.get("file_sha256") == _RANGE_TRANSPORT_CORE_FILE_SHA256,
+        "range-transport core file digest changed",
+    )
+    _require(
+        core.get("freeze_commit") == "098d0090110fc321818ce22a5900675b3cc62632",
+        "range-transport core freeze commit changed",
+    )
+
+    source = _mapping(
+        payload.get("source_identity"), message="range source identity is missing"
+    )
+    _require(
+        source.get("google_drive_file_id") == POSEIT_GELSIGHT_FILE_ID,
+        "range source file ID changed",
+    )
+    _require(
+        source.get("google_drive_folder_id") == POSEIT_DRIVE_FOLDER_ID,
+        "range source folder ID changed",
+    )
+    _require(
+        source.get("archive_size_bytes") == 905_738_058_282, "archive size changed"
+    )
+    _require(
+        source.get("last_modified") == "Sat, 20 Aug 2022 02:26:04 GMT",
+        "range source last-modified identity changed",
+    )
+    _require(
+        source.get("content_disposition_file_name") == "gelsight.zip",
+        "range source file name changed",
+    )
+    _require(source.get("expected_http_status") == 206, "range HTTP status changed")
+    _require(source.get("accept_ranges") == "bytes", "range capability changed")
+
+    execution = _mapping(
+        payload.get("execution"), message="range execution lock is missing"
+    )
+    _require(execution.get("chunk_size_bytes") == 33_554_432, "chunk size changed")
+    _require(execution.get("max_workers") == 8, "range worker count changed")
+    _require(
+        execution.get("max_inflight_bytes") == 268_435_456,
+        "range inflight bound changed",
+    )
+    _require(
+        execution.get("max_attempts_per_range") == 3,
+        "range attempt count changed",
+    )
+    _require(
+        execution.get("timeout_seconds_per_range") == 120.0,
+        "range timeout changed",
+    )
+    _require(execution.get("concurrent_process_limit") == 1, "process limit changed")
+
+    boundaries = _mapping(
+        payload.get("boundaries"), message="range boundaries are missing"
+    )
+    for key in (
+        "archive_member_names_opened_during_hash",
+        "archive_payload_retained",
+        "confirmation_opened",
+        "held_v8_accessed",
+        "member_payload_bytes_opened_during_hash",
+        "phase_labels_opened_during_hash",
+        "sensor_payloads_decoded_during_hash",
+        "shake_outcomes_opened_during_hash",
+    ):
+        _require(boundaries.get(key) is False, f"range boundary changed: {key}")
+
+    if parent_protocol_path is not None:
+        parent_protocol = load_poseit_real_decision_protocol(parent_protocol_path)
+        _require(
+            poseit_protocol_file_sha256(parent_protocol_path)
+            == protocol.get("file_sha256"),
+            "bound range parent protocol file changed",
+        )
+        _require(
+            poseit_protocol_config_sha256(parent_protocol)
+            == protocol.get("config_sha256"),
+            "bound range parent protocol config changed",
+        )
+    if mapping_constraints_path is not None:
+        parent_mapping = load_poseit_preaccess_mapping_constraints(
+            mapping_constraints_path,
+            parent_protocol_path=parent_protocol_path,
+        )
+        _require(
+            poseit_mapping_constraints_file_sha256(mapping_constraints_path)
+            == mapping.get("file_sha256"),
+            "bound range mapping file changed",
+        )
+        _require(
+            poseit_mapping_constraints_config_sha256(parent_mapping)
+            == mapping.get("config_sha256"),
+            "bound range mapping config changed",
+        )
+    if method_lock_path is not None:
+        parent_method = load_poseit_real_decision_method_lock(
+            method_lock_path,
+            parent_protocol_path=parent_protocol_path,
+            mapping_constraints_path=mapping_constraints_path,
+        )
+        _require(
+            poseit_method_lock_file_sha256(method_lock_path)
+            == method.get("file_sha256"),
+            "bound range method file changed",
+        )
+        _require(
+            poseit_method_lock_config_sha256(parent_method)
+            == method.get("config_sha256"),
+            "bound range method config changed",
+        )
+    if range_transport_core_path is not None:
+        _require(
+            poseit_protocol_file_sha256(range_transport_core_path)
+            == core.get("file_sha256"),
+            "bound range-transport core file changed",
+        )
+
+    _require(
+        poseit_range_transport_lock_file_sha256(path)
+        == _RANGE_TRANSPORT_LOCK_FILE_SHA256,
+        "range-transport lock file bytes drifted",
+    )
+    _require(
+        poseit_range_transport_lock_config_sha256(payload)
+        == _CANONICAL_RANGE_TRANSPORT_LOCK_SHA256,
+        "range-transport lock configuration drifted",
+    )
+    return dict(payload)
+
+
 __all__ = [
     "BUDGETS",
     "CALIBRATION_COUNT",
@@ -736,6 +960,7 @@ __all__ = [
     "POSEIT_ARXIV_ID",
     "POSEIT_REPOSITORY_REVISION",
     "PROTOCOL_ID",
+    "RANGE_TRANSPORT_LOCK_ID",
     "PoseItObjectCohort",
     "SELECTABLE_POSES",
     "SOURCE_TEST_COUNT",
@@ -745,10 +970,13 @@ __all__ = [
     "load_poseit_real_decision_protocol",
     "load_poseit_preaccess_mapping_constraints",
     "load_poseit_real_decision_method_lock",
+    "load_poseit_range_transport_lock",
     "poseit_mapping_constraints_config_sha256",
     "poseit_mapping_constraints_file_sha256",
     "poseit_method_lock_config_sha256",
     "poseit_method_lock_file_sha256",
     "poseit_protocol_config_sha256",
     "poseit_protocol_file_sha256",
+    "poseit_range_transport_lock_config_sha256",
+    "poseit_range_transport_lock_file_sha256",
 ]

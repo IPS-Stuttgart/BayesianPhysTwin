@@ -162,9 +162,54 @@ Only then may fit and calibration outcomes open. Source-test outcomes open once,
 after predictions are sealed. Confirmation remains unauthorized until the
 registered source gate passes.
 
-## Structure-only custody tool
+## Range-hash custody for the public archive
 
-The exact acquisition command is:
+The official Drive metadata and an exact HTTP 206 probe establish that
+`gelsight.zip` is 905,738,058,282 bytes, was last modified at
+`Sat, 20 Aug 2022 02:26:04 GMT`, and supports exact byte ranges even while a
+full HTTP 200 download is quota-blocked. These transport facts do not expose a
+ZIP member name or payload.
+
+The source-independent transport contract is frozen in
+`protocols/poseit_real_decision_probe_v1_range_transport_lock.json`, with file
+SHA-256
+`8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a`.
+It binds the exact range implementation at commit
+`098d0090110fc321818ce22a5900675b3cc62632`. The registered execution hashes
+every byte in ascending order using 32 MiB chunks and at most eight concurrent
+requests. Bytes are released after entering the ordered SHA-256 state; no local
+archive is retained. Identity failures are terminal, while each identical range
+may receive at most three transport-only attempts.
+
+The exact command on `gpuserver4090` is:
+
+```bash
+flock -n /home/florianpfaff/source-only/poseit-real-decision-v1/range-hash.lock \
+  env PYTHONPATH=src python \
+  scripts/science/acquire_poseit_gelsight_range_hash_v1.py \
+  --receipt /home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/acquisition-receipt-v1.json \
+  --progress /home/florianpfaff/source-only/poseit-real-decision-v1/range-hash/progress-v1.json \
+  --protocol protocols/poseit_real_decision_probe_v1.json \
+  --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4 \
+  --mapping-constraints protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json \
+  --expected-mapping-constraints-sha256 8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210 \
+  --method-lock protocols/poseit_real_decision_probe_v1_method_lock.json \
+  --expected-method-lock-sha256 4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c \
+  --transport-lock protocols/poseit_real_decision_probe_v1_range_transport_lock.json \
+  --expected-transport-lock-sha256 8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a \
+  --range-transport-core src/bayesian_phystwin_experiments/poseit_remote_archive.py
+```
+
+The mutable progress file is monitoring metadata, not evidence. Only the
+write-once completion receipt supplies the archive SHA-256 required by the
+parent protocol. Central-directory ranges remain closed until that receipt
+exists. Member payload ranges remain closed until the later structure and
+archive-specific mapping locks authorize them.
+
+## Full-download and structure-only custody tools
+
+If a complete local copy becomes available, the alternate exact acquisition
+command is:
 
 ```bash
 PYTHONPATH=src python \
@@ -186,8 +231,8 @@ streamed opaquely into a write-once destination while computing SHA-256. The
 content-bound receipt records that no ZIP structure, member name, sensor value,
 phase label, or shake outcome was opened.
 
-After successful acquisition, the first admissible archive-inspection command
-is:
+After successful retained acquisition, the first admissible local
+archive-inspection command is:
 
 ```bash
 PYTHONPATH=src python \

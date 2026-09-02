@@ -1,0 +1,68 @@
+{
+  "boundaries": {
+    "archive_member_names_opened_during_hash": false,
+    "archive_payload_retained": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "member_payload_bytes_opened_during_hash": false,
+    "phase_labels_opened_during_hash": false,
+    "sensor_payloads_decoded_during_hash": false,
+    "shake_outcomes_opened_during_hash": false
+  },
+  "contract": "poseit-real-decision-range-transport-lock-v1",
+  "execution": {
+    "archive_hash": "SHA-256 over bytes 0 through 905738058281 in exact ascending order",
+    "archive_retention": "none; each completed range is released after its bytes enter the ordered SHA-256 state",
+    "chunk_size_bytes": 33554432,
+    "concurrent_process_limit": 1,
+    "max_attempts_per_range": 3,
+    "max_inflight_bytes": 268435456,
+    "max_workers": 8,
+    "receipt_policy": "write once only after every byte has entered the ordered SHA-256 state",
+    "restart_policy": "after a preserved pre-receipt transport failure, a replacement process may restart from byte zero without changing any scientific choice; after a receipt exists, no replacement hash run is authorized",
+    "run_host": "gpuserver4090",
+    "timeout_seconds_per_range": 120.0,
+    "transport_retry_scope": "only OSError, TimeoutError, or urllib URLError for the identical byte range; identity or schema failures are terminal"
+  },
+  "parent_artifacts": {
+    "mapping_constraints": {
+      "config_sha256": "75551bbdc63021d768bbc5f44ba9cc38a56592689306a11dff4912abf3f18682",
+      "file_sha256": "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210"
+    },
+    "method_lock": {
+      "config_sha256": "96ca3eb18ced1d01a42aeadc3ec71aa1042719be3b2f524d9b60df675eb5d148",
+      "file_sha256": "4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c"
+    },
+    "protocol": {
+      "config_sha256": "fa49b7c2d20d02d554f9d38b6025839d583493bf2a28dbea29a17cb804e66504",
+      "file_sha256": "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4"
+    },
+    "range_transport_core": {
+      "file_sha256": "2db9da81a84e3d1b7cc0ad4e0270aa18e19b64e42a1c72aade98b35228db0881",
+      "freeze_commit": "098d0090110fc321818ce22a5900675b3cc62632"
+    }
+  },
+  "source_identity": {
+    "accept_ranges": "bytes",
+    "archive_size_bytes": 905738058282,
+    "content_disposition_file_name": "gelsight.zip",
+    "content_type": "application/octet-stream",
+    "expected_http_status": 206,
+    "google_drive_file_id": "1EitCcpHoPEQKnlpqWKp02io2WpIxBrEe",
+    "google_drive_folder_id": "1CQiMPBEVvRMrDBSIRVeuwyuUOCOesfMc",
+    "last_modified": "Sat, 20 Aug 2022 02:26:04 GMT",
+    "registered_final_hosts": [
+      "drive.google.com",
+      "drive.usercontent.google.com",
+      "*.googleusercontent.com"
+    ],
+    "source_url": "https://drive.usercontent.google.com/download?id=1EitCcpHoPEQKnlpqWKp02io2WpIxBrEe&export=download&confirm=t"
+  },
+  "stages": {
+    "archive_hash_receipt": "must bind the full SHA-256, exact size, parent locks, transport lock, chunk count, and aggregate transport-attempt count",
+    "member_payload": "forbidden until a later archive-specific mapping lock authorizes exact members and byte ranges",
+    "structure_lock": "may fetch only end records and central-directory ranges after the full archive-hash receipt exists"
+  },
+  "schema_version": 1,
+  "status": "frozen-before-full-range-hash-and-before-central-directory-access"
+}
