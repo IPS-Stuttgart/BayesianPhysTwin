@@ -1,0 +1,22 @@
+{
+  "schema": "bayesian-phystwin.deform-dlo23-source-panel-plan-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-source-panel-plan-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "source_census": "evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1/result.json",
+  "authorized_source_objects": ["DLO2", "DLO3"],
+  "forbidden_target_objects": ["DLO4", "DLO5"],
+  "selection_rules": {
+    "semantic_vocabulary_frozen_in_code": true,
+    "minimum_top_to_runner_up_score_margin": 5,
+    "requires_physical_or_state_feature_carrier": true,
+    "requires_recoverable_complete_trajectory_identity": true,
+    "requires_exact_source_artifact_sha256": true,
+    "ambiguous_auto_selection_allowed": false
+  },
+  "target_payload_read_authorized": false,
+  "protected_parent_result_read_authorized": false,
+  "target_outcome_semantic_mapping_authorized": false,
+  "failure_policy": "Publish the negative/ambiguous adapter plan unchanged. Do not resolve ambiguity using DLO4/DLO5 or target errors."
+}
