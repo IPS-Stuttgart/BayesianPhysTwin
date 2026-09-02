@@ -1,0 +1,50 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Format revised query-probe certificate once
+
+on:
+  push:
+    branches:
+      - feature/query-probe-certificate-v1
+    paths:
+      - ".github/workflows/format-query-probe-certificate-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: feature/query-probe-certificate-v1
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Format and verify focused files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e . ruff==0.16.5 pytest
+          python -m ruff format \
+            src/bayesian_phystwin/query_probe_certificate_v1.py \
+            tests/test_query_probe_certificate_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/query_probe_certificate_v1.py \
+            tests/test_query_probe_certificate_v1.py
+          python -m pytest -q tests/test_query_probe_certificate_v1.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/query_probe_certificate_v1.py \
+            tests/test_query_probe_certificate_v1.py
+          if git diff --cached --quiet; then
+            echo "Files already formatted"
+          else
+            git commit -m "Format common-comparator query-probe certificate"
+            git push origin HEAD:feature/query-probe-certificate-v1
+          fi
