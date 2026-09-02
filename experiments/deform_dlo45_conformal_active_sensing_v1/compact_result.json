@@ -1,0 +1,56 @@
+{
+  "claim_boundary": "This is a retrospective trajectory-conformal wrapper around one fixed active virtual-sensing policy on source-test trajectories from two known DLOs. The split-conformal statement is marginal for one future complete trajectory exchangeable within its known DLO stratum and simultaneous only over the parent policy's nonfallback decisions on that trajectory. It does not calibrate the choice to sense before sensing cost is incurred, validate virtual measurements as deployable sensors, establish official evaluation-split or unseen-object performance, provide pointwise conditional validity, certify continuous control or robot safety, or authorize deployment.",
+  "contract": "deform-dlo45-conformal-active-sensing-v1",
+  "parent": {
+    "artifact_digest": "sha256:31ddbb20dc084514afb6b021ec4f6b0bdff72e22124c4734fb18b1952b347889",
+    "artifact_id": 9839951506,
+    "core_result_id": "ac1626f7392c1de2d95ff4d5fa5e937d113f46c573c48b4dcef5fd3b38ef6ade",
+    "measurement_budget": 4,
+    "outer_result_id": "ba5f43a2ed1ca9c95a2a032e95679df06d3b6c6ec20cc3ad962ea6326f543fe0",
+    "policy": "decision_regret",
+    "pull_request": 896,
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "scientific_revision": "56c31bc56b2fc3526f519f726ff7b922b909c65c",
+    "workflow_run": 33613192892
+  },
+  "primary_result": {
+    "decision_count": 304,
+    "decisions_acquiring_any_node_block": 132,
+    "empirical_simultaneous_trajectory_coverage": 0.8125,
+    "envelope_exceed_decision_count": 3,
+    "envelope_exceed_trajectory_count": 3,
+    "harmful_nonfallback_count": 0,
+    "mean_acquired_node_blocks_all_decisions": 1.1546052631578947,
+    "mean_effective_hypotheses_when_acting": 11.986788517145568,
+    "mean_trajectory_rmse_reduction": 0.4810555327821773,
+    "miscoverage": 0.2,
+    "nominal_trajectory_coverage": 0.8,
+    "nonfallback_count": 251,
+    "nonfallback_fraction": 0.8256578947368421,
+    "parent_nonfallback_count": 251,
+    "pooled_fallback_rmse_mm": 167.80580903474825,
+    "pooled_rmse_reduction": 0.4802548241903325,
+    "pooled_task_rmse_mm": 87.21625971864873,
+    "radii_by_dlo": {
+      "DLO4": 0.23924387123663388,
+      "DLO5": 0.18709086947574088
+    },
+    "regret_budget": 0.3,
+    "regret_budget_exceed_decision_count": 2,
+    "regret_budget_exceed_trajectory_count": 2,
+    "state_ambiguous_fraction_when_acting": 0.9760956175298805,
+    "trajectory_bootstrap_95_interval": [
+      0.443481672755224,
+      0.5169066390906167
+    ]
+  },
+  "primary_selection": {
+    "miscoverage": 0.2,
+    "rule": "smallest_registered_budget_retaining_every_parent_nonfallback_calibration_action",
+    "selected_regret_budget": 0.3
+  },
+  "protocol_sha256": "b526805419b1bbc50a60f8347c6c903f012bdb4acac9c7cc43218ea5174cae5c",
+  "result_id": "96e312db5c8acdcc3dbbdb9447a2d15c0a656a70fcb45f33b5a96750eb0e8b75",
+  "schema_version": 1,
+  "status": "retrospective-fixed-policy-trajectory-conformal-evaluation"
+}

@@ -1,0 +1,227 @@
+name: DEFORM decision-directed sensing v3 execution
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-decision-directed-sensing-v3
+    paths:
+      - ".github/requests/deform-dlo45-decision-directed-sensing-v3-execute.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo45-decision-directed-sensing-v3-execute-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REQUEST: .github/requests/deform-dlo45-decision-directed-sensing-v3-execute.json
+  PROTOCOL: experiments/deform_dlo45_decision_directed_sensing_v3/protocol.json
+  CORE_PROTOCOL: experiments/deform_dlo45_decision_directed_sensing_v3/core_protocol.json
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Validate one-shot request and syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="${{ github.event.before }}"
+          mapfile -t changed < <(git diff --name-only "$before" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$REQUEST"
+          python -m py_compile \
+            experiments/deform_dlo45_decision_directed_sensing_v3/evaluate.py \
+            experiments/deform_dlo45_decision_directed_sensing_v3/execute.py
+          python -m json.tool "$PROTOCOL" >/dev/null
+          python -m json.tool "$CORE_PROTOCOL" >/dev/null
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST"]).read_text())
+          supplied = request.pop("request_id")
+          payload = json.dumps(
+              request,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode()
+          assert hashlib.sha256(payload).hexdigest() == supplied
+          assert request["contract"] == (
+              "deform-dlo45-decision-directed-sensing-v3-request-v1"
+          )
+          assert request["status"] == "authorized"
+          assert request["branch"] == os.environ["GITHUB_REF_NAME"]
+          assert request["runner_labels"] == ["self-hosted", "gpuserver4090"]
+          assert request["registered_runner_name"] == "workstation1"
+          assert request["dataset_root"] == os.environ["DATASET_ROOT"]
+          assert request["protocol_path"] == os.environ["PROTOCOL"]
+          assert request["core_protocol_path"] == os.environ["CORE_PROTOCOL"]
+          assert request["source_test_only"] is True
+          assert request["official_evaluation_access_authorized"] is False
+          assert request["new_data_collection_authorized"] is False
+          for key, path_key in (
+              ("protocol_git_blob_sha1", "protocol_path"),
+              ("core_protocol_git_blob_sha1", "core_protocol_path"),
+          ):
+              observed = subprocess.check_output(
+                  ["git", "hash-object", request[path_key]],
+                  text=True,
+              ).strip()
+              assert observed == request[key]
+          PY
+
+  execute:
+    needs: contract
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - name: Create source-only dataset view
+        id: dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = "workstation1"
+          test -d "$DATASET_ROOT"
+          isolated="$RUNNER_TEMP/deform-dlo45-v3-one-shot-$GITHUB_RUN_ID"
+          rm -rf -- "$isolated"
+          mkdir -p "$isolated/DLO4" "$isolated/DLO5"
+          for dlo in DLO4 DLO5; do
+            train="$DATASET_ROOT/$dlo/train"
+            test "$(find "$train" -maxdepth 1 -type f -name '*.pkl' | wc -l)" \
+              -eq 56
+            ln -s "$train" "$isolated/$dlo/train"
+            test ! -e "$isolated/$dlo/eval"
+          done
+          echo "root=$isolated" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install isolated runtime
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="$RUNNER_TEMP/deform-dlo45-v3-one-shot-venv-$GITHUB_RUN_ID"
+          rm -rf -- "$venv"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          "$venv/bin/python" -m pip install --no-deps -e .
+          echo "python=$venv/bin/python" >> "$GITHUB_OUTPUT"
+      - name: Run non-overlapping replication
+        id: run
+        env:
+          PYTHON: ${{ steps.runtime.outputs.python }}
+          SOURCE_ROOT: ${{ steps.dataset.outputs.root }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/deform-dlo45-v3-result-$GITHUB_RUN_ID"
+          rm -rf -- "$out"
+          "$PYTHON" -m \
+            experiments.deform_dlo45_decision_directed_sensing_v3.execute \
+            --dataset-root "$SOURCE_ROOT" \
+            --protocol "$PROTOCOL" \
+            --output-dir "$out" \
+            --source-revision "$GITHUB_SHA"
+          echo "output=$out" >> "$GITHUB_OUTPUT"
+      - name: Validate result and expose compact metrics
+        id: summary
+        env:
+          OUTPUT: ${{ steps.run.outputs.output }}
+          PYTHON: ${{ steps.runtime.outputs.python }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PYTHON" - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT"])
+          result = json.loads((root / "result.json").read_text())
+          assert result["contract"] == (
+              "deform-dlo45-decision-directed-sensing-v3"
+          )
+          assert result["overlap_audit"]["total_overlap_count"] == 0
+          assert result["accounting"]["official_evaluation_files_opened"] is False
+          transport = result["transport_calibration"]
+          point = result["replication_operating_point"]
+          for value in (
+              transport["quantile"]["additive_slack"],
+              transport["source_test_coverage_fraction"],
+              point["pooled_task_rmse_mm"],
+              point["mean_trajectory_improvement"],
+          ):
+              assert math.isfinite(float(value))
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          with output.open("a", encoding="utf-8") as stream:
+              stream.write(f"classification={result['classification']}\n")
+              stream.write(
+                  "coverage="
+                  f"{float(transport['source_test_coverage_fraction']):.4f}\n"
+              )
+              stream.write(
+                  "improvement="
+                  f"{float(point['mean_trajectory_improvement']):.4f}\n"
+              )
+              stream.write(
+                  "rmse_mm="
+                  f"{float(point['pooled_task_rmse_mm']):.3f}\n"
+              )
+          print(json.dumps(result["acceptance"], indent=2, sort_keys=True))
+          PY
+          cat "$OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload complete evidence
+        if: always() && steps.run.outputs.output != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: >-
+            deform-dlo45-v3-${{ steps.summary.outputs.classification }}-cov${{
+            steps.summary.outputs.coverage }}-imp${{
+            steps.summary.outputs.improvement }}-rmse${{
+            steps.summary.outputs.rmse_mm }}
+          path: |
+            ${{ steps.run.outputs.output }}/**
+            experiments/deform_dlo45_decision_directed_sensing_v3/protocol.json
+            experiments/deform_dlo45_decision_directed_sensing_v3/core_protocol.json
+            .github/requests/deform-dlo45-decision-directed-sensing-v3-execute.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Clean isolated resources
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- \
+            "$RUNNER_TEMP/deform-dlo45-v3-one-shot-$GITHUB_RUN_ID" \
+            "$RUNNER_TEMP/deform-dlo45-v3-one-shot-venv-$GITHUB_RUN_ID"
