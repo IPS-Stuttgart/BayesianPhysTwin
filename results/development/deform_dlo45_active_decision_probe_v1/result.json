@@ -1,0 +1,925 @@
+{
+  "claim_boundary": "This retrospective pilot uses oracle-quality motion-capture internal-node response during a prefix of the already recorded endpoint motion. It tests active probe duration and contingent belief-revision decisions, not alternative counterfactual probe directions, learned perception, unseen-object generalization, continuous control, target regret guarantees, deployment, or safety.",
+  "dataset": {
+    "dlos": [
+      "DLO4",
+      "DLO5"
+    ],
+    "evaluation_scope": "within-dlo-official-held-trajectories",
+    "name": "DEFORM"
+  },
+  "dlos": {
+    "DLO4": {
+      "active": {
+        "certified_probe_fraction": 0.22556390977443608,
+        "duration_counts": {
+          "0": 35,
+          "12": 13,
+          "3": 8,
+          "6": 4,
+          "fallback_no_certified_probe": 206
+        },
+        "mean_pre_probe_minimax_regret": 0.13758795786564665,
+        "mean_selected_minimax_regret": 0.13132901165530683,
+        "mean_selected_probe_squared_distance": 0.10078181721366536,
+        "mean_supported_hypotheses_after_selected_probe": 15.026315789473685,
+        "mean_trajectory_improvement_pct": 6.23750715272679,
+        "no_probe_certified_fraction": 0.13157894736842105,
+        "probe_required_fraction": 0.09398496240601503,
+        "probed_decision_with_multiple_supported_states_fraction": 0.07142857142857142,
+        "selected_probe_out_of_support_fraction": 0.022556390977443608,
+        "trajectory_bootstrap_95_pct": [
+          3.6212022339384617,
+          9.293661608223024
+        ],
+        "trajectory_wins_ties_losses": [
+          14,
+          0,
+          0
+        ]
+      },
+      "aggregate": {
+        "active_minimum_cost": {
+          "action_counts": [
+            212,
+            28,
+            26
+          ],
+          "fallback_action_fraction": 0.7969924812030075,
+          "harm_fraction_vs_fallback": 0.011278195488721804,
+          "mean_probe_frames": 0.7669172932330827,
+          "rmse_ratio_to_fallback": 0.9250986242241712,
+          "terminal_rmse_mm": 48.72907290598103
+        },
+        "fallback": {
+          "action_counts": [
+            266,
+            0,
+            0
+          ],
+          "fallback_action_fraction": 1.0,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 0.0,
+          "rmse_ratio_to_fallback": 1.0,
+          "terminal_rmse_mm": 52.67446262483353
+        },
+        "fixed_probe_12": {
+          "action_counts": [
+            241,
+            5,
+            20
+          ],
+          "fallback_action_fraction": 0.9060150375939849,
+          "harm_fraction_vs_fallback": 0.011278195488721804,
+          "mean_probe_frames": 12.0,
+          "rmse_ratio_to_fallback": 0.9657120063316809,
+          "terminal_rmse_mm": 50.86836098387113
+        },
+        "fixed_probe_3": {
+          "action_counts": [
+            256,
+            2,
+            8
+          ],
+          "fallback_action_fraction": 0.9624060150375939,
+          "harm_fraction_vs_fallback": 0.0037593984962406013,
+          "mean_probe_frames": 3.0,
+          "rmse_ratio_to_fallback": 0.9805855372961901,
+          "terminal_rmse_mm": 51.651816234760474
+        },
+        "fixed_probe_6": {
+          "action_counts": [
+            252,
+            5,
+            9
+          ],
+          "fallback_action_fraction": 0.9473684210526315,
+          "harm_fraction_vs_fallback": 0.007518796992481203,
+          "mean_probe_frames": 6.0,
+          "rmse_ratio_to_fallback": 0.9789570894869766,
+          "terminal_rmse_mm": 51.56603862149756
+        },
+        "max_outcome_entropy": {
+          "action_counts": [
+            37,
+            95,
+            134
+          ],
+          "fallback_action_fraction": 0.13909774436090225,
+          "harm_fraction_vs_fallback": 0.10150375939849623,
+          "mean_probe_frames": 6.823308270676692,
+          "rmse_ratio_to_fallback": 0.7357970133442904,
+          "terminal_rmse_mm": 38.75771227886796
+        },
+        "no_probe_certificate": {
+          "action_counts": [
+            231,
+            27,
+            8
+          ],
+          "fallback_action_fraction": 0.868421052631579,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 0.0,
+          "rmse_ratio_to_fallback": 0.9535498476983757,
+          "terminal_rmse_mm": 50.227725813503795
+        },
+        "oracle_probe_action": {
+          "action_counts": [
+            4,
+            32,
+            230
+          ],
+          "fallback_action_fraction": 0.015037593984962405,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 4.048872180451128,
+          "rmse_ratio_to_fallback": 0.5383181039720549,
+          "terminal_rmse_mm": 28.355616847947257
+        }
+      },
+      "decision_count": 266,
+      "dlo": "DLO4",
+      "per_trajectory": [
+        {
+          "active_minimum_cost_ratio": 0.9932064436880089,
+          "active_minimum_cost_terminal_rmse_mm": 39.52865412675584,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 39.799031085598536,
+          "fixed_probe_12_ratio": 1.0049197860640984,
+          "fixed_probe_12_terminal_rmse_mm": 39.99483380409808,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 39.799031085598536,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 39.799031085598536,
+          "max_outcome_entropy_ratio": 0.7663356842649708,
+          "max_outcome_entropy_terminal_rmse_mm": 30.499417720064994,
+          "no_probe_certificate_ratio": 0.9932064436880089,
+          "no_probe_certificate_terminal_rmse_mm": 39.52865412675584,
+          "oracle_probe_action_ratio": 0.6384869216167754,
+          "oracle_probe_action_terminal_rmse_mm": 25.41116084117416,
+          "trajectory": "11.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9362338421429318,
+          "active_minimum_cost_terminal_rmse_mm": 33.75055178605508,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 36.04927558354859,
+          "fixed_probe_12_ratio": 0.9906550246643232,
+          "fixed_probe_12_terminal_rmse_mm": 35.71239599235131,
+          "fixed_probe_3_ratio": 0.9605146875139872,
+          "fixed_probe_3_terminal_rmse_mm": 34.62585867223778,
+          "fixed_probe_6_ratio": 0.9529252109771524,
+          "fixed_probe_6_terminal_rmse_mm": 34.35226354102655,
+          "max_outcome_entropy_ratio": 0.7111324734105644,
+          "max_outcome_entropy_terminal_rmse_mm": 25.635810510387977,
+          "no_probe_certificate_ratio": 0.9448529316274862,
+          "no_probe_certificate_terminal_rmse_mm": 34.06126371816305,
+          "oracle_probe_action_ratio": 0.5393176404598307,
+          "oracle_probe_action_terminal_rmse_mm": 19.442010248005612,
+          "trajectory": "16.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9232144739861079,
+          "active_minimum_cost_terminal_rmse_mm": 52.79909279007225,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 57.19049503427385,
+          "fixed_probe_12_ratio": 0.9829967174289975,
+          "fixed_probe_12_terminal_rmse_mm": 56.21806888683058,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 57.19049503427385,
+          "fixed_probe_6_ratio": 0.9857133568857386,
+          "fixed_probe_6_terminal_rmse_mm": 56.37343484219124,
+          "max_outcome_entropy_ratio": 0.6886021709705398,
+          "max_outcome_entropy_terminal_rmse_mm": 39.38149903948085,
+          "no_probe_certificate_ratio": 0.9412982622427715,
+          "no_probe_certificate_terminal_rmse_mm": 53.83331359256582,
+          "oracle_probe_action_ratio": 0.5055584253031475,
+          "oracle_probe_action_terminal_rmse_mm": 28.913136611834968,
+          "trajectory": "30.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.8665919254104666,
+          "active_minimum_cost_terminal_rmse_mm": 51.2817119312731,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 59.17630943420481,
+          "fixed_probe_12_ratio": 0.9558915513261865,
+          "fixed_probe_12_terminal_rmse_mm": 56.56613422682048,
+          "fixed_probe_3_ratio": 0.9843329266935166,
+          "fixed_probe_3_terminal_rmse_mm": 58.24918985629198,
+          "fixed_probe_6_ratio": 0.9161459321798238,
+          "fixed_probe_6_terminal_rmse_mm": 54.21413516956127,
+          "max_outcome_entropy_ratio": 0.6884469129966918,
+          "max_outcome_entropy_terminal_rmse_mm": 40.73974755251531,
+          "no_probe_certificate_ratio": 0.8706367953821639,
+          "no_probe_certificate_terminal_rmse_mm": 51.521072408339386,
+          "oracle_probe_action_ratio": 0.44042331685006386,
+          "oracle_probe_action_terminal_rmse_mm": 26.062626479958208,
+          "trajectory": "35.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9697425558557167,
+          "active_minimum_cost_terminal_rmse_mm": 46.58038369730868,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 48.03376258578793,
+          "fixed_probe_12_ratio": 0.9697425558557167,
+          "fixed_probe_12_terminal_rmse_mm": 46.58038369730868,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 48.03376258578793,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 48.03376258578793,
+          "max_outcome_entropy_ratio": 0.6897982913358013,
+          "max_outcome_entropy_terminal_rmse_mm": 33.133607358106055,
+          "no_probe_certificate_ratio": 1.0,
+          "no_probe_certificate_terminal_rmse_mm": 48.03376258578793,
+          "oracle_probe_action_ratio": 0.5199823501316393,
+          "oracle_probe_action_terminal_rmse_mm": 24.976708755023214,
+          "trajectory": "41.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9960073338275205,
+          "active_minimum_cost_terminal_rmse_mm": 31.43290227179725,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 31.558906450020693,
+          "fixed_probe_12_ratio": 1.007522409106512,
+          "fixed_probe_12_terminal_rmse_mm": 31.79630545529189,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 31.558906450020693,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 31.558906450020693,
+          "max_outcome_entropy_ratio": 0.7869703886277988,
+          "max_outcome_entropy_terminal_rmse_mm": 24.83592487364113,
+          "no_probe_certificate_ratio": 0.9883972906612077,
+          "no_probe_certificate_terminal_rmse_mm": 31.192737631430965,
+          "oracle_probe_action_ratio": 0.5586604947141723,
+          "oracle_probe_action_terminal_rmse_mm": 17.630714290006843,
+          "trajectory": "5.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9926663062161067,
+          "active_minimum_cost_terminal_rmse_mm": 46.7745645815325,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 47.120129179996084,
+          "fixed_probe_12_ratio": 1.0010146296594298,
+          "fixed_probe_12_terminal_rmse_mm": 47.16793866061827,
+          "fixed_probe_3_ratio": 1.0009174909700318,
+          "fixed_probe_3_terminal_rmse_mm": 47.16336147302546,
+          "fixed_probe_6_ratio": 1.0077702014375556,
+          "fixed_probe_6_terminal_rmse_mm": 47.48626207548829,
+          "max_outcome_entropy_ratio": 0.896059185087222,
+          "max_outcome_entropy_terminal_rmse_mm": 42.22242455423193,
+          "no_probe_certificate_ratio": 0.9847769374793656,
+          "no_probe_certificate_terminal_rmse_mm": 46.40281650750863,
+          "oracle_probe_action_ratio": 0.6345392325277315,
+          "oracle_probe_action_terminal_rmse_mm": 29.89957060648228,
+          "trajectory": "56.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9286710469243229,
+          "active_minimum_cost_terminal_rmse_mm": 43.0777317387169,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 46.38642701458883,
+          "fixed_probe_12_ratio": 0.9829357908082937,
+          "fixed_probe_12_terminal_rmse_mm": 45.59487932035607,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 46.38642701458883,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 46.38642701458883,
+          "max_outcome_entropy_ratio": 0.7555904569053004,
+          "max_outcome_entropy_terminal_rmse_mm": 35.049141582157546,
+          "no_probe_certificate_ratio": 0.9286710469243229,
+          "no_probe_certificate_terminal_rmse_mm": 43.0777317387169,
+          "oracle_probe_action_ratio": 0.5719670334886433,
+          "oracle_probe_action_terminal_rmse_mm": 26.53150705367184,
+          "trajectory": "58.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.8781383651317071,
+          "active_minimum_cost_terminal_rmse_mm": 59.43119522693398,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 67.67862285349555,
+          "fixed_probe_12_ratio": 0.8624377222165414,
+          "fixed_probe_12_terminal_rmse_mm": 58.36859733652107,
+          "fixed_probe_3_ratio": 0.9396278796576916,
+          "fixed_probe_3_terminal_rmse_mm": 63.59272088998262,
+          "fixed_probe_6_ratio": 0.9399795744342276,
+          "fixed_probe_6_terminal_rmse_mm": 63.61652310812335,
+          "max_outcome_entropy_ratio": 0.6567226693246514,
+          "max_outcome_entropy_terminal_rmse_mm": 44.44608585656396,
+          "no_probe_certificate_ratio": 1.0,
+          "no_probe_certificate_terminal_rmse_mm": 67.67862285349555,
+          "oracle_probe_action_ratio": 0.4900619514971418,
+          "oracle_probe_action_terminal_rmse_mm": 33.1667179902231,
+          "trajectory": "66.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9479896322355236,
+          "active_minimum_cost_terminal_rmse_mm": 59.14075297319358,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 62.38544279617221,
+          "fixed_probe_12_ratio": 0.9908560382847018,
+          "fixed_probe_12_terminal_rmse_mm": 61.81499269565208,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 62.38544279617221,
+          "fixed_probe_6_ratio": 0.99327278239091,
+          "fixed_probe_6_terminal_rmse_mm": 61.965762346842915,
+          "max_outcome_entropy_ratio": 0.7735708312770422,
+          "max_outcome_entropy_terminal_rmse_mm": 48.259558843421296,
+          "no_probe_certificate_ratio": 0.9479896322355236,
+          "no_probe_certificate_terminal_rmse_mm": 59.14075297319358,
+          "oracle_probe_action_ratio": 0.5819110584408744,
+          "oracle_probe_action_terminal_rmse_mm": 36.30277904882319,
+          "trajectory": "70.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9427711688551802,
+          "active_minimum_cost_terminal_rmse_mm": 61.39948623518407,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 65.12660575921333,
+          "fixed_probe_12_ratio": 0.9904966507707156,
+          "fixed_probe_12_terminal_rmse_mm": 64.5076848805656,
+          "fixed_probe_3_ratio": 0.9622607766530153,
+          "fixed_probe_3_terminal_rmse_mm": 62.66877823863537,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 65.12660575921333,
+          "max_outcome_entropy_ratio": 0.6883194099818102,
+          "max_outcome_entropy_terminal_rmse_mm": 44.827906850299684,
+          "no_probe_certificate_ratio": 0.9812602481195793,
+          "no_probe_certificate_terminal_rmse_mm": 63.906149326471706,
+          "oracle_probe_action_ratio": 0.5674952860185865,
+          "oracle_probe_action_terminal_rmse_mm": 36.95904176274449,
+          "trajectory": "81.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.8013571831302753,
+          "active_minimum_cost_terminal_rmse_mm": 50.62735526653411,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 63.177015608411544,
+          "fixed_probe_12_ratio": 0.9110180315416995,
+          "fixed_probe_12_terminal_rmse_mm": 57.555400398254314,
+          "fixed_probe_3_ratio": 0.943564721515146,
+          "fixed_probe_3_terminal_rmse_mm": 59.61160313870888,
+          "fixed_probe_6_ratio": 0.9652474718166867,
+          "fixed_probe_6_terminal_rmse_mm": 60.981454592942605,
+          "max_outcome_entropy_ratio": 0.6786706618018387,
+          "max_outcome_entropy_terminal_rmse_mm": 42.87638699362575,
+          "no_probe_certificate_ratio": 0.871292066123091,
+          "no_probe_certificate_terminal_rmse_mm": 55.045632460943665,
+          "oracle_probe_action_ratio": 0.37686198480241034,
+          "oracle_probe_action_terminal_rmse_mm": 23.809015496078835,
+          "trajectory": "84.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9902100071303247,
+          "active_minimum_cost_terminal_rmse_mm": 46.40436155246324,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 46.863151471216966,
+          "fixed_probe_12_ratio": 0.9992902385854442,
+          "fixed_probe_12_terminal_rmse_mm": 46.82988981453821,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 46.863151471216966,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 46.863151471216966,
+          "max_outcome_entropy_ratio": 0.8206403430905861,
+          "max_outcome_entropy_terminal_rmse_mm": 38.457792701645594,
+          "no_probe_certificate_ratio": 0.9909262723779627,
+          "no_probe_certificate_terminal_rmse_mm": 46.43792799925687,
+          "oracle_probe_action_ratio": 0.6341840169562248,
+          "oracle_probe_action_terminal_rmse_mm": 29.719861647244393,
+          "trajectory": "93.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9599487140840566,
+          "active_minimum_cost_terminal_rmse_mm": 49.05860232474143,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 51.10544095217745,
+          "fixed_probe_12_ratio": 1.0,
+          "fixed_probe_12_terminal_rmse_mm": 51.10544095217745,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 51.10544095217745,
+          "fixed_probe_6_ratio": 0.9963189437162219,
+          "fixed_probe_6_terminal_rmse_mm": 50.91731894762518,
+          "max_outcome_entropy_ratio": 0.8472934738618418,
+          "max_outcome_entropy_terminal_rmse_mm": 43.301306597611664,
+          "no_probe_certificate_ratio": 0.9599487140840566,
+          "no_probe_certificate_terminal_rmse_mm": 49.05860232474143,
+          "oracle_probe_action_ratio": 0.603427573531646,
+          "oracle_probe_action_terminal_rmse_mm": 30.838432228037252,
+          "trajectory": "96.pkl"
+        }
+      ]
+    },
+    "DLO5": {
+      "active": {
+        "certified_probe_fraction": 0.22180451127819548,
+        "duration_counts": {
+          "0": 36,
+          "12": 10,
+          "3": 11,
+          "6": 2,
+          "fallback_no_certified_probe": 207
+        },
+        "mean_pre_probe_minimax_regret": 0.2248225306537694,
+        "mean_selected_minimax_regret": 0.21642290772030198,
+        "mean_selected_probe_squared_distance": 0.07640940075299003,
+        "mean_supported_hypotheses_after_selected_probe": 15.093984962406015,
+        "mean_trajectory_improvement_pct": 7.446994555151629,
+        "no_probe_certified_fraction": 0.13533834586466165,
+        "probe_required_fraction": 0.08646616541353383,
+        "probed_decision_with_multiple_supported_states_fraction": 0.05639097744360902,
+        "selected_probe_out_of_support_fraction": 0.03007518796992481,
+        "trajectory_bootstrap_95_pct": [
+          5.416205245720178,
+          9.611442876675758
+        ],
+        "trajectory_wins_ties_losses": [
+          14,
+          0,
+          0
+        ]
+      },
+      "aggregate": {
+        "active_minimum_cost": {
+          "action_counts": [
+            215,
+            21,
+            30
+          ],
+          "fallback_action_fraction": 0.8082706766917294,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 0.6203007518796992,
+          "rmse_ratio_to_fallback": 0.9337676297135411,
+          "terminal_rmse_mm": 58.99471070467292
+        },
+        "fallback": {
+          "action_counts": [
+            266,
+            0,
+            0
+          ],
+          "fallback_action_fraction": 1.0,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 0.0,
+          "rmse_ratio_to_fallback": 1.0,
+          "terminal_rmse_mm": 63.17922021217545
+        },
+        "fixed_probe_12": {
+          "action_counts": [
+            241,
+            1,
+            24
+          ],
+          "fallback_action_fraction": 0.9060150375939849,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 12.0,
+          "rmse_ratio_to_fallback": 0.9571642759562842,
+          "terminal_rmse_mm": 60.47289256986955
+        },
+        "fixed_probe_3": {
+          "action_counts": [
+            254,
+            1,
+            11
+          ],
+          "fallback_action_fraction": 0.9548872180451128,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 3.0,
+          "rmse_ratio_to_fallback": 0.9826411153721991,
+          "terminal_rmse_mm": 62.08249941763788
+        },
+        "fixed_probe_6": {
+          "action_counts": [
+            254,
+            1,
+            11
+          ],
+          "fallback_action_fraction": 0.9548872180451128,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 6.0,
+          "rmse_ratio_to_fallback": 0.9835266648880477,
+          "terminal_rmse_mm": 62.13844774550846
+        },
+        "max_outcome_entropy": {
+          "action_counts": [
+            51,
+            83,
+            132
+          ],
+          "fallback_action_fraction": 0.19172932330827067,
+          "harm_fraction_vs_fallback": 0.05639097744360902,
+          "mean_probe_frames": 6.823308270676692,
+          "rmse_ratio_to_fallback": 0.7372256146164669,
+          "terminal_rmse_mm": 46.57733945191015
+        },
+        "no_probe_certificate": {
+          "action_counts": [
+            230,
+            21,
+            15
+          ],
+          "fallback_action_fraction": 0.8646616541353384,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 0.0,
+          "rmse_ratio_to_fallback": 0.9596727614336361,
+          "terminal_rmse_mm": 60.631376726242216
+        },
+        "oracle_probe_action": {
+          "action_counts": [
+            1,
+            18,
+            247
+          ],
+          "fallback_action_fraction": 0.0037593984962406013,
+          "harm_fraction_vs_fallback": 0.0,
+          "mean_probe_frames": 5.041353383458647,
+          "rmse_ratio_to_fallback": 0.5372085618923992,
+          "terminal_rmse_mm": 33.94041803166598
+        }
+      },
+      "decision_count": 266,
+      "dlo": "DLO5",
+      "per_trajectory": [
+        {
+          "active_minimum_cost_ratio": 0.8324634787034029,
+          "active_minimum_cost_terminal_rmse_mm": 39.5578842582699,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 47.51906272198629,
+          "fixed_probe_12_ratio": 0.8853511183048244,
+          "fixed_probe_12_terminal_rmse_mm": 42.071055321707654,
+          "fixed_probe_3_ratio": 0.9126611902271949,
+          "fixed_probe_3_terminal_rmse_mm": 43.36880434232874,
+          "fixed_probe_6_ratio": 0.91155417495214,
+          "fixed_probe_6_terminal_rmse_mm": 43.316200014039204,
+          "max_outcome_entropy_ratio": 0.6590729546174772,
+          "max_outcome_entropy_terminal_rmse_mm": 31.31852906883272,
+          "no_probe_certificate_ratio": 0.9106746862111211,
+          "no_probe_certificate_terminal_rmse_mm": 43.27440753339145,
+          "oracle_probe_action_ratio": 0.4357403657143264,
+          "oracle_probe_action_terminal_rmse_mm": 20.70597376888032,
+          "trajectory": "18.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9027220418319124,
+          "active_minimum_cost_terminal_rmse_mm": 50.495641121313255,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 55.937086701507155,
+          "fixed_probe_12_ratio": 0.9166463452617701,
+          "fixed_probe_12_terminal_rmse_mm": 51.2745260895273,
+          "fixed_probe_3_ratio": 0.9728367050444686,
+          "fixed_probe_3_terminal_rmse_mm": 54.41765111648098,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 55.937086701507155,
+          "max_outcome_entropy_ratio": 0.4976778474874521,
+          "max_outcome_entropy_terminal_rmse_mm": 27.838648904325062,
+          "no_probe_certificate_ratio": 0.9604324827042464,
+          "no_probe_certificate_terminal_rmse_mm": 53.7237950559712,
+          "oracle_probe_action_ratio": 0.3777768733371178,
+          "oracle_probe_action_terminal_rmse_mm": 21.131737717682643,
+          "trajectory": "3.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.980281082809694,
+          "active_minimum_cost_terminal_rmse_mm": 63.5623942025029,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 64.84098828095262,
+          "fixed_probe_12_ratio": 1.0,
+          "fixed_probe_12_terminal_rmse_mm": 64.84098828095262,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 64.84098828095262,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 64.84098828095262,
+          "max_outcome_entropy_ratio": 0.7286289032928011,
+          "max_outcome_entropy_terminal_rmse_mm": 47.245018179571865,
+          "no_probe_certificate_ratio": 0.980281082809694,
+          "no_probe_certificate_terminal_rmse_mm": 63.5623942025029,
+          "oracle_probe_action_ratio": 0.5198089771116192,
+          "oracle_probe_action_terminal_rmse_mm": 33.704927793228464,
+          "trajectory": "31.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9762358637760821,
+          "active_minimum_cost_terminal_rmse_mm": 61.68597612110411,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 63.18757424307549,
+          "fixed_probe_12_ratio": 1.0,
+          "fixed_probe_12_terminal_rmse_mm": 63.18757424307549,
+          "fixed_probe_3_ratio": 0.9921054402981422,
+          "fixed_probe_3_terminal_rmse_mm": 62.688736165797955,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 63.18757424307549,
+          "max_outcome_entropy_ratio": 0.78292521992619,
+          "max_outcome_entropy_terminal_rmse_mm": 49.47114546086234,
+          "no_probe_certificate_ratio": 0.9762358637760821,
+          "no_probe_certificate_terminal_rmse_mm": 61.68597612110411,
+          "oracle_probe_action_ratio": 0.5223259014275405,
+          "oracle_probe_action_terminal_rmse_mm": 33.004506675534046,
+          "trajectory": "32.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9283505140292672,
+          "active_minimum_cost_terminal_rmse_mm": 60.91613358767321,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 65.61760096763706,
+          "fixed_probe_12_ratio": 0.9599135276245907,
+          "fixed_probe_12_terminal_rmse_mm": 62.98722281910725,
+          "fixed_probe_3_ratio": 0.9586994423404405,
+          "fixed_probe_3_terminal_rmse_mm": 62.9075574553912,
+          "fixed_probe_6_ratio": 0.9566065486977242,
+          "fixed_probe_6_terminal_rmse_mm": 62.770226795475736,
+          "max_outcome_entropy_ratio": 0.6241153022844688,
+          "max_outcome_entropy_terminal_rmse_mm": 40.952948863098456,
+          "no_probe_certificate_ratio": 0.9635067623493817,
+          "no_probe_certificate_terminal_rmse_mm": 63.223002261461644,
+          "oracle_probe_action_ratio": 0.4780908623282992,
+          "oracle_probe_action_terminal_rmse_mm": 31.371175430531846,
+          "trajectory": "33.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9796225890605819,
+          "active_minimum_cost_terminal_rmse_mm": 81.06160570694391,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 82.74779145780894,
+          "fixed_probe_12_ratio": 1.0,
+          "fixed_probe_12_terminal_rmse_mm": 82.74779145780894,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 82.74779145780894,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 82.74779145780894,
+          "max_outcome_entropy_ratio": 0.8732037346723073,
+          "max_outcome_entropy_terminal_rmse_mm": 72.25568053684401,
+          "no_probe_certificate_ratio": 0.9796225890605819,
+          "no_probe_certificate_terminal_rmse_mm": 81.06160570694391,
+          "oracle_probe_action_ratio": 0.653792879543832,
+          "oracle_probe_action_terminal_rmse_mm": 54.09991685309341,
+          "trajectory": "46.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.885482407983382,
+          "active_minimum_cost_terminal_rmse_mm": 48.07218629018037,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 54.28926182696399,
+          "fixed_probe_12_ratio": 0.9345145513231523,
+          "fixed_probe_12_terminal_rmse_mm": 50.73410515789039,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 54.28926182696399,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 54.28926182696399,
+          "max_outcome_entropy_ratio": 0.5872744252838742,
+          "max_outcome_entropy_terminal_rmse_mm": 31.882695038516047,
+          "no_probe_certificate_ratio": 0.9543383300556129,
+          "no_probe_certificate_terminal_rmse_mm": 51.810323471896744,
+          "oracle_probe_action_ratio": 0.4517696271297538,
+          "oracle_probe_action_terminal_rmse_mm": 24.5262395727171,
+          "trajectory": "56.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9216885079814339,
+          "active_minimum_cost_terminal_rmse_mm": 48.48266954581016,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 52.60201155376321,
+          "fixed_probe_12_ratio": 0.9293536186691562,
+          "fixed_probe_12_terminal_rmse_mm": 48.885869786766605,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 52.60201155376321,
+          "fixed_probe_6_ratio": 0.9794680312919073,
+          "fixed_probe_6_terminal_rmse_mm": 51.521988698558616,
+          "max_outcome_entropy_ratio": 0.8336650150637828,
+          "max_outcome_entropy_terminal_rmse_mm": 43.852456754353284,
+          "no_probe_certificate_ratio": 0.9898778232088243,
+          "no_probe_certificate_terminal_rmse_mm": 52.06956469324456,
+          "oracle_probe_action_ratio": 0.6257391858940087,
+          "oracle_probe_action_terminal_rmse_mm": 32.91513988603903,
+          "trajectory": "58.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.8875301228536434,
+          "active_minimum_cost_terminal_rmse_mm": 51.534731568365885,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 58.06533236603635,
+          "fixed_probe_12_ratio": 0.8892206253765846,
+          "fixed_probe_12_terminal_rmse_mm": 51.632891159226084,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 58.06533236603635,
+          "fixed_probe_6_ratio": 0.9863381802431676,
+          "fixed_probe_6_terminal_rmse_mm": 57.272054261131,
+          "max_outcome_entropy_ratio": 0.6501641323401888,
+          "max_outcome_entropy_terminal_rmse_mm": 37.7519964368087,
+          "no_probe_certificate_ratio": 0.9848144008811419,
+          "no_probe_certificate_terminal_rmse_mm": 57.183575506022464,
+          "oracle_probe_action_ratio": 0.44213650033957,
+          "oracle_probe_action_terminal_rmse_mm": 25.67280284337328,
+          "trajectory": "6.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9199891505489426,
+          "active_minimum_cost_terminal_rmse_mm": 62.373954976655675,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 67.79857668912524,
+          "fixed_probe_12_ratio": 0.9644446321618032,
+          "fixed_probe_12_terminal_rmse_mm": 65.38797335603721,
+          "fixed_probe_3_ratio": 0.96036240566814,
+          "fixed_probe_3_terminal_rmse_mm": 65.11120421004419,
+          "fixed_probe_6_ratio": 0.9948588322014258,
+          "fixed_probe_6_terminal_rmse_mm": 67.45001282986195,
+          "max_outcome_entropy_ratio": 0.7610143452636287,
+          "max_outcome_entropy_terminal_rmse_mm": 51.59568944888056,
+          "no_probe_certificate_ratio": 0.9382872558138572,
+          "no_probe_certificate_terminal_rmse_mm": 63.61454046972467,
+          "oracle_probe_action_ratio": 0.6065898061334563,
+          "oracle_probe_action_terminal_rmse_mm": 41.125925489980744,
+          "trajectory": "72.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9362537292418971,
+          "active_minimum_cost_terminal_rmse_mm": 64.78666397825117,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 69.19776333570408,
+          "fixed_probe_12_ratio": 0.9359235438038134,
+          "fixed_probe_12_terminal_rmse_mm": 64.76381588444976,
+          "fixed_probe_3_ratio": 0.9675309500918621,
+          "fixed_probe_3_terminal_rmse_mm": 66.9509777044256,
+          "fixed_probe_6_ratio": 0.9466096299934449,
+          "fixed_probe_6_terminal_rmse_mm": 65.5032691475848,
+          "max_outcome_entropy_ratio": 0.7517450458648415,
+          "max_outcome_entropy_terminal_rmse_mm": 52.01907577254331,
+          "no_probe_certificate_ratio": 0.9697705430325766,
+          "no_probe_certificate_terminal_rmse_mm": 67.10595252670547,
+          "oracle_probe_action_ratio": 0.5417415258710918,
+          "oracle_probe_action_terminal_rmse_mm": 37.48730189635102,
+          "trajectory": "82.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9223808473799123,
+          "active_minimum_cost_terminal_rmse_mm": 68.9321929695102,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 74.73289711654024,
+          "fixed_probe_12_ratio": 0.9385538642050507,
+          "fixed_probe_12_terminal_rmse_mm": 70.14084937196733,
+          "fixed_probe_3_ratio": 0.9723833241465495,
+          "fixed_probe_3_terminal_rmse_mm": 72.66902292128349,
+          "fixed_probe_6_ratio": 0.9723833241465495,
+          "fixed_probe_6_terminal_rmse_mm": 72.66902292128349,
+          "max_outcome_entropy_ratio": 0.687669286219213,
+          "max_outcome_entropy_terminal_rmse_mm": 51.39151801722511,
+          "no_probe_certificate_ratio": 0.9223808473799123,
+          "no_probe_certificate_terminal_rmse_mm": 68.9321929695102,
+          "oracle_probe_action_ratio": 0.4696175028741993,
+          "oracle_probe_action_terminal_rmse_mm": 35.09587652642408,
+          "trajectory": "85.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9247514840898797,
+          "active_minimum_cost_terminal_rmse_mm": 51.33260966748742,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 55.50962669501186,
+          "fixed_probe_12_ratio": 0.9664721334405094,
+          "fixed_probe_12_terminal_rmse_mm": 53.64850733841436,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 55.50962669501186,
+          "fixed_probe_6_ratio": 0.995824351728091,
+          "fixed_probe_6_terminal_rmse_mm": 55.27783801822852,
+          "max_outcome_entropy_ratio": 0.7640058449067049,
+          "max_outcome_entropy_terminal_rmse_mm": 42.40967924357832,
+          "no_probe_certificate_ratio": 0.9247514840898797,
+          "no_probe_certificate_terminal_rmse_mm": 51.33260966748742,
+          "oracle_probe_action_ratio": 0.5174558913326893,
+          "oracle_probe_action_terminal_rmse_mm": 28.72378335901221,
+          "trajectory": "9.pkl"
+        },
+        {
+          "active_minimum_cost_ratio": 0.9596689419887405,
+          "active_minimum_cost_terminal_rmse_mm": 60.75928413149539,
+          "decision_count": 19,
+          "fallback_terminal_rmse_mm": 63.31275450634335,
+          "fixed_probe_12_ratio": 0.9850258661163537,
+          "fixed_probe_12_terminal_rmse_mm": 62.36470084382294,
+          "fixed_probe_3_ratio": 1.0,
+          "fixed_probe_3_terminal_rmse_mm": 63.31275450634335,
+          "fixed_probe_6_ratio": 1.0,
+          "fixed_probe_6_terminal_rmse_mm": 63.31275450634335,
+          "max_outcome_entropy_ratio": 0.8456237583514243,
+          "max_outcome_entropy_terminal_rmse_mm": 53.538769417235144,
+          "no_probe_certificate_ratio": 0.9596689419887405,
+          "no_probe_certificate_terminal_rmse_mm": 60.75928413149539,
+          "oracle_probe_action_ratio": 0.6353903546306723,
+          "oracle_probe_action_terminal_rmse_mm": 40.2283135384302,
+          "trajectory": "99.pkl"
+        }
+      ]
+    }
+  },
+  "pilot_protocol": {
+    "neighbors": 16,
+    "outcome_count": 3,
+    "probe_frames": [
+      0,
+      3,
+      6,
+      12
+    ],
+    "regret_tolerance": 0.05,
+    "response_quotient_classes": 16,
+    "target_support_multiplier": 2.0,
+    "temperature_scale": 1.0
+  },
+  "pooled": {
+    "active_minimum_cost": {
+      "action_counts": [
+        427,
+        49,
+        56
+      ],
+      "fallback_action_fraction": 0.8026315789473685,
+      "harm_fraction_vs_fallback": 0.005639097744360902,
+      "mean_probe_frames": 0.693609022556391,
+      "rmse_ratio_to_fallback": 0.9302225306488157,
+      "terminal_rmse_mm": 54.105907428877224
+    },
+    "fallback": {
+      "action_counts": [
+        532,
+        0,
+        0
+      ],
+      "fallback_action_fraction": 1.0,
+      "harm_fraction_vs_fallback": 0.0,
+      "mean_probe_frames": 0.0,
+      "rmse_ratio_to_fallback": 1.0,
+      "terminal_rmse_mm": 58.164477473082925
+    },
+    "fixed_probe_12": {
+      "action_counts": [
+        482,
+        6,
+        44
+      ],
+      "fallback_action_fraction": 0.9060150375939849,
+      "harm_fraction_vs_fallback": 0.005639097744360902,
+      "mean_probe_frames": 12.0,
+      "rmse_ratio_to_fallback": 0.9606786153445592,
+      "terminal_rmse_mm": 55.87736968108111
+    },
+    "fixed_probe_3": {
+      "action_counts": [
+        510,
+        3,
+        19
+      ],
+      "fallback_action_fraction": 0.9586466165413534,
+      "harm_fraction_vs_fallback": 0.0018796992481203006,
+      "mean_probe_frames": 3.0,
+      "rmse_ratio_to_fallback": 0.9817987116873105,
+      "terminal_rmse_mm": 57.105809049038406
+    },
+    "fixed_probe_6": {
+      "action_counts": [
+        506,
+        6,
+        20
+      ],
+      "fallback_action_fraction": 0.9511278195488722,
+      "harm_fraction_vs_fallback": 0.0037593984962406013,
+      "mean_probe_frames": 6.0,
+      "rmse_ratio_to_fallback": 0.9816554067819099,
+      "terminal_rmse_mm": 57.09747379409645
+    },
+    "max_outcome_entropy": {
+      "action_counts": [
+        88,
+        178,
+        266
+      ],
+      "fallback_action_fraction": 0.16541353383458646,
+      "harm_fraction_vs_fallback": 0.07894736842105263,
+      "mean_probe_frames": 6.823308270676692,
+      "rmse_ratio_to_fallback": 0.7366401278325371,
+      "terminal_rmse_mm": 42.84628812108453
+    },
+    "no_probe_certificate": {
+      "action_counts": [
+        461,
+        48,
+        23
+      ],
+      "fallback_action_fraction": 0.8665413533834586,
+      "harm_fraction_vs_fallback": 0.0,
+      "mean_probe_frames": 0.0,
+      "rmse_ratio_to_fallback": 0.9571666956056736,
+      "terminal_rmse_mm": 55.67310070454142
+    },
+    "oracle_probe_action": {
+      "action_counts": [
+        5,
+        50,
+        477
+      ],
+      "fallback_action_fraction": 0.009398496240601503,
+      "harm_fraction_vs_fallback": 0.0,
+      "mean_probe_frames": 4.545112781954887,
+      "rmse_ratio_to_fallback": 0.5376638251732082,
+      "terminal_rmse_mm": 31.272935447378664
+    }
+  },
+  "probe_semantics": "Select a duration before target internal response is read; execute the registered endpoint-motion prefix; observe motion-capture internal response; quantize it with a source-local deterministic outcome model; choose a contingent residual-admission action; score only the original fixed terminal horizon.",
+  "schema": "bayesian-phystwin/deform-dlo45-active-probe-pilot-v1",
+  "schema_version": 1,
+  "status": "retrospective-development-mechanism-pilot"
+}

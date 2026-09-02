@@ -101,9 +101,7 @@ def _class_index(value: object, *, expected_size: int) -> IntArray:
         raise ValueError("class_index must contain integer class labels")
     array = np.ascontiguousarray(raw, dtype=np.int64)
     if array.ndim != 1 or array.size != expected_size:
-        raise ValueError(
-            f"class_index must contain exactly {expected_size} entries"
-        )
+        raise ValueError(f"class_index must contain exactly {expected_size} entries")
     if np.any(array < 0):
         raise ValueError("class_index labels must be nonnegative")
     unique = np.unique(array)
@@ -125,9 +123,7 @@ def _finite_nonnegative(value: object, *, name: str) -> float:
 
 
 def _positive_integer(value: object, *, name: str) -> int:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(
-        value, (int, np.integer)
-    ):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be a positive integer")
     result = int(value)
     if result < 1:
@@ -146,13 +142,10 @@ def _outcome_likelihood(value: object, *, hypothesis_count: int) -> FloatArray:
         or likelihood.shape[1] < 1
     ):
         raise ValueError(
-            "outcome_likelihood must have shape "
-            "(hypothesis_count, outcome_count)"
+            "outcome_likelihood must have shape (hypothesis_count, outcome_count)"
         )
     if not np.all(np.isfinite(likelihood)) or np.any(likelihood < 0.0):
-        raise ValueError(
-            "outcome_likelihood must contain finite nonnegative values"
-        )
+        raise ValueError("outcome_likelihood must contain finite nonnegative values")
     totals = np.sum(likelihood, axis=1, dtype=np.float64)
     if not np.allclose(
         totals,
@@ -274,9 +267,7 @@ class ActiveDecisionProbeCertificateV1(NamedTuple):
             "version": ACTIVE_DECISION_PROBE_VERSION,
             "semantics": ACTIVE_DECISION_PROBE_SEMANTICS,
             "hypothesis_count": self.hypothesis_count,
-            "prior_support_count": int(
-                np.count_nonzero(self.prior_support_mask)
-            ),
+            "prior_support_count": int(np.count_nonzero(self.prior_support_mask)),
             "quotient_class_count": self.quotient_class_count,
             "outcome_count": self.outcome_count,
             "action_count": self.action_count,
@@ -285,16 +276,10 @@ class ActiveDecisionProbeCertificateV1(NamedTuple):
             "minimax_terminal_policy": self.minimax_terminal_policy.tolist(),
             "minimax_worst_case_regret": self.minimax_worst_case_regret,
             "adversary_policy_index": self.adversary_policy_index,
-            "adversary_terminal_policy": (
-                self.adversary_terminal_policy.tolist()
-            ),
+            "adversary_terminal_policy": (self.adversary_terminal_policy.tolist()),
             "regret_tolerance": self.regret_tolerance,
-            "has_tolerance_admissible_policy": (
-                self.has_tolerance_admissible_policy
-            ),
-            "has_robustly_optimal_policy": (
-                self.has_robustly_optimal_policy
-            ),
+            "has_tolerance_admissible_policy": (self.has_tolerance_admissible_policy),
+            "has_robustly_optimal_policy": (self.has_robustly_optimal_policy),
             "claim_boundary": ACTIVE_DECISION_PROBE_CLAIM_BOUNDARY,
         }
 
@@ -372,9 +357,10 @@ def active_decision_probe_certificate(
         dtype=np.float64,
     )
     for outcome in range(outcome_count):
-        expected_loss += likelihood[:, outcome, None] * losses[
-            :, outcome, :
-        ][:, policies[:, outcome]]
+        expected_loss += (
+            likelihood[:, outcome, None]
+            * losses[:, outcome, :][:, policies[:, outcome]]
+        )
 
     # For a fixed candidate policy pi and benchmark policy beta, the objective
     # is linear in the unknown complete belief.  With fixed mass lambda_c in
@@ -398,9 +384,7 @@ def active_decision_probe_certificate(
                 class_pairwise_max,
                 member_loss[:, None] - member_loss[None, :],
             )
-        pairwise_worst_case_gap += (
-            quotient[class_id] * class_pairwise_max
-        )
+        pairwise_worst_case_gap += quotient[class_id] * class_pairwise_max
     np.fill_diagonal(pairwise_worst_case_gap, 0.0)
 
     policy_regret = np.maximum(
@@ -444,12 +428,8 @@ def active_decision_probe_certificate(
         minimax_terminal_policy=_immutable_int64(policies[minimax_index]),
         minimax_worst_case_regret=minimum_regret,
         adversary_policy_index=adversary_index,
-        adversary_terminal_policy=_immutable_int64(
-            policies[adversary_index]
-        ),
-        selected_policy_pairwise_worst_case_gap=_immutable_float64(
-            selected_gaps
-        ),
+        adversary_terminal_policy=_immutable_int64(policies[adversary_index]),
+        selected_policy_pairwise_worst_case_gap=_immutable_float64(selected_gaps),
         regret_tolerance=tolerance,
         tolerance_admissible_policy_mask=_immutable_bool(tolerance_mask),
         robustly_optimal_policy_mask=_immutable_bool(robust_mask),
@@ -565,8 +545,7 @@ def select_minimum_cost_decision_probe(
     )
     admissible = np.asarray(
         [
-            certificate.minimax_worst_case_regret
-            <= regret_tolerance + _NUMERICAL_ATOL
+            certificate.minimax_worst_case_regret <= regret_tolerance + _NUMERICAL_ATOL
             for certificate in certificates
         ],
         dtype=np.bool_,
