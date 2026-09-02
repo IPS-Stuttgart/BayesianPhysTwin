@@ -13,7 +13,7 @@ import argparse
 import hashlib
 import json
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -406,7 +406,9 @@ def run(
     parent = load_protocol(parent_protocol_path)
     source_rows = reconstruct_source_panel(source_dir, parent)
     held_rows = load_held_panel(target_dir)
-    source_nonfallback = [row for row in source_rows if int(row["certificate_action"]) != 0]
+    source_nonfallback = [
+        row for row in source_rows if int(row["certificate_action"]) != 0
+    ]
     held_nonfallback = [row for row in held_rows if int(row["certificate_action"]) != 0]
     if len(source_nonfallback) != 332 or len(held_nonfallback) != 82:
         raise ValueError("inner certificate nonfallback roster changed")
@@ -483,7 +485,9 @@ def run(
     by_dlo: dict[str, object] = {}
     for dlo in DLOS:
         mask = np.asarray([row["dlo"] == dlo for row in held_rows], dtype=bool)
-        local_rows = [row for row, keep in zip(held_rows, mask, strict=True) if keep]
+        local_rows = [
+            row for row, keep in zip(held_rows, mask, strict=True) if keep
+        ]
         by_dlo[dlo] = policy_metrics(
             local_rows,
             outer_selected[mask],
