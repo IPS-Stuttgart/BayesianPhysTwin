@@ -250,16 +250,21 @@ def test_fail_closed_validation_and_defensive_branches() -> None:
             np.asarray([0.0]),
             np.asarray([0.5, 0.5]),
         )
-    assert admission._log_mixture(
-        np.asarray([-math.inf]),
-        np.asarray([1.0]),
-    ) == -math.inf
+    assert (
+        admission._log_mixture(
+            np.asarray([-math.inf]),
+            np.asarray([1.0]),
+        )
+        == -math.inf
+    )
 
 
 def test_configuration_rejects_empty_duplicate_and_invalid_mixtures() -> None:
     with pytest.raises(ValueError, match="gain_bet_fractions must not be empty"):
         _config(gain_bet_fractions=())
-    with pytest.raises(ValueError, match="harm_alternative_fractions must not be empty"):
+    with pytest.raises(
+        ValueError, match="harm_alternative_fractions must not be empty"
+    ):
         _config(harm_alternative_fractions=())
     with pytest.raises(ValueError, match="gain bet fractions must be unique"):
         _config(gain_bet_fractions=(0.2, 0.2))
