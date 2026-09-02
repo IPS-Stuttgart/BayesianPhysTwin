@@ -1,0 +1,198 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth cause transport source v1
+
+on:
+  push:
+    branches: [science/tracking-cloth-cause-transport-source-v1]
+    paths:
+      - ".github/requests/tracking-cloth-cause-transport-source-v1.json"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: tracking-cloth-cause-transport-source-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  RESULT_ROOT: results/science/tracking_cloth_cause_transport_source_v1/source-development-20260902-v1
+  SOURCE_SHA256: e93ab7e3f0a381bc302ceb8ff657e69041955bf165c8a14d494af5e257a935b7
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+      - name: Authorize request and reconstruct exact source
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/tracking-cloth-cause-transport-source-v1.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path(
+              ".github/requests/tracking-cloth-cause-transport-source-v1.json"
+          ).read_text())
+          expected = {
+              "schema": "bayesian-phystwin/tracking-cloth-cause-transport-source-request-v1",
+              "request_id": "tracking-cloth-cause-transport-source-v1-20260902",
+              "dataset_record": "14644526",
+              "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+              "source_repetitions": [1, 2],
+              "reserved_target_repetition": 3,
+              "retrospective_source_development": True,
+              "pristine_repetition2_target_claim": False,
+              "target_rep3_numeric_outcomes_read": False,
+              "target_protocol_authorized": False,
+              "automatic_follow_on": False,
+              "paper_claim_authorized": False,
+          }
+          if value != expected:
+              raise SystemExit("request content changed")
+          PY
+          cat .github/bootstrap/tracking-cloth-cause-transport-source-v1.part-* \
+            | base64 -d > "${RUNNER_TEMP}/source.tar.gz"
+          test "$(sha256sum "${RUNNER_TEMP}/source.tar.gz" | cut -d' ' -f1)" = \
+            "${SOURCE_SHA256}"
+          tar -xzf "${RUNNER_TEMP}/source.tar.gz"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Canonicalize and validate focused source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          files=(
+            experiments/tracking_cloth_cause_transport_source_v1/__init__.py
+            experiments/tracking_cloth_cause_transport_source_v1/model.py
+            experiments/tracking_cloth_cause_transport_source_v1/run.py
+            tests/test_tracking_cloth_cause_transport_source_v1.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m pytest -q tests/test_tracking_cloth_cause_transport_source_v1.py
+          python -m compileall -q experiments/tracking_cloth_cause_transport_source_v1
+          mkdir -p "${RUNNER_TEMP}/canonical"
+          cp -a experiments tests "${RUNNER_TEMP}/canonical/"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: tracking-cloth-cause-transport-canonical-${{ github.sha }}
+          path: ${{ runner.temp }}/canonical
+          if-no-files-found: error
+          retention-days: 7
+
+  source_evidence:
+    needs: prepare
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: true
+          fetch-depth: 2
+          clean: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: tracking-cloth-cause-transport-canonical-${{ github.sha }}
+          path: ${{ runner.temp }}/canonical
+      - name: Run exact source-development study
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          cp -a "${RUNNER_TEMP}/canonical/experiments/." experiments/
+          cp -a "${RUNNER_TEMP}/canonical/tests/." tests/
+          venv="${RUNNER_TEMP}/cloth-transport-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/cloth-transport-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check -e .
+          "${venv}/bin/python" -m \
+            experiments.tracking_cloth_cause_transport_source_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --protocol experiments/tracking_cloth_cause_transport_source_v1/protocol.json \
+            --output "${output}"
+          echo "SOURCE_VENV=${venv}" >> "${GITHUB_ENV}"
+          echo "SOURCE_OUTPUT=${output}" >> "${GITHUB_ENV}"
+      - name: Validate and commit compact evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "${RESULT_ROOT}"
+          mkdir -p -- "${RESULT_ROOT}"
+          cp "${SOURCE_OUTPUT}/result.json" "${RESULT_ROOT}/result.json"
+          cp "${SOURCE_OUTPUT}/cases.csv" "${RESULT_ROOT}/cases.csv"
+          cp "${SOURCE_OUTPUT}/SUMMARY.md" "${RESULT_ROOT}/README.md"
+          cp experiments/tracking_cloth_cause_transport_source_v1/protocol.json \
+            "${RESULT_ROOT}/protocol.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RESULT_ROOT"])
+          result = json.loads((root / "result.json").read_text())
+          assert result["aggregate"]["case_count"] == 72
+          assert len(result["model_records"]) == 6
+          assert result["source_repetitions_read"] == [1, 2]
+          assert result["reserved_target_repetition"] == 3
+          assert result["information_boundary"]["target_rep3_numeric_outcomes_read"] is False
+          assert result["information_boundary"]["target_protocol_authorized"] is False
+          assert result["information_boundary"]["paper_claim_authorized"] is False
+          assert result["seal_manifest"]["pristine_repetition2_target_claim"] is False
+          print((root / "README.md").read_text())
+          PY
+          cat "${RESULT_ROOT}/README.md" >> "${GITHUB_STEP_SUMMARY}"
+          archive=archive/github-actions/retired-one-shot-v1
+          mkdir -p "${archive}"
+          cp .github/workflows/tracking-cloth-cause-transport-source-v1.yml \
+            "${archive}/tracking-cloth-cause-transport-source-v1.yml"
+          rm -rf .github/bootstrap/tracking-cloth-cause-transport-source-v1.part-*
+          rm -f .github/workflows/tracking-cloth-cause-transport-source-v1.yml \
+            .github/requests/tracking-cloth-cause-transport-source-v1.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Record real-cloth cause-transport source evidence'
+          git push origin HEAD:science/tracking-cloth-cause-transport-source-v1
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: tracking-cloth-cause-transport-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.RESULT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${SOURCE_VENV:-}" "${SOURCE_OUTPUT:-}"
