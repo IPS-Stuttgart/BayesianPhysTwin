@@ -1,0 +1,170 @@
+name: Hierarchical missing-physics controlled transfer v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_controlled_transfer_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-controlled-transfer-v1
+  cancel-in-progress: false
+
+jobs:
+  controlled-falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/controlled_transfer_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Install bounded test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input \
+            numpy==2.2.6 pytest==8.3.5
+
+      - name: Run diagnosis and transfer regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pytest -q \
+            tests/test_hierarchical_missing_physics_diagnosis.py \
+            tests/test_hierarchical_missing_physics_transfer.py \
+            | tee "$RUNNER_TEMP/hierarchical-missing-physics-tests.log"
+
+      - name: Run held-out-object and held-out-backend falsification
+        id: experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-controlled-transfer"
+          mkdir -p "$work"
+          python3 scripts/science/evaluate_hierarchical_missing_physics_transfer.py \
+            --controlled-smoke \
+            --bootstrap 100 \
+            --seed 19 \
+            --output-directory "$work" \
+            | tee "$work/summary.log"
+          RESULT="$work/controlled_transfer_result.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          if value["controlled_gate"]["passed"] is not True:
+              raise SystemExit("controlled diagnosis/transfer gate failed")
+          if value["information_boundary"]["target_used_for_group_selection"] is not False:
+              raise SystemExit("target influenced diagnosis")
+          if value["information_boundary"]["target_used_for_coefficient_refit"] is not False:
+              raise SystemExit("target influenced coefficients")
+          if value["fallback_identity_violations"] != 0:
+              raise SystemExit("fallback identity audit failed")
+          if value["sensor_only_physical_rollout_change_norm"] != 0.0:
+              raise SystemExit("sensor discrepancy altered physical rollout")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Controlled hierarchical missing-physics result\n\n")
+              summary.write(f"Result ID: `{value['result_id']}`\n\n")
+              summary.write(
+                  f"Frozen selected groups: "
+                  f"`{value['selected_groups_frozen_source_only']}`\n\n"
+              )
+              summary.write("| Arm | RMSE | Improvement vs physical |\n")
+              summary.write("|---|---:|---:|\n")
+              for arm, metrics in sorted(value["aggregate"].items()):
+                  summary.write(
+                      f"| {arm} | {metrics['rmse']:.6f} | "
+                      f"{100.0 * metrics['relative_improvement_vs_physical']:.2f}% |\n"
+                  )
+              summary.write(
+                  f"\nTrajectory wins vs physical: "
+                  f"{value['diagnosis_guided_win_count_vs_physical']}/"
+                  f"{value['trajectory_count']}\n"
+              )
+          PY
+
+      - name: Construct immutable controlled evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-controlled-transfer"
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.experiment.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          cp "$work/sealed_source_model.json" "$EVIDENCE_DIR/sealed_source_model.json"
+          cp "$work/sealed_source_model.npz" "$EVIDENCE_DIR/sealed_source_model.npz"
+          cp "$work/sealed_source_model_source_result.json" "$EVIDENCE_DIR/source_result.json"
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-controlled-evidence-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "result_id": result["result_id"],
+              "files": {},
+              "real_target_outcomes_read": False,
+              "claim_scope": "controlled mechanism and custody validation only",
+          }
+          for path in sorted(evidence.iterdir()):
+              if path.is_file() and path.name != "receipt.json":
+                  receipt["files"][path.name] = {
+                      "bytes": path.stat().st_size,
+                      "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                  }
+          unsigned = json.dumps(
+              receipt, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+
+      - name: Commit controlled evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical evidence already committed."
+            exit 0
+          fi
+          git commit -m "Record hierarchical missing-physics controlled transfer"
+          git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+
+      - name: Upload complete controlled evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-controlled-transfer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-controlled-transfer/
+            ${{ runner.temp }}/hierarchical-missing-physics-tests.log
+            evidence/hierarchical_missing_physics/controlled_transfer_v1/
+          if-no-files-found: error
+          retention-days: 90
