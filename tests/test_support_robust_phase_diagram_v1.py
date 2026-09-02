@@ -144,9 +144,7 @@ def test_every_open_phase_cell_matches_direct_formula() -> None:
                 interval.support_miss_right - interval.support_miss_left
             )
             decision = diagram.decision_at(epsilon)
-            assert decision.minimax_plan_index == (
-                interval.decision.minimax_plan_index
-            )
+            assert decision.minimax_plan_index == (interval.decision.minimax_plan_index)
             assert decision.output_plan_index == interval.decision.output_plan_index
             assert decision.output_mode == interval.decision.output_mode
 

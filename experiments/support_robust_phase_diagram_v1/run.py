@@ -184,9 +184,7 @@ def build_result() -> dict[str, Any]:
         "hypothesis_count": int(prior.size),
         "plan_count": diagram.plan_count,
         "regret_tolerance": diagram.regret_tolerance,
-        "maximum_support_miss_probability": (
-            diagram.maximum_support_miss_probability
-        ),
+        "maximum_support_miss_probability": (diagram.maximum_support_miss_probability),
         "quick_tug_plan_index": quick,
         "camera_plan_index": camera,
         "quick_tug_maximum_admissible_support_miss": float(
@@ -206,9 +204,7 @@ def build_result() -> dict[str, Any]:
             "epsilon_0p2": diagram.decision_at(0.2).summary(),
         },
         "all_breakpoints": diagram.breakpoints.tolist(),
-        "point_decisions": [
-            decision.summary() for decision in diagram.point_decisions
-        ],
+        "point_decisions": [decision.summary() for decision in diagram.point_decisions],
         "open_interval_decisions": [
             interval.summary() for interval in diagram.interval_decisions
         ],

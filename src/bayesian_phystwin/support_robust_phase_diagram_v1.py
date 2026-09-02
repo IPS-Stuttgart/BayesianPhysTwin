@@ -201,7 +201,9 @@ class SupportRobustPhaseDiagramV1(NamedTuple):
     def plan_count(self) -> int:
         return self.base_certificate.plan_count
 
-    def decision_at(self, support_miss_probability: float) -> SupportRobustPhaseDecisionV1:
+    def decision_at(
+        self, support_miss_probability: float
+    ) -> SupportRobustPhaseDecisionV1:
         """Evaluate the exact robust decision at one admissible miss probability."""
 
         epsilon = _probability(
@@ -226,18 +228,14 @@ class SupportRobustPhaseDiagramV1(NamedTuple):
             "semantics": SUPPORT_ROBUST_PHASE_DIAGRAM_SEMANTICS,
             "plan_count": self.plan_count,
             "regret_tolerance": self.regret_tolerance,
-            "maximum_support_miss_probability": (
-                self.maximum_support_miss_probability
-            ),
+            "maximum_support_miss_probability": (self.maximum_support_miss_probability),
             "breakpoint_count": int(self.breakpoints.size),
             "interval_count": len(self.interval_decisions),
             "maximum_any_plan_admissible_support_miss": (
                 self.maximum_any_plan_admissible_support_miss
             ),
             "point_decisions": [item.summary() for item in self.point_decisions],
-            "interval_decisions": [
-                item.summary() for item in self.interval_decisions
-            ],
+            "interval_decisions": [item.summary() for item in self.interval_decisions],
             "claim_boundary": SUPPORT_ROBUST_PHASE_DIAGRAM_CLAIM_BOUNDARY,
         }
 
@@ -510,9 +508,7 @@ def _maximum_admissible_epsilon(
     maximum_epsilon: float,
 ) -> float:
     value_zero = max(
-        segment.intercept
-        for segment in segments
-        if segment.left <= _NUMERICAL_ATOL
+        segment.intercept for segment in segments if segment.left <= _NUMERICAL_ATOL
     )
     if value_zero > tolerance + _NUMERICAL_ATOL:
         return float("nan")
@@ -619,7 +615,9 @@ def support_robust_phase_diagram(
         )
     if has_plan_box:
         if unknown_plan_loss_lower is None or unknown_plan_loss_upper is None:
-            raise ValueError("complete plan-loss lower and upper bounds are both required")
+            raise ValueError(
+                "complete plan-loss lower and upper bounds are both required"
+            )
         lower, upper = _loss_box(
             unknown_plan_loss_lower,
             unknown_plan_loss_upper,
