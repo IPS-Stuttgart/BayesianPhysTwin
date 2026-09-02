@@ -6,30 +6,33 @@
     "experiment": "deform-dlo45-decision-directed-sensing-v2",
     "result_id": "a9b709398413e4518524023942790861801acc438e007179b2d9f6094d9bd035",
     "workflow_run_id": 33606616264,
+    "source_revision": "d5692d2ff2e6fdcc08e69012ecf02ec8b4d69d3b",
+    "artifact_id": 9837526698,
+    "artifact_digest": "sha256:ae39f97b544cf9744d2b8e98b634fac73299adef5c029867550bc1382fcb8629",
     "fixed_likelihood_scale": 2.0,
     "fixed_action_prototype_scale": 1.0,
     "fixed_support_regret_tolerance": 0.05,
     "fixed_measurement_budget": 4,
     "excluded_source_test_roster": {
       "DLO4": [
-        "data_20230602_144259_488515_reconstruction.pkl",
-        "data_20230602_150420_072356_reconstruction.pkl",
-        "data_20230602_151111_637459_reconstruction.pkl",
-        "data_20230602_152340_961276_reconstruction.pkl",
-        "data_20230602_153139_108709_reconstruction.pkl",
-        "data_20230602_153621_099480_reconstruction.pkl",
-        "data_20230602_154136_504322_reconstruction.pkl",
-        "data_20230602_154326_531171_reconstruction.pkl"
+        "78.pkl",
+        "2.pkl",
+        "1.pkl",
+        "92.pkl",
+        "39.pkl",
+        "34.pkl",
+        "13.pkl",
+        "67.pkl"
       ],
       "DLO5": [
-        "data_20230602_144744_449242_reconstruction.pkl",
-        "data_20230602_145428_978134_reconstruction.pkl",
-        "data_20230602_145620_456283_reconstruction.pkl",
-        "data_20230602_150155_462996_reconstruction.pkl",
-        "data_20230602_151903_655415_reconstruction.pkl",
-        "data_20230602_153006_980938_reconstruction.pkl",
-        "data_20230602_153322_283559_reconstruction.pkl",
-        "data_20230602_154219_028889_reconstruction.pkl"
+        "14.pkl",
+        "54.pkl",
+        "34.pkl",
+        "83.pkl",
+        "5.pkl",
+        "30.pkl",
+        "17.pkl",
+        "69.pkl"
       ]
     }
   },
@@ -64,5 +67,5 @@
     "target_tuning": false,
     "source_test_overlap_selection_used_only_filenames": true
   },
-  "claim_boundary": "This v3 study is a non-overlapping source-test replication and a trajectory-level transport-calibration analysis. The v2 operating point is fixed, and the replication test rosters must have zero filename overlap with the preceding v2 source-test rosters. The additive transport slack is calibrated only from complete calibration trajectories and targets trajectory-mean normalized regret under a trajectory-exchangeability assumption; it is not a per-decision safety guarantee. The split domain was selected using filenames only, not trajectory outcomes. Official DEFORM evaluation files remain absent. This is not unseen-object validation, learned-sensor validation, continuous-control certification, deployment safety, or state of the art."
+  "claim_boundary": "This v3 study is a non-overlapping source-test replication and a trajectory-level transport-calibration analysis. The exact v2 result, source revision, workflow run, artifact digest, fixed operating point, and source-test filenames are bound before replication. The replication test rosters must have zero filename overlap with that exact v2 source-test roster. The additive transport slack is calibrated only from complete calibration trajectories and targets trajectory-mean normalized regret under a trajectory-exchangeability assumption; it is not a per-decision safety guarantee. The split domain was selected using filenames only, not trajectory outcomes. Official DEFORM evaluation files remain absent. This is not unseen-object validation, learned-sensor validation, continuous-control certification, deployment safety, or state of the art."
 }
