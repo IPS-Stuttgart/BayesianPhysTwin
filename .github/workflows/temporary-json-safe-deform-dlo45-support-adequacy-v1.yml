@@ -1,0 +1,95 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #868
+# workflow-expiry: 2026-09-15
+name: Make DEFORM support-adequacy evidence JSON-safe
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-support-adequacy-prototype-v1
+    paths:
+      - ".github/workflows/temporary-json-safe-deform-dlo45-support-adequacy-v1.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/deform-dlo45-support-adequacy-prototype-v1
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+      - name: Normalize NumPy evidence values before JSON serialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.16.5
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "experiments/deform_dlo45_decision_identifiability_v1/"
+              "support_adequacy_audit.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          marker = '''    "dlo_is_5",
+          )
+
+
+          @dataclass(frozen=True)
+          class SupportProtocol:'''.replace("          ", "")
+          replacement = '''    "dlo_is_5",
+          )
+
+
+          def _json_ready(value: object) -> object:
+              if isinstance(value, np.ndarray):
+                  return value.tolist()
+              if isinstance(value, np.generic):
+                  return value.item()
+              if isinstance(value, Mapping):
+                  return {str(key): _json_ready(item) for key, item in value.items()}
+              if isinstance(value, (list, tuple)):
+                  return [_json_ready(item) for item in value]
+              return value
+
+
+          @dataclass(frozen=True)
+          class SupportProtocol:'''.replace("          ", "")
+          if text.count(marker) != 1:
+              raise SystemExit("JSON normalization insertion marker changed")
+          text = text.replace(marker, replacement, 1)
+          replacements = {
+              'write_json(output / "source_result.json", result)':
+                  'write_json(output / "source_result.json", _json_ready(result))',
+              'write_json(output / "policy.json", deployment)':
+                  'write_json(output / "policy.json", _json_ready(deployment))',
+              'write_json(output / "result.json", result)':
+                  'write_json(output / "result.json", _json_ready(result))',
+              'payload = {"method": method, **item}':
+                  'payload = _json_ready({"method": method, **item})',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f"serialization marker changed: {old}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          file=experiments/deform_dlo45_decision_identifiability_v1/support_adequacy_audit.py
+          python -m ruff format "$file"
+          python -m ruff check "$file"
+          python -m ruff format --check "$file"
+          rm -f .github/workflows/temporary-json-safe-deform-dlo45-support-adequacy-v1.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$file" \
+            .github/workflows/temporary-json-safe-deform-dlo45-support-adequacy-v1.yml
+          git commit -m "Make support-adequacy evidence JSON-safe"
+          git push origin HEAD:science/deform-dlo45-support-adequacy-prototype-v1
