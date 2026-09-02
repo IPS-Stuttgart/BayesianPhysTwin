@@ -453,9 +453,9 @@ def act_probe_fallback_certificate(
             probe_policy_index = int(policy_indices[selected_meta])
             selected_probe = selected_probe_value
             selected_policy = _immutable_int64(
-                probe_certificates[
-                    selected_probe_value
-                ].contingent_action_indices[probe_policy_index]
+                probe_certificates[selected_probe_value].contingent_action_indices[
+                    probe_policy_index
+                ]
             )
     else:
         route = "fallback"
