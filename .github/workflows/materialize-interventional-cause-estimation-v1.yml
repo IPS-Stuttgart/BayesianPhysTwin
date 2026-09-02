@@ -41,9 +41,8 @@ jobs:
           test "$GITHUB_REF" = \
             "refs/heads/research/interventional-cause-estimation-v1"
           payload=.github/agent-payloads/interventional-cause-estimation-v1.tgz
-          printf '%s  %s\n' \
-            9d8fd3aa7726a55ab7d79795290da704166d759a39cd2c141935a5b10a2b442d \
-            "$payload" | sha256sum --check --strict
+          test "$(git hash-object "$payload")" = \
+            ed5112492e960fdc2fe1e156a58f9d543e9ce37e
           rm -rf "$RUNNER_TEMP/why-twin-v2"
           mkdir -p "$RUNNER_TEMP/why-twin-v2"
           PAYLOAD="$payload" DESTINATION="$RUNNER_TEMP/why-twin-v2" python - <<'PY'
