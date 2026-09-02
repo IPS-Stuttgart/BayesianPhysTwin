@@ -78,6 +78,45 @@ jobs:
           )
           python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path("src/bayesian_phystwin/active_decision_probe_v1.py"): {
+                  "    pairwise_worst_case_gap = np.zeros(":
+                      "    pairwise_worst_case_gap: FloatArray = np.zeros(",
+                  "        class_pairwise_max = np.full(":
+                      "        class_pairwise_max: FloatArray = np.full(",
+              },
+              Path("src/bayesian_phystwin/outcome_certified_decision_probe_v1.py"): {
+                  "    reachable = np.zeros(outcome_count, dtype=np.bool_)":
+                      "    reachable: BoolArray = np.zeros(outcome_count, dtype=np.bool_)",
+                  "    maximum_probability = np.zeros(outcome_count, dtype=np.float64)":
+                      "    maximum_probability: FloatArray = np.zeros(outcome_count, dtype=np.float64)",
+                  "    pairwise = np.zeros(":
+                      "    pairwise: FloatArray = np.zeros(",
+                  "    action_regret = np.zeros(":
+                      "    action_regret: FloatArray = np.zeros(",
+                  "    minimax_action = np.full(outcome_count, -1, dtype=np.int64)":
+                      "    minimax_action: IntArray = np.full(outcome_count, -1, dtype=np.int64)",
+                  "    minimax_regret = np.zeros(outcome_count, dtype=np.float64)":
+                      "    minimax_regret: FloatArray = np.zeros(outcome_count, dtype=np.float64)",
+                  "    certified = np.zeros(outcome_count, dtype=np.bool_)":
+                      "    certified: BoolArray = np.zeros(outcome_count, dtype=np.bool_)",
+              },
+          }
+          for path, mapping in replacements.items():
+              text = path.read_text(encoding="utf-8")
+              for old, new in mapping.items():
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(
+                          f"expected one occurrence of {old!r} in {path}, got {count}"
+                      )
+                  text = text.replace(old, new)
+              path.write_text(text, encoding="utf-8")
+          PY
+          python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
