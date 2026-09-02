@@ -234,9 +234,26 @@ flock PID `3994831`; an independent process check confirmed Python child
 `3994832` and an advancing `range-hash/progress-v2.json`. The write-once attempt
 ledger and launch record are retained in
 `evidence/poseit-real-decision-v1/range-hash-v2-launch/`. They prove a launch,
-not archive completion. Continue monitoring those PIDs and the existing
-completion-receipt path; do not launch another process merely because a poll
+not archive completion, and do not authorize re-execution when a later poll
 times out. The original `progress-v1.json` and `run-v1.log` stay untouched.
+
+The replacement subsequently terminated at the same HTTP 206 guard after 87
+chunks (2,919,235,584 bytes), without a receipt. Both PIDs were independently
+confirmed absent. Its immutable snapshots are retained in
+`evidence/poseit-real-decision-v1/range-hash-v2-failure/`. A separate header-only
+GET for the next unfinished range returned HTTP 200 with a 2,009-byte HTML
+content type, no content range, and no archive identity headers. The body was
+not read; this diagnostic does not establish the cause of the earlier response.
+The byte-zero header check alone therefore did not establish reliable delivery
+of the complete archive.
+
+The v2 attempt record is consumed and authorizes no second process. No hash
+process is currently running, and no third full-hash attempt was launched.
+The next prerequisite is stable delivery of the same official archive, such as
+a complete attributed author-distributed copy. Any further transport execution
+must preserve both failures and be frozen before launch. The source/method locks
+and full-hash-before-structure requirement are unchanged; no scientific claim
+follows from the implementation tests or these transport observations.
 
 ## Full-download and structure-only custody tools
 

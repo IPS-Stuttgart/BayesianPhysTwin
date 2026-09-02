@@ -335,9 +335,10 @@ def test_replacement_launch_metadata_binds_attempt_and_is_not_completion() -> No
     record_path = ROOT / "protocols/poseit_real_decision_probe_v1_range_restart_v2.json"
     record = json.loads(record_path.read_text(encoding="utf-8"))
     record_sha256 = hashlib.sha256(record_path.read_bytes()).hexdigest()
-    assert launch["attempt_ledger_sha256"] == hashlib.sha256(
-        attempt_path.read_bytes()
-    ).hexdigest()
+    assert (
+        launch["attempt_ledger_sha256"]
+        == hashlib.sha256(attempt_path.read_bytes()).hexdigest()
+    )
     assert attempt["record_file_sha256"] == record_sha256
     assert launch["record_file_sha256"] == record_sha256
     assert attempt["command"] == record["execution"]["command"]
@@ -351,3 +352,49 @@ def test_replacement_launch_metadata_binds_attempt_and_is_not_completion() -> No
     assert attempt["scientific_method_changed"] is False
     assert launch["completion_receipt"] is False
     assert launch["scientific_result"] is False
+
+
+def test_replacement_failure_does_not_authorize_structure_or_another_attempt() -> None:
+    root = ROOT / "evidence/poseit-real-decision-v1/range-hash-v2-failure"
+    terminal = json.loads(
+        (root / "terminal_observation.json").read_text(encoding="utf-8")
+    )
+    for name, expected in terminal["retained_metadata"].items():
+        assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected
+    assert terminal["replacement_record_consumed"] is True
+    for key in (
+        "completion_receipt_exists",
+        "this_record_authorizes_another_process",
+        "archive_member_names_opened",
+        "member_payload_bytes_opened",
+        "phase_labels_opened",
+        "shake_outcomes_opened",
+        "confirmation_opened",
+        "held_v8_accessed",
+        "structure_access_authorized",
+        "scientific_result",
+    ):
+        assert terminal[key] is False
+    assert terminal["archive_sha256"] is None
+    assert terminal["failure"]["actual_http_status"] is None
+    assert (
+        terminal["last_persisted_progress"]["total_issued_transport_attempts"] is None
+    )
+    for name, path in (
+        (
+            "replacement_record",
+            ROOT / "protocols/poseit_real_decision_probe_v1_range_restart_v2.json",
+        ),
+        ("attempt_ledger", root.parent / "range-hash-v2-launch/attempt-v2.json"),
+        ("launch_receipt", root.parent / "range-hash-v2-launch/launch-v2.json"),
+    ):
+        assert (
+            terminal[f"{name}_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+        )
+    diagnostic = json.loads(
+        (root / "diagnostic_headers.json").read_text(encoding="utf-8")
+    )
+    assert diagnostic["frozen_identity_headers_valid"] is False
+    assert diagnostic["http_status"] == 200
+    assert diagnostic["headers"]["Content-Type"].startswith("text/html")
+    assert diagnostic["response_body_read"] is False

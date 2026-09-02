@@ -1,0 +1,51 @@
+{
+  "schema": "bayesian-phystwin.poseit-range-hash-terminal-observation",
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-02T17:02:31Z",
+  "run_host": "gpuserver4090",
+  "run_root": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash",
+  "status": "terminated-before-completion-receipt",
+  "pid_observation": {
+    "3994831": "absent",
+    "3994832": "absent"
+  },
+  "matching_acquisition_process_count": 0,
+  "completion_receipt_exists": false,
+  "exit_code": null,
+  "exit_time_utc": null,
+  "failure": {
+    "exception_type": "ValueError",
+    "message": "PoseIt range request did not return HTTP 206",
+    "actual_http_status": null,
+    "reason_for_non_206": "not recorded in the failed run; subsequent header diagnostic is a separate observation"
+  },
+  "retained_metadata": {
+    "progress-v2.json": "9d841378e25f540e07a44e635bd6c386c3ff127a785f91908fb342e60eca571a",
+    "run-v2.log": "5bf460e34533e127a8c4438f636182fb4407fe043852d8daa059c050968f6f0c"
+  },
+  "last_persisted_progress": {
+    "completed_chunks": 87,
+    "total_chunks": 26994,
+    "bytes_hashed": 2919235584,
+    "archive_size_bytes": 905738058282,
+    "transport_attempts_for_completed_prefix": 87,
+    "total_issued_transport_attempts": null,
+    "authoritative_result": false
+  },
+  "replacement_record_sha256": "4ba788ae7959d6d916956d96f0b1ba4931022aeeac99e40a835c670253131fa8",
+  "attempt_ledger_sha256": "876cd3952219bb3421eb1661435e6991d459364569abd266c93b1cd90c93eb52",
+  "launch_receipt_sha256": "faa622b21baf9ec05d57914bcd8691a2da49889086017d790d002ae9502c043d",
+  "archive_sha256": null,
+  "original_run_files_preserved": true,
+  "replacement_record_consumed": true,
+  "this_record_authorizes_another_process": false,
+  "archive_member_names_opened": false,
+  "member_payload_bytes_opened": false,
+  "phase_labels_opened": false,
+  "shake_outcomes_opened": false,
+  "confirmation_opened": false,
+  "held_v8_accessed": false,
+  "structure_access_authorized": false,
+  "scientific_result": false,
+  "next_action": "establish stable delivery of the same official archive; preserve all failures and freeze any additional transport execution before launch"
+}
