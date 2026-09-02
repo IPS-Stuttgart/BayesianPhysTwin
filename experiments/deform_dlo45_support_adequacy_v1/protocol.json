@@ -1,0 +1,95 @@
+{
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20260902,
+    "unit": "complete_trajectory"
+  },
+  "claim_boundary": "This pilot tests an outcome-free outer support score and a source-calibrated trajectory-max conformal envelope on the already opened official DEFORM DLO4/DLO5 evaluation trajectories. It does not establish exchangeability between source and target operators, prospective target validity, unseen-object generalization, calibrated probabilities, arbitrary-action safety, or deployment authorization. Nearest-residual diagnostics computed from held suffixes are explicitly forbidden as gate inputs.",
+  "classification": "retrospective-public-data-method-development-pilot",
+  "contract": "deform-dlo45-support-adequacy-v1",
+  "forbidden_gate_inputs": [
+    "certificate_realized_regret",
+    "certificate_regret_excess",
+    "certificate_harmful_vs_fallback",
+    "nearest_selected_residual_rmse",
+    "nearest_global_residual_rmse",
+    "oracle_action",
+    "future_internal_node_coordinates"
+  ],
+  "operational_risk_gate": {
+    "maximum_selection_harm_fraction": 0.1,
+    "maximum_selection_tolerance_breach_fraction": 0.1,
+    "minimum_selection_nonfallback_count": 8,
+    "require_both_dlos": true,
+    "secondary_only": true,
+    "selection_coverage_grid": [
+      0.25,
+      0.375,
+      0.5,
+      0.625,
+      0.75,
+      1.0
+    ]
+  },
+  "outcome_free_features": [
+    "certificate_source_regret_bound",
+    "expected_action_gap",
+    "expected_fallback_advantage",
+    "hypothesis_action_agreement",
+    "maximum_kernel_weight",
+    "maximum_quotient_mass",
+    "negative_residual_disagreement",
+    "negative_unsupported_specificity",
+    "quotient_concentration",
+    "worst_case_regret_fallback",
+    "worst_case_regret_half",
+    "worst_case_regret_full",
+    "current_frame_fraction",
+    "dlo5_indicator",
+    "full_correction_indicator"
+  ],
+  "paper_claim_authorized": false,
+  "parent": {
+    "decision_contract": "deform-dlo45-decision-identifiability-v1",
+    "source_artifact_id": 9787311310,
+    "source_artifact_sha256": "fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+    "upstream_repository": "roahmlab/DEFORM",
+    "upstream_revision": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "workflow_run_id": 33473378340
+  },
+  "schema_version": 1,
+  "source_crossfit": {
+    "calibration_trajectories_per_dlo": 12,
+    "fit_trajectories_per_dlo": 32,
+    "fold_count": 5,
+    "fold_domain": "bayesian-phystwin/deform-dlo45-support-adequacy-v1/inner-crossfit",
+    "selection_trajectories_per_dlo": 12,
+    "support_split_domain": "bayesian-phystwin/deform-dlo45-support-adequacy-v1/support-split"
+  },
+  "support_misspecification": {
+    "calibration_score": "trajectory_max_positive_realized_regret_minus_source_bound_minus_predicted_excess",
+    "classification_ridge_grid": [
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "conformal_alpha_grid": [
+      0.1,
+      0.2,
+      0.3,
+      0.4
+    ],
+    "outer_bound_never_below_inner_bound": true,
+    "primary_conformal_alpha": 0.1,
+    "registered_regret_tolerance": 0.05,
+    "regression_ridge_grid": [
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ]
+  },
+  "target_outcomes_used_for_model_or_threshold_selection": false,
+  "target_retries_authorized": false
+}
