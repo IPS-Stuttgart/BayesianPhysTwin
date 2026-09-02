@@ -21,7 +21,6 @@ import numpy as np
 
 from bayesian_phystwin.active_decision_probe_v1 import (
     ACTIVE_DECISION_PROBE_CLAIM_BOUNDARY,
-    active_decision_probe_certificate,
     decision_probe_candidate,
     select_minimum_cost_decision_probe,
 )
