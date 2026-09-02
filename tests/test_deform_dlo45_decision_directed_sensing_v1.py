@@ -12,16 +12,10 @@ from experiments.deform_dlo45_decision_directed_sensing_v1 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
-    ROOT
-    / "experiments"
-    / "deform_dlo45_decision_directed_sensing_v1"
-    / "protocol.json"
+    ROOT / "experiments" / "deform_dlo45_decision_directed_sensing_v1" / "protocol.json"
 )
 SCRIPT = (
-    ROOT
-    / "experiments"
-    / "deform_dlo45_decision_directed_sensing_v1"
-    / "evaluate.py"
+    ROOT / "experiments" / "deform_dlo45_decision_directed_sensing_v1" / "evaluate.py"
 )
 
 
@@ -118,12 +112,8 @@ def test_posterior_sensor_update_is_normalized_and_informative() -> None:
         target_sensor_features=np.asarray([[-2.0, 0.0]]),
         support_residuals=np.zeros((4, 3)),
         support_classes=np.asarray([0, 0, 1, 1], dtype=np.int64),
-        support_state_representation=np.asarray(
-            [[-1.0], [-0.8], [0.8], [1.0]]
-        ),
-        support_query_representation=np.asarray(
-            [[-1.0], [-0.8], [0.8], [1.0]]
-        ),
+        support_state_representation=np.asarray([[-1.0], [-0.8], [0.8], [1.0]]),
+        support_query_representation=np.asarray([[-1.0], [-0.8], [0.8], [1.0]]),
         fixed_actions=np.zeros((3, 3)),
         relative_losses=np.asarray(
             [

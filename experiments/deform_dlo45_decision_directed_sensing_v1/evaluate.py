@@ -229,9 +229,7 @@ def load_protocol(path: Path) -> Protocol:
         bootstrap_seed=int(evaluation["bootstrap_seed"]),
     )
     source_count = (
-        protocol.fit_count
-        + protocol.calibration_count
-        + protocol.source_test_count
+        protocol.fit_count + protocol.calibration_count + protocol.source_test_count
     )
     if (
         protocol.first_current_frame < 1
@@ -324,9 +322,9 @@ def extract_endpoint_observation(
 
     previous = trajectory[current - 1]
     present = trajectory[current]
-    future_endpoints = trajectory[
-        current + 1 : current + 1 + protocol.horizon_frames
-    ][:, [0, 1, NODE_COUNT - 2, NODE_COUNT - 1], :]
+    future_endpoints = trajectory[current + 1 : current + 1 + protocol.horizon_frames][
+        :, [0, 1, NODE_COUNT - 2, NODE_COUNT - 1], :
+    ]
     previous_left, previous_right = _anchor_means(previous)
     present_left, present_right = _anchor_means(present)
     future_left = np.mean(future_endpoints[:, :2, :], axis=1)
@@ -345,23 +343,28 @@ def extract_endpoint_observation(
         5,
         dtype=np.int64,
     )
-    sampled_actions = np.concatenate(
-        (
-            future_left[sample_indices] - present_left,
-            future_right[sample_indices] - present_right,
-        ),
-        axis=1,
-    ) / length_scale
-    sampled_lengths = np.linalg.norm(
-        future_right[sample_indices] - future_left[sample_indices],
-        axis=1,
-    ) / length_scale
-    midpoint_velocity = 0.5 * (
-        present_left
-        + present_right
-        - previous_left
-        - previous_right
-    ) / length_scale
+    sampled_actions = (
+        np.concatenate(
+            (
+                future_left[sample_indices] - present_left,
+                future_right[sample_indices] - present_right,
+            ),
+            axis=1,
+        )
+        / length_scale
+    )
+    sampled_lengths = (
+        np.linalg.norm(
+            future_right[sample_indices] - future_left[sample_indices],
+            axis=1,
+        )
+        / length_scale
+    )
+    midpoint_velocity = (
+        0.5
+        * (present_left + present_right - previous_left - previous_right)
+        / length_scale
+    )
     base_feature = np.concatenate(
         (
             present_axis,
@@ -392,10 +395,9 @@ def extract_endpoint_observation(
         count,
         dtype=np.float64,
     )
-    baseline = (
-        (1.0 - weights[None, :, None]) * future_left[:, None, :]
-        + weights[None, :, None] * future_right[:, None, :]
-    )
+    baseline = (1.0 - weights[None, :, None]) * future_left[:, None, :] + weights[
+        None, :, None
+    ] * future_right[:, None, :]
     return Observation(
         base_feature=np.asarray(base_feature, dtype=np.float64),
         sensor_features=np.asarray(sensor_features, dtype=np.float64),
@@ -585,9 +587,7 @@ def make_context(
         else max(float(np.mean(selected_distance)), 1e-12)
     )
     bandwidth = max(bandwidth * protocol.temperature_scale, 1e-12)
-    base_logits = -(
-        selected_distance - float(np.min(selected_distance))
-    ) / bandwidth
+    base_logits = -(selected_distance - float(np.min(selected_distance))) / bandwidth
     sensor_pool = (
         model.sensor_features - model.sensor_mean[None, :, :]
     ) / model.sensor_scale[None, :, :]
@@ -605,9 +605,7 @@ def make_context(
         axis=2,
     )
     fallback_losses = np.mean(np.square(residuals), axis=1)
-    relative_losses = raw_losses / (
-        fallback_losses[:, None] + model.loss_floor
-    )
+    relative_losses = raw_losses / (fallback_losses[:, None] + model.loss_floor)
     return CaseContext(
         support_indices=np.asarray(support, dtype=np.int64),
         base_logits=np.asarray(base_logits, dtype=np.float64),
@@ -667,8 +665,7 @@ def decision_state(
         regret_tolerance=protocol.regret_tolerance,
     )
     certified = bool(
-        certificate.minimax_worst_case_regret
-        <= protocol.regret_tolerance + ATOL
+        certificate.minimax_worst_case_regret <= protocol.regret_tolerance + ATOL
     )
     action = certificate.minimax_action_index if certified else 0
     positive = weights[weights > 0.0]
@@ -722,9 +719,7 @@ def expected_candidate_metric(
 
 
 def _stable_random_order(key: str, protocol: Protocol) -> tuple[int, ...]:
-    seed_bytes = hashlib.sha256(
-        f"{protocol.random_seed}\0{key}".encode()
-    ).digest()[:8]
+    seed_bytes = hashlib.sha256(f"{protocol.random_seed}\0{key}".encode()).digest()[:8]
     seed = int.from_bytes(seed_bytes, "big", signed=False)
     rng = np.random.default_rng(seed)
     return tuple(int(value) for value in rng.permutation(8))
@@ -791,13 +786,8 @@ def acquisition_path(
     observations: dict[int, FloatArray] = {}
     states = [decision_state(context, observations, protocol)]
     selected: list[int] = []
-    while (
-        len(selected) < protocol.maximum_measurements
-        and not states[-1].certified
-    ):
-        remaining = tuple(
-            index for index in range(8) if index not in observations
-        )
+    while len(selected) < protocol.maximum_measurements and not states[-1].certified:
+        remaining = tuple(index for index in range(8) if index not in observations)
         candidate = choose_candidate(
             policy,
             context,
@@ -843,9 +833,7 @@ def _budget_plan(
         "selected_internal_nodes": [
             selected[index] + 2 for index in range(sensor_count)
         ],
-        "certificate_worst_case_regret": (
-            state.certificate.minimax_worst_case_regret
-        ),
+        "certificate_worst_case_regret": (state.certificate.minimax_worst_case_regret),
         "state_variance": state.state_variance,
         "query_variance": state.query_variance,
         "effective_hypothesis_count": state.effective_hypothesis_count,
@@ -874,9 +862,7 @@ def score_plan(
             "physical_mse": selected_mse,
             "fallback_mse": fallback,
             "harmful_vs_fallback": bool(selected_mse > fallback + ATOL),
-            "normalized_realized_regret": (
-                float(normalized_mse[action]) - best
-            )
+            "normalized_realized_regret": (float(normalized_mse[action]) - best)
             / denominator,
         }
     )
@@ -969,21 +955,15 @@ def aggregate_rows(
                 for row in rows
                 if row["policy"] == policy and row["budget"] == budget
             ]
-            by_trajectory: dict[
-                tuple[str, str], list[dict[str, object]]
-            ] = {}
+            by_trajectory: dict[tuple[str, str], list[dict[str, object]]] = {}
             for row in selected:
                 key = (str(row["dlo"]), str(row["trajectory"]))
                 by_trajectory.setdefault(key, []).append(row)
             trajectory_records: list[dict[str, object]] = []
             improvements: list[float] = []
             for (dlo, trajectory), items in sorted(by_trajectory.items()):
-                physical = np.asarray(
-                    [float(item["physical_mse"]) for item in items]
-                )
-                fallback = np.asarray(
-                    [float(item["fallback_mse"]) for item in items]
-                )
+                physical = np.asarray([float(item["physical_mse"]) for item in items])
+                fallback = np.asarray([float(item["fallback_mse"]) for item in items])
                 rmse = math.sqrt(float(np.mean(physical)))
                 fallback_rmse = math.sqrt(float(np.mean(fallback)))
                 improvement = 1.0 - rmse / max(fallback_rmse, ATOL)
@@ -997,26 +977,17 @@ def aggregate_rows(
                         "fallback_rmse_mm": 1000.0 * fallback_rmse,
                         "relative_improvement": improvement,
                         "nonfallback_fraction": float(
-                            np.mean(
-                                [bool(item["nonfallback"]) for item in items]
-                            )
+                            np.mean([bool(item["nonfallback"]) for item in items])
                         ),
                         "certified_fraction": float(
-                            np.mean(
-                                [bool(item["certified"]) for item in items]
-                            )
+                            np.mean([bool(item["certified"]) for item in items])
                         ),
                         "mean_sensor_count": float(
-                            np.mean(
-                                [int(item["sensor_count"]) for item in items]
-                            )
+                            np.mean([int(item["sensor_count"]) for item in items])
                         ),
                         "harmful_fraction": float(
                             np.mean(
-                                [
-                                    bool(item["harmful_vs_fallback"])
-                                    for item in items
-                                ]
+                                [bool(item["harmful_vs_fallback"]) for item in items]
                             )
                         ),
                     }
@@ -1041,13 +1012,10 @@ def aggregate_rows(
             policy_result[str(budget)] = {
                 "decision_count": len(selected),
                 "trajectory_count": len(trajectory_records),
-                "pooled_rmse_mm": 1000.0
-                * math.sqrt(float(np.mean(physical_all))),
+                "pooled_rmse_mm": 1000.0 * math.sqrt(float(np.mean(physical_all))),
                 "pooled_fallback_rmse_mm": 1000.0
                 * math.sqrt(float(np.mean(fallback_all))),
-                "mean_trajectory_improvement": float(
-                    np.mean(improvement_array)
-                ),
+                "mean_trajectory_improvement": float(np.mean(improvement_array)),
                 "trajectory_bootstrap_95_interval": list(interval),
                 "nonfallback_fraction": float(
                     np.mean([bool(item["nonfallback"]) for item in selected])
@@ -1059,20 +1027,12 @@ def aggregate_rows(
                     np.mean([int(item["sensor_count"]) for item in selected])
                 ),
                 "harmful_fraction": float(
-                    np.mean(
-                        [
-                            bool(item["harmful_vs_fallback"])
-                            for item in selected
-                        ]
-                    )
+                    np.mean([bool(item["harmful_vs_fallback"]) for item in selected])
                 ),
                 "nonfallback_harmful_fraction": (
                     float(
                         np.mean(
-                            [
-                                bool(item["harmful_vs_fallback"])
-                                for item in nonfallback
-                            ]
+                            [bool(item["harmful_vs_fallback"]) for item in nonfallback]
                         )
                     )
                     if nonfallback
@@ -1080,10 +1040,7 @@ def aggregate_rows(
                 ),
                 "mean_normalized_realized_regret": float(
                     np.mean(
-                        [
-                            float(item["normalized_realized_regret"])
-                            for item in selected
-                        ]
+                        [float(item["normalized_realized_regret"]) for item in selected]
                     )
                 ),
                 "nonfallback_effective_hypothesis_count": (
@@ -1100,12 +1057,7 @@ def aggregate_rows(
                 ),
                 "nonfallback_state_variance": (
                     float(
-                        np.mean(
-                            [
-                                float(item["state_variance"])
-                                for item in nonfallback
-                            ]
-                        )
+                        np.mean([float(item["state_variance"]) for item in nonfallback])
                     )
                     if nonfallback
                     else 0.0
@@ -1135,9 +1087,7 @@ def render_summary(
         "Mean measurements | Harm | Effective hypotheses when acting |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    shown_budgets = tuple(
-        value for value in protocol.budgets if value in {0, 2, 4, 8}
-    )
+    shown_budgets = tuple(value for value in protocol.budgets if value in {0, 2, 4, 8})
     for policy in protocol.policies:
         policy_result = aggregate[policy]
         assert isinstance(policy_result, dict)
@@ -1188,9 +1138,7 @@ def run(args: argparse.Namespace) -> int:
         )
         model = fit_source_model(base, sensors, residuals, protocol)
         test_paths = tuple(
-            path
-            for path in train_paths
-            if path.name in set(split["source_test"])
+            path for path in train_paths if path.name in set(split["source_test"])
         )
         if len(test_paths) != protocol.source_test_count:
             raise ValueError("source-test roster is incomplete")
@@ -1207,17 +1155,12 @@ def run(args: argparse.Namespace) -> int:
             "model_trajectory_count": len(model_names),
             "model_window_count": len(base),
             "source_test_trajectory_count": len(test_paths),
-            "source_test_window_count": len(test_paths)
-            * len(window_starts(protocol)),
-            "response_class_count": int(
-                len(np.unique(model.class_labels))
-            ),
+            "source_test_window_count": len(test_paths) * len(window_starts(protocol)),
+            "response_class_count": int(len(np.unique(model.class_labels))),
             "loss_floor": model.loss_floor,
             "model_manifest": manifest,
         }
-        split_records[dlo] = {
-            name: list(values) for name, values in split.items()
-        }
+        split_records[dlo] = {name: list(values) for name, values in split.items()}
     aggregate = aggregate_rows(all_rows, protocol)
     result: dict[str, object] = {
         "contract": CONTRACT,
@@ -1247,9 +1190,7 @@ def run(args: argparse.Namespace) -> int:
     _write_json(output_dir / "result.json", result)
     with (output_dir / "cases.jsonl").open("w", encoding="utf-8") as stream:
         for row in all_rows:
-            stream.write(
-                json.dumps(row, sort_keys=True, allow_nan=False) + "\n"
-            )
+            stream.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
     (output_dir / "SUMMARY.md").write_text(
         render_summary(result, protocol),
         encoding="utf-8",
