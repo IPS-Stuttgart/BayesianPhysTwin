@@ -1,10 +1,12 @@
 """Decision-directed virtual sensing on existing DEFORM DLO4/DLO5 data.
 
 The experiment masks eight internal-node readouts from an endpoint-only physical
-forecast.  It then reveals recorded prefix readouts one at a time.  Candidate
-readouts are selected either by expected certified decision regret, state
-variance, query variance, fixed order, random order, or a target-value oracle.
-No future internal node is exposed before every action is selected.
+forecast and reveals recorded prefix readouts one at a time. Candidate readouts
+are selected by expected certified decision regret, state variance, query
+variance, a fixed order, a deterministic random order, or a diagnostic oracle.
+
+Every policy and action is selected before future internal-node outcomes are
+sliced for scoring. No new data are collected.
 """
 
 from __future__ import annotations
@@ -97,7 +99,7 @@ class SourceModel:
 class Observation(NamedTuple):
     base_feature: FloatArray
     sensor_features: FloatArray
-    residual: FloatArray
+    baseline: FloatArray
     length_scale: float
 
 
@@ -113,7 +115,6 @@ class CaseContext:
     support_query_representation: FloatArray
     fixed_actions: FloatArray
     relative_losses: FloatArray
-    target_residual: FloatArray
     length_scale: float
 
 
@@ -213,9 +214,7 @@ def load_protocol(path: Path) -> Protocol:
         response_clusters=int(model["response_clusters"]),
         action_scales=_float_array(model["action_scales"]),
         temperature_scale=float(model["temperature_scale"]),
-        sensor_log_likelihood_scale=float(
-            model["sensor_log_likelihood_scale"]
-        ),
+        sensor_log_likelihood_scale=float(model["sensor_log_likelihood_scale"]),
         regret_tolerance=float(model["regret_tolerance"]),
         state_projection_dimension=int(model["state_projection_dimension"]),
         kmeans_iterations=int(model["kmeans_iterations"]),
@@ -229,13 +228,16 @@ def load_protocol(path: Path) -> Protocol:
         bootstrap_replicates=int(evaluation["bootstrap_replicates"]),
         bootstrap_seed=int(evaluation["bootstrap_seed"]),
     )
+    source_count = (
+        protocol.fit_count
+        + protocol.calibration_count
+        + protocol.source_test_count
+    )
     if (
         protocol.first_current_frame < 1
         or protocol.horizon_frames < 1
         or protocol.stride_frames < 1
-        or protocol.fit_count + protocol.calibration_count
-        + protocol.source_test_count
-        != 56
+        or source_count != 56
         or protocol.support_neighbors < 2
         or protocol.response_clusters < 2
         or protocol.action_scales.shape != (3,)
@@ -318,15 +320,17 @@ def extract_endpoint_observation(
     current: int,
     protocol: Protocol,
 ) -> Observation:
+    """Build a target-free observation from the prefix and future endpoints."""
+
     previous = trajectory[current - 1]
     present = trajectory[current]
-    future = trajectory[
+    future_endpoints = trajectory[
         current + 1 : current + 1 + protocol.horizon_frames
-    ]
+    ][:, [0, 1, NODE_COUNT - 2, NODE_COUNT - 1], :]
     previous_left, previous_right = _anchor_means(previous)
     present_left, present_right = _anchor_means(present)
-    future_left = np.mean(future[:, list(ACTION_LEFT), :], axis=1)
-    future_right = np.mean(future[:, list(ACTION_RIGHT), :], axis=1)
+    future_left = np.mean(future_endpoints[:, :2, :], axis=1)
+    future_right = np.mean(future_endpoints[:, 2:, :], axis=1)
     present_delta = present_right - present_left
     previous_delta = previous_right - previous_left
     length_scale = max(float(np.linalg.norm(present_delta)), 1e-6)
@@ -392,13 +396,30 @@ def extract_endpoint_observation(
         (1.0 - weights[None, :, None]) * future_left[:, None, :]
         + weights[None, :, None] * future_right[:, None, :]
     )
-    truth = future[:, INTERNAL, :]
-    residual = ((truth - baseline) / length_scale).reshape(-1)
     return Observation(
         base_feature=np.asarray(base_feature, dtype=np.float64),
         sensor_features=np.asarray(sensor_features, dtype=np.float64),
-        residual=np.asarray(residual, dtype=np.float64),
+        baseline=np.asarray(baseline, dtype=np.float64),
         length_scale=length_scale,
+    )
+
+
+def extract_target_residual(
+    trajectory: FloatArray,
+    current: int,
+    observation: Observation,
+    protocol: Protocol,
+) -> FloatArray:
+    """Slice held future internal nodes only after all decisions are frozen."""
+
+    truth = trajectory[
+        current + 1 : current + 1 + protocol.horizon_frames,
+        INTERNAL,
+        :,
+    ].copy()
+    return np.asarray(
+        ((truth - observation.baseline) / observation.length_scale).reshape(-1),
+        dtype=np.float64,
     )
 
 
@@ -454,7 +475,14 @@ def build_arrays(
             )
             base_features.append(observation.base_feature)
             sensor_features.append(observation.sensor_features)
-            residuals.append(observation.residual)
+            residuals.append(
+                extract_target_residual(
+                    trajectory,
+                    current,
+                    observation,
+                    protocol,
+                )
+            )
             count += 1
         records.append(
             {
@@ -597,7 +625,6 @@ def make_context(
         ),
         fixed_actions=np.asarray(actions, dtype=np.float64),
         relative_losses=np.asarray(relative_losses, dtype=np.float64),
-        target_residual=observation.residual,
         length_scale=observation.length_scale,
     )
 
@@ -785,12 +812,11 @@ def acquisition_path(
     return states, selected
 
 
-def _budget_record(
+def _budget_plan(
     policy: str,
     budget: int,
     states: list[DecisionState],
     selected: list[int],
-    context: CaseContext,
 ) -> dict[str, object]:
     allowed = min(budget, len(states) - 1)
     certified_step = next(
@@ -807,18 +833,6 @@ def _budget_record(
         sensor_count = certified_step
         state = states[certified_step]
         certified = True
-    normalized_mse = np.mean(
-        np.square(
-            context.target_residual[None, :]
-            - context.fixed_actions,
-        ),
-        axis=1,
-    )
-    physical_mse = normalized_mse * context.length_scale**2
-    fallback = float(physical_mse[0])
-    selected_mse = float(physical_mse[action])
-    best = float(np.min(normalized_mse))
-    denominator = max(float(normalized_mse[0]), ATOL)
     return {
         "policy": policy,
         "budget": budget,
@@ -829,12 +843,6 @@ def _budget_record(
         "selected_internal_nodes": [
             selected[index] + 2 for index in range(sensor_count)
         ],
-        "physical_mse": selected_mse,
-        "fallback_mse": fallback,
-        "harmful_vs_fallback": bool(selected_mse > fallback + ATOL),
-        "normalized_realized_regret": (
-            float(normalized_mse[action]) - best
-        ) / denominator,
         "certificate_worst_case_regret": (
             state.certificate.minimax_worst_case_regret
         ),
@@ -843,6 +851,36 @@ def _budget_record(
         "effective_hypothesis_count": state.effective_hypothesis_count,
         "posterior_entropy": state.posterior_entropy,
     }
+
+
+def score_plan(
+    plan: dict[str, object],
+    context: CaseContext,
+    target_residual: FloatArray,
+) -> dict[str, object]:
+    normalized_mse = np.mean(
+        np.square(target_residual[None, :] - context.fixed_actions),
+        axis=1,
+    )
+    physical_mse = normalized_mse * context.length_scale**2
+    action = int(plan["action_index"])
+    fallback = float(physical_mse[0])
+    selected_mse = float(physical_mse[action])
+    best = float(np.min(normalized_mse))
+    denominator = max(float(normalized_mse[0]), ATOL)
+    scored = dict(plan)
+    scored.update(
+        {
+            "physical_mse": selected_mse,
+            "fallback_mse": fallback,
+            "harmful_vs_fallback": bool(selected_mse > fallback + ATOL),
+            "normalized_realized_regret": (
+                float(normalized_mse[action]) - best
+            )
+            / denominator,
+        }
+    )
+    return scored
 
 
 def evaluate_trajectory(
@@ -861,6 +899,11 @@ def evaluate_trajectory(
         )
         context = make_context(observation, model, protocol)
         key = f"{dlo}/{path.name}/{current}"
+
+        # Freeze every acquisition path and action before target outcomes are
+        # sliced. The oracle acquisition policy may inspect only the currently
+        # masked prefix sensor value, never a future internal node.
+        plans: list[dict[str, object]] = []
         for policy in protocol.policies:
             states, selected = acquisition_path(
                 policy,
@@ -869,21 +912,31 @@ def evaluate_trajectory(
                 protocol,
             )
             for budget in protocol.budgets:
-                record = _budget_record(
-                    policy,
-                    budget,
-                    states,
-                    selected,
-                    context,
+                plans.append(
+                    _budget_plan(
+                        policy,
+                        budget,
+                        states,
+                        selected,
+                    )
                 )
-                record.update(
-                    {
-                        "dlo": dlo,
-                        "trajectory": path.name,
-                        "current_frame": current,
-                    }
-                )
-                rows.append(record)
+
+        target_residual = extract_target_residual(
+            trajectory,
+            current,
+            observation,
+            protocol,
+        )
+        for plan in plans:
+            record = score_plan(plan, context, target_residual)
+            record.update(
+                {
+                    "dlo": dlo,
+                    "trajectory": path.name,
+                    "current_frame": current,
+                }
+            )
+            rows.append(record)
     return rows
 
 
@@ -916,7 +969,9 @@ def aggregate_rows(
                 for row in rows
                 if row["policy"] == policy and row["budget"] == budget
             ]
-            by_trajectory: dict[tuple[str, str], list[dict[str, object]]] = {}
+            by_trajectory: dict[
+                tuple[str, str], list[dict[str, object]]
+            ] = {}
             for row in selected:
                 key = (str(row["dlo"]), str(row["trajectory"]))
                 by_trajectory.setdefault(key, []).append(row)
@@ -942,13 +997,19 @@ def aggregate_rows(
                         "fallback_rmse_mm": 1000.0 * fallback_rmse,
                         "relative_improvement": improvement,
                         "nonfallback_fraction": float(
-                            np.mean([bool(item["nonfallback"]) for item in items])
+                            np.mean(
+                                [bool(item["nonfallback"]) for item in items]
+                            )
                         ),
                         "certified_fraction": float(
-                            np.mean([bool(item["certified"]) for item in items])
+                            np.mean(
+                                [bool(item["certified"]) for item in items]
+                            )
                         ),
                         "mean_sensor_count": float(
-                            np.mean([int(item["sensor_count"]) for item in items])
+                            np.mean(
+                                [int(item["sensor_count"]) for item in items]
+                            )
                         ),
                         "harmful_fraction": float(
                             np.mean(
@@ -1040,7 +1101,10 @@ def aggregate_rows(
                 "nonfallback_state_variance": (
                     float(
                         np.mean(
-                            [float(item["state_variance"]) for item in nonfallback]
+                            [
+                                float(item["state_variance"])
+                                for item in nonfallback
+                            ]
                         )
                     )
                     if nonfallback
@@ -1053,7 +1117,10 @@ def aggregate_rows(
     return aggregate
 
 
-def render_summary(result: dict[str, object], protocol: Protocol) -> str:
+def render_summary(
+    result: dict[str, object],
+    protocol: Protocol,
+) -> str:
     aggregate = result["aggregate"]
     assert isinstance(aggregate, dict)
     lines = [
@@ -1121,19 +1188,30 @@ def run(args: argparse.Namespace) -> int:
         )
         model = fit_source_model(base, sensors, residuals, protocol)
         test_paths = tuple(
-            path for path in train_paths if path.name in set(split["source_test"])
+            path
+            for path in train_paths
+            if path.name in set(split["source_test"])
         )
         if len(test_paths) != protocol.source_test_count:
             raise ValueError("source-test roster is incomplete")
         for path in test_paths:
-            all_rows.extend(evaluate_trajectory(path, dlo, model, protocol))
+            all_rows.extend(
+                evaluate_trajectory(
+                    path,
+                    dlo,
+                    model,
+                    protocol,
+                )
+            )
         source_records[dlo] = {
             "model_trajectory_count": len(model_names),
             "model_window_count": len(base),
             "source_test_trajectory_count": len(test_paths),
             "source_test_window_count": len(test_paths)
             * len(window_starts(protocol)),
-            "response_class_count": int(len(np.unique(model.class_labels))),
+            "response_class_count": int(
+                len(np.unique(model.class_labels))
+            ),
             "loss_floor": model.loss_floor,
             "model_manifest": manifest,
         }
