@@ -1,0 +1,28 @@
+{
+  "schema": "bayesian-phystwin/tracking-cloth-nominal-integrator-diagnostic-request-v2",
+  "request_id": "tracking-cloth-nominal-integrator-diagnostic-v2-20260903-a",
+  "prior_failed_run_id": 33667114075,
+  "prior_failure": "diagnostic-used-system-python-without-numpy",
+  "scientific_sweep_unchanged": true,
+  "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+  "script_path": "scripts/science/diagnose_tracking_cloth_nominal_integrator_v1.py",
+  "script_git_blob_sha1": "a3f076d49b44493e71b942b194447e793f2073e2",
+  "protocol_path": "experiments/tracking_cloth_self_collision_stable_bank_v1/protocol.json",
+  "protocol_git_blob_sha1": "3a24f07b8303a209cf9edc0858bfb460f72ebe4e",
+  "data_git_blob_sha1": "303074602b88eaaeee990941e4f84fe47a242324",
+  "model_git_blob_sha1": "be513a069a464fb0a82f5eca7ff7f22620525dbd",
+  "substep_grid": [
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "source_repetition": 1,
+  "target_repetition_opened": false,
+  "source_only": true,
+  "automatic_target_follow_on": false,
+  "paper_claim_authorized": false,
+  "expected_source_revision": "701faa92e3e02a3787bf6b79dbc03a58ef87c0c3"
+}
