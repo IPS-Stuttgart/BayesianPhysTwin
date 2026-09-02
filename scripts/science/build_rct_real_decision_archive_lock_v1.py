@@ -15,6 +15,7 @@ from bayesian_phystwin.rct_real_decision_protocol import (
     RCT_ARCHIVE_FILE_ID,
     RCT_ARCHIVE_SIZE_BYTES,
     RCT_CODE_REVISION,
+    load_rct_preoutcome_amendment_v2,
     load_rct_preoutcome_clarification,
     load_rct_real_decision_protocol,
     protocol_config_sha256,
@@ -72,6 +73,7 @@ def _build_lock(
     archive: Path,
     protocol_path: Path,
     clarification_path: Path,
+    amendment_v2_path: Path,
     *,
     expected_archive_size: int = RCT_ARCHIVE_SIZE_BYTES,
 ) -> dict[str, Any]:
@@ -82,6 +84,7 @@ def _build_lock(
     )
     protocol = load_rct_real_decision_protocol(protocol_path)
     clarification = load_rct_preoutcome_clarification(clarification_path)
+    amendment_v2 = load_rct_preoutcome_amendment_v2(amendment_v2_path)
     archive_sha256 = _sha256(archive)
     member = _force_metadata_member(archive)
     header, columns = _force_metadata_header(archive, member)
@@ -103,6 +106,8 @@ def _build_lock(
         "protocol_config_sha256": protocol_config_sha256(protocol),
         "clarification_file_sha256": protocol_file_sha256(clarification_path),
         "clarification_config_sha256": protocol_config_sha256(clarification),
+        "amendment_v2_file_sha256": protocol_file_sha256(amendment_v2_path),
+        "amendment_v2_config_sha256": protocol_config_sha256(amendment_v2),
         "archive_integrity_verified": True,
         "force_metadata_header_opened": True,
         "force_metadata_content_opened": False,
@@ -117,6 +122,7 @@ def main() -> int:
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--clarification", type=Path, required=True)
+    parser.add_argument("--amendment-v2", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     output = arguments.output.resolve()
@@ -125,6 +131,7 @@ def main() -> int:
         arguments.archive.resolve(strict=True),
         arguments.protocol.resolve(strict=True),
         arguments.clarification.resolve(strict=True),
+        arguments.amendment_v2.resolve(strict=True),
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(

@@ -14,6 +14,7 @@ PROTOCOL_ID = "rct-real-decision-probe-protocol-v1"
 PREOUTCOME_CLARIFICATION_ID = (
     "rct-real-decision-probe-preoutcome-clarification-v1"
 )
+PREOUTCOME_AMENDMENT_V2_ID = "rct-real-decision-probe-preoutcome-amendment-v2"
 RCT_CODE_REVISION = "8d2f2de96b08d7c1e4d754e327b974f3e41283b8"
 RCT_ARCHIVE_FILE_ID = 65037834
 RCT_ARCHIVE_SIZE_BYTES = 9_905_561_734
@@ -108,6 +109,13 @@ _PREOUTCOME_CLARIFICATION_CONFIG_SHA256 = (
     "f9248258e40cd42cd718f1244658234777731681720afa1733c3c05f68346b05"
 )
 _PREOUTCOME_PROTOCOL_COMMIT = "43b47d26a57c1340873a4136f4aea735e1febdd3"
+_PREOUTCOME_CLARIFICATION_FILE_SHA256 = (
+    "e05f77b571e3676cfd63fa8efcc73028859921a3b7c0f6516996220c4f5de87f"
+)
+_PREOUTCOME_CLARIFICATION_COMMIT = "46c44e22906196979bc27598181e31ab6046dfd8"
+_PREOUTCOME_AMENDMENT_V2_CONFIG_SHA256 = (
+    "c5dda44afc698e7bab0ff897ff8e58cda7afa1e8e8a69c2284da01e73bf1e6fc"
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -429,6 +437,58 @@ def load_rct_preoutcome_clarification(path: str | Path) -> dict[str, Any]:
     return dict(payload)
 
 
+def load_rct_preoutcome_amendment_v2(path: str | Path) -> dict[str, Any]:
+    """Load the practical-significance amendment frozen before force access."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(isinstance(payload, Mapping), "amendment must be a JSON object")
+    _require(payload.get("schema_version") == 1, "amendment schema changed")
+    _require(
+        payload.get("contract") == PREOUTCOME_AMENDMENT_V2_ID,
+        "amendment ID changed",
+    )
+    _require(
+        payload.get("status") == "frozen-before-force-outcome-access",
+        "amendment status changed",
+    )
+    _require(
+        payload.get("parent")
+        == {
+            "clarification_commit": _PREOUTCOME_CLARIFICATION_COMMIT,
+            "clarification_config_sha256": (
+                _PREOUTCOME_CLARIFICATION_CONFIG_SHA256
+            ),
+            "clarification_file_sha256": _PREOUTCOME_CLARIFICATION_FILE_SHA256,
+            "protocol_config_sha256": _CANONICAL_CONFIG_SHA256,
+            "protocol_file_sha256": _PROTOCOL_FILE_SHA256,
+        },
+        "amendment parent lock changed",
+    )
+    _require(
+        payload.get("information_boundary")
+        == {
+            "archive_download_complete": False,
+            "calibration_force_rows_opened": False,
+            "confirmation_force_rows_opened": False,
+            "held_v8_accessed": False,
+            "source_test_force_rows_opened": False,
+        },
+        "amendment information boundary changed",
+    )
+    change = payload.get("change")
+    _require(isinstance(change, Mapping), "amendment change is missing")
+    _require(
+        float(change.get("confirmation_minimum_relative_auc_improvement", -1.0))
+        == 0.05,
+        "confirmation practical threshold changed",
+    )
+    _require(
+        protocol_config_sha256(payload) == _PREOUTCOME_AMENDMENT_V2_CONFIG_SHA256,
+        "canonical amendment digest changed",
+    )
+    return dict(payload)
+
+
 def cohort_from_protocol(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
     """Return the validated material roles from an already parsed protocol."""
 
@@ -442,6 +502,7 @@ __all__ = [
     "HELD_INTERVENTION",
     "MANDATORY_ANCHOR",
     "OFFICIAL_SPLIT_SHA256",
+    "PREOUTCOME_AMENDMENT_V2_ID",
     "PREOUTCOME_CLARIFICATION_ID",
     "PROTOCOL_ID",
     "RCT_ARCHIVE_FILE_ID",
@@ -451,6 +512,7 @@ __all__ = [
     "SELECTABLE_PROBES",
     "SOURCE_TEST_MATERIALS",
     "cohort_from_protocol",
+    "load_rct_preoutcome_amendment_v2",
     "load_rct_preoutcome_clarification",
     "load_rct_real_decision_protocol",
     "protocol_config_sha256",

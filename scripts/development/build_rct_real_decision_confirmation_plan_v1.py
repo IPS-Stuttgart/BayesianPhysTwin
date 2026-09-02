@@ -12,6 +12,7 @@ from typing import Any
 
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.rct_real_decision_protocol import (
+    load_rct_preoutcome_amendment_v2,
     load_rct_preoutcome_clarification,
     load_rct_real_decision_protocol,
     protocol_config_sha256,
@@ -29,6 +30,9 @@ REGISTERED_PATHS = {
     "protocol": "protocols/rct_real_decision_probe_v1.json",
     "clarification": (
         "protocols/rct_real_decision_probe_v1_preoutcome_clarification.json"
+    ),
+    "amendment_v2": (
+        "protocols/rct_real_decision_probe_v1_preoutcome_amendment_v2.json"
     ),
     "archive_lock": "protocols/rct_real_decision_archive_lock_v1.json",
 }
@@ -160,9 +164,11 @@ def _build_plan(
     implementation = _implementation_lock(repository, revision)
     protocol_path = repository / REGISTERED_PATHS["protocol"]
     clarification_path = repository / REGISTERED_PATHS["clarification"]
+    amendment_v2_path = repository / REGISTERED_PATHS["amendment_v2"]
     archive_lock_path = repository / REGISTERED_PATHS["archive_lock"]
     protocol = load_rct_real_decision_protocol(protocol_path)
     load_rct_preoutcome_clarification(clarification_path)
+    load_rct_preoutcome_amendment_v2(amendment_v2_path)
     source_result_path = source_result_path.resolve(strict=True)
     source_result = _load_source_result(source_result_path)
     method_seal_path = method_seal_path.resolve(strict=True)
@@ -188,6 +194,8 @@ def _build_plan(
         "protocol_config_sha256": protocol_config_sha256(protocol),
         "clarification_path": str(clarification_path.resolve(strict=True)),
         "clarification_file_sha256": protocol_file_sha256(clarification_path),
+        "amendment_v2_path": str(amendment_v2_path.resolve(strict=True)),
+        "amendment_v2_file_sha256": protocol_file_sha256(amendment_v2_path),
         "source_result_path": str(source_result_path),
         "source_result_sha256": _sha256(source_result_path),
         "source_result_id": source_result["source_result_id"],

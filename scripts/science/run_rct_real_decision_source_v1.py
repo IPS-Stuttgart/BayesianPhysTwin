@@ -32,6 +32,7 @@ from bayesian_phystwin.rct_real_decision_protocol import (
     CONFIRMATION_MATERIALS,
     SOURCE_TEST_MATERIALS,
     cohort_from_protocol,
+    load_rct_preoutcome_amendment_v2,
     load_rct_preoutcome_clarification,
     load_rct_real_decision_protocol,
     protocol_config_sha256,
@@ -200,6 +201,10 @@ def _load_archive_lock(plan: dict[str, Any]) -> dict[str, Any]:
         == plan["clarification_file_sha256"],
         "clarification lock changed",
     )
+    _require(
+        lock.get("amendment_v2_file_sha256") == plan["amendment_v2_file_sha256"],
+        "amendment-v2 lock changed",
+    )
     _require(lock.get("confirmation_opened") is False, "archive lock opened confirmation")
     _require(lock.get("held_v8_accessed") is False, "archive lock accessed held-v8")
     return lock
@@ -279,6 +284,7 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
     implementation = _verify_implementation(plan)
     protocol_path = Path(plan["protocol_path"]).resolve(strict=True)
     clarification_path = Path(plan["clarification_path"]).resolve(strict=True)
+    amendment_v2_path = Path(plan["amendment_v2_path"]).resolve(strict=True)
     _require(
         protocol_file_sha256(protocol_path) == plan["protocol_file_sha256"],
         "protocol file changed",
@@ -294,6 +300,11 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         "clarification file changed",
     )
     load_rct_preoutcome_clarification(clarification_path)
+    _require(
+        protocol_file_sha256(amendment_v2_path) == plan["amendment_v2_file_sha256"],
+        "amendment-v2 file changed",
+    )
+    load_rct_preoutcome_amendment_v2(amendment_v2_path)
     cohort = cohort_from_protocol(protocol)
     archive_lock = _load_archive_lock(plan)
     archive = Path(plan["archive_path"]).resolve(strict=True)
@@ -337,6 +348,7 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         "protocol_file_sha256": plan["protocol_file_sha256"],
         "protocol_config_sha256": plan["protocol_config_sha256"],
         "clarification_file_sha256": plan["clarification_file_sha256"],
+        "amendment_v2_file_sha256": plan["amendment_v2_file_sha256"],
         "archive_lock_id": archive_lock["lock_id"],
         "implementation_revision": implementation["revision"],
         "fit_material_count": len(fit_materials),

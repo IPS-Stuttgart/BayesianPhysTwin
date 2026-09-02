@@ -151,6 +151,7 @@ def test_confirmation_gate_freezes_positive_or_negative_result() -> None:
     runner = _module()
     passing = {
         "paired_mean_auc_difference": -0.01,
+        "relative_auc_improvement": 0.05,
         "one_sided_exact_paired_sign_flip_p": 0.049,
         "decision_directed_simultaneous_force_coverage": 0.9,
         "decision_directed_false_safe_rate": 0.1,

@@ -55,6 +55,7 @@ def test_confirmation_plan_builder_registers_every_custody_critical_path() -> No
         "protocol_loader",
         "protocol",
         "clarification",
+        "amendment_v2",
         "archive_lock",
     }
     assert builder.REGISTERED_PATHS["runner"].endswith(

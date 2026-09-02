@@ -28,6 +28,7 @@ from bayesian_phystwin.rct_real_decision import (
 )
 from bayesian_phystwin.rct_real_decision_protocol import (
     CONFIRMATION_MATERIALS,
+    load_rct_preoutcome_amendment_v2,
     load_rct_preoutcome_clarification,
     load_rct_real_decision_protocol,
     protocol_config_sha256,
@@ -234,6 +235,10 @@ def _load_method(plan: dict[str, Any], source_result: dict[str, Any]) -> RCTDeci
     )
     _require(payload.get("confirmation_opened") is False, "method seal opened target")
     _require(payload.get("held_v8_accessed") is False, "method seal accessed held-v8")
+    _require(
+        payload.get("amendment_v2_file_sha256") == plan["amendment_v2_file_sha256"],
+        "method amendment-v2 lock changed",
+    )
     method = payload.get("method")
     _require(isinstance(method, dict), "sealed method is missing")
     return RCTDecisionMethod.from_dict(method)
@@ -250,6 +255,10 @@ def _load_archive_lock(plan: dict[str, Any], source_result: dict[str, Any]) -> d
     _require(lock["lock_id"] == source_result["archive_lock_id"], "archive lock changed")
     _require(lock.get("confirmation_opened") is False, "archive lock opened target")
     _require(lock.get("held_v8_accessed") is False, "archive lock accessed held-v8")
+    _require(
+        lock.get("amendment_v2_file_sha256") == plan["amendment_v2_file_sha256"],
+        "archive amendment-v2 lock changed",
+    )
     return lock
 
 
@@ -325,6 +334,9 @@ def _confirmation_gate(summary: dict[str, Any]) -> dict[str, Any]:
         "decision_auc_below_system_identification": (
             float(summary["paired_mean_auc_difference"]) < 0.0
         ),
+        "minimum_relative_auc_improvement": (
+            float(summary["relative_auc_improvement"]) >= 0.05
+        ),
         "one_sided_exact_paired_sign_flip": (
             float(summary["one_sided_exact_paired_sign_flip_p"]) <= 0.05
         ),
@@ -356,6 +368,7 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
     implementation = _verify_implementation(plan)
     protocol_path = Path(plan["protocol_path"]).resolve(strict=True)
     clarification_path = Path(plan["clarification_path"]).resolve(strict=True)
+    amendment_v2_path = Path(plan["amendment_v2_path"]).resolve(strict=True)
     _require(
         protocol_file_sha256(protocol_path) == plan["protocol_file_sha256"],
         "protocol file changed",
@@ -371,6 +384,11 @@ def _run(plan: dict[str, Any], output_root: Path) -> dict[str, Any]:
         "clarification file changed",
     )
     load_rct_preoutcome_clarification(clarification_path)
+    _require(
+        protocol_file_sha256(amendment_v2_path) == plan["amendment_v2_file_sha256"],
+        "amendment-v2 file changed",
+    )
+    load_rct_preoutcome_amendment_v2(amendment_v2_path)
     source_result = _load_source_result(plan)
     method = _load_method(plan, source_result)
     archive_lock = _load_archive_lock(plan, source_result)

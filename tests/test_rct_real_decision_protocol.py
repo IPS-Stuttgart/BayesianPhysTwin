@@ -14,6 +14,7 @@ from bayesian_phystwin.rct_real_decision_protocol import (
     SELECTABLE_PROBES,
     SOURCE_TEST_MATERIALS,
     cohort_from_protocol,
+    load_rct_preoutcome_amendment_v2,
     load_rct_preoutcome_clarification,
     load_rct_real_decision_protocol,
     protocol_config_sha256,
@@ -41,6 +42,17 @@ CLARIFICATION_FILE_SHA256 = (
 )
 CLARIFICATION_CONFIG_SHA256 = (
     "f9248258e40cd42cd718f1244658234777731681720afa1733c3c05f68346b05"
+)
+AMENDMENT_V2_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "protocols"
+    / "rct_real_decision_probe_v1_preoutcome_amendment_v2.json"
+)
+AMENDMENT_V2_FILE_SHA256 = (
+    "7346f4fe050225140493feb227f28daab864b372fa1e2d523fdca3b178f3dfa9"
+)
+AMENDMENT_V2_CONFIG_SHA256 = (
+    "c5dda44afc698e7bab0ff897ff8e58cda7afa1e8e8a69c2284da01e73bf1e6fc"
 )
 
 
@@ -83,6 +95,18 @@ def test_source_independent_clarification_is_hash_locked_to_parent_protocol() ->
     assert payload["parent"]["protocol_file_sha256"] == PROTOCOL_FILE_SHA256
     assert payload["information_boundary"]["archive_download_complete"] is False
     assert payload["information_boundary"]["confirmation_force_rows_opened"] is False
+
+
+def test_practical_significance_amendment_is_frozen_before_force_access() -> None:
+    payload = load_rct_preoutcome_amendment_v2(AMENDMENT_V2_PATH)
+
+    assert protocol_file_sha256(AMENDMENT_V2_PATH) == AMENDMENT_V2_FILE_SHA256
+    assert protocol_config_sha256(payload) == AMENDMENT_V2_CONFIG_SHA256
+    assert payload["change"]["confirmation_minimum_relative_auc_improvement"] == 0.05
+    assert payload["scientific_effect"][
+        "changes_confirmation_effect_size_threshold"
+    ] is True
+    assert payload["information_boundary"]["archive_download_complete"] is False
 
 
 def test_probe_and_held_intervention_rosters_are_physically_disjoint() -> None:

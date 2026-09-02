@@ -15,6 +15,9 @@ PROTOCOL_PATH = ROOT / "protocols/rct_real_decision_probe_v1.json"
 CLARIFICATION_PATH = (
     ROOT / "protocols/rct_real_decision_probe_v1_preoutcome_clarification.json"
 )
+AMENDMENT_V2_PATH = (
+    ROOT / "protocols/rct_real_decision_probe_v1_preoutcome_amendment_v2.json"
+)
 
 
 def _module() -> ModuleType:
@@ -40,6 +43,7 @@ def test_archive_lock_hashes_without_opening_force_member(tmp_path: Path) -> Non
         archive,
         PROTOCOL_PATH,
         CLARIFICATION_PATH,
+        AMENDMENT_V2_PATH,
         expected_archive_size=archive.stat().st_size,
     )
 
@@ -83,5 +87,6 @@ def test_archive_lock_rejects_wrong_byte_size(tmp_path: Path) -> None:
             archive,
             PROTOCOL_PATH,
             CLARIFICATION_PATH,
+            AMENDMENT_V2_PATH,
             expected_archive_size=archive.stat().st_size + 1,
         )
