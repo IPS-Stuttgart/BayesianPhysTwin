@@ -7,7 +7,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 SCHEMA_VERSION = 1
 PROTOCOL_ID = "rct-real-decision-probe-protocol-v1"
@@ -121,6 +121,11 @@ def _require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def _mapping(value: object, *, message: str) -> Mapping[str, Any]:
+    _require(isinstance(value, Mapping), message)
+    return cast(Mapping[str, Any], value)
+
+
 def _canonical_bytes(value: Any) -> bytes:
     return json.dumps(
         value,
@@ -172,21 +177,20 @@ class RCTRealDecisionCohort:
 
 
 def _material_ids(record: object, *, role: str) -> tuple[str, ...]:
-    _require(isinstance(record, Mapping), f"{role} cohort record is missing")
-    raw = record.get("material_ids")
+    record_mapping = _mapping(record, message=f"{role} cohort record is missing")
+    raw = record_mapping.get("material_ids")
     _require(
         isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)),
         f"{role} material IDs must be a list",
     )
-    values = tuple(str(value) for value in raw)
+    values = tuple(str(value) for value in cast(Sequence[object], raw))
     _require(len(values) == 20, f"{role} material count changed")
     _require(len(values) == len(set(values)), f"{role} contains duplicate materials")
     return values
 
 
 def _validate_dataset(payload: Mapping[str, Any]) -> None:
-    dataset = payload.get("dataset")
-    _require(isinstance(dataset, Mapping), "dataset lock is missing")
+    dataset = _mapping(payload.get("dataset"), message="dataset lock is missing")
     _require(
         dataset.get("code_revision") == RCT_CODE_REVISION,
         "RCT code revision changed",
@@ -208,8 +212,7 @@ def _validate_dataset(payload: Mapping[str, Any]) -> None:
         },
         "RCT release counts changed",
     )
-    archive = dataset.get("archive")
-    _require(isinstance(archive, Mapping), "archive lock is missing")
+    archive = _mapping(dataset.get("archive"), message="archive lock is missing")
     _require(
         int(archive.get("file_id", -1)) == RCT_ARCHIVE_FILE_ID,
         "archive file ID changed",
@@ -226,8 +229,7 @@ def _validate_dataset(payload: Mapping[str, Any]) -> None:
 
 
 def _validate_cohort(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
-    cohort = payload.get("cohort")
-    _require(isinstance(cohort, Mapping), "cohort lock is missing")
+    cohort = _mapping(payload.get("cohort"), message="cohort lock is missing")
     calibration = _material_ids(cohort.get("calibration"), role="calibration")
     source_test = _material_ids(cohort.get("source_test"), role="source_test")
     confirmation = _material_ids(cohort.get("confirmation"), role="confirmation")
@@ -237,8 +239,7 @@ def _validate_cohort(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
     _require(cohort.get("pairwise_disjoint") is True, "cohort disjointness changed")
     reserved = calibration + source_test + confirmation
     _require(len(set(reserved)) == 60, "registered cohorts overlap")
-    fit = cohort.get("fit")
-    _require(isinstance(fit, Mapping), "fit cohort rule is missing")
+    fit = _mapping(cohort.get("fit"), message="fit cohort rule is missing")
     _require(int(fit.get("expected_material_count", -1)) == 62, "fit count changed")
     _require(
         fit.get("rule")
@@ -254,13 +255,12 @@ def _validate_cohort(payload: Mapping[str, Any]) -> RCTRealDecisionCohort:
 
 
 def _probe_tuple(value: object, *, name: str) -> tuple[int, int]:
-    _require(isinstance(value, Mapping), f"{name} record is missing")
-    return int(value.get("position", -1)), int(value.get("sensor", -1))
+    value_mapping = _mapping(value, message=f"{name} record is missing")
+    return int(value_mapping.get("position", -1)), int(value_mapping.get("sensor", -1))
 
 
 def _validate_method(payload: Mapping[str, Any]) -> None:
-    method = payload.get("method")
-    _require(isinstance(method, Mapping), "method lock is missing")
+    method = _mapping(payload.get("method"), message="method lock is missing")
     _require(
         _probe_tuple(method.get("mandatory_anchor"), name="mandatory anchor")
         == MANDATORY_ANCHOR,
@@ -268,10 +268,12 @@ def _validate_method(payload: Mapping[str, Any]) -> None:
     )
     raw_probes = method.get("selectable_probes")
     _require(isinstance(raw_probes, Sequence), "selectable probes are missing")
-    probes = tuple(_probe_tuple(value, name="selectable probe") for value in raw_probes)
+    probes = tuple(
+        _probe_tuple(value, name="selectable probe")
+        for value in cast(Sequence[object], raw_probes)
+    )
     _require(probes == SELECTABLE_PROBES, "selectable probe roster changed")
-    fit = method.get("fit")
-    _require(isinstance(fit, Mapping), "fit method is missing")
+    fit = _mapping(method.get("fit"), message="fit method is missing")
     _require(
         float(fit.get("covariance_diagonal_shrinkage", -1.0)) == 0.25,
         "covariance shrinkage changed",
@@ -280,12 +282,12 @@ def _validate_method(payload: Mapping[str, Any]) -> None:
         float(fit.get("jitter_fraction_of_median_variance", -1.0)) == 1e-8,
         "covariance jitter changed",
     )
-    selectors = method.get("probe_selectors")
-    _require(isinstance(selectors, Mapping), "probe selectors are missing")
-    decision_directed = selectors.get("decision_directed")
-    _require(
-        isinstance(decision_directed, Mapping),
-        "decision-directed selector is missing",
+    selectors = _mapping(
+        method.get("probe_selectors"), message="probe selectors are missing"
+    )
+    decision_directed = _mapping(
+        selectors.get("decision_directed"),
+        message="decision-directed selector is missing",
     )
     _require(
         int(decision_directed.get("predictive_draw_count", -1)) == 4096,
@@ -295,16 +297,16 @@ def _validate_method(payload: Mapping[str, Any]) -> None:
         int(decision_directed.get("predictive_seed", -1)) == 20260902,
         "predictive seed changed",
     )
-    guard = method.get("universal_conformal_guard")
-    _require(isinstance(guard, Mapping), "conformal guard is missing")
+    guard = _mapping(
+        method.get("universal_conformal_guard"), message="conformal guard is missing"
+    )
     _require(float(guard.get("coverage", 0.0)) == 0.9, "guard coverage changed")
     _require(guard.get("shared_across_methods") is True, "guard sharing changed")
     _require(guard.get("uses_confirmation") is False, "confirmation entered guard")
 
 
 def _validate_decision(payload: Mapping[str, Any]) -> None:
-    decision = payload.get("decision")
-    _require(isinstance(decision, Mapping), "decision lock is missing")
+    decision = _mapping(payload.get("decision"), message="decision lock is missing")
     action_grid = tuple(
         float(value) for value in decision.get("action_indentation_mm", ())
     )
@@ -314,15 +316,17 @@ def _validate_decision(payload: Mapping[str, Any]) -> None:
         == HELD_INTERVENTION,
         "held intervention changed",
     )
-    force_limit = decision.get("force_limit")
-    _require(isinstance(force_limit, Mapping), "force-limit rule is missing")
+    force_limit = _mapping(
+        decision.get("force_limit"), message="force-limit rule is missing"
+    )
     _require(float(force_limit.get("quantile", -1.0)) == 0.6, "force limit changed")
     _require(force_limit.get("fit_only") is True, "force limit is not fit-only")
 
 
 def _validate_boundary(payload: Mapping[str, Any]) -> None:
-    boundary = payload.get("information_boundary")
-    _require(isinstance(boundary, Mapping), "information boundary is missing")
+    boundary = _mapping(
+        payload.get("information_boundary"), message="information boundary is missing"
+    )
     for key in (
         "calibration_force_rows_open_before_protocol_freeze",
         "confirmation_descriptor_labels_used",
@@ -341,8 +345,7 @@ def _validate_boundary(payload: Mapping[str, Any]) -> None:
         "target_open_requires_write_once_authorization",
     ):
         _require(boundary.get(key) is True, f"information boundary changed: {key}")
-    promotion = payload.get("promotion")
-    _require(isinstance(promotion, Mapping), "promotion lock is missing")
+    promotion = _mapping(payload.get("promotion"), message="promotion lock is missing")
     _require(promotion.get("target_authorized") is False, "target was authorized early")
     _require(
         int(promotion.get("target_attempt_limit", -1)) == 1, "attempt limit changed"

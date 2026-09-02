@@ -62,8 +62,10 @@ class RCTMaterialResponse:
     def __post_init__(self) -> None:
         values = np.asarray(self.force_n, dtype=np.float64)
         _require(values.shape == (COORDINATE_COUNT,), "response shape changed")
-        _require(np.all(np.isfinite(values)), "response contains non-finite values")
-        _require(np.all(values >= 0.0), "normal-force increment is negative")
+        _require(
+            bool(np.all(np.isfinite(values))), "response contains non-finite values"
+        )
+        _require(bool(np.all(values >= 0.0)), "normal-force increment is negative")
         object.__setattr__(self, "force_n", values.copy())
 
     def values_for(self, trajectory: Trajectory) -> np.ndarray:
@@ -80,8 +82,8 @@ def _registered_force_values(rows: Sequence[tuple[float, float]]) -> np.ndarray:
     )
     z = np.asarray([row[0] for row in rows], dtype=np.float64)
     raw_force = np.asarray([row[1] for row in rows], dtype=np.float64)
-    _require(np.all(np.isfinite(z)), "z_frame contains non-finite values")
-    _require(np.all(np.isfinite(raw_force)), "raw_fz contains non-finite values")
+    _require(bool(np.all(np.isfinite(z))), "z_frame contains non-finite values")
+    _require(bool(np.all(np.isfinite(raw_force))), "raw_fz contains non-finite values")
     shallow_index = int(np.argmax(z))
     shallow_z = float(z[shallow_index])
     baseline_force = float(raw_force[shallow_index])
@@ -151,10 +153,10 @@ def load_rct_force_responses(
         vectors: list[np.ndarray] = []
         for position, sensor in TRAJECTORY_ORDER:
             rows = grouped.get((material_id, position, sensor))
-            _require(
-                rows is not None,
-                f"registered trajectory p{position}/s{sensor} is missing: {material_id}",
-            )
+            if rows is None:
+                raise ValueError(
+                    f"registered trajectory p{position}/s{sensor} is missing: {material_id}"
+                )
             vectors.append(_registered_force_values(rows))
         responses.append(RCTMaterialResponse(material_id, np.concatenate(vectors)))
     return tuple(responses)
@@ -192,8 +194,10 @@ class GaussianState:
             covariance.shape == (COORDINATE_COUNT, COORDINATE_COUNT),
             "Gaussian covariance shape changed",
         )
-        _require(np.all(np.isfinite(mean)), "Gaussian mean is non-finite")
-        _require(np.all(np.isfinite(covariance)), "Gaussian covariance is non-finite")
+        _require(bool(np.all(np.isfinite(mean))), "Gaussian mean is non-finite")
+        _require(
+            bool(np.all(np.isfinite(covariance))), "Gaussian covariance is non-finite"
+        )
         _require(
             np.allclose(covariance, covariance.T, rtol=0.0, atol=1e-10),
             "Gaussian covariance is not symmetric",
@@ -278,7 +282,7 @@ class RCTGaussianTwin:
 def condition_gaussian(
     state: GaussianState,
     indices: Sequence[int],
-    values: Sequence[float],
+    values: Sequence[float] | np.ndarray,
 ) -> GaussianState:
     """Condition a Gaussian state on exact registered force coordinates."""
 
@@ -294,7 +298,7 @@ def condition_gaussian(
         all(0 <= index < COORDINATE_COUNT for index in new_indices),
         "observation coordinate is out of range",
     )
-    _require(np.all(np.isfinite(observations)), "observation is non-finite")
+    _require(bool(np.all(np.isfinite(observations))), "observation is non-finite")
     index_array = np.asarray(new_indices, dtype=int)
     covariance_yy = state.covariance[np.ix_(index_array, index_array)]
     cross = state.covariance[:, index_array]
@@ -427,7 +431,9 @@ def decision_value_of_probe(
         state.mean[held] + (candidate_samples - candidate_mean) @ gain[held, :].T
     )
     held_covariance = posterior_covariance[np.ix_(held, held)]
-    expected_action_values = np.zeros((len(draws), 1 + len(held)), dtype=np.float64)
+    expected_action_values: np.ndarray = np.zeros(
+        (len(draws), 1 + len(held)), dtype=np.float64
+    )
     for action_index, indentation in enumerate(REGISTERED_INDENTATIONS_MM):
         expected_action_values[:, action_index + 1] = _expected_action_utility(
             posterior_held_mean[:, action_index],
@@ -629,7 +635,7 @@ def calibrate_simultaneous_force_multiplier(
                 variance = np.diag(state.covariance[np.ix_(held, held)])
                 standard_deviation = np.sqrt(np.maximum(variance, 0.0))
                 _require(
-                    np.all(standard_deviation > 0.0),
+                    bool(np.all(standard_deviation > 0.0)),
                     "held predictive standard deviation vanished",
                 )
                 material_score = max(
@@ -711,7 +717,8 @@ class RCTDecisionMethod:
         _require(payload.get("confirmation_opened") is False, "confirmation opened")
         _require(payload.get("held_v8_accessed") is False, "held-v8 was accessed")
         twin = payload.get("twin")
-        _require(isinstance(twin, Mapping), "twin artifact is missing")
+        if not isinstance(twin, Mapping):
+            raise ValueError("twin artifact is missing")
         return cls(
             twin=RCTGaussianTwin.from_dict(twin),
             force_limit_n=float(payload["force_limit_n"]),
@@ -864,10 +871,10 @@ def _exact_one_sided_sign_flip_paired_p(differences: np.ndarray) -> float:
     count = 0
     total = 1 << len(differences)
     chunk_size = 1 << 15
-    bit_positions = np.arange(len(differences), dtype=np.uint64)
+    bit_positions: np.ndarray = np.arange(len(differences), dtype=np.uint64)
     for start in range(0, total, chunk_size):
         stop = min(total, start + chunk_size)
-        masks = np.arange(start, stop, dtype=np.uint64)[:, None]
+        masks: np.ndarray = np.arange(start, stop, dtype=np.uint64)[:, None]
         signs = 1.0 - 2.0 * ((masks >> bit_positions) & 1).astype(np.float64)
         permuted = signs @ differences / len(differences)
         count += int(np.count_nonzero(permuted <= observed + 1e-15))
