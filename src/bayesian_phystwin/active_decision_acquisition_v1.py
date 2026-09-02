@@ -33,7 +33,7 @@ import hashlib
 import json
 import math
 from dataclasses import dataclass, field
-from functools import lru_cache
+from functools import cache
 from numbers import Real
 from typing import Final, NamedTuple, TypeAlias
 
@@ -634,7 +634,7 @@ def synthesize_minimax_active_decision_policy(
         ],
     ] = {}
 
-    @lru_cache(maxsize=None)
+    @cache
     def solve(mask_bytes: bytes, remaining: tuple[int, ...]) -> float:
         mask = np.unpackbits(
             np.frombuffer(mask_bytes, dtype=np.uint8),
