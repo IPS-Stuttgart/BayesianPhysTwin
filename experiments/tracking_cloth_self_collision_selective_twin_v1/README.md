@@ -20,8 +20,11 @@ information order is fixed:
 
 The publisher describes the self-collision rod as static and stores its two
 markers before the cloth markers. The parser accepts the documented
-`four/two` and `normal/parallel` filename factors, and the reduced simulator
-holds a robust prefix estimate of the rod pose fixed after initialization. It
+`four/two` and `normal/parallel` filename factors. It preserves each file's
+monotone native timestamp grid and deterministically takes every fourth row;
+it does not impose the free-hanging pilot's 120 Hz cadence on this subset.
+The reduced simulator holds a robust prefix estimate of the rod pose fixed
+after initialization. It
 receives no future rod or cloth coordinates. The physical model is a
 transparent equal-marker-mass spring mesh with cylindrical rod contact,
 friction, and optional non-neighbor cloth repulsion. It is a competence probe,

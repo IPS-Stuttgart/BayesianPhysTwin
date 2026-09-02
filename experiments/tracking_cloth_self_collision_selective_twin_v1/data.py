@@ -436,9 +436,14 @@ def prediction_input(case: Case, protocol: dict[str, Any]) -> InputView:
     cloth_array = _causal_fill(cloth_prefix)
     rod_array = _causal_fill(rod_prefix)
     dt = np.diff(times)
-    expected_dt = stride / 120.0
-    if not np.allclose(dt, expected_dt, rtol=0.05, atol=1e-4):
-        raise ValueError("sampling does not match the frozen 120 Hz contract")
+    expected_dt = float(np.median(dt))
+    if (
+        not np.isfinite(expected_dt)
+        or expected_dt <= 0.0
+        or expected_dt > 0.25
+        or not np.allclose(dt, expected_dt, rtol=0.05, atol=1e-4)
+    ):
+        raise ValueError("sampling is not a regular native timestamp grid")
     if times[-1] < forecast_end - 2 * expected_dt:
         raise ValueError("recording does not cover the complete forecast horizon")
     rod_lengths = np.linalg.norm(rod_array[:, 1] - rod_array[:, 0], axis=1)
