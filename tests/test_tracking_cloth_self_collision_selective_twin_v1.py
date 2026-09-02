@@ -32,10 +32,16 @@ def _grid() -> np.ndarray:
     return np.asarray(points, dtype=float)
 
 
-def _write_case(path: Path, *, future_numeric: bool, forecast: float = 0.2) -> None:
+def _write_case(
+    path: Path,
+    *,
+    future_numeric: bool,
+    forecast: float = 0.2,
+    native_hz: float = 120.0,
+) -> None:
     cloth = _grid()
     rod = np.asarray([[-0.7, 0.0, 0.24], [0.9, 0.0, 0.24]])
-    dt = 1.0 / 120.0
+    dt = 1.0 / native_hz
     count = int(round((0.5 + forecast) / dt)) + 1
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
@@ -83,6 +89,17 @@ def test_prediction_input_does_not_parse_future_coordinates(tmp_path: Path) -> N
     assert len(inputs.times) > inputs.cutoff + 1
     assert inputs.cloth_prefix.shape[1:] == (20, 3)
     assert inputs.rod_prefix.shape[1:] == (2, 3)
+
+
+def test_prediction_input_accepts_regular_native_non_120hz_grid(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "cotton_A2_four_normal_rep3.csv"
+    _write_case(path, future_numeric=False, native_hz=100.0)
+    protocol = _small_protocol()
+    protocol["sample_stride"] = 4
+    inputs = prediction_input(Case(path, "cotton", "four_corners_normal", 3), protocol)
+    assert np.allclose(np.diff(inputs.times), 0.04, rtol=0.05, atol=1e-4)
 
 
 def test_contact_and_kinematic_predictions_are_finite(tmp_path: Path) -> None:
