@@ -85,10 +85,12 @@ def _archive(
     unsafe_name: str | None = None,
     link: bool = False,
     duplicate: bool = False,
+    comment: bool = True,
 ) -> bytes:
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
-        bundle.comment = b"structure-only"
+        if comment:
+            bundle.comment = b"structure-only"
         bundle.writestr("root/", b"")
         bundle.writestr(unsafe_name or "root/first.txt", b"first payload")
         if link:
@@ -182,6 +184,19 @@ def test_remote_structure_inventory_reads_only_ranges_and_matches_zip(
     assert summary["archive_comment_length"] == len(b"structure-only")
     assert requests
     assert all(0 <= start <= end < len(data) for start, end in requests)
+
+
+def test_remote_structure_uses_minimum_eocd_probe_without_comment() -> None:
+    data = _archive(comment=False)
+    requests: list[tuple[int, int]] = []
+
+    layout = read_remote_zip_layout(
+        _expectation(data),
+        opener=_opener(data, requests),
+    )
+
+    assert layout.archive_comment == b""
+    assert requests == [(len(data) - 22, len(data) - 1)]
 
 
 @pytest.mark.parametrize(

@@ -124,7 +124,8 @@ def read_remote_zip_layout(
 ) -> RemoteZipLayout:
     """Read only ZIP end records and return the central-directory layout."""
 
-    tail_size = min(expectation.size_bytes, _EOCD_SEARCH_BYTES)
+    _require(expectation.size_bytes >= _EOCD.size, "PoseIt ZIP is smaller than EOCD")
+    tail_size = _EOCD.size
     tail_start = expectation.size_bytes - tail_size
     tail = _fetch(
         expectation,
@@ -133,7 +134,22 @@ def read_remote_zip_layout(
         index=0,
         opener=opener,
     )
-    relative_eocd, eocd = _find_eocd(tail)
+    next_fetch_index = 1
+    try:
+        relative_eocd, eocd = _find_eocd(tail)
+    except ValueError:
+        tail_size = min(expectation.size_bytes, _EOCD_SEARCH_BYTES)
+        _require(tail_size > _EOCD.size, "PoseIt ZIP end record is missing")
+        tail_start = expectation.size_bytes - tail_size
+        tail = _fetch(
+            expectation,
+            start=tail_start,
+            end=expectation.size_bytes - 1,
+            index=next_fetch_index,
+            opener=opener,
+        )
+        next_fetch_index += 1
+        relative_eocd, eocd = _find_eocd(tail)
     (
         signature,
         disk_number,
@@ -171,9 +187,10 @@ def read_remote_zip_layout(
                 expectation,
                 start=locator_offset,
                 end=locator_offset + _ZIP64_LOCATOR.size - 1,
-                index=1,
+                index=next_fetch_index,
                 opener=opener,
             )
+            next_fetch_index += 1
         locator_signature, zip64_disk, zip64_offset, disk_count = _ZIP64_LOCATOR.unpack(
             locator
         )
@@ -187,7 +204,7 @@ def read_remote_zip_layout(
             expectation,
             start=zip64_offset,
             end=zip64_offset + _ZIP64_EOCD.size - 1,
-            index=2,
+            index=next_fetch_index,
             opener=opener,
         )
         (
