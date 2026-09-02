@@ -1,0 +1,233 @@
+name: Retain Transport4D frozen-split support evidence
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-support-evidence-finalizer.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: transport4d-support-evidence-finalizer
+  cancel-in-progress: false
+
+jobs:
+  retain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_RUN_ID: "33620300862"
+      SOURCE_HEAD_SHA: 24791c17fd198efceb3c502907ecbfeeb75bd043
+      ARTIFACT_ID: "9842625039"
+      ARTIFACT_NAME: transport4d-deform360-support-33620300862-1
+      ARTIFACT_SHA256: bc016a0210f3a10602fe6c077457a171693ff5be69eb3d8fb41a5abfd7769229
+      RESERVE_ID: 0fba6a0cda4ac23fc8f900ca4632d73a22ae0559d42e48cc2ec8c5ea79030dc4
+      SUPPORT_ID: 57aaea3215ad1cdf76accfc455c173bb5d84a926bfed013fa64b6ec3625befed
+      OUTPUT_DIR: evidence/transport4d_deform360_support_v1
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Download and verify exact support artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/transport4d-support.zip"
+          extracted="$RUNNER_TEMP/transport4d-support"
+          rm -rf -- "$archive" "$extracted"
+          mkdir -p -- "$extracted"
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            --output "$archive"
+          printf '%s  %s\n' "$ARTIFACT_SHA256" "$archive" \
+            | sha256sum --check --strict
+          unzip -q "$archive" -d "$extracted"
+          test -f "$extracted/support.json"
+          test -f "$extracted/support.md"
+          test -f "$extracted/environment.txt"
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+          echo "EXTRACTED=$extracted" >> "$GITHUB_ENV"
+      - name: Validate full support result and create compact binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "$OUTPUT_DIR"
+          mkdir -p "$OUTPUT_DIR"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          source = Path(os.environ["EXTRACTED"])
+          output = Path(os.environ["OUTPUT_DIR"])
+          full_bytes = (source / "support.json").read_bytes()
+          full = json.loads(full_bytes)
+          supplied = full.pop("support_id")
+          encoded = json.dumps(
+              full, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          assert hashlib.sha256(encoded).hexdigest() == supplied
+          assert supplied == os.environ["SUPPORT_ID"]
+          assert full["reserve_id"] == os.environ["RESERVE_ID"]
+          assert full["supported_calibration_object_count"] == 15
+          assert full["supported_confirmation_object_count"] == 33
+          assert full["numeric_confirmation_feasible"] is True
+          assert len(full["objects"]) == 70
+          assert all(row["numeric_payload_opened"] is False for row in full["objects"])
+          assert all(row["metadata_identity_matches_reserve"] is True for row in full["objects"])
+          boundary = full["information_boundary"]
+          for name in (
+              "robot_numeric_payload_opened",
+              "tactile_numeric_payload_opened",
+              "camera_pixel_opened",
+              "geometry_or_point_cloud_opened",
+              "target_outcome_opened",
+              "replacement_allowed",
+              "split_movement_allowed",
+              "confirmation_authorized",
+              "paper_claim_authorized",
+          ):
+              assert boundary[name] is False
+
+          rows = []
+          for row in full["objects"]:
+              carrier = {
+                  "metadata_sha256": row.get("metadata_sha256"),
+                  "robot_files": row.get("robot_files", []),
+                  "tactile_groups": row.get("tactile_groups", []),
+              }
+              carrier_id = hashlib.sha256(
+                  json.dumps(
+                      carrier,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  ).encode("utf-8")
+              ).hexdigest()
+              rows.append(
+                  {
+                      "object_id": row["object_id"],
+                      "split": row["split"],
+                      "eligible": bool(row["eligible"]),
+                      "reason": row.get("reason"),
+                      "metadata_sha256": row.get("metadata_sha256"),
+                      "episode_count": row.get("episode_count", 0),
+                      "action_count": row.get("action_count", 0),
+                      "robot_file_count": row.get("robot_file_count", 0),
+                      "tactile_group_count": row.get("tactile_group_count", 0),
+                      "complete_episode_ids": row.get("complete_episode_ids", []),
+                      "source_episode_count": row.get("source_episode_count", 0),
+                      "target_episode_id": row.get("target_episode_id"),
+                      "target_action": row.get("target_action"),
+                      "carrier_manifest_sha256": carrier_id,
+                      "numeric_payload_opened": False,
+                  }
+              )
+          compact = {
+              "schema": "bayesian-phystwin.transport4d_deform360_support_compact",
+              "schema_version": 1,
+              "status": "frozen-split-support-feasible",
+              "reserve_id": full["reserve_id"],
+              "support_id": supplied,
+              "full_result_sha256": hashlib.sha256(full_bytes).hexdigest(),
+              "calibration_object_count": full["calibration_object_count"],
+              "confirmation_object_count": full["confirmation_object_count"],
+              "supported_calibration_object_ids": full[
+                  "supported_calibration_object_ids"
+              ],
+              "supported_confirmation_object_ids": full[
+                  "supported_confirmation_object_ids"
+              ],
+              "supported_calibration_object_count": 15,
+              "supported_confirmation_object_count": 33,
+              "registered_minimum_calibration_objects": 15,
+              "registered_minimum_confirmation_objects": 29,
+              "numeric_confirmation_feasible": True,
+              "objects": rows,
+              "information_boundary": boundary,
+              "claim_boundary": full["claim_boundary"],
+          }
+          compact_unsigned = json.dumps(
+              compact, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          compact["compact_id"] = hashlib.sha256(compact_unsigned).hexdigest()
+          (output / "result.json").write_text(
+              json.dumps(compact, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          (output / "report.md").write_bytes((source / "support.md").read_bytes())
+          (output / "README.md").write_text(
+              "# Transport4D frozen-split carrier support\n\n"
+              "A target-closed file-identity audit retained 15 supported calibration "
+              "objects and 33 supported confirmation objects from the previously "
+              "frozen Deform360 split. The registered minimums are therefore met "
+              "without moving or replacing any object. Nineteen objects remain "
+              "support-negative for insufficient robot-complete episodes and three "
+              "for tactile recording-count mismatch.\n\n"
+              "Only metadata, directory names, file names, and file sizes were read. "
+              "The committed compact result stores a content hash of each full carrier "
+              "manifest; the complete per-file manifest remains bound to the immutable "
+              "Actions artifact. Numerical confirmation is still unauthorized.\n",
+              encoding="utf-8",
+          )
+          files = {}
+          for name in ("README.md", "report.md", "result.json"):
+              data = (output / name).read_bytes()
+              files[name] = {
+                  "bytes": len(data),
+                  "sha256": hashlib.sha256(data).hexdigest(),
+              }
+          manifest = {
+              "schema": "bayesian-phystwin.transport4d_deform360_support_evidence",
+              "schema_version": 1,
+              "source_workflow_run_id": int(os.environ["SOURCE_RUN_ID"]),
+              "source_head_sha": os.environ["SOURCE_HEAD_SHA"],
+              "artifact_id": int(os.environ["ARTIFACT_ID"]),
+              "artifact_name": os.environ["ARTIFACT_NAME"],
+              "artifact_sha256": os.environ["ARTIFACT_SHA256"],
+              "reserve_id": os.environ["RESERVE_ID"],
+              "support_id": os.environ["SUPPORT_ID"],
+              "status": "frozen-split-support-feasible",
+              "supported_calibration_object_count": 15,
+              "supported_confirmation_object_count": 33,
+              "numeric_payload_opened": False,
+              "confirmation_authorized": False,
+              "paper_claim_authorized": False,
+              "files": files,
+          }
+          manifest_unsigned = json.dumps(
+              manifest, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          manifest["evidence_id"] = hashlib.sha256(manifest_unsigned).hexdigest()
+          (output / "manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Remove one-shot support surface and commit retained evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/requests/transport4d-deform360-support-audit-v1.json \
+            .github/workflows/transport4d-deform360-support-audit-one-shot.yml \
+            .github/workflows/transport4d-support-evidence-finalizer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Retain frozen-split Transport4D carrier support"
+          git push origin HEAD:research/transport4d-tiered-public-v1
