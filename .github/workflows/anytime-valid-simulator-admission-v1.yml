@@ -40,20 +40,34 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e . pytest==9.0.2 ruff==0.16.5
 
-      - name: Repair retained replay use of the record-returning API
+      - name: Repair retained replay and claim-boundary compatibility
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('scripts/remote/run_anytime_valid_dlo_replay_v1.py')
-          source = path.read_text(encoding='utf-8')
+          replay = Path('scripts/remote/run_anytime_valid_dlo_replay_v1.py')
+          source = replay.read_text(encoding='utf-8')
           old = 'e_values.append(process.update(float(score)))'
           new = 'e_values.append(process.update(float(score)).e_value)'
           if old not in source and new not in source:
               raise SystemExit('expected retained replay update call not found')
-          path.write_text(source.replace(old, new), encoding='utf-8')
+          replay.write_text(source.replace(old, new), encoding='utf-8')
+
+          module = Path(
+              'src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py'
+          )
+          source = module.read_text(encoding='utf-8')
+          old = (
+              'These are not deployment-safety or unclipped-loss guarantees.'
+          )
+          new = (
+              'This is not a deployment-safety or unclipped-loss guarantee.'
+          )
+          if old not in source and new not in source:
+              raise SystemExit('expected claim-boundary sentence not found')
+          module.write_text(source.replace(old, new), encoding='utf-8')
           PY
 
       - name: Format and validate every anytime-admission Python source
