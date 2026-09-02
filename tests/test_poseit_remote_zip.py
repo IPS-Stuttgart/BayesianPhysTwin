@@ -13,6 +13,7 @@ from bayesian_phystwin_experiments.poseit_remote_archive import (
     RemoteArchiveExpectation,
 )
 from bayesian_phystwin_experiments.poseit_remote_zip import (
+    RemoteZipRangeEvent,
     fetch_remote_central_directory,
     parse_remote_central_directory,
     read_remote_zip_layout,
@@ -154,13 +155,15 @@ def test_remote_structure_inventory_reads_only_ranges_and_matches_zip(
     data = _zip64_archive() if zip64 else _archive()
     expectation = _expectation(data)
     requests: list[tuple[int, int]] = []
+    events: list[RemoteZipRangeEvent] = []
     opener = _opener(data, requests)
 
-    layout = read_remote_zip_layout(expectation, opener=opener)
+    layout = read_remote_zip_layout(expectation, opener=opener, audit=events.append)
     central = fetch_remote_central_directory(
         expectation,
         layout,
         opener=opener,
+        audit=events.append,
         chunk_size_bytes=31,
     )
     members = parse_remote_central_directory(
@@ -184,6 +187,8 @@ def test_remote_structure_inventory_reads_only_ranges_and_matches_zip(
     assert summary["archive_comment_length"] == len(b"structure-only")
     assert requests
     assert all(0 <= start <= end < len(data) for start, end in requests)
+    assert [(event.start, event.end) for event in events] == requests
+    assert all(event.attempts == 1 for event in events)
 
 
 def test_remote_structure_uses_minimum_eocd_probe_without_comment() -> None:

@@ -6,6 +6,7 @@ import hashlib
 import stat
 import struct
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any, cast
@@ -73,6 +74,17 @@ class RemoteZipMember:
         }
 
 
+@dataclass(frozen=True)
+class RemoteZipRangeEvent:
+    index: int
+    start: int
+    end: int
+    attempts: int
+
+
+RemoteZipRangeAudit = Callable[[RemoteZipRangeEvent], None]
+
+
 def _fetch(
     expectation: RemoteArchiveExpectation,
     *,
@@ -80,27 +92,33 @@ def _fetch(
     end: int,
     index: int,
     opener: RangeOpener | None,
+    audit: RemoteZipRangeAudit | None,
 ) -> bytes:
     if opener is None:
-        return cast(
-            bytes,
-            fetch_exact_range(
-                expectation,
-                index=index,
-                start=start,
-                end=end,
-            ).data,
+        block = fetch_exact_range(
+            expectation,
+            index=index,
+            start=start,
+            end=end,
         )
-    return cast(
-        bytes,
-        fetch_exact_range(
+    else:
+        block = fetch_exact_range(
             expectation,
             index=index,
             start=start,
             end=end,
             opener=opener,
-        ).data,
-    )
+        )
+    if audit is not None:
+        audit(
+            RemoteZipRangeEvent(
+                index=index,
+                start=start,
+                end=end,
+                attempts=cast(int, block.attempts),
+            )
+        )
+    return cast(bytes, block.data)
 
 
 def _find_eocd(
@@ -121,6 +139,7 @@ def read_remote_zip_layout(
     expectation: RemoteArchiveExpectation,
     *,
     opener: RangeOpener | None = None,
+    audit: RemoteZipRangeAudit | None = None,
 ) -> RemoteZipLayout:
     """Read only ZIP end records and return the central-directory layout."""
 
@@ -133,6 +152,7 @@ def read_remote_zip_layout(
         end=expectation.size_bytes - 1,
         index=0,
         opener=opener,
+        audit=audit,
     )
     next_fetch_index = 1
     try:
@@ -147,6 +167,7 @@ def read_remote_zip_layout(
             end=expectation.size_bytes - 1,
             index=next_fetch_index,
             opener=opener,
+            audit=audit,
         )
         next_fetch_index += 1
         relative_eocd, eocd = _find_eocd(tail)
@@ -189,6 +210,7 @@ def read_remote_zip_layout(
                 end=locator_offset + _ZIP64_LOCATOR.size - 1,
                 index=next_fetch_index,
                 opener=opener,
+                audit=audit,
             )
             next_fetch_index += 1
         locator_signature, zip64_disk, zip64_offset, disk_count = _ZIP64_LOCATOR.unpack(
@@ -206,6 +228,7 @@ def read_remote_zip_layout(
             end=zip64_offset + _ZIP64_EOCD.size - 1,
             index=next_fetch_index,
             opener=opener,
+            audit=audit,
         )
         (
             zip64_signature,
@@ -281,6 +304,7 @@ def fetch_remote_central_directory(
     layout: RemoteZipLayout,
     *,
     opener: RangeOpener | None = None,
+    audit: RemoteZipRangeAudit | None = None,
     chunk_size_bytes: int = 32 * 1024 * 1024,
     maximum_size_bytes: int = 8 * 1024 * 1024 * 1024,
 ) -> bytes:
@@ -305,6 +329,7 @@ def fetch_remote_central_directory(
                 end=end,
                 index=index,
                 opener=opener,
+                audit=audit,
             )
         )
         position = end + 1
@@ -562,6 +587,8 @@ def remote_zip_structure_summary(
 __all__ = [
     "RemoteZipLayout",
     "RemoteZipMember",
+    "RemoteZipRangeAudit",
+    "RemoteZipRangeEvent",
     "fetch_remote_central_directory",
     "parse_remote_central_directory",
     "read_remote_zip_layout",
