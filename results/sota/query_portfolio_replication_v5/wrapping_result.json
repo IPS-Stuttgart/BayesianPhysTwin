@@ -1,0 +1,284 @@
+{
+  "arms": {
+    "continuous_bayes": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.36823348999023436,
+        0.0,
+        0.297137451171875,
+        0.3346290588378906,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.023935743355863733,
+        0.03156682771706268
+      ],
+      "mean_downside_below_fixed": 0.0017413168781764857,
+      "mean_gain_over_continuous_prior_best_fixed": 0.027678567166174128,
+      "mean_native_reward": 0.9146453884474667,
+      "nonfixed_sensor_decisions": 921256,
+      "observed_harm_fraction": 0.05,
+      "one_sided_95pct_harm_risk_upper": 0.07495323389779734,
+      "oracle_action_rate": 0.40100860595703125,
+      "worlds_harmed_beyond_numeric_margin": 16
+    },
+    "continuous_map": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.41507492065429685,
+        0.0,
+        0.08059234619140625,
+        0.5043327331542968,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.02070175403953284,
+        0.030586757371053753
+      ],
+      "mean_downside_below_fixed": 0.00768940496073318,
+      "mean_gain_over_continuous_prior_best_fixed": 0.02555695460089118,
+      "mean_native_reward": 0.9125237758821839,
+      "nonfixed_sensor_decisions": 1205086,
+      "observed_harm_fraction": 0.19375,
+      "one_sided_95pct_harm_risk_upper": 0.23372163141122632,
+      "oracle_action_rate": 0.5401382446289062,
+      "worlds_harmed_beyond_numeric_margin": 62
+    },
+    "continuous_prior_best_fixed": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.0,
+        0.0
+      ],
+      "mean_downside_below_fixed": 0.0,
+      "mean_gain_over_continuous_prior_best_fixed": 0.0,
+      "mean_native_reward": 0.8869668212812926,
+      "nonfixed_sensor_decisions": 0,
+      "observed_harm_fraction": 0.0,
+      "one_sided_95pct_harm_risk_upper": 0.00931797940888407,
+      "oracle_action_rate": 0.0,
+      "worlds_harmed_beyond_numeric_margin": 0
+    },
+    "finite_particle_bayes": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.20677261352539061,
+        0.0,
+        0.17980117797851564,
+        0.6134262084960938,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.029066497828671486,
+        0.03964889693400361
+      ],
+      "mean_downside_below_fixed": 0.00399868090014166,
+      "mean_gain_over_continuous_prior_best_fixed": 0.034434857872145085,
+      "mean_native_reward": 0.9214016791534376,
+      "nonfixed_sensor_decisions": 1075051,
+      "observed_harm_fraction": 0.06875,
+      "one_sided_95pct_harm_risk_upper": 0.09671773561117031,
+      "oracle_action_rate": 0.6568557739257812,
+      "worlds_harmed_beyond_numeric_margin": 22
+    },
+    "posterior_90_guard": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.2761558532714844,
+        0.0,
+        0.6051353454589844,
+        0.11870880126953125,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.00943833680493262,
+        0.0124546949536921
+      ],
+      "mean_downside_below_fixed": 0.0002586733832587142,
+      "mean_gain_over_continuous_prior_best_fixed": 0.0109403560675341,
+      "mean_native_reward": 0.8979071773488266,
+      "nonfixed_sensor_decisions": 517557,
+      "observed_harm_fraction": 0.009375,
+      "one_sided_95pct_harm_risk_upper": 0.024050731680578197,
+      "oracle_action_rate": 0.12965164184570313,
+      "worlds_harmed_beyond_numeric_margin": 3
+    },
+    "posterior_975_guard": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.25807723999023435,
+        0.0,
+        0.7017204284667968,
+        0.04020233154296875,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.005067620233188167,
+        0.006768565248886562
+      ],
+      "mean_downside_below_fixed": 4.805527409794813e-05,
+      "mean_gain_over_continuous_prior_best_fixed": 0.005907709810817162,
+      "mean_native_reward": 0.8928745310921098,
+      "nonfixed_sensor_decisions": 390961,
+      "observed_harm_fraction": 0.003125,
+      "one_sided_95pct_harm_risk_upper": 0.01473813780942096,
+      "oracle_action_rate": 0.046892547607421876,
+      "worlds_harmed_beyond_numeric_margin": 1
+    },
+    "posterior_99_guard": {
+      "action_probability": [
+        0.0,
+        0.0,
+        0.22855606079101562,
+        0.0,
+        0.7534187316894532,
+        0.01802520751953125,
+        0.0,
+        0.0
+      ],
+      "gain_ci95": [
+        0.0035501976354394504,
+        0.004774267128184033
+      ],
+      "mean_downside_below_fixed": 9.183305191689737e-06,
+      "mean_gain_over_continuous_prior_best_fixed": 0.004154884412108993,
+      "mean_native_reward": 0.8911217056934018,
+      "nonfixed_sensor_decisions": 323199,
+      "observed_harm_fraction": 0.0,
+      "one_sided_95pct_harm_risk_upper": 0.00931797940888407,
+      "oracle_action_rate": 0.023537445068359374,
+      "worlds_harmed_beyond_numeric_margin": 0
+    }
+  },
+  "artifact_id": "6371c2c231e2ac325e1a721575ddd7f6d3c4b06e4700ce6f38359f98579da4c7",
+  "barrier_id": "1bf0cfd1116539fc0a26c7e1790a8b9592ec219da9ecad4d703ea57defaf1555",
+  "checks": {
+    "all_native_qa": true,
+    "calibration_certificate_revalidated": true,
+    "captures_at_least_5pct_oracle_headroom": true,
+    "complete_288_world_denominator": true,
+    "continuous_bayes_harmed_worlds_at_least_10": true,
+    "distinct_oracle_actions_at_least_2": true,
+    "guard_gain_over_best_fixed_at_least_0_003": true,
+    "guard_one_sided_95pct_harm_risk_upper_at_most_0_05": true,
+    "guard_reduces_harmed_worlds_by_at_least_5": true,
+    "guard_reduces_mean_downside_vs_continuous_by_at_least_75pct": true,
+    "guard_retains_at_least_15pct_continuous_gain": true,
+    "positive_paired_ci95_vs_fixed": true
+  },
+  "continuous_gain_fraction_retained": 0.21343987119524568,
+  "continuous_harmed_worlds": 16,
+  "continuous_mean_downside_below_fixed": 0.0017413168781764857,
+  "decision_seal_id": "4121916c192fe52bdacda920e663d541306d955778038a7bc563cbd55fb1b05c",
+  "distinct_oracle_actions": 4,
+  "fresh_successor_automatically_authorized": false,
+  "generation_id": "49e821b67bf20dc32174288d4928a0dab7c63da461d4027c11224fd5892cf016",
+  "guard_downside_reduction_ci95": [
+    0.0003124722233799387,
+    0.0035189084575392186
+  ],
+  "guard_downside_reduction_fraction_vs_continuous": 0.9724029125886199,
+  "guard_harmed_worlds": 1,
+  "guard_mean_downside_below_fixed": 4.805527409794813e-05,
+  "guard_observed_harm_fraction": 0.003125,
+  "guard_one_sided_95pct_harm_risk_upper": 0.01473813780942096,
+  "harm_risk_confidence": 0.95,
+  "harmed_world_reduction": 15,
+  "lock_id": "eaa298ab2d50e49f0b08e174d341cd9d0f84b3b69d8feaed7812d23d65172324",
+  "new_recordings": false,
+  "official_benchmark_or_sota_claim": false,
+  "oracle_headroom_fraction_captured": 0.10571279050633355,
+  "oracle_headroom_over_continuous_prior_best_fixed": 0.05588453187661539,
+  "oracle_mean_native_reward": 0.9428513531579081,
+  "ordinary_worlds": 320,
+  "paired_guard_gain": {
+    "continuous_bayes": {
+      "ci95": [
+        -0.025323851539540043,
+        -0.01843193791348811
+      ],
+      "mean_gain": -0.02177085735535697
+    },
+    "continuous_map": {
+      "ci95": [
+        -0.024454750273446568,
+        -0.015070938505739727
+      ],
+      "mean_gain": -0.019649244790074023
+    },
+    "continuous_prior_best_fixed": {
+      "ci95": [
+        0.005067620233188167,
+        0.006768565248886562
+      ],
+      "mean_gain": 0.005907709810817162
+    },
+    "finite_particle_bayes": {
+      "ci95": [
+        -0.03344305919786551,
+        -0.02348606504653243
+      ],
+      "mean_gain": -0.028527148061327924
+    },
+    "posterior_90_guard": {
+      "ci95": [
+        -0.005745869489994899,
+        -0.004294474423496299
+      ],
+      "mean_gain": -0.005032646256716939
+    },
+    "posterior_99_guard": {
+      "ci95": [
+        0.001494254333891946,
+        0.002012066380414526
+      ],
+      "mean_gain": 0.0017528253987081684
+    }
+  },
+  "pre_future": {
+    "checks": {
+      "all_thirty_two_prefix_batches_native_qualified": true,
+      "calibration_certificate_revalidated": true,
+      "distinct_guard_actions_at_least_2": true,
+      "every_nonfixed_guard_decision_has_probability_at_least_0_975": true,
+      "guard_differs_from_continuous_bayes_at_least_256": true,
+      "guard_nonfixed_sensor_decisions_at_least_256": true
+    },
+    "distinct_guard_actions": 3,
+    "guard_differs_from_continuous_bayes": 798644,
+    "guard_nonfixed_sensor_decisions": 390961,
+    "minimum_nonfixed_guard_improvement_probability": 0.9750001547480155,
+    "pre_future_gate_passed": true
+  },
+  "protected_data_read": false,
+  "real_robot_or_physical_safety_claim": false,
+  "registered_harm_risk_budget": 0.05,
+  "replacement_authorized": false,
+  "replacements": 0,
+  "retry_authorized": false,
+  "schema": "dlolab-wrapping-risk-certified-guard-score-v9",
+  "sensor_draws_per_world": 4096,
+  "source_gate_passed": true,
+  "status": "complete",
+  "task_future_generated": true,
+  "technical_failures": 0
+}

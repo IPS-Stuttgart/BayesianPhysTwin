@@ -1,0 +1,53 @@
+{
+  "artifact_id": "711ca7a97017a3661e16980bd64d5481e61b32e86a5db287dcae63ebf92d907f",
+  "complete_denominator": true,
+  "component_evidence": {
+    "dlolab_slingshot_v4": {
+      "artifact_id": "c7556807bb9c0fb8a78c410be58f13a8ff40f56190a70332e41be80dd69d3c70",
+      "component_result_id": "7f5622d544d2c8f14c054c28014686b1113af427cae4eb57ee4d92ac6f2cd52d",
+      "component_result_sha256": "f390e64af7a0236cef36b8c5dc246b8b26a22eac644abf46805f3fd43c0cacfd"
+    },
+    "dlolab_wrapping_v9": {
+      "artifact_id": "6cb1267174929f0ecd69711ab95862a0600ffcbc1e7587cd52a890c86f76c903",
+      "component_result_id": "6371c2c231e2ac325e1a721575ddd7f6d3c4b06e4700ce6f38359f98579da4c7",
+      "component_result_sha256": "4ea4f11c55c6a0648ed1b932f4ab9c74bb5d706591bb301508715abcadd9c7fd"
+    }
+  },
+  "cross_task_reward_pooling": false,
+  "joint_claim_confidence": 0.95,
+  "joint_portfolio_claim_passed": true,
+  "partial_results_used": false,
+  "protocol_id": "d1c5f9a7b52281d0762b597f2cb3143891b63f0d063093a6b2706a808a9f9ed6",
+  "queries": {
+    "dlolab_slingshot_v4": {
+      "candidate_deployed_worlds": 65,
+      "exact_fallback_worlds": 255,
+      "gain_confidence": 0.995,
+      "gain_gate_passed": true,
+      "gain_lower_bound": 0.003822835609316826,
+      "harm_confidence": 0.98,
+      "harm_gate_passed": true,
+      "harm_upper_bound": 0.01809390520660405,
+      "harmful_worlds": 1,
+      "mean_gain": 0.006338630616664886,
+      "worlds": 320
+    },
+    "dlolab_wrapping_v9": {
+      "candidate_deployed_worlds": 270,
+      "exact_fallback_worlds": 50,
+      "gain_confidence": 0.995,
+      "gain_gate_passed": true,
+      "gain_lower_bound": 0.004805008151771369,
+      "harm_confidence": 0.98,
+      "harm_gate_passed": true,
+      "harm_upper_bound": 0.01809390520660405,
+      "harmful_worlds": 1,
+      "mean_gain": 0.005907709810817162,
+      "worlds": 320
+    }
+  },
+  "schema": "bayesian_phystwin.query_portfolio_replication.result_evidence_v2",
+  "simultaneous_harm_control_passed": true,
+  "simultaneous_positive_value_passed": true,
+  "version": 5
+}
