@@ -424,6 +424,47 @@ The next admissible steps are:
 
 No new acquisition has been launched. No PoseIt scientific result exists.
 
+### Checkpoint receipt to structure integration
+
+`poseit_checkpoint_structure.py` and
+`scripts/science/build_poseit_checkpoint_structure_v1.py` provide a separate
+structure path for the checkpointed receipt. They do not modify the frozen
+acquisition implementation, the original remote ZIP parser, or any scientific
+lock. They do not reinterpret the new receipt as a legacy receipt.
+
+Before a provider request, the new path requires a separately hash-pinned
+`checkpoint-structure-authorization` binding the completed acquisition receipt,
+archive digest, acquisition specification/amendment, exact implementation files,
+host, output paths, structural size bounds, and cooldown. It uses the registered
+acquisition verifier to recompute complete terminal/checkpoint custody under the
+same shared flock. The structure attempt is consumed in a write-once ledger
+outside its output directory before ZIP initialization. There is no alternate
+output-root argument, implicit authorization, or automatic retry.
+
+Each requested ZIP structure slice is served only after fetching and hashing its
+covering acquisition chunks against their retained per-range SHA-256 values.
+The HTTP identity checks remain unchanged. Whole chunks can contain adjacent
+opaque compressed bytes; those bytes are held temporarily in bounded memory,
+never decoded or written as a data payload. Only the requested end-record and
+central-directory slices reach the original parser. The audit distinguishes
+actual provider attempts from in-memory parser responses, and records no raw
+bytes or member names in the public result. Exhausted transport retries, HTTP
+rejection, and changed bytes are terminal; the parser cannot multiply retries.
+
+The private member manifest, public structure lock, and successful terminal must
+all exist for the new offline verification command to accept publication. That
+command also rechecks acquisition custody and exact external authorization and
+result hashes. It verifies retained records, not unavailable raw archive bytes.
+Deleting an output directory does not release its external attempt ledger.
+
+This integration is being qualified exclusively with synthetic ZIPs, native
+checkpoint round trips, and injected failures. No real structure authorization
+has been issued, no real member name has been inspected, and no source or
+confirmation access follows from these software tests. The next production
+step remains the future-only checkpoint acquisition after its existing cooldown;
+only a verified full archive receipt can permit the separate structure
+authorization to be completed and reviewed.
+
 ## Full-download and structure-only custody tools
 
 If a complete local copy becomes available, the alternate exact acquisition
