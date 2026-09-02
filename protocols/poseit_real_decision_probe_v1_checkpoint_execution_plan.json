@@ -1,0 +1,116 @@
+{
+  "boundaries": {
+    "acquisition_launched": false,
+    "archive_bytes_retained": false,
+    "archive_member_names_opened": false,
+    "attempt_consumed": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "member_payload_bytes_opened": false,
+    "object_roles_assigned": false,
+    "phase_labels_opened": false,
+    "provider_contacted": false,
+    "scientific_execution_authorized": false,
+    "scientific_result": false,
+    "sensor_payloads_opened": false,
+    "shake_outcomes_opened": false,
+    "structure_access_authorized": false
+  },
+  "completion_policy": "Verify the complete new-schema receipt against its full custody chain. Do not translate it into a legacy receipt or inspect a central directory until the explicit structure-receipt integration has been qualified and authorized.",
+  "concurrent_acquisition_limit": 1,
+  "failure_policy": "Preserve any terminal failure and stop. A subsequent attempt needs a separate content-bound authorization for the retained terminal and committed prefix, no earlier than its registered failure cooldown. No automatic retry or fresh-root bypass.",
+  "first_request_not_before_utc": "2026-09-03T17:08:20.674819+00:00",
+  "host_alias": "gpuserver4090",
+  "hostname": "workstation1",
+  "implementation_revision": "8ba9f8668d66c887b94b86d30bc4075f6b6daae4",
+  "initial_attempt": 0,
+  "launch_custody": "Allocate a fresh log exclusively and retain the exact child PID/command. Never replace an existing log, launch receipt, attempt directory, or checkpoint. If any exists, inspect current process and custody state instead of spawning another process.",
+  "launch_receipt_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-administration-v1/attempt-000000-launch.json",
+  "log_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-administration-v1/attempt-000000.log",
+  "monitoring": {
+    "process_identity": "The exact PID and command from launch custody and attempts/000000/start.json; observation timeouts do not authorize restart.",
+    "progress": "Only contiguous chunk metadata and process state, never ZIP structure or member payloads.",
+    "terminal": "attempts/000000/terminal.json and the separate acquisition-receipt.json"
+  },
+  "output_root": "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-range-hash-v1",
+  "prelaunch_requirements": [
+    "Both the independently checked current UTC time and the server clock must be at or after the registered earliest time.",
+    "Reverify the deployment, amendment, authorization, native-library hashes, and tested interpreter.",
+    "Confirm that no attempt has been consumed and no acquisition is live; the shared internal flock and write-once attempt directory remain mandatory.",
+    "Use the exact frozen command once, without any method, source, range, retry, worker, or output-root override."
+  ],
+  "process_attempt_limit": 1,
+  "record_id": "87be138a26f159495be544e6e0d0384484911f78880b10cb7d5a74fb9d5229e7",
+  "references": {
+    "amendment": {
+      "file_sha256": "960a62785bce0b235644295f1c568f7bbdea462a3831cc53f673c72bbaccb43c",
+      "repository_path": "protocols/poseit_real_decision_probe_v1_checkpoint_transport_amendment.json"
+    },
+    "deployment_readiness": {
+      "file_sha256": "ee93dd9730b976a432581f00c1e092e6e20b0156551253fac5ae0d08347eb714",
+      "repository_path": "evidence/poseit-real-decision-v1/checkpoint-deployment-v1/readiness.json"
+    },
+    "initial_attempt_authorization": {
+      "file_sha256": "8d523d7713ed3b3ba965ca415cdfc0eb869bfc0964580147d0a997159fc733e9",
+      "repository_path": "protocols/poseit_real_decision_probe_v1_checkpoint_attempt_000000.json"
+    },
+    "preflight": {
+      "file_sha256": "1cd3cbfa86fd59039bfaa5782a79f828cf4d563970d185351dd4bbe4100e0e77",
+      "repository_path": "evidence/poseit-real-decision-v1/checkpoint-deployment-v1/preflight.json"
+    },
+    "software_qualification": {
+      "file_sha256": "4e6510532365f4771a56e4cfbaa28e8024209cf8777fd5ec52f81d9d94d1cbed",
+      "repository_path": "evidence/poseit-real-decision-v1/checkpoint-transport-qualification-v1.json"
+    }
+  },
+  "run_command": [
+    "env",
+    "-C",
+    "/home/florianpfaff/source-only/poseit-real-decision-v1/source-checkpoint-8ba9f866",
+    "PYTHONPATH=src",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "CUDA_VISIBLE_DEVICES=",
+    "OMP_NUM_THREADS=1",
+    "OPENBLAS_NUM_THREADS=1",
+    "python3",
+    "scripts/science/acquire_poseit_checkpointed_range_hash_v1.py",
+    "run",
+    "--amendment",
+    "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-administration-v1/poseit_real_decision_probe_v1_checkpoint_transport_amendment.json",
+    "--expected-amendment-sha256",
+    "960a62785bce0b235644295f1c568f7bbdea462a3831cc53f673c72bbaccb43c",
+    "--authorization",
+    "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-administration-v1/poseit_real_decision_probe_v1_checkpoint_attempt_000000.json",
+    "--expected-authorization-sha256",
+    "8d523d7713ed3b3ba965ca415cdfc0eb869bfc0964580147d0a997159fc733e9"
+  ],
+  "schema": "bayesian-phystwin.poseit-checkpoint-execution-plan",
+  "schema_version": 1,
+  "scope": "opaque-full-archive-hashing-only",
+  "shared_lock": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash.lock",
+  "shared_lock_owner": "internal CLI flock; do not wrap the command in another flock on the same path",
+  "source_code_archive": "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-administration-v1/poseit-checkpoint-production-source-8ba9f866.tar.gz",
+  "source_code_archive_sha256": "f207f7a7f9d12209a0021f37fce3038316920e145bb01157a9117862bdc3eeb0",
+  "source_code_root": "/home/florianpfaff/source-only/poseit-real-decision-v1/source-checkpoint-8ba9f866",
+  "spec_id": "a226d40e31eaf2deb63bcfc751e8acd69533a2b2a2b921e0920b5eb34676fb28",
+  "start_byte": 0,
+  "status": "frozen-future-attempt-not-launched",
+  "tested_python_version": "3.10.12",
+  "verify_command": [
+    "env",
+    "-C",
+    "/home/florianpfaff/source-only/poseit-real-decision-v1/source-checkpoint-8ba9f866",
+    "PYTHONPATH=src",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "CUDA_VISIBLE_DEVICES=",
+    "OMP_NUM_THREADS=1",
+    "OPENBLAS_NUM_THREADS=1",
+    "python3",
+    "scripts/science/acquire_poseit_checkpointed_range_hash_v1.py",
+    "verify",
+    "--amendment",
+    "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-administration-v1/poseit_real_decision_probe_v1_checkpoint_transport_amendment.json",
+    "--expected-amendment-sha256",
+    "960a62785bce0b235644295f1c568f7bbdea462a3831cc53f673c72bbaccb43c"
+  ]
+}

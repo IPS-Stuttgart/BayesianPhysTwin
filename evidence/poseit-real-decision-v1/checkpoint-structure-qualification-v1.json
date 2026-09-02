@@ -1,0 +1,106 @@
+{
+  "schema": "bayesian-phystwin.poseit-checkpoint-structure-qualification",
+  "schema_version": 1,
+  "status": "software-only-qualified-real-structure-not-authorized",
+  "observation_date_utc": "2026-09-02",
+  "implementation_revision": "9e4df0468f96346dd7b25583ba0053e0ce4ba8b6",
+  "unchanged_acquisition_implementation_revision": "8ba9f8668d66c887b94b86d30bc4075f6b6daae4",
+  "implementation_file_sha256": {
+    "src/bayesian_phystwin_experiments/poseit_checkpoint_structure.py": "c06f147ed209e4d18e5d109e4718933f0e38e1586629c938e845b5fb0baa80b7",
+    "scripts/science/build_poseit_checkpoint_structure_v1.py": "4b0bc493134f71b3bf8d2dbeddb6960b7eb9ff73be1c6ec994596c861acc7b1e"
+  },
+  "test_file_sha256": {
+    "tests/test_poseit_checkpoint_structure.py": "cbc04960083781bf92873e8ff99a85ed160f9a56b3c7f56e8dbe1351fc548cb0"
+  },
+  "unchanged_frozen_bindings": {
+    "acquisition_amendment_file_sha256": "960a62785bce0b235644295f1c568f7bbdea462a3831cc53f673c72bbaccb43c",
+    "all_sixteen_amendment_parent_and_implementation_files_reverified": true,
+    "remote_zip_parser_file_sha256": "098b94d34fd00daa4b1e6ee4431fc5ee4ee5d0558fde0d6ba0ab5bb7e4c1489a",
+    "scientific_protocol_or_method_changed": false,
+    "prior_acquisition_failures_modified": false
+  },
+  "local_verification": {
+    "requested_python": "3.12",
+    "native_library": "/tmp/poseit-rhash-v1.4.6/librhash/librhash.so.1.4.6",
+    "native_library_sha256": "c6be5c57ead2213cf36aaede1ba53036cd5ef13d3f0687f7973cce4f33ccbb33",
+    "full_poseit_suite_with_explicit_native_library": {
+      "passed": 275,
+      "skipped": 0,
+      "elapsed_seconds": 398.15,
+      "exit_code": 0
+    },
+    "full_poseit_suite_without_explicit_native_library": {
+      "passed": 138,
+      "skipped": 137,
+      "elapsed_seconds": 47.28,
+      "exit_code": 0
+    },
+    "native_skip_semantics": "Native tests require the explicitly supplied isolated RHash library; no system-library discovery or fallback is admitted.",
+    "ruff_passed": true,
+    "strict_mypy_passed_for_structure_module_and_command": true,
+    "command_help_import_passed_without_provider_contact": true,
+    "staged_diff_check_passed": true
+  },
+  "remote_synthetic_verification": {
+    "host_alias": "gpuserver4090",
+    "hostname": "workstation1",
+    "pytest": "9.1.1",
+    "code_root": "/home/florianpfaff/source-only/poseit-real-decision-v1/runtime/rhash-1.4.6-checkpoint-v1/synthetic-structure-9e4df046",
+    "source_archive_sha256": "93178c30b081fce31326cc434f31f0308f522a046b4063e7feadc54ea3992634",
+    "source_archive_producer_exit_code": 0,
+    "source_archive_hash_reverified_after_producer_exit_and_before_remote_extraction": true,
+    "exact_deployed_file_count": 22,
+    "all_deployed_file_hashes_matched_local_committed_files": true,
+    "native_library_sha256": "c6be5c57ead2213cf36aaede1ba53036cd5ef13d3f0687f7973cce4f33ccbb33",
+    "native_library_reverified": true,
+    "test_file": "tests/test_poseit_checkpoint_structure.py",
+    "passed": 45,
+    "skipped": 0,
+    "elapsed_seconds": 1.42,
+    "exit_code": 0,
+    "cuda_visible_devices": "",
+    "omp_num_threads": 1,
+    "openblas_num_threads": 1,
+    "scope": "Synthetic ZIPs, explicit native checkpoint round trips, mocked source transport, and mocked CLI dispatch only. No PoseIt archive request or payload is part of the test bundle."
+  },
+  "tested_contracts": [
+    "A complete registered checkpoint custody chain and an externally pinned acquisition receipt are required before any structure request.",
+    "A separate exact structure authorization binds source, implementation, host, fixed output and external ledger paths, scope, bounds, cooldown, and one attempt.",
+    "Refetched whole acquisition chunks must match their retained SHA-256 values before any requested ZIP slice is returned to the original parser.",
+    "Opaque neighboring compressed bytes may be buffered transiently; no member payload is decompressed or persisted.",
+    "Actual network attempts are distinguished from memory adapter responses; HTTP rejection and exhausted socket retries cannot trigger a nested parser retry.",
+    "ZIP and ZIP64 structure parsing succeeds on synthetic inputs without opening member payloads.",
+    "Missing custody, altered authorization/code bindings, wrong source bytes, unsafe archive paths, linked outputs, concurrent locks, and interrupted publication fail closed.",
+    "Deleting output does not release the external attempt ledger. Failure never automatically retries.",
+    "Offline publication verification requires matching private/public records, exact external result hash, complete terminal custody, and ordered timestamps. It does not rehash unavailable raw data."
+  ],
+  "production_state_after_qualification": {
+    "checkpoint_acquisition_output_exists": false,
+    "checkpoint_structure_output_exists": false,
+    "checkpoint_structure_attempt_ledger_exists": false,
+    "initial_checkpoint_launch_log_exists": false,
+    "initial_checkpoint_launch_receipt_exists": false,
+    "observed_by": "Direct SSH stat of the five exact registered paths; all returned no such file or directory.",
+    "earliest_provider_request_utc": "2026-09-03T17:08:20.674819+00:00",
+    "provider_reset_time_known": false
+  },
+  "remaining_gates": [
+    "After the existing cooldown and fresh process/identity checks, consume the already frozen initial acquisition authorization exactly once using the unchanged acquisition implementation.",
+    "Complete and verify the full archive SHA-256 and checkpoint custody. Preserve any failure without automatic restart.",
+    "Only then complete and review a separate structure authorization binding the actual receipt and exact integration implementation. No such real authorization is issued by this qualification.",
+    "Run and verify the one-shot structure inventory; qualify the new schema for the unchanged archive-specific mapping and object-role gates before decoding any sensor or phase payload.",
+    "Follow the frozen fit/calibration, sealed source-test, source gate, and one-shot confirmation sequence. No scientific benefit has been established."
+  ],
+  "boundaries": {
+    "poseit_provider_contacted_during_qualification": false,
+    "real_acquisition_launched_during_qualification": false,
+    "real_structure_authorization_issued": false,
+    "real_archive_member_names_opened": false,
+    "real_member_payloads_decoded": false,
+    "real_phase_labels_opened": false,
+    "real_shake_outcomes_opened": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "scientific_result": false
+  }
+}

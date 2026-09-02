@@ -1,0 +1,118 @@
+{
+  "boundaries": {
+    "archive_member_names_opened": false,
+    "archive_payload_bytes_acquired": false,
+    "confirmation_opened": false,
+    "feature_or_mapping_choice_from_any_poseit_outcome": false,
+    "held_v8_accessed": false,
+    "phase_labels_opened": false,
+    "sensor_payloads_opened": false
+  },
+  "contract": "poseit-real-decision-preaccess-mapping-constraints-v1",
+  "decision_claim": "on previously unseen real objects, decision-directed selection of logged physical probes reduces held-intervention decision regret more efficiently than task-agnostic system identification, while abstaining when no action is certified",
+  "deferred_until_structure_only_inspection": {
+    "allowed_information": [
+      "ZIP central-directory member names",
+      "ZIP central-directory sizes, compression methods, CRC metadata, and directory structure"
+    ],
+    "items": [
+      "exact archive member path templates",
+      "exact timestamp field names, units, and clock domains",
+      "exact phase-boundary field names",
+      "deterministic interpolation or nearest-sample rule required by the released cadence",
+      "deterministic handling of structurally absent modalities or actions",
+      "the final tensor layout and dimensionality consistent with the fixed scientific constraints"
+    ],
+    "must_be_frozen_before": "opening any ZIP member payload, phase label, sensor value, or shake outcome",
+    "outcome_information_allowed": false
+  },
+  "experiment_fixed_constraints": {
+    "action_context": {
+      "holding_pose_identifier_available": true,
+      "mandatory_reference_pose": 1,
+      "selectable_holding_poses": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    },
+    "feature_family": {
+      "allowed_core_modalities": [
+        "RGB",
+        "GelSight tactile",
+        "raw six-axis wrist force and torque",
+        "registered gripper force"
+      ],
+      "backbone_fit_on_poseit": false,
+      "backbone_family": "frozen ImageNet-pretrained ResNet50 for RGB and tactile frames",
+      "confirmation_derived_preprocessing": false,
+      "fit_only_coordinate_standardization": true,
+      "poseit_outcome_derived_preprocessing": false,
+      "tactile_reference": "subtract a pre-contact tactile image before frozen feature extraction"
+    },
+    "missingness": {
+      "complete_anchor_required": true,
+      "exclude_structurally_unavailable_actions_from_policy_and_oracle_before_labels": true,
+      "no_outcome_selected_imputation": true
+    },
+    "temporal_sampling": {
+      "end": "end of the pose phase after the one-second wait at the holding pose",
+      "future_samples_allowed": false,
+      "sample_count": 20,
+      "sampling": "evenly spaced over the registered pre-shake window",
+      "shake_or_retract_samples_allowed": false,
+      "start": "start of the grasp phase"
+    }
+  },
+  "official_source_constraints": {
+    "paper": {
+      "arxiv_id": "2209.05022",
+      "arxiv_version": 1,
+      "license": "CC-BY-4.0",
+      "title": "PoseIt: A Visual-Tactile Dataset of Holding Poses for Grasp Stability Analysis",
+      "url": "https://arxiv.org/abs/2209.05022"
+    },
+    "paper_defined_facts": {
+      "all_action_combinations_collected": "all grasp-point by two-gripper-force by sixteen-holding-pose combinations per object",
+      "collection_phases": [
+        "grasp",
+        "pose with a one-second terminal wait",
+        "shake stability check",
+        "retract and release"
+      ],
+      "input_definition": "sensory data from the grasp and pose phases only",
+      "prediction_target": "stability during the later shaking phase",
+      "reference_pose": 1,
+      "standard_input_modalities": [
+        "RGB",
+        "GelSight tactile",
+        "raw force and torque",
+        "fixed gripper force"
+      ],
+      "standard_temporal_sample_count": 20,
+      "standard_temporal_window": "start of grasp through end of pose phase"
+    },
+    "repository_revision": "5e290eb024f25b1f4aa602724e6869e512aca434"
+  },
+  "parent_protocol": {
+    "config_sha256": "fa49b7c2d20d02d554f9d38b6025839d583493bf2a28dbea29a17cb804e66504",
+    "contract": "poseit-real-decision-probe-protocol-v1",
+    "file_sha256": "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4",
+    "freeze_commit": "924dc8e68276d945842f73d9f941cd4ac8db59d6",
+    "mapping_requirement": "the exact archive paths, timestamps, resampling, missingness encoding, and fixed-dimensional feature map must be frozen after structure-only inspection and before any label decode"
+  },
+  "schema_version": 1,
+  "status": "frozen-source-independently-before-archive-byte-acquisition"
+}

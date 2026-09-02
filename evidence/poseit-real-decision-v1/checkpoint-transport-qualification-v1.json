@@ -1,0 +1,95 @@
+{
+  "schema": "bayesian-phystwin.poseit-checkpoint-transport-qualification",
+  "schema_version": 1,
+  "status": "software-only-qualified-production-amendment-not-yet-frozen",
+  "observation_date_utc": "2026-09-02",
+  "implementation_file_sha256": {
+    "src/bayesian_phystwin_experiments/poseit_hash_checkpoint.py": "b286c24377f966bb6b9452fa70c332cce3ef9e78638986b16e5dfcbf9862e1a1",
+    "src/bayesian_phystwin_experiments/poseit_checkpoint_acquisition.py": "4d8a7324c83a50b3fad8b0eec4913957b31251e0a9686490c3ad64604da2ff8b",
+    "scripts/science/acquire_poseit_checkpointed_range_hash_v1.py": "dbacda30617389826e3183734f9448912d6f2c48086fddb95513c94cac653d5f"
+  },
+  "test_file_sha256": {
+    "tests/test_poseit_hash_checkpoint.py": "2f60ae1bd88307dee83b49ca708e123d9eea6bb79e493cf42a243fb9b567517b",
+    "tests/test_poseit_checkpoint_acquisition.py": "6c162c637119ea397e069c57edfd6c52317833c46fa44aa62e5baca12718b76a",
+    "tests/test_poseit_checkpoint_acquisition_cli.py": "7d18538879030debb5b0c9223a64d0ca9b20cb94ec9eabe83305e3b819807dca"
+  },
+  "unchanged_parent_file_sha256": {
+    "protocols/poseit_real_decision_probe_v1.json": "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4",
+    "protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json": "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210",
+    "protocols/poseit_real_decision_probe_v1_method_lock.json": "4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c",
+    "protocols/poseit_real_decision_probe_v1_range_transport_lock.json": "8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a",
+    "src/bayesian_phystwin_experiments/poseit_remote_archive.py": "2db9da81a84e3d1b7cc0ad4e0270aa18e19b64e42a1c72aade98b35228db0881"
+  },
+  "local_verification": {
+    "requested_python": "3.12",
+    "explicit_native_library": "/tmp/poseit-rhash-v1.4.6/librhash/librhash.so.1.4.6",
+    "native_library_sha256": "c6be5c57ead2213cf36aaede1ba53036cd5ef13d3f0687f7973cce4f33ccbb33",
+    "full_poseit_suite_with_explicit_library": {"passed": 230, "skipped": 0, "elapsed_seconds": 220.27},
+    "full_poseit_suite_without_explicit_library": {"passed": 133, "skipped": 97, "elapsed_seconds": 33.60},
+    "native_skip_semantics": "Native-dependent tests skip rather than discover or fall back to a system library.",
+    "ruff_passed": true,
+    "strict_mypy_passed_for_runner_and_command": true,
+    "diff_check_passed": true
+  },
+  "remote_native_build": {
+    "host_alias": "gpuserver4090",
+    "hostname": "workstation1",
+    "root": "/home/florianpfaff/source-only/poseit-real-decision-v1/runtime/rhash-1.4.6-checkpoint-v1",
+    "upstream_repository": "https://github.com/rhash/RHash",
+    "upstream_revision": "6562de382954d9893442b89b0e8b5c513eea6a88",
+    "source_delivery": "Local git archive of the pinned revision, transferred by SSH after the server's direct GitHub clone failed before checkout.",
+    "source_archive_sha256": "f7b5dff4ef75985b42a43d24a6c80e03cdce125ac235d24cf82e40a6d836ba47",
+    "source_archive_reverified_on_server": true,
+    "configure_arguments": ["--disable-openssl", "--enable-lib-shared", "--disable-lib-static"],
+    "compiler": "gcc 11.4.0",
+    "config_mak_sha256": "a363c970ad85f4fa2fa7a35cf627ce85e98018f3f6420a2a85892cbe8e8a8993",
+    "librhash_config_mak_sha256": "391431a9ba50c5ecbde968e0b046f63d8ea761e3c71a707e06a1a1fcb79ae704",
+    "native_library": "/home/florianpfaff/source-only/poseit-real-decision-v1/runtime/rhash-1.4.6-checkpoint-v1/source/librhash/librhash.so.1.4.6",
+    "native_library_sha256": "c6be5c57ead2213cf36aaede1ba53036cd5ef13d3f0687f7973cce4f33ccbb33",
+    "matches_local_native_binary": true,
+    "upstream_shared_library_test_exit_code": 0,
+    "upstream_shared_library_test_result": "All sums are working properly!",
+    "system_library_install_or_replacement_performed": false
+  },
+  "remote_synthetic_verification": {
+    "python": "3.10.12",
+    "pytest": "9.1.1",
+    "code_bundle_sha256": "0a7dfcb4d6ee34d705da807ffa8f4c319c5061396745e91b89682a542d05b169",
+    "code_bundle_reverified_on_server": true,
+    "code_root": "/home/florianpfaff/source-only/poseit-real-decision-v1/runtime/rhash-1.4.6-checkpoint-v1/synthetic-transport",
+    "bundle_scope": "Only transport code, exact protocol/administrative parent files, and synthetic tests; no dataset payload or empirical execution bundle.",
+    "test_files": ["tests/test_poseit_hash_checkpoint.py", "tests/test_poseit_checkpoint_acquisition.py", "tests/test_poseit_checkpoint_acquisition_cli.py"],
+    "passed": 128,
+    "skipped": 0,
+    "elapsed_seconds": 5.27,
+    "exit_code": 0,
+    "cuda_visible_devices": "",
+    "omp_num_threads": 1,
+    "openblas_num_threads": 1,
+    "input": "synthetic byte streams and mocked command dispatch only"
+  },
+  "remaining_gates": [
+    "Seal the implementation revision and its exact production deployment.",
+    "Freeze a separate transport amendment and one externally hash-bound initial attempt authorization.",
+    "Do not contact the provider before 2026-09-03T17:08:20.674819+00:00; the cooldown is not a known reset or a launch authorization.",
+    "Start the first checkpointed attempt at byte zero; neither old failed prefix is recoverable.",
+    "After a complete archive hash, explicitly integrate the new receipt schema with structure custody before central-directory inspection.",
+    "Pass the unchanged structure, mapping, fit/calibration, source prediction seal, source gate, and confirmation authorization gates in order."
+  ],
+  "boundaries": {
+    "scientific_method_changed": false,
+    "old_failed_attempts_modified": false,
+    "poseit_provider_contacted_during_this_qualification": false,
+    "new_poseit_acquisition_launched": false,
+    "production_amendment_frozen": false,
+    "production_attempt_authorized": false,
+    "full_archive_hash_available": false,
+    "archive_member_names_opened": false,
+    "member_payload_bytes_opened": false,
+    "phase_labels_opened": false,
+    "shake_outcomes_opened": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "scientific_result": false
+  }
+}

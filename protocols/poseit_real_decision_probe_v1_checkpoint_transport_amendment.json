@@ -1,0 +1,56 @@
+{
+  "boundaries": {
+    "archive_bytes_retained": false,
+    "archive_member_names_opened": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "member_payload_bytes_opened": false,
+    "object_roles_assigned": false,
+    "phase_labels_opened": false,
+    "scientific_result": false,
+    "sensor_payloads_opened": false,
+    "shake_outcomes_opened": false,
+    "structure_access_authorized": false
+  },
+  "execution": {
+    "first_request_not_before_utc": "2026-09-03T17:08:20.674819+00:00",
+    "host_alias": "gpuserver4090",
+    "hostname": "workstation1",
+    "lock_path": "/home/florianpfaff/source-only/poseit-real-decision-v1/range-hash.lock",
+    "resume_delay_seconds": 86400,
+    "root": "/home/florianpfaff/source-only/poseit-real-decision-v1/checkpoint-range-hash-v1"
+  },
+  "implementation_files": {
+    "scripts/science/acquire_poseit_checkpointed_range_hash_v1.py": "dbacda30617389826e3183734f9448912d6f2c48086fddb95513c94cac653d5f",
+    "src/bayesian_phystwin/__init__.py": "34d837cbbc11494b10eb067774b9a1acf9b49ef241dbbd149ff2be4b81ab86c3",
+    "src/bayesian_phystwin/_canonical_contracts.py": "da9027ef31d5b60bffba98e94ee8322893f319c363dd172c0fd8232c4d1272f8",
+    "src/bayesian_phystwin/_portable_contracts.py": "7d4971a47224462a67b2c5ffa4c494d1f3f2ace679ec1305340019d63a0afbb3",
+    "src/bayesian_phystwin_experiments/__init__.py": "b6d2093e082d36f396f58235ba983b1b710badff81727becd3290c1149126201",
+    "src/bayesian_phystwin_experiments/poseit_checkpoint_acquisition.py": "4d8a7324c83a50b3fad8b0eec4913957b31251e0a9686490c3ad64604da2ff8b",
+    "src/bayesian_phystwin_experiments/poseit_hash_checkpoint.py": "b286c24377f966bb6b9452fa70c332cce3ef9e78638986b16e5dfcbf9862e1a1",
+    "src/bayesian_phystwin_experiments/poseit_real_decision_protocol.py": "b38107e1f43951092cdc5986339bba1af12ffda106a32ebae0c425425ebf8293"
+  },
+  "implementation_revision": "8ba9f8668d66c887b94b86d30bc4075f6b6daae4",
+  "legacy_receipt_compatible": false,
+  "native_library": {
+    "path": "/home/florianpfaff/source-only/poseit-real-decision-v1/runtime/rhash-1.4.6-checkpoint-v1/source/librhash/librhash.so.1.4.6",
+    "sha256": "c6be5c57ead2213cf36aaede1ba53036cd5ef13d3f0687f7973cce4f33ccbb33"
+  },
+  "parent_files": {
+    "evidence/poseit-real-decision-v1/delivery-recovery-feasibility-v1.json": "a5a9a0bd0bf55a7a26c2220728318da8cd0f65135ec0e2ea079551e4463f3fed",
+    "evidence/poseit-real-decision-v1/range-hash-v1-failure/terminal_observation.json": "1186ced3e319a8186a804d954868537ef293280bccf1586ba2c8bbc43bbc0c16",
+    "evidence/poseit-real-decision-v1/range-hash-v2-failure/terminal_observation.json": "11f7adb855fd5dc4af9f368eb875b7715b383a9deff7443e61e46146ec329364",
+    "protocols/poseit_real_decision_probe_v1.json": "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4",
+    "protocols/poseit_real_decision_probe_v1_method_lock.json": "4fa1ef3c96df28a67e13461b79c44690f53f5abb4c90e06200c4e90bcf8e1a1c",
+    "protocols/poseit_real_decision_probe_v1_preaccess_mapping_constraints.json": "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210",
+    "protocols/poseit_real_decision_probe_v1_range_transport_lock.json": "8b3843bd4255aae980e3c8474f60fb38431bdb61e043a9a2e062d1c2acf8b67a",
+    "src/bayesian_phystwin_experiments/poseit_remote_archive.py": "2db9da81a84e3d1b7cc0ad4e0270aa18e19b64e42a1c72aade98b35228db0881"
+  },
+  "prior_partial_hashes_reused": false,
+  "record_id": "dc4340794cfc576df667c39ab606a46427ccab3407d13bdde8e2dd7283355dc4",
+  "resume_policy": "new-authorization-after-preserved-terminal-and-cooldown",
+  "schema": "bayesian-phystwin.poseit-checkpoint-transport-amendment",
+  "schema_version": 1,
+  "scientific_method_changed": false,
+  "status": "frozen-acquisition-only"
+}

@@ -1,0 +1,99 @@
+{
+  "boundaries": {
+    "archive_member_names_opened": false,
+    "archive_payload_bytes_acquired": false,
+    "confirmation_opened": false,
+    "held_v8_accessed": false,
+    "method_choice_from_any_poseit_outcome": false,
+    "phase_labels_opened": false,
+    "sensor_payloads_opened": false
+  },
+  "calibration": {
+    "calibration_object_count": 5,
+    "certificate_threshold": 0.5,
+    "coverage": 0.8,
+    "lower_stability_bound": "standard-normal CDF of conditional latent mean divided by conditional latent standard deviation minus the calibrated object-level standardized shortfall multiplier",
+    "object_score": "maximum of max(0, (conditional latent mean - observed latent shake stability) / conditional latent standard deviation) over every valid-anchor family, registered selector, budget, and structurally available non-reference pose",
+    "registered_selectors": [
+      "decision_directed",
+      "system_identification",
+      "lexicographic_fixed",
+      "all 256 hash-derived fixed orders"
+    ],
+    "shared_across_methods": true,
+    "split_conformal_rank": 5,
+    "tie_rule": "use the conservative higher order statistic",
+    "uses_confirmation": false
+  },
+  "contract": "poseit-real-decision-method-lock-v1",
+  "decision_and_aggregation": {
+    "certificate_coverage": "an object is covered only when every family, selector, budget, and available action is simultaneously covered",
+    "certified_action": "lexicographically first structurally available non-reference pose with lower stability bound at least 0.5",
+    "false_safe_rate": "unstable certified selections divided by all non-abstaining selections; zero when there are no non-abstaining selections",
+    "family_regret_auc": "trapezoidal area over budgets 0, 1, 2, and 3",
+    "fixed_order_control": {
+      "count": 256,
+      "domain_separator": "poseit-real-decision-fixed-probe-order-v1",
+      "roster_sha256": "889f81c2ec6b1f33e3f55e7a2d9e6f4e879b9bf511ec8a5ead9933d45fc9bee3",
+      "rule": "for each integer index 0 through 255, sort poses 2 through 16 by SHA-256(domain_separator || NUL || decimal_index || NUL || decimal_pose), with pose identifier as the digest-tie break; the 256 resulting full orders must be unique",
+      "summary": "exact arithmetic mean over the frozen 256 orders at each budget"
+    },
+    "object_regret_auc": "mean family regret AUC within each object before any cross-object inference",
+    "oracle": "lexicographically first structurally available non-reference pose with a Pass shake label, or abstain if none passes",
+    "selected_probe_diversity": "number of distinct pose identifiers selected by the decision-directed policy anywhere in the evaluated cohort",
+    "unsafe_action_rate": "unstable certified selections divided by all family-budget decisions, including abstentions"
+  },
+  "latent_response_twin": {
+    "action_block_layout": "eight projected pre-shake feature coordinates followed by one latent shake-stability coordinate, action-major for poses 1 through 16",
+    "covariance": {
+      "diagonal_shrinkage": 0.25,
+      "estimator": "sample covariance with ddof=1 over complete fit families",
+      "jitter": "max(1e-8 times the median positive shrunk variance, float64 epsilon)",
+      "mean": "arithmetic mean over complete fit families"
+    },
+    "fit_family_requirement": "every fit family must contain all 16 structurally available pose records; otherwise the archive gate fails before any outcome payload is opened",
+    "latent_shake_stability": {
+      "Pass": 1.0,
+      "Drop": -1.0,
+      "Not present": -1.0,
+      "Slip": -1.0
+    },
+    "posterior_stability_probability": "standard-normal CDF of conditional latent mean divided by conditional latent standard deviation, with the registered deterministic zero-variance limit",
+    "selectors_share_exact_state": true
+  },
+  "parent_artifacts": {
+    "mapping_constraints": {
+      "config_sha256": "75551bbdc63021d768bbc5f44ba9cc38a56592689306a11dff4912abf3f18682",
+      "contract": "poseit-real-decision-preaccess-mapping-constraints-v1",
+      "file_sha256": "8bf66c087437d77589d5fcd35d74a47b2a4d8ba69b311041123d719da8445210",
+      "freeze_commit": "ac87d68f0dbdb6c321498dec6743b3a73c50ec77"
+    },
+    "protocol": {
+      "config_sha256": "fa49b7c2d20d02d554f9d38b6025839d583493bf2a28dbea29a17cb804e66504",
+      "contract": "poseit-real-decision-probe-protocol-v1",
+      "file_sha256": "221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4",
+      "freeze_commit": "924dc8e68276d945842f73d9f941cd4ac8db59d6"
+    },
+    "selector_kernel": {
+      "file_sha256": "12da0efa6af9abd8b9be0122a626e318283d5d1472df339bd8c43badf84bc15f",
+      "freeze_commit": "aedb37e59067346ca4e93daa5e39188f748ad632"
+    }
+  },
+  "preprocessing": {
+    "dimension_reduction": {
+      "component_count": 8,
+      "fit_records": "every structurally present pre-shake pose record from the ten fit objects",
+      "method": "thin-SVD principal components of fit-standardized records without using any phase or shake label",
+      "sign_rule": "make the largest-absolute loading in each component positive, breaking equal-absolute-loading ties by the lowest raw coordinate index"
+    },
+    "fit_only_standardization": {
+      "center": "coordinate-wise arithmetic mean over every structurally present pre-shake pose record from the ten fit objects",
+      "constant_coordinate_rule": "replace a zero population standard deviation with one",
+      "scale": "coordinate-wise population standard deviation with ddof=0",
+      "uses_outcome": false
+    },
+    "raw_pose_record": "the exact fixed-dimensional pre-shake tensor admitted by the parent mapping constraints and the future structure-only archive mapping lock"
+  },
+  "schema_version": 1,
+  "status": "frozen-source-independently-before-archive-byte-acquisition"
+}

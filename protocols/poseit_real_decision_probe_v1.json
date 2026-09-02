@@ -1,0 +1,250 @@
+{
+  "claim_boundary": {
+    "authorized_if_confirmation_passes": "On previously unseen PoseIt household objects, decision-directed selection among logged pre-shake holding-pose probes reduces held-shake decision regret more efficiently than task-agnostic system identification while abstaining when no holding pose is certified stable.",
+    "not_authorized": [
+      "online robot execution",
+      "new physical data collection",
+      "safety certification outside the released PoseIt setup",
+      "arbitrary manipulation-task generalization",
+      "causal identification of object material parameters",
+      "state-of-the-art grasp-stability classification"
+    ],
+    "physical_unit": "one previously unseen PoseIt household object",
+    "scope_note": "Logged-policy evaluation supports a real-data decision claim, not a claim that the selector was deployed online."
+  },
+  "cohort": {
+    "assignment": {
+      "calibration_count": 5,
+      "confirmation_count": 6,
+      "domain_separator": "poseit-real-decision-object-split-v1",
+      "fit_count": 10,
+      "rule": "Normalize each archive-derived object token with NFKC, casefold, and surrounding-whitespace removal; sort by SHA-256(domain_separator || NUL || token), breaking digest ties by token; assign the first 10 to fit, next 5 to calibration, next 5 to source_test, and final 6 to confirmation.",
+      "source_test_count": 5
+    },
+    "assignment_time": "after archive hash and structure-only qualification, before any phase label or outcome-bearing payload is decoded",
+    "expected_object_count": 26,
+    "pairwise_disjoint": true,
+    "roles": {
+      "calibration": "calibrate one shared object-level lower-stability certificate without selecting the method",
+      "confirmation": "one-shot confirmation only after the source gate and exact method seal authorize it",
+      "fit": "fit the shared latent-response model and all fit-only preprocessing",
+      "source_test": "single source-side promotion decision with no method changes afterward"
+    }
+  },
+  "contract": "poseit-real-decision-probe-protocol-v1",
+  "dataset": {
+    "archive": {
+      "expected_sha256": null,
+      "file_name": "gelsight.zip",
+      "google_drive_file_id": "1EitCcpHoPEQKnlpqWKp02io2WpIxBrEe",
+      "size_bytes": null,
+      "status": "public-locator-visible-byte-acquisition-quota-blocked"
+    },
+    "archive_root": {
+      "google_drive_folder_id": "1CQiMPBEVvRMrDBSIRVeuwyuUOCOesfMc",
+      "url": "https://drive.google.com/drive/u/2/folders/1CQiMPBEVvRMrDBSIRVeuwyuUOCOesfMc"
+    },
+    "counts": {
+      "grasp_datapoints": 1840,
+      "holding_poses": 16,
+      "household_objects": 26
+    },
+    "license_boundary": {
+      "analysis_policy": "academic analysis with attribution; do not redistribute raw archive bytes until the release terms are clarified",
+      "paper_license": "CC BY 4.0",
+      "repository_license_file": "CC0 1.0 Universal",
+      "repository_readme_badges": [
+        "CC BY-SA 4.0",
+        "MIT"
+      ],
+      "status": "publicly released with inconsistent repository license signals"
+    },
+    "name": "PoseIt: A Visual-Tactile Dataset of Holding Poses for Grasp Stability Analysis",
+    "paper": "https://arxiv.org/abs/2209.05022",
+    "primary_sensor_release": "GelSight",
+    "release_repository": "https://github.com/Robo-Touch/PoseIt",
+    "release_repository_revision": "5e290eb024f25b1f4aa602724e6869e512aca434",
+    "secondary_archive": {
+      "admitted": false,
+      "file_name": "weiss.zip",
+      "google_drive_file_id": "124lVr6WTHDo5XbIGO-DWWcNpq7BBm8Mg",
+      "reason": "avoid sensor-release mixing and duplicated scientific units in the primary test"
+    }
+  },
+  "decision": {
+    "action_set": "all structurally available non-reference holding poses 2 through 16",
+    "abstention_utility": 0.0,
+    "held_intervention": "the manually annotated shake-phase outcome for the chosen holding pose",
+    "oracle": "choose the lexicographically first structurally available pose with a Pass shake label, or abstain if none passes",
+    "policy": "choose the lexicographically first pose whose simultaneous calibrated lower stability bound is at least 0.5; abstain if no pose is certified",
+    "regret": "oracle utility minus realized policy utility",
+    "stable_label": "Pass",
+    "stable_utility": 1.0,
+    "unstable_labels": [
+      "Slip",
+      "Drop",
+      "Not present"
+    ],
+    "unstable_utility": -1.0
+  },
+  "evaluation": {
+    "budgets": {
+      "additional_probe_counts": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cost_unit": "one logged pre-shake sensory record at one non-reference holding pose",
+      "mandatory_anchor_cost": 0,
+      "primary_summary": "trapezoidal area under object-level decision regret versus additional-probe count"
+    },
+    "confirmation_success": {
+      "decision_directed_auc_below_system_identification": true,
+      "maximum_false_safe_rate": 0.2,
+      "minimum_object_level_certificate_coverage": 0.8,
+      "minimum_relative_auc_improvement": 0.05,
+      "one_sided_exact_paired_sign_flip_p_max": 0.05,
+      "unsafe_action_rate_not_above_system_identification_by_more_than": 0.1
+    },
+    "controls": [
+      "task-agnostic latent-response information gain",
+      "exact average over a preregistered common-random-number set of fixed probe orders",
+      "lexicographic fixed probe order",
+      "reference-pose-only no-additional-probe policy",
+      "held-shake oracle diagnostic"
+    ],
+    "primary_contrast": "decision-directed regret AUC minus task-agnostic system-identification regret AUC",
+    "secondary_metrics": [
+      "regret at each matched probe count",
+      "object wins ties losses",
+      "object-level certificate coverage",
+      "false-safe and unsafe-action rates",
+      "certified-action coverage",
+      "abstention rate",
+      "selected-pose diversity"
+    ],
+    "statistical_inference": {
+      "bootstrap_repetitions": 10000,
+      "bootstrap_seed": 20260902,
+      "primary_test": "one-sided exact paired sign-flip test over six confirmation objects",
+      "statistical_unit": "object",
+      "within_object_aggregation": "mean across complete grasp-location by gripper-force families before object-level inference"
+    }
+  },
+  "information_boundary": {
+    "archive_member_names_open_before_protocol_freeze": false,
+    "archive_payload_bytes_acquired_before_protocol_freeze": false,
+    "confirmation_outcomes_open_before_authorization": false,
+    "held_v8_access_allowed": false,
+    "method_changes_after_source_test": false,
+    "object_tokens_open_before_protocol_freeze": false,
+    "phase_labels_open_before_protocol_freeze": false,
+    "repository_object_image_bytes_opened": false,
+    "repository_readme_object_catalog_opened": true,
+    "repository_readme_object_catalog_used_for_assignment_or_method_design": false,
+    "target_open_requires_archive_hash": true,
+    "target_open_requires_exact_method_seal": true,
+    "target_open_requires_source_gate": true,
+    "target_open_requires_write_once_authorization": true
+  },
+  "method": {
+    "episode_family": {
+      "nesting": "object by grasp location by gripper force",
+      "required_anchor": "a structurally complete pre-shake record at reference pose 1",
+      "structurally_unavailable_action": "exclude from both the policy and oracle action sets without consulting its shake label",
+      "unit_inclusion": "include every archive family with a valid anchor; never select families using phase labels"
+    },
+    "feature_boundary": {
+      "allowed": [
+        "RGB-D observations through the end of the one-second holding-pose wait",
+        "GelSight observations through the end of the one-second holding-pose wait",
+        "wrist force and torque through the end of the one-second holding-pose wait",
+        "joint angle and velocity through the end of the one-second holding-pose wait",
+        "registered gripper force",
+        "holding-pose identifier"
+      ],
+      "forbidden": [
+        "any shaking-phase sensor sample",
+        "any grasp, pose, shake, or retract phase label at probe-selection time",
+        "future samples after the registered end-of-pose cutoff",
+        "confirmation-derived preprocessing or thresholds"
+      ],
+      "mapping_requirement": "the exact archive paths, timestamps, resampling, missingness encoding, and fixed-dimensional feature map must be frozen after structure-only inspection and before any label decode"
+    },
+    "mandatory_anchor": {
+      "holding_pose": 1,
+      "observed_fields": "pre-shake features only"
+    },
+    "model_family": {
+      "fit_only_standardization": true,
+      "posterior": "registered Bayesian latent-response posterior shared across poses and conditioned only on the anchor plus selected pre-shake probes",
+      "prob4d_used": false,
+      "required_property": "both selectors share the identical posterior and differ only in their acquisition objective"
+    },
+    "probe_selectors": {
+      "decision_directed": {
+        "common_random_numbers": true,
+        "objective": "maximum expected reduction in downstream Bayes decision regret per additional pose probe",
+        "predictive_draw_count": 4096,
+        "predictive_seed": 20260902,
+        "tie_break": "lowest holding-pose identifier"
+      },
+      "system_identification": {
+        "objective": "maximum mutual information about the full still-unobserved latent response vector, independent of downstream utility",
+        "tie_break": "lowest holding-pose identifier"
+      }
+    },
+    "selectable_probes": {
+      "holding_poses": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "observed_fields": "pre-shake features only",
+      "shake_outcome_revealed": false
+    },
+    "shared_certificate": {
+      "calibration_unit": "object",
+      "coverage": 0.8,
+      "score": "maximum one-sided stability shortfall over every registered selector, budget, and structurally available pose, aggregated within object before calibration",
+      "shared_across_methods": true,
+      "tie_rule": "conservative higher rank",
+      "uses_confirmation": false
+    }
+  },
+  "promotion": {
+    "archive_gate": {
+      "archive_sha256_required": true,
+      "exact_feature_mapping_required": true,
+      "expected_object_count": 26,
+      "primary_archive_only": true,
+      "structure_only_before_mapping_freeze": true
+    },
+    "source_gate": {
+      "decision_directed_auc_relative_improvement_min": 0.05,
+      "maximum_false_safe_rate": 0.2,
+      "minimum_improved_object_count": 4,
+      "minimum_object_level_certificate_coverage": 0.8,
+      "minimum_selected_probe_count": 2,
+      "unsafe_action_rate_not_above_system_identification_by_more_than": 0.1
+    },
+    "target_attempt_limit": 1,
+    "target_authorized": false,
+    "target_failure_policy": "freeze and report without retry, replacement, calibration, or method change"
+  },
+  "schema_version": 1,
+  "status": "frozen-before-archive-outcome-access"
+}
