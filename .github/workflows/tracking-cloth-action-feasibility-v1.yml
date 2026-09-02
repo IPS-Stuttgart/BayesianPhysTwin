@@ -8,6 +8,7 @@ on:
       - ".github/workflows/tracking-cloth-action-feasibility-v1.yml"
       - "experiments/tracking_cloth_action_feasibility_v1/**"
       - "tests/test_tracking_cloth_action_feasibility_v1.py"
+      - "tests/test_tracking_cloth_action_actual_time_v1.py"
       - "src/bayesian_phystwin/act_sense_fallback_certificate_v1.py"
       - "experiments/tracking_cloth_self_collision_selective_twin_v1/data.py"
   push:
@@ -16,6 +17,7 @@ on:
       - ".github/workflows/tracking-cloth-action-feasibility-v1.yml"
       - "experiments/tracking_cloth_action_feasibility_v1/**"
       - "tests/test_tracking_cloth_action_feasibility_v1.py"
+      - "tests/test_tracking_cloth_action_actual_time_v1.py"
       - "src/bayesian_phystwin/act_sense_fallback_certificate_v1.py"
       - "experiments/tracking_cloth_self_collision_selective_twin_v1/data.py"
 
@@ -60,13 +62,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pytest -q tests/test_tracking_cloth_action_feasibility_v1.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py
           python -m ruff check \
             experiments/tracking_cloth_action_feasibility_v1 \
-            tests/test_tracking_cloth_action_feasibility_v1.py
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py
           python -m ruff format --check \
             experiments/tracking_cloth_action_feasibility_v1 \
-            tests/test_tracking_cloth_action_feasibility_v1.py
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py
 
       - name: Verify target-closed workflow policy
         shell: bash
@@ -83,18 +89,20 @@ jobs:
           )
           assert protocol["source_repetitions"] == [1, 2]
           assert protocol["reserved_target_repetition"] == 3
+          assert protocol["analysis_sample_period_seconds"] == 1.0 / 30.0
           boundary = protocol["information_boundary"]
           assert boundary["target_rep3_numeric_outcomes_read"] is False
           assert boundary["target_protocol_authorized"] is False
+          assert boundary["nominal_capture_rate_assumed_exact"] is False
           workflow = Path(
               ".github/workflows/tracking-cloth-action-feasibility-v1.yml"
           ).read_text(encoding="utf-8")
           source = workflow[workflow.index("\n  source_audit:") :]
           assert "if: github.event_name == 'push'" in source
           assert "[self-hosted, Linux, X64, gpuserver4090]" in source
-          assert "${{ secrets." not in workflow
-          assert "contents: write" not in workflow
-          assert "git push" not in workflow
+          assert "secrets" + "." not in workflow
+          assert "contents:" + " write" not in workflow
+          assert "git" + " push" not in workflow
           PY
 
   source_audit:
@@ -130,10 +138,20 @@ jobs:
           test ! -e "$output"
           python -m venv "$venv"
           "$venv/bin/python" -m pip install -e .
-          "$venv/bin/python" -m \
-            experiments.tracking_cloth_action_feasibility_v1.run \
-            --dataset-root "$DATASET_ROOT" \
-            --output "$output"
+          ACTION_TMP_OUTPUT="$output" "$venv/bin/python" - <<'PY'
+          import os
+          from pathlib import Path
+
+          from experiments.tracking_cloth_action_feasibility_v1 import run
+          from experiments.tracking_cloth_action_feasibility_v1._data import (
+              source_rows,
+          )
+
+          run.source_rows = source_rows
+          result, rows = run.build_result(Path(os.environ["DATASET_ROOT"]))
+          run.write_outputs(Path(os.environ["ACTION_TMP_OUTPUT"]), result, rows)
+          print(result["result_id"])
+          PY
           cp experiments/tracking_cloth_action_feasibility_v1/protocol.json \
             "$output/protocol.json"
           echo "ACTION_SOURCE_OUTPUT=$output" >> "$GITHUB_ENV"
@@ -143,7 +161,7 @@ jobs:
         run: cat "$ACTION_SOURCE_OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload source-only evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: tracking-cloth-action-feasibility-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
