@@ -457,8 +457,17 @@ command also rechecks acquisition custody and exact external authorization and
 result hashes. It verifies retained records, not unavailable raw archive bytes.
 Deleting an output directory does not release its external attempt ledger.
 
-This integration is being qualified exclusively with synthetic ZIPs, native
-checkpoint round trips, and injected failures. No real structure authorization
+The implementation is sealed at
+`9e4df0468f96346dd7b25583ba0053e0ce4ba8b6`. The complete local PoseIt suite
+passed 275 tests with the explicit native library; without that library, 138
+passed and 137 native-dependent tests skipped. An exact 22-file code/test bundle
+from this commit was hash-verified on `gpuserver4090`; all 45 new structure tests
+passed there. Ruff, strict MyPy for the module/command, and diff checks passed.
+The compact software-only record is
+`evidence/poseit-real-decision-v1/checkpoint-structure-qualification-v1.json`.
+
+This qualification uses synthetic ZIPs, native checkpoint round trips, and
+injected failures exclusively. No real structure authorization
 has been issued, no real member name has been inspected, and no source or
 confirmation access follows from these software tests. The next production
 step remains the future-only checkpoint acquisition after its existing cooldown;
