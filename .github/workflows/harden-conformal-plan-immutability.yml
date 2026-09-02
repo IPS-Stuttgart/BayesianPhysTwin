@@ -77,23 +77,34 @@ jobs:
 
           tests = Path('tests/test_conformal_complete_plan_certificate_v1.py')
           test_text = tests.read_text(encoding='utf-8')
-          marker = '''    assert not envelope.inflation_by_plan.flags.writeable
-              assert not envelope.trajectory_scores.flags.writeable
-          '''.replace('          ', '')
-          replacement = '''    assert not envelope.inflation_by_plan.flags.writeable
-              assert not envelope.trajectory_scores.flags.writeable
-              assert not envelope.plan_scales.flags.writeable
-              for immutable in (
-                  envelope.inflation_by_plan,
-                  envelope.trajectory_scores,
-                  envelope.plan_scales,
-              ):
-                  with pytest.raises(ValueError):
-                      immutable.setflags(write=True)
-          '''.replace('          ', '')
-          if test_text.count(marker) != 1:
-              raise SystemExit('expected immutability assertion block was not found exactly once')
-          tests.write_text(test_text.replace(marker, replacement), encoding='utf-8')
+          test_name = 'test_byte_backed_outputs_do_not_alias_and_cannot_be_made_writeable'
+          if test_name in test_text:
+              raise SystemExit('immutability regression test already exists')
+          addition = r'''
+
+
+def test_byte_backed_outputs_do_not_alias_and_cannot_be_made_writeable() -> None:
+    scales = np.asarray([1.0, 2.0, 4.0], dtype=np.float64)
+    envelope = scaled_trajectory_conformal_plan_envelope(
+        np.zeros((4, 1, 3), dtype=np.float64),
+        np.zeros((4, 1, 3), dtype=np.float64),
+        scales,
+        miscoverage=0.25,
+    )
+
+    scales[:] = 99.0
+    np.testing.assert_array_equal(envelope.plan_scales, [1.0, 2.0, 4.0])
+    for immutable in (
+        envelope.plan_scales,
+        envelope.trajectory_scores,
+        envelope.inflation_by_plan,
+        envelope.candidate_plan_mask,
+    ):
+        assert not immutable.flags.writeable
+        with pytest.raises(ValueError):
+            immutable.setflags(write=True)
+'''
+          tests.write_text(test_text.rstrip() + addition + '\n', encoding='utf-8')
 
           Path('.github/workflows/harden-conformal-plan-immutability.yml').unlink()
           PY
