@@ -1,0 +1,311 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Adjudicate frozen Transport4D calibration
+
+on:
+  push:
+    branches: [research/transport4d-tiered-public-v1]
+    paths:
+      - ".github/workflows/transport4d-calibration-adjudicate-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: transport4d-calibration-adjudicate-once
+  cancel-in-progress: false
+
+jobs:
+  adjudicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Await terminal calibration evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch=research/transport4d-tiered-public-v1
+          for attempt in $(seq 1 180); do
+            git fetch origin "${branch}" >/dev/null 2>&1 || true
+            git reset --hard "origin/${branch}" >/dev/null 2>&1 || true
+            if [[ -f evidence/transport4d_deform360_calibration_v1/manifest.json ]]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Terminal calibration evidence was not retained within the bounded wait." >&2
+          exit 1
+
+      - name: Classify the exact terminal evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          from pathlib import Path
+          from typing import Any
+
+          root = Path.cwd()
+          evidence_root = root / "evidence/transport4d_deform360_calibration_v1"
+          manifest_path = evidence_root / "manifest.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          if manifest.get("schema") != (
+              "bayesian-phystwin.transport4d_deform360_calibration_evidence"
+          ):
+              raise SystemExit("unexpected calibration evidence schema")
+          if manifest.get("confirmation_numeric_payload_opened") is not False:
+              raise SystemExit("calibration evidence reports confirmation numerical access")
+          if manifest.get("confirmation_authorized") is not False:
+              raise SystemExit("calibration evidence reports confirmation authorization")
+          if manifest.get("paper_claim_authorized") is not False:
+              raise SystemExit("calibration evidence self-authorized a paper claim")
+
+          records: list[dict[str, Any]] = []
+          positive: list[dict[str, Any]] = []
+          negative: list[dict[str, Any]] = []
+          selected_policy: list[dict[str, Any]] = []
+          identifiers: list[dict[str, Any]] = []
+
+          exact_gate_keys = {
+              "calibration_gate_passed",
+              "source_gate_passed",
+              "promotion_gate_passed",
+              "candidate_for_confirmation",
+              "confirmation_candidate",
+              "calibration_passed",
+          }
+          positive_strings = {
+              "calibration-gate-passed",
+              "calibration_gate_passed",
+              "calibration-positive",
+              "calibration_positive",
+              "source-gate-passed",
+              "source_gate_passed",
+              "promotion-gate-passed",
+              "promotion_gate_passed",
+              "eligible-for-confirmation",
+              "eligible_for_confirmation",
+              "candidate-for-confirmation",
+              "candidate_for_confirmation",
+          }
+          negative_tokens = (
+              "failed",
+              "negative",
+              "ineligible",
+              "not-eligible",
+              "not_eligible",
+              "support-negative",
+              "support_negative",
+              "mixed-or-negative",
+              "mixed_or_negative",
+          )
+
+          def visit(value: Any, path: str, source: str) -> None:
+              if isinstance(value, dict):
+                  for key in sorted(value):
+                      child = f"{path}.{key}" if path else str(key)
+                      visit(value[key], child, source)
+                  return
+              if isinstance(value, list):
+                  if len(value) <= 128:
+                      for index, item in enumerate(value):
+                          visit(item, f"{path}[{index}]", source)
+                  return
+              row = {"source": source, "path": path, "value": value}
+              records.append(row)
+              key = path.rsplit(".", 1)[-1].lower()
+              normalized = str(value).strip().lower() if isinstance(value, str) else None
+              if key in exact_gate_keys and isinstance(value, bool):
+                  (positive if value else negative).append(row)
+              if key in {"decision", "status", "promotion_decision", "gate_decision"}:
+                  if normalized in positive_strings:
+                      positive.append(row)
+                  elif normalized is not None and any(
+                      token in normalized for token in negative_tokens
+                  ):
+                      negative.append(row)
+              lower_path = path.lower()
+              if "selected" in lower_path and any(
+                  token in lower_path
+                  for token in ("operating", "policy", "tier", "threshold", "frontier")
+              ):
+                  selected_policy.append(row)
+              if any(
+                  token in key
+                  for token in (
+                      "policy_id",
+                      "model_id",
+                      "result_id",
+                      "seal_id",
+                      "artifact_id",
+                      "protocol_id",
+                  )
+              ):
+                  identifiers.append(row)
+
+          for path in sorted((evidence_root / "files").rglob("*.json")):
+              try:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+              except (UnicodeDecodeError, json.JSONDecodeError):
+                  continue
+              visit(value, "", path.relative_to(evidence_root).as_posix())
+
+          conclusion = str(manifest.get("run_conclusion"))
+          if conclusion != "success":
+              status = "calibration-run-failed"
+              binding_allowed = False
+          elif negative:
+              status = "calibration-explicit-negative"
+              binding_allowed = False
+          elif positive:
+              status = "calibration-explicit-positive"
+              binding_allowed = True
+          else:
+              status = "calibration-ambiguous-fail-closed"
+              binding_allowed = False
+
+          adjudication: dict[str, Any] = {
+              "schema": "bayesian-phystwin.transport4d_deform360_calibration_adjudication",
+              "schema_version": 1,
+              "status": status,
+              "calibration_evidence_id": manifest.get("evidence_id"),
+              "workflow_run_id": manifest.get("workflow_run_id"),
+              "source_head_sha": manifest.get("source_head_sha"),
+              "run_conclusion": conclusion,
+              "explicit_positive_gate_records": positive,
+              "explicit_negative_gate_records": negative,
+              "selected_policy_records": selected_policy[:160],
+              "identifier_records": identifiers[:160],
+              "confirmation_policy_binding_allowed": binding_allowed,
+              "confirmation_numeric_payload_opened": False,
+              "confirmation_authorized": False,
+              "paper_claim_authorized": False,
+              "claim_boundary": (
+                  "Terminal calibration classification only. A positive classification may "
+                  "bind a frozen policy for review but does not authorize confirmation "
+                  "numerical access. Negative, failed, and ambiguous outcomes are terminal "
+                  "for this calibration attempt and remain fail closed."
+              ),
+          }
+          encoded = json.dumps(
+              adjudication, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          adjudication["adjudication_id"] = hashlib.sha256(encoded).hexdigest()
+          (evidence_root / "adjudication.json").write_text(
+              json.dumps(adjudication, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          lines = [
+              "# Transport4D calibration adjudication",
+              "",
+              f"Status: **{status}**",
+              "",
+              f"- Workflow run: **{adjudication['workflow_run_id']}**",
+              f"- Run conclusion: **{conclusion}**",
+              f"- Explicit positive gate records: **{len(positive)}**",
+              f"- Explicit negative gate records: **{len(negative)}**",
+              f"- Confirmation policy binding allowed: **{str(binding_allowed).lower()}**",
+              "- Confirmation numerical access: **false**",
+              "- Confirmation authorization: **false**",
+              f"- Adjudication ID: `{adjudication['adjudication_id']}`",
+              "",
+              "## Explicit gate records",
+              "",
+              "| Sign | Source | Field | Value |",
+              "|---|---|---|---|",
+          ]
+          for sign, rows in (("positive", positive), ("negative", negative)):
+              for row in rows:
+                  lines.append(
+                      f"| {sign} | `{row['source']}` | `{row['path']}` | "
+                      f"`{json.dumps(row['value'], ensure_ascii=False)}` |"
+                  )
+          lines.extend(["", adjudication["claim_boundary"], ""])
+          (evidence_root / "adjudication.md").write_text(
+              "\n".join(lines), encoding="utf-8"
+          )
+
+          binding_path = root / "protocols/transport4d_deform360_confirmation_binding_v1.json"
+          if binding_allowed:
+              binding: dict[str, Any] = {
+                  "schema": "bayesian-phystwin.transport4d_deform360_confirmation_binding",
+                  "schema_version": 1,
+                  "status": "positive-calibration-policy-bound-for-separate-review",
+                  "confirmation_design_path": (
+                      "protocols/transport4d_deform360_confirmation_design_v1.json"
+                  ),
+                  "confirmation_design_protocol_id": (
+                      "transport4d-deform360-confirmation-design-v1-20260902"
+                  ),
+                  "support_id": (
+                      "57aaea3215ad1cdf76accfc455c173bb5d84a926bfed013fa64b6ec3625befed"
+                  ),
+                  "supported_confirmation_object_count": 33,
+                  "calibration_evidence_id": manifest.get("evidence_id"),
+                  "calibration_adjudication_id": adjudication["adjudication_id"],
+                  "calibration_workflow_run_id": manifest.get("workflow_run_id"),
+                  "calibration_source_head_sha": manifest.get("source_head_sha"),
+                  "selected_policy_records": selected_policy,
+                  "identifier_records": identifiers,
+                  "all_retained_calibration_file_records": manifest.get("selected_files", []),
+                  "all_omitted_calibration_file_hashes": manifest.get("skipped_files", []),
+                  "confirmation_numeric_payload_opened": False,
+                  "confirmation_predictions_sealed": False,
+                  "confirmation_authorized": False,
+                  "paper_claim_authorized": False,
+                  "separate_review_and_add_only_authorization_required": True,
+                  "claim_boundary": (
+                      "Binds an explicitly positive calibration policy to the frozen "
+                      "confirmation design. It is not an access request and does not "
+                      "authorize prediction, scoring, paper, deployment, or safety claims."
+                  ),
+              }
+              unsigned = json.dumps(
+                  binding, sort_keys=True, separators=(",", ":"), allow_nan=False
+              ).encode("utf-8")
+              binding["binding_id"] = hashlib.sha256(unsigned).hexdigest()
+              binding_path.write_text(
+                  json.dumps(binding, indent=2, sort_keys=True, allow_nan=False) + "\n",
+                  encoding="utf-8",
+              )
+          elif binding_path.exists():
+              raise SystemExit("nonpositive calibration must not retain a confirmation binding")
+          PY
+          git diff --check
+
+      - name: Retain adjudication and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f .github/workflows/transport4d-calibration-adjudicate-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            evidence/transport4d_deform360_calibration_v1/adjudication.json \
+            evidence/transport4d_deform360_calibration_v1/adjudication.md \
+            .github/workflows/transport4d-calibration-adjudicate-once.yml
+          if [[ -f protocols/transport4d_deform360_confirmation_binding_v1.json ]]; then
+            git add protocols/transport4d_deform360_confirmation_binding_v1.json
+          fi
+          git diff --cached --check
+          git commit -m "Adjudicate terminal Transport4D Deform360 calibration"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:research/transport4d-tiered-public-v1; then
+              exit 0
+            fi
+            git fetch origin research/transport4d-tiered-public-v1
+            git rebase origin/research/transport4d-tiered-public-v1
+          done
+          exit 1
