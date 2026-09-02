@@ -1,0 +1,57 @@
+{
+  "claim_boundary": "Retrospective source-frozen development on the previously opened official DEFORM DLO4/DLO5 held trajectories. The outer policy uses only the original source-test trajectories and outcome-free target prefixes/actions. It can test whether a support-adequacy layer reduces realized regret violations while retaining utility, but it is not fresh confirmation, an unseen-object result, a distribution-shift theorem, deployment authorization, or safety.",
+  "comparators": [
+    "inner finite-support certificate",
+    "full-correction-only structural gate",
+    "current-feature-distance gate",
+    "source-fitted ridge risk gate",
+    "leave-trajectory-out maximum-residual outer envelope",
+    "exact fallback"
+  ],
+  "contract": "deform-dlo45-support-adequacy-audit-v1",
+  "dataset_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+  "dataset_repository": "roahmlab/DEFORM",
+  "future_residual_distance_used_for_policy": false,
+  "model": {
+    "features": [
+      "certificate action scale",
+      "registered support regret",
+      "registered quotient/kernel diagnostics",
+      "current observation-to-source feature distance",
+      "decision time",
+      "known DLO identity"
+    ],
+    "leave_one_trajectory_out_max_residual_envelope": true,
+    "leave_one_trajectory_out_predictions": true,
+    "ridge_lambdas": [
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "target": "realized_regret_excess_over_registered_support_bound"
+  },
+  "paper_claim_authorized": false,
+  "parent_contract": "deform-dlo45-decision-identifiability-v1",
+  "parent_source_artifact_digest": "sha256:fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+  "parent_workflow_run_id": 33473378340,
+  "policy_unit": "complete_trajectory",
+  "regret_tolerance": 0.05,
+  "schema_version": 1,
+  "source_selection": {
+    "exploratory_violation_fraction": 0.2,
+    "maximum_harm_fraction": 0.1,
+    "minimum_retained_fraction": 0.25,
+    "selection_order": [
+      "maximum nonfallback coverage",
+      "minimum realized tolerance violations",
+      "minimum harmful accepted fraction",
+      "minimum RMSE ratio",
+      "minimum policy complexity"
+    ],
+    "strict_violation_fraction": 0.1
+  },
+  "target_outcomes_used_for_policy": false,
+  "target_retries": false,
+  "target_tuning": false
+}
