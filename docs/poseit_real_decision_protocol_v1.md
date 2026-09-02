@@ -82,7 +82,26 @@ registered source gate passes.
 
 ## Structure-only custody tool
 
-Once the official archive is available, the first admissible command is:
+The exact acquisition command is:
+
+```bash
+PYTHONPATH=src python \
+  scripts/science/acquire_poseit_gelsight_archive_v1.py \
+  --archive /home/fpfaff/source-only/poseit-real-decision-v1/archives/gelsight.zip \
+  --receipt /home/fpfaff/source-only/poseit-real-decision-v1/archives/acquisition-receipt-v1.json \
+  --protocol protocols/poseit_real_decision_probe_v1.json \
+  --expected-protocol-sha256 221803b109a82d3a2d923d5e0c18284b965a8848bcd69e25addd97409d31c5d4
+```
+
+The acquisition tool accepts only the frozen official Google Drive file ID and
+the registered `gelsight.zip` name. It rejects HTML, quota pages, renamed files,
+non-HTTPS redirects, and unregistered redirect hosts. A successful response is
+streamed opaquely into a write-once destination while computing SHA-256. The
+content-bound receipt records that no ZIP structure, member name, sensor value,
+phase label, or shake outcome was opened.
+
+After successful acquisition, the first admissible archive-inspection command
+is:
 
 ```bash
 PYTHONPATH=src python \
