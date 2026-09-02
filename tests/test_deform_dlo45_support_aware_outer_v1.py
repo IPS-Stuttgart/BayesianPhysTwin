@@ -25,8 +25,13 @@ def test_protocol_keeps_retrospective_information_boundary() -> None:
     assert value["contract"] == CONTRACT
     assert value["outer_model"]["held_outcome_features_forbidden"] is True
     assert value["held_evaluation"]["target_outcomes_used_for_model_selection"] is False
-    assert value["held_evaluation"]["target_outcomes_used_for_threshold_selection"] is False
-    assert value["held_evaluation"]["target_outcomes_used_for_descriptive_scoring"] is True
+    assert (
+        value["held_evaluation"]["target_outcomes_used_for_threshold_selection"]
+        is False
+    )
+    assert (
+        value["held_evaluation"]["target_outcomes_used_for_descriptive_scoring"] is True
+    )
 
 
 def test_source_threshold_is_group_bootstrap_controlled() -> None:
