@@ -42,7 +42,7 @@ jobs:
             "refs/heads/research/interventional-cause-estimation-v1"
           payload=.github/agent-payloads/interventional-cause-estimation-v1.tgz
           printf '%s  %s\n' \
-            cec1000950cf34474e13b50c8cef6bcfbb8d39202a483ab2c44415973f071594 \
+            f7ec798cf2a7f12b368a16166b33eaec1702c704923f702c15bddb1fb9adc211 \
             "$payload" | sha256sum --check --strict
           rm -rf "$RUNNER_TEMP/why-twin-v2"
           mkdir -p "$RUNNER_TEMP/why-twin-v2"
@@ -98,7 +98,7 @@ jobs:
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
-          python -m pytest -q -p no:cacheprovider \
+          PYTHONPATH=src python -m pytest -q -p no:cacheprovider \
             tests/test_interventional_cause_identifiability_v1.py \
             tests/test_interventional_cause_attribution_controlled_v1.py \
             tests/test_interventional_cause_estimation_v1.py \
