@@ -1,0 +1,287 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM DLO4/DLO5 information-contract replay v1
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-information-contract-v1
+    paths:
+      - ".github/workflows/deform-dlo45-information-contract-v1.yml"
+      - "experiments/deform_dlo45_information_contract_v1/**"
+      - "tests/test_deform_dlo45_information_contract_v1.py"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: deform-dlo45-information-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  NUMPY_VERSION: "2.2.6"
+  SOURCE_RUN_ID: "33473378340"
+  SOURCE_ARTIFACT_ID: "9787311310"
+  SOURCE_ARTIFACT_NAME: "dlo45-decision-source-33473378340"
+  SOURCE_HEAD_SHA: "38b2ea56471923e63b64cfe24bf3f691aad5d5e0"
+  SOURCE_ARTIFACT_DIGEST: "sha256:fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee"
+  DEFORM_REPOSITORY: "roahmlab/DEFORM"
+  DEFORM_COMMIT: "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  PROB4D_REPOSITORY: "IPS-Stuttgart/Prob4D"
+  PROB4D_COMMIT: "f25b0cdb0a258e1b2ef276d25a723c2cf3a9fb4f"
+  ADAPTER: "experiments/deform_dlo45_information_contract_v1/export.py"
+  REQUEST: "experiments/deform_dlo45_information_contract_v1/request.json"
+  PROTOCOL: "experiments/deform_dlo45_decision_identifiability_v1/protocol.json"
+  REFERENCE_RESULT: "results/science/deform_dlo45_decision_identifiability_v1/official-dlo45-one-shot-20260901-v1/target_result.json"
+
+jobs:
+  contracts:
+    name: Adapter contracts and exact frozen identities
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact adapter revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install and test the exact adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==${NUMPY_VERSION}"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            "${ADAPTER}"
+            experiments/deform_dlo45_information_contract_v1/__init__.py
+            tests/test_deform_dlo45_information_contract_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_information_contract_v1.py \
+            tests/test_deform_dlo45_decision_identifiability_v1.py \
+            tests/test_query_decision_certificate_v1.py
+          python "${ADAPTER}" export --help >/dev/null
+          python "${ADAPTER}" validate --help >/dev/null
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  replay:
+    name: Replay all 532 public-data decisions through the benchmark
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact adapter revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Check out pinned public DEFORM evaluation trajectories
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.DEFORM_REPOSITORY }}
+          ref: ${{ env.DEFORM_COMMIT }}
+          path: upstream-DEFORM
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/eval
+            data_set/DLO5/eval
+          sparse-checkout-cone-mode: false
+
+      - name: Check out exact Prob4D benchmark
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.PROB4D_REPOSITORY }}
+          ref: ${{ env.PROB4D_COMMIT }}
+          path: prob4d-source
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up pinned numerical runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install both exact repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==${NUMPY_VERSION}"
+          python -m pip install --no-deps -e .
+          python -m pip install --no-deps -e prob4d-source
+          python -m pip check
+          test "$(git -C upstream-DEFORM rev-parse HEAD)" = "${DEFORM_COMMIT}"
+          test "$(git -C prob4d-source rev-parse HEAD)" = "${PROB4D_COMMIT}"
+          for dlo in DLO4 DLO5; do
+            test "$(find "upstream-DEFORM/data_set/${dlo}/eval" -maxdepth 1 \
+              -type f -name '*.pkl' | wc -l)" -eq 14
+            test ! -e "upstream-DEFORM/data_set/${dlo}/train"
+          done
+
+      - name: Verify and retrieve the exact historical source artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          receipt="${RUNNER_TEMP}/source-artifact-receipt.json"
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}" \
+            > "${receipt}"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          receipt = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "source-artifact-receipt.json").read_text()
+          )
+          expected = {
+              "id": int(os.environ["SOURCE_ARTIFACT_ID"]),
+              "name": os.environ["SOURCE_ARTIFACT_NAME"],
+              "expired": False,
+              "digest": os.environ["SOURCE_ARTIFACT_DIGEST"],
+          }
+          for key, value in expected.items():
+              if receipt.get(key) != value:
+                  raise SystemExit(f"historical source artifact changed: {key}")
+          workflow = receipt.get("workflow_run") or {}
+          if workflow.get("id") != int(os.environ["SOURCE_RUN_ID"]):
+              raise SystemExit("historical source run changed")
+          if workflow.get("head_sha") != os.environ["SOURCE_HEAD_SHA"]:
+              raise SystemExit("historical source head changed")
+          PY
+          source_root="${RUNNER_TEMP}/dlo45-decision-source"
+          rm -rf "${source_root}"
+          mkdir -p "${source_root}"
+          gh run download "${SOURCE_RUN_ID}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name "${SOURCE_ARTIFACT_NAME}" \
+            --dir "${source_root}"
+          test -f "${source_root}/source_model.npz"
+          test -f "${source_root}/source_result.json"
+          test -f "${source_root}/source_seal.json"
+
+      - name: Export and score all frozen methods
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_root="${RUNNER_TEMP}/dlo45-decision-source"
+          output_root="${RUNNER_TEMP}/dlo45-information-contract"
+          rm -rf "${output_root}"
+          python -m experiments.deform_dlo45_information_contract_v1.export \
+            export \
+            --request "${REQUEST}" \
+            --protocol "${PROTOCOL}" \
+            --dataset-root "${GITHUB_WORKSPACE}/upstream-DEFORM/data_set" \
+            --model "${source_root}/source_model.npz" \
+            --source-result "${source_root}/source_result.json" \
+            --source-seal "${source_root}/source_seal.json" \
+            --reference-result "${REFERENCE_RESULT}" \
+            --output-root "${output_root}"
+          for method in \
+            fallback certificate jeffrey_point kernel_point map_point oracle; do
+            python -m prob4d.information_contract_benchmark evaluate \
+              "${output_root}/${method}/suite.json" \
+              "${output_root}/${method}/benchmark_result.json"
+          done
+          python -m experiments.deform_dlo45_information_contract_v1.export \
+            validate \
+            --output-root "${output_root}" \
+            --reference-result "${REFERENCE_RESULT}" \
+            --destination "${output_root}/validation.json"
+
+      - name: Retain compact, non-redistributive evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_root="${RUNNER_TEMP}/dlo45-information-contract"
+          cp "${RUNNER_TEMP}/source-artifact-receipt.json" \
+            "${output_root}/source_artifact_receipt.json"
+          cp "${REQUEST}" "${output_root}/request.json"
+          find "${output_root}" -type d -name cases -prune -exec rm -rf {} +
+          test "$(find "${output_root}" -type f -name '*.npz' | wc -l)" -eq 0
+          (
+            cd "${output_root}"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "dlo45-information-contract"
+          value = json.loads((root / "validation.json").read_text())
+          assert value["all_reference_metrics_reproduced"] is True
+          assert value["case_rosters_identical"] is True
+          assert value["certificate_contract_all_cases_pass"] is True
+          assert value["certificate_nonfallback_count"] == 82
+          assert value["certificate_harmful_nonfallback_count"] == 3
+          print(json.dumps(value, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload exact compact benchmark evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: deform-dlo45-information-contract-${{ github.run_id }}
+          path: ${{ runner.temp }}/dlo45-information-contract/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 6
+
+      - name: Commit compact replay evidence to the triggering branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_root="${RUNNER_TEMP}/dlo45-information-contract"
+          destination="results/science/deform_dlo45_information_contract_v1/official-replay-20260902-v1"
+          test ! -e "${destination}"
+          mkdir -p "${destination}"
+          cp -R "${source_root}/." "${destination}/"
+          rm -rf upstream-DEFORM prob4d-source
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${destination}"
+          git commit -m "Record DEFORM information-contract replay"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
