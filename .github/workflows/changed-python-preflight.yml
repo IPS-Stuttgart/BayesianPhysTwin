@@ -51,20 +51,23 @@ jobs:
           persist-credentials: true
           clean: true
 
-      - name: Materialize payload and retire bootstrap data
+      - name: Reconstruct the content-addressed archive
+        id: payload
         shell: bash
         env:
-          EXPECTED_PAYLOAD_SHA256: bf7bc9c7f53e22138711314671d9b9256dee09c78c11f05aa6d77a45f5515177
+          EXPECTED_RAW_SHA256: bf7bc9c7f53e22138711314671d9b9256dee09c78c11f05aa6d77a45f5515177
         run: |
           set -euo pipefail
-          python - <<'PY'
+          raw="$RUNNER_TEMP/active-decision-payload.zip"
+          repaired="$RUNNER_TEMP/active-decision-payload-repaired.zip"
+          python - "$raw" <<'PY'
           import base64
           import hashlib
-          import io
           import os
-          import zipfile
+          import sys
           from pathlib import Path
 
+          output = Path(sys.argv[1])
           root = Path("ops/bootstrap/active-decision")
           chunks = [root / f"chunk-{index:02d}.txt" for index in range(7)]
           chunks += [root / f"chunk-07-part-{index:02d}.txt" for index in range(4)]
@@ -74,8 +77,27 @@ jobs:
           encoded = "".join(path.read_text(encoding="ascii").strip() for path in chunks)
           raw = base64.b64decode(encoded, validate=True)
           digest = hashlib.sha256(raw).hexdigest()
-          if digest != os.environ["EXPECTED_PAYLOAD_SHA256"]:
-              raise SystemExit(f"active-decision payload digest mismatch: {digest}")
+          if digest != os.environ["EXPECTED_RAW_SHA256"]:
+              raise SystemExit(f"active-decision raw digest mismatch: {digest}")
+          output.write_bytes(raw)
+          PY
+          printf 'y\n' | zip -FF "$raw" --out "$repaired" >/tmp/zip-repair.log 2>&1
+          test -s "$repaired"
+          cat /tmp/zip-repair.log
+          echo "archive=$repaired" >> "$GITHUB_OUTPUT"
+
+      - name: Validate, materialize, and retire bootstrap data
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.payload.outputs.archive }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import zipfile
+          from pathlib import Path
+
+          archive_path = Path(os.environ["ARCHIVE"])
           expected = {
               ".github/workflows/active-decision-acquisition-v1.yml",
               "docs/active-decision-acquisition-v1.md",
@@ -87,9 +109,10 @@ jobs:
               "tests/test_active_decision_acquisition_study_v1.py",
               "tests/test_active_decision_v1.py",
           }
-          with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-              if archive.testzip() is not None:
-                  raise SystemExit("active-decision payload ZIP failed CRC validation")
+          with zipfile.ZipFile(archive_path) as archive:
+              bad = archive.testzip()
+              if bad is not None:
+                  raise SystemExit(f"active-decision payload CRC failure: {bad}")
               members = [member.filename for member in archive.infolist() if not member.is_dir()]
               if len(members) != len(expected) or set(members) != expected:
                   raise SystemExit(f"unexpected payload members: {members}")
@@ -112,6 +135,37 @@ jobs:
             src/bayesian_phystwin/active_decision_acquisition_v1.py \
             tests/test_active_decision_acquisition_study_v1.py \
             tests/test_active_decision_v1.py
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              ".github/workflows/changed-python-preflight.yml",
+              "docs/active-decision-acquisition-v1.md",
+              "experiments/active_decision_acquisition_v1/run.py",
+              "protocols/active-decision-acquisition-study-v1.json",
+              "results/science/active_decision_acquisition_v1/controlled-v1/result.json",
+              "results/science/active_decision_acquisition_v1/controlled-v1/summary.md",
+              "src/bayesian_phystwin/active_decision_acquisition_v1.py",
+              "tests/test_active_decision_acquisition_study_v1.py",
+              "tests/test_active_decision_v1.py",
+          }
+          expected.update(
+              f"ops/bootstrap/active-decision/chunk-{index:02d}.txt" for index in range(8)
+          )
+          expected.update(
+              f"ops/bootstrap/active-decision/chunk-07-part-{index:02d}.txt"
+              for index in range(4)
+          )
+          changed = set(
+              subprocess.check_output(
+                  ["git", "diff", "--cached", "--name-only"], text=True
+              ).splitlines()
+          )
+          if changed != expected:
+              raise SystemExit(
+                  f"unexpected staged bootstrap materialization diff: {sorted(changed)}"
+              )
+          PY
           test -z "$(git status --short | grep '^??' || true)"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
