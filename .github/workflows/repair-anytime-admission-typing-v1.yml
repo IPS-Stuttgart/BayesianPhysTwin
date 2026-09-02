@@ -60,6 +60,24 @@ jobs:
           if text.count(old) != 1:
               raise SystemExit(f'harm annotation: expected one match, got {text.count(old)}')
           path.write_text(text.replace(old, new), encoding='utf-8')
+
+          test_path = Path('tests/test_anytime_recursive_admission_v1.py')
+          test_text = test_path.read_text(encoding='utf-8')
+          replacements = (
+              (
+                  'assert config.total_alpha_gain == pytest.approx(0.05)',
+                  'assert config.total_alpha_gain == pytest.approx(0.025)',
+              ),
+              (
+                  'assert config.total_alpha_harm == pytest.approx(0.05)',
+                  'assert config.total_alpha_harm == pytest.approx(0.025)',
+              ),
+          )
+          for old, new in replacements:
+              if test_text.count(old) != 1:
+                  raise SystemExit(f'alpha assertion: expected one match for {old!r}')
+              test_text = test_text.replace(old, new)
+          test_path.write_text(test_text, encoding='utf-8')
           PY
           python -m pip install -e '.[dev]'
           python -m ruff check \
@@ -88,6 +106,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             src/bayesian_phystwin/anytime_admission_v1.py \
+            tests/test_anytime_recursive_admission_v1.py \
             .github/workflows/repair-anytime-admission-typing-v1.yml
           git diff --cached --check
           git commit -m 'Annotate anytime admission NumPy state'
