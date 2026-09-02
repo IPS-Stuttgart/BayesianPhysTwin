@@ -65,6 +65,18 @@ FEATURE_NAMES = (
 )
 
 
+def _json_ready(value: object) -> object:
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, Mapping):
+        return {str(key): _json_ready(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_ready(item) for item in value]
+    return value
+
+
 @dataclass(frozen=True)
 class SupportProtocol:
     parent_workflow_run_id: int
@@ -889,7 +901,7 @@ def source_command(args: argparse.Namespace) -> int:
     }
     output = args.output_root.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    write_json(output / "source_result.json", result)
+    write_json(output / "source_result.json", _json_ready(result))
     selected = policy["selected_policy"]
     diagnostics = policy["diagnostic_policies"]
     assert isinstance(selected, dict)
@@ -921,7 +933,7 @@ def source_command(args: argparse.Namespace) -> int:
         "target_outcomes_used_for_policy": False,
     }
     deployment["policy_id"] = canonical_sha256(deployment)
-    write_json(output / "policy.json", deployment)
+    write_json(output / "policy.json", _json_ready(deployment))
     seal = {
         "contract": CONTRACT,
         "schema_version": 1,
@@ -1100,14 +1112,14 @@ def target_command(args: argparse.Namespace) -> int:
     }
     output = args.output_root.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    write_json(output / "result.json", result)
+    write_json(output / "result.json", _json_ready(result))
     with (output / "per_decision.jsonl").open(
         "w",
         encoding="utf-8",
     ) as handle:
         for method, items in per_decision.items():
             for item in items:
-                payload = {"method": method, **item}
+                payload = _json_ready({"method": method, **item})
                 handle.write(
                     json.dumps(
                         payload,
