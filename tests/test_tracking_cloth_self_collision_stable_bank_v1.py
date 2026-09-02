@@ -54,9 +54,7 @@ def test_fit_prunes_only_explicit_parent_instability(monkeypatch) -> None:
 
     assert fit.parameters == ((400.0, 2.0, 0.0), (1600.0, 2.0, 0.0))
     assert fit.rejected_parameters == ((100.0, 2.0, 0.0),)
-    assert fit.rejection_reasons == (
-        "contact rollout escaped the registered domain",
-    )
+    assert fit.rejection_reasons == ("contact rollout escaped the registered domain",)
     assert fit.candidate_count == 3
     assert fit.valid_fraction == pytest.approx(2.0 / 3.0)
     assert np.sum(fit.weights) == pytest.approx(1.0)
@@ -104,7 +102,9 @@ def test_non_instability_parent_errors_remain_fatal(monkeypatch) -> None:
         model.fit_physics(SimpleNamespace(), np.zeros(1), protocol)
 
 
-def test_prediction_uses_source_sealed_subset_without_target_pruning(monkeypatch) -> None:
+def test_prediction_uses_source_sealed_subset_without_target_pruning(
+    monkeypatch,
+) -> None:
     protocol = _protocol()
     fit = model.PhysicsFit(
         parameters=((400.0, 2.0, 0.0), (1600.0, 2.0, 0.0)),

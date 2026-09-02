@@ -244,7 +244,9 @@ def all_predictions(
     try:
         nominal_index = fit.parameters.index(nominal)
     except ValueError as error:
-        raise ValueError("nominal contact parameters are absent from the stable bank") from error
+        raise ValueError(
+            "nominal contact parameters are absent from the stable bank"
+        ) from error
     predictions["nominal_contact_physics"] = bank[nominal_index]
     predictions["map_contact_physics"] = bank[int(np.argmax(fit.weights))]
     predictions[PHYSICS_ARM] = np.einsum("k,ktnd->tnd", fit.weights, bank)
