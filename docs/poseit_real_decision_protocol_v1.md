@@ -229,6 +229,15 @@ source deployment, lock, chunk sizes, retries, worker count, and full-archive
 receipt path, with distinct progress/log paths. It does not overwrite the first
 attempt, resume from an unverified prefix, or change any scientific choice.
 
+The replacement was launched once at `2026-09-02T16:57:14.387945+00:00` under
+flock PID `3994831`; an independent process check confirmed Python child
+`3994832` and an advancing `range-hash/progress-v2.json`. The write-once attempt
+ledger and launch record are retained in
+`evidence/poseit-real-decision-v1/range-hash-v2-launch/`. They prove a launch,
+not archive completion. Continue monitoring those PIDs and the existing
+completion-receipt path; do not launch another process merely because a poll
+times out. The original `progress-v1.json` and `run-v1.log` stay untouched.
+
 ## Full-download and structure-only custody tools
 
 If a complete local copy becomes available, the alternate exact acquisition

@@ -325,3 +325,29 @@ def test_registered_replacement_preserves_failure_and_exact_transport() -> None:
     assert Path(execution["progress_path"]).name == "progress-v2.json"
     assert Path(execution["log_path"]).name == "run-v2.log"
     assert not any(replacement["boundaries"].values())
+
+
+def test_replacement_launch_metadata_binds_attempt_and_is_not_completion() -> None:
+    root = ROOT / "evidence/poseit-real-decision-v1/range-hash-v2-launch"
+    attempt_path = root / "attempt-v2.json"
+    attempt = json.loads(attempt_path.read_text(encoding="utf-8"))
+    launch = json.loads((root / "launch-v2.json").read_text(encoding="utf-8"))
+    record_path = ROOT / "protocols/poseit_real_decision_probe_v1_range_restart_v2.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    record_sha256 = hashlib.sha256(record_path.read_bytes()).hexdigest()
+    assert launch["attempt_ledger_sha256"] == hashlib.sha256(
+        attempt_path.read_bytes()
+    ).hexdigest()
+    assert attempt["record_file_sha256"] == record_sha256
+    assert launch["record_file_sha256"] == record_sha256
+    assert attempt["command"] == record["execution"]["command"]
+    assert attempt["cwd"] == record["execution"]["cwd"]
+    assert attempt["attempt"] == 1
+    assert attempt["start_byte"] == 0
+    assert attempt["matching_acquisition_processes_before_launch"] == 0
+    assert attempt["original_failure_artifacts_verified"] is True
+    assert attempt["completion_receipt_absent_before_launch"] is True
+    assert attempt["structure_access_authorized"] is False
+    assert attempt["scientific_method_changed"] is False
+    assert launch["completion_receipt"] is False
+    assert launch["scientific_result"] is False
