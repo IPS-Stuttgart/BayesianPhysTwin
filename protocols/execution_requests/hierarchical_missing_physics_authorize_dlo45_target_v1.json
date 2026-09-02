@@ -1,0 +1,24 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-authorize-dlo45-target-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-authorize-dlo45-target-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "source_seal": "evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/receipt.json",
+  "protected_parent_run": 33361441865,
+  "required_parent_state": {
+    "status": "completed",
+    "conclusion": "success",
+    "target_job_status": "completed",
+    "target_job_conclusion": "success",
+    "pre_score_target_seal_step_required": true,
+    "retained_target_artifact_metadata_required": true
+  },
+  "authorized_targets": ["DLO4", "DLO5"],
+  "coefficient_refit_authorized": false,
+  "standardizer_refit_authorized": false,
+  "target_group_selection_authorized": false,
+  "target_semantic_vocabulary_change_authorized": false,
+  "artifact_payload_read_during_authorization": false,
+  "per_dlo_reporting_required": true,
+  "failure_policy": "Do not download target payloads unless the source seal and successful parent-run metadata verify. Preserve any later DLO4/DLO5 result separately."
+}
