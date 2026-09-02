@@ -42,7 +42,9 @@ def _log_mixture(log_wealth: np.ndarray) -> np.ndarray:
     return maximum + np.log(np.sum(np.exp(terms - maximum[:, None]), axis=1))
 
 
-def wilson_interval(successes: int, total: int, *, z: float = 1.959963984540054) -> list[float]:
+def wilson_interval(
+    successes: int, total: int, *, z: float = 1.959963984540054
+) -> list[float]:
     """Return a Wilson score interval for a binomial proportion."""
 
     if successes < 0 or total < 1 or successes > total:
@@ -54,8 +56,7 @@ def wilson_interval(successes: int, total: int, *, z: float = 1.959963984540054)
     radius = (
         z
         * math.sqrt(
-            proportion * (1.0 - proportion) / total
-            + z2 / (4.0 * total * total)
+            proportion * (1.0 - proportion) / total + z2 / (4.0 * total * total)
         )
         / denominator
     )
@@ -72,9 +73,7 @@ def _crossing_summary(first_crossing: np.ndarray) -> dict[str, object]:
         "crossing_count": count,
         "crossing_probability": count / total,
         "wilson_95_interval": wilson_interval(count, total),
-        "median_first_crossing": (
-            None if count == 0 else float(np.median(observed))
-        ),
+        "median_first_crossing": (None if count == 0 else float(np.median(observed))),
         "first_crossing_quantiles_10_90": (
             None
             if count == 0
@@ -168,16 +167,8 @@ def simulate_discrete_admission_scenario(
         split_gain_crossed |= gain_log_e >= split_log_threshold
         split_harm_crossed |= harm_log_e >= split_log_threshold
         if observation >= minimum:
-            new_shared = (
-                (shared_first < 0)
-                & shared_gain_crossed
-                & shared_harm_crossed
-            )
-            new_split = (
-                (split_first < 0)
-                & split_gain_crossed
-                & split_harm_crossed
-            )
+            new_shared = (shared_first < 0) & shared_gain_crossed & shared_harm_crossed
+            new_split = (split_first < 0) & split_gain_crossed & split_harm_crossed
             shared_first[new_shared] = observation
             split_first[new_split] = observation
 
@@ -264,9 +255,10 @@ def run_joint_admission_study(protocol: dict[str, object]) -> dict[str, object]:
         float(
             cast(
                 list[float],
-                cast(dict[str, object], cast(dict[str, object], results[name])["shared_alpha_iut"])[
-                    "wilson_95_interval"
-                ],
+                cast(
+                    dict[str, object],
+                    cast(dict[str, object], results[name])["shared_alpha_iut"],
+                )["wilson_95_interval"],
             )[1]
         )
         for name in null_names

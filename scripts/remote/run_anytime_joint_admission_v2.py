@@ -85,14 +85,10 @@ def _write_summary_csv(path: Path, result: dict[str, object]) -> None:
                         "e_value_threshold": summary["e_value_threshold"],
                         "replication_count": summary["replication_count"],
                         "crossing_count": summary["crossing_count"],
-                        "crossing_probability": summary[
-                            "crossing_probability"
-                        ],
+                        "crossing_probability": summary["crossing_probability"],
                         "wilson_95_lower": interval[0],
                         "wilson_95_upper": interval[1],
-                        "median_first_crossing": summary[
-                            "median_first_crossing"
-                        ],
+                        "median_first_crossing": summary["median_first_crossing"],
                         "first_crossing_q10": (
                             None if quantiles is None else quantiles[0]
                         ),

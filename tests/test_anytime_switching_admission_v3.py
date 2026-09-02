@@ -181,12 +181,15 @@ def test_selection_returns_exact_registered_object() -> None:
     fallback = object()
     candidate = object()
 
-    assert controller.select(
-        fallback=fallback,
-        candidate=candidate,
-        fallback_id="fallback-sha256",
-        candidate_id="candidate-sha256",
-    ) is fallback
+    assert (
+        controller.select(
+            fallback=fallback,
+            candidate=candidate,
+            fallback_id="fallback-sha256",
+            candidate_id="candidate-sha256",
+        )
+        is fallback
+    )
     with pytest.raises(ValueError, match="candidate_id"):
         controller.select(
             fallback=fallback,

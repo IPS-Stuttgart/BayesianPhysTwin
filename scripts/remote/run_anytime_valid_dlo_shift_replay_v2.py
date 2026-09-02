@@ -10,13 +10,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-
-from bayesian_phystwin_experiments.anytime_valid_admission_v1 import (
-    AnytimeAdmissionConfig,
-    AnytimeAdmissionController,
-    DeploymentState,
-    clipped_gain,
-)
 from run_anytime_valid_dlo_shift_replay_v1 import (
     canonical,
     collect_arrays,
@@ -26,6 +19,13 @@ from run_anytime_valid_dlo_shift_replay_v1 import (
     materialize,
     method_identity,
     sha256_file,
+)
+
+from bayesian_phystwin_experiments.anytime_valid_admission_v1 import (
+    AnytimeAdmissionConfig,
+    AnytimeAdmissionController,
+    DeploymentState,
+    clipped_gain,
 )
 
 
@@ -141,8 +141,7 @@ def main() -> int:
         ("DLO5", dlo5[0], dlo5[1], transfer5),
     )
     total_post_shift_observations = sum(
-        canonical(panel[1].values).shape[0]
-        * canonical(panel[1].values).shape[1]
+        canonical(panel[1].values).shape[0] * canonical(panel[1].values).shape[1]
         for panel in panels[1:]
     )
 
@@ -225,7 +224,6 @@ def main() -> int:
                     boundary = record.boundary
                     raw_gain = record.raw_gain
                     normalized_gain = record.clipped_normalized_gain
-                    was_clipped = record.clipped
 
                 row = {
                     "reveal_order": reveal_order,
@@ -289,8 +287,7 @@ def main() -> int:
             ),
             "guarded_cumulative_regret_m": guarded_post_shift_regret,
             "unguarded_cumulative_regret_m": unguarded_post_shift_regret,
-            "regret_avoided_m": unguarded_post_shift_regret
-            - guarded_post_shift_regret,
+            "regret_avoided_m": unguarded_post_shift_regret - guarded_post_shift_regret,
         },
         "exact_fallback_identity_violations": identity_violations,
         "selected_arrays": {
@@ -347,9 +344,7 @@ def main() -> int:
         "",
         protocol["claim_boundary"],
     ]
-    (output_root / "report.md").write_text(
-        "\n".join(report) + "\n", encoding="utf-8"
-    )
+    (output_root / "report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
     return 0
 

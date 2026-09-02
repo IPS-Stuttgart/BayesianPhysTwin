@@ -30,10 +30,10 @@ unregistered score, candidate, fallback, or information-set changes.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
+from dataclasses import asdict, dataclass
 from typing import Final, Generic, TypeVar
 
 from bayesian_phystwin.anytime_admission_v1 import (
@@ -422,7 +422,10 @@ class SwitchingUnionAdmissionControllerV3(Generic[T]):
     ) -> T:
         if _identifier(fallback_id, label="fallback_id") != self.contract.fallback_id:
             raise ValueError("fallback_id does not match the frozen contract")
-        if _identifier(candidate_id, label="candidate_id") != self.contract.candidate_id:
+        if (
+            _identifier(candidate_id, label="candidate_id")
+            != self.contract.candidate_id
+        ):
             raise ValueError("candidate_id does not match the frozen contract")
         return candidate if self._authorized else fallback
 
@@ -449,9 +452,7 @@ class SwitchingUnionAdmissionControllerV3(Generic[T]):
             pending_trial_count=len(self._pending),
             ignored_closed_epoch_outcome_count=self._ignored_closed_epoch_count,
             current_epoch_alpha=alpha,
-            cumulative_alpha=self._schedule.cumulative_alpha_through(
-                self._epoch_index
-            ),
+            cumulative_alpha=self._schedule.cumulative_alpha_through(self._epoch_index),
             log_threshold=-math.log(alpha),
             log_e_value=self._process.log_e_value,
             maximum_log_e_value=self._process.maximum_log_e_value,

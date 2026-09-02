@@ -7,15 +7,12 @@ import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = REPOSITORY_ROOT / "protocols" / "anytime_valid_dlo_replay_v1.json"
-RUNNER = (
-    REPOSITORY_ROOT
-    / "scripts"
-    / "remote"
-    / "run_anytime_valid_dlo_replay_v1.py"
-)
+RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_anytime_valid_dlo_replay_v1.py"
 
 
-def cases(prefix: str, count: int, relative_improvement: float) -> list[dict[str, object]]:
+def cases(
+    prefix: str, count: int, relative_improvement: float
+) -> list[dict[str, object]]:
     baseline = 1.0
     candidate = baseline * (1.0 - relative_improvement)
     return [
@@ -35,12 +32,10 @@ def test_protocol_discloses_retrospective_boundary() -> None:
     assert protocol["information_boundary"]["outcomes_previously_opened"] is True
     assert protocol["information_boundary"]["retrospective_replay"] is True
     assert (
-        protocol["information_boundary"]["fresh_validation_claim_authorized"]
-        is False
+        protocol["information_boundary"]["fresh_validation_claim_authorized"] is False
     )
     assert (
-        protocol["information_boundary"]["deployment_safety_claim_authorized"]
-        is False
+        protocol["information_boundary"]["deployment_safety_claim_authorized"] is False
     )
     assert protocol["information_boundary"]["paper_claim_authorized"] is False
 
@@ -78,18 +73,14 @@ def test_synthetic_terminal_artifacts_reproduce_registered_mechanism(
                     "cases": cases(
                         "pyelastica",
                         hierarchy["pyelastica"]["expected_case_count"],
-                        hierarchy["pyelastica"][
-                            "expected_relative_improvement"
-                        ],
+                        hierarchy["pyelastica"]["expected_relative_improvement"],
                     )
                 },
                 "cross_operator": {
                     "cases": cases(
                         "cross",
                         hierarchy["cross_operator"]["expected_case_count"],
-                        hierarchy["cross_operator"][
-                            "expected_relative_improvement"
-                        ],
+                        hierarchy["cross_operator"]["expected_relative_improvement"],
                     )
                 },
             }
@@ -132,16 +123,15 @@ def test_runner_binds_known_terminal_artifact_identities() -> None:
     protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
 
     assert (
-        protocol["artifacts"]["dlo45_prospective_target"]["artifact_id"]
-        == 9811788200
+        protocol["artifacts"]["dlo45_prospective_target"]["artifact_id"] == 9811788200
     )
+    assert protocol["artifacts"]["hierarchical_transfer"]["artifact_id"] == 9811886089
     assert (
-        protocol["artifacts"]["hierarchical_transfer"]["artifact_id"]
-        == 9811886089
+        protocol["streams"]["universal_coefficient_transport"][
+            "shift_boundary_after_case"
+        ]
+        == 8
     )
-    assert protocol["streams"]["universal_coefficient_transport"][
-        "shift_boundary_after_case"
-    ] == 8
 
 
 def test_changed_aggregate_cannot_be_silently_selected(tmp_path: Path) -> None:
@@ -179,19 +169,23 @@ def test_protocol_expected_counts_are_consistent() -> None:
     dlo45 = protocol["artifacts"]["dlo45_prospective_target"]
     hierarchy = protocol["artifacts"]["hierarchical_transfer"]
 
-    assert dlo45["expected_wins"] + dlo45["expected_ties"] + dlo45[
-        "expected_losses"
-    ] == dlo45["expected_case_count"]
+    assert (
+        dlo45["expected_wins"] + dlo45["expected_ties"] + dlo45["expected_losses"]
+        == dlo45["expected_case_count"]
+    )
     for label in ("pyelastica", "cross_operator"):
         part = hierarchy[label]
-        assert part["expected_wins"] + part["expected_ties"] + part[
-            "expected_losses"
-        ] == part["expected_case_count"]
+        assert (
+            part["expected_wins"] + part["expected_ties"] + part["expected_losses"]
+            == part["expected_case_count"]
+        )
     assert hierarchy["cross_operator"]["expected_losses"] == 28
     assert hierarchy["pyelastica"]["expected_wins"] == 8
 
 
-@pytest.mark.parametrize("key", ["fresh_validation_claim_authorized", "paper_claim_authorized"])
+@pytest.mark.parametrize(
+    "key", ["fresh_validation_claim_authorized", "paper_claim_authorized"]
+)
 def test_no_claim_promotion_flag_is_true(key: str) -> None:
     protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     assert protocol["information_boundary"][key] is False

@@ -54,9 +54,7 @@ def _crossing_summary(first_crossing: np.ndarray) -> dict[str, object]:
         "crossing_count": count,
         "crossing_probability": count / total,
         "wilson_95_interval": wilson_interval(count, total),
-        "median_first_crossing": (
-            None if count == 0 else float(np.median(values))
-        ),
+        "median_first_crossing": (None if count == 0 else float(np.median(values))),
         "first_crossing_quantiles_10_90": (
             None
             if count == 0
@@ -88,9 +86,7 @@ def _phase_arrays(
     if np.any(gain_scores < -1.0) or np.any(gain_scores > 1.0):
         raise ValueError("gain scores must lie in [-1, 1]")
     scale = max(maximum_harm_rate, 1.0 - maximum_harm_rate)
-    harm_scores = (
-        maximum_harm_rate - harmful.astype(np.float64)
-    ) / scale
+    harm_scores = (maximum_harm_rate - harmful.astype(np.float64)) / scale
     robust_scores = np.minimum(gain_scores, harm_scores)
     return duration, probabilities, gain_scores, harmful, robust_scores
 
@@ -167,15 +163,11 @@ def simulate_switching_admission_scenario(
                 "name": str(phase.get("name", f"phase-{index}")),
                 "duration": duration,
                 "active_null_component": phase.get("active_null_component"),
-                "expected_gain_score": float(
-                    np.sum(probabilities * gain_scores)
-                ),
+                "expected_gain_score": float(np.sum(probabilities * gain_scores)),
                 "expected_harm_rate": float(
                     np.sum(probabilities * harmful.astype(np.float64))
                 ),
-                "expected_robust_score": float(
-                    np.sum(probabilities * robust_scores)
-                ),
+                "expected_robust_score": float(np.sum(probabilities * robust_scores)),
             }
         )
         for _ in range(duration):
@@ -188,33 +180,22 @@ def simulate_switching_admission_scenario(
             gains = gain_scores[atoms]
             harms = harmful[atoms]
             robust = robust_scores[atoms]
-            gain_log_wealth += np.log1p(
-                gains[:, None] * gain_bets[None, :]
-            )
+            gain_log_wealth += np.log1p(gains[:, None] * gain_bets[None, :])
             harm_factors = np.where(
                 harms[:, None],
                 harm_alternatives[None, :] / ceiling,
                 (1.0 - harm_alternatives[None, :]) / (1.0 - ceiling),
             )
             harm_log_wealth += np.log(harm_factors)
-            robust_log_wealth += np.log1p(
-                robust[:, None] * robust_bets[None, :]
-            )
+            robust_log_wealth += np.log1p(robust[:, None] * robust_bets[None, :])
             gain_log_e = _log_mixture(gain_log_wealth)
             harm_log_e = _log_mixture(harm_log_wealth)
             robust_log_e = _log_mixture(robust_log_wealth)
             gain_crossed |= gain_log_e >= threshold
             harm_crossed |= harm_log_e >= threshold
             if observation >= minimum:
-                new_iut = (
-                    (iut_first < 0)
-                    & gain_crossed
-                    & harm_crossed
-                )
-                new_robust = (
-                    (robust_first < 0)
-                    & (robust_log_e >= threshold)
-                )
+                new_iut = (iut_first < 0) & gain_crossed & harm_crossed
+                new_robust = (robust_first < 0) & (robust_log_e >= threshold)
                 iut_first[new_iut] = observation
                 robust_first[new_robust] = observation
 
@@ -226,9 +207,7 @@ def simulate_switching_admission_scenario(
             **_crossing_summary(iut_first),
             "component_alpha": alpha,
             "e_value_threshold": 1.0 / alpha,
-            "assumption": (
-                "one fixed component null must hold throughout the epoch"
-            ),
+            "assumption": ("one fixed component null must hold throughout the epoch"),
         },
         "switching_union_min_score": {
             **_crossing_summary(robust_first),
@@ -319,9 +298,7 @@ def run_switching_admission_study(
                 list[float],
                 cast(
                     dict[str, object],
-                    cast(dict[str, object], results[name])[
-                        "switching_union_min_score"
-                    ],
+                    cast(dict[str, object], results[name])["switching_union_min_score"],
                 )["wilson_95_interval"],
             )[1]
         )
@@ -344,22 +321,16 @@ def run_switching_admission_study(
         "latched_iut_failure_outside_assumptions": float(
             cast(Any, switching_iut["crossing_probability"])
         )
-        >= float(
-            cast(Any, requirements["minimum_switching_null_iut_crossing"])
-        ),
+        >= float(cast(Any, requirements["minimum_switching_null_iut_crossing"])),
         "switching_robust_control": float(
             cast(Any, switching_robust["crossing_probability"])
         )
-        <= float(
-            cast(Any, requirements["maximum_switching_null_robust_crossing"])
-        ),
+        <= float(cast(Any, requirements["maximum_switching_null_robust_crossing"])),
         "moderate_robust_power": float(
             cast(Any, moderate_robust["crossing_probability"])
         )
         >= float(cast(Any, requirements["minimum_moderate_robust_power"])),
-        "strong_robust_power": float(
-            cast(Any, strong_robust["crossing_probability"])
-        )
+        "strong_robust_power": float(cast(Any, strong_robust["crossing_probability"]))
         >= float(cast(Any, requirements["minimum_strong_robust_power"])),
     }
     passed = all(gate_results.values())

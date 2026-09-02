@@ -94,7 +94,9 @@ def row_logsumexp(values: np.ndarray) -> np.ndarray:
     return maximum + np.log(np.sum(np.exp(values - maximum[:, None]), axis=1))
 
 
-def wilson_interval(successes: int, total: int, z: float = 1.959963984540054) -> list[float]:
+def wilson_interval(
+    successes: int, total: int, z: float = 1.959963984540054
+) -> list[float]:
     if total <= 0 or successes < 0 or successes > total:
         raise ValueError("invalid binomial counts")
     proportion = successes / total
@@ -103,8 +105,7 @@ def wilson_interval(successes: int, total: int, z: float = 1.959963984540054) ->
     radius = (
         z
         * math.sqrt(
-            proportion * (1.0 - proportion) / total
-            + z * z / (4.0 * total * total)
+            proportion * (1.0 - proportion) / total + z * z / (4.0 * total * total)
         )
         / denominator
     )
@@ -119,9 +120,7 @@ def summarize_crossings(first: np.ndarray, horizon: int) -> dict[str, object]:
         "crossing_count": int(np.sum(crossed)),
         "crossing_probability": float(np.mean(crossed)),
         "wilson_95_interval": wilson_interval(int(np.sum(crossed)), len(first)),
-        "median_first_crossing": (
-            None if len(times) == 0 else float(np.median(times))
-        ),
+        "median_first_crossing": (None if len(times) == 0 else float(np.median(times))),
         "mean_first_crossing": None if len(times) == 0 else float(np.mean(times)),
         "horizon": horizon,
     }
@@ -204,12 +203,8 @@ def simulate_monitoring(
         first_naive[newly_naive] = time_index
 
         spending_alpha = epoch_alpha * 6.0 / (math.pi * math.pi * count * count)
-        spending_threshold = math.sqrt(
-            2.0 * math.log(1.0 / spending_alpha) / count
-        )
-        newly_spending = (
-            (first_spending < 0) & eligible & (mean >= spending_threshold)
-        )
+        spending_threshold = math.sqrt(2.0 * math.log(1.0 / spending_alpha) / count)
+        newly_spending = (first_spending < 0) & eligible & (mean >= spending_threshold)
         first_spending[newly_spending] = time_index
 
     fixed_horizon = final_log_e >= -math.log(epoch_alpha)
@@ -273,13 +268,10 @@ def simulate_abrupt_shift(
                 scores[promotable, None] * lambdas[None, :]
             )
             promotion_count[promotable] += 1
-            log_e = row_logsumexp(
-                promotion_logs[promotable] + log_weights[None, :]
-            )
+            log_e = row_logsumexp(promotion_logs[promotable] + log_weights[None, :])
             indices = np.flatnonzero(promotable)
-            crossed = (
-                (promotion_count[promotable] >= minimum_promotion)
-                & (log_e >= -math.log(promotion_alpha))
+            crossed = (promotion_count[promotable] >= minimum_promotion) & (
+                log_e >= -math.log(promotion_alpha)
             )
             newly_promoted = indices[crossed]
             active[newly_promoted] = True
@@ -292,13 +284,10 @@ def simulate_abrupt_shift(
                 -scores[revocable, None] * lambdas[None, :]
             )
             revocation_count[revocable] += 1
-            log_e = row_logsumexp(
-                revocation_logs[revocable] + log_weights[None, :]
-            )
+            log_e = row_logsumexp(revocation_logs[revocable] + log_weights[None, :])
             indices = np.flatnonzero(revocable)
-            crossed = (
-                (revocation_count[revocable] >= minimum_revocation)
-                & (log_e >= -math.log(revocation_alpha))
+            crossed = (revocation_count[revocable] >= minimum_revocation) & (
+                log_e >= -math.log(revocation_alpha)
             )
             newly_revoked = indices[crossed]
             active[newly_revoked] = False
@@ -306,8 +295,8 @@ def simulate_abrupt_shift(
             revocation_time[newly_revoked] = time_index
 
     promoted_before_shift = ever_promoted & (promotion_time < shift_index)
-    revoked_after_shift = promoted_before_shift & revoked & (
-        revocation_time >= shift_index
+    revoked_after_shift = (
+        promoted_before_shift & revoked & (revocation_time >= shift_index)
     )
     delays = revocation_time[revoked_after_shift] - shift_index + 1
     unguarded_harmful_steps = horizon - shift_index
@@ -344,7 +333,10 @@ def exercise_exact_identity(config: AnytimeAdmissionConfig) -> dict[str, object]
     fallback = {"kind": "caller-owned-fallback", "payload": [1, 2, 3]}
     candidate = {"kind": "frozen-candidate", "payload": [4, 5, 6]}
     violations = 0
-    if guard.select(fallback_belief=fallback, candidate_belief=candidate) is not fallback:
+    if (
+        guard.select(fallback_belief=fallback, candidate_belief=candidate)
+        is not fallback
+    ):
         violations += 1
 
     guard.register("delayed-first")
@@ -361,7 +353,10 @@ def exercise_exact_identity(config: AnytimeAdmissionConfig) -> dict[str, object]
         index += 1
     if guard.state is not DeploymentState.CANDIDATE:
         raise RuntimeError("deterministic positive stream did not promote")
-    if guard.select(fallback_belief=fallback, candidate_belief=candidate) is not candidate:
+    if (
+        guard.select(fallback_belief=fallback, candidate_belief=candidate)
+        is not candidate
+    ):
         violations += 1
 
     index = 0
@@ -506,8 +501,12 @@ def write_summary_csv(path: Path, result: Mapping[str, object]) -> None:
                         "method": method_name,
                         "crossing_probability": method.get("crossing_probability"),
                         "median_first_crossing": method.get("median_first_crossing"),
-                        "wilson_low": cast(list[object], method["wilson_95_interval"])[0],
-                        "wilson_high": cast(list[object], method["wilson_95_interval"])[1],
+                        "wilson_low": cast(list[object], method["wilson_95_interval"])[
+                            0
+                        ],
+                        "wilson_high": cast(list[object], method["wilson_95_interval"])[
+                            1
+                        ],
                     }
                 )
     with path.open("w", newline="", encoding="utf-8") as stream:
@@ -652,9 +651,7 @@ def main() -> int:
         "shift_promotion_probability": promotion_probability
         >= float(cast(Any, gate["minimum_shift_promotion_probability"])),
         "shift_revocation_probability": revocation_probability
-        >= float(
-            cast(Any, gate["minimum_revocation_probability_given_promotion"])
-        ),
+        >= float(cast(Any, gate["minimum_revocation_probability_given_promotion"])),
         "harmful_active_steps_fraction": harmful_fraction
         <= float(
             cast(

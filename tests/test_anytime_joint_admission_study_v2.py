@@ -91,10 +91,7 @@ def test_frozen_protocol_has_two_distinct_union_nulls() -> None:
 
     assert protocol["status"] == "frozen-before-controlled-execution"
     assert scenarios["gain_boundary_low_harm"]["null_component"] == "mean-gain"
-    assert (
-        scenarios["harm_boundary_positive_gain"]["null_component"]
-        == "harm-rate"
-    )
+    assert scenarios["harm_boundary_positive_gain"]["null_component"] == "harm-rate"
     assert protocol["design"]["total_alpha"] == 0.05
     assert protocol["design"]["epoch_alpha_continuation"] == 0.5
     assert protocol["information_boundary"]["real_outcomes_used"] is False

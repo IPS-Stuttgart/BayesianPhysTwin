@@ -25,10 +25,10 @@ safety, arbitrary-shift, or unclipped-loss guarantees.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
+from dataclasses import asdict, dataclass
 from typing import Final, Generic, TypeVar
 
 import numpy as np
@@ -201,10 +201,9 @@ class JointAdmissionConfigV2:
             if not values:
                 raise ValueError(f"{label} must not be empty")
             numeric = tuple(float(value) for value in values)
-            if (
-                any(not math.isfinite(value) or not 0.0 < value < 1.0 for value in numeric)
-                or len(set(numeric)) != len(numeric)
-            ):
+            if any(
+                not math.isfinite(value) or not 0.0 < value < 1.0 for value in numeric
+            ) or len(set(numeric)) != len(numeric):
                 raise ValueError(f"{label} must contain unique finite values in (0, 1)")
 
     def descriptor(self) -> dict[str, object]:
@@ -405,9 +404,7 @@ class JointAnytimeAdmissionControllerV2(Generic[T]):
         self._ever_authorized = False
         self._gain_crossed = False
         self._harm_crossed = False
-        self._gain_process = BoundedGainMixtureEProcess(
-            self.config.gain_bet_fractions
-        )
+        self._gain_process = BoundedGainMixtureEProcess(self.config.gain_bet_fractions)
         self._harm_process = BernoulliHarmMixtureEProcess(
             maximum_harm_rate=self.config.maximum_harm_rate,
             alternative_fractions=self.config.harm_alternative_fractions,
@@ -464,12 +461,7 @@ class JointAnytimeAdmissionControllerV2(Generic[T]):
         denominator = self.config.loss_cap + self.config.minimum_mean_gain
         return float(
             np.clip(
-                (
-                    fallback
-                    - candidate
-                    - self.config.minimum_mean_gain
-                )
-                / denominator,
+                (fallback - candidate - self.config.minimum_mean_gain) / denominator,
                 -1.0,
                 1.0,
             )
@@ -525,10 +517,13 @@ class JointAnytimeAdmissionControllerV2(Generic[T]):
                 self._harm_crossed
                 or self._harm_process.maximum_log_e_value >= log_threshold
             )
-            minimum = (
-                self._gain_process.count >= self.config.minimum_resolved_trials
-            )
-            if not self._authorized and self._gain_crossed and self._harm_crossed and minimum:
+            minimum = self._gain_process.count >= self.config.minimum_resolved_trials
+            if (
+                not self._authorized
+                and self._gain_crossed
+                and self._harm_crossed
+                and minimum
+            ):
                 self._authorized = True
                 self._ever_authorized = True
                 self._revocation_process = ChangePointBoundedGainEProcess(
@@ -589,18 +584,28 @@ class JointAnytimeAdmissionControllerV2(Generic[T]):
     ) -> T:
         """Return the exact registered object selected for the next decision."""
 
-        if _nonempty_identifier(fallback_id, label="fallback_id") != self.contract.fallback_id:
+        if (
+            _nonempty_identifier(fallback_id, label="fallback_id")
+            != self.contract.fallback_id
+        ):
             raise ValueError("fallback_id does not match the frozen contract")
-        if _nonempty_identifier(candidate_id, label="candidate_id") != self.contract.candidate_id:
+        if (
+            _nonempty_identifier(candidate_id, label="candidate_id")
+            != self.contract.candidate_id
+        ):
             raise ValueError("candidate_id does not match the frozen contract")
         return candidate if self._authorized else fallback
 
     def snapshot(self) -> JointAdmissionSnapshotV2:
-        alpha = None if self._closed else self._alpha_schedule.alpha_for_epoch(
-            self._epoch_index
+        alpha = (
+            None
+            if self._closed
+            else self._alpha_schedule.alpha_for_epoch(self._epoch_index)
         )
-        beta = None if self._closed else self._beta_schedule.alpha_for_epoch(
-            self._epoch_index
+        beta = (
+            None
+            if self._closed
+            else self._beta_schedule.alpha_for_epoch(self._epoch_index)
         )
         minimum = self._gain_process.count >= self.config.minimum_resolved_trials
         harm_fraction: float | None = None

@@ -13,13 +13,12 @@ delayed outcome becomes available, even if the candidate was not deployed.
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 from enum import Enum
-import math
 from typing import Generic, TypeVar
 
 import numpy as np
-
 
 T = TypeVar("T")
 

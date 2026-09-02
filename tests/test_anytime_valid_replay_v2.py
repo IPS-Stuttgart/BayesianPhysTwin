@@ -1,22 +1,14 @@
 import csv
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
-
+from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = (
-    REPOSITORY_ROOT
-    / "scripts"
-    / "remote"
-    / "run_anytime_valid_loss_replay_v2.py"
-)
+SCRIPT = REPOSITORY_ROOT / "scripts" / "remote" / "run_anytime_valid_loss_replay_v2.py"
 BASE_PROTOCOL = (
-    REPOSITORY_ROOT
-    / "protocols"
-    / "anytime_valid_simulator_admission_v1.json"
+    REPOSITORY_ROOT / "protocols" / "anytime_valid_simulator_admission_v1.json"
 )
 
 
@@ -100,9 +92,7 @@ def test_terminal_fallback_after_nonreentrant_revocation(tmp_path: Path) -> None
     assert stream_result["terminal_fallback_observations"] > 0
     assert result["exact_fallback_identity_violations"] == 0
 
-    events = list(
-        csv.DictReader((output / "events.csv").open(encoding="utf-8"))
-    )
+    events = list(csv.DictReader((output / "events.csv").open(encoding="utf-8")))
     revocation_index = next(
         index for index, row in enumerate(events) if row["event"] == "revoke"
     )

@@ -76,8 +76,7 @@ def test_deterministic_switching_invalidity_never_crosses_robust_process() -> No
 
     assert result["switching_union_min_score"]["crossing_count"] == 0
     assert all(
-        phase["expected_robust_score"] <= 0.0
-        for phase in result["phase_expectations"]
+        phase["expected_robust_score"] <= 0.0 for phase in result["phase_expectations"]
     )
 
 

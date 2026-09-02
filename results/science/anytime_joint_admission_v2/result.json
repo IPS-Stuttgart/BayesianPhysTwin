@@ -1,0 +1,227 @@
+{
+  "claim_boundary": "Controlled Monte Carlo evidence for the shared-alpha intersection--union admission mechanism. It is not fresh real-world validation, a universal power guarantee, or a physical-safety certificate.",
+  "contract": "anytime-joint-admission-power-result-v2",
+  "decision": "shared-alpha-iut-efficiency-supported",
+  "derived_comparison": {
+    "maximum_null_wilson_upper": 0.016569109007622082,
+    "moderate_median_crossing_ratio_shared_over_split": 0.8842975206611571,
+    "moderate_power_gain_shared_minus_split": 0.049800000000000066
+  },
+  "design": {
+    "comparison": {
+      "bonferroni_split": "Each component e-process receives half of the same first-epoch alpha allocation.",
+      "shared_alpha_iut": "Both latched component e-processes use the full first-epoch alpha allocation."
+    },
+    "epoch_alpha_continuation": 0.5,
+    "gain_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "harm_alternative_fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "horizon": 500,
+    "maximum_harm_rate": 0.1,
+    "minimum_resolved_trials": 20,
+    "replication_count": {
+      "alternative": 10000,
+      "null": 20000
+    },
+    "seed_base": 2026090200,
+    "shared_component_threshold": 40.0,
+    "shared_first_epoch_alpha": 0.025,
+    "split_component_threshold": 80.0,
+    "total_alpha": 0.05
+  },
+  "mechanism_gate": {
+    "passed": true,
+    "requirements": {
+      "decision": "conjunctive",
+      "maximum_moderate_median_crossing_ratio": 0.9,
+      "maximum_null_wilson_upper": 0.025,
+      "minimum_moderate_power_gain": 0.03,
+      "minimum_strong_power": 0.99
+    },
+    "results": {
+      "moderate_median_crossing_ratio": true,
+      "moderate_power_gain": true,
+      "null_wilson_upper": true,
+      "strong_power": true
+    }
+  },
+  "protocol_sha256": "3d67d569f1b753762d2caed4892310a046cc8239ac1b0f4066a48bdcaa0a3640",
+  "runtime": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "python": "3.12.14"
+  },
+  "scenarios": {
+    "gain_boundary_low_harm": {
+      "bonferroni_split": {
+        "component_alpha": 0.0125,
+        "crossing_count": 72,
+        "crossing_probability": 0.0036,
+        "e_value_threshold": 80.0,
+        "first_crossing_quantiles_10_90": [
+          187.0,
+          424.0
+        ],
+        "median_first_crossing": 257.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.0028599057300619343,
+          0.004530747666438737
+        ]
+      },
+      "expected_gain_score": 0.0,
+      "expected_harm_rate": 0.05,
+      "group": "null",
+      "null_component": "mean-gain",
+      "shared_alpha_iut": {
+        "component_alpha": 0.025,
+        "crossing_count": 167,
+        "crossing_probability": 0.00835,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          132.0,
+          431.0
+        ],
+        "median_first_crossing": 237.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.007179888553562395,
+          0.009708940500405282
+        ]
+      }
+    },
+    "harm_boundary_positive_gain": {
+      "bonferroni_split": {
+        "component_alpha": 0.0125,
+        "crossing_count": 141,
+        "crossing_probability": 0.00705,
+        "e_value_threshold": 80.0,
+        "first_crossing_quantiles_10_90": [
+          59.0,
+          315.0
+        ],
+        "median_first_crossing": 103.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.005981362480713051,
+          0.0083079658670005
+        ]
+      },
+      "expected_gain_score": 0.17,
+      "expected_harm_rate": 0.1,
+      "group": "null",
+      "null_component": "harm-rate",
+      "shared_alpha_iut": {
+        "component_alpha": 0.025,
+        "crossing_count": 296,
+        "crossing_probability": 0.0148,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          51.0,
+          301.0
+        ],
+        "median_first_crossing": 94.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.013217242781221848,
+          0.016569109007622082
+        ]
+      }
+    },
+    "moderate_safe_benefit": {
+      "bonferroni_split": {
+        "component_alpha": 0.0125,
+        "crossing_count": 8501,
+        "crossing_probability": 0.8501,
+        "e_value_threshold": 80.0,
+        "first_crossing_quantiles_10_90": [
+          81.0,
+          425.0
+        ],
+        "median_first_crossing": 242.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.842969064327551,
+          0.8569620600133011
+        ]
+      },
+      "expected_gain_score": 0.0925,
+      "expected_harm_rate": 0.05,
+      "group": "alternative",
+      "null_component": null,
+      "shared_alpha_iut": {
+        "component_alpha": 0.025,
+        "crossing_count": 8999,
+        "crossing_probability": 0.8999,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          73.0,
+          396.0
+        ],
+        "median_first_crossing": 214.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.893863059890281,
+          0.9056298182128519
+        ]
+      }
+    },
+    "strong_safe_benefit": {
+      "bonferroni_split": {
+        "component_alpha": 0.0125,
+        "crossing_count": 10000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 80.0,
+        "first_crossing_quantiles_10_90": [
+          77.0,
+          160.0
+        ],
+        "median_first_crossing": 81.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.9996160016293234,
+          1.0
+        ]
+      },
+      "expected_gain_score": 0.097,
+      "expected_harm_rate": 0.02,
+      "group": "alternative",
+      "null_component": null,
+      "shared_alpha_iut": {
+        "component_alpha": 0.025,
+        "crossing_count": 10000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          67.0,
+          132.0
+        ],
+        "median_first_crossing": 73.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.9996160016293234,
+          1.0
+        ]
+      }
+    }
+  },
+  "schema": "bayesian-phystwin.anytime-joint-admission-study-v2",
+  "schema_version": 2,
+  "theorem_boundary": {
+    "invalid_candidate_null": "insufficient conditional mean bounded gain OR conditional harm rate at or above the registered ceiling",
+    "latched_crossing": "each component may cross at a different stopping time within the same epoch",
+    "not_covered": "epochs in which neither fixed component null holds throughout, unregistered score changes, physical safety, or real-data freshness",
+    "shared_alpha_justification": "joint admission implies rejection of whichever fixed component null is true; dependence between component e-processes is allowed"
+  }
+}

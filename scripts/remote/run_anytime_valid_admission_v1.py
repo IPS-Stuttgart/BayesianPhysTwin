@@ -75,7 +75,9 @@ def gain_sequence(
         positive = float(scenario["positive_gain"])
         negative = float(scenario["negative_gain"])
         shift = int(scenario["shift_step"])
-        probabilities = np.full(horizon, float(scenario["post_shift_positive_probability"]))
+        probabilities = np.full(
+            horizon, float(scenario["post_shift_positive_probability"])
+        )
         probabilities[:shift] = float(scenario["pre_shift_positive_probability"])
         return np.where(rng.random(horizon) < probabilities, positive, negative)
     if kind == "adaptive_rademacher_gain":
@@ -117,7 +119,9 @@ def fixed_horizon_z_rejects(gains: np.ndarray, *, threshold: float) -> bool:
     return z_value >= threshold
 
 
-def wilson_interval(successes: int, total: int, z: float = 1.959963984540054) -> list[float]:
+def wilson_interval(
+    successes: int, total: int, z: float = 1.959963984540054
+) -> list[float]:
     if total <= 0 or not 0 <= successes <= total:
         raise ValueError("invalid binomial counts")
     proportion = successes / total
@@ -126,8 +130,7 @@ def wilson_interval(successes: int, total: int, z: float = 1.959963984540054) ->
     radius = (
         z
         * math.sqrt(
-            proportion * (1.0 - proportion) / total
-            + z * z / (4.0 * total * total)
+            proportion * (1.0 - proportion) / total + z * z / (4.0 * total * total)
         )
         / denominator
     )
@@ -177,7 +180,7 @@ def evaluate_scenario(
     fallback_token = object()
     candidate_token = object()
 
-    for replication, child_seed in enumerate(child_seeds):
+    for _replication, child_seed in enumerate(child_seeds):
         rng = np.random.default_rng(child_seed)
         gains = gain_sequence(scenario, horizon=horizon, rng=rng)
         controller = AnytimeAdmissionController(
@@ -196,7 +199,10 @@ def evaluate_scenario(
                 fallback=fallback_token,
                 candidate=candidate_token,
             )
-            if state_before is DeploymentState.FALLBACK and selected is not fallback_token:
+            if (
+                state_before is DeploymentState.FALLBACK
+                and selected is not fallback_token
+            ):
                 exact_fallback_identity_violations += 1
             if state_before is DeploymentState.CANDIDATE:
                 candidate_exposures += 1
@@ -301,18 +307,16 @@ def write_csv(path: Path, scenarios: list[dict[str, Any]]) -> None:
                 "anytime_admission_fraction": result["anytime"][
                     "ever_admitted_fraction"
                 ],
-                "naive_repeated_z_admission_fraction": result[
-                    "naive_repeated_z"
-                ]["ever_admitted_fraction"],
+                "naive_repeated_z_admission_fraction": result["naive_repeated_z"][
+                    "ever_admitted_fraction"
+                ],
                 "fixed_horizon_z_rejection_fraction": result["fixed_horizon_z"][
                     "rejected_fraction"
                 ],
                 "anytime_revocation_fraction": result["anytime"][
                     "ever_revoked_fraction"
                 ],
-                "median_admission_time": result["anytime"]["admission_time"][
-                    "median"
-                ],
+                "median_admission_time": result["anytime"]["admission_time"]["median"],
                 "median_revocation_delay": result["anytime"][
                     "revocation_delay_after_shift"
                 ]["median"],
@@ -411,8 +415,7 @@ def main() -> int:
         "adaptive_amplitude_zero_mean_null",
     )
     identity_violations = sum(
-        result["deployment"]["exact_fallback_identity_violations"]
-        for result in results
+        result["deployment"]["exact_fallback_identity_violations"] for result in results
     )
     gates = {
         "zero_fallback_identity_violations": identity_violations == 0,
@@ -439,7 +442,11 @@ def main() -> int:
         for epoch in range(1, 100_001)
     )
     gates["summable_alpha_budget"] = alpha_sum <= config.alpha
-    decision = "controlled-mechanism-pass" if all(gates.values()) else "controlled-mechanism-fail"
+    decision = (
+        "controlled-mechanism-pass"
+        if all(gates.values())
+        else "controlled-mechanism-fail"
+    )
 
     payload = {
         "schema_version": 1,

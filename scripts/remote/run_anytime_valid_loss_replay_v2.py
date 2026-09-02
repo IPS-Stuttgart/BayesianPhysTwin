@@ -9,12 +9,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from run_anytime_valid_loss_replay_v1 import load_config, load_rows
+
 from bayesian_phystwin_experiments.anytime_valid_admission_v1 import (
     AnytimeAdmissionController,
     DeploymentState,
     clipped_gain,
 )
-from run_anytime_valid_loss_replay_v1 import load_config, load_rows
 
 
 def parse_args() -> argparse.Namespace:
@@ -219,9 +220,7 @@ def main() -> int:
         "aggregate": {
             "admissions": sum(row["admissions"] for row in summaries),
             "revocations": sum(row["revocations"] for row in summaries),
-            "candidate_exposures": sum(
-                row["candidate_exposures"] for row in summaries
-            ),
+            "candidate_exposures": sum(row["candidate_exposures"] for row in summaries),
             "harmful_candidate_exposures": sum(
                 row["harmful_candidate_exposures"] for row in summaries
             ),

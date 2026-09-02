@@ -80,14 +80,10 @@ def _write_summary_csv(path: Path, result: dict[str, object]) -> None:
                         "method": method,
                         "replication_count": summary["replication_count"],
                         "crossing_count": summary["crossing_count"],
-                        "crossing_probability": summary[
-                            "crossing_probability"
-                        ],
+                        "crossing_probability": summary["crossing_probability"],
                         "wilson_95_lower": interval[0],
                         "wilson_95_upper": interval[1],
-                        "median_first_crossing": summary[
-                            "median_first_crossing"
-                        ],
+                        "median_first_crossing": summary["median_first_crossing"],
                         "first_crossing_q10": (
                             None if quantiles is None else quantiles[0]
                         ),
@@ -126,14 +122,10 @@ def _write_phase_csv(path: Path, result: dict[str, object]) -> None:
                         "phase_index": phase["phase_index"],
                         "phase_name": phase["name"],
                         "duration": phase["duration"],
-                        "active_null_component": phase[
-                            "active_null_component"
-                        ],
+                        "active_null_component": phase["active_null_component"],
                         "expected_gain_score": phase["expected_gain_score"],
                         "expected_harm_rate": phase["expected_harm_rate"],
-                        "expected_robust_score": phase[
-                            "expected_robust_score"
-                        ],
+                        "expected_robust_score": phase["expected_robust_score"],
                     }
                 )
 

@@ -9,7 +9,7 @@ import json
 import math
 import re
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -213,8 +213,10 @@ def append_parallel_array_records(
     names: list[str] | None = None
     for key in ("names", "trajectory_names", "case_names", "ids", "objects"):
         raw = value.get(key)
-        if isinstance(raw, list) and raw and all(
-            isinstance(item, (str, int)) for item in raw
+        if (
+            isinstance(raw, list)
+            and raw
+            and all(isinstance(item, (str, int)) for item in raw)
         ):
             names = [str(item) for item in raw]
             break
@@ -319,11 +321,7 @@ def append_csv_records(
             key for key in reader.fieldnames if metric_key(key, BASELINE_TOKENS)
         ]
         name_key = next(
-            (
-                key
-                for key in reader.fieldnames
-                if normalize_key(key) in NAME_KEYS
-            ),
+            (key for key in reader.fieldnames if normalize_key(key) in NAME_KEYS),
             None,
         )
         if not candidate_keys or not baseline_keys or name_key is None:
@@ -376,7 +374,9 @@ def append_npz_records(
             (key for key in ("names", "trajectory_names", "case_names") if key in keys),
             None,
         )
-        truth_key = next((key for key in ("truth", "target", "targets") if key in keys), None)
+        truth_key = next(
+            (key for key in ("truth", "target", "targets") if key in keys), None
+        )
         candidate_key = next(
             (
                 key
@@ -397,7 +397,9 @@ def append_npz_records(
         )
         if None in {name_key, truth_key, candidate_key, baseline_key}:
             return
-        names = [str(item) for item in np.asarray(archive[cast(str, name_key)]).tolist()]
+        names = [
+            str(item) for item in np.asarray(archive[cast(str, name_key)]).tolist()
+        ]
         truth = np.asarray(archive[cast(str, truth_key)], dtype=np.float64)
         candidate = np.asarray(archive[cast(str, candidate_key)], dtype=np.float64)
         baseline = np.asarray(archive[cast(str, baseline_key)], dtype=np.float64)
@@ -499,9 +501,7 @@ def collect_groups(root: Path) -> list[PairGroup]:
 def expected_group(value: Mapping[str, object]) -> ExpectedGroup:
     return ExpectedGroup(
         case_count=int(cast(Any, value["expected_case_count"])),
-        relative_improvement=float(
-            cast(Any, value["expected_relative_improvement"])
-        ),
+        relative_improvement=float(cast(Any, value["expected_relative_improvement"])),
         wins=int(cast(Any, value["expected_wins"])),
         ties=int(cast(Any, value["expected_ties"])),
         losses=int(cast(Any, value["expected_losses"])),
@@ -622,7 +622,7 @@ def run_e_process(
     e_values = []
     first_crossing: int | None = None
     for index, score in enumerate(scores):
-        e_values.append(process.update(float(score)))
+        e_values.append(process.update(float(score)).e_value)
         if (
             first_crossing is None
             and index + 1 >= minimum_observations
@@ -673,10 +673,7 @@ def replay_guard(
 
         if not active and promotion_observation is None:
             promotion.update(score)
-            if (
-                index + 1 >= minimum_promotion
-                and promotion.crossed(promotion_alpha)
-            ):
+            if index + 1 >= minimum_promotion and promotion.crossed(promotion_alpha):
                 active = True
                 promotion_observation = index + 1
                 revocation = MixtureBettingEProcess(betting)
@@ -684,9 +681,8 @@ def replay_guard(
             if revocation is None:
                 raise RuntimeError("active replay lacks revocation e-process")
             revocation.update(-score)
-            if (
-                revocation.count >= minimum_revocation
-                and revocation.crossed(revocation_alpha)
+            if revocation.count >= minimum_revocation and revocation.crossed(
+                revocation_alpha
             ):
                 active = False
                 revocation_observation = index + 1
@@ -861,9 +857,7 @@ def main() -> int:
     )
     pyelastica_group = select_group(
         hierarchy_groups,
-        expected_group(
-            mapping(hierarchy_contract["pyelastica"], label="PyElastica")
-        ),
+        expected_group(mapping(hierarchy_contract["pyelastica"], label="PyElastica")),
         label="PyElastica exact coefficient transfer",
     )
     cross_operator_group = select_group(
@@ -876,22 +870,16 @@ def main() -> int:
 
     e_contract = mapping(protocol["e_process"], label="e-process")
     betting = BettingMixtureConfig(
-        lambdas=tuple(float(value) for value in cast(list[object], e_contract["lambdas"]))
+        lambdas=tuple(
+            float(value) for value in cast(list[object], e_contract["lambdas"])
+        )
     )
-    total_promotion_alpha = float(
-        cast(Any, e_contract["global_promotion_alpha"])
-    )
-    total_revocation_alpha = float(
-        cast(Any, e_contract["global_revocation_alpha"])
-    )
+    total_promotion_alpha = float(cast(Any, e_contract["global_promotion_alpha"]))
+    total_revocation_alpha = float(cast(Any, e_contract["global_revocation_alpha"]))
     promotion_alpha = geometric_alpha(total_promotion_alpha, 0)
     revocation_alpha = geometric_alpha(total_revocation_alpha, 0)
-    minimum_promotion = int(
-        cast(Any, e_contract["minimum_promotion_observations"])
-    )
-    minimum_revocation = int(
-        cast(Any, e_contract["minimum_revocation_observations"])
-    )
+    minimum_promotion = int(cast(Any, e_contract["minimum_promotion_observations"]))
+    minimum_revocation = int(cast(Any, e_contract["minimum_revocation_observations"]))
 
     procedure_records = procedure_group.records
     universal_records = pyelastica_group.records + cross_operator_group.records
@@ -905,9 +893,7 @@ def main() -> int:
         magnitude_scores = [magnitude_gain(record) for record in records]
         stream_results[name] = {
             **group_summary(
-                procedure_group
-                if name == "procedure_replication"
-                else pyelastica_group
+                procedure_group if name == "procedure_replication" else pyelastica_group
             ),
             "case_count": len(records),
             "sign_e_process": run_e_process(
@@ -961,8 +947,7 @@ def main() -> int:
     )
     deployments = cast(list[str], universal_guard["deployments"])
     candidate_active_at_boundary = (
-        shift_boundary < len(deployments)
-        and deployments[shift_boundary] == "candidate"
+        shift_boundary < len(deployments) and deployments[shift_boundary] == "candidate"
     )
     cross_harm = sum(
         deployment == "candidate" and sign_gain(record) < 0.0
@@ -978,7 +963,14 @@ def main() -> int:
     universal["cross_operator_harmful_candidate_deployments"] = cross_harm
 
     exact_violations = sum(
-        int(cast(Any, cast(dict[str, object], value["guard"])["exact_fallback_identity_violations"]))
+        int(
+            cast(
+                Any,
+                cast(dict[str, object], value["guard"])[
+                    "exact_fallback_identity_violations"
+                ],
+            )
+        )
         for value in stream_results.values()
     )
     expected = mapping(
@@ -1010,9 +1002,7 @@ def main() -> int:
             )
         ),
         "exact_fallback_identity": exact_violations
-        <= int(
-            cast(Any, expected["maximum_exact_fallback_identity_violations"])
-        ),
+        <= int(cast(Any, expected["maximum_exact_fallback_identity_violations"])),
     }
     supported = all(checks.values())
     result = {

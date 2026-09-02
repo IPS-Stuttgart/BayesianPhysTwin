@@ -17,8 +17,7 @@ from bayesian_phystwin_experiments.anytime_valid_admission_v1 import (
 def test_epoch_alpha_spending_is_summable() -> None:
     total = 0.05
     spent = sum(
-        epoch_budget(total, epoch, allow_reentry=True)
-        for epoch in range(1, 100_001)
+        epoch_budget(total, epoch, allow_reentry=True) for epoch in range(1, 100_001)
     )
     assert spent < total
     assert total - spent < 1e-6
@@ -27,13 +26,10 @@ def test_epoch_alpha_spending_is_summable() -> None:
 
 def test_one_step_supermartingale_factor_under_rademacher_null() -> None:
     for betting_fraction in (0.01, 0.1, 0.5, 0.9):
-        factors = [
-            1.0 + betting_fraction * evidence for evidence in (-1.0, 1.0)
-        ]
+        factors = [1.0 + betting_fraction * evidence for evidence in (-1.0, 1.0)]
         assert np.mean(factors) == pytest.approx(1.0)
         negative_null_factors = [
-            1.0 + betting_fraction * evidence
-            for evidence in (-1.0, 0.0)
+            1.0 + betting_fraction * evidence for evidence in (-1.0, 0.0)
         ]
         assert np.mean(negative_null_factors) < 1.0
 

@@ -16,7 +16,6 @@ from bayesian_phystwin_experiments.anytime_valid_admission_v1 import (
     DeploymentState,
 )
 
-
 REQUIRED_COLUMNS = {
     "stream_id",
     "reveal_order",
@@ -59,7 +58,9 @@ def load_rows(path: Path) -> dict[str, list[dict[str, Any]]]:
     streams: dict[str, list[dict[str, Any]]] = defaultdict(list)
     with path.open(newline="", encoding="utf-8") as stream:
         reader = csv.DictReader(stream)
-        if reader.fieldnames is None or not REQUIRED_COLUMNS.issubset(reader.fieldnames):
+        if reader.fieldnames is None or not REQUIRED_COLUMNS.issubset(
+            reader.fieldnames
+        ):
             raise ValueError(
                 "paired loss CSV must contain " + ", ".join(sorted(REQUIRED_COLUMNS))
             )
@@ -81,7 +82,10 @@ def load_rows(path: Path) -> dict[str, list[dict[str, Any]]]:
         orders = [int(row["reveal_order"]) for row in rows]
         if len(set(orders)) != len(orders):
             raise ValueError(f"stream {stream_id}: duplicate reveal_order")
-        if any(current <= previous for previous, current in zip(orders, orders[1:])):
+        if any(
+            current <= previous
+            for previous, current in zip(orders, orders[1:], strict=False)
+        ):
             raise ValueError(f"stream {stream_id}: reveal order is not increasing")
     return dict(streams)
 
@@ -234,9 +238,7 @@ def main() -> int:
         "aggregate": {
             "admissions": sum(row["admissions"] for row in summaries),
             "revocations": sum(row["revocations"] for row in summaries),
-            "candidate_exposures": sum(
-                row["candidate_exposures"] for row in summaries
-            ),
+            "candidate_exposures": sum(row["candidate_exposures"] for row in summaries),
             "harmful_candidate_exposures": sum(
                 row["harmful_candidate_exposures"] for row in summaries
             ),

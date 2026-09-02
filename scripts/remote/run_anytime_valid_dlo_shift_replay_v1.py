@@ -5,14 +5,14 @@ from __future__ import annotations
 
 import argparse
 import csv
-from dataclasses import dataclass
 import hashlib
 import itertools
 import json
 import math
+import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-import zipfile
 
 import numpy as np
 
@@ -148,11 +148,15 @@ def canonical(values: np.ndarray) -> np.ndarray:
     if result.ndim == 3:
         result = result[None, ...]
     if result.ndim != 4:
-        raise ValueError(f"expected a case/time/node/coordinate array, got {result.shape}")
+        raise ValueError(
+            f"expected a case/time/node/coordinate array, got {result.shape}"
+        )
     if result.shape[1] < 20 and result.shape[2] > 100:
         result = np.swapaxes(result, 1, 2)
     if result.shape[1] < 100 or result.shape[-1] != 3:
-        raise ValueError(f"array does not have a plausible DLO time/coordinate layout: {result.shape}")
+        raise ValueError(
+            f"array does not have a plausible DLO time/coordinate layout: {result.shape}"
+        )
     return result
 
 
@@ -192,8 +196,12 @@ def identify_triple(
         if len(shape_records) > 40:
             continue
         for truth, baseline, candidate in itertools.permutations(shape_records, 3):
-            baseline_error = mean_l1(canonical(baseline.values), canonical(truth.values))
-            candidate_error = mean_l1(canonical(candidate.values), canonical(truth.values))
+            baseline_error = mean_l1(
+                canonical(baseline.values), canonical(truth.values)
+            )
+            candidate_error = mean_l1(
+                canonical(candidate.values), canonical(truth.values)
+            )
             discrepancy = abs(baseline_error - expected_baseline) + abs(
                 candidate_error - expected_candidate
             )
@@ -209,13 +217,23 @@ def identify_triple(
             "no array triple matches the registered aggregate identity: "
             f"baseline={expected_baseline}, candidate={expected_candidate}"
         )
-    matches.sort(key=lambda item: (-item[0], item[1], item[2].label, item[3].label, item[4].label))
+    matches.sort(
+        key=lambda item: (
+            -item[0],
+            item[1],
+            item[2].label,
+            item[3].label,
+            item[4].label,
+        )
+    )
     best = matches[0]
     if len(matches) > 1 and matches[1][:2] == best[:2]:
         first = tuple(record.digest for record in best[2:])
         second = tuple(record.digest for record in matches[1][2:])
         if first != second:
-            raise ValueError("aggregate identity does not uniquely select an array triple")
+            raise ValueError(
+                "aggregate identity does not uniquely select an array triple"
+            )
     return best[2], best[3], best[4]
 
 
@@ -258,11 +276,15 @@ def identify_cross_operator_candidates(
             if semantic == 0:
                 continue
             error = mean_l1(values, truth_values)
-            wins = int(np.sum(case_errors(values, truth_values) < baseline_cases - 1e-12))
+            wins = int(
+                np.sum(case_errors(values, truth_values) < baseline_cases - 1e-12)
+            )
             if error > baseline_error:
                 rows.append((semantic, error, wins, record))
         if not rows:
-            raise ValueError(f"no semantically identified cross-operator candidate for {name}")
+            raise ValueError(
+                f"no semantically identified cross-operator candidate for {name}"
+            )
         options[name] = rows
 
     baseline_mean = 0.5 * (
@@ -285,7 +307,9 @@ def identify_cross_operator_candidates(
                     )
                 )
     if not matches:
-        raise ValueError("cross-operator arrays do not reproduce the registered decision")
+        raise ValueError(
+            "cross-operator arrays do not reproduce the registered decision"
+        )
     matches.sort(key=lambda item: (-item[0], item[1], item[2].label, item[3].label))
     best = matches[0]
     if len(matches) > 1 and matches[1][:2] == best[:2]:
@@ -408,9 +432,12 @@ def main() -> int:
         ("DLO4", dlo4[0], dlo4[1], transfer4),
         ("DLO5", dlo5[0], dlo5[1], transfer5),
     )
-    for panel_index, (domain, truth_record, fallback_record, candidate_record) in enumerate(
-        panels
-    ):
+    for panel_index, (
+        domain,
+        truth_record,
+        fallback_record,
+        candidate_record,
+    ) in enumerate(panels):
         truth = canonical(truth_record.values)
         fallback = canonical(fallback_record.values)
         candidate = canonical(candidate_record.values)
@@ -420,10 +447,20 @@ def main() -> int:
             for frame_index in range(truth.shape[1]):
                 reveal_order += 1
                 candidate_loss = float(
-                    np.mean(np.abs(candidate[case_index, frame_index] - truth[case_index, frame_index]))
+                    np.mean(
+                        np.abs(
+                            candidate[case_index, frame_index]
+                            - truth[case_index, frame_index]
+                        )
+                    )
                 )
                 fallback_loss = float(
-                    np.mean(np.abs(fallback[case_index, frame_index] - truth[case_index, frame_index]))
+                    np.mean(
+                        np.abs(
+                            fallback[case_index, frame_index]
+                            - truth[case_index, frame_index]
+                        )
+                    )
                 )
                 state_before = controller.state
                 selected = controller.select(
@@ -478,8 +515,7 @@ def main() -> int:
         "zero_exact_fallback_identity_violations": identity_violations == 0,
         "guarded_post_shift_exposure_below_unguarded": post_shift_exposures
         < sum(
-            canonical(panel[1].values).shape[0]
-            * canonical(panel[1].values).shape[1]
+            canonical(panel[1].values).shape[0] * canonical(panel[1].values).shape[1]
             for panel in panels[1:]
         ),
         "guarded_post_shift_regret_below_unguarded": guarded_post_shift_regret
@@ -505,8 +541,7 @@ def main() -> int:
             "guarded_harmful_candidate_exposures": post_shift_harmful_exposures,
             "guarded_cumulative_regret_m": guarded_post_shift_regret,
             "unguarded_cumulative_regret_m": unguarded_post_shift_regret,
-            "regret_avoided_m": unguarded_post_shift_regret
-            - guarded_post_shift_regret,
+            "regret_avoided_m": unguarded_post_shift_regret - guarded_post_shift_regret,
         },
         "exact_fallback_identity_violations": identity_violations,
         "selected_arrays": {
@@ -538,7 +573,9 @@ def main() -> int:
         json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-    with (output_root / "events.csv").open("w", newline="", encoding="utf-8") as stream_handle:
+    with (output_root / "events.csv").open(
+        "w", newline="", encoding="utf-8"
+    ) as stream_handle:
         writer = csv.DictWriter(stream_handle, fieldnames=list(event_rows[0]))
         writer.writeheader()
         writer.writerows(event_rows)
