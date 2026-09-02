@@ -84,9 +84,12 @@ jobs:
 
           files=(
             src/bayesian_phystwin/active_decision_probe_v1.py
+            experiments/deform_dlo45_active_decision_probe_v1/_core.py
             experiments/deform_dlo45_active_decision_probe_v1/run.py
             tests/test_deform_dlo45_active_decision_probe_v1.py
           )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m pytest -q -p no:cacheprovider \
@@ -119,13 +122,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- "${RESULT}" && git ls-files \
+          source_files=(
+            src/bayesian_phystwin/active_decision_probe_v1.py
+            experiments/deform_dlo45_active_decision_probe_v1/_core.py
+            experiments/deform_dlo45_active_decision_probe_v1/run.py
+            tests/test_deform_dlo45_active_decision_probe_v1.py
+          )
+          if git diff --quiet -- "${source_files[@]}" "${RESULT}" && git ls-files \
             --error-unmatch "${RESULT}" >/dev/null 2>&1; then
-            echo "Result is unchanged."
+            echo "Source formatting and result are unchanged."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${RESULT}"
+          git add "${source_files[@]}" "${RESULT}"
           git commit -m "Record retrospective DEFORM active-probe pilot"
           git push origin "HEAD:${GITHUB_REF_NAME}"

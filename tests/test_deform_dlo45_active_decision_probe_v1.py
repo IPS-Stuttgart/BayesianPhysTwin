@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from experiments.deform_dlo45_active_decision_probe_v1.run import (
+from experiments.deform_dlo45_active_decision_probe_v1._core import (
     LocalSupport,
     PilotProtocol,
     assign_outcome,
