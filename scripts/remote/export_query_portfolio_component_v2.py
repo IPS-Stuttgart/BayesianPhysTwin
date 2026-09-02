@@ -75,7 +75,7 @@ def _wrapping() -> dict[str, Any]:
     outcome = wrapping_outcome(
         decisions["decisions"],
         rewards,
-        primary_arm_index=runner.ARM_NAMES.index("posterior_975_guard"),
+        primary_arm_index=wrapper.method.ARM_NAMES.index("posterior_975_guard"),
     )
     return component_evidence(
         outcome,
