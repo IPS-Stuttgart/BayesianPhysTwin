@@ -1,0 +1,57 @@
+name: Repair DEFORM v3 evaluator
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-decision-directed-sensing-v2
+    paths:
+      - .github/workflows/repair-deform-v3-evaluator.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-deform-v3-evaluator
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          clean: true
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Restore reviewed evaluator and update predecessor binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          path = 'experiments/deform_dlo45_decision_directed_sensing_v3/evaluate.py'
+          original = subprocess.check_output(
+              ['git', 'show', 'c983ddf79013586a415e2ea7ee307395f5496cf6:' + path],
+              text=True,
+          )
+          stale = 'a9b709398413e4518524023942790861801acc438e007179b2d9f6094d9bd035'
+          retained = 'a586cf3a2b5654b37e2acc62e3b8adb40942899e1b03cd45f70160170e0d9d39'
+          if original.count(stale) != 1:
+              raise SystemExit('reviewed evaluator does not contain exactly one stale binding')
+          repaired = original.replace(stale, retained)
+          Path(path).write_text(repaired, encoding='utf-8')
+          Path('.github/workflows/repair-deform-v3-evaluator.yml').unlink()
+          PY
+
+          python -m py_compile experiments/deform_dlo45_decision_directed_sensing_v3/evaluate.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Restore DEFORM v3 evaluator and retained result binding'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
