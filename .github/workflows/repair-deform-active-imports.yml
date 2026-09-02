@@ -1,0 +1,60 @@
+name: Repair DEFORM active-sensing imports
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-decision-directed-sensing-v2
+    paths:
+      - .github/workflows/repair-deform-active-imports.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-deform-active-imports
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          clean: true
+          persist-credentials: true
+
+      - name: Apply the Ruff import correction and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('experiments/deform_dlo45_conformal_active_sensing_v1/analyze.py')
+          text = path.read_text(encoding='utf-8')
+          old = (
+              'from collections import defaultdict\n'
+              'from pathlib import Path\n'
+              'from typing import Any, Mapping, Sequence\n'
+          )
+          new = (
+              'from collections import defaultdict\n'
+              'from collections.abc import Mapping, Sequence\n'
+              'from pathlib import Path\n'
+              'from typing import Any\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit('expected import block not found exactly once')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          Path('.github/workflows/repair-deform-active-imports.yml').unlink()
+          PY
+          python -m ruff check experiments/deform_dlo45_conformal_active_sensing_v1/analyze.py
+          python -m py_compile experiments/deform_dlo45_conformal_active_sensing_v1/analyze.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Fix DEFORM active-sensing type imports'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
