@@ -138,20 +138,10 @@ jobs:
           test ! -e "$output"
           python -m venv "$venv"
           "$venv/bin/python" -m pip install -e .
-          ACTION_TMP_OUTPUT="$output" "$venv/bin/python" - <<'PY'
-          import os
-          from pathlib import Path
-
-          from experiments.tracking_cloth_action_feasibility_v1 import run
-          from experiments.tracking_cloth_action_feasibility_v1._data import (
-              source_rows,
-          )
-
-          run.source_rows = source_rows
-          result, rows = run.build_result(Path(os.environ["DATASET_ROOT"]))
-          run.write_outputs(Path(os.environ["ACTION_TMP_OUTPUT"]), result, rows)
-          print(result["result_id"])
-          PY
+          "$venv/bin/python" -m \
+            experiments.tracking_cloth_action_feasibility_v1.run \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$output"
           cp experiments/tracking_cloth_action_feasibility_v1/protocol.json \
             "$output/protocol.json"
           echo "ACTION_SOURCE_OUTPUT=$output" >> "$GITHUB_ENV"
