@@ -25,7 +25,7 @@ jobs:
       - name: Check out exact request revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: science/hierarchical-missing-physics-diagnosis-v1
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -41,6 +41,28 @@ jobs:
           grep -F '"dlo4_payload_read": False' scripts/science/inventory_deform_source_runtime_artifacts.py
           grep -F '"dlo5_payload_read": False' scripts/science/inventory_deform_source_runtime_artifacts.py
           grep -F '"protected_parent_run_33361441865_artifact_read": False' scripts/science/inventory_deform_source_runtime_artifacts.py
+
+      - name: Prepare isolated pinned numerical runtime
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="$RUNNER_TEMP/hmp-runtime-census-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --no-input \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          "$venv/bin/python" - <<'PY'
+          import numpy
+          print(numpy.__version__)
+          PY
+          echo "python=$venv/bin/python" >> "$GITHUB_OUTPUT"
+          echo "venv=$venv" >> "$GITHUB_OUTPUT"
 
       - name: Select only existing bounded source roots
         id: roots
@@ -64,6 +86,8 @@ jobs:
       - name: Inventory retained DLO2/DLO3 artifacts without opening DLO4/DLO5
         id: census
         shell: bash
+        env:
+          PYTHON: ${{ steps.runtime.outputs.python }}
         run: |
           set -euo pipefail
           work="$RUNNER_TEMP/hierarchical-missing-physics-runtime-census"
@@ -73,14 +97,14 @@ jobs:
             args+=(--root "$root")
           done < "${{ steps.roots.outputs.file }}"
           output="$work/result.json"
-          python3 scripts/science/inventory_deform_source_runtime_artifacts.py \
+          "$PYTHON" scripts/science/inventory_deform_source_runtime_artifacts.py \
             "${args[@]}" \
             --max-depth 8 \
             --max-entries 250000 \
             --max-candidates 5000 \
             --output "$output" \
             | tee "$work/summary.log"
-          RESULT="$output" python3 - <<'PY'
+          RESULT="$output" "$PYTHON" - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -121,11 +145,13 @@ jobs:
 
       - name: Publish immutable source-runtime census evidence
         shell: bash
+        env:
+          PYTHON: ${{ steps.runtime.outputs.python }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
           cp "${{ steps.census.outputs.result }}" "$EVIDENCE_DIR/result.json"
-          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" "$PYTHON" - <<'PY'
           import hashlib
           import json
           import os
@@ -174,3 +200,9 @@ jobs:
             evidence/hierarchical_missing_physics/runtime_census_gpuserver4090_v1/
           if-no-files-found: error
           retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${{ steps.runtime.outputs.venv }}"
