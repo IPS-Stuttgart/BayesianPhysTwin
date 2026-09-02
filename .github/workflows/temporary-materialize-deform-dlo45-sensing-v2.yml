@@ -1,0 +1,69 @@
+name: Temporary materialize DEFORM sensing v2
+
+on:
+  push:
+    branches:
+      - science/deform-dlo45-decision-directed-sensing-v2
+    paths:
+      - ".github/workflows/temporary-materialize-deform-dlo45-sensing-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out experiment branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/deform-dlo45-decision-directed-sensing-v2
+          fetch-depth: 0
+      - name: Materialize, format, and syntax-check focused files
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=tmp/deform-dlo45-sensing-v2
+          target=experiments/deform_dlo45_decision_directed_sensing_v2
+          mkdir -p "$target" tests
+          gzip -dc "$root/evaluate.py.gz" > "$target/evaluate.py"
+          gzip -dc "$root/README.md.gz" > "$target/README.md"
+          gzip -dc "$root/test.py.gz" > tests/test_deform_dlo45_decision_directed_sensing_v2.py
+          rm -rf -- "$root"
+          python -m pip install --disable-pip-version-check "ruff==0.16.5"
+          python -m ruff check --fix \
+            "$target/evaluate.py" \
+            tests/test_deform_dlo45_decision_directed_sensing_v2.py
+          python -m ruff format \
+            "$target/evaluate.py" \
+            tests/test_deform_dlo45_decision_directed_sensing_v2.py
+          python -m py_compile \
+            "$target/evaluate.py" \
+            tests/test_deform_dlo45_decision_directed_sensing_v2.py
+          python -m ruff check \
+            "$target/evaluate.py" \
+            tests/test_deform_dlo45_decision_directed_sensing_v2.py
+          python -m ruff format --check \
+            "$target/evaluate.py" \
+            tests/test_deform_dlo45_decision_directed_sensing_v2.py
+          git diff --check
+          mapfile -t changed < <(git status --short | sed -E 's/^...//')
+          for path in "${changed[@]}"; do
+            case "$path" in
+              experiments/deform_dlo45_decision_directed_sensing_v2/evaluate.py|experiments/deform_dlo45_decision_directed_sensing_v2/README.md|tests/test_deform_dlo45_decision_directed_sensing_v2.py|tmp/deform-dlo45-sensing-v2/evaluate.py.gz|tmp/deform-dlo45-sensing-v2/test.py.gz|tmp/deform-dlo45-sensing-v2/README.md.gz) ;;
+              *) echo "unexpected materialization change: $path" >&2; exit 1 ;;
+            esac
+          done
+      - name: Commit materialized implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A \
+            experiments/deform_dlo45_decision_directed_sensing_v2 \
+            tests/test_deform_dlo45_decision_directed_sensing_v2.py \
+            tmp/deform-dlo45-sensing-v2
+          git commit -m "Implement competing-action DEFORM sensing pilot"
+          git push origin HEAD:science/deform-dlo45-decision-directed-sensing-v2
