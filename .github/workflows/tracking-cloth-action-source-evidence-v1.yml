@@ -1,0 +1,338 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Tracking Cloth action source evidence v1
+
+on:
+  push:
+    branches: [science/tracking-cloth-action-source-evidence-v1]
+    paths:
+      - ".github/requests/tracking-cloth-action-source-evidence-v1.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tracking-cloth-action-source-evidence-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+  PROTOCOL_PATH: experiments/tracking_cloth_action_feasibility_v1/protocol.json
+  RESULT_ROOT: results/science/tracking_cloth_action_feasibility_v1/source-only-20260902-v1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Authorize one add-only source request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/tracking-cloth-action-source-evidence-v1.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(
+              Path(
+                  ".github/requests/tracking-cloth-action-source-evidence-v1.json"
+              ).read_text(encoding="utf-8")
+          )
+          expected = {
+              "schema": "bayesian-phystwin/tracking-cloth-action-source-evidence-request-v1",
+              "request_id": "tracking-cloth-action-source-evidence-v1-20260902",
+              "dataset_record": "14644526",
+              "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+              "source_repetitions": [1, 2],
+              "reserved_target_repetition": 3,
+              "source_only": True,
+              "target_outcomes_read": False,
+              "target_execution_authorized": False,
+              "sequential_probe_claim_authorized": False,
+              "automatic_follow_on": False,
+              "paper_claim_authorized": False,
+          }
+          if request != expected:
+              raise SystemExit("source-evidence request changed")
+          PY
+      - name: Install and validate focused contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pytest -q tests/test_tracking_cloth_action_feasibility_v1.py
+          python -m ruff check \
+            experiments/tracking_cloth_action_feasibility_v1 \
+            tests/test_tracking_cloth_action_feasibility_v1.py
+          python -m ruff format --check \
+            experiments/tracking_cloth_action_feasibility_v1 \
+            tests/test_tracking_cloth_action_feasibility_v1.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          protocol = json.loads(Path(
+              "experiments/tracking_cloth_action_feasibility_v1/protocol.json"
+          ).read_text(encoding="utf-8"))
+          assert protocol["source_repetitions"] == [1, 2]
+          assert protocol["reserved_target_repetition"] == 3
+          boundary = protocol["information_boundary"]
+          assert boundary["target_rep3_numeric_outcomes_read"] is False
+          assert boundary["target_protocol_authorized"] is False
+          workflow = Path(
+              ".github/workflows/tracking-cloth-action-source-evidence-v1.yml"
+          ).read_text(encoding="utf-8")
+          assert "--stage predict" not in workflow
+          assert "--stage score" not in workflow
+          assert "rep3" in workflow
+          assert "target_execution_authorized\": False" in workflow
+          PY
+
+  source_evidence:
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    steps:
+      - name: Check out exact source request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+          clean: true
+      - name: Validate mounted public dataset and source boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path(
+              ".github/requests/tracking-cloth-action-source-evidence-v1.json"
+          ).read_text(encoding="utf-8"))
+          assert request["source_only"] is True
+          assert request["target_outcomes_read"] is False
+          assert request["target_execution_authorized"] is False
+          assert request["sequential_probe_claim_authorized"] is False
+          assert request["automatic_follow_on"] is False
+          assert request["paper_claim_authorized"] is False
+          PY
+      - name: Run source-only physical-action factorial
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${RUNNER_TEMP}/tracking-cloth-action-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/tracking-cloth-action-source-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check -e .
+          "${venv}/bin/python" -m \
+            experiments.tracking_cloth_action_feasibility_v1.run \
+            --dataset-root "${DATASET_ROOT}" \
+            --protocol "${PROTOCOL_PATH}" \
+            --output "${output}"
+          {
+            echo "SOURCE_VENV=${venv}"
+            echo "SOURCE_OUTPUT=${output}"
+          } >> "${GITHUB_ENV}"
+      - name: Validate, interpret, and materialize compact evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "${RESULT_ROOT}"
+          mkdir -p -- "${RESULT_ROOT}"
+          cp "${SOURCE_OUTPUT}/result.json" "${RESULT_ROOT}/source_result.json"
+          cp "${SOURCE_OUTPUT}/source_cases.csv" "${RESULT_ROOT}/source_cases.csv"
+          cp "${SOURCE_OUTPUT}/SUMMARY.md" "${RESULT_ROOT}/runtime_summary.md"
+          cp "${PROTOCOL_PATH}" "${RESULT_ROOT}/protocol.json"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          root = Path(os.environ["RESULT_ROOT"])
+          result = json.loads((root / "source_result.json").read_text(encoding="utf-8"))
+          protocol = json.loads((root / "protocol.json").read_text(encoding="utf-8"))
+          if result["schema"] != "bayesian-phystwin.tracking-cloth-action-feasibility-result.v1":
+              raise SystemExit("unexpected source result schema")
+          if result["source_block_count"] != 8 or result["source_case_count"] != 24:
+              raise SystemExit("source factorial is incomplete")
+          if protocol["source_repetitions"] != [1, 2]:
+              raise SystemExit("source repetitions changed")
+          if protocol["reserved_target_repetition"] != 3:
+              raise SystemExit("reserved target changed")
+          boundary = result["information_boundary"]
+          if boundary["target_rep3_numeric_outcomes_read"] is not False:
+              raise SystemExit("rep3 was numerically opened")
+          if boundary["target_protocol_authorized"] is not False:
+              raise SystemExit("source result authorized target execution")
+
+          feasibility = result["feasibility"]
+          numerical_candidate = bool(
+              feasibility["candidate_for_separately_reviewed_rep3_protocol"]
+          )
+          selected = result["decision_summary"]["selected_source_setting"]
+          selected_available = "mode_counts" in selected
+          promotion = {
+              "schema": "bayesian-phystwin.tracking-cloth-action-source-promotion.v1",
+              "schema_version": 1,
+              "source_result_id": result["result_id"],
+              "source_revision": subprocess.check_output(
+                  ["git", "rev-parse", "HEAD^"], text=True
+              ).strip(),
+              "workflow_revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "dataset_record": protocol["dataset_record"],
+              "source_block_count": result["source_block_count"],
+              "source_case_count": result["source_case_count"],
+              "unique_best_actions": result["unique_best_actions"],
+              "stable_best_action_material_count": result[
+                  "stable_best_action_material_count"
+              ],
+              "numerical_action_factorial_candidate": numerical_candidate,
+              "selected_source_setting_available": selected_available,
+              "selected_source_setting": selected,
+              "sequential_probe_identified_by_dataset": False,
+              "sequential_probe_limitation": (
+                  "Each candidate probe prefix is attached to a separately executed "
+                  "interaction trajectory. The public data contain no reset-verified "
+                  "probe outcome followed by a different terminal action from the "
+                  "same physical state."
+              ),
+              "rep3_numeric_outcomes_read": False,
+              "rep3_retrospective_benchmark_authorized": False,
+              "rep3_sequential_active_experiment_authorized": False,
+              "automatic_follow_on": False,
+              "paper_claim_authorized": False,
+              "recommended_next_stage": (
+                  "review-retrospective-rep3-action-selection-protocol"
+                  if numerical_candidate
+                  else "stop-before-rep3-source-feasibility-gate-failed"
+              ),
+          }
+          payload = json.dumps(
+              promotion, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          promotion["promotion_id"] = hashlib.sha256(payload).hexdigest()
+          (root / "promotion.json").write_text(
+              json.dumps(promotion, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          mode_text = (
+              json.dumps(selected["mode_counts"], sort_keys=True)
+              if selected_available
+              else "not available"
+          )
+          gain_text = (
+              f"{100.0 * float(selected['relative_gain_vs_fallback']):.6f}%"
+              if selected_available
+              else "not available"
+          )
+          lines = [
+              "# Tracking Cloth physical-action source evidence",
+              "",
+              f"- Source result ID: `{result['result_id']}`",
+              f"- Source blocks: `{result['source_block_count']}`",
+              f"- Source recordings: `{result['source_case_count']}`",
+              "- Unique source-optimal actions: `"
+              + ", ".join(result["unique_best_actions"])
+              + "`",
+              "- Stable best-action materials: `"
+              + str(result["stable_best_action_material_count"])
+              + "/4`",
+              f"- Selected mode counts: `{mode_text}`",
+              f"- Selected relative gain over fallback: `{gain_text}`",
+              "- Numerical candidate for a separately reviewed rep3 protocol: `"
+              + str(numerical_candidate).lower()
+              + "`",
+              "- Rep3 numeric outcomes read: `false`",
+              "- Rep3 execution authorized: `false`",
+              "- Sequential probe claim authorized: `false`",
+              "",
+              "## Interpretation",
+              "",
+              "The source factorial can establish that downstream physical action "
+              "choice is nontrivial and that an outcome-conditioned rule can improve "
+              "over a fixed fallback on repetitions 1 and 2. It cannot by itself "
+              "establish a sequential probe-then-act intervention: probe prefixes "
+              "belong to separately executed interaction trajectories, with no "
+              "reset-verified continuation under a different terminal action.",
+              "",
+              "A positive numerical gate therefore permits only design of a separately "
+              "reviewed retrospective repetition-3 action-selection benchmark. It "
+              "does not permit automatic target access or an online active-sensing claim.",
+          ]
+          (root / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("\n".join(lines))
+          PY
+      - name: Publish exact source interpretation
+        shell: bash
+        run: cat "${RESULT_ROOT}/README.md" >> "${GITHUB_STEP_SUMMARY}"
+      - name: Retire request and one-shot launcher, then commit evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p archive/github-actions/retired-one-shot-v1
+          cp .github/workflows/tracking-cloth-action-source-evidence-v1.yml \
+            archive/github-actions/retired-one-shot-v1/tracking-cloth-action-source-evidence-v1.yml
+          rm -f \
+            .github/workflows/tracking-cloth-action-source-evidence-v1.yml \
+            .github/requests/tracking-cloth-action-source-evidence-v1.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            "${RESULT_ROOT}" \
+            archive/github-actions/retired-one-shot-v1/tracking-cloth-action-source-evidence-v1.yml \
+            .github/workflows/tracking-cloth-action-source-evidence-v1.yml \
+            .github/requests/tracking-cloth-action-source-evidence-v1.json
+          git commit -m 'Record real-cloth physical-action source evidence'
+          git push origin HEAD:science/tracking-cloth-action-source-evidence-v1
+      - name: Upload source evidence bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: tracking-cloth-action-source-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            results/science/tracking_cloth_action_feasibility_v1/source-only-20260902-v1
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${SOURCE_VENV:-}" ]; then
+            rm -rf -- "${SOURCE_VENV}"
+          fi
+          if [ -n "${SOURCE_OUTPUT:-}" ]; then
+            rm -rf -- "${SOURCE_OUTPUT}"
+          fi
