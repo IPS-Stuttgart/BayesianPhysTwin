@@ -1,0 +1,57 @@
+{
+  "schema": "bayesian-phystwin/support-aware-outer-certificate-prototype-evidence-v1",
+  "status": "retrospective-method-development-positive",
+  "source": {
+    "complete_trajectory_count": 112,
+    "decision_count": 2128,
+    "inner_nonfallback_count": 332,
+    "grouped_cross_validated_auc": 0.9639820281460028,
+    "chosen_threshold": 0.1642338344559222,
+    "source_selected_count": 161,
+    "source_empirical_support_violation_fraction": 0.024844720496894408,
+    "source_block_bootstrap_upper_095": 0.047337278106508875
+  },
+  "held": {
+    "decision_count": 532,
+    "descriptive_auc": 0.9333333333333332,
+    "inner": {
+      "selected_count": 82,
+      "overall_coverage": 0.15413533834586465,
+      "support_bound_violation_count": 45,
+      "support_bound_violation_fraction_selected": 0.5487804878048781,
+      "regret_tolerance_violation_count": 44,
+      "regret_tolerance_violation_fraction_selected": 0.5365853658536586,
+      "harmful_count": 3,
+      "harmful_fraction_selected": 0.036585365853658534,
+      "normalized_regret_reduction_vs_fallback": 0.1292
+    },
+    "outer_plus_inner": {
+      "selected_count": 27,
+      "overall_coverage": 0.05075187969924812,
+      "fraction_of_inner_nonfallback_retained": 0.32926829268292684,
+      "support_bound_violation_count": 2,
+      "support_bound_violation_fraction_selected": 0.07407407407407407,
+      "regret_tolerance_violation_count": 2,
+      "regret_tolerance_violation_fraction_selected": 0.07407407407407407,
+      "harmful_count": 1,
+      "harmful_fraction_selected": 0.037037037037037035,
+      "normalized_regret_reduction_vs_fallback": 0.05247313742870974
+    }
+  },
+  "negative_control": {
+    "trajectory_maximum_conformal_coverage": 0.9,
+    "regret_inflation": 0.2841,
+    "held_inner_nonfallback_count": 82,
+    "held_accepted_count": 0
+  },
+  "upstream": {
+    "decision_workflow_run_id": 33473378340,
+    "source_artifact_id": 9787311310,
+    "source_artifact_sha256": "fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+    "gate_risk_audit_workflow_run_id": 33540426989,
+    "gate_risk_audit_artifact_id": 9813375113,
+    "gate_risk_audit_artifact_sha256": "d8a758dd4102b0d44c9567e3bf4c7f0ded4436a6c2bb180b9d4cf44d826fcd37"
+  },
+  "local_prototype_result_id": "617c597ff2dacfc67445c56bfa022d664269f732cb5dbbf57674ec6146c1cc27",
+  "claim_boundary": "Retrospective method-development evidence on an already opened public held panel. The source operating point is trajectory-block-bootstrap controlled rather than distribution-free selective-risk certified. No fresh-confirmation, deployment-safety, unseen-object-generalization, or population-level regret guarantee is claimed."
+}
