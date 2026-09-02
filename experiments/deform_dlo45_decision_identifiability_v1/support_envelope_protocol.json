@@ -1,0 +1,48 @@
+{
+  "contract": "deform-dlo45-support-robust-decision-envelope-v1",
+  "schema_version": 1,
+  "parent_contract": "deform-dlo45-decision-identifiability-v1",
+  "parent_workflow_run_id": 33473378340,
+  "parent_source_artifact": {
+    "id": 9787311310,
+    "name": "dlo45-decision-source-33473378340",
+    "digest": "sha256:fdb35f680e4cf685303f841b8974c16eb9301ad52cbdc8f5af0d87a9dfc358ee",
+    "source_model_sha256": "a43aed43cd563ee47358e48cab84829dc7eebc77d97725721a11b228f3b6b7f0"
+  },
+  "parent_target_artifact": {
+    "id": 9787322207,
+    "name": "dlo45-decision-result-33473378340",
+    "digest": "sha256:588e006efe45d5f6bbc5459f9f031a4c4f92c28aaaf4004ef4c0d5c85eba5663",
+    "eval_manifest_sha256": "93f7799700f56a2a3da08bc647114dc5aa258f866af21e9eb3ad196816952ffb"
+  },
+  "dataset": {
+    "repository": "roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "dlos": ["DLO4", "DLO5"],
+    "calibration_partition": "source_test",
+    "target_partition": "eval"
+  },
+  "conformal": {
+    "calibration_unit": "complete_trajectory",
+    "score": "maximum-positive-realized-regret-minus-finite-support-bound-over-base-nonfallback-decisions",
+    "base_policy": "exact-finite-support-certificate-v1",
+    "miscoverage": 0.2,
+    "pool_across_dlos": false,
+    "insufficient_rank_behavior": "positive-infinity-and-exact-fallback"
+  },
+  "operational": {
+    "fallback_action_index": 0,
+    "fixed_regret_tolerance": 0.25,
+    "source_retention_fraction": 0.5,
+    "source_retention_rule": "smallest-bound-threshold-retaining-at-least-fraction-of-base-nonfallback-decisions",
+    "report_regret_tolerance_grid": [0.05, 0.1, 0.2, 0.25, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0],
+    "target_tuning": false,
+    "target_retries": false
+  },
+  "bootstrap": {
+    "unit": "complete_trajectory",
+    "replicates": 20000,
+    "seed": 20260902
+  },
+  "claim_boundary": "Retrospective within-DLO trajectory-level split-conformal calibration under exchangeability with the source-test trajectories. No unseen-object, arbitrary-shift, individual conditional, predictive-calibration, deployment-safety, or prospective-confirmation claim."
+}
