@@ -19,7 +19,7 @@ jobs:
   validate:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Check out exact branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -62,6 +62,7 @@ jobs:
           set -euo pipefail
           files=(
             scripts/remote/run_anytime_joint_admission_v2.py
+            scripts/remote/run_anytime_switching_admission_v3.py
             scripts/remote/run_anytime_valid_admission_v1.py
             scripts/remote/run_anytime_valid_dlo_replay_v1.py
             scripts/remote/run_anytime_valid_dlo_shift_replay_v1.py
@@ -72,13 +73,17 @@ jobs:
             scripts/science/run_anytime_recursive_admission_v1.py
             src/bayesian_phystwin/anytime_admission_v1.py
             src/bayesian_phystwin/anytime_joint_admission_v2.py
+            src/bayesian_phystwin/anytime_switching_admission_v3.py
             src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py
             src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py
             src/bayesian_phystwin_experiments/anytime_joint_admission_v2.py
+            src/bayesian_phystwin_experiments/anytime_switching_admission_v3.py
             tests/test_anytime_admission_v1.py
             tests/test_anytime_joint_admission_study_v2.py
             tests/test_anytime_joint_admission_v2.py
             tests/test_anytime_recursive_admission_v1.py
+            tests/test_anytime_switching_admission_study_v3.py
+            tests/test_anytime_switching_admission_v3.py
             tests/test_anytime_valid_admission_v1.py
             tests/test_anytime_valid_dlo_replay_v1.py
             tests/test_anytime_valid_replay_v2.py
@@ -98,6 +103,8 @@ jobs:
             tests/test_anytime_joint_admission_study_v2.py \
             tests/test_anytime_joint_admission_v2.py \
             tests/test_anytime_recursive_admission_v1.py \
+            tests/test_anytime_switching_admission_study_v3.py \
+            tests/test_anytime_switching_admission_v3.py \
             tests/test_anytime_valid_admission_v1.py \
             tests/test_anytime_valid_dlo_replay_v1.py \
             tests/test_anytime_valid_replay_v2.py
@@ -110,23 +117,29 @@ jobs:
           set -euo pipefail
           v1=results/science/anytime_valid_simulator_admission_v1
           v2=results/science/anytime_joint_admission_v2
-          rm -rf "$v1" "$v2"
+          v3=results/science/anytime_switching_admission_v3
+          rm -rf "$v1" "$v2" "$v3"
           python scripts/remote/run_anytime_valid_admission_v1.py \
             --protocol protocols/anytime_valid_simulator_admission_v1.json \
             --output-root "$v1"
           python scripts/remote/run_anytime_joint_admission_v2.py \
             --protocol protocols/anytime_joint_admission_v2.json \
             --output-root "$v2"
+          python scripts/remote/run_anytime_switching_admission_v3.py \
+            --protocol protocols/anytime_switching_admission_v3.json \
+            --output-root "$v3"
           python - <<'PY'
           import json
           from pathlib import Path
 
-          v1 = json.loads(Path(
-              'results/science/anytime_valid_simulator_admission_v1/result.json'
-          ).read_text(encoding='utf-8'))
-          v2 = json.loads(Path(
-              'results/science/anytime_joint_admission_v2/result.json'
-          ).read_text(encoding='utf-8'))
+          def load(name: str) -> dict[str, object]:
+              return json.loads(Path(
+                  f'results/science/{name}/result.json'
+              ).read_text(encoding='utf-8'))
+
+          v1 = load('anytime_valid_simulator_admission_v1')
+          v2 = load('anytime_joint_admission_v2')
+          v3 = load('anytime_switching_admission_v3')
           if v1['decision'] != 'controlled-mechanism-pass':
               raise SystemExit(f"v1 controlled mechanism failed: {v1['gates']}")
           if v1['exact_fallback_identity_violations'] != 0:
@@ -135,10 +148,16 @@ jobs:
               raise SystemExit(
                   f"v2 shared-IUT mechanism failed: {v2['mechanism_gate']}"
               )
+          if v3['decision'] != 'switching-null-robustness-supported':
+              raise SystemExit(
+                  f"v3 switching-null mechanism failed: {v3['mechanism_gate']}"
+              )
           print(json.dumps({
               'v1_decision': v1['decision'],
               'v2_decision': v2['decision'],
               'v2_derived_comparison': v2['derived_comparison'],
+              'v3_decision': v3['decision'],
+              'v3_derived_comparison': v3['derived_comparison'],
           }, indent=2, sort_keys=True))
           PY
 
@@ -150,8 +169,11 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             docs/anytime_joint_admission_v2.md \
+            docs/anytime_switching_admission_v3.md \
             protocols/anytime_joint_admission_v2.json \
+            protocols/anytime_switching_admission_v3.json \
             scripts/remote/run_anytime_joint_admission_v2.py \
+            scripts/remote/run_anytime_switching_admission_v3.py \
             scripts/remote/run_anytime_valid_admission_v1.py \
             scripts/remote/run_anytime_valid_dlo_replay_v1.py \
             scripts/remote/run_anytime_valid_dlo_shift_replay_v1.py \
@@ -162,20 +184,25 @@ jobs:
             scripts/science/run_anytime_recursive_admission_v1.py \
             src/bayesian_phystwin/anytime_admission_v1.py \
             src/bayesian_phystwin/anytime_joint_admission_v2.py \
+            src/bayesian_phystwin/anytime_switching_admission_v3.py \
             src/bayesian_phystwin_experiments/anytime_recursive_admission_v1.py \
             src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py \
             src/bayesian_phystwin_experiments/anytime_joint_admission_v2.py \
+            src/bayesian_phystwin_experiments/anytime_switching_admission_v3.py \
             tests/test_anytime_admission_v1.py \
             tests/test_anytime_joint_admission_study_v2.py \
             tests/test_anytime_joint_admission_v2.py \
             tests/test_anytime_recursive_admission_v1.py \
+            tests/test_anytime_switching_admission_study_v3.py \
+            tests/test_anytime_switching_admission_v3.py \
             tests/test_anytime_valid_admission_v1.py \
             tests/test_anytime_valid_dlo_replay_v1.py \
             tests/test_anytime_valid_replay_v2.py \
             results/science/anytime_valid_simulator_admission_v1 \
-            results/science/anytime_joint_admission_v2
+            results/science/anytime_joint_admission_v2 \
+            results/science/anytime_switching_admission_v3
           rm .github/workflows/anytime-valid-simulator-admission-v1.yml
           git add .github/workflows/anytime-valid-simulator-admission-v1.yml
           git diff --cached --check
-          git commit -m 'Validate stronger anytime-valid admission contract'
+          git commit -m 'Validate stronger anytime-valid admission contracts'
           git push origin HEAD:science/anytime-valid-simulator-admission-v1
