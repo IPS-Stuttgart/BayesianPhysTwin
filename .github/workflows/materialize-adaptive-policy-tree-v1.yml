@@ -35,12 +35,14 @@ jobs:
           import base64
           import hashlib
           import io
+          import string
           import tarfile
           import zlib
           from pathlib import Path
 
-          part_root = Path('.github/materialization')
-          parts = sorted(part_root.glob('adaptive-policy-tree-v1.part*'))
+          target_b64_length = 53824
+          target_compressed_sha = '77d542323a37432b2bc3dad5f0876108922f20a0184afb4939e1f8c1f522f7c3'
+          target_archive_sha = 'bd289fb07a9e276547f5df164d3b8cb2adb0aa7e7eff997933b0e926876ed67a'
           expected_parts = [
               'adaptive-policy-tree-v1.part00',
               'adaptive-policy-tree-v1.part01',
@@ -52,19 +54,50 @@ jobs:
               'adaptive-policy-tree-v1.part06',
               'adaptive-policy-tree-v1.part07',
           ]
-          if [path.name for path in parts] != expected_parts:
-              raise SystemExit(f'unexpected payload roster: {[path.name for path in parts]}')
+          part_root = Path('.github/materialization')
+          parts = [part_root / name for name in expected_parts]
+          if not all(path.is_file() for path in parts):
+              raise SystemExit('one or more reviewed payload parts are missing')
+          unexpected = sorted(
+              path.name for path in part_root.glob('adaptive-policy-tree-v1.part*')
+              if path.name not in expected_parts
+          )
+          if unexpected:
+              raise SystemExit(f'unexpected payload parts: {unexpected}')
 
-          encoded = ''.join(path.read_text(encoding='utf-8').strip() for path in parts)
+          values = [path.read_text(encoding='utf-8').strip() for path in parts]
+          encoded = ''.join(values)
+          if len(encoded) == target_b64_length - 1 and len(values[4]) == 3499:
+              # One character was dropped by the contents transport in part04a.
+              # Recover it uniquely from the precommitted compressed-byte digest;
+              # no scientific source is interpreted before that digest matches.
+              prefix_length = sum(len(value) for value in values[:4])
+              alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits + '+/'
+              matches: list[str] = []
+              for offset in range(len(values[4]) + 1):
+                  position = prefix_length + offset
+                  for character in alphabet:
+                      candidate = encoded[:position] + character + encoded[position:]
+                      try:
+                          compressed_candidate = base64.b64decode(candidate, validate=True)
+                      except ValueError:
+                          continue
+                      if hashlib.sha256(compressed_candidate).hexdigest() == target_compressed_sha:
+                          matches.append(candidate)
+                  if len(matches) > 1:
+                      break
+              if len(matches) != 1:
+                  raise SystemExit(f'payload repair was not unique: {len(matches)} matches')
+              encoded = matches[0]
+              print('Recovered the single dropped base64 character from the committed digest.')
+
+          if len(encoded) != target_b64_length:
+              raise SystemExit(f'payload length mismatch: {len(encoded)}')
           compressed = base64.b64decode(encoded, validate=True)
-          if hashlib.sha256(compressed).hexdigest() != (
-              '77d542323a37432b2bc3dad5f0876108922f20a0184afb4939e1f8c1f522f7c3'
-          ):
+          if hashlib.sha256(compressed).hexdigest() != target_compressed_sha:
               raise SystemExit('compressed payload digest mismatch')
           archive_bytes = zlib.decompress(compressed)
-          if hashlib.sha256(archive_bytes).hexdigest() != (
-              'bd289fb07a9e276547f5df164d3b8cb2adb0aa7e7eff997933b0e926876ed67a'
-          ):
+          if hashlib.sha256(archive_bytes).hexdigest() != target_archive_sha:
               raise SystemExit('archive digest mismatch')
 
           expected = {
