@@ -1,0 +1,58 @@
+{
+  "schema": "bayesian-phystwin/deform360-bootstrap-comparator-protocol-v1",
+  "schema_version": 1,
+  "status": "frozen-before-execution",
+  "protocol_id": "f5d2982842917b7a9273c87ae66d4f12e544c594079f70771bdf62dc6bfa6671",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "reference_dependence_result": {
+    "workflow_run_id": 33528032875,
+    "workflow_run_attempt": 1,
+    "execution_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "recovery_revision": "0f9312a3cae9f854631d8c61c2893c6527014219",
+    "recovery_runner_path": "scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py",
+    "recovery_runner_git_blob_sha1": "0955ad7ce0c176e7538bd5b91cc36e3444564be5",
+    "protocol_path": "original-v6/protocols/deform360_dependence_query_v6.json",
+    "artifact_id": 9811194776,
+    "artifact_zip_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+    "result_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1"
+  },
+  "reference_evaluation": {
+    "coverage_probability": 0.9,
+    "event_threshold_quantile": 0.9,
+    "fallback_cost": 0.2,
+    "probability_clip": 1e-06
+  },
+  "comparator": {
+    "name": "source_residual_bootstrap",
+    "source_only": true,
+    "source_residual_semantics": "leave-one-source-episode-out-cv-residuals",
+    "episode_balanced": true,
+    "same_target_mean": true,
+    "same_query_variance_as_full": true,
+    "analytic_empirical_probabilities": true,
+    "empirical_interval": "weighted-central-absolute-90-percent",
+    "moment_parity_tolerance": 1e-10
+  },
+  "statistics": {
+    "independent_unit": "complete-physical-object",
+    "object_bootstrap_repetitions": 10000,
+    "random_seed": 20260903,
+    "co_primary_metrics": [
+      "event_brier",
+      "decision_loss"
+    ],
+    "secondary_metrics": [
+      "event_log_loss",
+      "standardized_crps"
+    ],
+    "familywise_confidence": 0.95,
+    "multiplicity_rule": "bonferroni-two-co-primary-endpoints"
+  },
+  "retrospective_target_reuse": true,
+  "target_outcomes_may_select_or_tune_comparator": false,
+  "unbound_numeric_payloads_may_open": false,
+  "new_measurements_collected": false,
+  "paper_claim_authorized": false,
+  "fresh_confirmation_authorized": false,
+  "deployment_claim_authorized": false
+}

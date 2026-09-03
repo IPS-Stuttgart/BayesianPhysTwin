@@ -1,0 +1,21 @@
+{
+  "schema": "bayesian-phystwin/deform360-bootstrap-comparator-request-v1",
+  "request_id": "deform360-bootstrap-comparator-20260903",
+  "reference_workflow_run_id": 33528032875,
+  "reference_artifact_id": 9811194776,
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "gpuserver4090"
+  ],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "comparator": "episode-balanced-source-residual-bootstrap",
+  "same_target_mean": true,
+  "same_query_variance": true,
+  "retrospective_target_reuse": true,
+  "unbound_numeric_payloads_may_open": false,
+  "new_measurements_collected": false,
+  "scientific_result_must_not_control_job_success": true,
+  "paper_claim_authorized": false
+}
