@@ -1,0 +1,102 @@
+{
+  "schema": "bayesian-phystwin/deform360-posterior-vs-map-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-posterior-marginalization-vs-map-v1",
+  "status": "frozen-before-retrospective-execution",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "bindings": {
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "original_v6_runner_path": "scripts/science/run_deform360_dependence_query_v6.py",
+    "original_v6_runner_sha256": "06c22fc3fe667c4f2f11eddee3dcb1b78b5465b6312136efb010611e1ebab91c",
+    "original_v6_protocol_path": "protocols/deform360_dependence_query_v6.json",
+    "recovery_revision": "0f9312a3cae9f854631d8c61c2893c6527014219",
+    "recovery_runner_path": "scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py",
+    "recovery_runner_git_blob_sha1": "0955ad7ce0c176e7538bd5b91cc36e3444564be5",
+    "parent_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "parent_confirmation_run_id": 33335779766,
+    "parent_confirmation_artifact_id": 9738998271,
+    "parent_confirmation_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+    "parent_result_json_sha256": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7",
+    "parent_result_payload_sha256": "26984c5ecc59ef8b10a8efe94c86f5ea55fd88111913c4b46ae06704410c6c0e",
+    "parent_readiness_json_sha256": "58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e",
+    "parent_object_count": 92
+  },
+  "scientific_question": "Does integrating over the frozen generalized-Bayes action-candidate posterior improve held-out predictive distributions or passive execute-versus-fallback decisions relative to selecting its maximum-weight component?",
+  "evaluation": {
+    "inferential_unit": "physical object",
+    "same_frozen_predictor_required": true,
+    "component_mean_parity_required": true,
+    "source_only_calibration": true,
+    "posterior_semantics": "finite generalized-Bayes model posterior over the 16 frozen action-conditioned ridge and kernel candidates",
+    "posterior_weight_rule": "unchanged frozen generalized_bayes_weights from source leave-one-episode-out objectives",
+    "map_rule": "select the candidate with maximum frozen posterior weight; ties use the existing deterministic candidate order",
+    "target_component_correction": "apply one common source-fitted readout correction to every component and recenter component deviations so their weighted mean equals the exact frozen posterior mean",
+    "map_self_calibration": "fit MAP-specific leave-one-source-episode-out bias and Gaussian variance without target outcomes",
+    "mixture_calibration": "fit one query-specific common conditional variance by deterministic source-only equal-episode mixture-NLL minimization",
+    "arms": [
+      "posterior_mixture",
+      "posterior_mean_gaussian",
+      "map_gaussian"
+    ],
+    "primary_comparator": "map_gaussian",
+    "primary_metrics": [
+      "query_nll",
+      "query_crps"
+    ],
+    "secondary_metrics": [
+      "event_brier",
+      "decision_loss",
+      "field_rmse",
+      "query_rmse",
+      "coverage",
+      "interval_width"
+    ],
+    "query_bank": "reuse byte-identical five-query bank and event semantics from deform360_dependence_query_v6",
+    "coverage_probability": 0.9,
+    "event_threshold_quantile": 0.9,
+    "fallback_cost": 0.1,
+    "decision_rule": "execute the recorded action prediction when posterior adverse-event probability is no greater than the constant fallback cost; otherwise return exact fallback",
+    "probability_clip": 1e-09,
+    "minimum_variance": 1e-10,
+    "variance_grid_count": 81,
+    "quantile_iterations": 60,
+    "bootstrap_repetitions": 10000,
+    "random_seed": 260903,
+    "mean_parity_tolerance": 1e-12
+  },
+  "success_gates": {
+    "posterior_marginalization_supported": "all invariants pass and the posterior mixture has negative mean paired differences with object-bootstrap upper bounds below zero for both NLL and CRPS versus the independently source-calibrated MAP plug-in",
+    "decision_value_supported": "the posterior mixture has object-bootstrap upper bounds below zero for both Brier score and passive decision loss versus the independently source-calibrated MAP plug-in",
+    "same_mean_distribution_supported": "the posterior mixture beats the independently source-calibrated same-mean Gaussian in both NLL and CRPS",
+    "model_averaging_mean_supported": "posterior-mean field RMSE minus independently source-corrected MAP field RMSE has an object-bootstrap upper bound below zero",
+    "negative_or_mixed_results_retained": true,
+    "no_threshold_or_arm_changes_after_target_scoring": true
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "target_tactile_futures_previously_opened": true,
+    "target_outcomes_may_tune_protocol": false,
+    "target_outcomes_may_select_arms": false,
+    "target_outcomes_may_select_queries": false,
+    "new_measurements_collected": false,
+    "robot_actions_selected": false,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "unbound_numeric_payloads_may_open": false,
+    "dataset_modified": false
+  },
+  "runner": {
+    "labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "gpuserver4090"
+    ],
+    "reason": "the complete verified official Deform360 snapshot and exact parent-bound carriers are on gpuserver4090; the gpuserver6000 tree is a noncanonical research working tree"
+  },
+  "paper_claim_authorized": false,
+  "fresh_confirmation_authorized": false,
+  "robot_control_claim_authorized": false,
+  "claim_boundary": "A positive result would establish retrospective value of generalized-Bayes posterior averaging or marginalization on five registered tactile-field queries over the exact previously scored 92-object Deform360 cohort. It would not establish a physical-parameter posterior, fresh confirmation, unseen-object transfer, Prob4D provider competence, calibrated dense-field uncertainty, strict counterfactual value, active robot improvement, deployment safety, or state of the art."
+}
