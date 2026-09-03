@@ -119,8 +119,7 @@ def load_protocol(path: Path) -> dict[str, Any]:
     if (
         protocol.get("schema_version") != 1
         or protocol.get("contract") != CONTRACT
-        or protocol.get("evidence_class")
-        != "retrospective-post-open-control-study"
+        or protocol.get("evidence_class") != "retrospective-post-open-control-study"
     ):
         raise ValueError("unsupported adapter-control protocol")
 
@@ -157,15 +156,13 @@ def load_protocol(path: Path) -> dict[str, Any]:
         or data.get("target_calibration") is not False
         or float(adapter.get("ridge", math.nan)) != 1.0
         or float(adapter.get("shrinkage", math.nan)) != 0.25
-        or int(adapter.get("expected_feature_count", -1))
-        != EXPECTED_FEATURE_COUNT
+        or int(adapter.get("expected_feature_count", -1)) != EXPECTED_FEATURE_COUNT
         or int(adapter.get("expected_internal_node_count", -1)) != 8
         or tuple(controls.get("reported_methods", ())) != expected_methods
         or tuple(controls.get("trivial_shrinkage_grid", ()))
         != (0.0, 0.25, 0.5, 0.75, 1.0)
         or int(controls.get("trivial_cv_folds", -1)) != 7
-        or tuple(controls.get("data_efficiency_sizes", ()))
-        != (1, 2, 4, 8, 16, 32, 56)
+        or tuple(controls.get("data_efficiency_sizes", ())) != (1, 2, 4, 8, 16, 32, 56)
         or int(controls.get("data_efficiency_replicates", -1)) != 8
         or controls.get("subset_target_selection") is not False
         or evaluation.get("statistical_unit") != "complete-trajectory"
@@ -680,11 +677,9 @@ def _load_parent(
     for observed, expected in cross_checks:
         observed_map = _mapping(observed, label="observed parent identity")
         expected_map = _mapping(expected, label="expected parent identity")
-        if (
-            observed_map.get("sha256") != expected_map.get("sha256")
-            or int(observed_map.get("size_bytes", -1))
-            != int(expected_map.get("size_bytes", -2))
-        ):
+        if observed_map.get("sha256") != expected_map.get("sha256") or int(
+            observed_map.get("size_bytes", -1)
+        ) != int(expected_map.get("size_bytes", -2)):
             raise ValueError(f"{dlo} parent cross-identity changed")
     return {
         "paths": paths,
@@ -1134,9 +1129,7 @@ def run_dlo(args: argparse.Namespace) -> int:
         "eval_roster_sha256": hashlib.sha256(
             "\n".join(eval_names).encode()
         ).hexdigest(),
-        "parent_file_sha256": {
-            key: sha256_file(path) for key, path in paths.items()
-        },
+        "parent_file_sha256": {key: sha256_file(path) for key, path in paths.items()},
     }
     result["result_id"] = _canonical_sha256(result)
     _write_json(output / "result.json", result)
@@ -1236,8 +1229,7 @@ def combine(args: argparse.Namespace) -> int:
         if (
             result.get("contract") != RESULT_CONTRACT
             or result.get("dlo") != dlo
-            or result.get("status")
-            != "completed-retrospective-post-open-control-study"
+            or result.get("status") != "completed-retrospective-post-open-control-study"
             or result.get("protocol_sha256") != sha256_file(protocol_path)
             or result.get("source_revision") != args.source_revision
         ):
@@ -1271,8 +1263,7 @@ def combine(args: argparse.Namespace) -> int:
             "ties": sum(int(by_dlo[dlo]["ties"]) for dlo in DLOS),
             "losses": sum(int(by_dlo[dlo]["losses"]) for dlo in DLOS),
             "worst_candidate_to_baseline_ratio": max(
-                float(by_dlo[dlo]["worst_candidate_to_baseline_ratio"])
-                for dlo in DLOS
+                float(by_dlo[dlo]["worst_candidate_to_baseline_ratio"]) for dlo in DLOS
             ),
             "per_dlo": {
                 dlo: {
@@ -1351,9 +1342,7 @@ def combine(args: argparse.Namespace) -> int:
         "scientific_outcome_controls_workflow_success": False,
         "methods": combined_methods,
         "data_efficiency": combined_efficiency,
-        "dlo_result_ids": {
-            dlo: results[dlo]["result_id"] for dlo in DLOS
-        },
+        "dlo_result_ids": {dlo: results[dlo]["result_id"] for dlo in DLOS},
     }
     result["result_id"] = _canonical_sha256(result)
     _write_json(output / "result.json", result)
