@@ -1,0 +1,121 @@
+{
+  "schema": "bayesian-phystwin/deform360-query-copula-audit-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-exact-query-marginal-copula-audit-v1",
+  "status": "frozen-before-first-copula-audit-execution",
+  "lineage": {
+    "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "gpuserver4090"
+    ],
+    "bound_recovery_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "bound_recovery_runner": "scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py",
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "original_v6_runner": "scripts/science/run_deform360_dependence_query_v6.py",
+    "original_v6_protocol": "protocols/deform360_dependence_query_v6.json",
+    "original_v6_random_seed": 260901,
+    "parent_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "completed_dependence_result": {
+      "workflow_run_id": 33528032875,
+      "artifact_id": 9811194776,
+      "artifact_zip_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+      "result_json_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+      "embedded_result_sha256": "d430731e56ce470a5e0df8fbd3bc13dea83763beccd2df06d86cde2365d4ee36",
+      "object_count": 92
+    },
+    "parent_confirmation": {
+      "workflow_run_id": 33335779766,
+      "artifact_id": 9738998271,
+      "artifact_zip_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+      "result_json_sha256": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7",
+      "readiness_json_sha256": "58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e"
+    }
+  },
+  "evaluation": {
+    "inferential_unit": "physical object",
+    "query_order": [
+      "total_load",
+      "sensor_imbalance",
+      "horizontal_balance",
+      "vertical_balance",
+      "center_periphery"
+    ],
+    "query_thresholds_and_marginal_scales": "reuse the exact source-only v6 construction",
+    "event_bank": "all ten unordered query pairs, each scored as conjunction and disjunction",
+    "event_pair_selection": "none",
+    "arms": [
+      "full_query_copula",
+      "independent_query_copula",
+      "scrambled_query_copula"
+    ],
+    "full_query_copula": "Gaussian copula induced by the calibrated full projected query covariance",
+    "independent_query_copula": "independent deterministic row permutations of each full-copula query sample column",
+    "scrambled_query_copula": "fixed target-independent derangement of full-copula rank carriers with fixed signs",
+    "scramble_permutation": [
+      2,
+      4,
+      1,
+      0,
+      3
+    ],
+    "scramble_signs": [
+      1,
+      -1,
+      -1,
+      1,
+      -1
+    ],
+    "sample_count": 32768,
+    "sample_seed": 260903,
+    "normal_marginal_discretization": "midpoint standard-normal quantile grid",
+    "same_predictive_query_mean_required": true,
+    "exact_empirical_univariate_query_marginal_parity_required": true,
+    "exact_single_query_event_probability_parity_required": true,
+    "coverage_probability": 0.9,
+    "event_threshold_quantile": 0.9,
+    "fallback_cost": 0.1,
+    "probability_clip": 1e-09,
+    "object_weighting": "equal",
+    "event_weighting_within_object": "equal over all twenty composite events",
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 260903,
+    "maximum_correlation_approximation_error": 0.002,
+    "maximum_marginal_variance_error": 0.0001
+  },
+  "pre_execution_interpretation_rule": {
+    "primary_endpoints": [
+      "object-balanced composite-event Brier score",
+      "object-balanced execute-versus-fallback decision loss"
+    ],
+    "primary_contrasts": [
+      "full_query_copula minus independent_query_copula",
+      "full_query_copula minus scrambled_query_copula"
+    ],
+    "both_primary_bootstrap_upper_bounds_below_zero_against_each_control": true,
+    "positive_result": "both primary endpoints have object-bootstrap 95% upper bounds below zero against both controls",
+    "mixed_result": "only one primary endpoint passes against both controls",
+    "negative_or_inconclusive_result": "neither primary endpoint passes against both controls",
+    "retain_result_regardless_of_sign": true
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "target_open_before_protocol_design": true,
+    "target_outcomes_may_select_event_pairs": false,
+    "target_outcomes_may_select_copula_controls": false,
+    "target_outcomes_may_select_sample_seed": false,
+    "all_previously_registered_queries_required": true,
+    "all_unordered_query_pairs_required": true,
+    "unbound_numeric_payloads_may_open": false,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "new_measurements_collected": false,
+    "fresh_confirmation": false
+  },
+  "paper_claim_authorized": false,
+  "fresh_confirmation_authorized": false,
+  "claim_boundary": "Retrospective mechanism audit on the already opened 92-object Deform360 cohort. A positive result would show that the full coupling among five registered physical queries improves joint-event probabilities and an offline execute-versus-fallback decision when predictive query means, complete empirical univariate query marginals, and every single-query event probability are exactly identical. It would not establish fresh confirmation, calibrated field uncertainty, actual robot deployment, strict individual counterfactuals, unseen-object transfer, or a state-of-the-art claim."
+}
