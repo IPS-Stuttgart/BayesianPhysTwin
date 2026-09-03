@@ -4,16 +4,18 @@ import importlib.util
 import math
 import sys
 from pathlib import Path
+from types import ModuleType
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "science" / "analyze_full22_dependence_compression_v1.py"
 PROTOCOL = ROOT / "protocols" / "full22_dependence_compression_diagnostic_v1.json"
 
 
-def _load_script():
+def _load_script() -> ModuleType:
     spec = importlib.util.spec_from_file_location(
         "analyze_full22_dependence_compression_v1",
         SCRIPT,
@@ -104,7 +106,7 @@ def test_case_analysis_uses_frozen_horizon_scales_and_common_noise() -> None:
     assert result["rank1_relative_total_correlation_error"] == pytest.approx(0.0)
 
 
-@pytest.mark.parametrize(
+@pytest.mark.parametrize(  # type: ignore[untyped-decorator]
     "covariance",
     [
         np.eye(3, dtype=np.float64),
@@ -113,7 +115,7 @@ def test_case_analysis_uses_frozen_horizon_scales_and_common_noise() -> None:
     ],
 )
 def test_case_analysis_rejects_wrong_or_nonpositive_covariance(
-    covariance: np.ndarray,
+    covariance: NDArray[np.float64],
 ) -> None:
     with pytest.raises(ValueError):
         MODULE.analyze_case_covariance(

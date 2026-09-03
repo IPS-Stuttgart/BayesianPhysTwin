@@ -1,0 +1,50 @@
+{
+  "analysis_revision": "1b94864cbb9e053cd284fb3afa0b76a860a51ce6",
+  "boundary_checks": {
+    "future_truth_extracted": false,
+    "held_v8_opened": false,
+    "prediction_means_loaded_by_registered_analyzer": false,
+    "prefix_arrays_extracted": false,
+    "protected_or_fresh_target_opened": false
+  },
+  "conclusion": "The Full-22 exported covariance contains a numerically real but predeclared-negligible local x-y-z dependence signal. It does not support the proposed dependence-plus-compression headline or authorize realized-outcome comparison.",
+  "independent_recomputation": {
+    "case_count": 22,
+    "covariance_block_count": 3638553,
+    "implementation": "separate NumPy calculation that did not import the registered analyzer",
+    "intrinsic_donor_case_range_nats": [
+      0.000022575076322922625,
+      0.0072111116558115085
+    ],
+    "intrinsic_donor_equal_case_mean_total_correlation_nats": 0.0027418518630065603,
+    "scored_case_range_nats": [
+      0.000008326142413283058,
+      0.004241414480672291
+    ],
+    "scored_equal_case_mean_total_correlation_nats": 0.0015531253193047767,
+    "scored_mean_matches_registered_result": true
+  },
+  "protocol_id": "f9f7b251abbd3900ace05b067a043d1f84b183fd5b5e136e0403eaa4758917f2",
+  "result": {
+    "file_sha256": "c80ec1fd55a1532079653e8dc43563e68e702a16e0026d35262b08482f251ca9",
+    "report_file_sha256": "db6f60467c748c499431750ec0476f172671723bf822b5767f1bdfe5e52fc7b6",
+    "result_id": "1b57eb14bc77cc9995f77883cadf33d89d2c06b1de4579a90b8d19a0fd27051c"
+  },
+  "runtime": {
+    "numpy_version": "2.2.6",
+    "python_version": "3.12.13",
+    "verified_at_utc": "2026-09-03T19:01:50Z"
+  },
+  "schema": "bayesian-phystwin/full22-dependence-compression-verification-v1",
+  "schema_version": 1,
+  "source_extraction": {
+    "all_prediction_case_sha256_verified": true,
+    "artifact_id": 9074451004,
+    "artifact_size_bytes": 1893605659,
+    "member_count": 23,
+    "receipt_file_sha256": "60c6e05aec477452701b4d679f67dc85eccb7ca0055b60e732e3fc8606f28a75",
+    "receipt_id": "b5f5e491f199ea933725e89b82575e2e0c7f5c10e936a8ae1d4fc4799ed7d04e"
+  },
+  "status": "verified-negative",
+  "verification_id": "7217f9ac1d3482ee97ade8d97b5e324038a216534bc48f51610b087086aeb5d8"
+}
