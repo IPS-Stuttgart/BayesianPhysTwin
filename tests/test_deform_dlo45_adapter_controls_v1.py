@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 
 import numpy as np
 
-from experiments.deform_dlo45_adapter_controls_v1 import evaluate as controls
 
-
+controls = importlib.import_module(
+    "experiments.deform_dlo45_adapter_controls_v1.evaluate"
+)
 PROTOCOL = Path("experiments/deform_dlo45_adapter_controls_v1/protocol.json")
 
 
