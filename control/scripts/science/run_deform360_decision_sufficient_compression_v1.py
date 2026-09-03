@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Hosted-workflow path shim for the compression experiment."""
 
-from pathlib import Path
 import runpy
+from pathlib import Path
 
 
 _TARGET = (
