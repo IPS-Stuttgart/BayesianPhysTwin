@@ -10,6 +10,8 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+pytest.importorskip("scipy")
+
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts/science"
 sys.path.insert(0, str(SCRIPTS))
 import deform360_joint_events_v1 as joint  # noqa: E402
