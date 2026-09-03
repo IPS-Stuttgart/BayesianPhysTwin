@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-posthoc-controls-v1",
+  "evidence_class": "retrospective-post-open-control-study",
+  "scientific_question": "Does the frozen trajectory-grouped Bayesian residual adapter outperform additional DEFORM optimization and simple logged-data residual controls, and which structural choices matter?",
+  "parent": {
+    "workflow_run_id": 33361441865,
+    "workflow_name": "DEFORM DLO4/DLO5 staged timeout recovery v3",
+    "head_sha": "0376ece871d7c3d9355788f812a3c4cc1c9165b0",
+    "run_root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1",
+    "joint_prediction_seal_required": true,
+    "both_target_results_already_open": true
+  },
+  "runtime": {
+    "runner_labels": ["self-hosted", "Linux", "X64", "gpuserver4090"],
+    "registered_runner_name": "workstation1",
+    "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+    "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+    "frozen_python": "/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python",
+    "devices": {"DLO4": "cuda:0", "DLO5": "cuda:1"}
+  },
+  "data": {
+    "dlos": ["DLO4", "DLO5"],
+    "train_trajectories_per_dlo": 56,
+    "evaluation_trajectories_per_dlo": 14,
+    "frame_count": 500,
+    "node_count": 12,
+    "observed_prefix_frames": 2,
+    "future_frames": 498,
+    "internal_nodes": [2, 3, 4, 5, 6, 7, 8, 9],
+    "new_data_collection": false,
+    "dataset_mutation": false
+  },
+  "adapter": {
+    "ridge": 1.0,
+    "shrinkage": 0.25,
+    "coordinate_frame": "initial-action-local",
+    "complete_trajectory_groups": true,
+    "clamped_nodes_baseline_exact": true
+  },
+  "arms": {
+    "reference": [
+      "physical",
+      "compute_matched_physical",
+      "registered_full_adapter"
+    ],
+    "trivial": [
+      "node_constant_bias",
+      "time_node_mean_residual",
+      "time_only_ridge"
+    ],
+    "structural": [
+      "no_explicit_action_features",
+      "no_baseline_dynamics_features",
+      "global_coordinate_frame"
+    ],
+    "source_data_sizes": [1, 2, 4, 8, 16, 32, 56],
+    "source_data_repeats": 5,
+    "source_subset_domain": "deform-dlo-posthoc-controls-v1-source-subset"
+  },
+  "evaluation": {
+    "primary_metric": "mean-coordinate-l1-all-nodes-m",
+    "statistical_unit": "complete-trajectory",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20260903,
+    "full_adapter_parent_prediction_tolerance_m": 1e-10,
+    "primary_gate": {
+      "registered_full_adapter_beats_physical_on_each_dlo": true,
+      "registered_full_adapter_beats_compute_matched_on_each_dlo": true,
+      "parent_prediction_reproduced": true
+    },
+    "trivial_and_structural_arms_are_falsification_controls_not_gate_tuning": true,
+    "source_data_curve_is_descriptive_and_target_outcomes_do_not_select_subsets": true
+  },
+  "claim_boundary": "The study may support a retrospective controlled statement about an already completed public DLO4/DLO5 evaluation. It is not fresh confirmation, zero-shot complete-twin transfer, physical-parameter identification, arbitrary-object generalization, calibrated deployment uncertainty, or robot-control safety."
+}
