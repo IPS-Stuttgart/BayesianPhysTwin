@@ -34,9 +34,8 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t changed < <(git diff --name-status HEAD^ HEAD)
-          test "${#changed[@]}" -eq 2
-          printf '%s\n' "${changed[@]}" | grep -Fx $'A\t.github/workflows/format-deform360-query-sufficient-v1.yml'
-          printf '%s\n' "${changed[@]}" | grep -Fx $'A\t.github/requests/format-deform360-query-sufficient-v1.json'
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/format-deform360-query-sufficient-v1.json'
           python -m pip install --disable-pip-version-check ruff==0.14.14
           python -m ruff format \
             scripts/science/run_deform360_query_sufficient_dependence_v1.py \
