@@ -1,0 +1,175 @@
+{
+  "adapter": {
+    "coordinate_variance_floor_m2": 1e-06,
+    "expected_feature_count": 92,
+    "expected_internal_node_count": 8,
+    "parity_max_abs_m": 1e-08,
+    "ridge": 1.0,
+    "shrinkage": 0.25
+  },
+  "claim_boundary": "Tests whether the already reported post-hoc local residual advantage on the previously opened DLO4/DLO5 targets survives compute-matched, trivial-residual, structural-feature, and source-data-efficiency controls. It does not create fresh confirmation, authorize target tuning, or establish general object transfer.",
+  "contract": "deform-dlo45-adapter-controls-v1",
+  "controls": {
+    "data_efficiency_replicates": 8,
+    "data_efficiency_sizes": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      56
+    ],
+    "reported_methods": [
+      "primary_full_adapter",
+      "compute_matched_physical",
+      "global_bias",
+      "node_bias",
+      "time_node_mean",
+      "global_frame_linear",
+      "no_explicit_action_linear",
+      "initial_action_only_linear"
+    ],
+    "subset_order_domain": "deform-dlo45-adapter-controls-source-efficiency-v1",
+    "subset_target_selection": false,
+    "trivial_cv_folds": 7,
+    "trivial_shrinkage_grid": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ]
+  },
+  "data": {
+    "dataset_mutation": false,
+    "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+    "dlos": [
+      "DLO4",
+      "DLO5"
+    ],
+    "evaluation_trajectory_count": 14,
+    "frame_count": 500,
+    "new_data_collection": false,
+    "node_count": 12,
+    "target_calibration": false,
+    "target_selection": false,
+    "train_trajectory_count": 56,
+    "upstream_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8"
+  },
+  "evaluation": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20260903,
+    "fail_on_parent_or_parity_mismatch": true,
+    "fail_on_scientific_control_loss": false,
+    "metric": "mean-coordinate-l1-m",
+    "statistical_unit": "complete-trajectory"
+  },
+  "evidence_class": "retrospective-post-open-control-study",
+  "parent": {
+    "frozen_protocol_sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+    "head_sha": "0376ece871d7c3d9355788f812a3c4cc1c9165b0",
+    "run_root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1",
+    "target_outcomes_previously_opened": true,
+    "workflow_name": "DEFORM DLO4/DLO5 staged timeout recovery v3",
+    "workflow_run_id": 33361441865
+  },
+  "parent_files": {
+    "DLO4": {
+      "compute_matched_checkpoint": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/physical_compute_matched_update_6401.pt",
+        "sha256": "ff6d08bd2409382487448bc83e09b8fc33cee7de22ff95e52bb9f0ec3e4189ba",
+        "size_bytes": 325747
+      },
+      "eval_manifest": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/eval_manifest.json",
+        "sha256": "10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d",
+        "size_bytes": 3877
+      },
+      "full_covariance_model": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/full_covariance_model.npz",
+        "sha256": "8d56aac0bb8c98df847854450a102eb9939f0f7cb385b2d093f653f6c27c0887",
+        "size_bytes": 5857344
+      },
+      "method_seal": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/method_seal.json",
+        "sha256": "ee962bfecb6b658c67877f240cb082b3b1c3647ffa3c6fb077662dc00c78d647",
+        "size_bytes": 2896
+      },
+      "physical_checkpoint": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/alltrain/physical_update_6400.pt",
+        "sha256": "729f015c944f1bdfbd759cc17e2e9155cfb6519e30545a9372dbf26ab240f304",
+        "size_bytes": 326195
+      },
+      "prediction_seal": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/prediction_seal.json",
+        "sha256": "7f8e42c7e3404c992d3aa85c0c8cfa722043d9d35d5e1ee9edb74e95e37bdbce",
+        "size_bytes": 2192
+      },
+      "source_manifest": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_manifest.json",
+        "sha256": "1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17",
+        "size_bytes": 14511
+      },
+      "source_result": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_result.json",
+        "sha256": "c811db44c6f680e31d70698d4eea2e740fce2fd1703abf27fccf873ec32950e1",
+        "size_bytes": 8867
+      },
+      "target_predictions": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/target_predictions.npz",
+        "sha256": "b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b",
+        "size_bytes": 18273132
+      }
+    },
+    "DLO5": {
+      "compute_matched_checkpoint": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/physical_compute_matched_update_6401.pt",
+        "sha256": "73496ab6b5a6f569ef25d55f2f8fd606eb2bb26966e9ce0f13e0dc7fd9ab6c29",
+        "size_bytes": 325747
+      },
+      "eval_manifest": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/eval_manifest.json",
+        "sha256": "48bd004dbba2161609ada67ec76369a9271fa6899624c1ba1a84b747654e6b7d",
+        "size_bytes": 3871
+      },
+      "full_covariance_model": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/full_covariance_model.npz",
+        "sha256": "701efadf241cb3840df53bc88fc81f0eee59104a7479d64943627271b449af26",
+        "size_bytes": 5852713
+      },
+      "method_seal": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/method_seal.json",
+        "sha256": "21e4bc2518d53df4f52e09501f8a27f50ecf9c099dc3a286838c4ea33f282def",
+        "size_bytes": 2895
+      },
+      "physical_checkpoint": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/alltrain/physical_update_6400.pt",
+        "sha256": "5e2505fcd00c87178ff7c825cdb9310fb070caaca2f2299bf197e63ccf5e5140",
+        "size_bytes": 326195
+      },
+      "prediction_seal": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/prediction_seal.json",
+        "sha256": "e71fcbb549c984b968d3325af0c66a1a317de92bb6f7c8a0d7cd1c94da94fc1f",
+        "size_bytes": 2192
+      },
+      "source_manifest": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_manifest.json",
+        "sha256": "6bc72a4b3c7dae13c39181d28aebe9228fb1049fbe4bf26871b95fb518997a04",
+        "size_bytes": 14523
+      },
+      "source_result": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_result.json",
+        "sha256": "ce1cb3d1844516416ad53b5353cc9c0b55812ddb12d3d50b57a4da45698664d0",
+        "size_bytes": 8879
+      },
+      "target_predictions": {
+        "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/target_predictions.npz",
+        "sha256": "86b5fd6cde97594e96640c98e071862260941bebb21b82d4b65cbd9abdd0f612",
+        "size_bytes": 18280280
+      }
+    }
+  },
+  "schema_version": 1
+}
