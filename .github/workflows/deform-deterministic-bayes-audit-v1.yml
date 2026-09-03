@@ -11,6 +11,7 @@ on:
       - ".github/workflows/deform-deterministic-bayes-audit-v1.yml"
       - "scripts/science/audit_deform_deterministic_bayes_v1.py"
       - "tests/test_deform_deterministic_bayes_v1.py"
+      - "results/science/deform_deterministic_bayes_audit_v1/**"
   workflow_dispatch:
 
 permissions:
