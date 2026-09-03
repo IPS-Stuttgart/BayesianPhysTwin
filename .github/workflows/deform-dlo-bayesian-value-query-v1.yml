@@ -1,0 +1,122 @@
+name: deform-dlo-bayesian-value-query-v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/bayesian-value-nonlinear-query-v1
+    paths:
+      - .github/workflows/deform-dlo-bayesian-value-query-v1.yml
+      - experiments/deform_dlo_bayesian_value_query_v1/**
+      - scripts/remote/run_deform_dlo_bayesian_value_query_v1.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo-bayesian-value-query-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  inventory-retained-evidence:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Verify exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+
+      - name: Inventory immutable DLO4/DLO5 workflow cache
+        shell: bash
+        env:
+          CACHE_ROOT: /home/github-runner/.cache/workflows/deform-dlo45/runs
+          DATA_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+        run: |
+          set -euo pipefail
+          mkdir -p build/deform-dlo-bayesian-value-query-v1
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          from pathlib import Path
+
+          cache_root = Path(os.environ["CACHE_ROOT"])
+          data_root = Path(os.environ["DATA_ROOT"])
+          output = Path("build/deform-dlo-bayesian-value-query-v1/inventory.json")
+
+          if not cache_root.is_dir():
+              raise SystemExit(f"retained cache root is missing: {cache_root}")
+          if not data_root.is_dir():
+              raise SystemExit(f"DEFORM data root is missing: {data_root}")
+
+          interesting_suffixes = {".json", ".npz", ".npy", ".pt", ".pth", ".log"}
+          interesting_tokens = (
+              "prediction",
+              "target",
+              "trajectory",
+              "model",
+              "checkpoint",
+              "result",
+              "seal",
+              "method",
+              "source",
+              "score",
+          )
+          records: list[dict[str, object]] = []
+          for path in sorted(cache_root.rglob("*")):
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(cache_root)
+              depth = len(relative.parts)
+              lower = path.name.lower()
+              if depth > 8:
+                  continue
+              if path.suffix.lower() not in interesting_suffixes:
+                  continue
+              if not any(token in lower for token in interesting_tokens):
+                  continue
+              stat = path.stat()
+              records.append(
+                  {
+                      "path": str(path),
+                      "relative_path": str(relative),
+                      "size_bytes": stat.st_size,
+                      "mtime_ns": stat.st_mtime_ns,
+                  }
+              )
+
+          payload = {
+              "schema": "bayesian-phystwin.deform-dlo45-retained-cache-inventory",
+              "schema_version": 1,
+              "github_sha": os.environ.get("GITHUB_SHA", ""),
+              "runner_name": os.environ.get("RUNNER_NAME", ""),
+              "cache_root": str(cache_root),
+              "data_root": str(data_root),
+              "cache_run_directories": [
+                  str(path)
+                  for path in sorted(cache_root.iterdir())
+                  if path.is_dir()
+              ],
+              "matching_file_count": len(records),
+              "files": records,
+          }
+          output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload cache inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: deform-dlo-bayesian-value-query-v1-inventory
+          path: build/deform-dlo-bayesian-value-query-v1/inventory.json
+          if-no-files-found: error
+          retention-days: 14
