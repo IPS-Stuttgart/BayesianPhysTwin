@@ -17,7 +17,7 @@ concurrency:
 
 env:
   DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
-  REQUEST_PATH: .github/requests/deform360-heldout-query-value-v7-20260903-r1.json
+  REQUEST_PATH: .github/requests/deform360-heldout-query-value-v7-20260903-r2.json
   V7_RUNNER: control/scripts/science/run_deform360_heldout_query_value_v7.py
   V7_PAYLOAD: control/scripts/science/run_deform360_heldout_query_value_v7.py.gz
   V7_PROTOCOL: control/protocols/deform360_heldout_query_value_v7.json
@@ -109,7 +109,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          REQUEST="control/${REQUEST_PATH}" python - <<'PY'
+          REQUEST="control/${REQUEST_PATH}" python3 - <<'PY'
           import json, os, subprocess
           from pathlib import Path
           request = json.loads(Path(os.environ["REQUEST"]).read_text())
@@ -233,7 +233,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
           name: deform360-heldout-query-value-v7-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.OUTPUT_ROOT }}
+          path: ${{ runner.temp }}/deform360-v7-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 90
 
