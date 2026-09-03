@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Hosted-workflow path shim for the compression experiment."""
 
+# ruff: noqa: I001
 import runpy
 from pathlib import Path
 
