@@ -79,7 +79,10 @@ jobs:
           python -m ruff check \
             scripts/science/run_deform360_dependence_robustness_v1.py \
             tests/test_deform360_dependence_robustness_v1.py
-          python -m ruff format --check \
+          python -m ruff format \
+            scripts/science/run_deform360_dependence_robustness_v1.py \
+            tests/test_deform360_dependence_robustness_v1.py
+          git diff --exit-code -- \
             scripts/science/run_deform360_dependence_robustness_v1.py \
             tests/test_deform360_dependence_robustness_v1.py
 
