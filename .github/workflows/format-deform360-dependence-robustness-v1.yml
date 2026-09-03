@@ -1,0 +1,85 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Format Deform360 dependence robustness v1
+
+on:
+  push:
+    branches:
+      - science/deform360-same-mean-robustness-v1
+    paths:
+      - .github/requests/deform360-dependence-robustness-format-v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform360-dependence-robustness-v1
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Validate one-shot request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/science/deform360-same-mean-robustness-v1
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/deform360-dependence-robustness-format-v1.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path('.github/requests/deform360-dependence-robustness-format-v1.json')
+          value = json.loads(path.read_text(encoding='utf-8'))
+          expected = {
+              'schema': 'bayesian-phystwin/deform360-dependence-robustness-format-request-v1',
+              'target_path': 'scripts/science/run_deform360_dependence_robustness_v1.py',
+              'formatter': 'ruff==0.14.14',
+              'expected_blob_sha1': 'e73f661cd0319934bfb59a291b43b2ff138007ca',
+              'expected_parent_revision': subprocess.check_output(
+                  ['git', 'rev-parse', f"{os.environ['GITHUB_SHA']}^"], text=True
+              ).strip(),
+          }
+          if value != expected:
+              raise SystemExit(f'invalid formatting request: {value!r}')
+          PY
+      - name: Apply exact Ruff formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.14.14
+          python -m ruff format scripts/science/run_deform360_dependence_robustness_v1.py
+          test "$(git hash-object scripts/science/run_deform360_dependence_robustness_v1.py)" = \
+            e73f661cd0319934bfb59a291b43b2ff138007ca
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = scripts/science/run_deform360_dependence_robustness_v1.py
+          python -m py_compile scripts/science/run_deform360_dependence_robustness_v1.py
+          python scripts/science/run_deform360_dependence_robustness_v1.py --self-test
+      - name: Commit exact formatted script
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/science/run_deform360_dependence_robustness_v1.py
+          git commit -m 'Format Deform360 robustness runner'
+          git push origin HEAD:science/deform360-same-mean-robustness-v1
