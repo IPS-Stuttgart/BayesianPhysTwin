@@ -1,0 +1,248 @@
+{
+  "aggregate": {
+    "dlo_count": 4,
+    "equal_dlo_base_mean_l1_m": 0.008450922091103586,
+    "equal_dlo_deterministic_mean_l1_m": 0.007746798186999596,
+    "equal_dlo_relative_improvement": 0.08331918061879089,
+    "maximum_deterministic_bayesian_point_difference_m": 0.0,
+    "trajectory_count": 56,
+    "wins": 56
+  },
+  "audit_id": "deform-deterministic-bayes-audit-v1-2026-09-03",
+  "contract": "deform-deterministic-bayes-point-equivalence-audit-v1",
+  "decision": {
+    "bayesian_point_accuracy_unique": false,
+    "bayesian_value_attribution": "predictive covariance and joint dependence, not the ridge point mean",
+    "matched_deterministic_point_equivalence_supported": true,
+    "paper_claim_supported": true,
+    "residual_adapter_accuracy_supported": true
+  },
+  "information_boundary": {
+    "audit_class": "retrospective-matched-deterministic-equivalence",
+    "existing_sealed_predictions_only": true,
+    "original_artifacts_mutated": false,
+    "physical_model_retrained": false,
+    "public_real_data_only": true,
+    "residual_model_refit": false,
+    "target_calibration": false,
+    "target_selection": false
+  },
+  "panels": [
+    {
+      "artifact_sha256": {
+        "evaluation_manifest": "de777b105ebb7bfde500667e0f5397ccdda18b106cd2065d0ef223f7f4e92cdd",
+        "point_model": "0376e95bc144d435d61fed14f5d40222978958dd2954ac43c9117588437f8034",
+        "predictions": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b"
+      },
+      "base_mean_l1_m": 0.008746962326219684,
+      "bayesian_mean_l1_m": 0.007860559253359958,
+      "case_count": 14,
+      "checks": {
+        "base_score_matches_frozen_result": true,
+        "candidate_score_matches_frozen_result": true,
+        "deterministic_bayesian_point_equivalence": true,
+        "deterministic_score_matches_bayesian": true,
+        "win_count_matches_frozen_result": true
+      },
+      "deterministic_mean_l1_m": 0.007860559253359958,
+      "deterministic_reconstruction": {
+        "covariance_arrays_read": false,
+        "elapsed_seconds": 0.0789047300349921,
+        "seconds_per_trajectory": 0.005636052145356578
+      },
+      "dlo": "DLO2",
+      "horizon_l1_m": {
+        "base": {
+          "early": 0.007239500581656865,
+          "late": 0.009783735603531359,
+          "middle": 0.009217650793470826
+        },
+        "bayesian": {
+          "early": 0.006479327779928443,
+          "late": 0.008819549879117594,
+          "middle": 0.008282800101033834
+        },
+        "deterministic": {
+          "early": 0.006479327779928443,
+          "late": 0.008819549879117594,
+          "middle": 0.008282800101033834
+        }
+      },
+      "maximum_case_ratio": 0.9419249083983519,
+      "passed": true,
+      "point_equivalence": {
+        "array_equal": true,
+        "max_abs_difference_m": 0.0,
+        "tolerance_m": 1e-12,
+        "within_tolerance": true
+      },
+      "relative_improvement": 0.10133838923744597,
+      "wins": 14
+    },
+    {
+      "artifact_sha256": {
+        "evaluation_manifest": "c4069ef71a193a0071526bb8c49cf457cff80ec6828a15b65444126a3b9747df",
+        "point_model": "4d0669cd1bb6b505709e075d1099587b4d78951cbdc8de4425c1710bd84a1692",
+        "predictions": "4f6ce87c0958f3ee125a4800c058153b15081d8ff19b3dfb260025e266991fe3"
+      },
+      "base_mean_l1_m": 0.007051789640964592,
+      "bayesian_mean_l1_m": 0.006346656652054402,
+      "case_count": 14,
+      "checks": {
+        "base_score_matches_frozen_result": true,
+        "candidate_score_matches_frozen_result": true,
+        "deterministic_bayesian_point_equivalence": true,
+        "deterministic_score_matches_bayesian": true,
+        "win_count_matches_frozen_result": true
+      },
+      "deterministic_mean_l1_m": 0.006346656652054402,
+      "deterministic_reconstruction": {
+        "covariance_arrays_read": false,
+        "elapsed_seconds": 0.0752463800017722,
+        "seconds_per_trajectory": 0.005374741428698014
+      },
+      "dlo": "DLO3",
+      "horizon_l1_m": {
+        "base": {
+          "early": 0.006781998255290128,
+          "late": 0.007319860197236732,
+          "middle": 0.0070535104703669145
+        },
+        "bayesian": {
+          "early": 0.006095273077463435,
+          "late": 0.006612162506602,
+          "middle": 0.006332534372097772
+        },
+        "deterministic": {
+          "early": 0.006095273077463435,
+          "late": 0.006612162506602,
+          "middle": 0.006332534372097772
+        }
+      },
+      "maximum_case_ratio": 0.9423317332362335,
+      "passed": true,
+      "point_equivalence": {
+        "array_equal": true,
+        "max_abs_difference_m": 0.0,
+        "tolerance_m": 1e-12,
+        "within_tolerance": true
+      },
+      "relative_improvement": 0.09999348035199439,
+      "wins": 14
+    },
+    {
+      "artifact_sha256": {
+        "evaluation_manifest": "10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d",
+        "point_model": "8d56aac0bb8c98df847854450a102eb9939f0f7cb385b2d093f653f6c27c0887",
+        "predictions": "b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b"
+      },
+      "base_mean_l1_m": 0.009954855613252654,
+      "bayesian_mean_l1_m": 0.00895317154556605,
+      "case_count": 14,
+      "checks": {
+        "base_score_matches_frozen_result": true,
+        "candidate_score_matches_frozen_result": true,
+        "deterministic_bayesian_point_equivalence": true,
+        "deterministic_score_matches_bayesian": true,
+        "win_count_matches_frozen_result": true
+      },
+      "deterministic_mean_l1_m": 0.00895317154556605,
+      "deterministic_reconstruction": {
+        "covariance_arrays_read": false,
+        "elapsed_seconds": 0.07437044603284448,
+        "seconds_per_trajectory": 0.005312174716631749
+      },
+      "dlo": "DLO4",
+      "horizon_l1_m": {
+        "base": {
+          "early": 0.008816653520581719,
+          "late": 0.010782661186193785,
+          "middle": 0.01026525213298245
+        },
+        "bayesian": {
+          "early": 0.007793210895865658,
+          "late": 0.009829706025198323,
+          "middle": 0.00923659771563417
+        },
+        "deterministic": {
+          "early": 0.007793210895865658,
+          "late": 0.009829706025198323,
+          "middle": 0.00923659771563417
+        }
+      },
+      "maximum_case_ratio": 0.9421759903621103,
+      "passed": true,
+      "point_equivalence": {
+        "array_equal": true,
+        "max_abs_difference_m": 0.0,
+        "tolerance_m": 1e-12,
+        "within_tolerance": true
+      },
+      "relative_improvement": 0.10062266160375913,
+      "wins": 14
+    },
+    {
+      "artifact_sha256": {
+        "evaluation_manifest": "48bd004dbba2161609ada67ec76369a9271fa6899624c1ba1a84b747654e6b7d",
+        "point_model": "701efadf241cb3840df53bc88fc81f0eee59104a7479d64943627271b449af26",
+        "predictions": "86b5fd6cde97594e96640c98e071862260941bebb21b82d4b65cbd9abdd0f612"
+      },
+      "base_mean_l1_m": 0.008050080783977408,
+      "bayesian_mean_l1_m": 0.007826805297017975,
+      "case_count": 14,
+      "checks": {
+        "base_score_matches_frozen_result": true,
+        "candidate_score_matches_frozen_result": true,
+        "deterministic_bayesian_point_equivalence": true,
+        "deterministic_score_matches_bayesian": true,
+        "win_count_matches_frozen_result": true
+      },
+      "deterministic_mean_l1_m": 0.007826805297017975,
+      "deterministic_reconstruction": {
+        "covariance_arrays_read": false,
+        "elapsed_seconds": 0.07235077599762008,
+        "seconds_per_trajectory": 0.005167912571258577
+      },
+      "dlo": "DLO5",
+      "horizon_l1_m": {
+        "base": {
+          "early": 0.005576949056423663,
+          "late": 0.00953626075789274,
+          "middle": 0.009037032537615826
+        },
+        "bayesian": {
+          "early": 0.0053992294966428295,
+          "late": 0.009273543873330885,
+          "middle": 0.008807642521080213
+        },
+        "deterministic": {
+          "early": 0.0053992294966428295,
+          "late": 0.009273543873330885,
+          "middle": 0.008807642521080213
+        }
+      },
+      "maximum_case_ratio": 0.9840983944891828,
+      "passed": true,
+      "point_equivalence": {
+        "array_equal": true,
+        "max_abs_difference_m": 0.0,
+        "tolerance_m": 1e-12,
+        "within_tolerance": true
+      },
+      "relative_improvement": 0.027735807000077883,
+      "wins": 14
+    }
+  ],
+  "passed": true,
+  "schema_version": 1,
+  "source_revision": "9c126bf3a0429076dee26ef84245ac2428a812b3",
+  "workflow_receipt": {
+    "artifact_digest": "sha256:8fb75fddc7a335b633edfc624ecaa718f7760612259ded8dc8f0a707a0a67832",
+    "artifact_id": 9890938371,
+    "numpy": "1.24.3",
+    "python": "3.10.12",
+    "required_runner_label": "gpuserver4090",
+    "run_id": 33749453799,
+    "runner_name": "workstation1"
+  }
+}
