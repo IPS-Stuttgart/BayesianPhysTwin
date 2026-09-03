@@ -100,8 +100,9 @@ def test_case_analysis_uses_frozen_horizon_scales_and_common_noise() -> None:
     assert result["block_count"] == 12
     assert result["future_frame_count"] == 6
     assert result["track_count"] == 2
-    assert result["mean_total_correlation_nats"] > (
-        result["mean_raw_total_correlation_nats"]
+    assert (
+        result["mean_total_correlation_nats"]
+        > (result["mean_raw_total_correlation_nats"])
     )
     assert result["rank1_relative_total_correlation_error"] == pytest.approx(0.0)
 

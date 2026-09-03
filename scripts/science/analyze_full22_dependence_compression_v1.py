@@ -16,9 +16,7 @@ from typing import Any, Final, TypeAlias, cast
 import numpy as np
 from numpy.typing import NDArray
 
-PROTOCOL_SCHEMA: Final = (
-    "bayesian-phystwin/full22-dependence-compression-diagnostic-v1"
-)
+PROTOCOL_SCHEMA: Final = "bayesian-phystwin/full22-dependence-compression-diagnostic-v1"
 PREDICTION_MANIFEST_CONTRACT: Final = (
     "bayesian-phystwin-full22-discrepancy-prediction-manifest"
 )
@@ -410,16 +408,12 @@ def analyze(
         mean_total >= float(gate["minimum_equal_case_mean_total_correlation_nats"])
         and threshold_fraction
         >= float(
-            gate[
-                "minimum_case_fraction_with_mean_total_correlation_at_least_0_01_nats"
-            ]
+            gate["minimum_case_fraction_with_mean_total_correlation_at_least_0_01_nats"]
         )
     )
     local_rank1_supported = bool(
         median_rank1_error
-        <= float(
-            gate["maximum_median_case_rank1_relative_total_correlation_error"]
-        )
+        <= float(gate["maximum_median_case_rank1_relative_total_correlation_error"])
     )
     dense_available = bool(analysis["dense_cross_track_covariance_available"])
     report: dict[str, Any] = {
@@ -462,16 +456,9 @@ def analyze(
             "case_fraction_with_mean_total_correlation_at_least_0_01_nats": (
                 threshold_fraction
             ),
-            "median_case_rank1_relative_total_correlation_error": (
-                median_rank1_error
-            ),
+            "median_case_rank1_relative_total_correlation_error": (median_rank1_error),
             "mean_case_rank1_anisotropic_trace_fraction": float(
-                np.mean(
-                    [
-                        row["mean_rank1_anisotropic_trace_fraction"]
-                        for row in cases
-                    ]
-                )
+                np.mean([row["mean_rank1_anisotropic_trace_fraction"] for row in cases])
             ),
         },
         "gates": {
@@ -480,7 +467,9 @@ def analyze(
             "whole_object_dependence_testable": dense_available,
             "strict_compression_supported": False,
             "headline_fused_claim_supported": bool(
-                dependence_signal_supported and local_rank1_supported and dense_available
+                dependence_signal_supported
+                and local_rank1_supported
+                and dense_available
             ),
             "realized_outcome_comparison_authorized": False,
         },
@@ -558,7 +547,9 @@ def write_result(output_dir: Path, report: Mapping[str, Any]) -> None:
             path.name: _file_sha256(path) for path in (result_path, report_path)
         }
         (temporary / "SHA256SUMS").write_text(
-            "".join(f"{digest}  {name}\n" for name, digest in sorted(checksums.items())),
+            "".join(
+                f"{digest}  {name}\n" for name, digest in sorted(checksums.items())
+            ),
             encoding="ascii",
         )
         os.replace(temporary, output)

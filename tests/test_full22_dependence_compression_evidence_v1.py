@@ -7,9 +7,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = (
-    ROOT / "results" / "science" / "full22_dependence_compression_diagnostic_v1"
-)
+EVIDENCE = ROOT / "results" / "science" / "full22_dependence_compression_diagnostic_v1"
 
 
 def _load(name: str) -> dict[str, object]:
@@ -93,9 +91,11 @@ def test_recorded_file_hashes_match_verification() -> None:
     result = verification["result"]
     assert isinstance(result, dict)
 
-    assert hashlib.sha256((EVIDENCE / "result.json").read_bytes()).hexdigest() == (
-        result["file_sha256"]
+    assert (
+        hashlib.sha256((EVIDENCE / "result.json").read_bytes()).hexdigest()
+        == (result["file_sha256"])
     )
-    assert hashlib.sha256((EVIDENCE / "report.md").read_bytes()).hexdigest() == (
-        result["report_file_sha256"]
+    assert (
+        hashlib.sha256((EVIDENCE / "report.md").read_bytes()).hexdigest()
+        == (result["report_file_sha256"])
     )
