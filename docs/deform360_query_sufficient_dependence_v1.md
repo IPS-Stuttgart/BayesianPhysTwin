@@ -116,3 +116,16 @@ queries. It does not preserve the complete tactile-field covariance, establish
 query calibration, test the posterior-conditioning theorem on Deform360,
 demonstrate a real Prob4D perception provider, establish unseen-object transfer,
 or authorize deployment safety or a paper claim automatically.
+
+## Exact-bound mirror execution
+
+The verified official snapshot remains the normative source. Because
+`gpuserver4090` is occupied by the separately authorized PoseIt archive hash, a
+second workflow may use `/mnt/lexar4tb/datasets/deform360` on `gpuserver6000`
+only as an operational carrier mirror. The mirror path is not accepted on name
+or directory layout alone. Every selected robot, tactile, and median numeric
+carrier and every bound action must reproduce the immutable 92-object parent
+receipts; any absent or changed bound carrier stops the run. Extra files, caches,
+and episodes are inventoried but never selected or numerically opened. The
+mirror workflow cancels the still-queued official-root execution before the
+numerical job is admitted, preventing duplicate evaluation.

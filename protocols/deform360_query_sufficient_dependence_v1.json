@@ -1,100 +1,103 @@
 {
-  "schema": "bayesian-phystwin/deform360-query-sufficient-dependence-protocol-v1",
-  "schema_version": 1,
-  "protocol_id": "deform360-query-sufficient-dependence-v1",
-  "status": "frozen-before-execution",
+  "claim_boundary": "This retrospective study tests whether the dependence advantage already established on 92 bound public Deform360 objects can be retained by the minimum latent subspace sufficient for the five registered predictive queries. It does not preserve the full tactile-field covariance, establish query calibration, open a fresh cohort, demonstrate a real Prob4D perception provider, establish a Bayesian conditioning posterior on Deform360, or authorize deployment safety or a paper claim automatically.",
   "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
-  "source_bindings": {
-    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
-    "original_v6_runner_path": "scripts/science/run_deform360_dependence_query_v6.py",
-    "original_v6_runner_git_blob_sha1": "b5c2b219f083d3f3af578a840194829bacd56e3e",
-    "recovery_runner_path": "scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py",
-    "recovery_runner_git_blob_sha1": "0955ad7ce0c176e7538bd5b91cc36e3444564be5",
-    "parent_confirmation_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
-    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
-    "prob4d_revision": "25d7fc1c363892f432c4f3ddf15665fc20ab727e",
-    "prob4d_kernel_path": "src/prob4d/query_preserving_compression.py",
-    "prob4d_kernel_git_blob_sha1": "06cd938e5c705d8fab62eaf8338baa6bbd40f5c5"
-  },
-  "reference_result": {
-    "repository": "IPS-Stuttgart/BayesianPhysTwin",
-    "workflow_run_id": 33528032875,
-    "artifact_id": 9811194776,
-    "artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
-    "result_json_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
-    "result_sha256": "d430731e56ce470a5e0df8fbd3bc13dea83763beccd2df06d86cde2365d4ee36",
-    "execution_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
-    "object_count": 92,
-    "dependence_value_supported": true,
-    "query_calibration_supported": false
-  },
   "evaluation": {
+    "absolute_rank_tolerance": 1e-15,
+    "bootstrap_repetitions": 10000,
+    "complete_query_covariance_parity_required": true,
+    "factor_payload_definition": "number of float64 entries in the materialized shared factor; unchanged diagonal, means, and metadata excluded",
+    "matched_rank_energy_control_required": true,
+    "maximum_portfolio_rank": 5,
+    "maximum_query_loss_fraction": 1e-10,
+    "metric_parity_absolute_tolerance": 1e-10,
+    "prob4d_and_direct_projection_agreement_required": true,
+    "projector_absolute_tolerance": 1e-08,
     "query_bank": [
       {
-        "name": "total_load",
+        "definition": "mean normalized tactile response over every pooled sensor cell",
         "event": "upper",
-        "definition": "mean normalized tactile response over every pooled sensor cell"
+        "name": "total_load"
       },
       {
-        "name": "sensor_imbalance",
+        "definition": "difference between the first and last pooled tactile sensor means",
         "event": "absolute",
-        "definition": "difference between the first and last pooled tactile sensor means"
+        "name": "sensor_imbalance"
       },
       {
-        "name": "horizontal_balance",
+        "definition": "right-half minus left-half pooled tactile response",
         "event": "absolute",
-        "definition": "right-half minus left-half pooled tactile response"
+        "name": "horizontal_balance"
       },
       {
-        "name": "vertical_balance",
+        "definition": "lower-half minus upper-half pooled tactile response",
         "event": "absolute",
-        "definition": "lower-half minus upper-half pooled tactile response"
+        "name": "vertical_balance"
       },
       {
-        "name": "center_periphery",
+        "definition": "center-region mean minus perimeter-region mean",
         "event": "upper",
-        "definition": "center-region mean minus perimeter-region mean"
+        "name": "center_periphery"
       }
     ],
-    "maximum_portfolio_rank": 5,
-    "relative_rank_tolerance": 1e-13,
-    "absolute_rank_tolerance": 1e-15,
-    "maximum_query_loss_fraction": 1e-10,
-    "relative_eigenspace_tolerance": 1e-12,
     "query_covariance_absolute_tolerance": 1e-10,
     "query_covariance_relative_tolerance": 1e-10,
-    "metric_parity_absolute_tolerance": 1e-10,
-    "projector_absolute_tolerance": 1e-8,
-    "bootstrap_repetitions": 10000,
     "random_seed": 260903,
-    "same_point_predictor_required": true,
-    "same_full_covariance_required": true,
-    "same_source_calibration_required": true,
+    "relative_eigenspace_tolerance": 1e-12,
+    "relative_rank_tolerance": 1e-13,
     "same_decision_rule_required": true,
-    "complete_query_covariance_parity_required": true,
-    "prob4d_and_direct_projection_agreement_required": true,
-    "matched_rank_energy_control_required": true,
-    "factor_payload_definition": "number of float64 entries in the materialized shared factor; unchanged diagonal, means, and metadata excluded",
+    "same_full_covariance_required": true,
+    "same_point_predictor_required": true,
+    "same_source_calibration_required": true,
     "simple_cache_baselines_required": [
       "full 5x5 registered-query covariance",
       "symmetric 5x5 registered-query covariance",
       "five scalar query variances used by the frozen decision rule"
     ]
   },
-  "information_boundary": {
-    "retrospective_target_reuse": true,
-    "target_outcomes_may_tune_projection": false,
-    "target_outcomes_may_select_rank": false,
-    "target_outcomes_may_select_queries": false,
-    "camera_pixels_may_open": false,
-    "geometry_or_point_cloud_may_open": false,
-    "unbound_numeric_payloads_may_open": false,
-    "new_measurements_collected": false,
-    "full_field_covariance_preservation_claimed": false,
-    "registered_query_portfolio_covariance_preservation_claimed": true
-  },
-  "claim_boundary": "This retrospective study tests whether the dependence advantage already established on 92 bound public Deform360 objects can be retained by the minimum latent subspace sufficient for the five registered predictive queries. It does not preserve the full tactile-field covariance, establish query calibration, open a fresh cohort, demonstrate a real Prob4D perception provider, establish a Bayesian conditioning posterior on Deform360, or authorize deployment safety or a paper claim automatically.",
-  "new_measurements_collected": false,
+  "exact_bound_mirror_roots": [
+    "/mnt/lexar4tb/datasets/deform360"
+  ],
   "fresh_confirmation_authorized": false,
-  "paper_claim_authorized": false
+  "information_boundary": {
+    "camera_pixels_may_open": false,
+    "full_field_covariance_preservation_claimed": false,
+    "geometry_or_point_cloud_may_open": false,
+    "new_measurements_collected": false,
+    "registered_query_portfolio_covariance_preservation_claimed": true,
+    "retrospective_target_reuse": true,
+    "target_outcomes_may_select_queries": false,
+    "target_outcomes_may_select_rank": false,
+    "target_outcomes_may_tune_projection": false,
+    "unbound_numeric_payloads_may_open": false
+  },
+  "new_measurements_collected": false,
+  "paper_claim_authorized": false,
+  "protocol_id": "deform360-query-sufficient-dependence-v1",
+  "reference_result": {
+    "artifact_id": 9811194776,
+    "artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+    "dependence_value_supported": true,
+    "execution_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "object_count": 92,
+    "query_calibration_supported": false,
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "result_json_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+    "result_sha256": "d430731e56ce470a5e0df8fbd3bc13dea83763beccd2df06d86cde2365d4ee36",
+    "workflow_run_id": 33528032875
+  },
+  "schema": "bayesian-phystwin/deform360-query-sufficient-dependence-protocol-v1",
+  "schema_version": 1,
+  "source_bindings": {
+    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "original_v6_runner_git_blob_sha1": "b5c2b219f083d3f3af578a840194829bacd56e3e",
+    "original_v6_runner_path": "scripts/science/run_deform360_dependence_query_v6.py",
+    "parent_confirmation_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "prob4d_kernel_git_blob_sha1": "06cd938e5c705d8fab62eaf8338baa6bbd40f5c5",
+    "prob4d_kernel_path": "src/prob4d/query_preserving_compression.py",
+    "prob4d_revision": "25d7fc1c363892f432c4f3ddf15665fc20ab727e",
+    "recovery_runner_git_blob_sha1": "0955ad7ce0c176e7538bd5b91cc36e3444564be5",
+    "recovery_runner_path": "scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py"
+  },
+  "status": "frozen-before-execution"
 }

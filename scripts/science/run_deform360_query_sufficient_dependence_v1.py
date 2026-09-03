@@ -368,8 +368,15 @@ def validate_protocol(
         raise ValueError("unexpected query-sufficient protocol schema")
     if protocol.get("status") != "frozen-before-execution":
         raise ValueError("query-sufficient protocol is not frozen")
-    if Path(str(protocol.get("dataset_root"))) != data_root:
-        raise ValueError("dataset root changed")
+    allowed_roots = {Path(str(protocol.get("dataset_root")))}
+    mirror_roots = protocol.get("exact_bound_mirror_roots", [])
+    if not isinstance(mirror_roots, list) or not all(
+        isinstance(value, str) for value in mirror_roots
+    ):
+        raise ValueError("exact-bound mirror roots are invalid")
+    allowed_roots.update(Path(value) for value in mirror_roots)
+    if data_root not in allowed_roots:
+        raise ValueError("dataset root is not an authorized exact-bound carrier root")
     if protocol.get("paper_claim_authorized") is not False:
         raise ValueError("protocol may not self-authorize a paper claim")
     if protocol.get("fresh_confirmation_authorized") is not False:
@@ -1004,10 +1011,12 @@ def run(
     )
     qpc = load_prob4d_compressor(prob4d_root)
     reference_protocol = v6.read_json(reference_protocol_path)
+    validation_protocol = json.loads(json.dumps(reference_protocol))
+    validation_protocol["dataset_root"] = str(data_root)
     parent_result = v6.read_json(parent_result_path)
     parent_protocol = v6.read_json(parent_protocol_path)
     v6.validate_protocol(
-        reference_protocol,
+        validation_protocol,
         parent_control_root=parent_control_root,
         parent_protocol_path=parent_protocol_path,
         data_root=data_root,
@@ -1431,6 +1440,11 @@ def run(
         "source_bindings": protocol["source_bindings"],
         "reference_result": protocol["reference_result"],
         "information_boundary": {
+            "official_dataset_root": str(protocol["dataset_root"]),
+            "operational_dataset_root": str(data_root),
+            "exact_bound_mirror_used": (
+                str(data_root) != str(protocol["dataset_root"])
+            ),
             "retrospective_target_reuse": True,
             "exact_reference_study_reproduced": True,
             "exact_parent_bound_numeric_carriers_reused": True,
