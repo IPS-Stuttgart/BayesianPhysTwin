@@ -1,0 +1,68 @@
+{
+  "schema": "bayesian-phystwin/deform360-decision-sufficient-compression-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-decision-sufficient-compression-v1-20260902",
+  "status": "frozen-before-compression-evaluation",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "parent_dependence_study": {
+    "workflow_run_id": 33528032875,
+    "artifact_id": 9811194776,
+    "artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+    "execution_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "parent_confirmation_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "parent_confirmation_artifact_id": 9738998271,
+    "parent_confirmation_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+    "parent_result_sha256": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7",
+    "parent_readiness_sha256": "58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e"
+  },
+  "scientific_hypothesis": "For Gaussian physical beliefs with covariance D + U U^T and a fixed linear query portfolio Q, projecting U onto range(U^T Q^T) is the minimum-rank orthogonal factor projection that preserves the complete joint distribution of QX. It therefore preserves every registered query score and execute-versus-fallback decision exactly, whereas an equal-rank spectral projection need not.",
+  "evaluation": {
+    "object_count": 92,
+    "query_names": [
+      "total_load",
+      "sensor_imbalance",
+      "horizontal_balance",
+      "vertical_balance",
+      "center_periphery"
+    ],
+    "representations": [
+      "full_low_rank",
+      "portfolio_sufficient",
+      "per_query_sufficient",
+      "spectral_rank_matched"
+    ],
+    "same_predictive_mean_required": true,
+    "source_only_query_calibration_required": true,
+    "portfolio_query_covariance_tolerance": 1e-10,
+    "per_query_variance_tolerance": 1e-10,
+    "metric_parity_tolerance": 1e-10,
+    "rank_tolerance_relative": 1e-10,
+    "bootstrap_repetitions": 20000,
+    "bootstrap_seed": 27092026,
+    "minimum_objects_with_strict_per_query_rank_reduction_fraction": 0.95,
+    "minimum_median_per_query_factor_entry_reduction": 2.0
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "point_predictor_may_change": false,
+    "query_bank_may_change": false,
+    "covariance_estimator_may_change": false,
+    "source_calibration_may_change": false,
+    "decision_rule_may_change": false,
+    "target_outcomes_may_select_projection": false,
+    "projection_uses_only_covariance_factor_and_registered_queries": true,
+    "new_measurements_collected": false
+  },
+  "claim_boundary": {
+    "supports_exact_query_distribution_preservation_within_fixed_orthogonal_factor_projection_family": true,
+    "supports_exact_registered_decision_preservation": true,
+    "supports_global_field_covariance_preservation": false,
+    "supports_arbitrary_future_queries": false,
+    "supports_calibration": false,
+    "supports_closed_loop_robot_control": false,
+    "supports_state_of_the_art_prediction": false
+  },
+  "paper_claim_authorized": false
+}
