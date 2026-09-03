@@ -1,0 +1,119 @@
+{
+  "schema": "bayesian-phystwin/deform360-heldout-query-value-protocol-v7",
+  "schema_version": 7,
+  "protocol_id": "deform360-heldout-query-bayesian-value-v7",
+  "status": "frozen-before-v7-target-reexecution",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "lineage": {
+    "bound_carrier_recovery_revision": "0f9312a3cae9f854631d8c61c2893c6527014219",
+    "bound_carrier_recovery_runner_path": "scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py",
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "original_v6_runner_path": "scripts/science/run_deform360_dependence_query_v6.py",
+    "original_v6_runner_sha256": "06c22fc3fe667c4f2f11eddee3dcb1b78b5465b6312136efb010611e1ebab91c",
+    "parent_confirmation_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+    "parent_confirmation_run_id": 33335779766,
+    "parent_confirmation_artifact_id": 9738998271,
+    "parent_confirmation_artifact_sha256": "e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948",
+    "parent_result_json_sha256": "0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7",
+    "parent_readiness_json_sha256": "58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e"
+  },
+  "query_transfer": {
+    "generator": "tensor_product_dct_low_frequency_v1",
+    "field_rows": 6,
+    "field_columns": 16,
+    "query_count": 64,
+    "calibration_query_count": 32,
+    "evaluation_query_count": 32,
+    "mode_order": "ascending total frequency, then sensor mode, row mode, column mode",
+    "weight_normalization": "unit_l1",
+    "constant_mode_event": "upper",
+    "nonconstant_mode_event": "absolute",
+    "split_method": "sha256(seed, query name), ascending digest",
+    "split_seed": 260903,
+    "target_queries_used_for_uncertainty_calibration": false,
+    "source_truth_may_set_each_event_threshold": true
+  },
+  "covariance_arms": {
+    "shared_calibration": [
+      "full_low_rank",
+      "diagonal_marginal_matched",
+      "scrambled_marginal_matched"
+    ],
+    "arm_calibrated": [
+      "full_low_rank",
+      "diagonal_marginal_matched",
+      "scrambled_marginal_matched",
+      "local_diagonal_only",
+      "diagonal_width_matched"
+    ],
+    "full_low_rank": "frozen low-rank-plus-local covariance",
+    "diagonal_marginal_matched": "remove the low-rank factor and transfer its row-wise variance to the diagonal",
+    "scrambled_marginal_matched": "preserve factor-row norms while deterministically permuting row directions and signs",
+    "local_diagonal_only": "delete the low-rank component without transferring its variance",
+    "diagonal_width_matched": "start from the independently calibrated marginal-matched diagonal arm and apply one source-only scalar so its mean calibration-query interval width equals the full arm"
+  },
+  "calibration": {
+    "source_error_centering": "subtract the pooled source residual mean coordinate-wise",
+    "global_variance_scale": "mean squared standardized source error pooled across calibration queries and source windows",
+    "coverage_probability": 0.9,
+    "radius": "pooled empirical absolute-standardized-error quantile over calibration queries and source windows",
+    "shared_regime_reference_arm": "full_low_rank",
+    "shared_regime_reuses_scale_and_radius_for_controls": true,
+    "arm_calibrated_regime_fits_each_non_width_arm_independently": true,
+    "width_matching_uses_target_outcomes": false,
+    "minimum_variance_scale": 1e-08
+  },
+  "evaluation": {
+    "inferential_unit": "physical object",
+    "object_count": 92,
+    "event_threshold_quantile": 0.9,
+    "fallback_cost": 0.1,
+    "decision_rule": "execute when predicted adverse-event probability is no greater than fallback cost; otherwise use exact fallback",
+    "probability_clip": 1e-09,
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 260904,
+    "marginal_parity_tolerance": 1e-12,
+    "width_match_tolerance": 1e-12,
+    "reported_metrics": [
+      "target_query_nanees",
+      "target_90_coverage",
+      "mean_90_interval_width",
+      "query_nll",
+      "event_brier",
+      "event_log_loss",
+      "decision_loss",
+      "decision_regret",
+      "acceptance_fraction",
+      "harmful_accept_fraction_all",
+      "harmful_accept_rate_given_accept"
+    ]
+  },
+  "success_gates": {
+    "complete_92_object_roster": true,
+    "exact_parent_point_result_reproduced": true,
+    "shared_regime_same_mean_coordinate_marginals_and_calibration": true,
+    "exact_32_query_calibration_and_32_query_evaluation_split": true,
+    "full_decision_and_brier_bootstrap_upper_bound_below_zero_against_shared_diagonal_and_scrambled": true,
+    "full_decision_and_brier_bootstrap_upper_bound_below_zero_against_independently_calibrated_diagonal_and_scrambled": true,
+    "full_decision_and_brier_bootstrap_upper_bound_below_zero_against_width_matched_diagonal": true,
+    "scientific_gates_do_not_control_workflow_success": true
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "exact_parent_bound_numeric_carriers_required": true,
+    "live_unbound_numeric_payloads_may_open": false,
+    "point_predictor_may_change": false,
+    "target_outcomes_may_tune_queries": false,
+    "target_outcomes_may_tune_query_split": false,
+    "target_outcomes_may_tune_calibration": false,
+    "target_outcomes_may_select_covariance_arm": false,
+    "camera_pixels_may_open": false,
+    "geometry_or_point_cloud_may_open": false,
+    "new_measurements_collected": false
+  },
+  "paper_claim_authorized": false,
+  "fresh_confirmation_authorized": false,
+  "deployment_claim_authorized": false,
+  "claim_boundary": "Retrospective mechanism evidence on the previously opened 92-object Deform360 tactile cohort. A positive result would show that a frozen joint predictive covariance transfers source-only uncertainty calibration to held-out linear physical queries better than dependence-destroyed controls, and would test whether the advantage survives independent source calibration and average-width matching. It would not establish fresh held-out confirmation, universal calibration, dense 4-D geometry, unseen-object transfer, robot safety, or paper acceptance."
+}
