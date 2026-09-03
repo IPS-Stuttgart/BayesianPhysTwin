@@ -1,0 +1,97 @@
+{
+  "schema": "bayesian-phystwin.tracking-cloth-matched-coverage.v1",
+  "schema_version": 1,
+  "study_id": "tracking-cloth-matched-coverage-retrospective-v1",
+  "base_experiment": {
+    "module": "experiments.tracking_cloth_selective_twin_v1",
+    "expected_result_id": "f4ede897f7ac966ee8258e7f76540f1e6d9547175906186bcd7b22d069a40bf2",
+    "workflow_run_id": 33511626637,
+    "artifact_id": 9811332913,
+    "artifact_digest": "sha256:2bd74c9f31a5d7c59b35f6516e91e208c1def1bf1b7aeaec98f089a23ec69ec5",
+    "compact_file_sha256": {
+      "query_cases.csv": "e8c8177c7e20a12e8a9a6b44533b0d7fd6d38c3d3897e499de2edd327cd53288",
+      "policy_cases.csv": "677c6f74ea3e6e34febf51745344232c00f5abf2722f1bd4cd7c67383e75a502",
+      "result.json": "0dd7e9b55f87b8cd0ac52764bd23e87550da69861b771278e986d4ff1d8d0b1c",
+      "protocol.json": "8faa6437aa0f10e53f33f4c18b326a2efeb271afc79a0fb3d28763ae99d932ba"
+    }
+  },
+  "dataset_root": "/home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526",
+  "outer_split": "leave-one-material-out",
+  "materials": [
+    "cotton",
+    "denim",
+    "polyester",
+    "wool"
+  ],
+  "acceptance_fraction": 0.1,
+  "acceptance_count_per_material": 32,
+  "candidate_arm": "candidate_loss_mm",
+  "fallback_arm": "fallback_loss_mm",
+  "evaluation_arms": {
+    "candidate": "candidate_loss_mm",
+    "map": "map_loss_mm",
+    "last_residual": "last_residual_loss_mm",
+    "nominal": "nominal_loss_mm"
+  },
+  "selectors": [
+    "registered_query_horizon_gate",
+    "random_hash",
+    "lowest_ensemble_spread",
+    "lowest_candidate_fallback_disagreement",
+    "context_ridge",
+    "context_plus_disagreement_ridge",
+    "context_plus_spread_ridge",
+    "context_plus_disagreement_and_spread_ridge",
+    "oracle_matched_coverage"
+  ],
+  "source_model": {
+    "target": "candidate_minus_fallback_mm divided by initial_diameter_mm",
+    "ridge_lambda": 1.0,
+    "context_fields": [
+      "motion_query_horizon",
+      "size",
+      "speed",
+      "grasp"
+    ],
+    "numeric_transform": "log1p for nonnegative spread and disagreement",
+    "standardization": "source-fold mean and population standard deviation",
+    "tie_break": "sha256(selector_id, case_id, tie_break_seed)",
+    "tie_break_seed": 20260903
+  },
+  "primary_comparison": {
+    "candidate_selector": "context_plus_spread_ridge",
+    "comparator_selector": "context_ridge",
+    "arm": "candidate",
+    "metric": "equal-material deployed regret in mm at exactly matched coverage",
+    "support_requires_bootstrap_upper_difference_below_mm": 0.0,
+    "support_requires_no_higher_accepted_practical_harm_fraction": true
+  },
+  "secondary_comparisons": [
+    "context_plus_disagreement_and_spread_ridge versus context_plus_disagreement_ridge",
+    "lowest_ensemble_spread versus matched random selection",
+    "all selectors with candidate, MAP, last-residual, and nominal accepted arms"
+  ],
+  "bootstrap": {
+    "unit": "complete recording",
+    "stratification": "material",
+    "repetitions": 20000,
+    "seed": 20260903,
+    "confidence_level": 0.95
+  },
+  "random_null": {
+    "repetitions": 20000,
+    "seed": 20260904,
+    "selection": "exactly 32 query cases per material"
+  },
+  "information_boundary": {
+    "retrospective": true,
+    "outcomes_previously_opened": true,
+    "heldout_material_outcomes_used_to_fit_or_rank_nonoracle_selectors": false,
+    "heldout_material_features_used_for_source-frozen_ranking": true,
+    "oracle_uses_heldout_outcomes": true,
+    "raw_trajectory_upload": false,
+    "fresh_confirmation": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "Retrospective matched-coverage ablation on previously opened public Tracking Cloth outcomes. It can test whether source-fitted ensemble spread adds selective value beyond target-blind context at the same 10% coverage. It cannot establish prospective calibration, fresh transfer, closed-loop safety, causal identification, or state of the art."
+}
