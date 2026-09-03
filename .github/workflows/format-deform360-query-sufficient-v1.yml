@@ -1,0 +1,60 @@
+name: Format Deform360 query-sufficient v1
+
+on:
+  push:
+    branches:
+      - science/deform360-query-sufficient-dependence-v1
+    paths:
+      - .github/requests/format-deform360-query-sufficient-v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform360-query-sufficient-v1
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out formatter request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Apply pinned formatter and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status HEAD^ HEAD)
+          test "${#changed[@]}" -eq 2
+          printf '%s\n' "${changed[@]}" | grep -Fx $'A\t.github/workflows/format-deform360-query-sufficient-v1.yml'
+          printf '%s\n' "${changed[@]}" | grep -Fx $'A\t.github/requests/format-deform360-query-sufficient-v1.json'
+          python -m pip install --disable-pip-version-check ruff==0.14.14
+          python -m ruff format \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          python -m ruff check \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          python -m ruff format --check \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          git rm \
+            .github/workflows/format-deform360-query-sufficient-v1.yml \
+            .github/requests/format-deform360-query-sufficient-v1.json
+          git add \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          git diff --cached --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Format query-sufficient dependence evaluator"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
