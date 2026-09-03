@@ -1,0 +1,39 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-matched-coverage-request-v1",
+  "request_id": "deform360-dependence-matched-coverage-audit-20260903-01",
+  "request_sequence": 1,
+  "expected_source_revision": "add6672d79e398f0ceb4640970c6cb2544d6a338",
+  "base_workflow_run_id": 33528032875,
+  "base_artifact_id": 9811194776,
+  "base_artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+  "base_result_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+  "audit_runner_sha256": "da2f0bd470362ccffe5e8f1e797321740e13801102934e6a567ffd5005f939c8",
+  "audit_protocol_sha256": "db19f55da028e047fe0f75d86876a1310cef92e43e500dab75936c303588864e",
+  "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+  "parent_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+  "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0",
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "gpuserver4090"
+  ],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "coverage_grid": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "matched_acceptance_counts_required": true,
+  "exact_base_result_reproduction_required": true,
+  "point_predictor_query_covariance_or_calibration_changed": false,
+  "retrospective_target_reuse": true,
+  "new_measurements_collected": false,
+  "paper_claim_authorized": false
+}
