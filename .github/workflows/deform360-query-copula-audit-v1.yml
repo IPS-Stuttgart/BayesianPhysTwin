@@ -1,0 +1,416 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 exact-query-marginal copula audit v1
+
+on:
+  push:
+    branches:
+      - science/deform360-query-copula-audit-v1
+    paths:
+      - .github/requests/deform360-query-copula-audit-v1.json
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-query-copula-audit-v1
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  AUDIT_ROOT: audit-control
+  RECOVERY_ROOT: recovery-control
+  ORIGINAL_V6_ROOT: original-v6
+  PARENT_CONTROL_ROOT: parent-control
+  FROZEN_ROOT: frozen
+  AUDIT_RUNNER: audit-control/scripts/science/run_deform360_query_copula_audit_v1.py
+  AUDIT_PROTOCOL: audit-control/protocols/deform360_query_copula_audit_v1.json
+  AUDIT_PROTOCOL_SHA256: f6ee777aeb9fe1d38aa289da0518a390365121b01efcb61885c88026dd35e531
+  RECOVERY_RUNNER: recovery-control/scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py
+  ORIGINAL_V6_RUNNER: original-v6/scripts/science/run_deform360_dependence_query_v6.py
+  ORIGINAL_V6_PROTOCOL: original-v6/protocols/deform360_dependence_query_v6.json
+  PARENT_PROTOCOL: parent-control/protocols/deform360_untouched_confirmation_v5.json
+  RECOVERY_REVISION: 28e8a44bfbab9e1556e0f51c53b46e91b8352481
+  ORIGINAL_V6_REVISION: 954538832106d8ded13f1101b3a2b2e855b40513
+  PARENT_CONTROL_REVISION: e409527b8499a225bde8bd7f8c532a30e96548c6
+  FROZEN_REVISION: 25ba91c021124569c4dcf84c66eda5ec088868e0
+  PARENT_ARTIFACT_ID: "9738998271"
+  PARENT_ARTIFACT_SHA256: e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948
+  PARENT_RESULT_SHA256: 0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7
+  PARENT_READINESS_SHA256: 58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e
+  REFERENCE_ARTIFACT_ID: "9811194776"
+  REFERENCE_ARTIFACT_SHA256: 8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a
+  REFERENCE_RESULT_SHA256: c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact proposed audit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Validate the frozen audit implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "numpy==1.26.4" \
+            "pytest==8.4.2" \
+            "ruff==0.14.14"
+          printf '%s  %s\n' \
+            "${AUDIT_PROTOCOL_SHA256}" \
+            protocols/deform360_query_copula_audit_v1.json \
+            | sha256sum --check --strict
+          python -m json.tool protocols/deform360_query_copula_audit_v1.json >/dev/null
+          python -m py_compile \
+            scripts/science/run_deform360_query_copula_audit_v1.py \
+            tests/test_deform360_query_copula_audit_v1.py
+          python scripts/science/run_deform360_query_copula_audit_v1.py --self-test
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_query_copula_audit_v1.py
+          python -m ruff check \
+            scripts/science/run_deform360_query_copula_audit_v1.py \
+            tests/test_deform360_query_copula_audit_v1.py
+          python -m ruff format --check \
+            scripts/science/run_deform360_query_copula_audit_v1.py \
+            tests/test_deform360_query_copula_audit_v1.py
+          git diff --check
+          test -z "$(git status --porcelain=v1)"
+
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      request_path: ${{ steps.request.outputs.request_path }}
+    steps:
+      - name: Check out the add-only request commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+
+      - id: request
+        name: Authorize one exact copula-audit request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/science/deform360-query-copula-audit-v1
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = \
+            $'A\t.github/requests/deform360-query-copula-audit-v1.json'
+          request=.github/requests/deform360-query-copula-audit-v1.json
+          REQUEST_PATH="${request}" BEFORE_SHA="${BEFORE_SHA}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          request_path = Path(os.environ["REQUEST_PATH"])
+          value = json.loads(request_path.read_text(encoding="utf-8"))
+          expected = {
+              "schema": "bayesian-phystwin/deform360-query-copula-audit-request-v1",
+              "request_id": "deform360-query-copula-audit-20260903",
+              "expected_source_revision": os.environ["BEFORE_SHA"],
+              "runner_labels": ["self-hosted", "Linux", "X64", "gpuserver4090"],
+              "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+              "audit_protocol_path": "protocols/deform360_query_copula_audit_v1.json",
+              "audit_protocol_sha256": "f6ee777aeb9fe1d38aa289da0518a390365121b01efcb61885c88026dd35e531",
+              "audit_runner_path": "scripts/science/run_deform360_query_copula_audit_v1.py",
+              "reference_workflow_run_id": 33528032875,
+              "reference_artifact_id": 9811194776,
+              "reference_result_json_sha256": "c73659af65c2b8793fd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+              "all_ten_query_pairs_and_both_boolean_operators_required": True,
+              "exact_empirical_query_marginal_parity_required": True,
+              "exact_single_query_probability_parity_required": True,
+              "retrospective_target_reuse": True,
+              "target_open_before_protocol_design": True,
+              "new_measurements_collected": False,
+              "retain_result_regardless_of_sign": True,
+              "paper_claim_authorized": False,
+          }
+          if value != expected:
+              raise SystemExit("request differs from the exact authorized payload")
+          protocol = Path(value["audit_protocol_path"])
+          runner = Path(value["audit_runner_path"])
+          observed_protocol = hashlib.sha256(protocol.read_bytes()).hexdigest()
+          if observed_protocol != value["audit_protocol_sha256"]:
+              raise SystemExit("audit protocol bytes changed")
+          if not runner.is_file():
+              raise SystemExit("audit runner is absent")
+          PY
+          echo "request_path=${request}" >> "${GITHUB_OUTPUT}"
+
+  evaluate:
+    needs: [contracts, authorize]
+    if: >-
+      always() && needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 300
+    env:
+      REQUEST_PATH: ${{ needs.authorize.outputs.request_path }}
+    steps:
+      - name: Check out audit control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: audit-control
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact completed recovery control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 28e8a44bfbab9e1556e0f51c53b46e91b8352481
+          path: recovery-control
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact original v6 control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 954538832106d8ded13f1101b3a2b2e855b40513
+          path: original-v6
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact parent confirmation control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e409527b8499a225bde8bd7f8c532a30e96548c6
+          path: parent-control
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact frozen point method
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 25ba91c021124569c4dcf84c66eda5ec088868e0
+          path: frozen
+          persist-credentials: false
+          clean: true
+
+      - name: Recover and verify bound parent confirmation evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf parent-evidence parent-evidence.zip
+          mkdir -p parent-evidence
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${PARENT_ARTIFACT_ID}/zip" \
+            --output parent-evidence.zip
+          printf '%s  %s\n' "${PARENT_ARTIFACT_SHA256}" parent-evidence.zip \
+            | sha256sum --check --strict
+          unzip -q parent-evidence.zip -d parent-evidence
+          printf '%s  %s\n' "${PARENT_RESULT_SHA256}" parent-evidence/result.json \
+            | sha256sum --check --strict
+          printf '%s  %s\n' \
+            "${PARENT_READINESS_SHA256}" \
+            parent-evidence/bound-readiness.json \
+            | sha256sum --check --strict
+
+      - name: Recover and verify completed same-mean dependence evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf reference-evidence reference-evidence.zip
+          mkdir -p reference-evidence
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${REFERENCE_ARTIFACT_ID}/zip" \
+            --output reference-evidence.zip
+          printf '%s  %s\n' "${REFERENCE_ARTIFACT_SHA256}" reference-evidence.zip \
+            | sha256sum --check --strict
+          unzip -q reference-evidence.zip -d reference-evidence
+          printf '%s  %s\n' \
+            "${REFERENCE_RESULT_SHA256}" \
+            reference-evidence/result.json \
+            | sha256sum --check --strict
+
+      - name: Prepare isolated numerical runtime and evidence root
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${RUNNER_TEMP}/deform360-query-copula-audit-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/deform360-query-copula-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check \
+            "numpy==1.26.4"
+          mkdir -p -- "${output}"
+          {
+            echo "PYTHON_BIN=${venv}/bin/python"
+            echo "VENV_ROOT=${venv}"
+            echo "OUTPUT_ROOT=${output}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Validate exact lineage and audit scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          test "$(git -C "${RECOVERY_ROOT}" rev-parse HEAD)" = "${RECOVERY_REVISION}"
+          test "$(git -C "${ORIGINAL_V6_ROOT}" rev-parse HEAD)" = "${ORIGINAL_V6_REVISION}"
+          test "$(git -C "${PARENT_CONTROL_ROOT}" rev-parse HEAD)" = "${PARENT_CONTROL_REVISION}"
+          test "$(git -C "${FROZEN_ROOT}" rev-parse HEAD)" = "${FROZEN_REVISION}"
+          printf '%s  %s\n' "${AUDIT_PROTOCOL_SHA256}" "${AUDIT_PROTOCOL}" \
+            | sha256sum --check --strict
+          "${PYTHON_BIN}" -m py_compile \
+            "${AUDIT_RUNNER}" \
+            "${RECOVERY_RUNNER}" \
+            "${ORIGINAL_V6_RUNNER}"
+          "${PYTHON_BIN}" "${AUDIT_RUNNER}" --self-test
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "audit_revision=${GITHUB_SHA}"
+            echo "recovery_revision=$(git -C "${RECOVERY_ROOT}" rev-parse HEAD)"
+            echo "original_v6_revision=$(git -C "${ORIGINAL_V6_ROOT}" rev-parse HEAD)"
+            echo "parent_control_revision=$(git -C "${PARENT_CONTROL_ROOT}" rev-parse HEAD)"
+            echo "frozen_revision=$(git -C "${FROZEN_ROOT}" rev-parse HEAD)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum \
+              "${AUDIT_RUNNER}" \
+              "${AUDIT_PROTOCOL}" \
+              "${RECOVERY_RUNNER}" \
+              "${ORIGINAL_V6_RUNNER}" \
+              reference-evidence/result.json \
+              parent-evidence/result.json \
+              parent-evidence/bound-readiness.json
+            "${PYTHON_BIN}" --version
+            "${PYTHON_BIN}" -c 'import numpy; print("numpy=" + numpy.__version__)'
+            uname -a
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+          cp "${AUDIT_PROTOCOL}" "${OUTPUT_ROOT}/protocol.json"
+          cp "${AUDIT_ROOT}/${REQUEST_PATH}" "${OUTPUT_ROOT}/request.json"
+
+      - name: Run exact-query-marginal copula audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" "${AUDIT_RUNNER}" \
+            --audit-protocol "${AUDIT_PROTOCOL}" \
+            --recovery-runner "${RECOVERY_RUNNER}" \
+            --base-runner "${ORIGINAL_V6_RUNNER}" \
+            --original-protocol "${ORIGINAL_V6_PROTOCOL}" \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --parent-result parent-evidence/result.json \
+            --readiness-json parent-evidence/bound-readiness.json \
+            --data-root "${DATASET_ROOT}" \
+            --parent-control-root "${PARENT_CONTROL_ROOT}" \
+            --frozen-root "${FROZEN_ROOT}" \
+            --reference-result reference-evidence/result.json \
+            --output-json "${OUTPUT_ROOT}/result.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            --output-csv "${OUTPUT_ROOT}/object-results.csv" \
+            | tee "${OUTPUT_ROOT}/console.log"
+
+      - name: Enforce complete audit evidence without sign selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT_JSON="${OUTPUT_ROOT}/result.json" "${PYTHON_BIN}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT_JSON"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          if value.get("status") != "complete":
+              raise SystemExit("copula audit is incomplete")
+          unsigned = dict(value)
+          declared = unsigned.pop("result_sha256", None)
+          observed = hashlib.sha256(
+              json.dumps(
+                  unsigned,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          if declared != observed:
+              raise SystemExit("copula audit result digest is invalid")
+          if value["summary"]["object_count"] != 92:
+              raise SystemExit("copula audit object roster is incomplete")
+          required = (
+              "complete_92_object_roster",
+              "completed_v6_scientific_result_reproduced",
+              "predictive_query_means_identical_by_construction",
+              "empirical_univariate_query_marginals_exactly_identical",
+              "single_query_event_probabilities_exactly_identical",
+              "full_copula_sampling_correlation_within_tolerance",
+              "normal_score_marginal_variance_within_tolerance",
+          )
+          gates = value["decision"]["gates"]
+          failed = [name for name in required if gates.get(name) is not True]
+          if failed:
+              raise SystemExit(f"execution gates failed: {failed}")
+          if value["decision"]["retrospective_mechanism_evidence_only"] is not True:
+              raise SystemExit("retrospective boundary is absent")
+          if value["decision"]["fresh_confirmation_authorized"] is not False:
+              raise SystemExit("audit attempted to authorize fresh confirmation")
+          if value["decision"]["paper_claim_authorized"] is not False:
+              raise SystemExit("audit attempted to self-authorize a paper claim")
+          print(json.dumps(value["decision"], indent=2, sort_keys=True))
+          PY
+          (
+            cd "${OUTPUT_ROOT}"
+            sha256sum \
+              console.log \
+              environment.txt \
+              object-results.csv \
+              protocol.json \
+              report.md \
+              request.json \
+              result.json \
+              > sha256sums.txt
+          )
+
+      - name: Upload complete copula-audit evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-query-copula-audit-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${VENV_ROOT:-}" "${OUTPUT_ROOT:-}"
