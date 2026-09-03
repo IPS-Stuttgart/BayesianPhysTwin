@@ -736,7 +736,6 @@ def robustness_row(
     target_truth = context["target_truth"]
     target_errors = context["target_errors"]
     centered_source_errors = context["centered_source_errors"]
-    source_truth = context["source_truth"]
     bank = context["bank"]
     original_arms = context["arms"]
     query_records = context["queries"]
