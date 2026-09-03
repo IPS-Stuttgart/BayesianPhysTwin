@@ -1,0 +1,122 @@
+name: Patch Deform360 query-sufficient mirror source v1
+
+on:
+  push:
+    branches:
+      - science/deform360-query-sufficient-dependence-v1
+    paths:
+      - .github/requests/patch-deform360-query-sufficient-mirror-source-v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patch-deform360-query-sufficient-mirror-source-v1
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source-patch request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Add exact-bound mirror source support
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-status HEAD^ HEAD)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/patch-deform360-query-sufficient-mirror-source-v1.json'
+          python -m pip install --disable-pip-version-check numpy==1.26.4 pytest ruff==0.14.14
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+
+          def replace_once(text: str, old: str, new: str, *, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one match, found {count}")
+              return text.replace(old, new, 1)
+
+
+          runner_path = Path(
+              "scripts/science/run_deform360_query_sufficient_dependence_v1.py"
+          )
+          runner = runner_path.read_text(encoding="utf-8")
+          runner = replace_once(
+              runner,
+              '''    if Path(str(protocol.get("dataset_root"))) != data_root:\n        raise ValueError("dataset root changed")\n''',
+              '''    allowed_roots = {Path(str(protocol.get("dataset_root")))}\n    mirror_roots = protocol.get("exact_bound_mirror_roots", [])\n    if not isinstance(mirror_roots, list) or not all(\n        isinstance(value, str) for value in mirror_roots\n    ):\n        raise ValueError("exact-bound mirror roots are invalid")\n    allowed_roots.update(Path(value) for value in mirror_roots)\n    if data_root not in allowed_roots:\n        raise ValueError("dataset root is not an authorized exact-bound carrier root")\n''',
+              label="authorized mirror roots",
+          )
+          runner = replace_once(
+              runner,
+              '''    reference_protocol = v6.read_json(reference_protocol_path)\n    parent_result = v6.read_json(parent_result_path)\n    parent_protocol = v6.read_json(parent_protocol_path)\n    v6.validate_protocol(\n        reference_protocol,\n        parent_control_root=parent_control_root,\n        parent_protocol_path=parent_protocol_path,\n        data_root=data_root,\n    )\n''',
+              '''    reference_protocol = v6.read_json(reference_protocol_path)\n    validation_protocol = json.loads(json.dumps(reference_protocol))\n    validation_protocol["dataset_root"] = str(data_root)\n    parent_result = v6.read_json(parent_result_path)\n    parent_protocol = v6.read_json(parent_protocol_path)\n    v6.validate_protocol(\n        validation_protocol,\n        parent_control_root=parent_control_root,\n        parent_protocol_path=parent_protocol_path,\n        data_root=data_root,\n    )\n''',
+              label="runtime-only reference root",
+          )
+          runner = replace_once(
+              runner,
+              '''        "information_boundary": {\n            "retrospective_target_reuse": True,\n''',
+              '''        "information_boundary": {\n            "official_dataset_root": str(protocol["dataset_root"]),\n            "operational_dataset_root": str(data_root),\n            "exact_bound_mirror_used": (\n                str(data_root) != str(protocol["dataset_root"])\n            ),\n            "retrospective_target_reuse": True,\n''',
+              label="mirror provenance",
+          )
+          runner_path.write_text(runner, encoding="utf-8")
+
+          protocol_path = Path("protocols/deform360_query_sufficient_dependence_v1.json")
+          protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+          if "exact_bound_mirror_roots" in protocol:
+              raise SystemExit("exact-bound mirror roots already exist")
+          protocol["exact_bound_mirror_roots"] = [
+              "/mnt/lexar4tb/datasets/deform360"
+          ]
+          protocol_path.write_text(
+              json.dumps(protocol, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          documentation = Path("docs/deform360_query_sufficient_dependence_v1.md")
+          text = documentation.read_text(encoding="utf-8")
+          addition = '''\n## Exact-bound mirror execution\n\nThe verified official snapshot remains the normative source. Because\n`gpuserver4090` is occupied by the separately authorized PoseIt archive hash, a\nsecond workflow may use `/mnt/lexar4tb/datasets/deform360` on `gpuserver6000`\nonly as an operational carrier mirror. The mirror path is not accepted on name\nor directory layout alone. Every selected robot, tactile, and median numeric\ncarrier and every bound action must reproduce the immutable 92-object parent\nreceipts; any absent or changed bound carrier stops the run. Extra files, caches,\nand episodes are inventoried but never selected or numerically opened. The\nmirror workflow cancels the still-queued official-root execution before the\nnumerical job is admitted, preventing duplicate evaluation.\n'''
+          if "## Exact-bound mirror execution" in text:
+              raise SystemExit("mirror documentation already exists")
+          documentation.write_text(text.rstrip() + "\n" + addition, encoding="utf-8")
+          PY
+          python -m ruff format \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          python -m ruff check \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          python -m ruff format --check \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py
+          python -m pytest -q tests/test_deform360_query_sufficient_dependence_v1.py
+          python -m json.tool protocols/deform360_query_sufficient_dependence_v1.json >/dev/null
+          git rm \
+            .github/requests/patch-deform360-query-sufficient-mirror-source-v1.json \
+            .github/requests/prepare-deform360-query-sufficient-mirror-v1.json \
+            .github/requests/repair-deform360-mirror-preparation-v1.json
+          git add \
+            scripts/science/run_deform360_query_sufficient_dependence_v1.py \
+            tests/test_deform360_query_sufficient_dependence_v1.py \
+            protocols/deform360_query_sufficient_dependence_v1.json \
+            docs/deform360_query_sufficient_dependence_v1.md
+          git diff --cached --check
+          git diff --cached --name-only | grep -v '^.github/workflows/' >/dev/null
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Add exact-bound Deform360 mirror source support"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
