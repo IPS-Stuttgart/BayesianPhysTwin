@@ -1,0 +1,302 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 dependence robustness v7
+
+on:
+  push:
+    branches:
+      - science/deform360-dependence-robustness-v7
+    paths:
+      - .github/requests/deform360-dependence-robustness-v7.json
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: deform360-dependence-robustness-v7
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  REQUEST_PATH: .github/requests/deform360-dependence-robustness-v7.json
+  PAYLOAD_PATH: control/scripts/science/run_deform360_dependence_robustness_v7.py.gz.b64
+  PAYLOAD_SHA256: 8ce9b0cfc6a52709c0a4ba19e0e91228541808fdb022c9db450267afdbeb040d
+  FOLLOWUP_RUNNER_SHA256: bd3faa1fd4781b120909ad3eb6fbdc8ac619c47820dd8c16042c2970aa239ff1
+  RECOVERY_REVISION: 28e8a44bfbab9e1556e0f51c53b46e91b8352481
+  RECOVERY_RUNNER: recovery/scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py
+  RECOVERY_RUNNER_SHA256: 6cca5314d3748304904ec97d97c7cd023956faf30a9fe48415684602a5add7ee
+  ORIGINAL_V6_REVISION: 954538832106d8ded13f1101b3a2b2e855b40513
+  ORIGINAL_V6_RUNNER: original-v6/scripts/science/run_deform360_dependence_query_v6.py
+  ORIGINAL_V6_RUNNER_SHA256: 06c22fc3fe667c4f2f11eddee3dcb1b78b5465b6312136efb010611e1ebab91c
+  ORIGINAL_V6_PROTOCOL: original-v6/protocols/deform360_dependence_query_v6.json
+  ORIGINAL_V6_PROTOCOL_SHA256: aa72486f3a01b460be6bc8796fb852ec99f5d31539bea366a3426f52dc97ca22
+  PARENT_CONTROL_REVISION: e409527b8499a225bde8bd7f8c532a30e96548c6
+  PARENT_PROTOCOL: parent-control/protocols/deform360_untouched_confirmation_v5.json
+  FROZEN_REVISION: 25ba91c021124569c4dcf84c66eda5ec088868e0
+  PARENT_ARTIFACT_ID: "9738998271"
+  PARENT_ARTIFACT_SHA256: e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948
+  PARENT_RESULT_SHA256: 0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7
+  PARENT_READINESS_SHA256: 58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e
+  REFERENCE_ARTIFACT_ID: "9811194776"
+  REFERENCE_ARTIFACT_SHA256: 8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a
+  REFERENCE_RESULT_SHA256: c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  evaluate:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 300
+    steps:
+      - name: Check out trigger control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: control
+          clean: true
+          fetch-depth: 2
+
+      - name: Authorize the add-only request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/science/deform360-dependence-robustness-v7
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git -C control diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/deform360-dependence-robustness-v7.json'
+          REQUEST="control/${REQUEST_PATH}" GITHUB_SHA_VALUE="${GITHUB_SHA}" python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST"]).read_text(encoding="utf-8"))
+          parent = subprocess.check_output(
+              ["git", "-C", "control", "rev-parse", "HEAD^"], text=True
+          ).strip()
+          if request.get("expected_source_revision") != parent:
+              raise SystemExit("request does not bind the complete pre-trigger source")
+          if request.get("request_id") != "deform360-dependence-robustness-v7-20260903":
+              raise SystemExit("unexpected request id")
+          if request.get("paper_claim_authorized") is not False:
+              raise SystemExit("request may not self-authorize a paper claim")
+          PY
+
+      - name: Check out exact scientific dependencies
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 28e8a44bfbab9e1556e0f51c53b46e91b8352481
+          path: recovery
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 954538832106d8ded13f1101b3a2b2e855b40513
+          path: original-v6
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e409527b8499a225bde8bd7f8c532a30e96548c6
+          path: parent-control
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 25ba91c021124569c4dcf84c66eda5ec088868e0
+          path: frozen
+          persist-credentials: false
+          clean: true
+
+      - name: Decode and validate the frozen follow-up runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' "${PAYLOAD_SHA256}" "${PAYLOAD_PATH}" | sha256sum --check --strict
+          runner="${RUNNER_TEMP}/run_deform360_dependence_robustness_v7.py"
+          base64 --decode "${PAYLOAD_PATH}" | gzip --decompress > "${runner}"
+          printf '%s  %s\n' "${FOLLOWUP_RUNNER_SHA256}" "${runner}" | sha256sum --check --strict
+          python3 -m py_compile "${runner}" "${RECOVERY_RUNNER}" "${ORIGINAL_V6_RUNNER}"
+          python3 "${runner}" --self-test
+          echo "FOLLOWUP_RUNNER=${runner}" >> "${GITHUB_ENV}"
+
+      - name: Recover exact parent and reference evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf parent-evidence reference-evidence parent-evidence.zip reference-evidence.zip
+          mkdir -p parent-evidence reference-evidence
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${PARENT_ARTIFACT_ID}/zip" \
+            --output parent-evidence.zip
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${REFERENCE_ARTIFACT_ID}/zip" \
+            --output reference-evidence.zip
+          printf '%s  %s\n' "${PARENT_ARTIFACT_SHA256}" parent-evidence.zip | sha256sum --check --strict
+          printf '%s  %s\n' "${REFERENCE_ARTIFACT_SHA256}" reference-evidence.zip | sha256sum --check --strict
+          unzip -q parent-evidence.zip -d parent-evidence
+          unzip -q reference-evidence.zip -d reference-evidence
+          printf '%s  %s\n' "${PARENT_RESULT_SHA256}" parent-evidence/result.json | sha256sum --check --strict
+          printf '%s  %s\n' "${PARENT_READINESS_SHA256}" parent-evidence/bound-readiness.json | sha256sum --check --strict
+          printf '%s  %s\n' "${REFERENCE_RESULT_SHA256}" reference-evidence/result.json | sha256sum --check --strict
+
+      - name: Prepare isolated numerical runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${DATASET_ROOT}"
+          test "$(readlink -f -- "${DATASET_ROOT}")" = "${DATASET_ROOT}"
+          test "$(git -C recovery rev-parse HEAD)" = "${RECOVERY_REVISION}"
+          test "$(git -C original-v6 rev-parse HEAD)" = "${ORIGINAL_V6_REVISION}"
+          test "$(git -C parent-control rev-parse HEAD)" = "${PARENT_CONTROL_REVISION}"
+          test "$(git -C frozen rev-parse HEAD)" = "${FROZEN_REVISION}"
+          printf '%s  %s\n' "${RECOVERY_RUNNER_SHA256}" "${RECOVERY_RUNNER}" | sha256sum --check --strict
+          printf '%s  %s\n' "${ORIGINAL_V6_RUNNER_SHA256}" "${ORIGINAL_V6_RUNNER}" | sha256sum --check --strict
+          printf '%s  %s\n' "${ORIGINAL_V6_PROTOCOL_SHA256}" "${ORIGINAL_V6_PROTOCOL}" | sha256sum --check --strict
+          venv="${RUNNER_TEMP}/deform360-dependence-robustness-v7-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/deform360-dependence-robustness-v7-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf -- "${venv}" "${output}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4 ruff==0.14.14
+          "${venv}/bin/python" -m ruff check "${FOLLOWUP_RUNNER}"
+          mkdir -p "${output}"
+          {
+            echo "PYTHON_BIN=${venv}/bin/python"
+            echo "VENV_ROOT=${venv}"
+            echo "OUTPUT_ROOT=${output}"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "trigger_revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "dataset_root=${DATASET_ROOT}"
+            sha256sum "${FOLLOWUP_RUNNER}" "${RECOVERY_RUNNER}" "${ORIGINAL_V6_RUNNER}" \
+              "${ORIGINAL_V6_PROTOCOL}" parent-evidence.zip reference-evidence.zip
+            "${venv}/bin/python" --version
+            "${venv}/bin/python" -c 'import numpy; print("numpy=" + numpy.__version__)'
+            uname -a
+          } | tee "${output}/environment.txt"
+          cp "control/${REQUEST_PATH}" "${output}/request.json"
+
+      - name: Run exact-rerun attribution controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" "${FOLLOWUP_RUNNER}" \
+            --request "control/${REQUEST_PATH}" \
+            --recovery-runner "${RECOVERY_RUNNER}" \
+            --base-runner "${ORIGINAL_V6_RUNNER}" \
+            --protocol "${ORIGINAL_V6_PROTOCOL}" \
+            --parent-protocol "${PARENT_PROTOCOL}" \
+            --parent-result parent-evidence/result.json \
+            --readiness-json parent-evidence/bound-readiness.json \
+            --reference-result reference-evidence/result.json \
+            --data-root "${DATASET_ROOT}" \
+            --parent-control-root parent-control \
+            --frozen-root frozen \
+            --output-json "${OUTPUT_ROOT}/result.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            --matched-csv "${OUTPUT_ROOT}/matched-coverage.csv" \
+            --temperature-csv "${OUTPUT_ROOT}/temperature-controls.csv" \
+            | tee "${OUTPUT_ROOT}/console.log"
+          cp "${FOLLOWUP_RUNNER}" "${OUTPUT_ROOT}/run_deform360_dependence_robustness_v7.py"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Enforce retained boundaries and result integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["OUTPUT_ROOT"]) / "result.json"
+          result = json.loads(path.read_text(encoding="utf-8"))
+          if result.get("status") != "complete":
+              raise SystemExit("robustness result is incomplete")
+          if result["original_reproduction"]["scientific_projection_equal"] is not True:
+              raise SystemExit("reference scientific projection did not reproduce")
+          if result["capture_audit"]["object_count"] != 92:
+              raise SystemExit("complete 92-object capture was not retained")
+          boundary = result["information_boundary"]
+          for key in (
+              "exact_bound_carrier_v6_recovery_rerun",
+              "exact_original_scientific_projection_reproduced",
+              "same_predictive_mean_retained",
+              "original_coordinate_marginal_matched_arms_retained",
+              "temperature_fits_use_source_residuals_only",
+              "temperature_fit_excludes_target_object_source_data",
+              "matched_coverage_uses_fixed_request_grid",
+          ):
+              if boundary[key] is not True:
+                  raise SystemExit(f"required boundary failed: {key}")
+          for key in (
+              "target_outcomes_used_to_fit_scales_or_choose_coverage",
+              "unbound_numeric_payloads_opened",
+              "new_measurements_collected",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"forbidden information flow: {key}")
+          decision = result["decision"]
+          for key in (
+              "paper_claim_authorized",
+              "calibration_claim_authorized",
+              "deployment_safety_claim_authorized",
+              "fresh_confirmation_authorized",
+          ):
+              if decision[key] is not False:
+                  raise SystemExit(f"result self-authorized forbidden claim: {key}")
+          unsigned = dict(result)
+          supplied = unsigned.pop("result_sha256")
+          encoded = json.dumps(unsigned, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+          if hashlib.sha256(encoded).hexdigest() != supplied:
+              raise SystemExit("result digest is invalid")
+          PY
+          sha256sum "${OUTPUT_ROOT}"/* > "${OUTPUT_ROOT}/sha256sums.txt"
+
+      - name: Upload robustness evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-dependence-robustness-v7-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Materialize readable runner on the experiment branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=control/scripts/science/run_deform360_dependence_robustness_v7.py
+          cp "${FOLLOWUP_RUNNER}" "${target}"
+          rm "${PAYLOAD_PATH}"
+          git -C control config user.name github-actions[bot]
+          git -C control config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C control add scripts/science/run_deform360_dependence_robustness_v7.py \
+            scripts/science/run_deform360_dependence_robustness_v7.py.gz.b64
+          git -C control commit -m "Materialize readable Deform360 robustness runner"
+          git -C control push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}" "${OUTPUT_ROOT:-}"
