@@ -1,0 +1,64 @@
+{
+  "analysis": {
+    "bootstrap_confidence": 0.95,
+    "bootstrap_replicates": 100000,
+    "bootstrap_seed": 20260904,
+    "case_weighting": "equal",
+    "covariance_block": "one tracked point's x-y-z coordinates",
+    "covariance_block_weighting_within_case": "equal",
+    "dense_cross_track_covariance_available": false,
+    "diagonal_approximation": "preserve every x-y-z marginal variance and set off-diagonal entries to zero",
+    "factor_diagnostic": "remove the smallest eigenvalue as an isotropic floor, retain the leading positive eigencomponent, and return omitted variance to the diagonal so marginal variances remain exact",
+    "factor_scope": "per-track-per-frame only",
+    "frozen_horizon_scales": [
+      8.0,
+      16.0,
+      16.0
+    ],
+    "horizon_partition": "numpy-array-split-over-future-frames-into-early-middle-late",
+    "observation_std_m": 0.005,
+    "primary_covariance": "frozen horizon scale times donor future covariance plus common isotropic observation variance",
+    "primary_endpoint": "equal-case mean of minus-one-half-log-determinant of each 3x3 correlation matrix",
+    "rank_tolerance_relative": 1e-10,
+    "secondary_covariance": "raw donor future covariance plus common isotropic observation variance",
+    "total_correlation_units": "natural-log nats per 3D point forecast"
+  },
+  "claim_boundary": "This target-free retrospective diagnostic can quantify the Gaussian dependence encoded inside each exported 3x3 point covariance. It cannot establish realized log-score superiority, joint whole-object tolerance value, regularized-empirical-covariance superiority, cross-track dependence, physical-cause identification, fresh transfer, or a Bayesian-specific paper claim.",
+  "information_boundary": {
+    "case_identity_read_before_freeze": true,
+    "covariance_values_read_before_freeze": false,
+    "future_outcomes_required": false,
+    "future_truth_opened": false,
+    "held_v8_opened": false,
+    "prediction_means_required": false,
+    "prefix_arrays_required": false,
+    "protected_or_fresh_target_opened": false,
+    "scales_previously_selected_on_open_full22_outcomes": true,
+    "source_prediction_manifest_metadata_read_before_freeze": true
+  },
+  "proceed_gate": {
+    "maximum_median_case_rank1_relative_total_correlation_error": 0.1,
+    "minimum_case_fraction_with_mean_total_correlation_at_least_0_01_nats": 0.75,
+    "minimum_equal_case_mean_total_correlation_nats": 0.05,
+    "outcome_comparison_authorized_by_this_diagnostic": false,
+    "whole_object_compression_requires_dense_cross_track_covariance": true
+  },
+  "protocol_id": "f9f7b251abbd3900ace05b067a043d1f84b183fd5b5e136e0403eaa4758917f2",
+  "schema": "bayesian-phystwin/full22-dependence-compression-diagnostic-v1",
+  "schema_version": 1,
+  "scientific_question": "Does the frozen covariance-only donor contain enough same-marginal Gaussian dependence to motivate a separately frozen realized-value comparison, and is that dependence locally rank-one compressible?",
+  "source": {
+    "artifact_id": 9074451004,
+    "artifact_name": "bpt-full22-discrepancy-31410594302-1",
+    "artifact_sha256": "22984bd34992ef7693c7577045c7496f8de2990641c3d2592ce230b9fbc97220",
+    "case_count": 22,
+    "candidate_id": "independent_endpoint_v1",
+    "prediction_artifact_sha256": "1244be0511b9cc132d93438786c9139de6f76fed9194e85a7cbd7f473f37c9fb",
+    "prediction_manifest_file_sha256": "e9c9ea7f4521a3947e540870588895945b6dd1bb5a556b2bdacaa4ab661ae57f",
+    "prediction_source_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa",
+    "prefix_manifest_id": "1195884a383b2f2f690a4ea7a0fce9bb82a1dc755d276f85450174fcd9bdc25c",
+    "source_protocol_id": "22746172fb6d207e80a2ebfeb2a003332317f3895317ff12988275acc75e16bd",
+    "workflow_run_id": 31410594302
+  },
+  "status": "frozen-before-covariance-value-read"
+}
