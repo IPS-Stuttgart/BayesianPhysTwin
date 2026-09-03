@@ -4,30 +4,22 @@ from pathlib import Path
 
 import numpy as np
 
-from experiments.deform_dlo45_adapter_controls_v1.evaluate import (
-    ALL_FEATURES,
-    INITIAL_ACTION_ONLY_FEATURES,
-    NO_EXPLICIT_ACTION_FEATURES,
-    _balanced_folds,
-    _broadcast_trivial_template,
-    _collapse_duplicate_queries,
-    _fit_trivial_template,
-    _hash_order,
-    load_protocol,
-    score_prediction,
-)
+from experiments.deform_dlo45_adapter_controls_v1 import evaluate as controls
 
 
 PROTOCOL = Path("experiments/deform_dlo45_adapter_controls_v1/protocol.json")
 
 
 def test_protocol_and_feature_masks_are_frozen() -> None:
-    protocol = load_protocol(PROTOCOL)
+    protocol = controls.load_protocol(PROTOCOL)
     assert protocol["contract"] == "deform-dlo45-adapter-controls-v1"
-    assert np.array_equal(ALL_FEATURES, np.arange(92))
-    assert NO_EXPLICIT_ACTION_FEATURES.size == 36
-    assert INITIAL_ACTION_ONLY_FEATURES.size == 48
-    for mask in (NO_EXPLICIT_ACTION_FEATURES, INITIAL_ACTION_ONLY_FEATURES):
+    assert np.array_equal(controls.ALL_FEATURES, np.arange(92))
+    assert controls.NO_EXPLICIT_ACTION_FEATURES.size == 36
+    assert controls.INITIAL_ACTION_ONLY_FEATURES.size == 48
+    for mask in (
+        controls.NO_EXPLICIT_ACTION_FEATURES,
+        controls.INITIAL_ACTION_ONLY_FEATURES,
+    ):
         assert np.array_equal(mask, np.unique(mask))
         assert np.all(mask >= 0)
         assert np.all(mask < 92)
@@ -35,14 +27,19 @@ def test_protocol_and_feature_masks_are_frozen() -> None:
 
 def test_hash_order_and_balanced_folds_are_deterministic() -> None:
     names = tuple(f"{index}.pkl" for index in range(14))
-    first = _hash_order(names, domain="test", dlo="DLO4", replicate=3)
-    second = _hash_order(names, domain="test", dlo="DLO4", replicate=3)
-    changed = _hash_order(names, domain="test", dlo="DLO4", replicate=4)
+    first = controls._hash_order(names, domain="test", dlo="DLO4", replicate=3)
+    second = controls._hash_order(names, domain="test", dlo="DLO4", replicate=3)
+    changed = controls._hash_order(names, domain="test", dlo="DLO4", replicate=4)
     assert np.array_equal(first, second)
     assert not np.array_equal(first, changed)
     assert sorted(first.tolist()) == list(range(14))
 
-    folds = _balanced_folds(names, domain="test-fold", dlo="DLO5", folds=7)
+    folds = controls._balanced_folds(
+        names,
+        domain="test-fold",
+        dlo="DLO5",
+        folds=7,
+    )
     assert folds.shape == (14,)
     assert sorted(np.bincount(folds).tolist()) == [2] * 7
 
@@ -53,7 +50,7 @@ def test_score_prediction_uses_complete_trajectory_units() -> None:
     candidate = baseline.copy()
     candidate[0] *= 0.5
     candidate[1] *= 1.5
-    summary = score_prediction(candidate, baseline, target, ("a", "b"))
+    summary = controls.score_prediction(candidate, baseline, target, ("a", "b"))
     assert summary["candidate_mean_l1_m"] == 1.0
     assert summary["baseline_mean_l1_m"] == 1.0
     assert summary["relative_improvement"] == 0.0
@@ -71,9 +68,9 @@ def test_trivial_templates_have_declared_shapes() -> None:
         "time_node_mean": (5, 8, 3),
     }
     for kind, shape in expected.items():
-        template = _fit_trivial_template(residual, kind)
+        template = controls._fit_trivial_template(residual, kind)
         assert template.shape == shape
-        broadcast = _broadcast_trivial_template(
+        broadcast = controls._broadcast_trivial_template(
             template,
             kind=kind,
             trajectory_count=2,
@@ -95,7 +92,7 @@ def test_duplicate_queries_average_only_the_targets() -> None:
     target[1] = 4.0
     target[2] = 7.0
 
-    grouped = _collapse_duplicate_queries(initial, action, baseline, target)
+    grouped = controls._collapse_duplicate_queries(initial, action, baseline, target)
     assert grouped[0].shape[0] == 2
     assert np.all(grouped[3][0] == 3.0)
     assert np.all(grouped[3][1] == 7.0)
