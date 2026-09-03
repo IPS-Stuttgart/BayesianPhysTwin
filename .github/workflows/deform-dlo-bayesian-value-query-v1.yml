@@ -1,3 +1,5 @@
+# workflow-lifecycle: experimental-retrospective-diagnostic
+# workflow-owner: IPS-Stuttgart maintainers
 name: deform-dlo-bayesian-value-query-v1
 
 on:
@@ -15,108 +17,82 @@ permissions:
 
 concurrency:
   group: deform-dlo-bayesian-value-query-v1-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONHASHSEED: "0"
+  PROTOCOL: experiments/deform_dlo_bayesian_value_query_v1/protocol.json
+  OUTPUT_ROOT: build/deform-dlo-bayesian-value-query-v1
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
 
 jobs:
-  inventory-retained-evidence:
-    runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 30
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out exact triggering revision
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
-          fetch-depth: 1
-
-      - name: Verify exact checkout
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install contract dependencies
+        run: python -m pip install -e .
+      - name: Validate frozen protocol and implementation
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python scripts/remote/run_deform_dlo_bayesian_value_query_v1.py --self-test
+          python scripts/remote/run_deform_dlo_bayesian_value_query_v1.py \
+            --protocol "$PROTOCOL" --validate-only >/dev/null
 
-      - name: Inventory immutable DLO4/DLO5 workflow cache
+  evaluate:
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Bind exact retained parent and data roots
         shell: bash
-        env:
-          CACHE_ROOT: /home/github-runner/.cache/workflows/deform-dlo45/runs
-          DATA_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
         run: |
           set -euo pipefail
-          mkdir -p build/deform-dlo-bayesian-value-query-v1
-          python3 - <<'PY'
-          from __future__ import annotations
-
-          import json
-          import os
-          from pathlib import Path
-
-          cache_root = Path(os.environ["CACHE_ROOT"])
-          data_root = Path(os.environ["DATA_ROOT"])
-          output = Path("build/deform-dlo-bayesian-value-query-v1/inventory.json")
-
-          if not cache_root.is_dir():
-              raise SystemExit(f"retained cache root is missing: {cache_root}")
-          if not data_root.is_dir():
-              raise SystemExit(f"DEFORM data root is missing: {data_root}")
-
-          interesting_suffixes = {".json", ".npz", ".npy", ".pt", ".pth", ".log"}
-          interesting_tokens = (
-              "prediction",
-              "target",
-              "trajectory",
-              "model",
-              "checkpoint",
-              "result",
-              "seal",
-              "method",
-              "source",
-              "score",
-          )
-          records: list[dict[str, object]] = []
-          for path in sorted(cache_root.rglob("*")):
-              if not path.is_file():
-                  continue
-              relative = path.relative_to(cache_root)
-              depth = len(relative.parts)
-              lower = path.name.lower()
-              if depth > 8:
-                  continue
-              if path.suffix.lower() not in interesting_suffixes:
-                  continue
-              if not any(token in lower for token in interesting_tokens):
-                  continue
-              stat = path.stat()
-              records.append(
-                  {
-                      "path": str(path),
-                      "relative_path": str(relative),
-                      "size_bytes": stat.st_size,
-                      "mtime_ns": stat.st_mtime_ns,
-                  }
-              )
-
-          payload = {
-              "schema": "bayesian-phystwin.deform-dlo45-retained-cache-inventory",
-              "schema_version": 1,
-              "github_sha": os.environ.get("GITHUB_SHA", ""),
-              "runner_name": os.environ.get("RUNNER_NAME", ""),
-              "cache_root": str(cache_root),
-              "data_root": str(data_root),
-              "cache_run_directories": [
-                  str(path)
-                  for path in sorted(cache_root.iterdir())
-                  if path.is_dir()
-              ],
-              "matching_file_count": len(records),
-              "files": records,
-          }
-          output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-          print(json.dumps(payload, indent=2, sort_keys=True))
-          PY
-
-      - name: Upload cache inventory
-        uses: actions/upload-artifact@v4
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -x "$FROZEN_PYTHON"
+          test -d /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          test -d /mnt/seagate10tb/florianpfaff/datasets/deform/data_set/DLO4/eval
+          test -d /mnt/seagate10tb/florianpfaff/datasets/deform/data_set/DLO5/eval
+      - name: Evaluate nonlinear Bayesian query value
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$OUTPUT_ROOT"
+          "$FROZEN_PYTHON" \
+            scripts/remote/run_deform_dlo_bayesian_value_query_v1.py \
+            --protocol "$PROTOCOL" \
+            --output-dir "$OUTPUT_ROOT" \
+            | tee "$RUNNER_TEMP/deform-dlo-bayesian-value-query-v1.log"
+          test -s "$OUTPUT_ROOT/result.json"
+          test -s "$OUTPUT_ROOT/trajectory_records.json"
+          test -s "$OUTPUT_ROOT/trajectory_records.csv"
+          test -s "$OUTPUT_ROOT/summary.md"
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: deform-dlo-bayesian-value-query-v1-inventory
-          path: build/deform-dlo-bayesian-value-query-v1/inventory.json
+          name: deform-dlo-bayesian-value-query-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUTPUT_ROOT }}
+            ${{ env.PROTOCOL }}
+            ${{ runner.temp }}/deform-dlo-bayesian-value-query-v1.log
+          retention-days: 30
           if-no-files-found: error
-          retention-days: 14
