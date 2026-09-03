@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 import importlib
+import inspect
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +11,23 @@ controls = importlib.import_module(
     "experiments.deform_dlo45_adapter_controls_v1.evaluate"
 )
 PROTOCOL = Path("experiments/deform_dlo45_adapter_controls_v1/protocol.json")
+
+
+def test_replay_restores_parent_deterministic_setup_before_rollout() -> None:
+    tree = ast.parse(inspect.getsource(controls.run_dlo))
+    calls = [
+        (node.lineno, node.func.attr, node)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    ]
+    setup = [row for row in calls if row[1] == "_seed_everything"]
+    rollouts = [row for row in calls if row[1] == "_evaluate_state"]
+    assert len(setup) == 1 and len(rollouts) == 2
+    assert setup[0][0] < min(row[0] for row in rollouts)
+    assert ast.unparse(setup[0][2].args[1]) == (
+        "int(frozen_protocol['physical_training']['seed'])"
+    )
+    assert controls.load_protocol(PROTOCOL)["adapter"]["parity_max_abs_m"] == 1e-8
 
 
 def test_protocol_and_feature_masks_are_frozen() -> None:

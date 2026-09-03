@@ -738,6 +738,10 @@ def run_dlo(args: argparse.Namespace) -> int:
 
     torch = _setup_torch(frozen_protocol, args.device)
     modules = source_runtime._load_upstream(args.upstream_root.resolve())
+    # Parent training enabled deterministic kernels before every saved replay.
+    source_runtime._seed_everything(
+        torch, int(frozen_protocol["physical_training"]["seed"])
+    )
     checkpoint = torch.load(
         paths["physical_checkpoint"],
         map_location="cpu",
