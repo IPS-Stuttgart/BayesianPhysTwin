@@ -1,0 +1,81 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-matched-coverage-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-dependence-matched-coverage-audit-v1",
+  "status": "frozen-before-audit-execution",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "gpuserver4090"
+  ],
+  "question": "Does full low-rank dependence retain lower selective risk and deployment loss than marginal-matched controls after every object-query arm is forced to accept the same number of target windows?",
+  "base_experiment": {
+    "workflow_run_id": 33528032875,
+    "artifact_id": 9811194776,
+    "artifact_zip_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+    "result_file_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+    "result_internal_sha256": "d430731e56ce470a5e0df8fbd3bc13dea83763beccd2df06d86cde2365d4ee36",
+    "execution_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "recovery_runner_sha256": "6cca5314d3748304904ec97d97c7cd023956faf30a9fe48415684602a5add7ee",
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "parent_control_revision": "e409527b8499a225bde8bd7f8c532a30e96548c6",
+    "frozen_point_revision": "25ba91c021124569c4dcf84c66eda5ec088868e0"
+  },
+  "evaluation": {
+    "inferential_unit": "physical object",
+    "query_aggregation": "equal mean over five registered queries",
+    "coverage_grid": [
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ],
+    "selection_order": "ascending predicted adverse-event probability with target-time index as deterministic tie break",
+    "acceptance_count_rule": "floor(n_windows * nominal_coverage), lower-bounded by one",
+    "coverage_aggregation": "equal-grid mean and normalized trapezoidal area over nominal coverage",
+    "fallback_cost": 0.1,
+    "primary_metrics": [
+      "normalized_selective_risk_auc",
+      "mean_deployment_loss"
+    ],
+    "secondary_metrics": [
+      "mean_selective_risk",
+      "mean_harmful_accept_fraction_all",
+      "mean_decision_regret"
+    ],
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 260903,
+    "success_rule": "for each primary metric and each dependence-destruction control, full low-rank mean difference is negative and the object-bootstrap 95 percent upper endpoint is below zero"
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "exact_base_experiment_rerun_required": true,
+    "same_mean_and_coordinate_marginals_required": true,
+    "matched_acceptance_counts_required": true,
+    "new_measurements_collected": false,
+    "point_predictor_may_change": false,
+    "query_bank_may_change": false,
+    "covariance_arms_may_change": false,
+    "source_calibration_may_change": false,
+    "target_outcomes_may_tune_coverage_grid": false
+  },
+  "interpretation": {
+    "positive": "the learned dependence improves risk ranking and deployment decisions beyond mean, coordinate marginals, and acceptance rate on the already opened Deform360 cohort",
+    "negative": "the prior decision-loss advantage is partly or wholly explained by different acceptance rates",
+    "not_authorized": [
+      "fresh confirmation",
+      "calibrated uncertainty",
+      "robot-control safety",
+      "arbitrary-object generalization",
+      "automatic manuscript claim promotion"
+    ]
+  },
+  "paper_claim_authorized": false
+}
