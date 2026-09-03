@@ -1,0 +1,82 @@
+# workflow-lifecycle: experimental-retrospective-numerical-audit
+# workflow-owner: IPS-Stuttgart maintainers
+name: deform-dlo-bayesian-value-query-mc-audit-v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/bayesian-value-nonlinear-query-v1
+    paths:
+      - .github/workflows/deform-dlo-bayesian-value-query-mc-audit-v1.yml
+      - experiments/deform_dlo_bayesian_value_query_mc_audit_v1/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo-bayesian-value-query-mc-audit-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONHASHSEED: "0"
+  PROTOCOL: experiments/deform_dlo_bayesian_value_query_mc_audit_v1/protocol.json
+  OUTPUT_ROOT: build/deform-dlo-bayesian-value-query-mc-audit-v1
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Validate unchanged implementation and audit protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e .
+          python scripts/remote/run_deform_dlo_bayesian_value_query_v1.py --self-test
+          python scripts/remote/run_deform_dlo_bayesian_value_query_v1.py \
+            --protocol "$PROTOCOL" --validate-only >/dev/null
+
+  audit:
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run independent 8192-draw audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$FROZEN_PYTHON"
+          test -d /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          rm -rf "$OUTPUT_ROOT"
+          "$FROZEN_PYTHON" \
+            scripts/remote/run_deform_dlo_bayesian_value_query_v1.py \
+            --protocol "$PROTOCOL" \
+            --output-dir "$OUTPUT_ROOT" \
+            | tee "$RUNNER_TEMP/deform-dlo-bayesian-value-query-mc-audit-v1.log"
+          test -s "$OUTPUT_ROOT/result.json"
+      - name: Upload numerical-audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo-bayesian-value-query-mc-audit-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUTPUT_ROOT }}
+            ${{ env.PROTOCOL }}
+            ${{ runner.temp }}/deform-dlo-bayesian-value-query-mc-audit-v1.log
+          retention-days: 30
+          if-no-files-found: error

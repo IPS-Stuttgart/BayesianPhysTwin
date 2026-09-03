@@ -1,0 +1,162 @@
+{
+  "schema": "bayesian-phystwin.deform-dlo-bayesian-value-query-protocol",
+  "schema_version": 1,
+  "protocol_id": "deform-dlo-bayesian-value-query-mc-audit-v1",
+  "status": "retrospective-diagnostic-frozen-before-execution",
+  "scientific_question": "Numerical audit of the unchanged DEFORM DLO4/DLO5 nonlinear-query comparison: do the posterior-mean, posterior-median, and CRPS contrasts retain their signs under an independent fourfold-larger Monte Carlo draw set?",
+  "statistical_unit": "complete held-out DEFORM trajectory",
+  "execution": {
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "gpuserver4090"
+    ],
+    "parent_workflow_run_id": 33361441865,
+    "parent_workflow_attempt": 1,
+    "parent_source_revision": "0376ece871d7c3d9355788f812a3c4cc1c9165b0",
+    "cache_root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1",
+    "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+    "retraining": false,
+    "refitting": false,
+    "new_predictions": false,
+    "target_selection": false,
+    "target_calibration": false,
+    "case_replacement": false
+  },
+  "parent_artifacts": {
+    "DLO4": {
+      "prediction_path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/target_predictions.npz",
+      "prediction_sha256": "b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b",
+      "prediction_size_bytes": 18273132,
+      "eval_manifest_path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/eval_manifest.json",
+      "eval_manifest_sha256": "10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d",
+      "eval_manifest_size_bytes": 3877,
+      "prediction_seal_path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/prediction_seal.json",
+      "prediction_seal_sha256": "7f8e42c7e3404c992d3aa85c0c8cfa722043d9d35d5e1ee9edb74e95e37bdbce",
+      "prediction_seal_size_bytes": 2192,
+      "method_seal_sha256": "ee962bfecb6b658c67877f240cb082b3b1c3647ffa3c6fb077662dc00c78d647"
+    },
+    "DLO5": {
+      "prediction_path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/target_predictions.npz",
+      "prediction_sha256": "86b5fd6cde97594e96640c98e071862260941bebb21b82d4b65cbd9abdd0f612",
+      "prediction_size_bytes": 18280280,
+      "eval_manifest_path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/eval_manifest.json",
+      "eval_manifest_sha256": "48bd004dbba2161609ada67ec76369a9271fa6899624c1ba1a84b747654e6b7d",
+      "eval_manifest_size_bytes": 3871,
+      "prediction_seal_path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/prediction_seal.json",
+      "prediction_seal_sha256": "e71fcbb549c984b968d3325af0c66a1a317de92bb6f7c8a0d7cd1c94da94fc1f",
+      "prediction_seal_size_bytes": 2192,
+      "method_seal_sha256": "21e4bc2518d53df4f52e09501f8a27f50ecf9c099dc3a286838c4ea33f282def"
+    }
+  },
+  "belief_arms": {
+    "full": {
+      "source_archive_key": "bayesian_covariance_m2__calibrated_full_coordinate_covariance_v1",
+      "description": "Frozen source-calibrated 3x3 coordinate covariance at each predicted point."
+    },
+    "diagonal_marginal_matched": {
+      "construction": "zero the off-diagonal entries of the full arm without changing its mean or any coordinate variance",
+      "target_outcome_use": false
+    },
+    "plug_in": {
+      "construction": "apply the registered nonlinear query directly to the unchanged candidate coordinate mean",
+      "target_outcome_use": false
+    }
+  },
+  "query_geometry": {
+    "free_node_indices": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "left_clamp_indices": [
+      0,
+      1
+    ],
+    "right_clamp_indices": [
+      10,
+      11
+    ],
+    "chord_definition": "infinite line through the mean left-clamp point and mean right-clamp point at the same forecast frame",
+    "late_frame_fraction": 0.25
+  },
+  "queries": [
+    {
+      "query_id": "terminal_chord_distance_m",
+      "frame_selection": "terminal",
+      "transform": "euclidean distance of each free node from the contemporaneous clamp chord",
+      "unit": "m"
+    },
+    {
+      "query_id": "late_chord_distance_m",
+      "frame_selection": "final-quarter",
+      "transform": "euclidean distance of each free node from the contemporaneous clamp chord",
+      "unit": "m"
+    },
+    {
+      "query_id": "terminal_squared_chord_distance_m2",
+      "frame_selection": "terminal",
+      "transform": "squared euclidean distance of each free node from the contemporaneous clamp chord",
+      "unit": "m^2"
+    },
+    {
+      "query_id": "late_squared_chord_distance_m2",
+      "frame_selection": "final-quarter",
+      "transform": "squared euclidean distance of each free node from the contemporaneous clamp chord",
+      "unit": "m^2"
+    }
+  ],
+  "monte_carlo": {
+    "sample_count": 8192,
+    "base_seed": 20260905,
+    "cell_chunk_size": 128,
+    "common_standard_normal_draws_for_full_and_diagonal": true,
+    "quantile_interval": [
+      0.05,
+      0.95
+    ]
+  },
+  "scoring": {
+    "plugin_point_rule": "Q(E[Y])",
+    "bayesian_squared_loss_point_rule": "E[Q(Y)]",
+    "bayesian_absolute_loss_point_rule": "median(Q(Y))",
+    "proper_score": "equal-weight empirical scalar CRPS",
+    "within_trajectory_aggregation": "equal mean over registered frame-node query cells",
+    "across_trajectory_aggregation": "equal DLO mean of complete-trajectory means",
+    "registered_contrasts": [
+      "full_posterior_mean_mse_minus_plugin_mse",
+      "full_posterior_median_mae_minus_plugin_mae",
+      "full_crps_minus_diagonal_marginal_matched_crps",
+      "full_crps_minus_plugin_point_mass_crps"
+    ]
+  },
+  "uncertainty": {
+    "bootstrap_replicates": 20000,
+    "bootstrap_seed": 20260906,
+    "bootstrap_unit": "complete trajectory, resampled separately within DLO4 and DLO5",
+    "interval": "percentile 95%"
+  },
+  "interpretation": {
+    "retrospective_target_already_open": true,
+    "claim_authorized": false,
+    "positive_result_boundary": "This numerical audit may confirm or weaken the Monte Carlo stability of the already registered retrospective contrasts. It cannot create a new query, rescue an unfavorable primary result, or authorize fresh-confirmation, calibration, physical-state, generalization, or safety claims.",
+    "negative_result_boundary": "A negative result localizes the lack of value to these registered nonlinear queries and the available pointwise 3x3 coordinate belief; it does not refute Bayesian physical twins in general."
+  },
+  "numerical_audit": {
+    "audit_type": "independent-seed-fourfold-sample-count",
+    "primary_protocol_sha256": "6001876517ca557e8cbf66b7c42a9b48f6a650513c5457c72625f9d72d7e1fad",
+    "primary_workflow_run_id": 33750626012,
+    "primary_result_artifact_id": 9891400206,
+    "queries_changed": false,
+    "belief_arms_changed": false,
+    "scoring_changed": false,
+    "target_selection": false,
+    "claim_rescue_authorized": false
+  }
+}
