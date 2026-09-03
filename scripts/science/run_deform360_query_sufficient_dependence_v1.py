@@ -286,7 +286,9 @@ def relative_matrix_error(first: np.ndarray, second: np.ndarray) -> tuple[float,
     return maximum, relative
 
 
-def recursive_max_abs_difference(first: Any, second: Any, *, path: str = "root") -> float:
+def recursive_max_abs_difference(
+    first: Any, second: Any, *, path: str = "root"
+) -> float:
     """Return the largest scalar difference; reject structural mismatches."""
 
     if isinstance(first, Mapping) and isinstance(second, Mapping):
@@ -294,7 +296,9 @@ def recursive_max_abs_difference(first: Any, second: Any, *, path: str = "root")
             raise ValueError(f"mapping keys differ at {path}")
         return max(
             (
-                recursive_max_abs_difference(first[key], second[key], path=f"{path}.{key}")
+                recursive_max_abs_difference(
+                    first[key], second[key], path=f"{path}.{key}"
+                )
                 for key in first
             ),
             default=0.0,
@@ -386,15 +390,15 @@ def validate_protocol(
         str(source["original_v6_runner_path"]),
     ) != source.get("original_v6_runner_git_blob_sha1"):
         raise ValueError("original v6 runner changed")
-    if git_output(recovery_root, "hash-object", str(source["recovery_runner_path"])) != source.get(
-        "recovery_runner_git_blob_sha1"
-    ):
+    if git_output(
+        recovery_root, "hash-object", str(source["recovery_runner_path"])
+    ) != source.get("recovery_runner_git_blob_sha1"):
         raise ValueError("recovery runner changed")
     if git_output(prob4d_root, "rev-parse", "HEAD") != source.get("prob4d_revision"):
         raise ValueError("Prob4D revision changed")
-    if git_output(prob4d_root, "hash-object", str(source["prob4d_kernel_path"])) != source.get(
-        "prob4d_kernel_git_blob_sha1"
-    ):
+    if git_output(
+        prob4d_root, "hash-object", str(source["prob4d_kernel_path"])
+    ) != source.get("prob4d_kernel_git_blob_sha1"):
         raise ValueError("Prob4D query compressor changed")
 
     evaluation = protocol.get("evaluation")
@@ -482,7 +486,9 @@ def prob4d_compress(
     protocol: Mapping[str, Any],
 ) -> Any:
     if factor.shape[0] % 3:
-        raise ValueError("Prob4D block compressor requires a row count divisible by three")
+        raise ValueError(
+            "Prob4D block compressor requires a row count divisible by three"
+        )
     evaluation = protocol["evaluation"]
     factor_3d = np.asarray(factor, dtype=np.float64).reshape(
         factor.shape[0] // 3,
@@ -628,9 +634,7 @@ def aggregate_extended(
             )
         ),
         "maximum_query_factor_residual_relative": float(
-            max(
-                row["compression"]["query_factor_residual_relative"] for row in rows
-            )
+            max(row["compression"]["query_factor_residual_relative"] for row in rows)
         ),
         "maximum_prob4d_projector_difference": float(
             max(row["compression"]["prob4d_projector_difference"] for row in rows)
@@ -642,7 +646,9 @@ def aggregate_extended(
             )
         ),
         "maximum_full_metric_absolute_difference": float(
-            max(row["compression"]["maximum_metric_absolute_difference"] for row in rows)
+            max(
+                row["compression"]["maximum_metric_absolute_difference"] for row in rows
+            )
         ),
         "maximum_reference_reproduction_difference": float(
             max(row["reference_reproduction_max_abs_difference"] for row in rows)
@@ -655,7 +661,9 @@ def aggregate_extended(
         "retained_min": int(np.min(retained_ranks)),
         "retained_median": float(np.median(retained_ranks)),
         "retained_max": int(np.max(retained_ranks)),
-        "strict_reduction_objects": int(np.count_nonzero(retained_ranks < original_ranks)),
+        "strict_reduction_objects": int(
+            np.count_nonzero(retained_ranks < original_ranks)
+        ),
         "full_rank_objects": int(np.count_nonzero(retained_ranks == original_ranks)),
         "rank_histogram": {
             str(rank): int(np.count_nonzero(retained_ranks == rank))
@@ -742,7 +750,8 @@ def aggregate_extended(
         "complete_92_object_roster": len(rows) == 92,
         "reference_full_study_reproduced_exactly": parity[
             "maximum_reference_reproduction_difference"
-        ] == 0.0,
+        ]
+        == 0.0,
         "original_dependence_value_supported": reference["decision"][
             "dependence_value_supported"
         ]
@@ -940,9 +949,9 @@ def write_object_csv(path: Path, rows: list[Mapping[str, Any]]) -> None:
                     "compressed_brier": row["arm_summary"][
                         "query_sufficient_portfolio"
                     ]["event_brier"],
-                    "energy_brier": row["arm_summary"][
-                        "leading_energy_matched_rank"
-                    ]["event_brier"],
+                    "energy_brier": row["arm_summary"]["leading_energy_matched_rank"][
+                        "event_brier"
+                    ],
                 }
             )
 
@@ -1030,9 +1039,7 @@ def run(
     minimum = int(parent_protocol["selection"]["minimum_complete_episodes_per_object"])
 
     evaluation = protocol["evaluation"]
-    point_rng = np.random.default_rng(
-        int(development["statistics"]["random_seed"])
-    )
+    point_rng = np.random.default_rng(int(development["statistics"]["random_seed"]))
     rows: list[dict[str, Any]] = []
     reference_rows_current: list[dict[str, Any]] = []
     carrier_drift: list[dict[str, Any]] = []
@@ -1057,16 +1064,20 @@ def run(
             minimum_episodes=minimum,
         )
         carrier_drift.append(drift)
-        point_row, capture, source_truth, target_truth = v6.evaluate_object_with_capture(
-            v3,
-            descriptors,
-            development,
-            base_protocol,
-            point_rng,
+        point_row, capture, source_truth, target_truth = (
+            v6.evaluate_object_with_capture(
+                v3,
+                descriptors,
+                development,
+                base_protocol,
+                point_rng,
+            )
         )
         exact_point = v6.point_projection(point_row) == v6.point_projection(parent_row)
         if not exact_point:
-            raise RuntimeError(f"exact parent point result did not reproduce: {object_id}")
+            raise RuntimeError(
+                f"exact parent point result did not reproduce: {object_id}"
+            )
 
         target_errors = np.asarray(capture.target_errors, dtype=np.float64)
         source_errors = np.asarray(capture.source_residuals, dtype=np.float64)
@@ -1090,7 +1101,9 @@ def run(
             absolute_rank_tolerance=float(evaluation["absolute_rank_tolerance"]),
         )
         if direct["retained_rank"] > int(evaluation["maximum_portfolio_rank"]):
-            raise RuntimeError(f"query rank exceeds registered portfolio size: {object_id}")
+            raise RuntimeError(
+                f"query rank exceeds registered portfolio size: {object_id}"
+            )
 
         prob4d_result = prob4d_compress(
             qpc,
@@ -1166,7 +1179,9 @@ def run(
                 weight,
                 raw_variances,
                 event=event,
-                probability=float(reference_protocol["evaluation"]["coverage_probability"]),
+                probability=float(
+                    reference_protocol["evaluation"]["coverage_probability"]
+                ),
                 event_quantile=float(
                     reference_protocol["evaluation"]["event_threshold_quantile"]
                 ),
@@ -1224,7 +1239,9 @@ def run(
                 abs(float(compressed_metrics[name]) - float(full_metrics[name]))
                 for name in PARITY_METRICS
             )
-            maximum_metric_difference = max(maximum_metric_difference, metric_difference)
+            maximum_metric_difference = max(
+                maximum_metric_difference, metric_difference
+            )
             scalar_projection = exact_query_projection(
                 np.asarray(full_model.factor, dtype=np.float64),
                 np.asarray(weight, dtype=np.float64)[None, :],
@@ -1340,7 +1357,9 @@ def run(
                     "retained_rank": retained_rank,
                     "direct_minimum_rank": int(direct["retained_rank"]),
                     "prob4d_retained_rank": int(prob4d_result.retained_rank),
-                    "prob4d_compression_applied": bool(prob4d_result.compression_applied),
+                    "prob4d_compression_applied": bool(
+                        prob4d_result.compression_applied
+                    ),
                     "prob4d_fallback_reason": prob4d_result.fallback_reason,
                     "prob4d_summary": prob4d_result.summary(),
                     "prob4d_projector_difference": projector_difference,
@@ -1396,7 +1415,9 @@ def run(
         path="decision",
     )
     if reference_summary_difference != 0.0 or reference_decision_difference != 0.0:
-        raise RuntimeError("the frozen reference dependence result did not reproduce exactly")
+        raise RuntimeError(
+            "the frozen reference dependence result did not reproduce exactly"
+        )
 
     summary, decision = aggregate_extended(rows, protocol, reference)
     result: dict[str, Any] = {
