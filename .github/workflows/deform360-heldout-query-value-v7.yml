@@ -1,0 +1,243 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 held-out-query Bayesian value v7
+
+on:
+  push:
+    branches: [science/deform360-heldout-query-value-v7]
+    paths: [.github/requests/deform360-heldout-query-value-v7-*.json]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-heldout-query-value-v7
+  cancel-in-progress: false
+
+env:
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  REQUEST_PATH: .github/requests/deform360-heldout-query-value-v7-20260903-r1.json
+  V7_RUNNER: control/scripts/science/run_deform360_heldout_query_value_v7.py
+  V7_PAYLOAD: control/scripts/science/run_deform360_heldout_query_value_v7.py.gz
+  V7_PROTOCOL: control/protocols/deform360_heldout_query_value_v7.json
+  V7_RUNNER_SHA256: 77bd31292fa00e724493ebacfb34f5be0a6d525e3f95fcda9887c0131c97bb2d
+  V7_PAYLOAD_SHA256: 01d6f1cd5fa7d91f9e1a055cc4c7b4254d903b243a40f077d041e2228742a674
+  V7_EXPANDED_SHA256: f9274d059c6a350fb751e185c0aa050368d0da2ac36bc1a78e53351204045795
+  V7_PROTOCOL_SHA256: 4b1fa8a5a305ede21ebaca10be2a42da0cf6c46e835dc26581677e3bda046e8f
+  RECOVERY_REVISION: 0f9312a3cae9f854631d8c61c2893c6527014219
+  ORIGINAL_V6_REVISION: 954538832106d8ded13f1101b3a2b2e855b40513
+  PARENT_CONTROL_REVISION: e409527b8499a225bde8bd7f8c532a30e96548c6
+  FROZEN_REVISION: 25ba91c021124569c4dcf84c66eda5ec088868e0
+  PARENT_ARTIFACT_ID: "9738998271"
+  PARENT_ARTIFACT_SHA256: e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948
+  PARENT_RESULT_SHA256: 0ad16b15c94d81b8c14221a271eb1f647d689a530284570becdfeca87e0d8ec7
+  PARENT_READINESS_SHA256: 58841144ae5105080ecb991cc73e9021214fc8676f9e55948ef3511fb12a2f8e
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install numpy==1.26.4
+      - name: Validate source-bound contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' "${V7_RUNNER_SHA256}" scripts/science/run_deform360_heldout_query_value_v7.py | sha256sum -c --strict
+          printf '%s  %s\n' "${V7_PAYLOAD_SHA256}" scripts/science/run_deform360_heldout_query_value_v7.py.gz | sha256sum -c --strict
+          test "$(gzip -dc scripts/science/run_deform360_heldout_query_value_v7.py.gz | sha256sum | cut -d' ' -f1)" = "${V7_EXPANDED_SHA256}"
+          printf '%s  %s\n' "${V7_PROTOCOL_SHA256}" protocols/deform360_heldout_query_value_v7.json | sha256sum -c --strict
+          python -m json.tool protocols/deform360_heldout_query_value_v7.json >/dev/null
+          python scripts/science/run_deform360_heldout_query_value_v7.py --self-test
+          python -m unittest discover -s tests -p 'test_deform360_heldout_query_value_v7.py' -v
+
+  evaluate:
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 300
+    steps:
+      - name: Check out v7 request commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: control
+          persist-credentials: false
+          fetch-depth: 2
+          clean: true
+      - name: Check out exact scientific ancestors
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RECOVERY_REVISION }}
+          path: recovery
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.ORIGINAL_V6_REVISION }}
+          path: original-v6
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PARENT_CONTROL_REVISION }}
+          path: parent-control
+          persist-credentials: false
+          clean: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.FROZEN_REVISION }}
+          path: frozen
+          persist-credentials: false
+          clean: true
+
+      - name: Validate request and recover parent evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REQUEST="control/${REQUEST_PATH}" python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          request = json.loads(Path(os.environ["REQUEST"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "-C", "control", "rev-parse", "HEAD^"], text=True
+          ).strip()
+          expected = {
+              "schema": "bayesian-phystwin/deform360-heldout-query-value-request-v7",
+              "experiment": "deform360-heldout-query-bayesian-value-v7",
+              "runner_sha256": os.environ["V7_RUNNER_SHA256"],
+              "payload_sha256": os.environ["V7_PAYLOAD_SHA256"],
+              "expanded_runner_sha256": os.environ["V7_EXPANDED_SHA256"],
+              "protocol_sha256": os.environ["V7_PROTOCOL_SHA256"],
+              "runner_labels": ["self-hosted", "Linux", "X64", "gpuserver4090"],
+              "dataset_root": os.environ["DATASET_ROOT"],
+              "object_count": 92,
+              "query_count": 64,
+              "calibration_query_count": 32,
+              "evaluation_query_count": 32,
+              "retrospective_target_reuse": True,
+              "new_measurements_collected": False,
+              "scientific_gates_control_workflow_success": False,
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+          }
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f"invalid request field {key}")
+          PY
+          test -d "${DATASET_ROOT}"
+          printf '%s  %s\n' "${V7_RUNNER_SHA256}" "${V7_RUNNER}" | sha256sum -c --strict
+          printf '%s  %s\n' "${V7_PAYLOAD_SHA256}" "${V7_PAYLOAD}" | sha256sum -c --strict
+          test "$(gzip -dc "${V7_PAYLOAD}" | sha256sum | cut -d' ' -f1)" = "${V7_EXPANDED_SHA256}"
+          printf '%s  %s\n' "${V7_PROTOCOL_SHA256}" "${V7_PROTOCOL}" | sha256sum -c --strict
+          rm -rf parent-evidence parent-evidence.zip
+          mkdir parent-evidence
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${PARENT_ARTIFACT_ID}/zip" \
+            -o parent-evidence.zip
+          printf '%s  %s\n' "${PARENT_ARTIFACT_SHA256}" parent-evidence.zip | sha256sum -c --strict
+          unzip -q parent-evidence.zip -d parent-evidence
+          printf '%s  %s\n' "${PARENT_RESULT_SHA256}" parent-evidence/result.json | sha256sum -c --strict
+          printf '%s  %s\n' "${PARENT_READINESS_SHA256}" parent-evidence/bound-readiness.json | sha256sum -c --strict
+
+      - name: Prepare isolated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          VENV="${RUNNER_TEMP}/deform360-v7-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          OUTPUT="${RUNNER_TEMP}/deform360-v7-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${VENV}" "${OUTPUT}"
+          python3 -m venv "${VENV}"
+          "${VENV}/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4
+          mkdir -p "${OUTPUT}"
+          echo "PYTHON_BIN=${VENV}/bin/python" >> "${GITHUB_ENV}"
+          echo "VENV_ROOT=${VENV}" >> "${GITHUB_ENV}"
+          echo "OUTPUT_ROOT=${OUTPUT}" >> "${GITHUB_ENV}"
+
+      - name: Run fixed-mean held-out-query evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" "${V7_RUNNER}" \
+            --protocol "${V7_PROTOCOL}" \
+            --recovery-runner recovery/scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py \
+            --original-v6-runner original-v6/scripts/science/run_deform360_dependence_query_v6.py \
+            --original-v6-protocol original-v6/protocols/deform360_dependence_query_v6.json \
+            --parent-protocol parent-control/protocols/deform360_untouched_confirmation_v5.json \
+            --parent-result parent-evidence/result.json \
+            --readiness-json parent-evidence/bound-readiness.json \
+            --data-root "${DATASET_ROOT}" \
+            --recovery-root recovery \
+            --original-v6-root original-v6 \
+            --parent-control-root parent-control \
+            --frozen-root frozen \
+            --output-json "${OUTPUT_ROOT}/result.json" \
+            --output-report "${OUTPUT_ROOT}/report.md" \
+            --output-csv "${OUTPUT_ROOT}/object-results.csv" \
+            | tee "${OUTPUT_ROOT}/console.log"
+          cp "control/${REQUEST_PATH}" "${OUTPUT_ROOT}/request.json"
+          cp "${V7_PROTOCOL}" "${OUTPUT_ROOT}/protocol.json"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Enforce technical completion, not scientific success
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          result = json.loads((Path(os.environ["OUTPUT_ROOT"]) / "result.json").read_text())
+          if result["status"] != "complete" or result["summary"]["object_count"] != 92:
+              raise SystemExit("incomplete result")
+          technical = (
+              "complete_92_object_roster", "exact_parent_point_result_reproduced",
+              "same_mean_by_construction", "shared_raw_coordinate_marginals_match",
+              "exact_32_32_query_split", "source_width_match_exact",
+          )
+          for key in technical:
+              if result["decision"]["gates"][key] is not True:
+                  raise SystemExit(f"technical gate failed: {key}")
+          boundary = result["information_boundary"]
+          if boundary["new_measurements_collected"] is not False:
+              raise SystemExit("new measurements were used")
+          if boundary["target_outcomes_used_for_query_or_arm_selection"] is not False:
+              raise SystemExit("target leakage detected")
+          if result["decision"]["paper_claim_authorized"] is not False:
+              raise SystemExit("result self-authorized a paper claim")
+          unsigned = dict(result)
+          supplied = unsigned.pop("result_sha256")
+          encoded = json.dumps(unsigned, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+          if hashlib.sha256(encoded).hexdigest() != supplied:
+              raise SystemExit("invalid result digest")
+          PY
+          sha256sum "${OUTPUT_ROOT}"/* > "${OUTPUT_ROOT}/sha256sums.txt"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-heldout-query-value-v7-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove isolated runtime
+        if: always()
+        shell: bash
+        run: rm -rf -- "${VENV_ROOT:-}"
