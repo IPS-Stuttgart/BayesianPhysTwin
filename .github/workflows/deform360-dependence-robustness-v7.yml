@@ -260,8 +260,8 @@ jobs:
           decision = result["decision"]
           for key in (
               "paper_claim_authorized",
-              "calibration_claim_authorized",
-              "deployment_safety_claim_authorized",
+              "calibrated_uncertainty_claim_authorized",
+              "robot_control_or_safety_claim_authorized",
               "fresh_confirmation_authorized",
           ):
               if decision[key] is not False:
