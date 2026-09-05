@@ -1,0 +1,156 @@
+# workflow-lifecycle: experiment
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 empirical null and matched acceptance v1
+
+on:
+  push:
+    branches:
+      - science/deform360-empirical-null-audit-20260906
+    paths:
+      - .github/requests/deform360-empirical-null-audit-20260906.json
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: deform360-empirical-null-audit-20260906
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: '0'
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  NUMEXPR_NUM_THREADS: '1'
+
+jobs:
+  evaluate:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    steps:
+      - name: Checkout new audit only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: audit
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Validate request-only trigger
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          test "${BEFORE_SHA}" != 0000000000000000000000000000000000000000
+          test "$(git -C audit diff --name-only "${BEFORE_SHA}" "${GITHUB_SHA}")" = .github/requests/deform360-empirical-null-audit-20260906.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('audit/.github/requests/deform360-empirical-null-audit-20260906.json').read_text())
+          assert p['retrospective'] is True
+          assert p['new_holdouts_may_open'] is False
+          assert p['expected_objects'] == 92
+          assert p['runner_label'] == 'gpuserver4090'
+          assert p['primary_matched_acceptance'] == 0.4
+          assert p['empirical_covariance_shrinkage'] == 0.1
+          assert p['query_bank_changed'] is False
+          assert p['point_predictor_changed'] is False
+          PY
+      - name: Checkout immutable recovery reader
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 28e8a44bfbab9e1556e0f51c53b46e91b8352481
+          path: recovery
+          persist-credentials: false
+      - name: Checkout immutable v6 definitions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 954538832106d8ded13f1101b3a2b2e855b40513
+          path: v6
+          persist-credentials: false
+      - name: Checkout immutable parent reader
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: e409527b8499a225bde8bd7f8c532a30e96548c6
+          path: parent
+          persist-credentials: false
+      - name: Checkout immutable point predictor
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 25ba91c021124569c4dcf84c66eda5ec088868e0
+          path: frozen
+          persist-credentials: false
+      - name: Create isolated runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="${RUNNER_TEMP}/empirical-null-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="${RUNNER_TEMP}/empirical-null-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          python3 -m venv "${venv}"
+          "${venv}/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4
+          mkdir -p "${output}"
+          echo "PYTHON_BIN=${venv}/bin/python" >> "${GITHUB_ENV}"
+          echo "OUTPUT_ROOT=${output}" >> "${GITHUB_ENV}"
+          echo "VENV_ROOT=${venv}" >> "${GITHUB_ENV}"
+          cp audit/.github/requests/deform360-empirical-null-audit-20260906.json "${output}/request.json"
+          cp audit/scripts/science/run_deform360_empirical_null_audit_v1.py "${output}/audit-source.py"
+      - name: Recover hash-verified historical artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p parent-evidence v6-evidence
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/9738998271/zip" -o parent-evidence.zip
+          echo 'e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948  parent-evidence.zip' | sha256sum -c -
+          curl --fail --location --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/9811194776/zip" -o v6-evidence.zip
+          echo '8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a  v6-evidence.zip' | sha256sum -c -
+          unzip -q -o parent-evidence.zip -d parent-evidence
+          unzip -q -o v6-evidence.zip -d v6-evidence
+      - name: Preflight numerical and source contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d /mnt/seagate10tb/florianpfaff/datasets/deform360
+          "${PYTHON_BIN}" audit/scripts/science/run_deform360_empirical_null_audit_v1.py --self-test
+          "${PYTHON_BIN}" recovery/scripts/science/run_deform360_dependence_query_v6_bound_carrier_recovery_v1.py --self-test
+          echo '06c22fc3fe667c4f2f11eddee3dcb1b78b5465b6312136efb010611e1ebab91c  v6/scripts/science/run_deform360_dependence_query_v6.py' | sha256sum -c -
+          {
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "audit_commit=${GITHUB_SHA}"
+            echo "runner=${RUNNER_NAME}"
+            for folder in audit recovery v6 parent frozen; do
+              echo "${folder}=$(git -C "${folder}" rev-parse HEAD)"
+            done
+            "${PYTHON_BIN}" --version
+            "${PYTHON_BIN}" -c 'import numpy; print(numpy.__version__)'
+            df -h /mnt/seagate10tb/florianpfaff/datasets/deform360
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+      - name: Execute unchanged real-data replay and independent controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" audit/scripts/science/run_deform360_empirical_null_audit_v1.py \
+            --root "${GITHUB_WORKSPACE}" --output "${OUTPUT_ROOT}" \
+            2>&1 | tee "${OUTPUT_ROOT}/console.log"
+          cat "${OUTPUT_ROOT}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+          for folder in recovery v6 parent frozen; do
+            git -C "${folder}" diff --exit-code
+          done
+          find "${OUTPUT_ROOT}" -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 sha256sum > "${OUTPUT_ROOT}/sha256sums.txt"
+      - name: Upload positive negative or incomplete evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform360-empirical-null-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: warn
+          retention-days: 90
