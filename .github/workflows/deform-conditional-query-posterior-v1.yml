@@ -1,0 +1,118 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM conditional posterior query transfer v1
+
+on:
+  push:
+    branches:
+      - science/deform-conditional-query-posterior-v1
+    paths:
+      - .github/requests/deform-conditional-query-posterior-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-conditional-query-posterior-v1
+  cancel-in-progress: false
+
+env:
+  CAPSULE: experiments/deform_conditional_query_posterior_v1
+  REQUEST: .github/requests/deform-conditional-query-posterior-v1.json
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  hypothesis:
+    name: Matched-mean posterior versus plug-in and empirical controls
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact file-change trigger
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Verify request-only trigger and frozen code
+        env:
+          BEFORE: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          req = json.loads(Path(os.environ['REQUEST']).read_text())
+          before = os.environ['BEFORE']
+          changed = subprocess.check_output(['git', 'diff', '--name-only', before, os.environ['GITHUB_SHA']], text=True).splitlines()
+          assert changed == [os.environ['REQUEST']], changed
+          assert req['experiment_revision'] == before
+          assert req['status'] == 'authorized'
+          assert req['runner_labels'] == ['self-hosted', 'gpuserver4090']
+          assert req['dataset_root'] == os.environ['DATASET_ROOT']
+          assert req['official_eval_access'] is False
+          assert req['new_acquisition'] is False
+          for name, expected in req['git_blobs'].items():
+              actual = subprocess.check_output(['git', 'hash-object', name], text=True).strip()
+              assert actual == expected, (name, actual, expected)
+          assert Path(os.environ['DATASET_ROOT']).is_dir()
+          for dlo in ('DLO4', 'DLO5'):
+              assert len(list((Path(os.environ['DATASET_ROOT'])/dlo/'train').glob('*.pkl'))) == 56
+          PY
+          base="$RUNNER_TEMP/conditional-query-posterior-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$base"
+          echo "CAPSULE_OUTPUT=$base" >> "$GITHUB_ENV"
+          echo "CAPSULE_PYTHON=$base/venv/bin/python" >> "$GITHUB_ENV"
+          python -m venv "$base/venv"
+          "$base/venv/bin/python" -m pip install 'numpy==2.2.6' 'scipy==1.15.3' 'pytest==8.4.2'
+          "$base/venv/bin/python" -m pip freeze > "$base/runtime.txt"
+
+      - name: Numerical and future-information exclusion tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CAPSULE_PYTHON" -m pytest -q -p no:cacheprovider "$CAPSULE/test_run.py" 2>&1 | tee "$CAPSULE_OUTPUT/tests.log"
+
+      - name: Fit, calibrate, seal, and score the fixed real-data panel
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CAPSULE_PYTHON" "$CAPSULE/run.py" \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$CAPSULE_OUTPUT/evidence" \
+            --revision "$GITHUB_SHA" 2>&1 | tee "$CAPSULE_OUTPUT/run.log"
+          cat "$CAPSULE_OUTPUT/evidence/SUMMARY.md"
+          cat "$CAPSULE_OUTPUT/evidence/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain positive, negative, or technical-failure evidence
+        if: always() && env.CAPSULE_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform-conditional-query-posterior-v1-${{ github.run_id }}
+          path: |
+            ${{ env.CAPSULE_OUTPUT }}/evidence/
+            ${{ env.CAPSULE_OUTPUT }}/runtime.txt
+            ${{ env.CAPSULE_OUTPUT }}/tests.log
+            ${{ env.CAPSULE_OUTPUT }}/run.log
+            experiments/deform_conditional_query_posterior_v1/
+            .github/requests/deform-conditional-query-posterior-v1.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove only the job-owned virtual environment
+        if: always() && env.CAPSULE_OUTPUT != ''
+        shell: bash
+        run: rm -rf -- "$CAPSULE_OUTPUT/venv"
