@@ -1,0 +1,111 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: Held-out deformation uncertainty v1
+on:
+  push:
+    branches: [science/heldout-deformation-uncertainty-v1]
+    paths: [.github/requests/heldout-deformation-uncertainty-v1.json]
+permissions:
+  contents: read
+concurrency:
+  group: heldout-deformation-uncertainty-v1
+  cancel-in-progress: false
+jobs:
+  experiment:
+    if: github.run_attempt == 1
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 60
+    env:
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      DATA_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Read explicit file-change request
+        run: |
+          set -euo pipefail
+          OUT="${RUNNER_TEMP}/heldout-deformation-${GITHUB_RUN_ID}"
+          mkdir -p "${OUT}"
+          echo "OUTPUT_ROOT=${OUT}" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import json, os
+          p = '.github/requests/heldout-deformation-uncertainty-v1.json'
+          r = json.load(open(p))
+          assert r['runner'] == 'gpuserver4090'
+          assert r['data_root'] == os.environ['DATA_ROOT']
+          assert r['official_eval_access'] is False
+          assert r['mode'] in ('inventory', 'evaluate')
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('EXPERIMENT_MODE=' + r['mode'] + '\n')
+          print(json.dumps(r, indent=2))
+          PY
+          cp .github/requests/heldout-deformation-uncertainty-v1.json "$OUT/request.json"
+      - name: Source cache schema inventory (no outcome scoring)
+        if: env.EXPERIMENT_MODE == 'inventory'
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$OUTPUT_ROOT/inventory.json"
+          import ast, json, os, struct, zipfile
+          from pathlib import Path
+          root = Path('/home/github-runner/.cache/workflows/deform-dlo45/runs')
+          record = {'runner': os.environ.get('RUNNER_NAME'), 'official_eval_opened': False, 'data': {}, 'source_files': []}
+          for dlo in ('DLO4', 'DLO5'):
+              p = Path(os.environ['DATA_ROOT']) / dlo / 'train'
+              names = sorted(x.name for x in p.iterdir())
+              record['data'][dlo] = {'count': len(names), 'first_names': names[:5]}
+          if root.exists():
+              candidates = sorted(root.rglob('*.npz'))
+              record['cache_npz_names'] = [str(p) for p in candidates][:150]
+              for p in candidates:
+                  if 'source' not in str(p.relative_to(root)).lower():
+                      continue
+                  fields = {}
+                  try:
+                      with zipfile.ZipFile(p) as z:
+                          for name in z.namelist():
+                              with z.open(name) as f:
+                                  magic = f.read(8)
+                                  if magic[:6] != b'\x93NUMPY':
+                                      continue
+                                  nbytes = 2 if magic[6] == 1 else 4
+                                  length = int.from_bytes(f.read(nbytes), 'little')
+                                  if length > 100000:
+                                      raise ValueError('oversized array header')
+                                  fields[name] = ast.literal_eval(f.read(length).decode('latin1').strip())
+                      record['source_files'].append({'path': str(p), 'fields': fields})
+                  except (OSError, ValueError, zipfile.BadZipFile) as e:
+                      record['source_files'].append({'path': str(p), 'error': str(e)})
+                  if len(record['source_files']) >= 20:
+                      break
+          print(json.dumps(record, indent=2))
+          PY
+      - name: Prepare isolated statistical runtime
+        if: env.EXPERIMENT_MODE == 'evaluate'
+        run: |
+          set -euo pipefail
+          python3 -m venv "$OUTPUT_ROOT/venv"
+          "$OUTPUT_ROOT/venv/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4 scipy==1.12.0
+      - name: Validate and run frozen experiment
+        if: env.EXPERIMENT_MODE == 'evaluate'
+        run: |
+          set -euo pipefail
+          "$OUTPUT_ROOT/venv/bin/python" experiments/heldout_deformation_uncertainty_v1/run.py --self-test
+          "$OUTPUT_ROOT/venv/bin/python" experiments/heldout_deformation_uncertainty_v1/run.py \
+            --request .github/requests/heldout-deformation-uncertainty-v1.json \
+            --output "$OUTPUT_ROOT/results" | tee "$OUTPUT_ROOT/console.log"
+          cat "$OUTPUT_ROOT/results/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain evidence including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: heldout-deformation-uncertainty-v1-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/heldout-deformation-${{ github.run_id }}/*.json
+            ${{ runner.temp }}/heldout-deformation-${{ github.run_id }}/*.log
+            ${{ runner.temp }}/heldout-deformation-${{ github.run_id }}/results
+          if-no-files-found: warn
+          retention-days: 90
