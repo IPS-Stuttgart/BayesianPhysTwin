@@ -1,0 +1,30 @@
+{
+  "schema": "deform360-empirical-null-audit-request-v1",
+  "request_id": "deform360-empirical-null-audit-20260906",
+  "expected_source_revision": "fbb7cbeab1c8536ab97c8b841e1f749e70cc447a",
+  "retrospective": true,
+  "new_holdouts_may_open": false,
+  "expected_objects": 92,
+  "runner_label": "gpuserver4090",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "primary_matched_acceptance": 0.4,
+  "secondary_matched_acceptances": [0.1, 0.2, 0.6, 0.8, 1.0],
+  "empirical_covariance_shrinkage": 0.1,
+  "empirical_covariance_rank": "same_as_original_per_object",
+  "source_only_controls": [
+    "rank-matched PCA empirical covariance with fixed shrinkage and exact coordinate-marginal rescaling",
+    "direct empirical Gaussian for each of the five original scalar queries",
+    "independently source-recalibrated diagonal covariance at query level"
+  ],
+  "query_bank_changed": false,
+  "point_predictor_changed": false,
+  "target_outcomes_may_select_hyperparameters": false,
+  "parent_run_id": 33528032875,
+  "parent_artifact_id": 9811194776,
+  "inferential_unit": "physical object",
+  "bootstrap_repetitions": 10000,
+  "seed": 260906,
+  "primary_question": "Does structured uncertainty improve Brier score and accepted event risk at identical means and matched 40 percent acceptance compared with conventional source-fitted error distributions?",
+  "negative_control": "Independent per-query scale calibration can exactly cancel projected raw covariance; test probability equivalence instead of assuming Bayesian uniqueness.",
+  "scientific_claim_authorized": false
+}
