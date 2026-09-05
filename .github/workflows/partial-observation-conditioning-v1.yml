@@ -5,7 +5,6 @@ on:
   push:
     branches: [research/partial-observation-conditioning-20260906]
     paths:
-      - '.github/workflows/partial-observation-conditioning-v1.yml'
       - 'experiments/partial_observation_conditioning_v1/request.json'
 permissions:
   contents: read
@@ -21,56 +20,86 @@ jobs:
       OMP_NUM_THREADS: '2'
       OPENBLAS_NUM_THREADS: '2'
       MKL_NUM_THREADS: '2'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      PYTHONHASHSEED: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      STUDY: experiments/partial_observation_conditioning_v1
       PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Read-only inventory of completed DEFORM cache
-        if: hashFiles('experiments/partial_observation_conditioning_v1/request.json') == ''
+      - name: Bind isolated runtime and authorized paths
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json, zipfile, struct
-          from pathlib import Path
-          root = Path('/home/github-runner/.cache/workflows/deform-dlo45/runs')
-          for run in ['33329341107-1', '33335970581-1', '33414972339-3']:
-              for p in sorted((root/run).rglob('*')):
-                  if not p.is_file() or p.suffix not in ['.npz','.json','.pt','.pth']:
-                      continue
-                  print('CACHE', p.relative_to(root), p.stat().st_size, flush=True)
-                  if p.suffix == '.npz':
-                      with zipfile.ZipFile(p) as z:
-                          for name in z.namelist():
-                              with z.open(name) as f:
-                                  magic=f.read(8)
-                                  n=struct.unpack('<H' if magic[6]==1 else '<I', f.read(2 if magic[6]==1 else 4))[0]
-                                  print('HEADER',name,f.read(n).decode().strip(),flush=True)
-                  if p.name in ['source_result.json','prediction_seal.json','method_seal.json']:
-                      v=json.loads(p.read_text())
-                      print('IDENTITY',json.dumps({k:v.get(k) for k in ['contract','dlo','source_manifest','physical_checkpoint','predictions','eval_manifest']}),flush=True)
-          PY
-      - name: Create isolated NumPy test environment
-        if: hashFiles('experiments/partial_observation_conditioning_v1/request.json') != ''
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m venv "$RUNNER_TEMP/partial-observation-venv"
-          "$RUNNER_TEMP/partial-observation-venv/bin/pip" install 'numpy==2.2.6' 'pytest==8.3.5'
-      - name: Validate and execute fixed partial-observation experiment
-        if: hashFiles('experiments/partial_observation_conditioning_v1/request.json') != ''
-        shell: bash
-        run: |
-          set -euo pipefail
-          PY="$RUNNER_TEMP/partial-observation-venv/bin/python"
-          export OUT="$RUNNER_TEMP/partial-observation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test "$RUNNER_NAME" = workstation1
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          export OUT="$RUNNER_TEMP/partial-observation-${GITHUB_RUN_ID}"
+          export SCRATCH="/home/github-runner/.cache/workflows/partial-observation-conditioning-v1/${GITHUB_RUN_ID}"
+          test ! -e "$SCRATCH"
+          mkdir -p "$OUT" "$SCRATCH"
           echo "OUT=$OUT" >> "$GITHUB_ENV"
-          "$PY" -m pytest -q experiments/partial_observation_conditioning_v1/test_experiment.py
-          "$PY" -u experiments/partial_observation_conditioning_v1/run.py \
-            --request experiments/partial_observation_conditioning_v1/request.json --output "$OUT"
-          cat "$OUT/report.md" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Retain complete compact evidence including failures
+          echo "SCRATCH=$SCRATCH" >> "$GITHUB_ENV"
+          cp "$STUDY/request.json" "$OUT/request.json"
+          test -x "$FROZEN_PYTHON"
+          safe="$RUNNER_TEMP/partial-observation-gitconfig-${GITHUB_RUN_ID}"
+          git config --file "$safe" --add safe.directory /home/florianpfaff/source-only/DEFORM-b73b8b8
+          echo "GIT_CONFIG_GLOBAL=$safe" >> "$GITHUB_ENV"
+          device=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -t, -k2,2nr | head -1 | cut -d, -f1 | tr -d ' ')
+          echo "PARTIAL_DEVICE=cuda:$device" >> "$GITHUB_ENV"
+          python3 -m venv "$RUNNER_TEMP/partial-observation-venv"
+          "$RUNNER_TEMP/partial-observation-venv/bin/pip" install 'numpy==2.2.6'
+          echo "NUMPY_PYTHON=$RUNNER_TEMP/partial-observation-venv/bin/python" >> "$GITHUB_ENV"
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "run=$GITHUB_RUN_ID"
+            echo "runner=$RUNNER_NAME"
+            echo "device=cuda:$device"
+            echo "scratch=$SCRATCH"
+            sha256sum "$STUDY/run.py" "$STUDY/test_experiment.py" "$STUDY/request.json"
+            nvidia-smi
+          } > "$OUT/environment.txt"
+      - name: Analytic conditioning, leakage and negative-control tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMPY_PYTHON" -m unittest discover -v -s "$STUDY" -p test_experiment.py 2>&1 | tee "$OUT/tests.log"
+      - name: Replay pinned DEFORM checkpoints on source trajectories only
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -u "$STUDY/run.py" source --request "$STUDY/request.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/source.log"
+      - name: Tune all methods on source trajectories and freeze them
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMPY_PYTHON" -u "$STUDY/run.py" fit --request "$STUDY/request.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/fit.log"
+      - name: Upload source seal before any target outcome is opened
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: partial-observation-source-seal-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/source_seal.json
+            ${{ env.OUT }}/source_selection.json
+            ${{ env.OUT }}/*_model.npz
+            ${{ env.OUT }}/request.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Load all previously opened official targets and verify baseline parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -u "$STUDY/run.py" target --request "$STUDY/request.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/target.log"
+      - name: Score all methods without target selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMPY_PYTHON" -u "$STUDY/run.py" score --request "$STUDY/request.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/score.log"
+          cat "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain compact evidence including technical or scientific failures
         if: always() && env.OUT != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
