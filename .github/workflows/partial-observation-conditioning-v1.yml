@@ -1,0 +1,130 @@
+name: Partial-observation conditioning v1
+
+on:
+  push:
+    branches: [experiment/partial-observation-conditioning-v1]
+    paths: [.github/requests/partial-observation-conditioning-v1.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: partial-observation-conditioning-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: '0'
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  NUMEXPR_NUM_THREADS: '1'
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  EXPERIMENT: experiments/partial_observation_conditioning_v1
+  REQUEST: .github/requests/partial-observation-conditioning-v1.json
+
+jobs:
+  experiment:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 45
+    env:
+      OUT: ${{ runner.temp }}/partial-observation-conditioning-${{ github.run_id }}
+      SOURCE_VIEW: ${{ runner.temp }}/partial-observation-source-${{ github.run_id }}
+      VENV: ${{ runner.temp }}/partial-observation-venv-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Validate request-only trigger and sealed code
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          before='${{ github.event.before }}'
+          test "$before" != '0000000000000000000000000000000000000000'
+          mapfile -t changed < <(git diff --name-only "$before" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$REQUEST"
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          request = json.loads(Path(os.environ['REQUEST']).read_text())
+          assert request['contract'] == 'partial-observation-conditioning-request-v1'
+          assert request['branch'] == os.environ['GITHUB_REF_NAME']
+          assert request['dataset_root'] == os.environ['DATASET_ROOT']
+          assert request['official_eval_access'] is False
+          assert request['new_hardware'] is False
+          assert request['source_only'] is True
+          for name, expected in request['code_sha256'].items():
+              path = Path(os.environ['EXPERIMENT']) / name
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, name
+          PY
+      - name: Create train-only view and isolated numerical runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test ! -e "$SOURCE_VIEW"
+          mkdir -p "$SOURCE_VIEW/DLO4" "$SOURCE_VIEW/DLO5"
+          for dlo in DLO4 DLO5; do
+            test -d "$DATASET_ROOT/$dlo/train"
+            test "$(find "$DATASET_ROOT/$dlo/train" -maxdepth 1 -type f -name '*.pkl' | wc -l)" -eq 56
+            ln -s "$DATASET_ROOT/$dlo/train" "$SOURCE_VIEW/$dlo/train"
+            test ! -e "$SOURCE_VIEW/$dlo/eval"
+          done
+          python -m venv "$VENV"
+          "$VENV/bin/python" -m pip install --disable-pip-version-check numpy==2.2.6
+      - name: Numerical and leakage tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VENV/bin/python" -m unittest discover -s "$EXPERIMENT" -p 'test_*.py' -v 2>&1 | tee "$RUNNER_TEMP/partial-observation-tests-$GITHUB_RUN_ID.log"
+      - name: Fit source models, seal settings, and evaluate source-held trajectories
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VENV/bin/python" "$EXPERIMENT/evaluate.py" \
+            --dataset-root "$SOURCE_VIEW" --output-dir "$OUT" \
+            --revision "$GITHUB_SHA" 2>&1 | tee "$RUNNER_TEMP/partial-observation-run-$GITHUB_RUN_ID.log"
+      - name: Validate completed evidence and publish job summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VENV/bin/python" - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads((Path(os.environ['OUT'])/'result.json').read_text())
+          assert result['status'] == 'completed-source-only-pilot'
+          assert result['accounting']['rows'] == 640
+          assert result['accounting']['source_test_trajectories'] == 16
+          assert result['accounting']['official_eval_opened'] is False
+          assert result['config']['official_DEFORM_checkpoint_used'] is False
+          assert result['source_revision'] == os.environ['GITHUB_SHA']
+          PY
+          cat "$OUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain compact evidence, including failures; no raw dataset arrays
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: partial-observation-conditioning-v1-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/*.json
+            ${{ env.OUT }}/*.jsonl
+            ${{ env.OUT }}/SUMMARY.md
+            ${{ runner.temp }}/partial-observation-*-${{ github.run_id }}.log
+            experiments/partial_observation_conditioning_v1/*.py
+            .github/requests/partial-observation-conditioning-v1.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Clean isolated runtime and source view, not original data or results
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "$VENV" "$SOURCE_VIEW"
