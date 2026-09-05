@@ -1,0 +1,56 @@
+name: Nonlinear query value v1
+on:
+  push:
+    branches: [experiment/nonlinear-query-value-20260906]
+    paths: [experiments/nonlinear_query_value_v1/request.json]
+permissions:
+  contents: write
+concurrency:
+  group: nonlinear-query-value-v1
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute requested phase
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p outputs/nonlinear-query-value-v1
+          python3 experiments/nonlinear_query_value_v1/run.py --request experiments/nonlinear_query_value_v1/request.json --output outputs/nonlinear-query-value-v1
+      - name: Upload complete evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nonlinear-query-value-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: outputs/nonlinear-query-value-v1/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain compact evidence on experiment branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="results/science/nonlinear_query_value_v1/${GITHUB_RUN_ID}"
+          mkdir -p "$destination"
+          for name in inventory.json result.json failure.json summary.md units.csv; do
+            if test -f "outputs/nonlinear-query-value-v1/$name"; then
+              cp "outputs/nonlinear-query-value-v1/$name" "$destination/$name"
+            fi
+          done
+          if test -f "$destination/summary.md"; then cat "$destination/summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$destination"
+          if ! git diff --cached --quiet; then
+            git commit -m "Retain nonlinear-query run ${GITHUB_RUN_ID} evidence"
+            git pull --rebase origin "$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
