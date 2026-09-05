@@ -1,6 +1,6 @@
 {
   "schema": "heldout-deformation-uncertainty-request-v1",
-  "request_id": "20260906-source-evaluation-1",
+  "request_id": "20260906-source-evaluation-2-ownership-repair",
   "mode": "evaluate",
   "runner": "gpuserver4090",
   "data_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
@@ -9,6 +9,9 @@
   "score_outcomes": true,
   "new_physical_measurements": false,
   "evaluator_sha256": "562b5b21535eedd01f3191ace7d3583d550f26a8d10818f32169d16566800633",
-  "exporter_sha256": "e7ab9916abae486470e09f5579222bf51a274d49fc01d3c827bd7948cc7a53b0",
-  "protocol_sha256": "a502252119d6d257068cfedc3dd9aaf35078ac2277063de78865059975db6e95"
+  "exporter_sha256": "cc0fca496a43374fe6bcaa2cf35dca60e0d2dcdafff00c2402e292ac139e5993",
+  "protocol_sha256": "a502252119d6d257068cfedc3dd9aaf35078ac2277063de78865059975db6e95",
+  "technical_repair_of_run": 33984874637,
+  "previous_scoring_started": false,
+  "repair_scope": "process-local safe.directory for exact authorized shared DEFORM checkout; all upstream and checkpoint identity checks retained"
 }
