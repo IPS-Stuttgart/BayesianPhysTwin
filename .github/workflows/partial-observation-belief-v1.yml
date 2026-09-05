@@ -45,9 +45,6 @@ jobs:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: [self-hosted, gpuserver4090]
     timeout-minutes: 60
-    env:
-      OUT: ${{ runner.temp }}/partial-belief-${{ github.run_id }}
-      VENV: ${{ runner.temp }}/partial-belief-venv-${{ github.run_id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -56,6 +53,9 @@ jobs:
       - name: Create isolated NumPy runtime
         run: |
           set -euo pipefail
+          VENV="$RUNNER_TEMP/partial-belief-venv-$GITHUB_RUN_ID"
+          echo "VENV=$VENV" >> "$GITHUB_ENV"
+          echo "OUT=$RUNNER_TEMP/partial-belief-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
           python3 -m venv "$VENV"
           "$VENV/bin/python" -m pip install numpy==2.2.6
       - name: Run fixed-mask real-data experiment
@@ -83,6 +83,6 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: partial-observation-belief-v1-${{ github.run_id }}
-          path: ${{ env.OUT }}/
+          path: ${{ runner.temp }}/partial-belief-${{ github.run_id }}/
           if-no-files-found: warn
           retention-days: 90
