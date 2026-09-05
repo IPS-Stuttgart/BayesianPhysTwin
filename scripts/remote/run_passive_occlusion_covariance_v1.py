@@ -176,7 +176,7 @@ PARENTS = {
         'source_predictions.npz': ('b858c2f4c0e107d367857dc2c4e17e753b6853e4593af64c4ce489564ae88fca', 9736605),
         'source_manifest.json': ('1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17', 14511),
         'target_predictions.npz': ('b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b', 18273132),
-        'eval_manifest.json': ('10ce91fc82df072cdbf36ce4f4bc1a0b57fc112f8f0b356b3aecafee26306d', 3877),
+        'eval_manifest.json': ('10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d', 3877),
     },
     'DLO5': {
         'source_predictions.npz': ('a8f8b3253f2588eed3fb0e92a8812ce534dba857c82a3af9d3f0fe0dadab39b6', 9757431),
