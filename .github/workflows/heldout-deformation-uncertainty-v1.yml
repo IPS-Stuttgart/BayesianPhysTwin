@@ -17,88 +17,70 @@ jobs:
     timeout-minutes: 60
     env:
       PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
       DATA_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Read explicit file-change request
+          fetch-depth: 2
+      - name: Bind request, code, protocol, runner, and file-change trigger
         run: |
           set -euo pipefail
           OUT="${RUNNER_TEMP}/heldout-deformation-${GITHUB_RUN_ID}"
           mkdir -p "${OUT}"
           echo "OUTPUT_ROOT=${OUT}" >> "$GITHUB_ENV"
           python3 - <<'PY'
-          import json, os
+          import hashlib, json, os, subprocess
+          from pathlib import Path
           p = '.github/requests/heldout-deformation-uncertainty-v1.json'
-          r = json.load(open(p))
+          r = json.loads(Path(p).read_text())
           assert r['runner'] == 'gpuserver4090'
           assert r['data_root'] == os.environ['DATA_ROOT']
           assert r['official_eval_access'] is False
-          assert r['mode'] in ('inventory', 'evaluate')
-          with open(os.environ['GITHUB_ENV'], 'a') as f:
-              f.write('EXPERIMENT_MODE=' + r['mode'] + '\n')
+          assert r['reserved_campaign_access'] is False
+          assert r['new_physical_measurements'] is False
+          assert r['mode'] == 'evaluate'
+          assert r['score_outcomes'] is True
+          assert os.environ['RUNNER_NAME'] == 'workstation1'
+          changed = subprocess.check_output(['git', 'diff', '--name-only', 'HEAD^', 'HEAD'], text=True).splitlines()
+          assert changed == [p], changed
+          root = Path('experiments/heldout_deformation_uncertainty_v1')
+          for filename, field in [('run.py', 'evaluator_sha256'), ('export.py', 'exporter_sha256')]:
+              assert hashlib.sha256((root / filename).read_bytes()).hexdigest() == r[field], field
+          protocol = json.loads((root / 'protocol.json').read_text())
+          canonical = json.dumps(protocol, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+          assert hashlib.sha256(canonical).hexdigest() == r['protocol_sha256']
           print(json.dumps(r, indent=2))
           PY
           cp .github/requests/heldout-deformation-uncertainty-v1.json "$OUT/request.json"
-      - name: Source cache schema inventory (no outcome scoring)
-        if: env.EXPERIMENT_MODE == 'inventory'
-        run: |
-          set -euo pipefail
-          python3 - <<'PY' | tee "$OUTPUT_ROOT/inventory.json"
-          import ast, json, os, struct, zipfile
-          from pathlib import Path
-          root = Path('/home/github-runner/.cache/workflows/deform-dlo45/runs')
-          record = {'runner': os.environ.get('RUNNER_NAME'), 'official_eval_opened': False, 'data': {}, 'source_files': []}
-          for dlo in ('DLO4', 'DLO5'):
-              p = Path(os.environ['DATA_ROOT']) / dlo / 'train'
-              names = sorted(x.name for x in p.iterdir())
-              record['data'][dlo] = {'count': len(names), 'first_names': names[:5]}
-          if root.exists():
-              candidates = sorted(root.rglob('*.npz'))
-              record['cache_npz_names'] = [str(p) for p in candidates][:150]
-              for p in candidates:
-                  if 'source' not in str(p.relative_to(root)).lower():
-                      continue
-                  fields = {}
-                  try:
-                      with zipfile.ZipFile(p) as z:
-                          for name in z.namelist():
-                              with z.open(name) as f:
-                                  magic = f.read(8)
-                                  if magic[:6] != b'\x93NUMPY':
-                                      continue
-                                  nbytes = 2 if magic[6] == 1 else 4
-                                  length = int.from_bytes(f.read(nbytes), 'little')
-                                  if length > 100000:
-                                      raise ValueError('oversized array header')
-                                  fields[name] = ast.literal_eval(f.read(length).decode('latin1').strip())
-                      record['source_files'].append({'path': str(p), 'fields': fields})
-                  except (OSError, ValueError, zipfile.BadZipFile) as e:
-                      record['source_files'].append({'path': str(p), 'error': str(e)})
-                  if len(record['source_files']) >= 20:
-                      break
-          print(json.dumps(record, indent=2))
-          PY
-      - name: Prepare isolated statistical runtime
-        if: env.EXPERIMENT_MODE == 'evaluate'
+          cp experiments/heldout_deformation_uncertainty_v1/protocol.json "$OUT/protocol.json"
+      - name: Prepare isolated statistical runtime and validate mathematics
         run: |
           set -euo pipefail
           python3 -m venv "$OUTPUT_ROOT/venv"
           "$OUTPUT_ROOT/venv/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4 scipy==1.12.0
-      - name: Validate and run frozen experiment
-        if: env.EXPERIMENT_MODE == 'evaluate'
+          "$OUTPUT_ROOT/venv/bin/python" experiments/heldout_deformation_uncertainty_v1/run.py --self-test | tee "$OUTPUT_ROOT/self-test.log"
+          "$OUTPUT_ROOT/venv/bin/python" -m pip freeze > "$OUTPUT_ROOT/runtime.log"
+      - name: Replay frozen source twin, never official evaluation data
         run: |
           set -euo pipefail
-          "$OUTPUT_ROOT/venv/bin/python" experiments/heldout_deformation_uncertainty_v1/run.py --self-test
+          test -x "$FROZEN_PYTHON"
+          "$FROZEN_PYTHON" experiments/heldout_deformation_uncertainty_v1/export.py \
+            --output "$OUTPUT_ROOT/carriers" |& tee "$OUTPUT_ROOT/export.log"
+      - name: Fit source uncertainty, seal, and score held-out query families
+        run: |
+          set -euo pipefail
           "$OUTPUT_ROOT/venv/bin/python" experiments/heldout_deformation_uncertainty_v1/run.py \
             --request .github/requests/heldout-deformation-uncertainty-v1.json \
-            --output "$OUTPUT_ROOT/results" | tee "$OUTPUT_ROOT/console.log"
+            --output "$OUTPUT_ROOT/results" |& tee "$OUTPUT_ROOT/console.log"
           cat "$OUTPUT_ROOT/results/report.md" >> "$GITHUB_STEP_SUMMARY"
-      - name: Retain evidence including failures
+      - name: Retain compact evidence including failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
