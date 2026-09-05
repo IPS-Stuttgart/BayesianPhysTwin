@@ -1,0 +1,15 @@
+{
+  "contract": "partial-observation-conditioning-request-v1",
+  "branch": "experiment/partial-observation-conditioning-v1",
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "runner_labels": ["self-hosted", "gpuserver4090"],
+  "source_only": true,
+  "official_eval_access": false,
+  "new_hardware": false,
+  "request_id": "partial-observation-conditioning-v1-initial",
+  "code_sha256": {
+    "evaluate.py": "8e4f51405ab751f5f95a48d8a324fe4b48d46629dcf321c88a0371002ae29920",
+    "test_evaluate.py": "dbaaafa376caa74125d27c6e0265ef13304ee34c0e6e5fec4bf4a5e49d9db55a"
+  },
+  "scope": "Retrospective real-data mechanism pilot with a shared source-fitted linear dynamical surrogate; not the official DEFORM checkpoint or a new independent confirmation cohort."
+}
