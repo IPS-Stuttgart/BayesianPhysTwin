@@ -29,10 +29,6 @@ jobs:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: [self-hosted, gpuserver4090]
     timeout-minutes: 45
-    env:
-      OUT: ${{ runner.temp }}/partial-observation-conditioning-${{ github.run_id }}
-      SOURCE_VIEW: ${{ runner.temp }}/partial-observation-source-${{ github.run_id }}
-      VENV: ${{ runner.temp }}/partial-observation-venv-${{ github.run_id }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -42,6 +38,12 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
+      - name: Set isolated run-local paths
+        shell: bash
+        run: |
+          echo "OUT=$RUNNER_TEMP/partial-observation-conditioning-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+          echo "SOURCE_VIEW=$RUNNER_TEMP/partial-observation-source-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+          echo "VENV=$RUNNER_TEMP/partial-observation-venv-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
       - name: Validate request-only trigger and sealed code
         shell: bash
         run: |
@@ -127,4 +129,4 @@ jobs:
         if: always()
         shell: bash
         run: |
-          rm -rf -- "$VENV" "$SOURCE_VIEW"
+          rm -rf -- "${VENV:-$RUNNER_TEMP/unused-venv-$GITHUB_RUN_ID}" "${SOURCE_VIEW:-$RUNNER_TEMP/unused-source-$GITHUB_RUN_ID}"
