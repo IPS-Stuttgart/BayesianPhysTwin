@@ -1,0 +1,110 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: Partial-observation covariance v1
+on:
+  push:
+    branches: [science/partial-observation-covariance-v1]
+    paths: [.github/requests/partial-observation-covariance-v1.json]
+permissions:
+  contents: read
+concurrency:
+  group: partial-observation-covariance-v1
+  cancel-in-progress: false
+jobs:
+  experiment:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 60
+    env:
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      REQUEST: .github/requests/partial-observation-covariance-v1.json
+      DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+      PARENT_ROOT: /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate request and isolate runtime
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          r=json.loads(Path(os.environ['REQUEST']).read_text())
+          assert r['contract']=='partial-observation-covariance-v1'
+          assert r['mode'] in ('inventory','evaluate')
+          assert r['dataset_mutation'] is False
+          before=json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())['before']
+          assert before != '0'*40
+          changed=subprocess.check_output(['git','diff','--name-only',before,os.environ['GITHUB_SHA']],text=True).splitlines()
+          assert changed==[os.environ['REQUEST']], changed
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('mode='+r['mode']+'\n')
+          PY
+          out="$RUNNER_TEMP/partial-observation-covariance-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$out"
+          echo "OUT=$out" >> "$GITHUB_ENV"
+          python3 -m venv "$out/venv"
+          "$out/venv/bin/python" -m pip install --disable-pip-version-check 'numpy==2.2.6' 'pytest==8.3.5'
+          echo "PY=$out/venv/bin/python" >> "$GITHUB_ENV"
+      - name: Inventory only approved dataset and parent-run paths
+        if: steps.request.outputs.mode == 'inventory'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PY" - <<'PY'
+          import os,json,hashlib
+          from pathlib import Path
+          import numpy as np
+          root=Path(os.environ['PARENT_ROOT'])
+          result={'runner':os.environ['RUNNER_NAME'],'sha':os.environ['GITHUB_SHA'],'parent_exists':root.is_dir(),'files':[],'datasets':{}}
+          for dlo in ('DLO4','DLO5'):
+              folder=Path(os.environ['DATASET_ROOT'])/dlo/'train'
+              files=sorted(folder.glob('*.pkl'))
+              result['datasets'][dlo]={'train_count':len(files),'names':[p.name for p in files]}
+          if root.is_dir():
+              for p in sorted(root.rglob('*')):
+                  if not p.is_file() or p.suffix not in ('.json','.npz'): continue
+                  entry={'path':str(p.relative_to(root)),'bytes':p.stat().st_size}
+                  try:
+                      if p.suffix=='.npz':
+                          with np.load(p,allow_pickle=False) as z:
+                              entry['arrays']={k:{'shape':list(z[k].shape),'dtype':str(z[k].dtype)} for k in z.files}
+                      elif p.name in ('source_result.json','method_seal.json','source_manifest.json','eval_manifest.json','prediction_seal.json'):
+                          j=json.loads(p.read_text());entry['record']=j
+                  except Exception as e: entry['error']=str(e)
+                  result['files'].append(entry)
+          path=Path(os.environ['OUT'])/'inventory.json'
+          path.write_text(json.dumps(result,indent=2,sort_keys=True))
+          print(json.dumps(result,sort_keys=True))
+          PY
+      - name: Validate and execute frozen conditioning experiment
+        if: steps.request.outputs.mode == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PY" -m pytest -q -o addopts='' tests/test_partial_observation_covariance_v1.py
+          "$PY" experiments/partial_observation_covariance_v1/run.py \
+            --request "$REQUEST" --dataset-root "$DATASET_ROOT" \
+            --parent-root "$PARENT_ROOT" --output "$OUT/result"
+          cat "$OUT/result/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload compact evidence, including failures
+        if: always() && env.OUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: partial-observation-covariance-v1-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/inventory.json
+            ${{ env.OUT }}/result/*.json
+            ${{ env.OUT }}/result/*.csv
+            ${{ env.OUT }}/result/*.md
+          if-no-files-found: warn
+          retention-days: 90
