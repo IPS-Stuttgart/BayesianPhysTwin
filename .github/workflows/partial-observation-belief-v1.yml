@@ -1,0 +1,88 @@
+name: Partial observation joint-belief v1
+on:
+  push:
+    branches: [science/partial-observation-belief-v1]
+    paths: [.github/requests/partial-observation-belief-v1.json]
+permissions:
+  contents: read
+concurrency:
+  group: partial-observation-belief-v1-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONUNBUFFERED: '1'
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.2.6 pytest==8.4.1
+      - name: Noninterference, covariance, and MAP equivalence tests
+        run: python -m pytest -q experiments/partial_observation_belief_v1/test_run.py
+      - name: Bind request to protocol
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          r = json.loads(Path('.github/requests/partial-observation-belief-v1.json').read_text())
+          p = Path('experiments/partial_observation_belief_v1/protocol.json')
+          assert r['status'] == 'authorized'
+          assert r['protocol_sha256'] == hashlib.sha256(p.read_bytes()).hexdigest()
+          assert r['runner'] == 'gpuserver4090'
+          assert r['official_eval_access'] is False
+          PY
+  real_data:
+    needs: contract
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Create isolated NumPy runtime
+        run: |
+          set -euo pipefail
+          VENV="$RUNNER_TEMP/partial-belief-venv-$GITHUB_RUN_ID"
+          echo "VENV=$VENV" >> "$GITHUB_ENV"
+          echo "OUT=$RUNNER_TEMP/partial-belief-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+          python3 -m venv "$VENV"
+          "$VENV/bin/python" -m pip install numpy==2.2.6
+      - name: Run fixed-mask real-data experiment
+        run: |
+          set -euo pipefail
+          "$VENV/bin/python" experiments/partial_observation_belief_v1/run.py \
+            --dataset-root /mnt/seagate10tb/florianpfaff/datasets/deform/data_set \
+            --output "$OUT"
+          cat "$OUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Print paired primary evidence
+        run: |
+          "$VENV/bin/python" - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads((Path(os.environ['OUT'])/'result.json').read_text())
+          print(json.dumps({k:r[k] for k in ('status', 'hypothesis_supported_against_all_controls', 'accounting', 'aggregate', 'paired')}, indent=2))
+          assert r['accounting']['test_per_object'] == 12
+          assert r['official_eval_files_opened'] is False
+          for value in r['selected'].values():
+              assert value['max_gain_equivalence_error'] < 1e-7
+              assert value['max_marginal_mismatch'] == 0
+          PY
+      - name: Retain positive or negative evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: partial-observation-belief-v1-${{ github.run_id }}
+          path: ${{ runner.temp }}/partial-belief-${{ github.run_id }}/
+          if-no-files-found: warn
+          retention-days: 90
