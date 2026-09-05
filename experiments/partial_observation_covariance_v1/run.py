@@ -14,7 +14,6 @@ import json
 import os
 import pickle
 import platform
-import sys
 import time
 from pathlib import Path
 
@@ -118,7 +117,7 @@ def grid(family):
     if family == 'rod_modes':
         return [dict(family=family, rank=k, reg=r) for k in (2, 4) for r in REGS]
     if family == 'rbf':
-        return [dict(family=family, length=l, reg=r) for l in (1.0, 2.0, 4.0) for r in REGS]
+        return [dict(family=family, length=length, reg=r) for length in (1.0, 2.0, 4.0) for r in REGS]
     if family in ('empirical', 'ridge'):
         return [dict(family=family, reg=r) for r in REGS]
     return [dict(family=family)]
@@ -236,7 +235,8 @@ def evaluate_panel(dlo, names, base, hybrid, truth, source, selected, selection)
                     # Hash every prediction before retrieving hidden scoring values.
                     h = hashlib.sha256()
                     for arm in sorted(preds):
-                        h.update(arm.encode()); h.update(np.ascontiguousarray(preds[arm]).tobytes())
+                        h.update(arm.encode())
+                        h.update(np.ascontiguousarray(preds[arm]).tobytes())
                     seals.append({'dlo': dlo, 'name': name, 'cut': t + 2, 'budget': budget,
                                   'nodes': (nodes + 2).tolist(), 'sha256': h.hexdigest()})
                     hidden = np.setdiff1d(np.arange(8), nodes)
@@ -325,9 +325,13 @@ def main():
             names, base, hybrid, truth, _, identities = read_panel(args.parent_root, args.dataset_root, dlo, 'target', protocol['pins'][dlo]['target'])
             target_ids[dlo] = identities
             result = evaluate_panel(dlo, names, base, hybrid, truth, sources[dlo], selections[dlo], records[dlo])
-            rows.extend(result[0]); diagnostics.extend(result[1]); seals.extend(result[2])
+            rows.extend(result[0])
+            diagnostics.extend(result[1])
+            seals.extend(result[2])
         with (args.output / 'per_trajectory.csv').open('w') as f:
-            writer = csv.DictWriter(f, fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+            writer = csv.DictWriter(f, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
         write_json(args.output / 'prediction_seals.json', seals)
         summary, contrasts = summarize(rows)
         primary = [c for c in contrasts if c['budget'] == 2 and c['horizon'] == 25]
