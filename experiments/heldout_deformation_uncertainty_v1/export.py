@@ -34,6 +34,11 @@ def main() -> None:
     parent = Path('/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1')
     data_root = Path('/mnt/seagate10tb/florianpfaff/datasets/deform/data_set').resolve()
     upstream = Path('/home/florianpfaff/source-only/DEFORM-b73b8b8')
+    # Trust only this caller-authorized shared checkout for this process.
+    # The upstream commit and source identities are still checked below.
+    os.environ['GIT_CONFIG_COUNT'] = '1'
+    os.environ['GIT_CONFIG_KEY_0'] = 'safe.directory'
+    os.environ['GIT_CONFIG_VALUE_0'] = str(upstream)
     for dlo in ('DLO4', 'DLO5'):
         source_runtime._install_eval_read_guard(data_root / dlo / 'eval')
     manifest_out = {'source_revision': os.environ.get('GITHUB_SHA'), 'official_eval_opened': False, 'dlos': {}}
