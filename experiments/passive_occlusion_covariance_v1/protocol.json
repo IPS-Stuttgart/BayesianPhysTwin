@@ -1,0 +1,62 @@
+{
+  "contract": "passive-occlusion-covariance-v1",
+  "status": "retrospective-source-fitted-mechanism-test",
+  "parent_run": 33361441865,
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "source_trajectories_per_dlo": 8,
+  "evaluation_trajectories_per_dlo": 14,
+  "source_roster": "Exact prior source-test roster from each public training partition, now used to fit the new covariance and deterministic controls.",
+  "evaluation_roster": "All already-open DLO4 and DLO5 official evaluation trajectories; no selection or replacement.",
+  "reference_alignment": "Float32 (500,3,12), transpose, z clipping, then [2:] to match the sealed (498,12,3) predictions.",
+  "offsets_frames": [0, 10, 25, 50],
+  "anchors": "range(49, 498-50, 10); 40 fixed windows per trajectory",
+  "internal_nodes": [2, 3, 4, 5, 6, 7, 8, 9],
+  "hidden_global_nodes": {
+    "25pct": [5, 6],
+    "50pct": [4, 5, 6, 7],
+    "75pct": [3, 4, 5, 6, 7, 8]
+  },
+  "observations": "Only complementary current-time internal node coordinates. No active selection. Each update starts from the same frozen prior; no recursive simulator feedback.",
+  "covariance_fit": {
+    "method": "Residual second moment about the unchanged prior, correlation-space rank truncation, diagonal residual retained",
+    "dimension": 96,
+    "rank": 8,
+    "diagonal_shrinkage": 0.1,
+    "diagonal_floor_m2": 1e-8,
+    "observation_variance_m2": 1e-6,
+    "observation_variance_status": "Assumed likelihood regularizer, not measured sensor calibration",
+    "mean_refitting": false
+  },
+  "controls": {
+    "diagonal": "Same means and coordinate variances; no cross-node or cross-time covariance",
+    "scrambled": "S P S with fixed Rademacher sign seeds 601,602,603,604; preserve eigenvalues and coordinate variances; average losses, not predictions",
+    "global": "Global visible residual, with source-fitted scalar gain per mask and horizon in [0,2]",
+    "interpolation": "Material-index linear interpolation of visible residuals, with source-fitted scalar gain per mask and horizon in [0,2]",
+    "unchanged": "Original sealed candidate; diagonal must reproduce its hidden coordinates exactly"
+  },
+  "primary": {
+    "condition": "50pct_lead0",
+    "metric": "Mean complete-trajectory hidden-node Euclidean 3D RMSE in mm",
+    "comparators": ["diagonal", "scrambled_average_loss", "interpolation"],
+    "positive_rule": "Full covariance beats all three controls with upper paired 98.333% bootstrap endpoints below zero; Bonferroni familywise alpha 0.05"
+  },
+  "secondary": "Report all three masks and four horizons, global control, per-DLO effects, wins, coverage, width, normalized NEES and joint Gaussian NLL per coordinate regardless of signs.",
+  "bootstrap": {
+    "replicates": 20000,
+    "seed": 20260906,
+    "unit": "Complete trajectory, stratified within DLO4 and DLO5; equal DLO means",
+    "intervals": [0.95, 0.9833333333333333]
+  },
+  "information_boundary": {
+    "source_models_sealed_before_target_readouts": true,
+    "all_predictions_sealed_before_hidden_scoring": true,
+    "hidden_or_future_reference_passed_to_predictor": false,
+    "native_pickle_deserializes_full_record_in_io_adapter": true,
+    "active_observation_selection": false,
+    "new_physical_data": false,
+    "dataset_mutation": false,
+    "hybrid_retraining": false,
+    "target_fitting": false
+  },
+  "claim_boundary": "Retrospective empirical joint predictive-error conditioning, not an exact latent-physics posterior, simulator-state feedback, fresh confirmation, camera-occlusion robustness, population-level object generalization, or calibration. Source residuals use the earlier 39-fit hybrid; evaluation means use unchanged all-56 retraining. Deterministic MAP under the identical joint Gaussian model equals the conditional mean."
+}
