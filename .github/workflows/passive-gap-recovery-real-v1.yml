@@ -1,0 +1,95 @@
+name: Passive gap recovery real v1
+
+on:
+  push:
+    branches:
+      - science/passive-gap-recovery-real-v1
+    paths:
+      - experiments/passive-gap-recovery-real-v1/request.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passive-gap-recovery-real-v1
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+      DATASET_ROOT: /home/github-runner/.cache/datasets/tracking-cloth-deformation-v1-zenodo-14644526
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate frozen source and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object experiments/passive_gap_recovery_v1.py)" = dac16cdcb8fe476a86e14bf66f87733fd8107425
+          test "$(git hash-object experiments/tracking_cloth_deformation_v1/data.py)" = 0ac4ab4de7e768a23f30522b7a7846fab560dc5d
+          test "$(git hash-object experiments/tracking_cloth_deformation_v1/model.py)" = 21b33e36d15ee62863cb8ea5d7b87eb15843a03c
+          test "$(git hash-object experiments/tracking_cloth_deformation_v1/protocol.json)" = 49dd4a15d9e0c42c8c8fd88f2ef37df29356b5e9
+          python3 - <<'PY'
+          import json, os, shutil
+          from pathlib import Path
+          request = json.loads(Path('experiments/passive-gap-recovery-real-v1/request.json').read_text())
+          assert request['study_id'] == 'passive-gap-recovery-real-v1'
+          assert request['protocol_sha256'] == 'a8cc959bc03bae47a48ebdc49b9a8c966a54a28fe921f6ae70deb4b4d007d054'
+          assert request['retrospective_already_open_free_hanging_only'] is True
+          assert Path(os.environ['DATASET_ROOT']).is_dir()
+          assert shutil.disk_usage(os.environ['RUNNER_TEMP']).free > 2 * 1024**3
+          print('Frozen source, dataset path, and file-change request validated.')
+          PY
+      - name: Create isolated NumPy environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/passive-gap-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$ROOT"
+          python3 -m venv "$ROOT/venv"
+          "$ROOT/venv/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4
+          echo "STUDY_ROOT=$ROOT" >> "$GITHUB_ENV"
+          echo "STUDY_PYTHON=$ROOT/venv/bin/python" >> "$GITHUB_ENV"
+      - name: Run timing, leakage, covariance, MAP and mask checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$STUDY_PYTHON" -m experiments.passive_gap_recovery_v1 --self-test | tee "$STUDY_ROOT/self-test.log"
+      - name: Fit on source, seal predictions, and score all targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$STUDY_PYTHON" -m experiments.passive_gap_recovery_v1 \
+            --dataset-root "$DATASET_ROOT" \
+            --output "$STUDY_ROOT/evidence" \
+            --workers 1 2>&1 | tee "$STUDY_ROOT/execution.log"
+      - name: Publish result summary
+        if: always()
+        shell: bash
+        run: |
+          if test -n "${STUDY_ROOT:-}" && test -f "$STUDY_ROOT/evidence/report.md"; then
+            cat "$STUDY_ROOT/evidence/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'No completed scientific result. Consult retained logs; workflow failure is not a negative scientific result.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain evidence and failure logs, never raw measurements
+        if: always() && env.STUDY_ROOT != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: passive-gap-recovery-real-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.STUDY_ROOT }}/evidence/
+            ${{ env.STUDY_ROOT }}/*.log
+          if-no-files-found: error
+          retention-days: 90
