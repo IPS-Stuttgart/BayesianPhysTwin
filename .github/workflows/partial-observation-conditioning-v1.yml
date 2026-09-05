@@ -26,36 +26,30 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - name: Read-only inventory of authorized DEFORM assets
+      - name: Read-only inventory of completed DEFORM cache
+        if: hashFiles('experiments/partial_observation_conditioning_v1/request.json') == ''
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os, shutil
+          import json, zipfile, struct
           from pathlib import Path
-          data = Path('/mnt/seagate10tb/florianpfaff/datasets/deform/data_set')
-          for dlo in ['DLO4', 'DLO5']:
-              for split in ['train', 'eval']:
-                  paths = sorted((data/dlo/split).glob('*.pkl'))
-                  print('DATA', dlo, split, len(paths), [p.name for p in paths[:3]], flush=True)
-          root = Path('/home/github-runner/.cache/workflows/deform-dlo45/runs/33361441865-1')
-          print('CACHE_ROOT', root, root.exists(), flush=True)
-          if root.is_dir():
-              for p in sorted(root.rglob('*')):
-                  if p.is_file() and p.suffix in ['.npz', '.json', '.pt', '.pth']:
-                      print('CACHE', p.relative_to(root), p.stat().st_size, flush=True)
-          else:
-              base = root.parent
-              print('RUN_DIRECTORIES', [p.name for p in sorted(base.glob('*')) if p.is_dir()], flush=True)
-          base = Path('/home/github-runner/.cache/workflows/deform-dlo45')
-          for p in sorted(base.glob('*/bin/python*')):
-              print('PYTHON', p, flush=True)
-          print('SYSTEM_PYTHON', shutil.which('python3'), flush=True)
-          try:
-              import numpy as np
-              print('NUMPY', np.__version__, flush=True)
-          except ImportError:
-              print('NUMPY unavailable in system Python', flush=True)
+          root = Path('/home/github-runner/.cache/workflows/deform-dlo45/runs')
+          for run in ['33329341107-1', '33335970581-1', '33414972339-3']:
+              for p in sorted((root/run).rglob('*')):
+                  if not p.is_file() or p.suffix not in ['.npz','.json','.pt','.pth']:
+                      continue
+                  print('CACHE', p.relative_to(root), p.stat().st_size, flush=True)
+                  if p.suffix == '.npz':
+                      with zipfile.ZipFile(p) as z:
+                          for name in z.namelist():
+                              with z.open(name) as f:
+                                  magic=f.read(8)
+                                  n=struct.unpack('<H' if magic[6]==1 else '<I', f.read(2 if magic[6]==1 else 4))[0]
+                                  print('HEADER',name,f.read(n).decode().strip(),flush=True)
+                  if p.name in ['source_result.json','prediction_seal.json','method_seal.json']:
+                      v=json.loads(p.read_text())
+                      print('IDENTITY',json.dumps({k:v.get(k) for k in ['contract','dlo','source_manifest','physical_checkpoint','predictions','eval_manifest']}),flush=True)
           PY
       - name: Create isolated NumPy test environment
         if: hashFiles('experiments/partial_observation_conditioning_v1/request.json') != ''
