@@ -1,0 +1,72 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: https://github.com/IPS-Stuttgart/BayesianPhysTwin/issues/949
+# workflow-expires: 2026-09-14
+# Branch-only diagnostic. Do not merge this temporary entry point.
+name: DP residual development pilot 20260907
+on:
+  push:
+    branches: [experiment/dp-residual-development-20260907]
+    paths:
+      - .github/workflows/dp-residual-development-20260907.yml
+      - experiments/dp_residual_development_v1/**
+permissions:
+  contents: read
+concurrency:
+  group: dp-residual-development-20260907
+  cancel-in-progress: false
+jobs:
+  development:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OUT: /home/github-runner/.cache/workflows/dp-residual-development-v1/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Locate original development checkpoint without opening outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run')
+          record = {'head_sha': os.environ['GITHUB_SHA'], 'source_test_opened': False, 'official_eval_read': False, 'files': {}}
+          for name in ('training_validation_result.json', 'source_manifest.json'):
+              p = root / name
+              if p.is_file():
+                  raw = p.read_bytes()
+                  obj = json.loads(raw)
+                  record['files'][str(p)] = {'sha256': hashlib.sha256(raw).hexdigest(), 'metadata': {k: v for k,v in obj.items() if k in ('contract','upstream','data_root','root','dlo_type','partition','split','source_manifest','selected_checkpoint','runtime')}}
+              else:
+                  record['files'][str(p)] = {'exists': False}
+          record['runtimes'] = {p: Path(p).is_file() for p in ('/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python', '/usr/bin/python3')}
+          print(json.dumps(record, indent=2, sort_keys=True))
+          (Path(os.environ['OUT']) / 'inventory.json').write_text(json.dumps(record, indent=2, sort_keys=True)+'\n')
+          PY
+      - name: Execute development pilot when implementation is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f experiments/dp_residual_development_v1/run.py; then
+            export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/scripts/remote:$GITHUB_WORKSPACE"
+            /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python experiments/dp_residual_development_v1/run.py --output-root "$OUT" | tee "$OUT/run.log"
+          fi
+      - name: Retain diagnostic artifacts and failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dp-residual-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUT }}
+          if-no-files-found: warn
+          retention-days: 30
