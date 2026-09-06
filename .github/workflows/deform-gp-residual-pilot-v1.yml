@@ -25,44 +25,26 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Source-only inventory or GP comparison
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.10'
+      - name: Source-only GP comparison
         shell: bash
         run: |
           set -euo pipefail
           export GP_OUTPUT="$RUNNER_TEMP/deform-gp-pilot-$GITHUB_RUN_ID"
           mkdir -p "$GP_OUTPUT"
           echo "GP_OUTPUT=$GP_OUTPUT" >> "$GITHUB_ENV"
-          python3 - <<'PY'
-          import json, os
+          python - <<'PY'
+          import json
           from pathlib import Path
-          request = json.loads(Path('.github/requests/deform-gp-residual-pilot-v1.json').read_text())
+          request=json.loads(Path('.github/requests/deform-gp-residual-pilot-v1.json').read_text())
           assert request['official_eval_read'] is False
           assert request['new_data_collection'] is False
+          assert request['dataset_mutation'] is False
           print('REQUEST', json.dumps(request, sort_keys=True))
-          print('RUNNER', os.environ.get('RUNNER_NAME'))
-          if request['mode'] == 'inventory':
-              roots = [
-                  Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5'),
-                  Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v6'),
-              ]
-              found = []
-              for root in roots:
-                  print('SOURCE_ROOT', root, root.exists())
-                  if root.is_dir():
-                      for p in sorted(root.rglob('*')):
-                          if p.is_file() and p.suffix in ('.json', '.npz', '.pt', '.sh'):
-                              row = {'path': str(p), 'bytes': p.stat().st_size}
-                              found.append(row)
-                              print(json.dumps(row))
-              for parent in [Path('/home/florianpfaff'), Path('/home/florianpfaff/source-only')]:
-                  if parent.is_dir():
-                      print('TOP_LEVEL', str(parent), sorted(p.name for p in parent.iterdir() if p.is_dir()))
-              Path(os.environ['GP_OUTPUT'], 'inventory.json').write_text(json.dumps(found, indent=2))
           PY
-          mode=$(python3 -c "import json; print(json.load(open('.github/requests/deform-gp-residual-pilot-v1.json'))['mode'])")
-          if [ "$mode" = compare ]; then
-            bash experiments/deform_gp_residual_pilot_v1/run.sh "$GP_OUTPUT"
-          fi
+          bash experiments/deform_gp_residual_pilot_v1/run.sh "$GP_OUTPUT"
       - name: Retain pilot evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
