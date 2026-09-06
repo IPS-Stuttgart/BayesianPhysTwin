@@ -48,6 +48,11 @@ jobs:
           "$FROZEN_PYTHON" -m unittest discover -s tests -p test_deform_gp_residual_v1.py -v
       - name: Execute fixed DLO1 development comparison
         shell: bash
+        env:
+          # Scope trust to this known shared checkout and this process only.
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
         run: |
           set -euo pipefail
           "$FROZEN_PYTHON" scripts/remote/run_deform_gp_residual_v1.py --output "$OUTPUT"
