@@ -25,17 +25,45 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Compare GP and ridge using development data only
         shell: bash
         run: |
           set -euo pipefail
           root=/home/florianpfaff/source-only/deform-dlo2-local-residual-v5
+          py=''
+          for candidate in "$root/source-8cc85de7/.venv/bin/python" /usr/bin/python3 python3; do
+            if "$candidate" -c 'import numpy, scipy; print(numpy.__version__, scipy.__version__)' 2>/dev/null; then
+              py="$candidate"
+              break
+            fi
+          done
+          if [ -z "$py" ]; then
+            python3 -m venv "$RUNNER_TEMP/gp-pilot-python-${{ github.run_id }}"
+            py="$RUNNER_TEMP/gp-pilot-python-${{ github.run_id }}/bin/python"
+            "$py" -m pip install numpy==2.3.5 scipy==1.17.0
+          fi
+          echo "GP_RUNTIME=$py"
+          "$py" experiments/deform_gp_residual_dev_v1/gp_residual_pilot.py --self-test
           cache="$root/inference_cache_6400_action_frame"
           if [ ! -f "$cache/fit.npz" ]; then
             cache="$root/inference_cache_6400"
           fi
-          /home/florianpfaff/venvs/bpt-deform-dlo-source-v1/bin/python \
-            experiments/deform_gp_residual_dev_v1/gp_residual_pilot.py \
+          if [ ! -f "$cache/fit.npz" ] || [ ! -f "$cache/validation.npz" ]; then
+            "$py" - <<'PY'
+          from pathlib import Path
+          root=Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5')
+          print('DEVELOPMENT_CACHE_MISSING')
+          print('ROOT_DIRECTORY_NAMES', sorted(p.name for p in root.iterdir() if p.is_dir()))
+          train=root/'train-8cc85de7/training_run'
+          print('RETAINED_TRAINING_FILES', sorted(p.name for p in train.iterdir()))
+          for name in ['training_validation_result.json', 'source_manifest.json', 'preflight.json']:
+              print('DEVELOPMENT_METADATA', name, (train/name).read_text())
+          PY
+            exit 1
+          fi
+          "$py" experiments/deform_gp_residual_dev_v1/gp_residual_pilot.py \
             --cache-root "$cache" \
             --manifest "$root/train-8cc85de7/training_run/source_manifest.json" \
             --output outputs/gp-residual-pilot/result.json
