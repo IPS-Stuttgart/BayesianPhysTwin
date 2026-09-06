@@ -13,39 +13,49 @@ concurrency:
 jobs:
   pilot:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 10
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Locate development metadata only
+      - name: Prepare isolated analysis runtime
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import os, json, hashlib
-          from pathlib import Path
-          roots = []
-          for parent in (Path('/home/florianpfaff/source-only'), Path('/home/github-runner/.cache/workflows')):
-              if parent.exists():
-                  children = sorted(p for p in parent.iterdir() if p.is_dir() and ('deform' in p.name.lower() or 'dlo' in p.name.lower()))
-                  print('WORKSPACES', [str(p) for p in children])
-                  roots += [p for p in children if 'dlo2' in p.name.lower() or p.name == 'deform-bayesian-v1']
-          for root in roots:
-              for current, dirs, files in os.walk(root):
-                  p = Path(current)
-                  depth = len(p.relative_to(root).parts)
-                  dirs[:] = sorted(d for d in dirs if d not in ('eval', 'test', '.git', '__pycache__', 'site-packages', 'node_modules') and not any(x in d.lower() for x in ('held', 'confirm', 'target')))
-                  if depth >= 6:
-                      dirs[:] = []
-                  for f in sorted(files):
-                      if f in ('training_validation_result.json', 'source_manifest.json', 'update_6400.pt', 'pyvenv.cfg'):
-                          fp = p / f
-                          print('INPUT', str(fp))
-                          if f == 'training_validation_result.json':
-                              data = fp.read_bytes()
-                              print('TRAINING', hashlib.sha256(data).hexdigest(), data.decode())
-                          if f == 'source_manifest.json':
-                              data = fp.read_bytes()
-                              print('MANIFEST', hashlib.sha256(data).hexdigest(), data.decode()[:2500])
-          PY
+          OUT="$RUNNER_TEMP/dp-residual-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$OUT"
+          echo "PILOT_OUT=$OUT" >> "$GITHUB_ENV"
+          VENV=/home/github-runner/.cache/workflows/dp-local-residual-pilot-20260907/analysis-venv
+          mkdir -p "$(dirname "$VENV")"
+          test -x "$VENV/bin/python" || python3 -m venv "$VENV"
+          "$VENV/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4 scipy==1.13.1 scikit-learn==1.5.2 threadpoolctl==3.5.0
+          echo "ANALYSIS_PY=$VENV/bin/python" >> "$GITHUB_ENV"
+          "$VENV/bin/python" experiments/dp_local_residual_pilot/pilot.py --self-test | tee "$OUT/self_test.json"
+      - name: Export only verified historical development inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          PY=/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+          "$PY" experiments/dp_local_residual_pilot/export_development.py \
+            --upstream /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM \
+            --output "$PILOT_OUT/export" --device cuda:0
+      - name: Run matched DP and finite-mixture development comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANALYSIS_PY" experiments/dp_local_residual_pilot/pilot.py \
+            --input "$PILOT_OUT/export/development.npz" --output "$PILOT_OUT/results"
+      - name: Preserve results or technical blocker
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dp-local-residual-pilot-${{ github.run_id }}
+          path: ${{ env.PILOT_OUT }}
+          if-no-files-found: warn
+          retention-days: 30
