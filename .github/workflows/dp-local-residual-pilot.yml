@@ -23,24 +23,29 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os
+          import os, json, hashlib
           from pathlib import Path
-          roots = [Path('/home/florianpfaff/source-only/deform-bayesian-v1'), Path('/home/github-runner/.cache/workflows')]
+          roots = []
+          for parent in (Path('/home/florianpfaff/source-only'), Path('/home/github-runner/.cache/workflows')):
+              if parent.exists():
+                  children = sorted(p for p in parent.iterdir() if p.is_dir() and ('deform' in p.name.lower() or 'dlo' in p.name.lower()))
+                  print('WORKSPACES', [str(p) for p in children])
+                  roots += [p for p in children if 'dlo2' in p.name.lower() or p.name == 'deform-bayesian-v1']
           for root in roots:
-              print('ROOT', str(root), root.exists())
-              if not root.exists():
-                  continue
               for current, dirs, files in os.walk(root):
                   p = Path(current)
                   depth = len(p.relative_to(root).parts)
                   dirs[:] = sorted(d for d in dirs if d not in ('eval', 'test', '.git', '__pycache__', 'site-packages', 'node_modules') and not any(x in d.lower() for x in ('held', 'confirm', 'target')))
-                  if root.name == 'workflows' and depth == 0:
-                      dirs[:] = [d for d in dirs if 'dlo2-local' in d or 'deform-dlo-source' in d or d == 'deform-dlo-local-residual-v4']
                   if depth >= 6:
                       dirs[:] = []
                   for f in sorted(files):
-                      if f in ('training_validation_result.json', 'source_manifest.json', 'update_6400.pt', 'pyvenv.cfg') or ('validation' in f and f.endswith('.npz')):
-                          print('INPUT', str(p / f))
-          for p in (Path('/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python'), Path('/home/florianpfaff/source-only/deform-bayesian-v1/DEFORM')):
-              print('RUNTIME', str(p), p.exists())
+                      if f in ('training_validation_result.json', 'source_manifest.json', 'update_6400.pt', 'pyvenv.cfg'):
+                          fp = p / f
+                          print('INPUT', str(fp))
+                          if f == 'training_validation_result.json':
+                              data = fp.read_bytes()
+                              print('TRAINING', hashlib.sha256(data).hexdigest(), data.decode())
+                          if f == 'source_manifest.json':
+                              data = fp.read_bytes()
+                              print('MANIFEST', hashlib.sha256(data).hexdigest(), data.decode()[:2500])
           PY
