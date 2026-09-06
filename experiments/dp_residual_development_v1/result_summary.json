@@ -1,0 +1,90 @@
+{
+  "contract": "dp-residual-dlo1-development-summary-v1",
+  "status": "completed-no-incremental-accuracy-benefit-established",
+  "implementation_commit": "7645f02265cc5087221f537742f06a36a8c245ba",
+  "preparation_run_id": 34052781162,
+  "comparison_run_id": 34053092767,
+  "preparation_artifact_id": 9995078685,
+  "preparation_artifact_zip_sha256": "083eaca1233d6373e515790f567a831a1d9d6092069ff2cd244e10955ae45c60",
+  "comparison_artifact_id": 9995164466,
+  "comparison_artifact_zip_sha256": "3b7fdeb0400f200f1346f50c6d7573c27a197def62bb4d13d5eefa4d09c59440",
+  "development_bundle_sha256": "70894781f89351bb25fc3b53f7b1453d9e6b36aeebc03caa7cb341ac4023ad3d",
+  "data": {
+    "dataset": "DEFORM DLO1 historical train partition",
+    "inner_fit_trajectories": 32,
+    "inner_tuning_trajectories": 8,
+    "final_refit_trajectories": 40,
+    "held_historical_validation_trajectories": 8,
+    "forecast_frames": 498,
+    "observed_initial_frames": 2,
+    "nodes": 13,
+    "distinct_causal_queries": 48,
+    "source_test_read": false,
+    "official_eval_read": false,
+    "other_dlos_read": false,
+    "held_validation_used_for_new_hyperparameter_selection": false,
+    "held_targets_present_in_prepared_bundle": true,
+    "fresh_independent_confirmation": false
+  },
+  "baseline_semantics": "Frozen retrained DEFORM hybrid includes DEFORM's own GCN correction; existing BayesianPhysTwin local correction is an additional layer.",
+  "actual_method": "Training-input-conditioned truncated variational DP Gaussian-mixture gate with nodewise, partially pooled ridge residual experts. No sticky HDP or temporal transition model was fitted.",
+  "selection": {
+    "single": {"components": 1, "ridge": 1.0, "shrinkage": 0.25},
+    "finite": {"components": 2, "ridge": 1.0, "shrinkage": 0.25},
+    "finite_bayes": {"components": 4, "total_concentration": 1.0, "ridge": 1.0, "shrinkage": 0.25},
+    "dp": {"max_components": 8, "concentration": 0.1, "ridge": 100.0, "shrinkage": 0.25},
+    "mixture_seeds_averaged": [7, 23, 61]
+  },
+  "mean_coordinate_l1_mm": {
+    "hybrid": 9.256204596316326,
+    "last_residual_initial_zero": 9.256204596316326,
+    "action_persistence": 51.961295366469614,
+    "existing_local_r1_s0p5": 8.288815140608614,
+    "single": 8.575966170006705,
+    "finite": 8.624751570847696,
+    "finite_bayes": 8.567169720909996,
+    "dp": 8.538862729588535
+  },
+  "dp_minus_reference_mm": {
+    "hybrid": {
+      "mean": -0.717341866727791,
+      "paired_trajectory_bootstrap_95_percent": [-0.956098768774223, -0.48552805589210246],
+      "wins": 8,
+      "cases": 8
+    },
+    "existing_local_r1_s0p5": {
+      "mean": 0.25004758897992274,
+      "paired_trajectory_bootstrap_95_percent": [0.11798512899587006, 0.3920358480003892],
+      "wins": 0,
+      "cases": 8
+    },
+    "single": {
+      "mean": -0.03710344041816949,
+      "paired_trajectory_bootstrap_95_percent": [-0.15383654970637858, 0.09589852288637803],
+      "wins": 5,
+      "cases": 8
+    },
+    "finite": {
+      "mean": -0.08588884125916108,
+      "paired_trajectory_bootstrap_95_percent": [-0.2221037708660666, 0.05776936110603137],
+      "wins": 6,
+      "cases": 8
+    },
+    "finite_bayes": {
+      "mean": -0.02830699132146053,
+      "paired_trajectory_bootstrap_95_percent": [-0.17890597180514586, 0.1278721996935338],
+      "wins": 4,
+      "cases": 8
+    }
+  },
+  "dp_final_active_components_weight_above_001": [7, 8, 8],
+  "all_selected_final_gate_fits_converged": true,
+  "focused_tests_passed": 7,
+  "single_expert_production_parity_max_abs_m": 1.4765966227514582e-14,
+  "point_scores_independently_recomputed_from_saved_predictions": true,
+  "dp_improves_all_strong_references_by_one_percent": false,
+  "uncertainty_calibration_tested": false,
+  "sticky_hdp_tested": false,
+  "claim_boundary": "Exploratory historical DLO1 development only. The old local correction was historically selected on these validation recordings, whereas new models use inner-fit-only selection. Bootstrap intervals are descriptive for eight trajectories of one DLO; not independent generalization or physical regime recovery.",
+  "interpretation": "DP improves over the frozen hybrid but is 3.0167 percent worse than the existing local correction, losing 8/8 paired trajectories. Small gains over newly tuned finite/single controls are unresolved by descriptive paired intervals. Do not promote this DP gate as a paper contribution or replace the existing correction. This result does not test or rule out a residual-informed temporally persistent HDP model."
+}
