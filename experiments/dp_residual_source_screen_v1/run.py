@@ -250,7 +250,9 @@ def load_source(source: Path):
                 raise ValueError("unexpected source representation")
             validate_xy(x, y)
             panels[dlo] = (
-                x.copy(), y.copy(), np.repeat(names, 19),
+                x.copy(),
+                y.copy(),
+                np.repeat(names, 19),
                 result["dlos"][dlo]["partition"],
             )
     return panels
@@ -259,8 +261,10 @@ def load_source(source: Path):
 def partitions(names, historical, folds):
     if folds == 1:
         yield (
-            "historical-39-9-8", historical["fit"],
-            historical["calibration"], historical["source_test"],
+            "historical-39-9-8",
+            historical["fit"],
+            historical["calibration"],
+            historical["source_test"],
         )
         return
     unique = np.array(sorted(set(names)))
@@ -271,8 +275,10 @@ def partitions(names, historical, folds):
         rng = np.random.default_rng(9127 + i)
         remaining = rng.permutation(remaining)
         yield (
-            f"grouped-{i}", remaining[9:].tolist(),
-            remaining[:9].tolist(), test.tolist(),
+            f"grouped-{i}",
+            remaining[9:].tolist(),
+            remaining[:9].tolist(),
+            test.tolist(),
         )
 
 
@@ -310,13 +316,15 @@ def run_panel(dlo, x, y, groups, split, output):
     for alpha in (0.01, 0.1, 1.0, 10.0, 100.0, 1000.0):
         model = Ridge(alpha=alpha).fit(zf, yf)
         add(
-            "ridge", {"alpha": alpha},
+            "ridge",
+            {"alpha": alpha},
             lambda q, m=model: m.predict(scaler.transform(q)),
         )
     for k in (4, 8, 16, 32):
         for temp in (0.5, 1.0, 2.0):
             add(
-                "kernel_analog", {"neighbors": k, "temperature": temp},
+                "kernel_analog",
+                {"neighbors": k, "temperature": temp},
                 lambda q, k=k, temp=temp: nearest_prediction(
                     zf, yf, scaler.transform(q), k, temp
                 ),
@@ -330,9 +338,10 @@ def run_panel(dlo, x, y, groups, split, output):
             )
 
             def rbf_predict(q, gamma=gamma, dual=dual):
-                dist = pairwise_distances(
-                    scaler.transform(q), zf, metric="sqeuclidean"
-                ) / zf.shape[1]
+                dist = (
+                    pairwise_distances(scaler.transform(q), zf, metric="sqeuclidean")
+                    / zf.shape[1]
+                )
                 return np.exp(-gamma * dist) @ dual
 
             add("rbf_ridge", {"gamma": gamma, "alpha": alpha}, rbf_predict)
@@ -356,8 +365,10 @@ def run_panel(dlo, x, y, groups, split, output):
                         "global_ridge": best_alpha,
                     }
                     add(
-                        family + "_full", full_settings,
-                        experts.predict, m.diagnostics,
+                        family + "_full",
+                        full_settings,
+                        experts.predict,
+                        m.diagnostics,
                     )
         print(dlo, fold, family, contenders[family][0], flush=True)
     seal = {
@@ -375,13 +386,10 @@ def run_panel(dlo, x, y, groups, split, output):
     out.mkdir(parents=True, exist_ok=False)
     write_json(out / "selection.json", seal)
     # Seal predictions before using test residuals for scoring.
-    predictions = {
-        name: predictor(xq) for name, (_, predictor) in contenders.items()
-    }
+    predictions = {name: predictor(xq) for name, (_, predictor) in contenders.items()}
     np.savez_compressed(out / "predictions.npz", groups=groups[test], **predictions)
     results = {
-        name: score(y[test], pred, groups[test])
-        for name, pred in predictions.items()
+        name: score(y[test], pred, groups[test]) for name, pred in predictions.items()
     }
     record = {
         "dlo": dlo,
@@ -412,8 +420,13 @@ def summarize(records, seed=773):
     contrasts = {}
     dp = totals["dp_full"]
     for other in (
-        "finite_full", "finite", "dp", "ridge", "kernel_analog",
-        "rbf_ridge", "kinematic",
+        "finite_full",
+        "finite",
+        "dp",
+        "ridge",
+        "kernel_analog",
+        "rbf_ridge",
+        "kinematic",
     ):
         paired = totals[other]["per_trajectory"]
         if [r["id"] for r in dp["per_trajectory"]] != [r["id"] for r in paired]:
@@ -431,7 +444,8 @@ def summarize(records, seed=773):
             for dlo in ("DLO4", "DLO5"):
                 idx = np.array(
                     [
-                        i for i, row in enumerate(dp["per_trajectory"])
+                        i
+                        for i, row in enumerate(dp["per_trajectory"])
                         if row["id"].startswith(dlo + "/")
                     ]
                 )
@@ -444,7 +458,8 @@ def summarize(records, seed=773):
             ).tolist(),
             "dp_wins": int((diff < -1e-9).sum()),
             "ties": int((np.abs(diff) <= 1e-9).sum()),
-            "dp_relative_improvement_percent": 100 * (1 - dp[METRIC] / totals[other][METRIC]),
+            "dp_relative_improvement_percent": 100
+            * (1 - dp[METRIC] / totals[other][METRIC]),
         }
     return {"methods": totals, "contrast_method": "dp_full", "dp_contrasts": contrasts}
 
