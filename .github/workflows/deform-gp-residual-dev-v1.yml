@@ -11,7 +11,7 @@ permissions:
   contents: read
 concurrency:
   group: deform-gp-residual-dev-v1-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   gp-versus-ridge:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
