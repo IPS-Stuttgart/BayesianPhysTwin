@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "mode": "compare",
-  "phase": "export-development",
-  "request": "deform-gp-residual-pilot-v1-export-python310",
+  "phase": "gp-comparison",
+  "request": "deform-gp-residual-pilot-v1-mean-comparison",
   "official_eval_read": false,
   "new_data_collection": false,
   "dataset_mutation": false,
-  "purpose": "Reproduce frozen hybrid on original 40 fit and 8 validation DLO2 training trajectories; source_test not opened by this phase."
+  "purpose": "Fit original ridge and sparse Matérn GPs on 40 original DLO2 training trajectories; select on eight validation trajectories, record selection, then score eight historical source-test trajectories once. This is exploratory, not fresh confirmation."
 }
