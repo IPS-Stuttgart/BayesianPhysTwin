@@ -14,33 +14,29 @@ concurrency:
   cancel-in-progress: false
 jobs:
   source-preflight:
-    strategy:
-      fail-fast: false
-      matrix:
-        host: [gpuserver4090, gpuserver6000]
-    runs-on: [self-hosted, Linux, X64, '${{ matrix.host }}']
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 5
     steps:
-      - name: Inspect only retained development metadata
+      - name: Read retained development metadata only
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import hashlib
           import os
           from pathlib import Path
           root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5')
+          train = root / 'train-8cc85de7/training_run'
           print('RUNNER', os.environ.get('RUNNER_NAME'))
-          print('SOURCE_ROOT', str(root), root.is_dir())
-          if root.is_dir():
-              print('ROOT_ENTRIES', sorted(p.name for p in root.iterdir()))
-              train = root / 'train-8cc85de7'
-              if train.is_dir():
-                  print('TRAIN_FILES', sorted(str(p.relative_to(train)) for p in train.rglob('*') if p.is_file())[:100])
-                  result = train / 'training_validation_result.json'
-                  if result.is_file():
-                      print('TRAINING_RESULT', result.read_text())
-              for name in ['.venv', 'venv', 'env', 'upstream', 'DEFORM']:
-                  p = root / name
-                  print('RUNTIME_CANDIDATE', str(p), p.exists())
+          for name in ['training_validation_result.json', 'source_manifest.json', 'preflight.json']:
+              p = train / name
+              data = p.read_bytes()
+              print('METADATA', name, hashlib.sha256(data).hexdigest(), data.decode())
+          source = root / 'source-8cc85de7'
+          print('SOURCE_TOP_LEVEL', sorted(p.name for p in source.iterdir()))
+          for parent in ['/home/florianpfaff/source-only', '/home/github/actions-runner', '/home/github', '/opt']:
+              p = Path(parent)
+              if p.is_dir():
+                  print('RUNTIME_DIRECTORY_NAMES', str(p), sorted(c.name for c in p.iterdir() if c.is_dir()))
           PY
