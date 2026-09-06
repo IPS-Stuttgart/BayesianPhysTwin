@@ -28,6 +28,9 @@ jobs:
       MKL_NUM_THREADS: '1'
       OUT: /home/github-runner/.cache/workflows/dp-residual-development-v1/${{ github.run_id }}-${{ github.run_attempt }}
       PY: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
