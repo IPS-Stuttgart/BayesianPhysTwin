@@ -1,25 +1,27 @@
 """Numerical and information-boundary tests, not empirical evidence."""
 
 import copy
+import importlib
 import inspect
 from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from sklearn.linear_model import Ridge
-from sklearn.preprocessing import StandardScaler
-from threadpoolctl import threadpool_limits
 
-from experiments.dp_residual_source_screen_v1.run import (
-    ConditionalMixture,
-    FullFeatureExperts,
-    Reduction,
-    load_source,
-    partitions,
-    score,
-    validate_xy,
-)
+# The dedicated experiment workflow installs these optional dependencies.
+# A core-only installation must remain usable without scikit-learn/SciPy.
+Ridge = pytest.importorskip("sklearn.linear_model").Ridge
+StandardScaler = pytest.importorskip("sklearn.preprocessing").StandardScaler
+threadpool_limits = pytest.importorskip("threadpoolctl").threadpool_limits
+experiment = importlib.import_module("experiments.dp_residual_source_screen_v1.run")
+ConditionalMixture = experiment.ConditionalMixture
+FullFeatureExperts = experiment.FullFeatureExperts
+Reduction = experiment.Reduction
+load_source = experiment.load_source
+partitions = experiment.partitions
+score = experiment.score
+validate_xy = experiment.validate_xy
 
 
 class IdentityReduction:
