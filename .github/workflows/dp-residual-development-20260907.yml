@@ -9,7 +9,7 @@ on:
     branches: [experiment/dp-residual-development-20260907]
     paths:
       - .github/workflows/dp-residual-development-20260907.yml
-      - experiments/dp_residual_development_v1/**
+      - experiments/dp_residual_development_v1/*.py
 permissions:
   contents: read
 concurrency:
@@ -27,42 +27,45 @@ jobs:
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
       OUT: /home/github-runner/.cache/workflows/dp-residual-development-v1/${{ github.run_id }}-${{ github.run_attempt }}
+      PY: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Locate original development checkpoint without opening outcomes
+      - name: Export authorized development arrays or reuse exact export
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$OUT"
-          python3 - <<'PY'
-          import hashlib, json, os
+          export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/scripts/remote:$GITHUB_WORKSPACE"
+          CACHE=/home/github-runner/.cache/workflows/dp-residual-development-v1/34052837838-1
+          if test -f "$CACHE/export_result.json" && test -f "$CACHE/development_arrays.npz"; then
+            "$PY" - "$CACHE" "$OUT" <<'PY'
+          import hashlib,json,shutil,sys
           from pathlib import Path
-          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run')
-          record = {'head_sha': os.environ['GITHUB_SHA'], 'source_test_opened': False, 'official_eval_read': False, 'files': {}}
-          for name in ('training_validation_result.json', 'source_manifest.json'):
-              p = root / name
-              if p.is_file():
-                  raw = p.read_bytes()
-                  obj = json.loads(raw)
-                  record['files'][str(p)] = {'sha256': hashlib.sha256(raw).hexdigest(), 'metadata': {k: v for k,v in obj.items() if k in ('contract','upstream','data_root','root','dlo_type','partition','split','source_manifest','selected_checkpoint','runtime')}}
-              else:
-                  record['files'][str(p)] = {'exists': False}
-          record['runtimes'] = {p: Path(p).is_file() for p in ('/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python', '/usr/bin/python3')}
-          print(json.dumps(record, indent=2, sort_keys=True))
-          (Path(os.environ['OUT']) / 'inventory.json').write_text(json.dumps(record, indent=2, sort_keys=True)+'\n')
+          src,dst=map(Path,sys.argv[1:])
+          record=json.loads((src/'export_result.json').read_text())
+          if record['source_test_opened'] or record['official_eval_read']:
+              raise ValueError('Unacceptable cache boundary')
+          if record['source_revision'] != 'c47c62bd52e89fb90a28bac21b5d5997a6772b14':
+              raise ValueError('Unexpected exporter revision')
+          if hashlib.sha256((src/'development_arrays.npz').read_bytes()).hexdigest() != record['array_sha256']:
+              raise ValueError('Export digest changed')
+          for name in ('development_arrays.npz','export_result.json','access_manifest.json'):
+              shutil.copy2(src/name,dst/name)
+          print('REUSED',str(src),record['array_sha256'])
           PY
-      - name: Execute development pilot when implementation is present
+          else
+            "$PY" experiments/dp_residual_development_v1/run.py --output-root "$OUT" | tee "$OUT/export.log"
+          fi
+      - name: Numerical tests and fit-selected development comparison
         shell: bash
         run: |
           set -euo pipefail
-          if test -f experiments/dp_residual_development_v1/run.py; then
-            export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/scripts/remote:$GITHUB_WORKSPACE"
-            /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python experiments/dp_residual_development_v1/run.py --output-root "$OUT" | tee "$OUT/run.log"
-          fi
-      - name: Retain diagnostic artifacts and failures
+          "$PY" -m unittest discover -s experiments/dp_residual_development_v1 -p test_model.py -v 2>&1 | tee "$OUT/tests.log"
+          "$PY" experiments/dp_residual_development_v1/analyze.py --input "$OUT/development_arrays.npz" --output "$OUT/analysis" | tee "$OUT/analysis.log"
+      - name: Retain results and technical failures
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
