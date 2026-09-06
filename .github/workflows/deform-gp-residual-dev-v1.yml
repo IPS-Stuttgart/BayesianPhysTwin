@@ -1,0 +1,46 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP residual development v1
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/deform-gp-residual-dev-v1.yml'
+      - 'experiments/deform_gp_residual_dev_v1/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deform-gp-residual-dev-v1-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  source-preflight:
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [gpuserver4090, gpuserver6000]
+    runs-on: [self-hosted, Linux, X64, '${{ matrix.host }}']
+    timeout-minutes: 5
+    steps:
+      - name: Inspect only retained development metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5')
+          print('RUNNER', os.environ.get('RUNNER_NAME'))
+          print('SOURCE_ROOT', str(root), root.is_dir())
+          if root.is_dir():
+              print('ROOT_ENTRIES', sorted(p.name for p in root.iterdir()))
+              train = root / 'train-8cc85de7'
+              if train.is_dir():
+                  print('TRAIN_FILES', sorted(str(p.relative_to(train)) for p in train.rglob('*') if p.is_file())[:100])
+                  result = train / 'training_validation_result.json'
+                  if result.is_file():
+                      print('TRAINING_RESULT', result.read_text())
+              for name in ['.venv', 'venv', 'env', 'upstream', 'DEFORM']:
+                  p = root / name
+                  print('RUNTIME_CANDIDATE', str(p), p.exists())
+          PY
