@@ -9,7 +9,7 @@ permissions:
   contents: read
 concurrency:
   group: dp-local-residual-development-pilot
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   pilot:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
