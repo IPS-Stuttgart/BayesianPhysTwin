@@ -6,6 +6,8 @@ on:
     branches: [science/dp-residual-dlo1-pilot-20260907]
     paths:
       - scripts/remote/run_dp_residual_cached_pilot.py
+      - scripts/remote/run_dp_residual_dlo1_pilot.py
+      - tests/test_dp_residual_pilot.py
       - .github/workflows/dp-residual-cached-pilot-20260907.yml
 permissions:
   contents: read
@@ -31,9 +33,11 @@ jobs:
         with:
           python-version: '3.13.5'
       - name: Install exact local replay runtime
-        run: python -m pip install 'numpy==2.3.5' 'scipy==1.17.0' 'scikit-learn==1.8.0'
-      - name: Test residual implementation
-        run: python scripts/remote/run_dp_residual_dlo1_pilot.py --self-test
+        run: python -m pip install 'numpy==2.3.5' 'scipy==1.17.0' 'scikit-learn==1.8.0' 'pytest==9.0.2'
+      - name: Test residual implementation without opening recordings
+        run: |
+          python scripts/remote/run_dp_residual_dlo1_pilot.py --self-test
+          python -m pytest -q -o addopts='' tests/test_dp_residual_pilot.py --junitxml="$RUNNER_TEMP/dp-regression.xml"
       - name: Download only the immutable historical development bundle
         env:
           GH_TOKEN: ${{ github.token }}
@@ -60,6 +64,7 @@ jobs:
           tar -czf "$RUNNER_TEMP/cached-dp-implementation.tar.gz" \
             scripts/remote/run_dp_residual_dlo1_pilot.py \
             scripts/remote/run_dp_residual_cached_pilot.py \
+            tests/test_dp_residual_pilot.py \
             src pyproject.toml
       - name: Upload results, frozen predictions, fitted heads and failures
         if: always()
@@ -69,6 +74,7 @@ jobs:
           path: |
             ${{ runner.temp }}/cached-dp-result/
             ${{ runner.temp }}/cached-dp.log
+            ${{ runner.temp }}/dp-regression.xml
             ${{ runner.temp }}/cached-dp-implementation.tar.gz
           retention-days: 90
           if-no-files-found: warn
