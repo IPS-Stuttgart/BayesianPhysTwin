@@ -13,34 +13,50 @@ concurrency:
   group: deform-gp-residual-dev-v1-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  source-preflight:
-    strategy:
-      fail-fast: false
-      matrix:
-        host: [gpuserver4090, gpuserver6000]
-    runs-on: [self-hosted, Linux, X64, '${{ matrix.host }}']
-    timeout-minutes: 5
+  comparison:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
     steps:
-      - name: Inspect only retained development metadata
-        shell: bash
+      - name: Check out requested source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Configure isolated experiment
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5')
-          print('RUNNER', os.environ.get('RUNNER_NAME'))
-          print('SOURCE_ROOT', str(root), root.is_dir())
-          if root.is_dir():
-              print('ROOT_ENTRIES', sorted(p.name for p in root.iterdir()))
-              train = root / 'train-8cc85de7'
-              if train.is_dir():
-                  print('TRAIN_FILES', sorted(str(p.relative_to(train)) for p in train.rglob('*') if p.is_file())[:100])
-                  result = train / 'training_validation_result.json'
-                  if result.is_file():
-                      print('TRAINING_RESULT', result.read_text())
-              for name in ['.venv', 'venv', 'env', 'upstream', 'DEFORM']:
-                  p = root / name
-                  print('RUNTIME_CANDIDATE', str(p), p.exists())
-          PY
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "EXPERIMENT_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "OUTPUT_DIR=$RUNNER_TEMP/deform-gp-v1-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          test -x "$FROZEN_PYTHON"
+      - name: Numerical and causal-input self-tests
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -m unittest experiments.deform_gp_residual_dev_v1.test_core -v
+      - name: Reproduce unchanged development baseline
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/run.py prepare --output "$OUTPUT_DIR"
+      - name: Fit GP candidates and seal validation predictions
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/run.py predict --output "$OUTPUT_DIR"
+      - name: Score sealed predictions
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/run.py score --output "$OUTPUT_DIR"
+          cat "$OUTPUT_DIR/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain complete development evidence
+        if: always() && env.OUTPUT_DIR != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform-gp-residual-dev-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: warn
+          retention-days: 90
