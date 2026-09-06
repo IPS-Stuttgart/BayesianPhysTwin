@@ -31,6 +31,10 @@ jobs:
           persist-credentials: false
       - name: Verify frozen runtime and prepare development-only arrays
         shell: bash
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
         run: |
           set -euo pipefail
           test -x "$FROZEN_PYTHON"
