@@ -21,7 +21,6 @@ from scipy.linalg import cho_factor, cho_solve, solve_triangular
 from bayesian_phystwin_experiments.deform_dlo_local_residual import (
     _collapse_duplicate_queries,
     build_deform_local_residual_features,
-    deform_causal_inputs,
     fit_deform_local_residual,
     predict_deform_local_residual,
 )
