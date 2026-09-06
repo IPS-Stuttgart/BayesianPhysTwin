@@ -13,30 +13,36 @@ concurrency:
   group: deform-gp-residual-dev-v1-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  source-preflight:
+  gp-versus-ridge:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
-    timeout-minutes: 5
+    timeout-minutes: 20
+    env:
+      OPENBLAS_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
     steps:
-      - name: Read retained development metadata only
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+      - name: Compare GP and ridge using development data only
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import hashlib
-          import os
-          from pathlib import Path
-          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5')
-          train = root / 'train-8cc85de7/training_run'
-          print('RUNNER', os.environ.get('RUNNER_NAME'))
-          for name in ['training_validation_result.json', 'source_manifest.json', 'preflight.json']:
-              p = train / name
-              data = p.read_bytes()
-              print('METADATA', name, hashlib.sha256(data).hexdigest(), data.decode())
-          source = root / 'source-8cc85de7'
-          print('SOURCE_TOP_LEVEL', sorted(p.name for p in source.iterdir()))
-          for parent in ['/home/florianpfaff/source-only', '/home/github/actions-runner', '/home/github', '/opt']:
-              p = Path(parent)
-              if p.is_dir():
-                  print('RUNTIME_DIRECTORY_NAMES', str(p), sorted(c.name for c in p.iterdir() if c.is_dir()))
-          PY
+          root=/home/florianpfaff/source-only/deform-dlo2-local-residual-v5
+          cache="$root/inference_cache_6400_action_frame"
+          if [ ! -f "$cache/fit.npz" ]; then
+            cache="$root/inference_cache_6400"
+          fi
+          /home/florianpfaff/venvs/bpt-deform-dlo-source-v1/bin/python \
+            experiments/deform_gp_residual_dev_v1/gp_residual_pilot.py \
+            --cache-root "$cache" \
+            --manifest "$root/train-8cc85de7/training_run/source_manifest.json" \
+            --output outputs/gp-residual-pilot/result.json
+      - name: Retain compact development results only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: deform-gp-residual-development-${{ github.run_id }}
+          path: outputs/gp-residual-pilot/result.json
+          if-no-files-found: warn
