@@ -6,11 +6,8 @@ on:
   push:
     branches: ['science/gp-residual-*']
     paths:
+      # Do not rerun the empirical study for source formatting or note changes.
       - 'protocols/deform_gp_residual_development_v1.json'
-      - 'src/bayesian_phystwin_experiments/deform_gp_residual_v1.py'
-      - 'scripts/remote/run_deform_gp_residual_v1.py'
-      - 'tests/test_deform_gp_residual_v1.py'
-      - '.github/workflows/deform-residual-comparison.yml'
   workflow_dispatch:
 
 permissions:
