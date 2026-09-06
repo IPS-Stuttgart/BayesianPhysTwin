@@ -60,6 +60,29 @@ def inventory(request: dict, output: Path) -> None:
     print(json.dumps({'inventory_status': 'complete', 'files': len(records)}))
 
 
+def score(request: dict, output: Path) -> None:
+    from evaluate import evaluate
+    if request.get('datasets') != ['DLO4', 'DLO5'] or request.get('parent_run_id') != 33361441865:
+        raise ValueError('Unexpected retrospective panel')
+    if request.get('bootstrap_repetitions') != 10000:
+        raise ValueError('Bootstrap budget differs from draft')
+    blob = Path(request['inventory_path']).read_bytes()
+    identity = hashlib.sha1(f'blob {len(blob)}\0'.encode() + blob).hexdigest()
+    if identity != 'adaebe31eee61ee4b1e3d339e01cf6d700377ad5':
+        raise ValueError('Successful inventory Git blob changed')
+    write(output / 'execution_manifest.json', {
+        'request': request,
+        'inventory_git_blob': identity,
+        'implementation_sha256': {name: sha256(Path(__file__).parent / name)
+                                  for name in ('analysis.py', 'evaluate.py', 'run.py', 'test_analysis.py')},
+        'github_sha': os.environ.get('GITHUB_SHA'),
+        'github_run_id': os.environ.get('GITHUB_RUN_ID'),
+        'github_run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT'),
+        'parent_artifact_writes': False,
+    })
+    evaluate(request, output)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--request', type=Path, required=True)
@@ -68,9 +91,12 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     request = json.loads(args.request.read_text())
     try:
-        if request['phase'] != 'inventory':
-            raise ValueError('Only inventory is implemented at this revision')
-        inventory(request, args.output)
+        if request['phase'] == 'inventory':
+            inventory(request, args.output)
+        elif request['phase'] == 'evaluate':
+            score(request, args.output)
+        else:
+            raise ValueError('Unsupported phase')
     except Exception as exc:
         write(args.output / 'failure.json', {'status': 'technical-failure', 'error': repr(exc), 'traceback': traceback.format_exc(), 'phase': request.get('phase')})
         raise
