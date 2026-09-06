@@ -1,0 +1,57 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-expires: 2026-09-14
+# workflow-removal-condition: Remove after formatted GP pilot blobs are applied.
+name: Format GP pilot source once
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gp-pilot-format-once.yml'
+permissions:
+  contents: read
+jobs:
+  format-source:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.number == 952
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 1dc09d59b03bcecf675fb0b57fe32ae262a9d4d9
+          persist-credentials: false
+      - name: Install pinned formatter
+        run: python3 -m pip install ruff==0.16.6
+      - name: Format two fixed files, verify AST parity, retain Git blobs only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ast
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import urllib.request
+          files = ['experiments/deform_gp_residual_dev_v1/run.py', 'experiments/deform_gp_residual_dev_v1/test_core.py']
+          before = {p: ast.dump(ast.parse(Path(p).read_text())) for p in files}
+          subprocess.run(['python3', '-m', 'ruff', 'format', *files], check=True)
+          subprocess.run(['python3', '-m', 'ruff', 'check', *files], check=True)
+          result = []
+          for path in files:
+              content = Path(path).read_text()
+              if ast.dump(ast.parse(content)) != before[path]:
+                  raise RuntimeError('Formatting changed AST: ' + path)
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/IPS-Stuttgart/BayesianPhysTwin/git/blobs',
+                  data=json.dumps({'content': content, 'encoding': 'utf-8'}).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'},
+                  method='POST')
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  blob = json.load(response)
+              result.append({'path': path, 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
+          print('FORMATTED_AST_IDENTICAL_BLOBS ' + json.dumps(result))
+          PY
