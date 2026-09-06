@@ -1,0 +1,68 @@
+{
+  "status": "passed",
+  "scope": "Independent recomputation of exported query scores, complete-trajectory CSV units and stratified intervals; not a raw simulator/data rerun.",
+  "run_id": 34052456906,
+  "artifact_id": 9994955348,
+  "artifact_zip_sha256": "5664bd33219c482442131304c89e561c0c554cac7c626200eb1e8d0e95b437c0",
+  "prediction_seal_verified": true,
+  "parameter_seal_verified": true,
+  "unit_rows_verified": 1008,
+  "paired_intervals_verified": 64,
+  "max_normalized_rmse_abs_difference": 4.440892098500626e-16,
+  "max_bootstrap_endpoint_abs_difference": 2.1316282072803006e-14,
+  "diagnostic_only_query_moments": {
+    "bending_statistic": {
+      "DLO4": {
+        "mean_missing_query_mm2": -191.00839188357537,
+        "fraction_plugin_already_overestimates": 0.5057133295085102,
+        "native_block_posterior": {
+          "mean_added_correction_mm2": 21393.482901270843,
+          "mean_query_squared_error_reduction_mm4": -524154193.4453271
+        },
+        "source_coupled_posterior_extension": {
+          "mean_added_correction_mm2": 11462.881291905403,
+          "mean_query_squared_error_reduction_mm4": -151618669.18664917
+        }
+      },
+      "DLO5": {
+        "mean_missing_query_mm2": 217.63102506281228,
+        "fraction_plugin_already_overestimates": 0.42713711990820424,
+        "native_block_posterior": {
+          "mean_added_correction_mm2": 13129.409440915593,
+          "mean_query_squared_error_reduction_mm4": -197045924.59084335
+        },
+        "source_coupled_posterior_extension": {
+          "mean_added_correction_mm2": 7061.032904914895,
+          "mean_query_squared_error_reduction_mm4": -55768044.036530755
+        }
+      }
+    },
+    "squared_distance": {
+      "DLO4": {
+        "mean_missing_query_mm2": 4695.220987014662,
+        "fraction_plugin_already_overestimates": 0.25911810507335464,
+        "native_block_posterior": {
+          "mean_added_correction_mm2": 5575.787535702203,
+          "mean_query_squared_error_reduction_mm4": 9826163.304940013
+        },
+        "source_coupled_posterior_extension": {
+          "mean_added_correction_mm2": 4184.344665086025,
+          "mean_query_squared_error_reduction_mm4": 16962366.92718865
+        }
+      },
+      "DLO5": {
+        "mean_missing_query_mm2": 1007.6701398718146,
+        "fraction_plugin_already_overestimates": 0.39388847908641367,
+        "native_block_posterior": {
+          "mean_added_correction_mm2": 3379.9248115403043,
+          "mean_query_squared_error_reduction_mm4": -8651452.248035897
+        },
+        "source_coupled_posterior_extension": {
+          "mean_added_correction_mm2": 2587.666489889482,
+          "mean_query_squared_error_reduction_mm4": -3721388.0997068924
+        }
+      }
+    }
+  },
+  "no_model_or_protocol_changes": true
+}
