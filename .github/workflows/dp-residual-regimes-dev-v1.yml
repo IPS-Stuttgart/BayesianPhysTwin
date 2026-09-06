@@ -1,4 +1,4 @@
-# workflow-lifecycle: experimental
+# workflow-lifecycle: permanent
 # workflow-owner: IPS-Stuttgart maintainers
 name: DP residual regimes development v1
 
@@ -29,7 +29,6 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
-      OUTPUT: ${{ runner.temp }}/dp-residual-regimes-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -43,7 +42,9 @@ jobs:
           py="$RUNNER_TEMP/dp-env-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/bin/python"
           "$py" -m pip install 'numpy==2.2.6' 'scipy==1.15.3' 'scikit-learn==1.8.0' 'pytest==8.4.2'
           echo "PY=$py" >> "$GITHUB_ENV"
-          mkdir -p "$OUTPUT"
+          output="$RUNNER_TEMP/dp-residual-regimes-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$output"
+          echo "OUTPUT=$output" >> "$GITHUB_ENV"
       - name: Inspect already-opened source caches only
         shell: bash
         run: |
