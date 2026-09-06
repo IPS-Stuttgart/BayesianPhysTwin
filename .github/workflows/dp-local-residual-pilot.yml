@@ -1,0 +1,46 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DP local residual development pilot
+on:
+  push:
+    branches: [experiment/dp-local-residual-pilot-20260907]
+    paths: [.github/workflows/dp-local-residual-pilot.yml, experiments/dp_local_residual_pilot/**]
+permissions:
+  contents: read
+concurrency:
+  group: dp-local-residual-development-pilot
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Locate development metadata only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          roots = [Path('/home/florianpfaff/source-only/deform-bayesian-v1'), Path('/home/github-runner/.cache/workflows')]
+          for root in roots:
+              print('ROOT', str(root), root.exists())
+              if not root.exists():
+                  continue
+              for current, dirs, files in os.walk(root):
+                  p = Path(current)
+                  depth = len(p.relative_to(root).parts)
+                  dirs[:] = sorted(d for d in dirs if d not in ('eval', 'test', '.git', '__pycache__', 'site-packages', 'node_modules') and not any(x in d.lower() for x in ('held', 'confirm', 'target')))
+                  if root.name == 'workflows' and depth == 0:
+                      dirs[:] = [d for d in dirs if 'dlo2-local' in d or 'deform-dlo-source' in d or d == 'deform-dlo-local-residual-v4']
+                  if depth >= 6:
+                      dirs[:] = []
+                  for f in sorted(files):
+                      if f in ('training_validation_result.json', 'source_manifest.json', 'update_6400.pt', 'pyvenv.cfg') or ('validation' in f and f.endswith('.npz')):
+                          print('INPUT', str(p / f))
+          for p in (Path('/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python'), Path('/home/florianpfaff/source-only/deform-bayesian-v1/DEFORM')):
+              print('RUNTIME', str(p), p.exists())
+          PY
