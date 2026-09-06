@@ -52,7 +52,8 @@ jobs:
               req = urllib.request.Request(base + path, headers=headers, data=data)
               with urllib.request.urlopen(req, timeout=60) as response:
                   return response.read()
-          payload = request('/actions/artifacts/9995263426/zip')
+          # curl strips Authorization on cross-origin redirects by default.
+          payload = subprocess.run(['curl', '--fail', '--location', '--silent', '--show-error', '--header', headers['Authorization'].join(['Authorization: ', '']), base + '/actions/artifacts/9995263426/zip'], check=True, capture_output=True).stdout
           expected = '7236cddfbc46dd5ceb977ec6c36296de8614b0392dacf387d14c24931b4873d8'
           assert hashlib.sha256(payload).hexdigest() == expected
           with ZipFile(io.BytesIO(payload)) as archive:
@@ -114,8 +115,7 @@ jobs:
           objects.append({'path': str(path), 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
           print('VERIFICATION', json.dumps(verification, sort_keys=True))
           print('VERIFIED_RESULT_BLOBS', json.dumps(objects))
-          # Cancel only this PR's known redundant copies; never touch another branch.
-          own_shas = {'52120c79cd859e170c3c766199c38bca805c2eeb', '1dc09d59b03bcecf675fb0b57fe32ae262a9d4d9', 'dc2ed6a141d11bdaad5a7efbd96f35dd592e9274', 'ca5378f6cb7c872af3314247fec8d688ea40aad1', os.environ['REQUEST_HEAD']}
+          own_shas = {'52120c79cd859e170c3c766199c38bca805c2eeb', '1dc09d59b03bcecf675fb0b57fe32ae262a9d4d9', 'dc2ed6a141d11bdaad5a7efbd96f35dd592e9274', 'ca5378f6cb7c872af3314247fec8d688ea40aad1', '7a54b605f33d789bbec99778f93fe8849e809f4c', os.environ['REQUEST_HEAD']}
           path = '/actions/workflows/351734685/runs?branch=research%2Fdeform-gp-nystrom-dev-779c15c4&per_page=50'
           runs = json.loads(request(path))['workflow_runs']
           for run in runs:
