@@ -1,0 +1,84 @@
+{
+  "schema": "material-gp-development-compact-evidence-v1",
+  "decision": "mixed-development-result; no replacement of existing ridge and no confirmed GP paper contribution",
+  "scope": "Retrospective DLO2 development only; not fresh confirmation, benchmark promotion, or calibrated physical uncertainty.",
+  "run_id": 34053302178,
+  "run_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/actions/runs/34053302178",
+  "implementation_sha": "dabe56561a3188a737b29feb19cae9a7d77f1bde",
+  "comparison_blob": "9b9399c236c40f4902735c312e452d3fc8eca022",
+  "comparison_script_sha256": "f2a282894eb8d73d6acb53814565470085a5340842a8ee625663706d8bf47f0a",
+  "checkpoint_sha256": "b64affff638c9d47ca51f17bb7124cc4bd224facd1f7137b0042b7fa9037ea65",
+  "source_manifest_sha256": "7c5501997e6bab7b0537ef9cda932ec19312e40618f03a4fad80ffc1622a6d98",
+  "input_archive_sha256": "6f89a07c2f5d0f6a8926adbf75191c5d9686e76b8e71bc25f3973d14d9390597",
+  "artifact": {
+    "id": 9995216697,
+    "name": "material-gp-cached-development-34053302178",
+    "zip_sha256": "b78765131d7ac3da1bc0762b0c34afd2bc6abb5493f32c53b6946b54ec2c0a9b",
+    "original_result_sha256": "833ab08eccebfe62f6e417601995edfaa0cb928517a968ce283bbe35fabc4209",
+    "predictions_sha256": "7b40cd37a02e14ba52afab138d12862c8b22b4852af72b0070fa0b377037cfc8",
+    "selection_sha256": "e1e65017a49141a2d241436257f25aff432464282ce315a19fc304baba76596f"
+  },
+  "fit_trajectories": 40,
+  "inner_fit_trajectories": 30,
+  "inner_selection_trajectories": 10,
+  "validation_trajectories": 8,
+  "forecast_steps": 498,
+  "nodes": 12,
+  "free_nodes": 8,
+  "source_test_read": false,
+  "official_eval_read": false,
+  "new_hardware_data": false,
+  "backbone_retrained": false,
+  "all_clamped_predictions_exact": true,
+  "exact_head_unit_tests_passed": 9,
+  "comparison_elapsed_seconds": 32.51923681597691,
+  "baseline_reproduction_absolute_error_m": 3.698603662921629e-10,
+  "selected": {
+    "ridge_existing": {"ridge": 1.0, "shrinkage": 0.25},
+    "ridge_tuned": {"ridge": 10.0, "shrinkage": 1.0, "inner_l1_mm": 7.654303729547524},
+    "gp_independent": {"length": 1.5, "noise_variance": 0.25, "shrinkage": 1.0, "inner_l1_mm": 7.588861044496298},
+    "gp_material": {"length": 1.5, "noise_variance": 1.0, "material_length": 0.4, "shrinkage": 1.0, "inner_l1_mm": 7.523901294916868}
+  },
+  "results": {
+    "hybrid": {"l1_mm": 7.91202974319458, "rmse_mm": 14.11661971360445},
+    "ridge_existing": {"l1_mm": 7.240300047231789, "rmse_mm": 12.943072464307125, "wins_vs_hybrid": 7, "worst_ratio_vs_hybrid": 1.0480343562562604},
+    "ridge_tuned": {"l1_mm": 7.567757010785244, "rmse_mm": 13.504370234148976, "wins_vs_hybrid": 4, "worst_ratio_vs_hybrid": 1.5122772336749122},
+    "gp_independent": {"l1_mm": 7.537306308746338, "rmse_mm": 13.333273120224476, "wins_vs_hybrid": 5, "worst_ratio_vs_hybrid": 1.5168161392211914},
+    "gp_material": {"l1_mm": 7.331219673156738, "rmse_mm": 12.622004374861717, "wins_vs_hybrid": 5, "worst_ratio_vs_hybrid": 1.3904114961624146}
+  },
+  "material_minus_existing_ridge": {
+    "primary_l1_relative_change_percent": 1.2557438964109213,
+    "rmse_relative_change_percent": -2.4806172593934805,
+    "mean_paired_l1_delta_mm": 0.09092010276210771,
+    "descriptive_trajectory_bootstrap95_l1_delta_mm": [-0.5811057767775287, 0.8069874794386855],
+    "paired_l1_wins": 4,
+    "n": 8
+  },
+  "material_minus_inner_tuned_ridge": {
+    "mean_paired_l1_delta_mm": -0.23653686079134728,
+    "descriptive_trajectory_bootstrap95_l1_delta_mm": [-0.6396193138638004, 0.16108059730558705],
+    "paired_l1_wins": 4,
+    "n": 8
+  },
+  "material_vs_independent_gp": {
+    "l1_relative_change_percent": -2.7342213139255778,
+    "paired_l1_wins": 7,
+    "n": 8,
+    "note": "The extra 7/8 summary is a post-run descriptive calculation from the retained per-trajectory scores; no model reselection."
+  },
+  "inner_scaled_marginal_uncertainty": {
+    "ridge_existing": {"coverage90": 0.9302313420348058, "mean_full_width90_mm": 55.44357758524768, "normalized_coordinate_nees": 0.7887510145637492, "gaussian_nll": -2.9283814537419715},
+    "ridge_tuned": {"coverage90": 0.9109354082998661, "mean_full_width90_mm": 50.65138121129375, "normalized_coordinate_nees": 0.9701156346143013, "gaussian_nll": -2.9396251713946686},
+    "gp_independent": {"coverage90": 0.906218624497992, "mean_full_width90_mm": 49.51409207478904, "normalized_coordinate_nees": 0.9853515265272556, "gaussian_nll": -2.9091086831100927},
+    "gp_material": {"coverage90": 0.9093143406961178, "mean_full_width90_mm": 50.171459636919224, "normalized_coordinate_nees": 0.9623796478146428, "gaussian_nll": -2.792480000428235}
+  },
+  "limitations": [
+    "Historical validation influenced old checkpoint and existing ridge selection; not a fresh independent test.",
+    "Inner split holds out residual fitting, not backbone training.",
+    "GP models share a total inducing budget but differ in material sharing and allocation; not a universal kernel comparison.",
+    "GP fits use thinned time samples with conditionally independent noise; no correlated observation likelihood.",
+    "Only marginal covariance is retained; no joint trajectory posterior or downstream Bayesian value is established.",
+    "Coverage and NEES are descriptive coordinate diagnostics on eight recordings, not independent-object calibration.",
+    "No MLP comparison, learning curve, cross-object transfer, or new official evaluation was performed."
+  ]
+}
