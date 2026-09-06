@@ -30,7 +30,9 @@ def _identities(value: object, count: int) -> NDArray[np.str_]:
     return result
 
 
-def _rows(x: object, time: object, ids: object, maximum: int) -> tuple[Array, Array, NDArray[np.str_]]:
+def _rows(
+    x: object, time: object, ids: object, maximum: int
+) -> tuple[Array, Array, NDArray[np.str_]]:
     features = _finite(x, 2, "features")
     times = _finite(time, 1, "times")
     names = _identities(ids, len(features))
@@ -67,13 +69,24 @@ class GPConfig:
     max_rows: int = 768
 
     def __post_init__(self) -> None:
-        positive = (self.lengthscale, self.time_lengthscale, self.shared_variance,
-                    self.noise_variance, self.output_scale_floor)
+        positive = (
+            self.lengthscale,
+            self.time_lengthscale,
+            self.shared_variance,
+            self.noise_variance,
+            self.output_scale_floor,
+        )
         if any(not np.isfinite(v) or v <= 0 for v in positive):
-            raise ValueError("scales, shared variance, and observation noise must be positive")
+            raise ValueError(
+                "scales, shared variance, and observation noise must be positive"
+            )
         if not np.isfinite(self.session_variance) or self.session_variance < 0:
             raise ValueError("session variance must be nonnegative")
-        if isinstance(self.max_rows, bool) or not isinstance(self.max_rows, int) or self.max_rows < 1:
+        if (
+            isinstance(self.max_rows, bool)
+            or not isinstance(self.max_rows, int)
+            or self.max_rows < 1
+        ):
             raise ValueError("max_rows must be a positive integer")
 
 
@@ -100,7 +113,9 @@ class GPPrediction:
         draws = np.empty((count, n, modes), dtype=np.float64)
         for mode in range(modes):
             root = np.linalg.cholesky(self.covariance[mode])
-            draws[:, :, mode] = self.mean[:, mode] + rng.standard_normal((count, n)) @ root.T
+            draws[:, :, mode] = (
+                self.mean[:, mode] + rng.standard_normal((count, n)) @ root.T
+            )
         return draws
 
 
@@ -118,8 +133,14 @@ class RecordingDiscrepancyGP:
     alpha: Array
 
     @staticmethod
-    def fit(x: object, time: object, ids: object, residual: object,
-            config: GPConfig = GPConfig()) -> RecordingDiscrepancyGP:
+    def fit(
+        x: object,
+        time: object,
+        ids: object,
+        residual: object,
+        config: GPConfig | None = None,
+    ) -> RecordingDiscrepancyGP:
+        config = GPConfig() if config is None else config
         features, times, names = _rows(x, time, ids, config.max_rows)
         response = _finite(residual, 2, "residual")
         if len(response) != len(features):
@@ -133,16 +154,31 @@ class RecordingDiscrepancyGP:
         standardized = (features - location) / scale
         output_location = response.mean(axis=0)
         output_scale = np.maximum(response.std(axis=0), config.output_scale_floor)
-        kernel = config.shared_variance * matern32(standardized, standardized, config.lengthscale)
-        kernel += config.session_variance * matern32(times[:, None], times[:, None], config.time_lengthscale) * (names[:, None] == names[None, :])
+        kernel = config.shared_variance * matern32(
+            standardized, standardized, config.lengthscale
+        )
+        kernel += (
+            config.session_variance
+            * matern32(times[:, None], times[:, None], config.time_lengthscale)
+            * (names[:, None] == names[None, :])
+        )
         kernel += config.noise_variance * np.eye(len(features))
         # No hidden jitter, eigenvalue clipping, pseudo-inverse or retry.
         cholesky = np.linalg.cholesky(kernel)
         normalized = (response - output_location) / output_scale
         alpha = np.linalg.solve(cholesky.T, np.linalg.solve(cholesky, normalized))
-        return RecordingDiscrepancyGP(config, standardized.copy(), times.copy(), names.copy(),
-                                     location, scale, output_location, output_scale,
-                                     cholesky, alpha)
+        return RecordingDiscrepancyGP(
+            config,
+            standardized.copy(),
+            times.copy(),
+            names.copy(),
+            location,
+            scale,
+            output_location,
+            output_scale,
+            cholesky,
+            alpha,
+        )
 
     def predict(self, x: object, time: object, ids: object) -> GPPrediction:
         features, times, names = _rows(x, time, ids, self.config.max_rows)
@@ -155,10 +191,22 @@ class RecordingDiscrepancyGP:
             raise ValueError("query overlaps a conditioned recording/time observation")
         standardized = (features - self.feature_location) / self.feature_scale
         config = self.config
-        cross = config.shared_variance * matern32(standardized, self.features, config.lengthscale)
-        cross += config.session_variance * matern32(times[:, None], self.times[:, None], config.time_lengthscale) * (names[:, None] == self.ids[None, :])
-        prior = config.shared_variance * matern32(standardized, standardized, config.lengthscale)
-        prior += config.session_variance * matern32(times[:, None], times[:, None], config.time_lengthscale) * (names[:, None] == names[None, :])
+        cross = config.shared_variance * matern32(
+            standardized, self.features, config.lengthscale
+        )
+        cross += (
+            config.session_variance
+            * matern32(times[:, None], self.times[:, None], config.time_lengthscale)
+            * (names[:, None] == self.ids[None, :])
+        )
+        prior = config.shared_variance * matern32(
+            standardized, standardized, config.lengthscale
+        )
+        prior += (
+            config.session_variance
+            * matern32(times[:, None], times[:, None], config.time_lengthscale)
+            * (names[:, None] == names[None, :])
+        )
         prior += config.noise_variance * np.eye(len(times))
         solved = np.linalg.solve(self.cholesky, cross.T)
         conditional = prior - solved.T @ solved
@@ -171,7 +219,10 @@ class RecordingDiscrepancyGP:
 
 def chain_modes(node_count: int, rank: int, clamped_each_end: int = 2) -> Array:
     """Dirichlet modes on a chain; clamped rows are exactly zero."""
-    if any(isinstance(v, bool) or not isinstance(v, int) for v in (node_count, rank, clamped_each_end)):
+    if any(
+        isinstance(v, bool) or not isinstance(v, int)
+        for v in (node_count, rank, clamped_each_end)
+    ):
         raise ValueError("chain sizes must be integers")
     free_count = node_count - 2 * clamped_each_end
     if clamped_each_end < 1 or not 1 <= rank <= free_count:
@@ -205,8 +256,9 @@ def frame_block_diagonal(covariance: object, frame_width: int) -> Array:
     return result
 
 
-def empirical_lowrank(errors: object, rank: int, diagonal_fraction: float,
-                      variance_floor: float) -> Array:
+def empirical_lowrank(
+    errors: object, rank: int, diagonal_fraction: float, variance_floor: float
+) -> Array:
     """Shrunk residual second moment about a fixed mean, fitted on calibration recordings."""
     residuals = _finite(errors, 2, "calibration errors")
     if not 1 <= rank <= min(residuals.shape):
@@ -215,16 +267,20 @@ def empirical_lowrank(errors: object, rank: int, diagonal_fraction: float,
         raise ValueError("diagonal_fraction must be in (0, 1]")
     if not np.isfinite(variance_floor) or variance_floor <= 0:
         raise ValueError("variance_floor must be positive")
-    _, singular, vectors = np.linalg.svd(residuals / np.sqrt(len(residuals)), full_matrices=False)
+    _, singular, vectors = np.linalg.svd(
+        residuals / np.sqrt(len(residuals)), full_matrices=False
+    )
     loading = vectors[:rank].T * singular[:rank]
-    diagonal = diagonal_fraction * np.mean(residuals ** 2, axis=0) + variance_floor
+    diagonal = diagonal_fraction * np.mean(residuals**2, axis=0) + variance_floor
     return (1 - diagonal_fraction) * (loading @ loading.T) + np.diag(diagonal)
 
 
 def gaussian_metrics(error: object, covariance: object) -> dict[str, float]:
     residual = _finite(error, 1, "error")
     matrix = _finite(covariance, 2, "covariance")
-    if matrix.shape != (len(residual), len(residual)) or not np.allclose(matrix, matrix.T, atol=1e-12, rtol=1e-10):
+    if matrix.shape != (len(residual), len(residual)) or not np.allclose(
+        matrix, matrix.T, atol=1e-12, rtol=1e-10
+    ):
         raise ValueError("covariance dimensions or symmetry invalid")
     root = np.linalg.cholesky(matrix)
     whitened = np.linalg.solve(root, residual)
@@ -232,8 +288,12 @@ def gaussian_metrics(error: object, covariance: object) -> dict[str, float]:
     logdet = float(2 * np.log(np.diag(root)).sum())
     std = np.sqrt(np.diag(matrix))
     return {
-        "nll_per_dimension": float(0.5 * (nees + logdet + len(residual) * np.log(2 * np.pi)) / len(residual)),
+        "nll_per_dimension": float(
+            0.5 * (nees + logdet + len(residual) * np.log(2 * np.pi)) / len(residual)
+        ),
         "normalized_nees": nees / len(residual),
-        "marginal_90_coverage": float(np.mean(np.abs(residual) <= 1.6448536269514722 * std)),
+        "marginal_90_coverage": float(
+            np.mean(np.abs(residual) <= 1.6448536269514722 * std)
+        ),
         "mean_full_90_width": float(np.mean(2 * 1.6448536269514722 * std)),
     }

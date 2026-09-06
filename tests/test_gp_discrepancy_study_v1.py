@@ -7,12 +7,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bayesian_phystwin_experiments.gp_discrepancy_study_v1 import run_study, synthetic_data
+from bayesian_phystwin_experiments.gp_discrepancy_study_v1 import (
+    run_study,
+    synthetic_data,
+)
 
 
 def protocol():
     root = Path(__file__).resolve().parents[1]
-    return json.loads((root / "configs/diagnostics/gp_discrepancy_development_v1.json").read_text())
+    return json.loads(
+        (root / "configs/diagnostics/gp_discrepancy_development_v1.json").read_text()
+    )
 
 
 def test_future_score_outcomes_cannot_change_fitting_or_predictions():
@@ -21,10 +26,17 @@ def test_future_score_outcomes_cannot_change_fitting_or_predictions():
     changed_truth = data.truth.copy()
     changed_truth[data.split == "score"] += 10.0
     second, other = run_study(replace(data, truth=changed_truth), protocol())
-    for key in ("prediction_sha256", "selected_config", "gp_mean_accepted_on_select",
-                "covariance_scale_from_calibration", "contrast_threshold_from_calibration_m"):
+    for key in (
+        "prediction_sha256",
+        "selected_config",
+        "gp_mean_accepted_on_select",
+        "covariance_scale_from_calibration",
+        "contrast_threshold_from_calibration_m",
+    ):
         assert first[key] == second[key]
-    np.testing.assert_array_equal(arrays["selected_predictions"], other["selected_predictions"])
+    np.testing.assert_array_equal(
+        arrays["selected_predictions"], other["selected_predictions"]
+    )
     assert second["point_summary"]["selected_mean_l1_m"] > 9.0
 
 
@@ -41,18 +53,34 @@ def test_clamped_points_are_exact_even_after_gp_correction():
     data = synthetic_data(29)
     _, arrays = run_study(data, protocol())
     clamped = np.all(data.basis == 0, axis=1)
-    np.testing.assert_array_equal(arrays["selected_predictions"][:, :, clamped], arrays["baseline_predictions"][:, :, clamped])
+    np.testing.assert_array_equal(
+        arrays["selected_predictions"][:, :, clamped],
+        arrays["baseline_predictions"][:, :, clamped],
+    )
 
 
 def test_rotated_canonical_frames_preserve_mode_uncertainty():
     data = synthetic_data(43)
     rotation = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-    rotated = replace(data, baseline=data.baseline @ rotation.T, ridge=data.ridge @ rotation.T,
-                      truth=data.truth @ rotation.T, frames=rotation[None] @ data.frames)
+    rotated = replace(
+        data,
+        baseline=data.baseline @ rotation.T,
+        ridge=data.ridge @ rotation.T,
+        truth=data.truth @ rotation.T,
+        frames=rotation[None] @ data.frames,
+    )
     first, arrays = run_study(data, protocol())
     second, other = run_study(rotated, protocol())
-    np.testing.assert_allclose(other["selected_predictions"], arrays["selected_predictions"] @ rotation.T, atol=1e-12)
-    assert first["covariance_summary"]["gp_scaled"]["nll_per_dimension"] == pytest.approx(second["covariance_summary"]["gp_scaled"]["nll_per_dimension"], abs=1e-10)
+    np.testing.assert_allclose(
+        other["selected_predictions"],
+        arrays["selected_predictions"] @ rotation.T,
+        atol=1e-12,
+    )
+    assert first["covariance_summary"]["gp_scaled"][
+        "nll_per_dimension"
+    ] == pytest.approx(
+        second["covariance_summary"]["gp_scaled"]["nll_per_dimension"], abs=1e-10
+    )
 
 
 def test_repeated_execution_is_reproducible():
