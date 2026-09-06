@@ -1,0 +1,84 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Recorded residual development
+on:
+  workflow_dispatch:
+  push:
+    branches: ["run/recorded-residual-*"]
+    paths: [".github/requests/recorded-residual-development.json"]
+permissions:
+  contents: read
+concurrency:
+  group: recorded-residual-development-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+jobs:
+  development:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Validate request and inspect named source environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/recorded-residual-$GITHUB_RUN_ID"
+          echo "RUN_ROOT=$RUNNER_TEMP/recorded-residual-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          req=json.loads(pathlib.Path('.github/requests/recorded-residual-development.json').read_text())
+          assert req['issue']==951 and req['dataset']=='DLO1/train'
+          assert req['official_eval_authorized'] is False
+          assert req['evidence_class']=='retrospective-development-only'
+          assert req['mode'] in ('export', 'benchmark')
+          root=pathlib.Path('/home/florianpfaff/source-only')
+          paths=[root/'deform-bayesian-v1/DEFORM-b73b8b8',root/'deform-bayesian-v2/runs/longrun-v2-2060c71/checkpoints/update_6400.pt']
+          print(json.dumps({'request':req,'required_paths':{str(p):os.access(p,os.R_OK) for p in paths}},indent=2),flush=True)
+          candidates=[pathlib.Path(sys.executable)]
+          if root.is_dir():
+              for project in sorted(root.glob('deform*')):
+                  for pattern in ('bin/python','*/bin/python','.*/*/python','*/.venv/bin/python','*/venv/bin/python'):
+                      candidates.extend(sorted(project.glob(pattern)))
+          candidates=list(dict.fromkeys(str(p) for p in candidates if p.is_file() and os.access(p,os.X_OK)))
+          chosen=None
+          for p in candidates:
+              probe=subprocess.run([p,'-c','import torch, numpy, theseus; print(torch.__version__)'],text=True,capture_output=True,timeout=60)
+              print(json.dumps({'python':p,'returncode':probe.returncode,'detail':(probe.stdout+probe.stderr)[-1200:]}),flush=True)
+              if probe.returncode==0:
+                  chosen=p
+                  break
+          inventory={'python_candidates':candidates,'chosen_python':chosen,'required_paths':{str(p):os.access(p,os.R_OK) for p in paths}}
+          dest=pathlib.Path(os.environ['RUNNER_TEMP'])/('recorded-residual-'+os.environ['GITHUB_RUN_ID'])
+          (dest/'inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
+          if not all(os.access(p,os.R_OK) for p in paths):
+              raise SystemExit('Named frozen source inputs are not readable; no fallback data opened.')
+          if chosen is None:
+              raise SystemExit('No compatible existing DEFORM Python environment found.')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('DEFORM_PYTHON='+chosen+'\n')
+          PY
+      - name: Choose idle GPU and replay source-only recordings
+        shell: bash
+        run: |
+          set -euo pipefail
+          GPU=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -t, -k2 -nr | head -1 | cut -d, -f1 | tr -d ' ')
+          export CUDA_VISIBLE_DEVICES="$GPU"
+          export CUBLAS_WORKSPACE_CONFIG=:4096:8
+          "$DEFORM_PYTHON" experiments/recorded_residual_regimes_v1/export_dlo1.py --output "$RUN_ROOT/export" 2>&1 | tee "$RUN_ROOT/export.log"
+      - name: Retain development artifacts, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: recorded-residual-development-${{ github.run_id }}
+          path: ${{ runner.temp }}/recorded-residual-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: error
