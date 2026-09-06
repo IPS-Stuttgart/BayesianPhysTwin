@@ -1,0 +1,73 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP residual source-only pilot v1
+on:
+  push:
+    branches: [science/deform-gp-residual-pilot-v1]
+    paths: [.github/requests/deform-gp-residual-pilot-v1.json]
+permissions:
+  contents: read
+concurrency:
+  group: deform-gp-residual-pilot-v1
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: [self-hosted, gpuserver6000]
+    timeout-minutes: 60
+    env:
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Source-only inventory or GP comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GP_OUTPUT="$RUNNER_TEMP/deform-gp-pilot-$GITHUB_RUN_ID"
+          mkdir -p "$GP_OUTPUT"
+          echo "GP_OUTPUT=$GP_OUTPUT" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          request = json.loads(Path('.github/requests/deform-gp-residual-pilot-v1.json').read_text())
+          assert request['official_eval_read'] is False
+          assert request['new_data_collection'] is False
+          print('REQUEST', json.dumps(request, sort_keys=True))
+          print('RUNNER', os.environ.get('RUNNER_NAME'))
+          if request['mode'] == 'inventory':
+              roots = [
+                  Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5'),
+                  Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v6'),
+              ]
+              found = []
+              for root in roots:
+                  print('SOURCE_ROOT', root, root.exists())
+                  if root.is_dir():
+                      for p in sorted(root.rglob('*')):
+                          if p.is_file() and p.suffix in ('.json', '.npz', '.pt', '.sh'):
+                              row = {'path': str(p), 'bytes': p.stat().st_size}
+                              found.append(row)
+                              print(json.dumps(row))
+              for parent in [Path('/home/florianpfaff'), Path('/home/florianpfaff/source-only')]:
+                  if parent.is_dir():
+                      print('TOP_LEVEL', str(parent), sorted(p.name for p in parent.iterdir() if p.is_dir()))
+              Path(os.environ['GP_OUTPUT'], 'inventory.json').write_text(json.dumps(found, indent=2))
+          PY
+          mode=$(python3 -c "import json; print(json.load(open('.github/requests/deform-gp-residual-pilot-v1.json'))['mode'])")
+          if [ "$mode" = compare ]; then
+            bash experiments/deform_gp_residual_pilot_v1/run.sh "$GP_OUTPUT"
+          fi
+      - name: Retain pilot evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform-gp-residual-pilot-v1-${{ github.run_id }}
+          path: ${{ env.GP_OUTPUT }}/
+          if-no-files-found: warn
+          retention-days: 90
