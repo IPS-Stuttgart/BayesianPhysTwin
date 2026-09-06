@@ -1,0 +1,52 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: Material GP development v1
+on:
+  push:
+    branches: [experiment/material-gp-development-20260907]
+    paths:
+      - .github/workflows/material-gp-development-v1.yml
+      - scripts/experiments/material_gp_development_v1.py
+      - tests/test_material_gp_development_v1.py
+permissions:
+  contents: read
+concurrency:
+  group: material-gp-development-v1
+  cancel-in-progress: false
+jobs:
+  development:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Inspect source-only runtime, no trajectory reads
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          roots = [
+            Path('/home/florianpfaff/source-only/deform-bayesian-v1'),
+            Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7'),
+            Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/evaluate-8cc85de7'),
+          ]
+          for root in roots:
+              print('ROOT', root, 'exists', root.exists())
+              if root.is_dir():
+                  print('CHILDREN', [str(p.relative_to(root)) for p in sorted(root.iterdir())])
+          training = roots[1]
+          if training.is_dir():
+              for p in sorted(training.rglob('training_validation_result.json')):
+                  value = json.loads(p.read_text())
+                  print('TRAINING_RESULT', p)
+                  print(json.dumps({k: value.get(k) for k in ('contract','selected_checkpoint','source_manifest','runtime','upstream')}, indent=2))
+          for python in [roots[0]/'venv/bin/python', Path('/home/github-runner/.cache/workflows/deform-bayesian-v1/venv/bin/python')]:
+              print('PYTHON', python, python.exists())
+          PY
+          p=/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+          if test -x "$p"; then
+            "$p" -c "import sys,numpy,torch; print(sys.version); print('numpy',numpy.__version__,'torch',torch.__version__); import scipy; print('scipy',scipy.__version__)"
+          fi
