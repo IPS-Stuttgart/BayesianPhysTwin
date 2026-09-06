@@ -14,7 +14,7 @@ permissions:
   contents: read
 concurrency:
   group: dp-residual-development-20260907
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   development:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
