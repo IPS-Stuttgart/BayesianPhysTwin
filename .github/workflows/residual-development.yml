@@ -88,6 +88,11 @@ jobs:
           clean: true
       - name: Execute fixed-backbone source-only comparison
         shell: bash
+        env:
+          # Exact shared checkout only; do not alter runner-wide Git configuration.
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
