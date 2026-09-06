@@ -136,6 +136,7 @@ class ConditionalMixture:
             self.estimator.weights_,
             self.estimator.means_,
             self.estimator.covariances_,
+            strict=True,
         )
         for weight, mu, cov in components:
             factor = cho_factor(cov[:d, :d], lower=True, check_finite=False)
@@ -153,7 +154,9 @@ class ConditionalMixture:
         z = self.reduction.x(x)
         d = z.shape[1]
         conditional = []
-        for mu, cov in zip(self.estimator.means_, self.estimator.covariances_):
+        for mu, cov in zip(
+            self.estimator.means_, self.estimator.covariances_, strict=True
+        ):
             factor = cho_factor(cov[:d, :d], lower=True, check_finite=False)
             inv_delta = cho_solve(factor, (z - mu[:d]).T, check_finite=False).T
             conditional.append(mu[d:] + inv_delta @ cov[:d, d:])
@@ -416,7 +419,10 @@ def summarize(records, seed=773):
         if [r["id"] for r in dp["per_trajectory"]] != [r["id"] for r in paired]:
             raise ValueError("paired trajectory IDs do not align")
         diff = np.array(
-            [a[METRIC] - b[METRIC] for a, b in zip(dp["per_trajectory"], paired)]
+            [
+                a[METRIC] - b[METRIC]
+                for a, b in zip(dp["per_trajectory"], paired, strict=True)
+            ]
         )
         rng = np.random.default_rng(seed)
         intervals = []
