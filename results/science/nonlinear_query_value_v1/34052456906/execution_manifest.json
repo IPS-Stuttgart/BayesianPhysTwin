@@ -1,0 +1,42 @@
+{
+  "github_run_attempt": "1",
+  "github_run_id": "34052456906",
+  "github_sha": "a952d4ef492dff504049dfc0047e1ac7bc4e5341",
+  "implementation_sha256": {
+    "analysis.py": "afa03c1fecd87c0e0d13b9a5fc31ce8c7ffbc9948a26ebad665c77c337b31d53",
+    "evaluate.py": "2eab97bf0931247e387a282689e2df49130e9900c6b76aadcfb286ccfc221924",
+    "run.py": "e6e6068ee302ee3bc4f1463ab748d412c6e4595417ccf0e7b303fe1598f59efe",
+    "test_analysis.py": "fc213ffeb3e8da30d58841b0dceba6a5dfb9fca4628bd08ff9864070fe861fb1"
+  },
+  "inventory_git_blob": "adaebe31eee61ee4b1e3d339e01cf6d700377ad5",
+  "parent_artifact_writes": false,
+  "request": {
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20260906,
+    "data_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+    "datasets": [
+      "DLO4",
+      "DLO5"
+    ],
+    "expected_candidate_coordinate_l1_mm": {
+      "DLO4": 8.95317154556605,
+      "DLO5": 7.826805297017976
+    },
+    "experiment": "nonlinear-query-value-v1",
+    "heldout_query_count": 13,
+    "inventory_git_blob": "adaebe31eee61ee4b1e3d339e01cf6d700377ad5",
+    "inventory_path": "results/science/nonlinear_query_value_v1/33984475829/inventory.json",
+    "parent_cache_root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs",
+    "parent_run_id": 33361441865,
+    "phase": "evaluate",
+    "prediction_construction": "All nine same-mean query readouts sealed for both DLOs before loading evaluation futures. Source controls use eight held-out predictions per DLO; target panel uses all fourteen evaluation trajectories.",
+    "primary_minimum_per_dlo_improvement_pct": 1.0,
+    "query_count": 27,
+    "request_id": "retrospective-nonlinear-query-score-20260907-v1",
+    "requested_by": "User: Try again; execute the nonlinear deformation-query hypothesis through a file-change-triggered GitHub Actions workflow.",
+    "schema_version": 1,
+    "scope": "Retrospective analysis of already completed public DEFORM study; no reserved targets, no robot, no simulator retraining, no parent artifact mutation.",
+    "source_coupling_identity_shrinkage": 0.5,
+    "technical_history": "Inventory 33984419926 failed on a stale README path before reading trajectories. Inventory 33984475829 succeeded. Numerical evaluator publication was previously blocked; the explicit user retry now permits its first scoring execution. No prior empirical scores exist for this hypothesis."
+  }
+}
