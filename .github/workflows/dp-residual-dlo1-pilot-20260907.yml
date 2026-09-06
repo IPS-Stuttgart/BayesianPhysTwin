@@ -1,4 +1,4 @@
-# workflow-lifecycle: one-shot
+# workflow-lifecycle: temporary
 # workflow-owner: IPS-Stuttgart maintainers
 name: DLO1 DP residual pilot 20260907
 
@@ -29,6 +29,11 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '2'
       MKL_NUM_THREADS: '1'
+      # Exact caller-owned upstream only. No global git configuration is changed.
+      # Run 34052958639 failed this ownership check before any trajectory read.
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
     steps:
       - name: Checkout experiment revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
