@@ -1,4 +1,4 @@
-# workflow-lifecycle: experimental
+# workflow-lifecycle: temporary
 # workflow-owner: IPS-Stuttgart maintainers
 name: DP residual source feasibility v1
 on:
@@ -6,15 +6,16 @@ on:
     branches: [science/dp-residual-source-v1-20260907]
     paths:
       - .github/workflows/dp-residual-source-v1.yml
-      - experiments/dp_residual_source_v1/**
+      - experiments/dp_residual_source_v1/*.py
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: dp-residual-source-v1
   cancel-in-progress: false
 jobs:
   source:
-    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
       PYTHONUNBUFFERED: '1'
@@ -23,59 +24,42 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
-      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
-      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
-      OUT: /home/github-runner/.cache/workflows/dp-residual-source-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
-      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}/experiments/dp_residual_source_v1
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/experiments/dp_residual_source_v1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Source metadata preflight (no trajectory payloads)
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install CPU inference dependencies
+        run: python -m pip install numpy==1.26.4 scipy==1.15.3
+      - name: Read the exact completed DLO1 development artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dp-dlo1-development-34052781162
+          run-id: 34052781162
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: prepared-source
+      - name: Numerical and information-boundary tests
+        run: python -m unittest discover -s experiments/dp_residual_source_v1 -p 'test_*.py' -v
+      - name: Run fixed development experiment
         shell: bash
         run: |
           set -euo pipefail
-          test ! -e "$OUT"
-          mkdir -p "$OUT"
-          test -x "$FROZEN_PYTHON"
-          "$FROZEN_PYTHON" - <<'PY' | tee "$OUT/preflight.log"
-          import os, json, sys
-          from pathlib import Path
-          import numpy, scipy, torch
-          print(json.dumps({'python': sys.version, 'numpy': numpy.__version__, 'scipy': scipy.__version__, 'torch': torch.__version__, 'cuda': torch.cuda.is_available()}))
-          roots = [Path('/home/florianpfaff/source-only/deform-bayesian-v1')]
-          cache = Path('/home/github-runner/.cache/workflows')
-          if cache.is_dir():
-              roots += [p for p in cache.iterdir() if p.is_dir() and 'dlo2' in p.name.lower()]
-          records = []
-          for root in roots:
-              print('SOURCE_ROOT', str(root))
-              if not root.is_dir():
-                  continue
-              print('TOP_LEVEL', sorted(p.name for p in root.iterdir()))
-              for current, dirs, files in os.walk(root):
-                  rel = Path(current).relative_to(root)
-                  dirs[:] = [d for d in dirs if d not in {'venv', '.venv', '.git', '__pycache__', 'data_set', 'eval', 'test', 'source_test', 'site-packages'}]
-                  if len(rel.parts) >= 5:
-                      dirs[:] = []
-                  for name in files:
-                      if name in {'training_validation_result.json', 'source_manifest.json', 'update_6400.pt'}:
-                          records.append(str(Path(current) / name))
-          print(json.dumps({'candidate_source_metadata_paths': sorted(records), 'trajectory_payloads_read': False}, indent=2))
-          Path(os.environ['OUT'], 'source_metadata_paths.json').write_text(json.dumps(records, indent=2))
-          PY
-      - name: Run implemented source-only experiment
-        if: hashFiles('experiments/dp_residual_source_v1/run.py') != ''
-        shell: bash
-        run: |
-          set -euo pipefail
-          "$FROZEN_PYTHON" -m unittest discover -s experiments/dp_residual_source_v1 -p 'test_*.py' -v
-          "$FROZEN_PYTHON" experiments/dp_residual_source_v1/run.py --metadata-paths "$OUT/source_metadata_paths.json" --output "$OUT/experiment" | tee "$OUT/experiment.log"
-      - name: Retain source-only evidence
+          mkdir -p outputs
+          python experiments/dp_residual_source_v1/run.py \
+            --bundle prepared-source/development.npz \
+            --preparation prepared-source/preparation.json \
+            --output outputs/dp-residual-source-v1 | tee outputs/source-experiment.log
+      - name: Retain development evidence and implementation
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: dp-residual-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.OUT }}
+          path: |
+            outputs
+            experiments/dp_residual_source_v1
           if-no-files-found: error
           retention-days: 30
