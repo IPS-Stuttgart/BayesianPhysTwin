@@ -7,12 +7,24 @@ on:
     paths:
       - .github/workflows/material-gp-development-v1.yml
       - scripts/experiments/material_gp_development_v1.py
+      - scripts/experiments/material_gp_export_v1.py
       - tests/test_material_gp_development_v1.py
 permissions:
   contents: read
 concurrency:
   group: material-gp-development-v1
   cancel-in-progress: false
+env:
+  PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OPENBLAS_NUM_THREADS: '4'
+  OMP_NUM_THREADS: '4'
+  MKL_NUM_THREADS: '4'
+  CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+  CACHE_ROOT: /home/github-runner/.cache/workflows/material-gp-development-v1/dlo2-v5-development
+  RESULT_ROOT: /home/github-runner/.cache/workflows/material-gp-development-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
 jobs:
   development:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
@@ -21,32 +33,28 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Inspect source-only runtime, no trajectory reads
+      - name: Export matched development forecasts from unchanged hybrid
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          roots = [
-            Path('/home/florianpfaff/source-only/deform-bayesian-v1'),
-            Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7'),
-            Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/evaluate-8cc85de7'),
-          ]
-          for root in roots:
-              print('ROOT', root, 'exists', root.exists())
-              if root.is_dir():
-                  print('CHILDREN', [str(p.relative_to(root)) for p in sorted(root.iterdir())])
-          training = roots[1]
-          if training.is_dir():
-              for p in sorted(training.rglob('training_validation_result.json')):
-                  value = json.loads(p.read_text())
-                  print('TRAINING_RESULT', p)
-                  print(json.dumps({k: value.get(k) for k in ('contract','selected_checkpoint','source_manifest','runtime','upstream')}, indent=2))
-          for python in [roots[0]/'venv/bin/python', Path('/home/github-runner/.cache/workflows/deform-bayesian-v1/venv/bin/python')]:
-              print('PYTHON', python, python.exists())
-          PY
-          p=/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
-          if test -x "$p"; then
-            "$p" -c "import sys,numpy,torch; print(sys.version); print('numpy',numpy.__version__,'torch',torch.__version__); import scipy; print('scipy',scipy.__version__)"
+          mkdir -p "$RESULT_ROOT"
+          "$FROZEN_PYTHON" scripts/experiments/material_gp_export_v1.py --output-root "$CACHE_ROOT" | tee "$RESULT_ROOT/export.log"
+          cp "$CACHE_ROOT/export.json" "$RESULT_ROOT/export.json"
+      - name: Test and compare residual models when implemented
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f tests/test_material_gp_development_v1.py; then
+            "$FROZEN_PYTHON" -m pytest -q tests/test_material_gp_development_v1.py | tee "$RESULT_ROOT/tests.log"
           fi
+          if test -f scripts/experiments/material_gp_development_v1.py; then
+            "$FROZEN_PYTHON" scripts/experiments/material_gp_development_v1.py --data "$CACHE_ROOT/development.npz" --output-root "$RESULT_ROOT/comparison" | tee "$RESULT_ROOT/comparison.log"
+          fi
+      - name: Retain development-only evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: material-gp-development-${{ github.run_id }}
+          path: ${{ env.RESULT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
