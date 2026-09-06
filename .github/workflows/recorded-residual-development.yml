@@ -17,8 +17,10 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
+  DEFORM_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
 jobs:
   development:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 20
     steps:
@@ -27,46 +29,32 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.sha }}
-      - name: Validate request and inspect named source environment
+      - name: Validate request and production environment
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/recorded-residual-$GITHUB_RUN_ID"
           echo "RUN_ROOT=$RUNNER_TEMP/recorded-residual-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
-          python3 - <<'PY'
-          import json, os, pathlib, subprocess, sys
+          "$DEFORM_PYTHON" - <<'PY'
+          import json, os, pathlib, sys
           req=json.loads(pathlib.Path('.github/requests/recorded-residual-development.json').read_text())
           assert req['issue']==951 and req['dataset']=='DLO1/train'
           assert req['official_eval_authorized'] is False
           assert req['evidence_class']=='retrospective-development-only'
-          assert req['mode'] in ('export', 'benchmark')
           root=pathlib.Path('/home/florianpfaff/source-only')
           paths=[root/'deform-bayesian-v1/DEFORM-b73b8b8',root/'deform-bayesian-v2/runs/longrun-v2-2060c71/checkpoints/update_6400.pt']
-          print(json.dumps({'request':req,'required_paths':{str(p):os.access(p,os.R_OK) for p in paths}},indent=2),flush=True)
-          candidates=[pathlib.Path(sys.executable)]
-          if root.is_dir():
-              for project in sorted(root.glob('deform*')):
-                  for pattern in ('bin/python','*/bin/python','.*/*/python','*/.venv/bin/python','*/venv/bin/python'):
-                      candidates.extend(sorted(project.glob(pattern)))
-          candidates=list(dict.fromkeys(str(p) for p in candidates if p.is_file() and os.access(p,os.X_OK)))
-          chosen=None
-          for p in candidates:
-              probe=subprocess.run([p,'-c','import torch, numpy, theseus; print(torch.__version__)'],text=True,capture_output=True,timeout=60)
-              print(json.dumps({'python':p,'returncode':probe.returncode,'detail':(probe.stdout+probe.stderr)[-1200:]}),flush=True)
-              if probe.returncode==0:
-                  chosen=p
-                  break
-          inventory={'python_candidates':candidates,'chosen_python':chosen,'required_paths':{str(p):os.access(p,os.R_OK) for p in paths}}
+          sys.path[:0]=['src','scripts/remote']
+          import run_deform_dlo_source as source
+          shim=source._install_dense_import_shim()
+          import torch, numpy, theseus
+          inventory={'python':sys.executable,'torch':torch.__version__,'numpy':numpy.__version__,'dense_shim':shim,'required_paths':{str(p):os.access(p,os.R_OK) for p in paths}}
           dest=pathlib.Path(os.environ['RUNNER_TEMP'])/('recorded-residual-'+os.environ['GITHUB_RUN_ID'])
           (dest/'inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
+          print(json.dumps(inventory,indent=2),flush=True)
           if not all(os.access(p,os.R_OK) for p in paths):
-              raise SystemExit('Named frozen source inputs are not readable; no fallback data opened.')
-          if chosen is None:
-              raise SystemExit('No compatible existing DEFORM Python environment found.')
-          with open(os.environ['GITHUB_ENV'],'a') as f:
-              f.write('DEFORM_PYTHON='+chosen+'\n')
+              raise SystemExit('Named source inputs unavailable; no fallback data opened.')
           PY
-      - name: Choose idle GPU and replay source-only recordings
+      - name: Choose available GPU and replay source-only recordings
         shell: bash
         run: |
           set -euo pipefail
