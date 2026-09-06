@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 
+from bayesian_phystwin_experiments.deform_dlo_local_residual import deform_causal_inputs
 from experiments.deform_gp_residual_dev_v1.run import (
     basis,
     fit_gp_basis,
@@ -13,7 +14,6 @@ from experiments.deform_gp_residual_dev_v1.run import (
     transform,
     world_prediction,
 )
-from bayesian_phystwin_experiments.deform_dlo_local_residual import deform_causal_inputs
 
 
 class GaussianProcessTests(unittest.TestCase):

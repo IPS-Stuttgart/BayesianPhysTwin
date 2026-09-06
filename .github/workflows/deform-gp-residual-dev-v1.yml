@@ -1,4 +1,4 @@
-# workflow-lifecycle: experimental
+# workflow-lifecycle: permanent
 # workflow-owner: IPS-Stuttgart maintainers
 name: DEFORM GP residual development v1
 on:
@@ -41,6 +41,10 @@ jobs:
           set -euo pipefail
           "$FROZEN_PYTHON" -m unittest experiments.deform_gp_residual_dev_v1.test_core -v
       - name: Reproduce unchanged development baseline
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/DEFORM-b73b8b8
         run: |
           set -euo pipefail
           "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/run.py prepare --output "$OUTPUT_DIR"
