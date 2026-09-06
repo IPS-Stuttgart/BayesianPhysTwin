@@ -42,29 +42,33 @@ class GaussianProcessTests(unittest.TestCase):
     def test_all_rows_enter_likelihood(self):
         first = fit_gp_basis(self.x, self.y, 6, 0.5, False)
         changed = self.y.copy()
-        unselected = sorted(set(range(len(self.x))) - set(first['inducing_indices']))[0]
+        unselected = sorted(set(range(len(self.x))) - set(first["inducing_indices"]))[0]
         changed[unselected] += 10
         second = fit_gp_basis(self.x, changed, 6, 0.5, False)
-        np.testing.assert_array_equal(first['inducing_indices'], second['inducing_indices'])
+        np.testing.assert_array_equal(
+            first["inducing_indices"], second["inducing_indices"]
+        )
         a, _ = predict_gp(self.x, solve_gp(first, 0.2))
         b, _ = predict_gp(self.x, solve_gp(second, 0.2))
         self.assertGreater(float(np.linalg.norm(a - b)), 1e-4)
 
     def test_query_does_not_change_normalizer(self):
         model = fit_gp_basis(self.x, self.y, 6, 1.5, True)
-        before = model['location'].copy()
+        before = model["location"].copy()
         predict_gp(self.x * 100, solve_gp(model, 0.5))
-        np.testing.assert_array_equal(before, model['location'])
+        np.testing.assert_array_equal(before, model["location"])
 
     def test_clamped_exact_and_frame_rotation(self):
         baseline = np.zeros((2, 5, 8, 3))
         local = np.ones((2, 5, 4, 3))
-        rotation = np.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1.]])
+        rotation = np.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1.0]])
         frames = np.stack((np.eye(3), rotation))
         result = world_prediction(baseline, local, frames, 0.5)
         np.testing.assert_array_equal(result[:, :, [0, 1, -2, -1]], 0)
         np.testing.assert_allclose(result[1, 0, 2], [-0.5, 0.5, 0.5])
-        np.testing.assert_array_equal(world_prediction(baseline, local, frames, 0), baseline)
+        np.testing.assert_array_equal(
+            world_prediction(baseline, local, frames, 0), baseline
+        )
 
     def test_future_free_node_truth_not_in_causal_inputs(self):
         trajectory = self.rng.normal(size=(2, 7, 8, 3))
@@ -83,5 +87,5 @@ class GaussianProcessTests(unittest.TestCase):
             solve_gp(fit_gp_basis(self.x, self.y, 6, 0.5, False), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
