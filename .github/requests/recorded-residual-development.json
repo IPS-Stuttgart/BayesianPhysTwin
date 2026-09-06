@@ -1,0 +1,29 @@
+{
+  "schema": "recorded-residual-development-request-v1",
+  "issue": 951,
+  "mode": "export",
+  "dataset": "DLO1/train",
+  "evidence_class": "retrospective-development-only",
+  "official_eval_authorized": false,
+  "hardware_acquisition": false,
+  "source_revision_before_request": "b9e43d3c7652b222fa9fd2672b68b7b8e9ff18b8",
+  "split": {"fit": 40, "validation": 8, "source_test": 8},
+  "residual_model": {
+    "representation_rank": 6,
+    "exogenous_feature_rank": 4,
+    "fixed_k": [1, 2, 4, 8],
+    "hdp_weak_limit_k": [8],
+    "alpha": 2.0,
+    "kappa": 20.0,
+    "gamma": 1.0,
+    "seed": 42,
+    "gibbs_sweeps": 40,
+    "burn_in": 20,
+    "retained_every": 5,
+    "prefix_frames": 8,
+    "forecast_origins": [16, 116, 216, 316],
+    "horizons": [10, 50, 100],
+    "selection_metric": "validation-trajectory-balanced-coordinate-L1-at-horizon-50",
+    "test_policy": "score all fixed candidates; select only on validation; no test reselection"
+  }
+}
