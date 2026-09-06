@@ -14,7 +14,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: dp-residual-regimes-dev-v1-${{ github.ref }}
+  group: dp-residual-regimes-cpu-v1-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
