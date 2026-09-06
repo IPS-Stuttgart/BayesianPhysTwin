@@ -1,14 +1,15 @@
 {
   "schema": "recorded-residual-development-request-v1",
   "issue": 951,
-  "mode": "export",
+  "mode": "contracts",
   "dataset": "DLO1/train",
   "evidence_class": "retrospective-development-only",
   "official_eval_authorized": false,
   "hardware_acquisition": false,
-  "source_revision_before_request": "4e1478f27b006b425b08d21d865b7020390b76dc",
+  "source_revision_before_request": "64958138c57c1aa2aa7cf8cb27bc2efc5c4d397a",
   "retained_preflight_failure_runs": [34052720381, 34052886918],
-  "repair": "Use production dense-import shim and a process-scoped safe.directory exception for the exact read-only DEFORM checkout; no dataset, estimator, or selection change.",
+  "export_run": 34053064504,
+  "existing_fit_validation_export_run": 34052781162,
   "split": {"fit": 40, "validation": 8, "source_test": 8},
   "residual_model": {
     "representation_rank": 6,
@@ -26,6 +27,10 @@
     "forecast_origins": [16, 116, 216, 316],
     "horizons": [10, 50, 100],
     "selection_metric": "validation-trajectory-balanced-coordinate-L1-at-horizon-50",
-    "test_policy": "score all fixed candidates; select only on validation; no test reselection"
+    "test_policy": "score all fixed candidates; select only on validation; no test reselection",
+    "coefficient_prior": "MatrixNormal M0=[zeros;0.98 I], row precision I, column covariance Q",
+    "covariance_prior": "InverseWishart(df=D+2, scale=0.01 I)",
+    "residual_complement": "persist last observed orthogonal complement",
+    "forecast_readout": "posterior predictive mean; exact mode-path first moments per retained parameter draw"
   }
 }
