@@ -1,0 +1,114 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Residual model source screen
+
+on:
+  push:
+    branches: ['science/residual-model-screen/**']
+    paths: ['.github/requests/residual-model-screen.json']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: residual-model-source-screen-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REQUEST: .github/requests/residual-model-screen.json
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  PYTHONHASHSEED: '0'
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  NUMEXPR_NUM_THREADS: '1'
+
+jobs:
+  source-screen:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Verify immutable source-capsule request
+        env:
+          BEFORE: ${{ github.event.before }}
+          EVENT: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re, subprocess
+          from pathlib import Path
+          request = json.loads(Path(os.environ['REQUEST']).read_text())
+          assert request['contract'] == 'residual-model-source-screen-request-v1'
+          assert request['status'] == 'authorized'
+          assert request['official_eval_access'] is False
+          assert request['new_acquisition'] is False
+          assert request['dataset_root'] == os.environ['DATASET_ROOT']
+          capsule = request['capsule']
+          assert re.fullmatch(r'experiments/[a-z0-9_]+', capsule)
+          assert request['runner_labels'] == ['self-hosted', 'gpuserver4090']
+          if os.environ['EVENT'] == 'push':
+              before = os.environ['BEFORE']
+              changed = subprocess.check_output(['git', 'diff', '--name-only', before, os.environ['GITHUB_SHA']], text=True).splitlines()
+              assert changed == [os.environ['REQUEST']], changed
+              assert request['experiment_revision'] == before
+          assert {f'{capsule}/{name}' for name in ('run.py', 'reference.py', 'test_run.py')} <= set(request['git_blobs'])
+          for name, expected in request['git_blobs'].items():
+              assert name.startswith(capsule + '/')
+              assert '..' not in Path(name).parts and not Path(name).is_symlink()
+              actual = subprocess.check_output(['git', 'hash-object', name], text=True).strip()
+              assert actual == expected, (name, actual, expected)
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'CAPSULE={capsule}\n')
+          assert Path(os.environ['DATASET_ROOT']).is_dir()
+          PY
+          base="$RUNNER_TEMP/residual-model-screen-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$base"
+          echo "CAPSULE_OUTPUT=$base" >> "$GITHUB_ENV"
+          echo "CAPSULE_PYTHON=$base/venv/bin/python" >> "$GITHUB_ENV"
+          python -m venv "$base/venv"
+          "$base/venv/bin/python" -m pip install 'numpy==2.2.6' 'scipy==1.15.3' 'scikit-learn==1.8.0' 'pytest==8.4.2'
+          "$base/venv/bin/python" -m pip freeze > "$base/runtime.txt"
+      - name: Run numerical and information-boundary tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CAPSULE_PYTHON" -m pytest -q -p no:cacheprovider "$CAPSULE/test_run.py" 2>&1 | tee "$CAPSULE_OUTPUT/tests.log"
+      - name: Fit source models and score sealed forecasts
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CAPSULE_PYTHON" "$CAPSULE/run.py" --dataset-root "$DATASET_ROOT" --output "$CAPSULE_OUTPUT/evidence" 2>&1 | tee "$CAPSULE_OUTPUT/run.log"
+          cat "$CAPSULE_OUTPUT/evidence/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain complete positive negative or failure evidence
+        if: always() && env.CAPSULE_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: residual-model-screen-${{ github.run_id }}
+          path: |
+            ${{ env.CAPSULE_OUTPUT }}/evidence/
+            ${{ env.CAPSULE_OUTPUT }}/runtime.txt
+            ${{ env.CAPSULE_OUTPUT }}/tests.log
+            ${{ env.CAPSULE_OUTPUT }}/run.log
+            ${{ env.CAPSULE }}/
+            .github/requests/residual-model-screen.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Remove only this job's virtual environment
+        if: always() && env.CAPSULE_OUTPUT != ''
+        shell: bash
+        run: rm -rf -- "$CAPSULE_OUTPUT/venv"
