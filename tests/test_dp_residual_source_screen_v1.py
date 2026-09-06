@@ -98,9 +98,7 @@ def test_experts_ignore_other_query_rows_and_component_order():
         mixture = ConditionalMixture.fit(x, y, red, "dp", 2, 1.0)
         scaler = StandardScaler().fit(x)
         global_model = Ridge(alpha=1.0).fit(scaler.transform(x), y)
-        experts = FullFeatureExperts.fit(
-            mixture, x, y, scaler, global_model, 10.0
-        )
+        experts = FullFeatureExperts.fit(mixture, x, y, scaler, global_model, 10.0)
         q = rng.normal(size=(6, 5))
         before = experts.predict(q)
         np.testing.assert_allclose(before[:1], experts.predict(q[:1]), atol=1e-12)
