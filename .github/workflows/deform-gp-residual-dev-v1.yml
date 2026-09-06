@@ -22,7 +22,6 @@ jobs:
       OPENBLAS_NUM_THREADS: '4'
       MKL_NUM_THREADS: '4'
       CUBLAS_WORKSPACE_CONFIG: ':4096:8'
-      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
     steps:
       - name: Check out requested source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -35,7 +34,22 @@ jobs:
           echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
           echo "EXPERIMENT_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "OUTPUT_DIR=$RUNNER_TEMP/deform-gp-v1-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
-          test -x "$FROZEN_PYTHON"
+          selected=''
+          for python in \
+            /home/florianpfaff/venvs/bpt-deform-dlo-source-v1/bin/python \
+            /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python; do
+            if [ -x "$python" ] && "$python" -c 'import numpy, scipy, torch; print(numpy.__version__, scipy.__version__, torch.__version__)'; then
+              selected="$python"
+              break
+            fi
+          done
+          if [ -z "$selected" ]; then
+            echo 'No complete retained DEFORM Python runtime at the two registered paths.'
+            find /home/florianpfaff/venvs -maxdepth 3 -name python -print 2>/dev/null || true
+            exit 1
+          fi
+          echo "FROZEN_PYTHON=$selected" >> "$GITHUB_ENV"
+          echo "RETAINED_RUNTIME=$selected"
       - name: Numerical and causal-input self-tests
         run: |
           set -euo pipefail
