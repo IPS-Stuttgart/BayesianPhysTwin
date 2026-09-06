@@ -13,11 +13,11 @@ permissions:
 
 concurrency:
   group: residual-model-source-screen-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   REQUEST: .github/requests/residual-model-screen.json
-  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  DATASET_ROOT: /tmp/deform-source-residual-screen
   PYTHONHASHSEED: '0'
   PYTHONUNBUFFERED: '1'
   PYTHONDONTWRITEBYTECODE: '1'
@@ -29,7 +29,7 @@ env:
 jobs:
   source-screen:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
-    runs-on: [self-hosted, gpuserver4090]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out exact requested revision
@@ -60,7 +60,7 @@ jobs:
           assert request['dataset_root'] == os.environ['DATASET_ROOT']
           capsule = request['capsule']
           assert re.fullmatch(r'experiments/[a-z0-9_]+', capsule)
-          assert request['runner_labels'] == ['self-hosted', 'gpuserver4090']
+          assert request['runner_labels'] == ['ubuntu-latest']
           if os.environ['EVENT'] == 'push':
               before = os.environ['BEFORE']
               changed = subprocess.check_output(['git', 'diff', '--name-only', before, os.environ['GITHUB_SHA']], text=True).splitlines()
@@ -74,7 +74,6 @@ jobs:
               assert actual == expected, (name, actual, expected)
           with open(os.environ['GITHUB_ENV'], 'a') as f:
               f.write(f'CAPSULE={capsule}\n')
-          assert Path(os.environ['DATASET_ROOT']).is_dir()
           PY
           base="$RUNNER_TEMP/residual-model-screen-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir "$base"
@@ -83,6 +82,38 @@ jobs:
           python -m venv "$base/venv"
           "$base/venv/bin/python" -m pip install 'numpy==2.2.6' 'scipy==1.15.3' 'scikit-learn==1.8.0' 'pytest==8.4.2'
           "$base/venv/bin/python" -m pip freeze > "$base/runtime.txt"
+      - name: Fetch only the pinned public source training directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import concurrent.futures, json, os, re, urllib.request
+          from pathlib import Path
+          root = Path(os.environ['DATASET_ROOT'])
+          root.mkdir(parents=True, exist_ok=False)
+          revision = 'b73b8b8ecc033caefa693fab7898741d4e6dbeff'
+          tasks = []
+          for dlo in ('DLO4', 'DLO5'):
+              url = f'https://api.github.com/repos/roahmlab/DEFORM/contents/data_set/{dlo}/train?ref={revision}'
+              request = urllib.request.Request(url, headers={'User-Agent': 'BayesianPhysTwin-source-screen'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  entries = json.load(response)
+              names = [entry['name'] for entry in entries if entry['type'] == 'file' and entry['name'].endswith('.pkl')]
+              assert len(names) == 56 and all(re.fullmatch(r'[0-9]+\.pkl', name) for name in names)
+              (root/dlo/'train').mkdir(parents=True)
+              tasks.extend((dlo, name) for name in names)
+          def fetch(item):
+              dlo, name = item
+              url = f'https://raw.githubusercontent.com/roahmlab/DEFORM/{revision}/data_set/{dlo}/train/{name}'
+              with urllib.request.urlopen(url, timeout=60) as response:
+                  payload = response.read()
+              (root/dlo/'train'/name).write_bytes(payload)
+              return len(payload)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+              sizes = list(pool.map(fetch, tasks))
+          print(f'Downloaded {len(sizes)} source-training files ({sum(sizes)} bytes). Official eval not enumerated or downloaded.')
+          print('The scientific runner checks the complete historical input hash manifest before fitting.')
+          PY
       - name: Run numerical and information-boundary tests
         shell: bash
         run: |
