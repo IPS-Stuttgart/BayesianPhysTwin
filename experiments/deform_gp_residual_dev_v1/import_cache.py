@@ -84,7 +84,9 @@ def main():
         if split == "fit":
             prepared["targets"] = data["targets"]
         else:
-            np.savez_compressed(output / "validation_truth.npz", targets=data["targets"])
+            np.savez_compressed(
+                output / "validation_truth.npz", targets=data["targets"]
+            )
         np.savez_compressed(output / (split + ".npz"), **prepared)
         query_hashes[split] = [
             hashlib.sha256(
@@ -124,7 +126,10 @@ def main():
             "same_rollout_operator": "run_deform_dlo_longrun_posterior._evaluate_state",
         },
     )
-    print("VERIFIED 40 fit / 8 validation; fixed checkpoint and baseline parity", flush=True)
+    print(
+        "VERIFIED 40 fit / 8 validation; fixed checkpoint and baseline parity",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
