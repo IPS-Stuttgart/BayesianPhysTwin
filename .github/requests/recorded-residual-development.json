@@ -6,9 +6,9 @@
   "evidence_class": "retrospective-development-only",
   "official_eval_authorized": false,
   "hardware_acquisition": false,
-  "source_revision_before_request": "647ed6aa91e74aeb0c40438792f9693611b0dcbc",
-  "retained_preflight_failure_run": 34052720381,
-  "repair": "Use existing production dense-import shim before Theseus import; no data or model setting change.",
+  "source_revision_before_request": "4e1478f27b006b425b08d21d865b7020390b76dc",
+  "retained_preflight_failure_runs": [34052720381, 34052886918],
+  "repair": "Use production dense-import shim and a process-scoped safe.directory exception for the exact read-only DEFORM checkout; no dataset, estimator, or selection change.",
   "split": {"fit": 40, "validation": 8, "source_test": 8},
   "residual_model": {
     "representation_rank": 6,
