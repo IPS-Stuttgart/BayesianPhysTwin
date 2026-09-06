@@ -1,0 +1,83 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Pinned source cache export
+on:
+  push:
+    branches: [experiment/source-cache-export-v1]
+    paths: [.github/requests/source-cache-export-v1.json]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 9d7383ea56a0a9e3ad6753d1c42fe653cd7e615d
+          persist-credentials: false
+      - name: Export only checksum-bound source trajectories and public features
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/source-cache-export-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$out"
+          echo "OUT=$out" >> "$GITHUB_ENV"
+          export OUT="$out"
+          python3 -m venv "$out/venv"
+          "$out/venv/bin/pip" install --disable-pip-version-check numpy==2.2.6
+          PYTHONPATH="$PWD/src" "$out/venv/bin/python" - <<'PY'
+          import os, json, hashlib, pickle
+          from pathlib import Path
+          import numpy as np
+          from bayesian_phystwin_experiments.deform_dlo_local_residual import build_deform_local_residual_features
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          root=Path('/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1')
+          data=Path('/mnt/seagate10tb/florianpfaff/datasets/deform/data_set')
+          out=Path(os.environ['OUT'])
+          pins={
+            'DLO4':('1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17','b858c2f4c0e107d367857dc2c4e17e753b6853e4593af64c4ce489564ae88fca',0.01253017906857404),
+            'DLO5':('6bc72a4b3c7dae13c39181d28aebe9228fb1049fbe4bf26871b95fb518997a04','a8f8b3253f2588eed3fb0e92a8812ce534dba857c82a3af9d3f0fe0dadab39b6',0.00918328492025507)}
+          receipt={'contract':'source-cache-export-v1','source_revision':'9d7383ea56a0a9e3ad6753d1c42fe653cd7e615d','run_id':os.environ['GITHUB_RUN_ID'],'runner':os.environ['RUNNER_NAME'],'official_eval_access':False,'objects':{}}
+          for dlo,(mh,ph,l1) in pins.items():
+              folder=root/(dlo.lower()+'-source')
+              mp=folder/'source_manifest.json'; pp=folder/'source_predictions.npz'
+              assert sha(mp)==mh and sha(pp)==ph
+              manifest=json.loads(mp.read_text())
+              with np.load(pp,allow_pickle=False) as z:
+                  names=list(map(str,z['names'])); hybrid=z['physical'].astype('float64'); candidate=z['candidate'].astype('float64')
+              assert names==manifest['partitions']['source_test'] and len(names)==8
+              assert hybrid.shape==candidate.shape==(8,498,12,3)
+              records=[]; identities=[]
+              for name in names:
+                  assert Path(name).name==name
+                  p=data/dlo/'train'/name; identity=manifest['trajectories'][name]
+                  assert p.stat().st_size==identity['size_bytes'] and sha(p)==identity['sha256']
+                  with p.open('rb') as f: a=np.asarray(pickle.load(f),dtype=np.float32)
+                  assert a.shape==(500,3,12) and np.isfinite(a).all()
+                  a=a.transpose(0,2,1).copy(); a[:,:,2]=np.clip(a[:,:,2],0.002001,10000.)
+                  records.append(a.astype('float64')); identities.append({'name':name,'sha256':identity['sha256']})
+              raw=np.stack(records); truth=raw[:,2:]
+              assert np.isclose(np.mean(np.abs(hybrid-truth)),l1,atol=1e-8,rtol=0)
+              initial=raw[:,:2]; action=raw[:,2:,[0,1,10,11]]
+              features,frames=build_deform_local_residual_features(initial,action,hybrid)
+              f=out/(dlo+'.npz')
+              np.savez_compressed(f,names=np.array(names),initial=initial,action=action,hybrid=hybrid,legacy_candidate=candidate,truth=truth,features=features,frames=frames)
+              receipt['objects'][dlo]={'file':f.name,'sha256':sha(f),'size_bytes':f.stat().st_size,'trajectories':identities,'hybrid_l1_m':float(np.mean(np.abs(hybrid-truth))),'feature_shape':list(features.shape),'source_manifest_sha256':mh,'source_prediction_sha256':ph}
+          (out/'receipt.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(receipt))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && env.OUT != ''
+        with:
+          name: pinned-source-cache-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/*.npz
+            ${{ env.OUT }}/receipt.json
+          retention-days: 7
+          if-no-files-found: error
