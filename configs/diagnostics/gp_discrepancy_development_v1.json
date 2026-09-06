@@ -1,0 +1,22 @@
+{
+  "study": "gp-discrepancy-development-v1",
+  "owner_issue": 945,
+  "classification": "development-only, non-confirmatory",
+  "official_evaluation_allowed": false,
+  "train_times": 8,
+  "max_rows": 768,
+  "output_scale_floor_m": 1e-6,
+  "variance_floor_m2": 1e-10,
+  "lowrank_rank": 4,
+  "lowrank_diagonal_fraction": 0.3,
+  "candidates": [
+    {"lengthscale": 0.5, "time_lengthscale": 0.15, "session_variance": 0.3},
+    {"lengthscale": 1.0, "time_lengthscale": 0.15, "session_variance": 0.3},
+    {"lengthscale": 2.0, "time_lengthscale": 0.15, "session_variance": 0.3},
+    {"lengthscale": 0.5, "time_lengthscale": 0.5, "session_variance": 1.0},
+    {"lengthscale": 1.0, "time_lengthscale": 0.5, "session_variance": 1.0},
+    {"lengthscale": 2.0, "time_lengthscale": 0.5, "session_variance": 1.0}
+  ],
+  "synthetic_seeds": [7, 17, 29, 43, 71],
+  "synthetic_arms": ["smooth", "hidden-regime-shift"]
+}
