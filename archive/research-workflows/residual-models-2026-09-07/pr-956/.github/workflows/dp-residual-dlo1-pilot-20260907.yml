@@ -1,0 +1,103 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: DLO1 DP residual pilot 20260907
+
+on:
+  push:
+    branches: [science/dp-residual-dlo1-pilot-20260907]
+    paths:
+      - scripts/remote/run_dp_residual_dlo1_pilot.py
+      - .github/workflows/dp-residual-dlo1-pilot-20260907.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dp-residual-dlo1-pilot-20260907
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 35
+    env:
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      RUN_BASE: /home/github-runner/.cache/workflows/dp-residual-dlo1-pilot-20260907/${{ github.run_id }}-${{ github.run_attempt }}
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '1'
+      # Exact caller-owned upstream only. No global git configuration is changed.
+      # Run 34052958639 failed this ownership check before any trajectory read.
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+    steps:
+      - name: Checkout experiment revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Prepare isolated numerical dependencies without changing frozen environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$FROZEN_PYTHON"
+          test ! -e "$RUN_BASE"
+          mkdir -p "$RUN_BASE"
+          "$FROZEN_PYTHON" --version
+          nvidia-smi --query-gpu=name,memory.free --format=csv
+          "$FROZEN_PYTHON" -m pip install --disable-pip-version-check \
+            --target "$RUN_BASE/deps" \
+            numpy==1.26.4 scipy==1.13.1 scikit-learn==1.5.2
+          echo "PYTHONPATH=$RUN_BASE/deps:$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/scripts/remote:$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+      - name: Unit checks only; not scientific evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" scripts/remote/run_dp_residual_dlo1_pilot.py --self-test
+      - name: Frozen-baseline reproduction, validation selection, and DLO1 source-only comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" scripts/remote/run_dp_residual_dlo1_pilot.py \
+            --output-root "$RUN_BASE/evidence" 2>&1 | tee "$RUN_BASE/pilot.log"
+      - name: Summarize completed comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads((Path(os.environ['RUN_BASE'])/'evidence/result.json').read_text())
+          compact = {'results': {k: {m:v for m,v in row.items() if m in (
+              'mean_l1_mm','last_quarter_l1_mm','rmse_mm','coordinate_90_coverage',
+              'mean_90_interval_width_mm','marginal_gaussian_mixture_nll_per_coordinate_m',
+              'trajectory_l1_mm','spec')} for k,row in result['results'].items()},
+              'dp_comparisons':result['dp_comparisons'],
+              'source_selection_sha256':result['source_selection_sha256'],
+              'prediction_sha256':result['prediction_sha256'],
+              'elapsed_seconds':result['elapsed_seconds'],
+              'official_eval_read':result['official_eval_read'],
+              'other_dlo_read':result['other_dlo_read']}
+          print('PILOT_METRICS_JSON='+json.dumps(compact,sort_keys=True))
+          text = ['# Retrospective DLO1 DP residual pilot',
+                  '40 fit / 8 validation / 8 source-test trajectories. No official evaluation or other DLO was read.',
+                  '| Model | Coordinate L1 (mm) | Last-quarter L1 (mm) |',
+                  '|---|---:|---:|']
+          for name,row in result['results'].items():
+              text.append(f"| {name} | {row['mean_l1_mm']:.6f} | {row['last_quarter_l1_mm']:.6f} |")
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('\n'.join(text)+'\n')
+          PY
+      - name: Retain all evidence including technical failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dp-residual-dlo1-pilot-${{ github.run_id }}
+          path: |
+            ${{ env.RUN_BASE }}/evidence/
+            ${{ env.RUN_BASE }}/pilot.log
+          if-no-files-found: warn
+          retention-days: 90

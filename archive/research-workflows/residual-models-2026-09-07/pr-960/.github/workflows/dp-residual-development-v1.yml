@@ -1,0 +1,78 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DP residual DLO1 development v1
+on:
+  push:
+    branches: [science/dp-residual-development-v1]
+    paths:
+      - .github/workflows/dp-residual-development-v1.yml
+      - experiments/dp_residual_development_v1/**
+permissions:
+  contents: read
+concurrency:
+  group: dp-residual-dlo1-development-v1
+  cancel-in-progress: false
+jobs:
+  development:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 35
+    env:
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Source-only metadata preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p outputs/dp-residual-development-v1
+          python3 - <<'PY' | tee outputs/dp-residual-development-v1/preflight.log
+          import json, os, pathlib, subprocess
+          print('HEAD', os.environ['GITHUB_SHA'])
+          print('RUNNER', os.environ['RUNNER_NAME'])
+          paths = [
+              '/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python',
+              '/home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8',
+              '/home/florianpfaff/source-only/deform-bayesian-v2/runs/longrun-v2-2060c71/longrun_result.json',
+              '/home/florianpfaff/source-only/deform-dlo-local-residual-v4/run-68351843',
+          ]
+          for text in paths:
+              p = pathlib.Path(text)
+              print('PATH', text, 'exists', p.exists(), 'readable', os.access(p, os.R_OK))
+              if p.is_dir():
+                  print('ENTRIES', sorted(x.name for x in p.iterdir()))
+              if p.is_file() and p.name == 'longrun_result.json':
+                  result = json.loads(p.read_text())
+                  print('RESULT_KEYS', sorted(result))
+                  print('UPSTREAM', result.get('upstream'))
+                  print('SELECTED_CHECKPOINT', result.get('selected_checkpoint'))
+          py = paths[0]
+          if pathlib.Path(py).exists():
+              subprocess.run([py, '-c', 'import sys,torch,numpy; print(sys.version,torch.__version__,numpy.__version__,torch.cuda.is_available()); import sklearn; print("sklearn",sklearn.__version__)'], check=False)
+          PY
+      - name: Execute development experiment when implementation is present
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+          # Read this exact shared checkout without changing global Git settings.
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+        run: |
+          set -euo pipefail
+          script=experiments/dp_residual_development_v1/run.py
+          if test -f "$script"; then
+            /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python "$script" --output outputs/dp-residual-development-v1 | tee outputs/dp-residual-development-v1/experiment.log
+          fi
+      - name: Retain development evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dp-residual-development-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: outputs/dp-residual-development-v1/
+          if-no-files-found: error

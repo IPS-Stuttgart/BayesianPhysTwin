@@ -1,0 +1,71 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP residual development v1
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/deform-gp-residual-dev-v1.yml'
+      - 'experiments/deform_gp_residual_dev_v1/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deform-gp-residual-dev-v1-${{ github.ref }}-gpuserver6000
+  cancel-in-progress: false
+jobs:
+  comparison:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, gpuserver6000]
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Check out requested source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Set up isolated Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.10'
+      - name: Configure isolated experiment
+        run: |
+          set -euo pipefail
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "EXPERIMENT_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "OUTPUT_DIR=$RUNNER_TEMP/deform-gp-v1-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/data" >> "$GITHUB_ENV"
+          environment="$RUNNER_TEMP/deform-gp-v1-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/venv"
+          python -m venv "$environment"
+          "$environment/bin/python" -m pip install numpy==1.24.3 scipy==1.15.3
+          echo "FROZEN_PYTHON=$environment/bin/python" >> "$GITHUB_ENV"
+      - name: Numerical and causal-input self-tests
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -m unittest experiments.deform_gp_residual_dev_v1.test_core -v
+      - name: Verify exact development cache and baseline parity
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/import_cache.py \
+            --cache /home/github-runner/.cache/bpt-gp-residual-pilot-v1 \
+            --output "$OUTPUT_DIR"
+      - name: Fit GP candidates and seal validation predictions
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/run.py predict --output "$OUTPUT_DIR"
+      - name: Score sealed predictions
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" experiments/deform_gp_residual_dev_v1/run.py score --output "$OUTPUT_DIR"
+          cat "$OUTPUT_DIR/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain complete development evidence
+        if: always() && env.OUTPUT_DIR != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform-gp-residual-dev-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: warn
+          retention-days: 90

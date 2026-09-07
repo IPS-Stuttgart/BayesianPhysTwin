@@ -1,0 +1,80 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: DLO1 cached DP residual pilot 20260907
+on:
+  push:
+    branches: [science/dp-residual-dlo1-pilot-20260907]
+    paths:
+      - scripts/remote/run_dp_residual_cached_pilot.py
+      - scripts/remote/run_dp_residual_dlo1_pilot.py
+      - tests/test_dp_residual_pilot.py
+      - .github/workflows/dp-residual-cached-pilot-20260907.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: dp-residual-cached-pilot-20260907
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13.5'
+      - name: Install exact local replay runtime
+        run: python -m pip install 'numpy==2.3.5' 'scipy==1.17.0' 'scikit-learn==1.8.0' 'pytest==9.0.2'
+      - name: Test residual implementation without opening recordings
+        run: |
+          python scripts/remote/run_dp_residual_dlo1_pilot.py --self-test
+          python -m pytest -q -o addopts='' tests/test_dp_residual_pilot.py --junitxml="$RUNNER_TEMP/dp-regression.xml"
+      - name: Download only the immutable historical development bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api /repos/IPS-Stuttgart/BayesianPhysTwin/actions/artifacts/9995078685/zip > "$RUNNER_TEMP/development.zip"
+          echo "083eaca1233d6373e515790f567a831a1d9d6092069ff2cd244e10955ae45c60  $RUNNER_TEMP/development.zip" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/development"
+          unzip -q "$RUNNER_TEMP/development.zip" -d "$RUNNER_TEMP/development"
+      - name: Reproduce inner selection and historical held-trajectory scores
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/remote/run_dp_residual_cached_pilot.py \
+            --bundle "$RUNNER_TEMP/development/development.npz" \
+            --preparation "$RUNNER_TEMP/development/preparation.json" \
+            --output "$RUNNER_TEMP/cached-dp-result" | tee "$RUNNER_TEMP/cached-dp.log"
+          cat "$RUNNER_TEMP/cached-dp-result/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain exact implementation
+        if: always()
+        shell: bash
+        run: |
+          tar -czf "$RUNNER_TEMP/cached-dp-implementation.tar.gz" \
+            scripts/remote/run_dp_residual_dlo1_pilot.py \
+            scripts/remote/run_dp_residual_cached_pilot.py \
+            tests/test_dp_residual_pilot.py \
+            src pyproject.toml
+      - name: Upload results, frozen predictions, fitted heads and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: cached-dp-pilot-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/cached-dp-result/
+            ${{ runner.temp }}/cached-dp.log
+            ${{ runner.temp }}/dp-regression.xml
+            ${{ runner.temp }}/cached-dp-implementation.tar.gz
+          retention-days: 90
+          if-no-files-found: warn

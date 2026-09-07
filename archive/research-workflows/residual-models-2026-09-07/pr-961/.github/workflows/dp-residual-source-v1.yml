@@ -1,0 +1,65 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: DP residual source feasibility v1
+on:
+  push:
+    branches: [science/dp-residual-source-v1-20260907]
+    paths:
+      - .github/workflows/dp-residual-source-v1.yml
+      - experiments/dp_residual_source_v1/*.py
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: dp-residual-source-v1
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/experiments/dp_residual_source_v1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install CPU inference dependencies
+        run: python -m pip install numpy==1.26.4 scipy==1.15.3
+      - name: Read the exact completed DLO1 development artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dp-dlo1-development-34052781162
+          run-id: 34052781162
+          github-token: ${{ github.token }}
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          path: prepared-source
+      - name: Numerical and information-boundary tests
+        run: python -m unittest discover -s experiments/dp_residual_source_v1 -p 'test_*.py' -v
+      - name: Run fixed development experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p outputs
+          python experiments/dp_residual_source_v1/run.py \
+            --bundle prepared-source/development.npz \
+            --preparation prepared-source/preparation.json \
+            --output outputs/dp-residual-source-v1 | tee outputs/source-experiment.log
+      - name: Retain development evidence and implementation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dp-residual-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            outputs
+            experiments/dp_residual_source_v1
+          if-no-files-found: error
+          retention-days: 30

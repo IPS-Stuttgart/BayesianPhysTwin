@@ -1,0 +1,967 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-07",
+  "base_revision": "9d7383ea56a0a9e3ad6753d1c42fe653cd7e615d",
+  "scope": "research-only integration; no production-default or scientific-outcome change",
+  "source_snapshot_run_id": 34110478996,
+  "source_snapshot_artifact_id": 10014138077,
+  "experiments": [
+    {
+      "pr": 950,
+      "id": "blockwise-regimes",
+      "family": "dirichlet-processes",
+      "title": "DLO4/DLO5 blockwise conditional residual regimes",
+      "source_revision": "0ae0ad14380f9aefa8bd91fe12cfaeac7e6d2e4c",
+      "paper_pr": null,
+      "files": [
+        {
+          "source_path": ".github/workflows/dp-residual-regimes-dev-v1.yml",
+          "source_git_blob": "077991f21063829ecb7721df2623c8d250777f29",
+          "source_sha256": "a705b44cef765451b05de7e753a015238e8f061534f1ebd7a041134b6cca7d10",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-950/.github/workflows/dp-residual-regimes-dev-v1.yml",
+          "retained_sha256": "a705b44cef765451b05de7e753a015238e8f061534f1ebd7a041134b6cca7d10",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/dp_residual_regimes_dev_v1/README.md",
+          "source_git_blob": "728b68b23bfe375d8e86e85ce31f4d90624f1760",
+          "source_sha256": "e16caf20a11c7045017a5b2fa61051c64f977f84479d783d24b9b329e8be71af",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/0ae0ad14380f9aefa8bd91fe12cfaeac7e6d2e4c/experiments/dp_residual_regimes_dev_v1/README.md"
+        },
+        {
+          "source_path": "experiments/dp_residual_regimes_dev_v1/__init__.py",
+          "source_git_blob": "1ac9003452f61db3241592659b0485e361a9e281",
+          "source_sha256": "0037d731d636ad7a6c7c7bf433ddab27aeb3dbb31ac8025391b1391db28959c7",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_regimes_dev_v1/__init__.py",
+          "retained_sha256": "0037d731d636ad7a6c7c7bf433ddab27aeb3dbb31ac8025391b1391db28959c7",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_regimes_dev_v1/model.py",
+          "source_git_blob": "351cd85aa16ba977e3e32f7d0fa6b6942c01935c",
+          "source_sha256": "bca5e1bdaae25eaa25c939394d6c87ad08dae60289c7358d402b31520e1f8832",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_regimes_dev_v1/model.py",
+          "retained_sha256": "bca5e1bdaae25eaa25c939394d6c87ad08dae60289c7358d402b31520e1f8832",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_regimes_dev_v1/run.py",
+          "source_git_blob": "f17af69e46201cd3582224ecf6b33064feeb79fe",
+          "source_sha256": "99198a5b389145da16556d134fc8ff0c5ea528b3542088718cc2478bc341a9a2",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_regimes_dev_v1/run.py",
+          "retained_sha256": "99198a5b389145da16556d134fc8ff0c5ea528b3542088718cc2478bc341a9a2",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_regimes_dev_v1/test_model.py",
+          "source_git_blob": "893eac9645e870ed569a6d5da87d462de37c3e24",
+          "source_sha256": "6f9321b3c30fd5a1d81616b262325f43f832f398b25d2cb7359e46dfcac3171c",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_regimes_dev_v1/test_model.py",
+          "retained_sha256": "6f9321b3c30fd5a1d81616b262325f43f832f398b25d2cb7359e46dfcac3171c",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": "experiments/dp_residual_regimes_dev_v1",
+      "test_paths": [
+        "test_model.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 952,
+      "id": "dlo2-nystrom",
+      "family": "gaussian-processes",
+      "title": "DLO2 matched-rank Nystrom GP",
+      "source_revision": "4adcc4e4532625de0163fb620470a889c05f39c5",
+      "paper_pr": 202,
+      "files": [
+        {
+          "source_path": ".github/workflows/deform-gp-residual-dev-v1.yml",
+          "source_git_blob": "197cbc04ec2871eaeda8e66510517307955781f7",
+          "source_sha256": "a6a8964f3994bf8c7173b4c1b6b96a01c3dd896b2a856413d2a0c033ee6b29bd",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-952/.github/workflows/deform-gp-residual-dev-v1.yml",
+          "retained_sha256": "a6a8964f3994bf8c7173b4c1b6b96a01c3dd896b2a856413d2a0c033ee6b29bd",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/README.md",
+          "source_git_blob": "0b9c09a59887cdf53be26162d09ceaa543605351",
+          "source_sha256": "220f90ef5a4899518a0f239edc5e596be6867826727162aec9b7aced4205ef0e",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/README.md"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/import_cache.py",
+          "source_git_blob": "689e1abb3bceb8695506f9c534cc1a60bdff4f40",
+          "source_sha256": "22b27dfad338a3a8f20711b116dcc9716a0fe69cdd192b1e3e285180b73c857c",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_dev_v1/import_cache.py",
+          "retained_sha256": "22b27dfad338a3a8f20711b116dcc9716a0fe69cdd192b1e3e285180b73c857c",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/results/prediction_seal.json",
+          "source_git_blob": "44437152c4900eb53ac17d6f7469d28739af3e3e",
+          "source_sha256": "e4f30ca9df32aced805623377262e8354467030ad35b32fbb145610f3f85d4d6",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/results/prediction_seal.json"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/results/preparation.json",
+          "source_git_blob": "e0a3b1092c71651434a8b8c57c0f824956953b05",
+          "source_sha256": "ca8682ca749425540dd36b4c51f5c2fc885bf2d668b6713b8da4192b8b18f99e",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/results/preparation.json"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/results/report.md",
+          "source_git_blob": "b78d83a3dfe951ac20d5a2ef432cfff6260f1bc9",
+          "source_sha256": "e0734a431f8e401a29d176e73f3f30e65844341f0d4f9643c72c964d32b61835",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/results/report.md"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/results/result.json",
+          "source_git_blob": "9d5104da5ec5b655ff10cdf4fbe1f642435977a6",
+          "source_sha256": "78395303e9dad06c055016a0bab36b8e956599fdb3c7096940605e45577fc475",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/results/result.json"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/results/selection.json",
+          "source_git_blob": "0c2213f263ad25855e2beb36c72a935b913ceb2c",
+          "source_sha256": "ee2da0a4d37f74fd82dc208e58de3e489e898c84c99bb39b445290a0290952d0",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/results/selection.json"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/results/verification.json",
+          "source_git_blob": "6bba90dfb7e7395527021c5285acf69b68e755a7",
+          "source_sha256": "c7813f3d43f6ae7efbda30d28709388391eaed5f25dbdc2b616ca1edbedd8f79",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4adcc4e4532625de0163fb620470a889c05f39c5/experiments/deform_gp_residual_dev_v1/results/verification.json"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/run.py",
+          "source_git_blob": "5889532b91ef58c152f4d418d08869a79424aa6b",
+          "source_sha256": "b6d2889bb88032c06d28faabb0b4d99ae9306d9913f7cefb1f21e6856f9f6133",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_dev_v1/run.py",
+          "retained_sha256": "b6d2889bb88032c06d28faabb0b4d99ae9306d9913f7cefb1f21e6856f9f6133",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_dev_v1/test_core.py",
+          "source_git_blob": "58a582b27f02666cc18198b63a31bfdb5f0458aa",
+          "source_sha256": "946763d27f9e995a73785db8b679f306d79502722f777ae94337eda73770f3a1",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_dev_v1/test_core.py",
+          "retained_sha256": "946763d27f9e995a73785db8b679f306d79502722f777ae94337eda73770f3a1",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "experiments/deform_gp_residual_dev_v1/test_core.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 953,
+      "id": "dlo1-additive",
+      "family": "gaussian-processes",
+      "title": "DLO1 additive independent/material GP",
+      "source_revision": "e9b8b2a0fb5399db42103aecc2aa6ef62bdc1c6c",
+      "paper_pr": 194,
+      "files": [
+        {
+          "source_path": ".github/workflows/deform-residual-comparison.yml",
+          "source_git_blob": "70b0b8532c43e4f43e34afe8497f4ad7942cb2d7",
+          "source_sha256": "e41a4e17d8d59b9da07bd7ac30ace7ec24722ec177e72f5ad886aac0f8d39a82",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-953/.github/workflows/deform-residual-comparison.yml",
+          "retained_sha256": "e41a4e17d8d59b9da07bd7ac30ace7ec24722ec177e72f5ad886aac0f8d39a82",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "docs/deform_gp_residual_development_v1.md",
+          "source_git_blob": "77041680394947bf94e22a48880eaf8a5c79aeda",
+          "source_sha256": "c208822227ccdbdad653dbd461ed386b627b249f23b1e25f15eae196c8ed197d",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/e9b8b2a0fb5399db42103aecc2aa6ef62bdc1c6c/docs/deform_gp_residual_development_v1.md"
+        },
+        {
+          "source_path": "protocols/deform_gp_residual_development_v1.json",
+          "source_git_blob": "d0c7e09d37e0ba1827bc4459b6a5efb2019397ee",
+          "source_sha256": "641efb857ab764f1eb297d4ab8288ba9045692edb30dc401db351b3c90c35439",
+          "disposition": "research-source",
+          "path": "protocols/deform_gp_residual_development_v1.json",
+          "retained_sha256": "641efb857ab764f1eb297d4ab8288ba9045692edb30dc401db351b3c90c35439",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "scripts/remote/run_deform_gp_residual_v1.py",
+          "source_git_blob": "769887a19dc211b01df89045b798ff88e102c92c",
+          "source_sha256": "c2d124a9a328db220d6b86bb7278530c522ebe2d8d4c945b8f2688ee4b0766db",
+          "disposition": "research-source",
+          "path": "scripts/remote/run_deform_gp_residual_v1.py",
+          "retained_sha256": "82cf89afeb2a3e760504950b9f2aac218b37323a5d65931b786724196af3c954",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "src/bayesian_phystwin_experiments/deform_gp_residual_v1.py",
+          "source_git_blob": "4a8e299b8efc4b7638e13987aa5a51c240afd05e",
+          "source_sha256": "f5483af5a47d64d3bf16f3065c40a2b59324f11c4aa9eacc205b739e29599d52",
+          "disposition": "research-source",
+          "path": "src/bayesian_phystwin_experiments/deform_gp_residual_v1.py",
+          "retained_sha256": "8828973cf147548946b71a71c67a8e983d80e47bc422c20d7bc9e363da9fffe9",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "tests/test_deform_gp_residual_v1.py",
+          "source_git_blob": "dc3cec305f82398f9d4ef002dc62b31bcc360ab1",
+          "source_sha256": "74fe4661ad8731ad979f73f4979ab126e154205fba835cb3244524ccfb1ecd20",
+          "disposition": "research-source",
+          "path": "tests/test_deform_gp_residual_v1.py",
+          "retained_sha256": "45f0029216694a6a508c37de2f598e0638d1784e2558f1e84220aa5a0cc62b0c",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "tests/test_deform_gp_residual_v1.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 955,
+      "id": "dlo2-data-efficiency",
+      "family": "gaussian-processes",
+      "title": "DLO2 subset-conditioned GP learning curves",
+      "source_revision": "cf5ce2e06e46df92710df3cb46af9956f797d4c5",
+      "paper_pr": 195,
+      "files": [
+        {
+          "source_path": ".github/workflows/residual-development.yml",
+          "source_git_blob": "7828b27a141f2912a7ed6c33ae17140446b2b82c",
+          "source_sha256": "05e9089325a8327423de6d3562efb99b7eaf90659896c31bfa6852d7f7396bbf",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-955/.github/workflows/residual-development.yml",
+          "retained_sha256": "05e9089325a8327423de6d3562efb99b7eaf90659896c31bfa6852d7f7396bbf",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "docs/gp_residual_development_v1.md",
+          "source_git_blob": "be8e9617d6f883064f3a2c4e909760bc0a80c5ff",
+          "source_sha256": "37ff8506de270a8d0f9be9690f84ba09f6ec0957f653f5b154a0171f36faa2cb",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/cf5ce2e06e46df92710df3cb46af9956f797d4c5/docs/gp_residual_development_v1.md"
+        },
+        {
+          "source_path": "protocols/gp_residual_development_v1.json",
+          "source_git_blob": "64305c6692f09c58fbe8fccb31ad1bcd91659bba",
+          "source_sha256": "7d4e628d498e66a7ddd6c5cc39efa21eafa4a3342e6056a105d052714f16e402",
+          "disposition": "research-source",
+          "path": "protocols/gp_residual_development_v1.json",
+          "retained_sha256": "7d4e628d498e66a7ddd6c5cc39efa21eafa4a3342e6056a105d052714f16e402",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "scripts/remote/run_gp_residual_development_v1.py",
+          "source_git_blob": "6fe013b440a8fd9f0fe0be2a49b04590a1721714",
+          "source_sha256": "0a3a40a01d474744e6ea56f3453cb4aa1f2f1fb2d5292da65d85419cd5227db3",
+          "disposition": "research-source",
+          "path": "scripts/remote/run_gp_residual_development_v1.py",
+          "retained_sha256": "791d98044adb846a8a85c470e135c02112b954448664f647c9a5044c67d91da2",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "src/bayesian_phystwin_experiments/gaussian_residual_v1.py",
+          "source_git_blob": "a6552f49a583695bfe7a356d05c4229ffd90c958",
+          "source_sha256": "47bc4333f485e63f9ec877d6fd76221cad3195b547af048c5d95aff5599df4f9",
+          "disposition": "research-source",
+          "path": "src/bayesian_phystwin_experiments/gaussian_residual_v1.py",
+          "retained_sha256": "67773e0b6207ab2c3e26c43480fe78ad2577d0b50b3cd9cfab6abe213ca744dd",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "tests/test_gaussian_residual_v1.py",
+          "source_git_blob": "a08b4b0f8b40413f68e165012343e066fee61add",
+          "source_sha256": "3b4e2050454457b20a9c73f5d88d9c9c3d7e946016d50b0134683c0f563771ca",
+          "disposition": "research-source",
+          "path": "tests/test_gaussian_residual_v1.py",
+          "retained_sha256": "de47d75f834c0c26491043e621d321e05d0de9429496c5cb355ec2f110f850f9",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "tests/test_gaussian_residual_v1.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 956,
+      "id": "dlo1-summary-gate",
+      "family": "dirichlet-processes",
+      "title": "DLO1 trajectory-summary mixture and weighted experts",
+      "source_revision": "2ee46cd04f878e63c8f0386614bcc4b97713ae8c",
+      "paper_pr": 203,
+      "files": [
+        {
+          "source_path": ".github/workflows/dp-residual-cached-pilot-20260907.yml",
+          "source_git_blob": "3eeba2855b163cf67f977d753f11b6173aae1ef8",
+          "source_sha256": "d5c26cffee90bbcaf1fd3610c5fc9996646f383016972c9b339ccd4359064960",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-956/.github/workflows/dp-residual-cached-pilot-20260907.yml",
+          "retained_sha256": "d5c26cffee90bbcaf1fd3610c5fc9996646f383016972c9b339ccd4359064960",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": ".github/workflows/dp-residual-dlo1-pilot-20260907.yml",
+          "source_git_blob": "0561e61bd2f7fb868c606d7048c953baca42ab73",
+          "source_sha256": "cc05a7d7e4b5808b5299ac7fd692300a0669094bae13313637776180c9550476",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-956/.github/workflows/dp-residual-dlo1-pilot-20260907.yml",
+          "retained_sha256": "cc05a7d7e4b5808b5299ac7fd692300a0669094bae13313637776180c9550476",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "docs/dp_residual_dlo1_pilot.md",
+          "source_git_blob": "fb9ac1008e1c4c4cc59381e012e3ed3d28cb4314",
+          "source_sha256": "cd374396f6b3e8ed4325993193cb421dc7fc4bb297badf7a5153b2f81db9ece4",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/2ee46cd04f878e63c8f0386614bcc4b97713ae8c/docs/dp_residual_dlo1_pilot.md"
+        },
+        {
+          "source_path": "scripts/remote/run_dp_residual_cached_pilot.py",
+          "source_git_blob": "c3119994cff8f9f9734ecd5038b0eb8db094a917",
+          "source_sha256": "c1689587c86bd3dc079d59de2185c8a37210acff541a383e9dbadb18beb22c46",
+          "disposition": "research-source",
+          "path": "scripts/remote/run_dp_residual_cached_pilot.py",
+          "retained_sha256": "ce4c4517329520f3b49d771811ea54edb4c1af1ca4ac6bcde0fb9b535761c28b",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "scripts/remote/run_dp_residual_dlo1_pilot.py",
+          "source_git_blob": "bfd249ce0e25f78c001f9b1c2f4a1ce6477f4fe7",
+          "source_sha256": "766a59534c0ff8b403c6c8e7aab58a2baf2c4cafb887b8c21a6c27a39e10c44a",
+          "disposition": "research-source",
+          "path": "scripts/remote/run_dp_residual_dlo1_pilot.py",
+          "retained_sha256": "f31c25b07c18e3bc9162d7ee25a3df0d1d80ed7254a3444cadd5878d40a61cbd",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "tests/test_dp_residual_pilot.py",
+          "source_git_blob": "effceca03d71745f2eba32f6bcdfe73bfc5a4fdf",
+          "source_sha256": "5d6068f864972a9380df1f448a00e8ebd43e980aec094e412a60ef0a9b177198",
+          "disposition": "research-source",
+          "path": "tests/test_dp_residual_pilot.py",
+          "retained_sha256": "555841857094a3a4ffd22423e2775434c15df17cd9f322a2d619ed0bac32925d",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "tests/test_dp_residual_pilot.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 957,
+      "id": "query-surrogate",
+      "family": "dirichlet-processes",
+      "title": "DP versus RBF/finite controls on the query surrogate",
+      "source_revision": "decd702e4b31730c8efcb098c71d37a78441785d",
+      "paper_pr": null,
+      "files": [
+        {
+          "source_path": ".github/requests/residual-model-screen.json",
+          "source_git_blob": "dbfd2ba2ef17a8a9d09030b960ac3e525e1b7d24",
+          "source_sha256": "6de8c07035084bf386fe8b4ade64e4cff1fb7bf9bfaa0f8c6af056d8819ac0e4",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-957/.github/requests/residual-model-screen.json",
+          "retained_sha256": "6de8c07035084bf386fe8b4ade64e4cff1fb7bf9bfaa0f8c6af056d8819ac0e4",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": ".github/workflows/residual-model-screen.yml",
+          "source_git_blob": "fb1fe214196066134f7a064e0bf579c227079a25",
+          "source_sha256": "7ee21a56c9e6f8ee2c7027ad16dab50a164cb4f9ec243c96e23ad994b66546d9",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-957/.github/workflows/residual-model-screen.yml",
+          "retained_sha256": "7ee21a56c9e6f8ee2c7027ad16dab50a164cb4f9ec243c96e23ad994b66546d9",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/deform_dp_residual_v1/README.md",
+          "source_git_blob": "2dc3b2677f3763c70adff7cec0e2b2f7e7d96980",
+          "source_sha256": "3cb1cfa6ab715208c27d923844204772ca189e484217dfe361a5703ce3feee8b",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/decd702e4b31730c8efcb098c71d37a78441785d/experiments/deform_dp_residual_v1/README.md"
+        },
+        {
+          "source_path": "experiments/deform_dp_residual_v1/RESULT.md",
+          "source_git_blob": "b8e7e75d467f964bc130e0cc7f30eb96defd40e0",
+          "source_sha256": "e950ab433bc8d7fde087e94927a9f0b8578a8f9815305f110c7f6a00a96b4b63",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/decd702e4b31730c8efcb098c71d37a78441785d/experiments/deform_dp_residual_v1/RESULT.md"
+        },
+        {
+          "source_path": "experiments/deform_dp_residual_v1/reference.py",
+          "source_git_blob": "57f9aff414f39f52a4ef346e525f40342554e75e",
+          "source_sha256": "7ad9eab308fb65ce44cfd8bee446172cb1b1f01b600a4ac4af8902333ef48fff",
+          "disposition": "research-source",
+          "path": "experiments/deform_dp_residual_v1/reference.py",
+          "retained_sha256": "5879f13a9369061fd3246002abbbfaa23f784dd80c67cd2b246e95c9b499a345",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_dp_residual_v1/run.py",
+          "source_git_blob": "c3e58dc8451dffce1b7cc8b12b73d7ba9a7d7858",
+          "source_sha256": "6e95aa73bc2475ec86529a3642aeb218ad8157835fac24637de89fcc3b69dfda",
+          "disposition": "research-source",
+          "path": "experiments/deform_dp_residual_v1/run.py",
+          "retained_sha256": "a4f22a3d4bce6a64d3a676bf8212334d1735b4656723d5e31e0aaf2017646527",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_dp_residual_v1/test_run.py",
+          "source_git_blob": "43214bdb93335d5da836928b0a7aee2bb421fd05",
+          "source_sha256": "40fdd2ae252a5f7805a64f140ed7402b86d20bdcbaba1bc943575c0f69625e89",
+          "disposition": "research-source",
+          "path": "experiments/deform_dp_residual_v1/test_run.py",
+          "retained_sha256": "7a0268a8f84414eca17fcd1c32274ec50589f497785c5812df3981f8a12fd803",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": "experiments/deform_dp_residual_v1",
+      "test_paths": [
+        "test_run.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 958,
+      "id": "dlo45-source-experts",
+      "family": "dirichlet-processes",
+      "title": "Source-only DLO4/DLO5 full-feature residual experts",
+      "source_revision": "037c07552cc978332847cbd4b1bb1830927b8f0d",
+      "paper_pr": null,
+      "files": [
+        {
+          "source_path": ".github/workflows/dp-residual-source-screen-v1.yml",
+          "source_git_blob": "28f1a13df2ae699b10788f07433cda08d449dcd8",
+          "source_sha256": "59ff851d4f247400d8b713f1e050d048417d59800a2cdadfa25bee0b150ead53",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-958/.github/workflows/dp-residual-source-screen-v1.yml",
+          "retained_sha256": "59ff851d4f247400d8b713f1e050d048417d59800a2cdadfa25bee0b150ead53",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_screen_v1/README.md",
+          "source_git_blob": "21c5d4cc59cf92577e96504ab5ab8055d5fc8315",
+          "source_sha256": "5660f37f1c361db0c8e80d92d4d81d4d75fcae56f3d29a769a4335a9a7d5c855",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/037c07552cc978332847cbd4b1bb1830927b8f0d/experiments/dp_residual_source_screen_v1/README.md"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_screen_v1/run.py",
+          "source_git_blob": "956c8bfc6c03a8026e4de8226e9997cd0cb6805b",
+          "source_sha256": "05efb2598d19353b7bb82b5478913d06fa48f5661385b14c52ea9ea409b49c19",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_source_screen_v1/run.py",
+          "retained_sha256": "05efb2598d19353b7bb82b5478913d06fa48f5661385b14c52ea9ea409b49c19",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "tests/test_dp_residual_source_screen_v1.py",
+          "source_git_blob": "ded74b82503aa05953da37bba047debf7059e7d2",
+          "source_sha256": "ccecc79409a416614c99448df95c476066e1265028cf2c7c22933fff113c725f",
+          "disposition": "research-source",
+          "path": "tests/test_dp_residual_source_screen_v1.py",
+          "retained_sha256": "ccecc79409a416614c99448df95c476066e1265028cf2c7c22933fff113c725f",
+          "change": "byte-identical",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "tests/test_dp_residual_source_screen_v1.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 959,
+      "id": "dlo2-sparse",
+      "family": "gaussian-processes",
+      "title": "DLO2 sparse variational GP comparison",
+      "source_revision": "4c4fe2f8a54a49f7464fd5a90b523217d8681bd5",
+      "paper_pr": 198,
+      "files": [
+        {
+          "source_path": ".github/requests/deform-gp-residual-pilot-v1.json",
+          "source_git_blob": "ac7ac12f3d80eab94a4e1690d9612213bdf37566",
+          "source_sha256": "e2811066a3df321854ecd740af6fe075b0b57cdba11816be11052221fe0d146c",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-959/.github/requests/deform-gp-residual-pilot-v1.json",
+          "retained_sha256": "e2811066a3df321854ecd740af6fe075b0b57cdba11816be11052221fe0d146c",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": ".github/workflows/deform-gp-residual-pilot-v1.yml",
+          "source_git_blob": "d1172f8cdb268376e37f96f4a29e6c16f6abec76",
+          "source_sha256": "d2ed3a559cb24e66c5990244b769aba640fa767e82df4102709934016151191a",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-959/.github/workflows/deform-gp-residual-pilot-v1.yml",
+          "retained_sha256": "d2ed3a559cb24e66c5990244b769aba640fa767e82df4102709934016151191a",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_pilot_v1/README.md",
+          "source_git_blob": "5a174a458fff7cd362ba4a0b27b6f3dc2e95b054",
+          "source_sha256": "6dfd6853b3c5b7d3ed31c98a9d16a9475ae84e2e301b4ab583e2de79991b71ef",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/4c4fe2f8a54a49f7464fd5a90b523217d8681bd5/experiments/deform_gp_residual_pilot_v1/README.md"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_pilot_v1/compare.py",
+          "source_git_blob": "8824efc96d019de02d78defd55562b0a4d7d5e18",
+          "source_sha256": "3022ffe5d3e6723db63fec154fef375e58a5f4671e87bbdd11cc7b784c35ff89",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_pilot_v1/compare.py",
+          "retained_sha256": "bd10566f00ffe1193b8b7a93a004348475a6c3ee9afb540e365e925e41c20b6d",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_pilot_v1/export.py",
+          "source_git_blob": "9c0ebc5dd506c9eeb3903910addc4b8007a0924f",
+          "source_sha256": "c49d6d4ac4881486e477bf6161a116ca92fe23712399d66bf452f996e5f42adb",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_pilot_v1/export.py",
+          "retained_sha256": "b326dd3cca83b0a41803fd4bb83fd3aa5007fc81f423e16fc6c58dc996b1b522",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_pilot_v1/gp.py",
+          "source_git_blob": "93deb21943c05078db8219db766a8337484b8ba9",
+          "source_sha256": "ea9f4f88b805cc262407236a6432efb3a899014eaec6a3d92f212acbd663d3ea",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_pilot_v1/gp.py",
+          "retained_sha256": "d78df4c26016ab5b99b89df59775507523cd0bc34048c46f030faedc7c636f2c",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/deform_gp_residual_pilot_v1/run.sh",
+          "source_git_blob": "937a770a1710b5b37b501158f5bd045099c0eb5d",
+          "source_sha256": "726158b9b355aca30d94ed39e06b362edef7e7cc7bfd5dbaec9dd9645325ea3a",
+          "disposition": "research-source",
+          "path": "experiments/deform_gp_residual_pilot_v1/run.sh",
+          "retained_sha256": "726158b9b355aca30d94ed39e06b362edef7e7cc7bfd5dbaec9dd9645325ea3a",
+          "change": "byte-identical"
+        }
+      ],
+      "test_working_directory": "experiments/deform_gp_residual_pilot_v1",
+      "test_paths": [],
+      "status": "retained research implementation, not production promotion",
+      "self_test_script": "gp.py"
+    },
+    {
+      "pr": 960,
+      "id": "dlo1-gated-experts",
+      "family": "dirichlet-processes",
+      "title": "DLO1 joint-feature/residual gated experts",
+      "source_revision": "b9911b7c704c2306a91763771d952e30553b6ea4",
+      "paper_pr": 197,
+      "files": [
+        {
+          "source_path": ".github/workflows/dp-residual-development-v1.yml",
+          "source_git_blob": "915805185c6c93089adbb9092f2e7dee149e4086",
+          "source_sha256": "e7467aad2478c5dab329d74aabb1cc47bbfb24c92e12aa1ffbbab4c5eb65fa09",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-960/.github/workflows/dp-residual-development-v1.yml",
+          "retained_sha256": "e7467aad2478c5dab329d74aabb1cc47bbfb24c92e12aa1ffbbab4c5eb65fa09",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "docs/dp_residual_development_v1.md",
+          "source_git_blob": "72feb75bdee33efb803868765abd4f003a391460",
+          "source_sha256": "4b6ea00241aba8b37a4f16e97f9065f284380a5cf666bbf1e482532b051fbe30",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/b9911b7c704c2306a91763771d952e30553b6ea4/docs/dp_residual_development_v1.md"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/model.py",
+          "source_git_blob": "f754a6eeef6b90ee1e6c1d6deeb38dcc0137f576",
+          "source_sha256": "7e8c7fcc91eb8e52e42ff46e142d10223e71f57f32b151ba4a8139e3a172218c",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_development_v1/model.py",
+          "retained_sha256": "92382fb790a059dbe74c5a5731bb26d5ad0e7b943ed684a01d44878073d7a1e2",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/run.py",
+          "source_git_blob": "c2d84579821b5029b9666be5bb8b83d11b3f7564",
+          "source_sha256": "67e397c8276e3a0228fde321f50eb0b536beacfe823127ad8eb133a28b02ebec",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_development_v1/run.py",
+          "retained_sha256": "2adbd7760a07b02919debcefc33b3dc8f6a2834c82bc39233fe2faba7bb21222",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "tests/test_dp_residual_development_v1.py",
+          "source_git_blob": "e2e6fbb4cc25d76613df16da4f4fbb767e0f4ab8",
+          "source_sha256": "365e7e0ef42ce668ebcbcf37a61b7ca2cd4b52b18589b821a4ff86466b94672d",
+          "disposition": "research-source",
+          "path": "tests/test_dp_residual_development_v1.py",
+          "retained_sha256": "82d08cd7348428bf7b2839712dfb0dd6853b4b91463b9b83cf7c1db2562c3ee4",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "tests/test_dp_residual_development_v1.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 961,
+      "id": "dlo1-sticky-hdp",
+      "family": "dirichlet-processes",
+      "title": "DLO1 sticky-HDP AR(2) residual dynamics",
+      "source_revision": "70b58b0febe3cd0c93e972b1221e00505933ee6e",
+      "paper_pr": 200,
+      "files": [
+        {
+          "source_path": ".github/workflows/dp-residual-source-v1.yml",
+          "source_git_blob": "99c5fd78c24ffd284aa31c86a8479624e346eaa2",
+          "source_sha256": "1983dc1609643157bea51981ff6d88e0fd4e2e762eab8bff098ae74d4a3829bc",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-961/.github/workflows/dp-residual-source-v1.yml",
+          "retained_sha256": "1983dc1609643157bea51981ff6d88e0fd4e2e762eab8bff098ae74d4a3829bc",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_v1/README.md",
+          "source_git_blob": "04c12d2612f79f7722cb9ee02267a74e9ff9baeb",
+          "source_sha256": "9a77c0c9fc4ebea34fb721cdaa3b24fb9f5f8641462bbd548305f23b0bf475ac",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/70b58b0febe3cd0c93e972b1221e00505933ee6e/experiments/dp_residual_source_v1/README.md"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_v1/model.py",
+          "source_git_blob": "91af253b2cdbc1623f5df4d818487a89975fa9c7",
+          "source_sha256": "c5498ca20ae743637092d78b84e60bb507f0f9d2f57eef42d1fcdf1696e38031",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_source_v1/model.py",
+          "retained_sha256": "f35c0d6449e46e50e2f8df4042a25e93749efbca52291bdc48791267a7f845dc",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_v1/run.py",
+          "source_git_blob": "20ed4616d6f3639ef1506637908f1504dacefb2c",
+          "source_sha256": "4a4aefefd1ac5c8948382d2ede501c34b383be9531fb82a172fadc6403e224a2",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_source_v1/run.py",
+          "retained_sha256": "046197816d8d5b728cbdb683c363b0d51627ca655ce5ab9e0f94205e8e17f567",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_v1/test_adapter.py",
+          "source_git_blob": "25ae19997099e3f921d46dcdb56d7a83516aebf9",
+          "source_sha256": "2da70838e2ea4cfbe81462cb40f12e5fc8470420cb822ae517b85ea6ca7c0869",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_source_v1/test_adapter.py",
+          "retained_sha256": "1e28a48d0c1e0fc4f7dbacd1e59260dfb440171144659e0f3cbd5b01e78bd08f",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_source_v1/test_model.py",
+          "source_git_blob": "a79614d95c83954667f2104e1773e4e98cec951a",
+          "source_sha256": "a4813a7f013b333957ad93e87cddeb7e3bd505e5caa8a5708a58123927e9b1d5",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_source_v1/test_model.py",
+          "retained_sha256": "d1aa93a5d20c4f8531f546bb6e40de2bbb53cb32186b6e4b511d8bd1eca5d72d",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": "experiments/dp_residual_source_v1",
+      "test_paths": [
+        "test_model.py",
+        "test_adapter.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 962,
+      "id": "dlo1-kinematic-gate",
+      "family": "dirichlet-processes",
+      "title": "DLO1 kinematic mixture gate",
+      "source_revision": "85a38ee1cfb7dbb802d10a1672472f7e5bc33e82",
+      "paper_pr": 199,
+      "files": [
+        {
+          "source_path": ".github/workflows/dp-residual-compare-v1.yml",
+          "source_git_blob": "2595a0dbc65e2853611c8a535aca9cbc78ee502e",
+          "source_sha256": "8a34b93d29bb5abb793529906f0afb37749c2fc92f081f8205e6318ff882dfa0",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-962/.github/workflows/dp-residual-compare-v1.yml",
+          "retained_sha256": "8a34b93d29bb5abb793529906f0afb37749c2fc92f081f8205e6318ff882dfa0",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": ".github/workflows/dp-residual-development-v1.yml",
+          "source_git_blob": "2d1accadcd844bdbb08ffdd771f5b3ed91709985",
+          "source_sha256": "47ef270a8850cde9fa248399d70185d91d814cedbeb99e7fd1e121c3fabd6848",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-962/.github/workflows/dp-residual-development-v1.yml",
+          "retained_sha256": "47ef270a8850cde9fa248399d70185d91d814cedbeb99e7fd1e121c3fabd6848",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/README.md",
+          "source_git_blob": "0238bcb3571d00adcf9943b8986ceaa23a249bfa",
+          "source_sha256": "0883d531749c567be01786440cfa10972be91db61ce2dd76780bdbf1c0a6f90c",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/85a38ee1cfb7dbb802d10a1672472f7e5bc33e82/experiments/dp_residual_development_v1/README.md"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/model.py",
+          "source_git_blob": "2c745e003cfdd9a7424a57a40738963b9a2bbdfe",
+          "source_sha256": "877a10506408cefc334d40cdb5572f26a7eb7ea807d2f161ed899cc4d3e15781",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_kinematic_v1/model.py",
+          "retained_sha256": "cbce77af8e58ad473b64a5233075c61641377ec04747e9d83295e916e2a96ce1",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/prepare.py",
+          "source_git_blob": "25bceed2f2ff80e21215a0b2f3c99f511fc872a5",
+          "source_sha256": "3fc8f1384270d49de91767b1c925bb247552aee987529f9c9b181f0cf27afa70",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_kinematic_v1/prepare.py",
+          "retained_sha256": "4ec5ae762e2877769bd4bda76f25d5c6962af4758bc682338a0a42ee359dbb3a",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/result_summary.json",
+          "source_git_blob": "2a90355eb13d62da3dec3308478c59be81dff12a",
+          "source_sha256": "2eff62809a4d2fbd2b3f1ec8e28ab716488a8617942f4ec7542e39af55de240f",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/85a38ee1cfb7dbb802d10a1672472f7e5bc33e82/experiments/dp_residual_development_v1/result_summary.json"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/run.py",
+          "source_git_blob": "1db4c46abad9e9bc8103337564852710e2fc638b",
+          "source_sha256": "bcb130b7c304e6352ebf0add48139b6e05904ae56841f0dce13be24e38a9372f",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_kinematic_v1/run.py",
+          "retained_sha256": "087581729491f7efa10de14a6e53467d668fcc6d61ae6477d8e07de1db508cb7",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "experiments/dp_residual_development_v1/test_model.py",
+          "source_git_blob": "b4778b75a57d39793ac5bfda43f190a2d3df84f5",
+          "source_sha256": "42ee2c5a3ab938abc187d46b521f3773863cab0b03d26b66319036873f81f5a0",
+          "disposition": "research-source",
+          "path": "experiments/dp_residual_kinematic_v1/test_model.py",
+          "retained_sha256": "3b66e2e2ff0a67dae9551ade687f672fc71c7d63eee9313105d5bac93b8fe129",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "experiments/dp_residual_kinematic_v1/test_model.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    },
+    {
+      "pr": 963,
+      "id": "dlo2-material-gp",
+      "family": "gaussian-processes",
+      "title": "DLO2 material-coordinate GP",
+      "source_revision": "d59ebacdc35862560fd5c2e6b85d5fcf077f098c",
+      "paper_pr": null,
+      "files": [
+        {
+          "source_path": ".github/workflows/material-gp-cached-development-v1.yml",
+          "source_git_blob": "00bc276bbb978d31641e30ff923b824acc957daf",
+          "source_sha256": "2b0eb548fec4b55ac06dac49945959c06bd467feba68ae9e88ce9ba1cbd97095",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-963/.github/workflows/material-gp-cached-development-v1.yml",
+          "retained_sha256": "2b0eb548fec4b55ac06dac49945959c06bd467feba68ae9e88ce9ba1cbd97095",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": ".github/workflows/material-gp-development-v1.yml",
+          "source_git_blob": "4cedc03937adb886ec4dc4644508fabf4654a99b",
+          "source_sha256": "8409e0403419e9717f748d549b15d5a1b1b39156a04d327f2c4086191479f72c",
+          "disposition": "inactive-execution-history",
+          "path": "archive/research-workflows/residual-models-2026-09-07/pr-963/.github/workflows/material-gp-development-v1.yml",
+          "retained_sha256": "8409e0403419e9717f748d549b15d5a1b1b39156a04d327f2c4086191479f72c",
+          "change": "byte-identical"
+        },
+        {
+          "source_path": "docs/material_gp_development_v1.md",
+          "source_git_blob": "cf614ab0c03d06f5734ad05851516e730e0c4abb",
+          "source_sha256": "2bc583bc3b5a48c4fbbca7a0dae386f22ebedbb64b3dd6fa22533efff61f4909",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/d59ebacdc35862560fd5c2e6b85d5fcf077f098c/docs/material_gp_development_v1.md"
+        },
+        {
+          "source_path": "docs/material_gp_development_v1_result.md",
+          "source_git_blob": "ead09ec090107dfbf432fa8902f53c6600b3b625",
+          "source_sha256": "9df5b81e313d08691750c3771d1e6ef70943d52335d87e49d2afb3e3a3f47463",
+          "disposition": "historical-document-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/d59ebacdc35862560fd5c2e6b85d5fcf077f098c/docs/material_gp_development_v1_result.md"
+        },
+        {
+          "source_path": "results/experiments/material_gp_development_v1/summary.json",
+          "source_git_blob": "53b19e7121889df4dc4478e7ee3364297e5aef09",
+          "source_sha256": "bb0a2cf25a815c275cabb016ca78682e1494230068508756c90cafa643091121",
+          "disposition": "historical-outcome-reference",
+          "historical_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/d59ebacdc35862560fd5c2e6b85d5fcf077f098c/results/experiments/material_gp_development_v1/summary.json"
+        },
+        {
+          "source_path": "scripts/experiments/material_gp_development_v1.py",
+          "source_git_blob": "9b9399c236c40f4902735c312e452d3fc8eca022",
+          "source_sha256": "f2a282894eb8d73d6acb53814565470085a5340842a8ee625663706d8bf47f0a",
+          "disposition": "research-source",
+          "path": "scripts/experiments/material_gp_development_v1.py",
+          "retained_sha256": "ef5e6af3eae997a4c328bcf655e0b83a28393a65abeacb70ba8c8b71b19606e8",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "scripts/experiments/material_gp_export_v1.py",
+          "source_git_blob": "0bd4faf0c42bb0115824e6955b0576a3b45a1c84",
+          "source_sha256": "76113a104f9fec9137a632f4c94ed4783bf43b398b2ca5b0d762ff179e71e9b6",
+          "disposition": "research-source",
+          "path": "scripts/experiments/material_gp_export_v1.py",
+          "retained_sha256": "48b88c27972a730491dc69af6184b78c24ab8804a85be1a1bf17285bc351316f",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "scripts/experiments/material_gp_import_cache_v1.py",
+          "source_git_blob": "2d45cf08f264d9f3fd02a31176c88b10875f4873",
+          "source_sha256": "195c40cea082e96c83c20114590a959676c606a24143d22c5c042981b316f4bb",
+          "disposition": "research-source",
+          "path": "scripts/experiments/material_gp_import_cache_v1.py",
+          "retained_sha256": "2e0ce3b642246e7ac94278d8c56c98e1cef646b6dfc194ce3b7c450015cd66d2",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        },
+        {
+          "source_path": "tests/test_material_gp_development_v1.py",
+          "source_git_blob": "70c0d764c1f7fda44f3d755885fa6a16aefb909a",
+          "source_sha256": "c6eb9fed24f304b42d68a92068b77ea10b39ffd55968f37d2d558420d7b02553",
+          "disposition": "research-source",
+          "path": "tests/test_material_gp_development_v1.py",
+          "retained_sha256": "3ebbd67923e83a51f603c96ac09e1bc868d27cf309f21a164afb892e39f3edae",
+          "change": "format/import/docstring hygiene; explicit original zip semantics; synchronous closure binding; namespace/test import repair only",
+          "numerical_ast_preserved": true,
+          "review_basis": "exact digest match to locally tested source with independently compared canonical numerical AST"
+        }
+      ],
+      "test_working_directory": ".",
+      "test_paths": [
+        "tests/test_material_gp_development_v1.py"
+      ],
+      "status": "retained research implementation, not production promotion"
+    }
+  ],
+  "deferred": [
+    {
+      "pr": 944,
+      "reason": "earlier incomplete overlapping prototype without focused tests"
+    },
+    {
+      "pr": 947,
+      "reason": "earlier separate source-preparation route without focused tests"
+    },
+    {
+      "pr": 964,
+      "reason": "prospective temporal-discrepancy extension; native adapter not validated here"
+    }
+  ]
+}

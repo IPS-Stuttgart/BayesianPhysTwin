@@ -1,0 +1,77 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DP residual regimes development v1
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dp-residual-regimes-dev-v1.yml'
+      - 'experiments/dp_residual_regimes_dev_v1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dp-residual-regimes-cpu-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Prepare isolated CPU runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/dp-env-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          py="$RUNNER_TEMP/dp-env-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/bin/python"
+          "$py" -m pip install 'numpy==2.2.6' 'scipy==1.15.3' 'scikit-learn==1.8.0' 'pytest==8.4.2' 'ruff==0.12.12'
+          echo "PY=$py" >> "$GITHUB_ENV"
+          output="$RUNNER_TEMP/dp-residual-regimes-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$output"
+          echo "OUTPUT=$output" >> "$GITHUB_ENV"
+      - name: Retrieve checksum-bound existing source export
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download 34052556765 --repo IPS-Stuttgart/BayesianPhysTwin --name pinned-source-cache-34052556765 --dir "$RUNNER_TEMP/dp-source-cache-$GITHUB_RUN_ID"
+      - name: Produce formatting-only source copies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT/formatted"
+          cp experiments/dp_residual_regimes_dev_v1/*.py "$OUTPUT/formatted/"
+          "$PY" -m ruff check --select E4,E7,E9,F,I,UP,B --target-version py310 --fix "$OUTPUT/formatted/"
+          "$PY" -m ruff format "$OUTPUT/formatted/"
+      - name: Test exact committed source and execute development experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PY" -m pytest -q experiments/dp_residual_regimes_dev_v1/test_model.py | tee "$OUTPUT/tests.log"
+          "$PY" -m experiments.dp_residual_regimes_dev_v1.run --cache-dir "$RUNNER_TEMP/dp-source-cache-$GITHUB_RUN_ID" --output "$OUTPUT" | tee "$OUTPUT/run.log"
+          cat "$OUTPUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain development evidence
+        if: always() && env.OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dp-residual-regimes-dev-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT }}
+          if-no-files-found: error
+          retention-days: 90

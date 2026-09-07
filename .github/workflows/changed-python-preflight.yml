@@ -13,6 +13,8 @@ on:
       - ".github/workflows/changed-python-preflight.yml"
       - "docs/workflow_lifecycle.md"
       - "pyproject.toml"
+      - "experiments/residual-models/**"
+      - ".github/quality/workflow-inventory-budget-v2.json"
   workflow_dispatch:
     inputs:
       base_revision:
@@ -117,3 +119,33 @@ jobs:
             tests+=(tests/test_pr_ready.py)
           fi
           python -m pytest -q "${tests[@]}"
+
+  residual-experiments:
+    name: Residual research / CPU contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.head_revision || github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Install isolated optional test dependencies
+        run: >-
+          python -m pip install -e ".[dev]"
+          numpy==1.26.4 scipy==1.15.3 scikit-learn==1.7.2
+      - name: Validate source custody and active workflow inventory
+        run: |
+          python -m pytest -q tests/test_residual_experiment_catalog.py tests/test_workflow_inventory_budget.py
+          python tools/quality/check_workflow_inventory_budget.py --contract .github/quality/workflow-inventory-budget-v2.json
+      - name: Check all retained implementations without recorded data
+        run: python scripts/ci/check_residual_experiments.py --output-dir "${{ runner.temp }}/residual-contracts"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: residual-research-contracts
+          path: ${{ runner.temp }}/residual-contracts/
+          if-no-files-found: error
+          retention-days: 30
