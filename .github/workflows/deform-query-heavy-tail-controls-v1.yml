@@ -98,9 +98,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh api -H 'Accept: application/vnd.github+json' \
-            '/repos/IPS-Stuttgart/BayesianPhysTwin/actions/artifacts/9974939619/zip' \
-            > "$CAPSULE_OUTPUT/parent.zip"
+          "$CAPSULE_PYTHON" - <<'PY'
+          import os, shutil, urllib.request
+          from pathlib import Path
+          class StripAuthorization(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+                  if redirected is not None:
+                      redirected.remove_header('Authorization')
+                  return redirected
+          request = urllib.request.Request(
+              'https://api.github.com/repos/IPS-Stuttgart/BayesianPhysTwin/actions/artifacts/9974939619/zip',
+              headers={
+                  'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'BayesianPhysTwin-heavy-tail-controls',
+              },
+          )
+          opener = urllib.request.build_opener(StripAuthorization())
+          with opener.open(request, timeout=90) as response:
+              with (Path(os.environ['CAPSULE_OUTPUT']) / 'parent.zip').open('wb') as output:
+                  shutil.copyfileobj(response, output)
+          PY
           echo "e7e182e009ac234fb611afb6ca03eb1006ee65da2688ec2a084105667fa4e591  $CAPSULE_OUTPUT/parent.zip" | sha256sum --check --strict
 
       - name: Calibrate, seal, and score the real-data controls
