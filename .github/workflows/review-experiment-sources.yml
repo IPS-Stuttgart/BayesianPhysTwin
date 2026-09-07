@@ -1,6 +1,6 @@
 # workflow-lifecycle: permanent
 # workflow-owner: IPS-Stuttgart maintainers
-# Review-branch helper; never part of the code merge.
+# One-off review-branch helper; never part of the integration tree.
 name: Review experiment source snapshots
 on:
   workflow_dispatch:
@@ -8,26 +8,61 @@ on:
     branches: [maintenance/review-code-experiments-2026-09-07]
     paths: [.github/workflows/review-experiment-sources.yml]
 permissions:
-  contents: read
+  contents: write
+  actions: read
 concurrency:
   group: review-experiment-sources-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  formatter:
+  prepare:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
-      - name: Retain pinned formatter for offline review
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install fixed CPU-only review dependencies
+        run: python -m pip install numpy==1.26.4 scipy==1.15.3 scikit-learn==1.7.2 pytest==8.3.5 ruff==0.16.2
+      - name: Verify reviewed sources and create only an unreferenced tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/review-tools"
-          python3 -m pip download --only-binary=:all: --no-deps ruff==0.16.2 --dest "$RUNNER_TEMP/review-tools"
-          cd "$RUNNER_TEMP/review-tools"
-          sha256sum *.whl > SHA256SUMS
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          script = Path('.github/review-tools/prepare_residual_integration.py').resolve()
+          source = script.read_text()
+          marker = '# Only now publish an entirely new, reviewed staging branch.'
+          assert source.count(marker) == 1
+          # This run intentionally stops before all commit/ref publication code.
+          # The connector will review and publish the resulting tree separately.
+          namespace = {'__file__': str(script), '__name__': '__main__'}
+          exec(compile(source.split(marker)[0], str(script), 'exec'), namespace)
+          api = namespace['api']
+          assert api('git/ref/heads/main')['object']['sha'] == namespace['BASE']
+          stage = namespace['STAGE']
+          entries = [{'path': name, 'mode': '100644', 'type': 'blob', 'content': (stage / name).read_text()} for name in sorted(namespace['retained_paths'])]
+          tree = api('git/trees', {'base_tree': namespace['BASE_TREE'], 'tree': entries})
+          receipt = {'repository': namespace['REPO'], 'tree': tree['sha'], 'base': namespace['BASE'], 'parents': namespace['parents'], 'candidate_branch': namespace['TARGET'], 'files': len(entries), 'reviewed_python_hashes': len(namespace['expected']), 'scientific_data_run': False, 'commits_created': False, 'refs_updated': False}
+          (namespace['WORK'] / 'publication.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          (namespace['WORK'] / 'source-catalog.json').write_text(json.dumps(namespace['manifest'], indent=2) + '\n')
+          print(json.dumps(receipt, indent=2))
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
         with:
-          name: code-review-formatter
-          path: ${{ runner.temp }}/review-tools/
-          if-no-files-found: error
-          retention-days: 3
+          name: reviewed-residual-integration
+          path: |
+            ${{ runner.temp }}/residual-integration/publication.json
+            ${{ runner.temp }}/residual-integration/source-catalog.json
+            ${{ runner.temp }}/residual-integration/checks/
+          if-no-files-found: warn
+          retention-days: 7
