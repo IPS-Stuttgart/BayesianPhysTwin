@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "status": "completed-successfully; historical-development-only",
+  "run_id": 34089074496,
+  "job_id": 101638727116,
+  "execution_commit": "40da25de732387d6f95478a666c307936f8eb7f1",
+  "workflow_url": "https://github.com/IPS-Stuttgart/BayesianPhysTwin/actions/runs/34089074496",
+  "completed_at_utc": "2026-09-07T06:04:30Z",
+  "artifact_id": 10006236763,
+  "artifact_sha256": "bd815c07ed9774a44a0566ccc1c1262957b667122b2e9c5b55bce987202b07ab",
+  "artifact_result_json_sha256": "e708fceaaa897f0439fef45d9d40f3afadb96036c6d0058d357bc760af1c2061",
+  "provenance": {
+    "upstream_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "upstream_tracked_clean": true,
+    "training_record_sha256_verified": true,
+    "manifest_sha256_verified": true,
+    "checkpoint_sha256_verified": true,
+    "baseline_expected_l1_m": 0.007912029745057225,
+    "baseline_measured_l1_m": 0.007912029512226582,
+    "baseline_reproduction_tolerance_m": 0.0000001,
+    "baseline_reproduction_passed": true
+  },
+  "boundary": {
+    "fit_cases": 40,
+    "fit_unique_query_groups": 40,
+    "inner_fit_cases": 32,
+    "inner_validation_cases": 8,
+    "historical_validation_cases": 8,
+    "fit_validation_identical_queries": 0,
+    "source_test_read": false,
+    "official_eval_read": false,
+    "fresh_confirmation": false,
+    "covariance_calibration_claim": false,
+    "baseline_retrained": false
+  },
+  "metric": "mean over trajectories of mean absolute coordinate error across all rollout times, nodes and coordinates; millimetres",
+  "validation_names": ["50.pkl", "3.pkl", "106.pkl", "19.pkl", "25.pkl", "102.pkl", "6.pkl", "56.pkl"],
+  "results": {
+    "baseline": {
+      "mean_l1_mm": 7.912029504776001,
+      "relative_improvement_vs_current_pct": -9.277644971141719,
+      "wins_vs_current": 1,
+      "per_case_l1_mm": [8.373876571655273, 10.46010971069336, 5.752618312835693, 5.322373867034912, 13.720014572143555, 5.465983867645264, 7.317733287811279, 6.883525848388672]
+    },
+    "current_ridge": {
+      "mean_l1_mm": 7.240300160993978,
+      "relative_improvement_vs_current_pct": 0.0,
+      "wins_vs_current": 0,
+      "ties_vs_current": 8,
+      "per_case_l1_mm": [7.682426601136481, 9.170897401808872, 5.417604861534356, 4.598109824837684, 12.368523706040895, 5.728538818766528, 6.812706037652513, 6.143594036174493]
+    },
+    "finite": {
+      "mean_l1_mm": 7.554475545883179,
+      "relative_improvement_vs_current_pct": -4.339259117761074,
+      "wins_vs_current": 1,
+      "per_case_l1_mm": [7.485915660858154, 9.364368438720703, 6.2541022300720215, 4.984359264373779, 12.996716499328613, 6.023099422454834, 6.9668073654174805, 6.360435485839844]
+    },
+    "bayes_finite": {
+      "mean_l1_mm": 7.592073976993561,
+      "relative_improvement_vs_current_pct": -4.858552935342542,
+      "wins_vs_current": 1,
+      "per_case_l1_mm": [7.448848247528076, 9.224599838256836, 6.5844268798828125, 4.927039623260498, 12.818524360656738, 6.364314079284668, 7.006030082702637, 6.362808704376221]
+    },
+    "dp": {
+      "mean_l1_mm": 7.576843202114105,
+      "relative_improvement_vs_current_pct": -4.648191837863336,
+      "wins_vs_current": 1,
+      "worst_case_ratio_vs_current": 1.2028731978945517,
+      "per_case_l1_mm": [7.422597885131836, 9.211457252502441, 6.5166916847229, 4.928398609161377, 12.816916465759277, 6.383316993713379, 6.996618270874023, 6.338748455047607]
+    },
+    "dp_fixed_alpha1_shrink025": {
+      "mean_l1_mm": 7.558611333370209,
+      "relative_improvement_vs_current_pct": -4.3963808861279485,
+      "wins_vs_current": 1,
+      "per_case_l1_mm": [7.744426727294922, 9.753639221191406, 5.769753932952881, 4.993186950683594, 13.190934181213379, 5.6019744873046875, 7.0699143409729, 6.3450608253479]
+    },
+    "trees": {
+      "mean_l1_mm": 6.603345632553101,
+      "relative_improvement_vs_current_pct": 8.797349754536054,
+      "wins_vs_current": 8,
+      "worst_case_ratio_vs_current": 0.9786656692663732,
+      "per_case_l1_mm": [6.503342151641846, 8.312129974365234, 5.302023887634277, 4.172426700592041, 11.429481506347656, 5.011584758758545, 6.577466011047363, 5.518310070037842]
+    }
+  },
+  "inner_selected_settings": {
+    "finite": {"components": 4, "shrinkage": 0.5},
+    "bayes_finite": {"components": 8, "concentration": 1.0, "shrinkage": 0.5},
+    "dp": {"truncation": 8, "concentration": 10.0, "shrinkage": 0.5},
+    "trees": {"shrinkage": 1.0}
+  },
+  "convergence": {
+    "max_iter": 150,
+    "finite_final_node_fits_converged": 8,
+    "bayes_finite_final_node_fits_converged": 4,
+    "dp_final_node_fits_converged": 6,
+    "dp_fixed_final_node_fits_converged": 6,
+    "node_fits_per_method": 8,
+    "dp_occupied_components_weight_gt_001_per_node": [8, 8, 8, 8, 8, 8, 8, 8]
+  },
+  "independent_verification": {
+    "input_npz_sha256_verified": true,
+    "per_case_scores_and_means_recomputed_from_predictions": true,
+    "wins_verified": true,
+    "prescribed_nodes_exact_all_methods": true,
+    "float64_recomputation_maximum_difference_mm": 0.0000008740869432699583,
+    "roundoff_tolerance_mm": 0.000005
+  },
+  "interpretation": "This fixed pilot does not support promoting the DP correction over current ridge or the selected finite mixture. ExtraTrees improved all eight historical validation trajectories. Bayesian-mixture nonconvergence, DP truncation occupancy, differing feature preprocessing and historical validation reuse prevent a general conclusion against Dirichlet processes or a fresh confirmatory claim. No outcome-dependent tuning or promotion was performed after scoring."
+}
