@@ -26,7 +26,7 @@ jobs:
           python-version: '3.12'
       - name: Install fixed CPU-only review dependencies
         run: python -m pip install numpy==1.26.4 scipy==1.15.3 scikit-learn==1.7.2 pytest==8.3.5 ruff==0.16.2
-      - name: Verify reviewed sources and create only an unreferenced tree
+      - name: Verify sources and create an unreferenced source-only tree
         env:
           GH_TOKEN: ${{ github.token }}
           OPENBLAS_NUM_THREADS: '1'
@@ -36,24 +36,27 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
+          import json, hashlib
           from pathlib import Path
           script = Path('.github/review-tools/prepare_residual_integration.py').resolve()
           source = script.read_text()
           marker = '# Only now publish an entirely new, reviewed staging branch.'
           assert source.count(marker) == 1
-          # This run intentionally stops before all commit/ref publication code.
-          # The connector will review and publish the resulting tree separately.
           namespace = {'__file__': str(script), '__name__': '__main__'}
           exec(compile(source.split(marker)[0], str(script), 'exec'), namespace)
           api = namespace['api']
           assert api('git/ref/heads/main')['object']['sha'] == namespace['BASE']
           stage = namespace['STAGE']
-          entries = [{'path': name, 'mode': '100644', 'type': 'blob', 'content': (stage / name).read_text()} for name in sorted(namespace['retained_paths'])]
+          # The Actions token cannot edit active workflow files. Their exact reviewed
+          # bytes are retained for the separate authorized connector edit.
+          workflow = '.github/workflows/changed-python-preflight.yml'
+          names = sorted(namespace['retained_paths'] - {workflow})
+          entries = [{'path': name, 'mode': '100644', 'type': 'blob', 'content': (stage / name).read_text()} for name in names]
           tree = api('git/trees', {'base_tree': namespace['BASE_TREE'], 'tree': entries})
-          receipt = {'repository': namespace['REPO'], 'tree': tree['sha'], 'base': namespace['BASE'], 'parents': namespace['parents'], 'candidate_branch': namespace['TARGET'], 'files': len(entries), 'reviewed_python_hashes': len(namespace['expected']), 'scientific_data_run': False, 'commits_created': False, 'refs_updated': False}
+          receipt = {'repository': namespace['REPO'], 'tree': tree['sha'], 'base': namespace['BASE'], 'parents': namespace['parents'], 'candidate_branch': namespace['TARGET'], 'files': len(entries), 'reviewed_python_hashes': len(namespace['expected']), 'pending_connector_workflow': workflow, 'pending_workflow_sha256': hashlib.sha256((stage / workflow).read_bytes()).hexdigest(), 'scientific_data_run': False, 'commits_created': False, 'refs_updated': False}
           (namespace['WORK'] / 'publication.json').write_text(json.dumps(receipt, indent=2) + '\n')
           (namespace['WORK'] / 'source-catalog.json').write_text(json.dumps(namespace['manifest'], indent=2) + '\n')
+          (namespace['WORK'] / 'reviewed-preflight.yml').write_bytes((stage / workflow).read_bytes())
           print(json.dumps(receipt, indent=2))
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -63,6 +66,7 @@ jobs:
           path: |
             ${{ runner.temp }}/residual-integration/publication.json
             ${{ runner.temp }}/residual-integration/source-catalog.json
+            ${{ runner.temp }}/residual-integration/reviewed-preflight.yml
             ${{ runner.temp }}/residual-integration/checks/
           if-no-files-found: warn
           retention-days: 7
