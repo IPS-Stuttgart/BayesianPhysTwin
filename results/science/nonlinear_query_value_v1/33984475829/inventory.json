@@ -1,0 +1,2544 @@
+{
+  "commit": "5e02d9af655d834168330f06155971b44799096f",
+  "parent_roots": [
+    "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1"
+  ],
+  "payload_use": "JSON metadata and NPZ headers only; no trajectory arrays",
+  "records": [
+    {
+      "bytes": 646,
+      "metadata": {
+        "confidence_increase_forbidden": true,
+        "contract": "deform-dlo-full-covariance-calibration-v1",
+        "gaussian_radius": 1.6448536269514715,
+        "nominal_coordinate_coverage": 0.9,
+        "order_statistic": "maximum-of-nine",
+        "rank": 9,
+        "schema_version": 1,
+        "source_test_opened": false,
+        "standardized_radius": 2.3488302320192163,
+        "target_eval_read": false,
+        "trajectory_scores": [
+          1.4568469467178837,
+          1.2107645148940998,
+          2.3488302320192163,
+          1.3884876192798343,
+          1.24081158894663,
+          1.1562632101595438,
+          1.5685355469559215,
+          1.4143267144815106,
+          1.1261162385616774
+        ],
+        "variance_scale": 2.0391479761658595
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/covariance_calibration.json",
+      "sha256": "f5e07d257e6dfa3beb686d7b8cdab8c8852f6348a63da75d86b4dff06f35bec8"
+    },
+    {
+      "arrays": {
+        "coefficient_covariance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficient_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficients.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            93,
+            3
+          ]
+        },
+        "feature_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "feature_location.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "feature_scale.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "node_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "normal_condition_number.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_maximum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_minimum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_relative_residual_norm.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "prediction_horizon.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "residual_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3
+          ]
+        },
+        "residual_variance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3
+          ]
+        },
+        "ridge.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "schema_version.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_cluster_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_clusters_json.npy": {
+          "descr": "<U426",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "variance_floor_m2.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        }
+      },
+      "bytes": 5856246,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/full_covariance_model.npz",
+      "sha256": "d949562de9f0bc60e570cd51fbc93aa31010973fe91a79ae33df64bc42319e59"
+    },
+    {
+      "bytes": 1926,
+      "metadata": {
+        "contract": "deform-dlo45-source-method-seal-v1",
+        "covariance_calibration": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/covariance_calibration.json",
+          "sha256": "f5e07d257e6dfa3beb686d7b8cdab8c8852f6348a63da75d86b4dff06f35bec8",
+          "size_bytes": 646
+        },
+        "dlo": "DLO4",
+        "full_covariance_model": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/full_covariance_model.npz",
+          "sha256": "d949562de9f0bc60e570cd51fbc93aa31010973fe91a79ae33df64bc42319e59",
+          "size_bytes": 5856246
+        },
+        "physical_checkpoint": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/physical/physical_update_6400.pt",
+          "sha256": "68689af7958d61ac7cc8b3933dc748319c19dc605044dddc8336b5fc9cfd6f9b",
+          "size_bytes": 326195,
+          "update": 6400
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "schema_version": 1,
+        "source_manifest": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_manifest.json",
+          "sha256": "1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17",
+          "size_bytes": 14511
+        },
+        "source_test_opened": false,
+        "target_calibration": false,
+        "target_eval_read": false,
+        "target_selection": false,
+        "window_schedule": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/physical/window_schedule.npz",
+          "sha256": "90aaed09655a9fb31545e2786064cc31e81ae64e6cae5cb1c133894aeddb882e",
+          "size_bytes": 635487
+        }
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/method_seal.json",
+      "sha256": "6ce129b7ea3a44ff28ae8d514030f0959d458df19a1fdbedcaa202b68535eb2d"
+    },
+    {
+      "bytes": 195,
+      "metadata": {
+        "completed_updates": 6400,
+        "dlo": "DLO4",
+        "elapsed_seconds": 57630.96227700403,
+        "latest_position_l1_m": 0.007606792263686657,
+        "requested_updates": 6400,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/physical/progress.json",
+      "sha256": "9ad4c39d1379156999a76d69f811bad54c698dcae3c224960389477f8f0aabbc"
+    },
+    {
+      "arrays": {
+        "fit_names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            39
+          ]
+        },
+        "start_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        },
+        "trajectory_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        }
+      },
+      "bytes": 635487,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/physical/window_schedule.npz",
+      "sha256": "90aaed09655a9fb31545e2786064cc31e81ae64e6cae5cb1c133894aeddb882e"
+    },
+    {
+      "bytes": 735,
+      "metadata": {
+        "contract": "deform-dlo45-source-prediction-seal-v1",
+        "dlo": "DLO4",
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/method_seal.json",
+          "sha256": "6ce129b7ea3a44ff28ae8d514030f0959d458df19a1fdbedcaa202b68535eb2d",
+          "size_bytes": 1926
+        },
+        "predictions": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_predictions.npz",
+          "sha256": "b858c2f4c0e107d367857dc2c4e17e753b6853e4593af64c4ce489564ae88fca",
+          "size_bytes": 9736605
+        },
+        "schema_version": 1,
+        "source_outcomes_scored": false,
+        "source_test_case_count": 8,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/prediction_seal.json",
+      "sha256": "e5ad1730ba264b7b1ef7f137acf61d27b8ef958a619982c49fd959e02d619193"
+    },
+    {
+      "bytes": 14511,
+      "metadata": {
+        "contract": "deform-dlo45-source-manifest-v1",
+        "dlo": "DLO4",
+        "eval_enumerated": false,
+        "eval_read": false,
+        "ordered_names": [
+          "1.pkl",
+          "13.pkl",
+          "14.pkl",
+          "15.pkl",
+          "17.pkl",
+          "18.pkl",
+          "19.pkl",
+          "2.pkl",
+          "20.pkl",
+          "21.pkl",
+          "22.pkl",
+          "23.pkl",
+          "24.pkl",
+          "26.pkl",
+          "3.pkl",
+          "32.pkl",
+          "34.pkl",
+          "36.pkl",
+          "37.pkl",
+          "38.pkl",
+          "39.pkl",
+          "4.pkl",
+          "40.pkl",
+          "42.pkl",
+          "43.pkl",
+          "44.pkl",
+          "49.pkl",
+          "50.pkl",
+          "51.pkl",
+          "53.pkl",
+          "54.pkl",
+          "57.pkl",
+          "59.pkl",
+          "6.pkl",
+          "60.pkl",
+          "61.pkl",
+          "62.pkl",
+          "67.pkl",
+          "69.pkl",
+          "71.pkl",
+          "72.pkl",
+          "74.pkl",
+          "75.pkl",
+          "76.pkl",
+          "78.pkl",
+          "79.pkl",
+          "8.pkl",
+          "85.pkl",
+          "86.pkl",
+          "87.pkl",
+          "89.pkl",
+          "9.pkl",
+          "90.pkl",
+          "91.pkl",
+          "92.pkl",
+          "95.pkl"
+        ],
+        "partition": "DLO4/train",
+        "partitions": {
+          "calibration": [
+            "51.pkl",
+            "26.pkl",
+            "67.pkl",
+            "9.pkl",
+            "34.pkl",
+            "6.pkl",
+            "85.pkl",
+            "95.pkl",
+            "32.pkl"
+          ],
+          "fit": [
+            "38.pkl",
+            "79.pkl",
+            "90.pkl",
+            "20.pkl",
+            "1.pkl",
+            "78.pkl",
+            "44.pkl",
+            "15.pkl",
+            "40.pkl",
+            "69.pkl",
+            "24.pkl",
+            "57.pkl",
+            "61.pkl",
+            "92.pkl",
+            "74.pkl",
+            "59.pkl",
+            "2.pkl",
+            "60.pkl",
+            "72.pkl",
+            "53.pkl",
+            "36.pkl",
+            "50.pkl",
+            "18.pkl",
+            "19.pkl",
+            "75.pkl",
+            "89.pkl",
+            "21.pkl",
+            "17.pkl",
+            "13.pkl",
+            "71.pkl",
+            "23.pkl",
+            "76.pkl",
+            "42.pkl",
+            "39.pkl",
+            "3.pkl",
+            "22.pkl",
+            "8.pkl",
+            "54.pkl",
+            "37.pkl"
+          ],
+          "source_test": [
+            "62.pkl",
+            "86.pkl",
+            "91.pkl",
+            "43.pkl",
+            "49.pkl",
+            "4.pkl",
+            "14.pkl",
+            "87.pkl"
+          ]
+        },
+        "schema_version": 1
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_manifest.json",
+      "sha256": "1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17"
+    },
+    {
+      "arrays": {
+        "bayesian_covariance_m2__calibrated_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__coefficient_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__current_diagonal_conservative_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__pooled_isotropic.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__residual_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__shrinkage_propagated_diagonal.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__trajectory_clustered_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "candidate.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3
+          ]
+        },
+        "names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "physical.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3
+          ]
+        }
+      },
+      "bytes": 9736605,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_predictions.npz",
+      "sha256": "b858c2f4c0e107d367857dc2c4e17e753b6853e4593af64c4ce489564ae88fca"
+    },
+    {
+      "bytes": 8867,
+      "metadata": {
+        "contract": "deform-dlo45-source-result-v1",
+        "covariance_calibration": {
+          "confidence_increase_forbidden": true,
+          "contract": "deform-dlo-full-covariance-calibration-v1",
+          "gaussian_radius": 1.6448536269514715,
+          "nominal_coordinate_coverage": 0.9,
+          "order_statistic": "maximum-of-nine",
+          "rank": 9,
+          "schema_version": 1,
+          "source_test_opened": false,
+          "standardized_radius": 2.3488302320192163,
+          "target_eval_read": false,
+          "trajectory_scores": [
+            1.4568469467178837,
+            1.2107645148940998,
+            2.3488302320192163,
+            1.3884876192798343,
+            1.24081158894663,
+            1.1562632101595438,
+            1.5685355469559215,
+            1.4143267144815106,
+            1.1261162385616774
+          ],
+          "variance_scale": 2.0391479761658595
+        },
+        "dlo": "DLO4",
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/method_seal.json",
+          "sha256": "6ce129b7ea3a44ff28ae8d514030f0959d458df19a1fdbedcaa202b68535eb2d",
+          "size_bytes": 1926
+        },
+        "prediction_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/prediction_seal.json",
+          "sha256": "e5ad1730ba264b7b1ef7f137acf61d27b8ef958a619982c49fd959e02d619193",
+          "size_bytes": 735
+        },
+        "prob4d_used": false,
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "retry_authorized": false,
+        "schema_version": 1,
+        "source_manifest": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_manifest.json",
+          "sha256": "1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17",
+          "size_bytes": 14511
+        },
+        "source_test_opened": true,
+        "target_authorized": false,
+        "target_eval_enumerated": false,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_result.json",
+      "sha256": "c811db44c6f680e31d70698d4eea2e740fce2fd1703abf27fccf873ec32950e1"
+    },
+    {
+      "bytes": 195,
+      "metadata": {
+        "completed_updates": 6400,
+        "dlo": "DLO4",
+        "elapsed_seconds": 59452.55977051804,
+        "latest_position_l1_m": 0.007123083341866732,
+        "requested_updates": 6400,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/alltrain/progress.json",
+      "sha256": "9e72d352cc351b390bea567dcc875d10d9f869354ff10d92eb4e3c397d08d21d"
+    },
+    {
+      "arrays": {
+        "fit_names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            56
+          ]
+        },
+        "start_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        },
+        "trajectory_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        }
+      },
+      "bytes": 660343,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/alltrain/window_schedule.npz",
+      "sha256": "f62d0ec8be01100b8f97ae7475c2d9400e6c010fac7059b8a5951be3617abfb8"
+    },
+    {
+      "bytes": 178,
+      "metadata": {
+        "dlo": "DLO4",
+        "retry_authorized": false,
+        "stage": "target-prediction",
+        "target_eval_enumerated": true,
+        "target_eval_read": true,
+        "target_outcomes_scored": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/custody_state.json",
+      "sha256": "fd55ac93dc2dd42bfaba5f52ad73f179b44098ca1d8eb43965c190d239091b4b"
+    },
+    {
+      "bytes": 3877,
+      "metadata": {
+        "contract": "deform-dlo45-eval-manifest-v1",
+        "dlo": "DLO4",
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/method_seal.json",
+          "sha256": "ee962bfecb6b658c67877f240cb082b3b1c3647ffa3c6fb077662dc00c78d647",
+          "size_bytes": 2896
+        },
+        "ordered_names": [
+          "11.pkl",
+          "16.pkl",
+          "30.pkl",
+          "35.pkl",
+          "41.pkl",
+          "5.pkl",
+          "56.pkl",
+          "58.pkl",
+          "66.pkl",
+          "70.pkl",
+          "81.pkl",
+          "84.pkl",
+          "93.pkl",
+          "96.pkl"
+        ],
+        "partition": "DLO4/eval",
+        "schema_version": 1,
+        "target_eval_read": true,
+        "target_outcomes_scored": false,
+        "trajectory_policy": "all-fourteen-sorted-once-no-replacement"
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/eval_manifest.json",
+      "sha256": "10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d"
+    },
+    {
+      "arrays": {
+        "coefficient_covariance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficient_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficients.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            93,
+            3
+          ]
+        },
+        "feature_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "feature_location.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "feature_scale.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "node_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "normal_condition_number.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_maximum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_minimum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_relative_residual_norm.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "prediction_horizon.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "residual_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3
+          ]
+        },
+        "residual_variance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3
+          ]
+        },
+        "ridge.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "schema_version.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_cluster_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_clusters_json.npy": {
+          "descr": "<U610",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "variance_floor_m2.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        }
+      },
+      "bytes": 5857344,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/full_covariance_model.npz",
+      "sha256": "8d56aac0bb8c98df847854450a102eb9939f0f7cb385b2d093f653f6c27c0887"
+    },
+    {
+      "bytes": 2896,
+      "metadata": {
+        "bayesian_ablation_distributions": [
+          "current-diagonal-conservative-v1",
+          "shrinkage-propagated-diagonal",
+          "coefficient-only",
+          "residual-only",
+          "pooled-isotropic",
+          "trajectory-clustered-full-coordinate-covariance-v1",
+          "calibrated-full-coordinate-covariance-v1"
+        ],
+        "compute_match": {
+          "additional_updates": 1,
+          "end_update": 6401,
+          "local_residual_wall_seconds": 0.8293342639808543,
+          "median_update_seconds_6301_6400": 10.447723418503301,
+          "start_update": 6400
+        },
+        "compute_matched_checkpoint": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/physical_compute_matched_update_6401.pt",
+          "sha256": "ff6d08bd2409382487448bc83e09b8fc33cee7de22ff95e52bb9f0ec3e4189ba",
+          "size_bytes": 325747,
+          "update": 6401
+        },
+        "contract": "deform-dlo45-alltrain-method-seal-v1",
+        "dlo": "DLO4",
+        "full_covariance_model": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/full_covariance_model.npz",
+          "sha256": "8d56aac0bb8c98df847854450a102eb9939f0f7cb385b2d093f653f6c27c0887",
+          "size_bytes": 5857344
+        },
+        "physical_checkpoint": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/alltrain/physical_update_6400.pt",
+          "sha256": "729f015c944f1bdfbd759cc17e2e9155cfb6519e30545a9372dbf26ab240f304",
+          "size_bytes": 326195,
+          "update": 6400
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "ridge": 1.0,
+        "schema_version": 1,
+        "shrinkage": 0.25,
+        "source_result": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_result.json",
+          "sha256": "c811db44c6f680e31d70698d4eea2e740fce2fd1703abf27fccf873ec32950e1",
+          "size_bytes": 8867
+        },
+        "target_authorization": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/target_authorization.json",
+          "sha256": "2764e37943e0b6642a02c0c2ef44acc6f0c03b2aee57f5e26644fa4327e34040",
+          "size_bytes": 7650
+        },
+        "target_calibration": false,
+        "target_eval_enumerated": false,
+        "target_eval_read": false,
+        "target_outcomes_scored": false,
+        "target_retries": false,
+        "target_selection": false,
+        "variance_scale": 2.0391479761658595,
+        "window_schedule": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/alltrain/window_schedule.npz",
+          "sha256": "f62d0ec8be01100b8f97ae7475c2d9400e6c010fac7059b8a5951be3617abfb8",
+          "size_bytes": 660343
+        }
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/method_seal.json",
+      "sha256": "ee962bfecb6b658c67877f240cb082b3b1c3647ffa3c6fb077662dc00c78d647"
+    },
+    {
+      "bytes": 2192,
+      "metadata": {
+        "bayesian_ablation_distributions": [
+          "current-diagonal-conservative-v1",
+          "shrinkage-propagated-diagonal",
+          "coefficient-only",
+          "residual-only",
+          "pooled-isotropic",
+          "trajectory-clustered-full-coordinate-covariance-v1",
+          "calibrated-full-coordinate-covariance-v1"
+        ],
+        "case_replacement": false,
+        "contract": "deform-dlo45-target-prediction-seal-v1",
+        "dlo": "DLO4",
+        "eval_manifest": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/eval_manifest.json",
+          "sha256": "10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d",
+          "size_bytes": 3877
+        },
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/method_seal.json",
+          "sha256": "ee962bfecb6b658c67877f240cb082b3b1c3647ffa3c6fb077662dc00c78d647",
+          "size_bytes": 2896
+        },
+        "point_mean_count": 1,
+        "predictions": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/target_predictions.npz",
+          "sha256": "b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b",
+          "size_bytes": 18273132
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "retry_authorized": false,
+        "schema_version": 1,
+        "source_result": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_result.json",
+          "sha256": "c811db44c6f680e31d70698d4eea2e740fce2fd1703abf27fccf873ec32950e1",
+          "size_bytes": 8867
+        },
+        "target_authorization": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/target_authorization.json",
+          "sha256": "2764e37943e0b6642a02c0c2ef44acc6f0c03b2aee57f5e26644fa4327e34040",
+          "size_bytes": 7650
+        },
+        "target_case_count": 14,
+        "target_eval_read": true,
+        "target_outcomes_scored": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/prediction_seal.json",
+      "sha256": "7f8e42c7e3404c992d3aa85c0c8cfa722043d9d35d5e1ee9edb74e95e37bdbce"
+    },
+    {
+      "arrays": {
+        "bayesian_covariance_m2__calibrated_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__coefficient_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__current_diagonal_conservative_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__pooled_isotropic.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__residual_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__shrinkage_propagated_diagonal.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__trajectory_clustered_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "candidate.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        },
+        "compute_matched_physical.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        },
+        "names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            14
+          ]
+        },
+        "persistence.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        },
+        "physical.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        }
+      },
+      "bytes": 18273132,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/target_predictions.npz",
+      "sha256": "b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b"
+    },
+    {
+      "bytes": 644,
+      "metadata": {
+        "confidence_increase_forbidden": true,
+        "contract": "deform-dlo-full-covariance-calibration-v1",
+        "gaussian_radius": 1.6448536269514715,
+        "nominal_coordinate_coverage": 0.9,
+        "order_statistic": "maximum-of-nine",
+        "rank": 9,
+        "schema_version": 1,
+        "source_test_opened": false,
+        "standardized_radius": 2.1515610877810936,
+        "target_eval_read": false,
+        "trajectory_scores": [
+          1.8775628016310204,
+          1.3702284446764421,
+          1.2492906806342194,
+          1.8290056543827071,
+          1.361023957512783,
+          0.9253308467534719,
+          1.463866410718936,
+          0.92034933126214,
+          2.1515610877810936
+        ],
+        "variance_scale": 1.7110111861062403
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/covariance_calibration.json",
+      "sha256": "c5044323a13a0fca8d2e00432bff919903837f7c4e06af6789dcaeb35486c44b"
+    },
+    {
+      "arrays": {
+        "coefficient_covariance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficient_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficients.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            93,
+            3
+          ]
+        },
+        "feature_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "feature_location.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "feature_scale.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "node_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "normal_condition_number.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_maximum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_minimum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_relative_residual_norm.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "prediction_horizon.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "residual_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3
+          ]
+        },
+        "residual_variance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3
+          ]
+        },
+        "ridge.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "schema_version.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_cluster_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_clusters_json.npy": {
+          "descr": "<U427",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "variance_floor_m2.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        }
+      },
+      "bytes": 5852143,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/full_covariance_model.npz",
+      "sha256": "01066665e992935165c26383650cf0d659678fdb2f90688fb1410e1a5a8c4243"
+    },
+    {
+      "bytes": 1926,
+      "metadata": {
+        "contract": "deform-dlo45-source-method-seal-v1",
+        "covariance_calibration": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/covariance_calibration.json",
+          "sha256": "c5044323a13a0fca8d2e00432bff919903837f7c4e06af6789dcaeb35486c44b",
+          "size_bytes": 644
+        },
+        "dlo": "DLO5",
+        "full_covariance_model": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/full_covariance_model.npz",
+          "sha256": "01066665e992935165c26383650cf0d659678fdb2f90688fb1410e1a5a8c4243",
+          "size_bytes": 5852143
+        },
+        "physical_checkpoint": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/physical/physical_update_6400.pt",
+          "sha256": "968cbcdc022c1845128ad5dce1210ad85d2cbb0f99ae56db816e323d7405c274",
+          "size_bytes": 326195,
+          "update": 6400
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "schema_version": 1,
+        "source_manifest": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_manifest.json",
+          "sha256": "6bc72a4b3c7dae13c39181d28aebe9228fb1049fbe4bf26871b95fb518997a04",
+          "size_bytes": 14523
+        },
+        "source_test_opened": false,
+        "target_calibration": false,
+        "target_eval_read": false,
+        "target_selection": false,
+        "window_schedule": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/physical/window_schedule.npz",
+          "sha256": "f602cb51ac2159efebeb3760b2e901adabdab7343b072503bd27f418bb19ea89",
+          "size_bytes": 635486
+        }
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/method_seal.json",
+      "sha256": "880ac9b42bd7de8d888b73d4e73e4b02b78ac8db0b9c794a6aa8fd5b322c3fd1"
+    },
+    {
+      "bytes": 196,
+      "metadata": {
+        "completed_updates": 6400,
+        "dlo": "DLO5",
+        "elapsed_seconds": 58280.02055447598,
+        "latest_position_l1_m": 0.0044632842764258385,
+        "requested_updates": 6400,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/physical/progress.json",
+      "sha256": "a87207d128d09604666eb8d012a62d45b776019cd74e36d47a1713652a601b6b"
+    },
+    {
+      "arrays": {
+        "fit_names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            39
+          ]
+        },
+        "start_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        },
+        "trajectory_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        }
+      },
+      "bytes": 635486,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/physical/window_schedule.npz",
+      "sha256": "f602cb51ac2159efebeb3760b2e901adabdab7343b072503bd27f418bb19ea89"
+    },
+    {
+      "bytes": 735,
+      "metadata": {
+        "contract": "deform-dlo45-source-prediction-seal-v1",
+        "dlo": "DLO5",
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/method_seal.json",
+          "sha256": "880ac9b42bd7de8d888b73d4e73e4b02b78ac8db0b9c794a6aa8fd5b322c3fd1",
+          "size_bytes": 1926
+        },
+        "predictions": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_predictions.npz",
+          "sha256": "a8f8b3253f2588eed3fb0e92a8812ce534dba857c82a3af9d3f0fe0dadab39b6",
+          "size_bytes": 9757431
+        },
+        "schema_version": 1,
+        "source_outcomes_scored": false,
+        "source_test_case_count": 8,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/prediction_seal.json",
+      "sha256": "c38c1c24b0277bd0b0e840ba0d0ceeeab527fe02f7692de6a095c106df496909"
+    },
+    {
+      "bytes": 14523,
+      "metadata": {
+        "contract": "deform-dlo45-source-manifest-v1",
+        "dlo": "DLO5",
+        "eval_enumerated": false,
+        "eval_read": false,
+        "ordered_names": [
+          "1.pkl",
+          "12.pkl",
+          "13.pkl",
+          "14.pkl",
+          "16.pkl",
+          "17.pkl",
+          "19.pkl",
+          "20.pkl",
+          "21.pkl",
+          "23.pkl",
+          "24.pkl",
+          "25.pkl",
+          "26.pkl",
+          "30.pkl",
+          "34.pkl",
+          "35.pkl",
+          "37.pkl",
+          "38.pkl",
+          "39.pkl",
+          "4.pkl",
+          "40.pkl",
+          "41.pkl",
+          "47.pkl",
+          "49.pkl",
+          "5.pkl",
+          "50.pkl",
+          "51.pkl",
+          "52.pkl",
+          "53.pkl",
+          "54.pkl",
+          "55.pkl",
+          "59.pkl",
+          "60.pkl",
+          "63.pkl",
+          "65.pkl",
+          "66.pkl",
+          "69.pkl",
+          "7.pkl",
+          "70.pkl",
+          "71.pkl",
+          "73.pkl",
+          "74.pkl",
+          "75.pkl",
+          "76.pkl",
+          "77.pkl",
+          "81.pkl",
+          "83.pkl",
+          "87.pkl",
+          "88.pkl",
+          "89.pkl",
+          "91.pkl",
+          "92.pkl",
+          "93.pkl",
+          "94.pkl",
+          "97.pkl",
+          "98.pkl"
+        ],
+        "partition": "DLO5/train",
+        "partitions": {
+          "calibration": [
+            "93.pkl",
+            "63.pkl",
+            "5.pkl",
+            "55.pkl",
+            "92.pkl",
+            "83.pkl",
+            "81.pkl",
+            "35.pkl",
+            "91.pkl"
+          ],
+          "fit": [
+            "74.pkl",
+            "38.pkl",
+            "71.pkl",
+            "20.pkl",
+            "88.pkl",
+            "16.pkl",
+            "73.pkl",
+            "14.pkl",
+            "70.pkl",
+            "50.pkl",
+            "23.pkl",
+            "39.pkl",
+            "24.pkl",
+            "40.pkl",
+            "98.pkl",
+            "37.pkl",
+            "19.pkl",
+            "59.pkl",
+            "52.pkl",
+            "12.pkl",
+            "49.pkl",
+            "54.pkl",
+            "65.pkl",
+            "53.pkl",
+            "41.pkl",
+            "66.pkl",
+            "34.pkl",
+            "1.pkl",
+            "13.pkl",
+            "25.pkl",
+            "87.pkl",
+            "21.pkl",
+            "94.pkl",
+            "76.pkl",
+            "77.pkl",
+            "4.pkl",
+            "26.pkl",
+            "17.pkl",
+            "7.pkl"
+          ],
+          "source_test": [
+            "47.pkl",
+            "69.pkl",
+            "30.pkl",
+            "75.pkl",
+            "51.pkl",
+            "60.pkl",
+            "97.pkl",
+            "89.pkl"
+          ]
+        },
+        "schema_version": 1
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_manifest.json",
+      "sha256": "6bc72a4b3c7dae13c39181d28aebe9228fb1049fbe4bf26871b95fb518997a04"
+    },
+    {
+      "arrays": {
+        "bayesian_covariance_m2__calibrated_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__coefficient_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__current_diagonal_conservative_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__pooled_isotropic.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__residual_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__shrinkage_propagated_diagonal.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__trajectory_clustered_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "candidate.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3
+          ]
+        },
+        "names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "physical.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            8,
+            498,
+            12,
+            3
+          ]
+        }
+      },
+      "bytes": 9757431,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_predictions.npz",
+      "sha256": "a8f8b3253f2588eed3fb0e92a8812ce534dba857c82a3af9d3f0fe0dadab39b6"
+    },
+    {
+      "bytes": 8879,
+      "metadata": {
+        "contract": "deform-dlo45-source-result-v1",
+        "covariance_calibration": {
+          "confidence_increase_forbidden": true,
+          "contract": "deform-dlo-full-covariance-calibration-v1",
+          "gaussian_radius": 1.6448536269514715,
+          "nominal_coordinate_coverage": 0.9,
+          "order_statistic": "maximum-of-nine",
+          "rank": 9,
+          "schema_version": 1,
+          "source_test_opened": false,
+          "standardized_radius": 2.1515610877810936,
+          "target_eval_read": false,
+          "trajectory_scores": [
+            1.8775628016310204,
+            1.3702284446764421,
+            1.2492906806342194,
+            1.8290056543827071,
+            1.361023957512783,
+            0.9253308467534719,
+            1.463866410718936,
+            0.92034933126214,
+            2.1515610877810936
+          ],
+          "variance_scale": 1.7110111861062403
+        },
+        "dlo": "DLO5",
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/method_seal.json",
+          "sha256": "880ac9b42bd7de8d888b73d4e73e4b02b78ac8db0b9c794a6aa8fd5b322c3fd1",
+          "size_bytes": 1926
+        },
+        "prediction_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/prediction_seal.json",
+          "sha256": "c38c1c24b0277bd0b0e840ba0d0ceeeab527fe02f7692de6a095c106df496909",
+          "size_bytes": 735
+        },
+        "prob4d_used": false,
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "retry_authorized": false,
+        "schema_version": 1,
+        "source_manifest": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_manifest.json",
+          "sha256": "6bc72a4b3c7dae13c39181d28aebe9228fb1049fbe4bf26871b95fb518997a04",
+          "size_bytes": 14523
+        },
+        "source_test_opened": true,
+        "target_authorized": false,
+        "target_eval_enumerated": false,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_result.json",
+      "sha256": "ce1cb3d1844516416ad53b5353cc9c0b55812ddb12d3d50b57a4da45698664d0"
+    },
+    {
+      "bytes": 195,
+      "metadata": {
+        "completed_updates": 6400,
+        "dlo": "DLO5",
+        "elapsed_seconds": 63563.81630954298,
+        "latest_position_l1_m": 0.004487417638301849,
+        "requested_updates": 6400,
+        "target_eval_read": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/alltrain/progress.json",
+      "sha256": "535e08dccd3940d3569559226f4669f8083ab63caa1e42ab23751b6aac097898"
+    },
+    {
+      "arrays": {
+        "fit_names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            56
+          ]
+        },
+        "start_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        },
+        "trajectory_indices.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            6912,
+            32
+          ]
+        }
+      },
+      "bytes": 660340,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/alltrain/window_schedule.npz",
+      "sha256": "92b2b015e7a0d8133fa896e8d13dae5b349331ae1ab8d8f0a02c2ee68c3308a4"
+    },
+    {
+      "bytes": 178,
+      "metadata": {
+        "dlo": "DLO5",
+        "retry_authorized": false,
+        "stage": "target-prediction",
+        "target_eval_enumerated": true,
+        "target_eval_read": true,
+        "target_outcomes_scored": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/custody_state.json",
+      "sha256": "d2789c4b9cfab8034f2ce10161fee45c15c3aa5cbe43d56aed25cc92d63871d8"
+    },
+    {
+      "bytes": 3871,
+      "metadata": {
+        "contract": "deform-dlo45-eval-manifest-v1",
+        "dlo": "DLO5",
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/method_seal.json",
+          "sha256": "21e4bc2518d53df4f52e09501f8a27f50ecf9c099dc3a286838c4ea33f282def",
+          "size_bytes": 2895
+        },
+        "ordered_names": [
+          "18.pkl",
+          "3.pkl",
+          "31.pkl",
+          "32.pkl",
+          "33.pkl",
+          "46.pkl",
+          "56.pkl",
+          "58.pkl",
+          "6.pkl",
+          "72.pkl",
+          "82.pkl",
+          "85.pkl",
+          "9.pkl",
+          "99.pkl"
+        ],
+        "partition": "DLO5/eval",
+        "schema_version": 1,
+        "target_eval_read": true,
+        "target_outcomes_scored": false,
+        "trajectory_policy": "all-fourteen-sorted-once-no-replacement"
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/eval_manifest.json",
+      "sha256": "48bd004dbba2161609ada67ec76369a9271fa6899624c1ba1a84b747654e6b7d"
+    },
+    {
+      "arrays": {
+        "coefficient_covariance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficient_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3,
+            93,
+            93
+          ]
+        },
+        "coefficients.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            93,
+            3
+          ]
+        },
+        "feature_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "feature_location.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "feature_scale.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            92
+          ]
+        },
+        "node_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "normal_condition_number.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_maximum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_minimum_eigenvalue.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "normal_relative_residual_norm.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8
+          ]
+        },
+        "prediction_horizon.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "residual_covariance_full.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3,
+            3
+          ]
+        },
+        "residual_variance.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            8,
+            3
+          ]
+        },
+        "ridge.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "schema_version.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_cluster_count.npy": {
+          "descr": "<i8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "trajectory_clusters_json.npy": {
+          "descr": "<U613",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        },
+        "variance_floor_m2.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            1
+          ]
+        }
+      },
+      "bytes": 5852713,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/full_covariance_model.npz",
+      "sha256": "701efadf241cb3840df53bc88fc81f0eee59104a7479d64943627271b449af26"
+    },
+    {
+      "bytes": 2895,
+      "metadata": {
+        "bayesian_ablation_distributions": [
+          "current-diagonal-conservative-v1",
+          "shrinkage-propagated-diagonal",
+          "coefficient-only",
+          "residual-only",
+          "pooled-isotropic",
+          "trajectory-clustered-full-coordinate-covariance-v1",
+          "calibrated-full-coordinate-covariance-v1"
+        ],
+        "compute_match": {
+          "additional_updates": 1,
+          "end_update": 6401,
+          "local_residual_wall_seconds": 0.9966356160002761,
+          "median_update_seconds_6301_6400": 8.755298414005665,
+          "start_update": 6400
+        },
+        "compute_matched_checkpoint": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/physical_compute_matched_update_6401.pt",
+          "sha256": "73496ab6b5a6f569ef25d55f2f8fd606eb2bb26966e9ce0f13e0dc7fd9ab6c29",
+          "size_bytes": 325747,
+          "update": 6401
+        },
+        "contract": "deform-dlo45-alltrain-method-seal-v1",
+        "dlo": "DLO5",
+        "full_covariance_model": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/full_covariance_model.npz",
+          "sha256": "701efadf241cb3840df53bc88fc81f0eee59104a7479d64943627271b449af26",
+          "size_bytes": 5852713
+        },
+        "physical_checkpoint": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/alltrain/physical_update_6400.pt",
+          "sha256": "5e2505fcd00c87178ff7c825cdb9310fb070caaca2f2299bf197e63ccf5e5140",
+          "size_bytes": 326195,
+          "update": 6400
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "ridge": 1.0,
+        "schema_version": 1,
+        "shrinkage": 0.25,
+        "source_result": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_result.json",
+          "sha256": "ce1cb3d1844516416ad53b5353cc9c0b55812ddb12d3d50b57a4da45698664d0",
+          "size_bytes": 8879
+        },
+        "target_authorization": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/target_authorization.json",
+          "sha256": "2764e37943e0b6642a02c0c2ef44acc6f0c03b2aee57f5e26644fa4327e34040",
+          "size_bytes": 7650
+        },
+        "target_calibration": false,
+        "target_eval_enumerated": false,
+        "target_eval_read": false,
+        "target_outcomes_scored": false,
+        "target_retries": false,
+        "target_selection": false,
+        "variance_scale": 1.7110111861062403,
+        "window_schedule": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/alltrain/window_schedule.npz",
+          "sha256": "92b2b015e7a0d8133fa896e8d13dae5b349331ae1ab8d8f0a02c2ee68c3308a4",
+          "size_bytes": 660340
+        }
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/method_seal.json",
+      "sha256": "21e4bc2518d53df4f52e09501f8a27f50ecf9c099dc3a286838c4ea33f282def"
+    },
+    {
+      "bytes": 2192,
+      "metadata": {
+        "bayesian_ablation_distributions": [
+          "current-diagonal-conservative-v1",
+          "shrinkage-propagated-diagonal",
+          "coefficient-only",
+          "residual-only",
+          "pooled-isotropic",
+          "trajectory-clustered-full-coordinate-covariance-v1",
+          "calibrated-full-coordinate-covariance-v1"
+        ],
+        "case_replacement": false,
+        "contract": "deform-dlo45-target-prediction-seal-v1",
+        "dlo": "DLO5",
+        "eval_manifest": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/eval_manifest.json",
+          "sha256": "48bd004dbba2161609ada67ec76369a9271fa6899624c1ba1a84b747654e6b7d",
+          "size_bytes": 3871
+        },
+        "method_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/method_seal.json",
+          "sha256": "21e4bc2518d53df4f52e09501f8a27f50ecf9c099dc3a286838c4ea33f282def",
+          "size_bytes": 2895
+        },
+        "point_mean_count": 1,
+        "predictions": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/target_predictions.npz",
+          "sha256": "86b5fd6cde97594e96640c98e071862260941bebb21b82d4b65cbd9abdd0f612",
+          "size_bytes": 18280280
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "retry_authorized": false,
+        "schema_version": 1,
+        "source_result": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_result.json",
+          "sha256": "ce1cb3d1844516416ad53b5353cc9c0b55812ddb12d3d50b57a4da45698664d0",
+          "size_bytes": 8879
+        },
+        "target_authorization": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/target_authorization.json",
+          "sha256": "2764e37943e0b6642a02c0c2ef44acc6f0c03b2aee57f5e26644fa4327e34040",
+          "size_bytes": 7650
+        },
+        "target_case_count": 14,
+        "target_eval_read": true,
+        "target_outcomes_scored": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/prediction_seal.json",
+      "sha256": "e71fcbb549c984b968d3325af0c66a1a317de92bb6f7c8a0d7cd1c94da94fc1f"
+    },
+    {
+      "arrays": {
+        "bayesian_covariance_m2__calibrated_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__coefficient_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__current_diagonal_conservative_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__pooled_isotropic.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__residual_only.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__shrinkage_propagated_diagonal.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "bayesian_covariance_m2__trajectory_clustered_full_coordinate_covariance_v1.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3,
+            3
+          ]
+        },
+        "candidate.npy": {
+          "descr": "<f8",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        },
+        "compute_matched_physical.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        },
+        "names.npy": {
+          "descr": "<U6",
+          "fortran_order": false,
+          "shape": [
+            14
+          ]
+        },
+        "persistence.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        },
+        "physical.npy": {
+          "descr": "<f4",
+          "fortran_order": false,
+          "shape": [
+            14,
+            498,
+            12,
+            3
+          ]
+        }
+      },
+      "bytes": 18280280,
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/target_predictions.npz",
+      "sha256": "86b5fd6cde97594e96640c98e071862260941bebb21b82d4b65cbd9abdd0f612"
+    },
+    {
+      "bytes": 1298,
+      "metadata": {
+        "both_datasets_predicted_before_any_scoring": true,
+        "case_replacement": false,
+        "contract": "deform-dlo45-joint-prediction-seal-v1",
+        "datasets": [
+          "DLO4",
+          "DLO5"
+        ],
+        "prediction_seals": {
+          "DLO4": {
+            "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target/prediction_seal.json",
+            "sha256": "7f8e42c7e3404c992d3aa85c0c8cfa722043d9d35d5e1ee9edb74e95e37bdbce",
+            "size_bytes": 2192
+          },
+          "DLO5": {
+            "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target/prediction_seal.json",
+            "sha256": "e71fcbb549c984b968d3325af0c66a1a317de92bb6f7c8a0d7cd1c94da94fc1f",
+            "size_bytes": 2192
+          }
+        },
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "schema_version": 1,
+        "target_authorization_sha256": "2764e37943e0b6642a02c0c2ef44acc6f0c03b2aee57f5e26644fa4327e34040",
+        "target_calibration": false,
+        "target_outcomes_scored": false,
+        "target_retries": false,
+        "target_selection": false,
+        "total_target_cases": 28
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/joint_prediction_seal.json",
+      "sha256": "3bbbc7dd5cc8b30cee10a9d3e863aa09748b71ec9bc2b105b6fb7a3a381d5712"
+    },
+    {
+      "bytes": 7650,
+      "metadata": {
+        "case_replacement": false,
+        "contract": "deform-dlo45-target-authorization-v1",
+        "joint_prediction_seal_required": true,
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "request": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/.github/requests/deform-dlo45-time-budget-recovery-v3.json",
+          "sha256": "e56cda4f06f253bae86e4c0b6a71491e6d49766e1261f94d98f9a70cad8faf34",
+          "size_bytes": 1034
+        },
+        "schema_version": 1,
+        "source_gates": {
+          "DLO4": {
+            "baseline_case_l1_m": [
+              0.020009333969272288,
+              0.01550369106136948,
+              0.007899865906624084,
+              0.014725567220050686,
+              0.012864853575242212,
+              0.007159271334837798,
+              0.011308619852785797,
+              0.01077022962840997
+            ],
+            "baseline_mean_l1_m": 0.01253017906857404,
+            "candidate_case_l1_m": [
+              0.018622869413325794,
+              0.014823750505613855,
+              0.00699230315543727,
+              0.01377554258632754,
+              0.011898572835180893,
+              0.0061791129906078905,
+              0.010039251821463094,
+              0.00986254999925947
+            ],
+            "candidate_early_middle_late_l1_m": [
+              0.008328223360029807,
+              0.01293277073753451,
+              0.013311738392641609
+            ],
+            "candidate_mean_l1_m": 0.011524244163401975,
+            "case_names": [
+              "62.pkl",
+              "86.pkl",
+              "91.pkl",
+              "43.pkl",
+              "49.pkl",
+              "4.pkl",
+              "14.pkl",
+              "87.pkl"
+            ],
+            "case_ratios": [
+              0.9307091101545086,
+              0.9561433110951345,
+              0.885116689078758,
+              0.9354846832365432,
+              0.9248898765609832,
+              0.8630924435758777,
+              0.8877521706585616,
+              0.9157232797751869
+            ],
+            "free_node_diagnostic": {
+              "baseline_case_l1_m": [
+                0.02979550851999094,
+                0.022954798845884614,
+                0.011487533409432715,
+                0.02188023191270789,
+                0.018996522767803416,
+                0.010462692996095542,
+                0.016670951200368624,
+                0.015842721149020852
+              ],
+              "baseline_mean_l1_m": 0.018511370100163075,
+              "candidate_case_l1_m": [
+                0.0277158116860712,
+                0.021934888012251172,
+                0.010126189282652492,
+                0.020455194962123172,
+                0.01754710165771144,
+                0.00899245547975068,
+                0.014766899153384569,
+                0.014481201705295101
+              ],
+              "candidate_early_middle_late_l1_m": [
+                0.012215793142337441,
+                0.019125776499669362,
+                0.01966583358520813
+              ],
+              "candidate_mean_l1_m": 0.017002467742404978,
+              "case_ratios": [
+                0.9302009954780804,
+                0.9555687313802668,
+                0.881493783020262,
+                0.9348710307884321,
+                0.9237007147145606,
+                0.8594780983353403,
+                0.8857862383436194,
+                0.9140602532280322
+              ],
+              "metric": "mean-coordinate-l1-free-nodes-only",
+              "relative_improvement": 0.08151219221449224,
+              "ties": 0,
+              "wins": 8,
+              "worst_candidate_to_baseline_ratio": 0.9555687313802668
+            },
+            "metric": "official-mean-coordinate-l1-all-nodes",
+            "passed": true,
+            "relative_improvement": 0.08028096802662388,
+            "thresholds": {
+              "maximum_case_ratio": 1.1,
+              "minimum_case_wins": 6,
+              "minimum_relative_improvement": 0.01,
+              "require_all_source_test_cases": true,
+              "required_before_target": true
+            },
+            "ties": 0,
+            "wins": 8,
+            "worst_candidate_to_baseline_ratio": 0.9561433110951345
+          },
+          "DLO5": {
+            "baseline_case_l1_m": [
+              0.011699181737437253,
+              0.008308336368309178,
+              0.017222602273300556,
+              0.00720026350772571,
+              0.007686699203654811,
+              0.006850068702203309,
+              0.006734632252558022,
+              0.00776449531685172
+            ],
+            "baseline_mean_l1_m": 0.00918328492025507,
+            "candidate_case_l1_m": [
+              0.011504158850417136,
+              0.007845345278287681,
+              0.01693920608634974,
+              0.006800468009910504,
+              0.007619923607731972,
+              0.006414994362044887,
+              0.006642734771996898,
+              0.007570417398753695
+            ],
+            "candidate_early_middle_late_l1_m": [
+              0.0070188868820212505,
+              0.009753362341991438,
+              0.009979218913047008
+            ],
+            "candidate_mean_l1_m": 0.008917156045686565,
+            "case_names": [
+              "47.pkl",
+              "69.pkl",
+              "30.pkl",
+              "75.pkl",
+              "51.pkl",
+              "60.pkl",
+              "97.pkl",
+              "89.pkl"
+            ],
+            "case_ratios": [
+              0.9833302113432391,
+              0.9442739112263795,
+              0.9835451006500829,
+              0.9444748796504135,
+              0.9913128386900988,
+              0.9364861348005924,
+              0.9863544916611863,
+              0.9750044387718534
+            ],
+            "free_node_diagnostic": {
+              "baseline_case_l1_m": [
+                0.017004559107045014,
+                0.011832051901382094,
+                0.025311898920277364,
+                0.010123028302093945,
+                0.010935438164152015,
+                0.009868637950395245,
+                0.009398888934645527,
+                0.010939148517523131
+              ],
+              "baseline_mean_l1_m": 0.013176706474689291,
+              "candidate_case_l1_m": [
+                0.016712024776514837,
+                0.011137565266349847,
+                0.024886804639851146,
+                0.009523335055371139,
+                0.01083527477026776,
+                0.009216026440157612,
+                0.009261042713803841,
+                0.010648031640376095
+              ],
+              "candidate_early_middle_late_l1_m": [
+                0.009945254886682641,
+                0.01404535881142366,
+                0.014341925790403305
+              ],
+              "candidate_mean_l1_m": 0.012777513162836535,
+              "case_ratios": [
+                0.9827967118295364,
+                0.9413046324660624,
+                0.983205753082173,
+                0.9407595011268753,
+                0.9908404773196372,
+                0.9338701537620503,
+                0.9853337748961405,
+                0.973387610865626
+              ],
+              "metric": "mean-coordinate-l1-free-nodes-only",
+              "relative_improvement": 0.030295378638019566,
+              "ties": 0,
+              "wins": 8,
+              "worst_candidate_to_baseline_ratio": 0.9908404773196372
+            },
+            "metric": "official-mean-coordinate-l1-all-nodes",
+            "passed": true,
+            "relative_improvement": 0.028979703546115565,
+            "thresholds": {
+              "maximum_case_ratio": 1.1,
+              "minimum_case_wins": 6,
+              "minimum_relative_improvement": 0.01,
+              "require_all_source_test_cases": true,
+              "required_before_target": true
+            },
+            "ties": 0,
+            "wins": 8,
+            "worst_candidate_to_baseline_ratio": 0.9913128386900988
+          }
+        },
+        "source_results": {
+          "DLO4": {
+            "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-source/source_result.json",
+            "sha256": "c811db44c6f680e31d70698d4eea2e740fce2fd1703abf27fccf873ec32950e1",
+            "size_bytes": 8867
+          },
+          "DLO5": {
+            "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-source/source_result.json",
+            "sha256": "ce1cb3d1844516416ad53b5353cc9c0b55812ddb12d3d50b57a4da45698664d0",
+            "size_bytes": 8879
+          }
+        },
+        "target_authorized": true,
+        "target_calibration": false,
+        "target_eval_enumerated": false,
+        "target_eval_read": false,
+        "target_outcomes_scored": false,
+        "target_retries": false,
+        "target_selection": false
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/target_authorization.json",
+      "sha256": "2764e37943e0b6642a02c0c2ef44acc6f0c03b2aee57f5e26644fa4327e34040"
+    },
+    {
+      "bytes": 36615,
+      "metadata": {
+        "both_datasets_predicted_before_any_scoring": true,
+        "both_primary_gates_passed": true,
+        "case_replacement": false,
+        "claim_boundary": "Fresh frozen-procedure replication on the exact released DLO4 and DLO5 operators only; not zero-shot arbitrary-object generalization, not a Prob4D result, and not a safety or universal-SOTA claim.",
+        "contract": "deform-dlo45-frozen-transfer-result-v1",
+        "decision": "both-fresh-dlos-pass-frozen-primary-gate",
+        "equal_dlo_mean_candidate_l1_m": 0.008389988421292013,
+        "equal_dlo_mean_physical_l1_m": 0.00900246819861503,
+        "equal_dlo_relative_improvement": 0.06803465047699286,
+        "joint_prediction_seal": {
+          "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/joint/joint_prediction_seal.json",
+          "sha256": "3bbbc7dd5cc8b30cee10a9d3e863aa09748b71ec9bc2b105b6fb7a3a381d5712",
+          "size_bytes": 1298
+        },
+        "paper_claim_authorized": false,
+        "prob4d_used": false,
+        "protocol": {
+          "path": "/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/deform_dlo45_frozen_v1/protocol.json",
+          "sha256": "f4430b41a205d3caeb95e0c3b5175fe932a4647da5f79bbfcfde498f7ac7b888",
+          "size_bytes": 4647
+        },
+        "schema_version": 1,
+        "target_calibration": false,
+        "target_case_count": 28,
+        "target_outcomes_scored": true,
+        "target_retries": false,
+        "target_selection": false,
+        "total_candidate_wins": 28
+      },
+      "path": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/score/result.json",
+      "sha256": "2c9ada966aba3b969a9797f8760c932771457b26f1e0c1d6b36323fb13998432"
+    }
+  ],
+  "run_id": "33984475829",
+  "status": "complete"
+}

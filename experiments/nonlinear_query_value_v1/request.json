@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "experiment": "nonlinear-query-value-v1",
+  "phase": "evaluate",
+  "request_id": "retrospective-nonlinear-query-score-20260907-v1",
+  "parent_run_id": 33361441865,
+  "parent_cache_root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs",
+  "data_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "datasets": ["DLO4", "DLO5"],
+  "inventory_path": "results/science/nonlinear_query_value_v1/33984475829/inventory.json",
+  "inventory_git_blob": "adaebe31eee61ee4b1e3d339e01cf6d700377ad5",
+  "expected_candidate_coordinate_l1_mm": {
+    "DLO4": 8.95317154556605,
+    "DLO5": 7.826805297017976
+  },
+  "bootstrap_repetitions": 10000,
+  "bootstrap_seed": 20260906,
+  "primary_minimum_per_dlo_improvement_pct": 1.0,
+  "query_count": 27,
+  "heldout_query_count": 13,
+  "source_coupling_identity_shrinkage": 0.5,
+  "scope": "Retrospective analysis of already completed public DEFORM study; no reserved targets, no robot, no simulator retraining, no parent artifact mutation.",
+  "prediction_construction": "All nine same-mean query readouts sealed for both DLOs before loading evaluation futures. Source controls use eight held-out predictions per DLO; target panel uses all fourteen evaluation trajectories.",
+  "technical_history": "Inventory 33984419926 failed on a stale README path before reading trajectories. Inventory 33984475829 succeeded. Numerical evaluator publication was previously blocked; the explicit user retry now permits its first scoring execution. No prior empirical scores exist for this hypothesis.",
+  "requested_by": "User: Try again; execute the nonlinear deformation-query hypothesis through a file-change-triggered GitHub Actions workflow."
+}

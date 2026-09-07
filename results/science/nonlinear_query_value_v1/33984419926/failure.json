@@ -1,0 +1,6 @@
+{
+  "error": "FileNotFoundError('Completed parent run directory was not found')",
+  "phase": "inventory",
+  "status": "technical-failure",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/nonlinear_query_value_v1/run.py\", line 73, in main\n    inventory(request, args.output)\n  File \"/home/github-runner/actions-runner/_work/BayesianPhysTwin/BayesianPhysTwin/experiments/nonlinear_query_value_v1/run.py\", line 35, in inventory\n    raise FileNotFoundError('Completed parent run directory was not found')\nFileNotFoundError: Completed parent run directory was not found\n"
+}

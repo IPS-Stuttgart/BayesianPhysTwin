@@ -1,0 +1,77 @@
+name: Nonlinear query value v1
+on:
+  push:
+    branches: [experiment/nonlinear-query-value-20260906]
+    paths: [experiments/nonlinear_query_value_v1/request.json]
+permissions:
+  contents: write
+concurrency:
+  group: nonlinear-query-value-v1
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    if: github.run_attempt == 1
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OUTPUT_DIR: outputs/nonlinear-query-value-v1/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select existing NumPy runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_DIR"
+          chosen=''
+          for candidate in /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python python3; do
+            if "$candidate" -c 'import numpy' 2>/dev/null; then
+              chosen="$candidate"
+              break
+            fi
+          done
+          test -n "$chosen"
+          echo "EVALUATOR_PYTHON=$chosen" >> "$GITHUB_ENV"
+          "$chosen" -c 'import sys,numpy;print(sys.version);print("NumPy",numpy.__version__)' > "$OUTPUT_DIR/runtime.txt"
+      - name: Validate moments, invariance, identities, and synthetic scoring pipeline
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$EVALUATOR_PYTHON" -m unittest discover -s experiments/nonlinear_query_value_v1 -p 'test_*.py' -v 2>&1 | tee "$OUTPUT_DIR/tests.log"
+      - name: Execute requested phase
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$EVALUATOR_PYTHON" experiments/nonlinear_query_value_v1/run.py --request experiments/nonlinear_query_value_v1/request.json --output "$OUTPUT_DIR" 2>&1 | tee "$OUTPUT_DIR/execution.log"
+      - name: Upload complete evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nonlinear-query-value-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_DIR }}/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain compact evidence on experiment branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="results/science/nonlinear_query_value_v1/${GITHUB_RUN_ID}"
+          mkdir -p "$destination"
+          for name in inventory.json result.json failure.json summary.md units.csv execution_manifest.json prediction_seal.json source_fitted_parameters.json tests.log runtime.txt execution.log; do
+            if test -f "$OUTPUT_DIR/$name"; then
+              cp "$OUTPUT_DIR/$name" "$destination/$name"
+            fi
+          done
+          if test -f "$destination/summary.md"; then cat "$destination/summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$destination"
+          if ! git diff --cached --quiet; then
+            git commit -m "Retain nonlinear-query run ${GITHUB_RUN_ID} evidence"
+            git pull --rebase origin "$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
