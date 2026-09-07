@@ -37,13 +37,44 @@ jobs:
           "$VENV/bin/python" -m pip install --disable-pip-version-check numpy==1.26.4 scipy==1.13.1 scikit-learn==1.5.2 threadpoolctl==3.5.0
           echo "ANALYSIS_PY=$VENV/bin/python" >> "$GITHUB_ENV"
           "$VENV/bin/python" experiments/dp_local_residual_pilot/pilot.py --self-test | tee "$OUT/self_test.json"
+      - name: Resolve protocol-pinned upstream revision
+        id: upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          upstream = json.loads(Path('configs/sota/deform_dlo2_local_residual_v6.json').read_text())['upstream']
+          if upstream['repository'] != 'https://github.com/roahmlab/DEFORM':
+              raise RuntimeError('Unexpected upstream repository; refusing substitution')
+          commit = upstream['commit']
+          if re.fullmatch(r'[0-9a-f]{40}', commit) is None:
+              raise RuntimeError('Upstream must be pinned to a full commit SHA')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as handle:
+              handle.write(f'commit={commit}\n')
+          print('PINNED_UPSTREAM', json.dumps(upstream, sort_keys=True))
+          PY
+      - name: Check out exact DEFORM source without datasets
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: roahmlab/DEFORM
+          ref: ${{ steps.upstream.outputs.commit }}
+          path: .dp-upstream/DEFORM
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout: '/*.py'
+          sparse-checkout-cone-mode: false
       - name: Export only verified historical development inputs
         shell: bash
         run: |
           set -euo pipefail
           PY=/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+          UPSTREAM="$GITHUB_WORKSPACE/.dp-upstream/DEFORM"
+          test -f "$UPSTREAM/DEFORM_sim.py"
+          test ! -e "$UPSTREAM/data_set"
           "$PY" experiments/dp_local_residual_pilot/export_development.py \
-            --upstream /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM \
+            --upstream "$UPSTREAM" \
             --output "$PILOT_OUT/export" --device cuda:0
       - name: Run matched DP and finite-mixture development comparison
         shell: bash
