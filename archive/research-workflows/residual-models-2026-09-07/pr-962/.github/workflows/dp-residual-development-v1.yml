@@ -1,0 +1,52 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: DP residual DLO1 development v1
+on:
+  push:
+    branches: [science/dp-residual-development-v1-20260907]
+    paths:
+      - .github/workflows/dp-residual-development-v1.yml
+      - experiments/dp_residual_development_v1/prepare.py
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: dp-residual-dlo1-development-prepare-v1
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    env:
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify frozen runtime and prepare development-only arrays
+        shell: bash
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+        run: |
+          set -euo pipefail
+          test -x "$FROZEN_PYTHON"
+          output="/home/github-runner/.cache/workflows/dp-residual-development-v1/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "DP_OUTPUT=$output" >> "$GITHUB_ENV"
+          "$FROZEN_PYTHON" experiments/dp_residual_development_v1/prepare.py --output "$output"
+          cat "$output/preparation.json" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain development arrays and provenance
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dp-dlo1-development-${{ github.run_id }}
+          path: ${{ env.DP_OUTPUT }}
+          retention-days: 30
+          if-no-files-found: error

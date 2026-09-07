@@ -1,0 +1,119 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Residual model development
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'science/gp-residual-development-*'
+    paths:
+      - '.github/workflows/residual-development.yml'
+      - 'protocols/gp_residual_development_v1.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: residual-development-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '2'
+  MKL_NUM_THREADS: '2'
+  PYTHONHASHSEED: '0'
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up test Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install isolated implementation-test dependencies
+        run: python -m pip install -e '.[dev]' scikit-learn
+      - name: Verify exact-head numerical and data-boundary tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python -m pytest -q tests/test_gaussian_residual_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin_experiments/gaussian_residual_v1.py \
+            scripts/remote/run_gp_residual_development_v1.py \
+            tests/test_gaussian_residual_v1.py
+      - name: Retain formatter review without changing executed code
+        if: always()
+        shell: bash
+        run: |
+          python -m ruff format --diff \
+            src/bayesian_phystwin_experiments/gaussian_residual_v1.py \
+            scripts/remote/run_gp_residual_development_v1.py \
+            tests/test_gaussian_residual_v1.py > format-review.patch || true
+          cat format-review.patch
+      - name: Upload formatting review
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: residual-format-review-${{ github.run_id }}
+          path: format-review.patch
+          if-no-files-found: warn
+          retention-days: 14
+
+  source-development:
+    needs: contracts
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 90
+    env:
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      OUTPUT_ROOT: /home/github-runner/.cache/workflows/residual-development/runs/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out the same tested implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - name: Execute fixed-backbone source-only comparison
+        shell: bash
+        env:
+          # Exact shared checkout only; do not alter runner-wide Git configuration.
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -x "$FROZEN_PYTHON"
+          mkdir -p "$(dirname "$OUTPUT_ROOT")"
+          test ! -e "$OUTPUT_ROOT"
+          "$FROZEN_PYTHON" scripts/remote/run_gp_residual_development_v1.py \
+            --protocol protocols/gp_residual_development_v1.json \
+            --output-root "$OUTPUT_ROOT" \
+            --device cuda:0 2>&1 | tee "$OUTPUT_ROOT.log"
+      - name: Retain compact development results and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: gp-residual-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUTPUT_ROOT }}.log
+            ${{ env.OUTPUT_ROOT }}/preflight.json
+            ${{ env.OUTPUT_ROOT }}/result.json
+            ${{ env.OUTPUT_ROOT }}/failure.json
+            ${{ env.OUTPUT_ROOT }}/seed-*/selection.json
+            ${{ env.OUTPUT_ROOT }}/seed-*/result.json
+          if-no-files-found: warn
+          retention-days: 90

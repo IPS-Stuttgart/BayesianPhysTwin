@@ -1,0 +1,15 @@
+# Dirichlet Processes
+
+[Research-code index](README.md)
+
+These are opt-in implementations, not replacements for the current predictor.
+
+| PR | Study | Source files | Paper record |
+| --- | --- | --- | --- |
+| [#950](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/950) | DLO4/DLO5 blockwise conditional residual regimes | [`experiments/dp_residual_regimes_dev_v1/__init__.py`](../../experiments/dp_residual_regimes_dev_v1/__init__.py); [`experiments/dp_residual_regimes_dev_v1/model.py`](../../experiments/dp_residual_regimes_dev_v1/model.py); [`experiments/dp_residual_regimes_dev_v1/run.py`](../../experiments/dp_residual_regimes_dev_v1/run.py) | Original source PR; no manuscript promotion |
+| [#956](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/956) | DLO1 trajectory-summary mixture and weighted experts | [`scripts/remote/run_dp_residual_cached_pilot.py`](../../scripts/remote/run_dp_residual_cached_pilot.py); [`scripts/remote/run_dp_residual_dlo1_pilot.py`](../../scripts/remote/run_dp_residual_dlo1_pilot.py) | [#203](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/pull/203) |
+| [#957](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/957) | DP versus RBF/finite controls on the query surrogate | [`experiments/deform_dp_residual_v1/reference.py`](../../experiments/deform_dp_residual_v1/reference.py); [`experiments/deform_dp_residual_v1/run.py`](../../experiments/deform_dp_residual_v1/run.py) | Original source PR; no manuscript promotion |
+| [#958](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/958) | Source-only DLO4/DLO5 full-feature residual experts | [`experiments/dp_residual_source_screen_v1/run.py`](../../experiments/dp_residual_source_screen_v1/run.py) | Original source PR; no manuscript promotion |
+| [#960](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/960) | DLO1 joint-feature/residual gated experts | [`experiments/dp_residual_development_v1/model.py`](../../experiments/dp_residual_development_v1/model.py); [`experiments/dp_residual_development_v1/run.py`](../../experiments/dp_residual_development_v1/run.py) | [#197](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/pull/197) |
+| [#961](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/961) | DLO1 sticky-HDP AR(2) residual dynamics | [`experiments/dp_residual_source_v1/model.py`](../../experiments/dp_residual_source_v1/model.py); [`experiments/dp_residual_source_v1/run.py`](../../experiments/dp_residual_source_v1/run.py) | [#200](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/pull/200) |
+| [#962](https://github.com/IPS-Stuttgart/BayesianPhysTwin/pull/962) | DLO1 kinematic mixture gate | [`experiments/dp_residual_kinematic_v1/model.py`](../../experiments/dp_residual_kinematic_v1/model.py); [`experiments/dp_residual_kinematic_v1/prepare.py`](../../experiments/dp_residual_kinematic_v1/prepare.py); [`experiments/dp_residual_kinematic_v1/run.py`](../../experiments/dp_residual_kinematic_v1/run.py) | [#199](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/pull/199) |

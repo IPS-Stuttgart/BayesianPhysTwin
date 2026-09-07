@@ -1,0 +1,31 @@
+{
+  "contract": "gp-residual-development-v1",
+  "classification": "retrospective diagnostic; user-authorized GP method development",
+  "admission_basis": "Test whether nonlinear residual learning improves the existing finite-feature ridge correction; retain source-only development and all historical frozen evaluations.",
+  "inputs": {
+    "training_root": "/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7",
+    "training_result_sha256": "1f8d092bc38b03f6cdd68ef38abcb7d403d914e38ba483698579deaeea8c2572",
+    "source_manifest_sha256": "7c5501997e6bab7b0537ef9cda932ec19312e40618f03a4fad80ffc1622a6d98",
+    "checkpoint_sha256": "b64affff638c9d47ca51f17bb7124cc4bd224facd1f7137b0042b7fa9037ea65",
+    "upstream_root": "/home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8",
+    "upstream_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "seeds": [7, 19, 41],
+  "budgets": [8, 16, 32],
+  "inner_validation_count": 8,
+  "outer_validation_count": 8,
+  "support_per_recording": 8,
+  "length_scales": [0.5, 1.0, 2.0],
+  "noise_variances": [0.03, 0.3],
+  "strengths": [0.0, 0.125, 0.25, 0.5, 1.0],
+  "mlp_widths": [32, 64],
+  "additional_reference": "Existing ridge-1 shrinkage-0.25 correction fitted on all original 40 fit recordings; stronger-data reference, not a matched-budget arm.",
+  "gp_approximation": "Exact GP conditioning on eight deterministic time samples per fit recording, independently per node and output coordinate; no graph coupling in v1.",
+  "source_test_read": false,
+  "official_eval_read": false,
+  "upstream_training": false,
+  "robot_experiments": false,
+  "primary_metric": "equal-recording full-coordinate trajectory L1 in millimetres",
+  "selection": "minimum inner-validation L1; deterministic first minimum; outer validation never selects hyperparameters",
+  "claim_boundary": "Method development only. Historical checkpoint and outer validation were selected/examined before this experiment. Budget measures residual adaptation, not entire-twin training. No fresh confirmation or calibrated-uncertainty claim."
+}

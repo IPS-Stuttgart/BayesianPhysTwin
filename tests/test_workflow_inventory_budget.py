@@ -23,20 +23,25 @@ expose_tests(
 )
 
 
-def test_checked_in_budget_is_frozen_and_repository_matches() -> None:
-    contract = _ARCHIVED.tool.load_contract(  # type: ignore[attr-defined]
-        _ARCHIVED.ROOT / _ARCHIVED.CONTRACT_PATH  # type: ignore[attr-defined]
+def test_historical_v1_budget_remains_frozen() -> None:
+    contract = _ARCHIVED.tool.load_contract(
+        ROOT / ".github/quality/workflow-inventory-budget-v1.json"
     )
-
     assert contract["maximum_checked_in_workflows"] == 88
+    assert contract["retirement_target_maximum_checked_in_workflows"] == 81
+    assert contract["temporary_looking_workflow_allowlist"] == []
+
+
+def test_checked_in_budget_is_frozen_and_repository_matches() -> None:
+    contract_path = Path(".github/quality/workflow-inventory-budget-v2.json")
+    contract = _ARCHIVED.tool.load_contract(ROOT / contract_path)
+    assert contract["baseline_revision"] == "9d7383ea56a0a9e3ad6753d1c42fe653cd7e615d"
+    assert contract["maximum_checked_in_workflows"] == 90
     assert contract["temporary_looking_workflow_allowlist"] == []
     assert contract["retirement_target_maximum_checked_in_workflows"] == 81
     assert contract["retirement_target_maximum_temporary_looking_workflows"] == 0
-
-    report = _ARCHIVED.tool.validate_repository(  # type: ignore[attr-defined]
-        _ARCHIVED.ROOT  # type: ignore[attr-defined]
-    )
-    assert report["checked_in_workflow_count"] == 88
+    report = _ARCHIVED.tool.validate_repository(ROOT, contract_path)
+    assert report["checked_in_workflow_count"] == 90
     assert report["temporary_looking_workflow_count"] == 0
-    assert report["workflow_retirement_gap"] == 7
+    assert report["workflow_retirement_gap"] == 9
     assert report["temporary_looking_retirement_gap"] == 0

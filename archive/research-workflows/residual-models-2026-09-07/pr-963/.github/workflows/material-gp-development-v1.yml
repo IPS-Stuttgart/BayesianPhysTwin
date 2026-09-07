@@ -1,0 +1,61 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: Material GP development v1
+on:
+  push:
+    branches: [experiment/material-gp-development-20260907]
+    paths:
+      - .github/workflows/material-gp-development-v1.yml
+      - scripts/experiments/material_gp_development_v1.py
+      - scripts/experiments/material_gp_export_v1.py
+      - tests/test_material_gp_development_v1.py
+permissions:
+  contents: read
+concurrency:
+  group: material-gp-development-v1
+  cancel-in-progress: false
+env:
+  PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OPENBLAS_NUM_THREADS: '4'
+  OMP_NUM_THREADS: '4'
+  MKL_NUM_THREADS: '4'
+  CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+  CACHE_ROOT: /home/github-runner/.cache/workflows/material-gp-development-v1/dlo2-v5-development
+  RESULT_ROOT: /home/github-runner/.cache/workflows/material-gp-development-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
+jobs:
+  development:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Test GP algebra before data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RESULT_ROOT"
+          "$FROZEN_PYTHON" -m pytest -q tests/test_material_gp_development_v1.py 2>&1 | tee "$RESULT_ROOT/tests.log"
+      - name: Export matched development forecasts from unchanged hybrid
+        shell: bash
+        run: |
+          set -euo pipefail
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=/home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8 \
+            "$FROZEN_PYTHON" scripts/experiments/material_gp_export_v1.py --output-root "$CACHE_ROOT" 2>&1 | tee "$RESULT_ROOT/export.log"
+          cp "$CACHE_ROOT/export.json" "$RESULT_ROOT/export.json"
+      - name: Fit, freeze and compare on development validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" scripts/experiments/material_gp_development_v1.py --data "$CACHE_ROOT/development.npz" --output-root "$RESULT_ROOT/comparison" 2>&1 | tee "$RESULT_ROOT/comparison.log"
+      - name: Retain development-only evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: material-gp-development-${{ github.run_id }}
+          path: ${{ env.RESULT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30

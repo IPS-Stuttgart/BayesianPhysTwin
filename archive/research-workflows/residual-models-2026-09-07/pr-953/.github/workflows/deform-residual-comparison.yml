@@ -1,0 +1,63 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM residual model comparison
+
+on:
+  push:
+    branches: ['science/gp-residual-*']
+    paths:
+      # Do not rerun the empirical study for source formatting or note changes.
+      - 'protocols/deform_gp_residual_development_v1.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-residual-comparison-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    env:
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OPENBLAS_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'
+      OMP_NUM_THREADS: '4'
+      OUTPUT: /home/github-runner/.cache/workflows/deform-residual-comparison/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out exact requested code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Test finite GP and information-preserving interface
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$FROZEN_PYTHON"
+          "$FROZEN_PYTHON" -m unittest discover -s tests -p test_deform_gp_residual_v1.py -v
+      - name: Execute fixed DLO1 development comparison
+        shell: bash
+        env:
+          # Scope trust to this known shared checkout and this process only.
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" scripts/remote/run_deform_gp_residual_v1.py --output "$OUTPUT"
+      - name: Retain completed result or technical failure artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform-gp-development-${{ github.run_id }}
+          path: ${{ env.OUTPUT }}
+          if-no-files-found: warn
+          retention-days: 30
