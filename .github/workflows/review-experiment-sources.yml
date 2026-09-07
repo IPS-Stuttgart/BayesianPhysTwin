@@ -1,0 +1,73 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+# Read-only review capability; this review-branch helper is not part of the merge.
+name: Review experiment source snapshots
+on:
+  workflow_dispatch:
+  push:
+    branches: [maintenance/review-code-experiments-2026-09-07]
+    paths: [.github/workflows/review-experiment-sources.yml]
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+concurrency:
+  group: review-experiment-sources-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Collect source and metadata without executing PR code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/code-review"
+          export REVIEW_OUT="$RUNNER_TEMP/code-review"
+          python3 - <<'PY'
+          import hashlib, io, json, os, subprocess, tarfile
+          from pathlib import Path
+          out = Path(os.environ['REVIEW_OUT'])
+          repo = 'IPS-Stuttgart/BayesianPhysTwin'
+          def api(endpoint):
+              return json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/{endpoint}']))
+          base = subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          (out/'base.json').write_text(json.dumps({'repository':repo,'commit':base,'git_commit':api(f'git/commits/{base}')},indent=2)+'\n')
+          subprocess.run(['git','archive','--format=tar.gz',f'--output={out / "main.tar.gz"}','HEAD'],check=True)
+          for number in [944,947,950,952,953,955,956,957,958,959,960,961,962,963,964]:
+              pr = api(f'pulls/{number}')
+              sha = pr['head']['sha']
+              if pr['head']['repo']['full_name'] != repo:
+                  raise RuntimeError('unexpected external head')
+              files = []
+              page = 1
+              while True:
+                  batch = api(f'pulls/{number}/files?per_page=100&page={page}')
+                  files.extend(batch)
+                  if len(batch)<100: break
+                  page += 1
+              reviews = api(f'pulls/{number}/reviews?per_page=100')
+              checks = api(f'commits/{sha}/check-runs?per_page=100')
+              metadata = {'number':number,'head_sha':sha,'head_ref':pr['head']['ref'],'base_ref':pr['base']['ref'],'title':pr['title'],'body':pr['body'],'draft':pr['draft'],'files':files,'reviews':reviews,'checks':checks}
+              (out/f'pr-{number}.json').write_text(json.dumps(metadata,indent=2)+'\n')
+              paths = [f['filename'] for f in files if f['status']!='removed']
+              subprocess.run(['git','fetch','--depth=1','origin',sha],check=True)
+              if paths:
+                  subprocess.run(['git','archive','--format=tar.gz',f'--output={out / f"pr-{number}.tar.gz"}',sha,'--',*paths],check=True)
+          sums = {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.iterdir())}
+          (out/'sha256.json').write_text(json.dumps(sums,indent=2)+'\n')
+          print(json.dumps({'base':base,'snapshots':15,'files':len(sums)},indent=2))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: code-experiment-review
+          path: ${{ runner.temp }}/code-review/
+          if-no-files-found: error
+          retention-days: 3
