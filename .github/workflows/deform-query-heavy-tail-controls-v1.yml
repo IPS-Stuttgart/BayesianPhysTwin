@@ -88,7 +88,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "$CAPSULE_PYTHON" -m pytest -q -p no:cacheprovider \
+          "$CAPSULE_PYTHON" -m pytest -q -p no:cacheprovider --import-mode=importlib \
             "$CAPSULE/test_run.py" \
             experiments/deform_conditional_query_posterior_v1/test_run.py 2>&1 | tee "$CAPSULE_OUTPUT/tests.log"
 
