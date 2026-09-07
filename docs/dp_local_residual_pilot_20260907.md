@@ -1,83 +1,134 @@
 # Dirichlet-process local-residual development pilot
 
-## Status
+## Completed result — 7 September 2026
 
-This is a development experiment, not a promoted method or a paper result.
-The implementation and constructed-data software checks were completed in the
-interactive session. The real DEFORM workflow was submitted, but its job was
-still queued when this status was written. No measured DEFORM DP result exists
-in this record. Queueing is neither a positive nor a negative scientific result.
+The workflow is repaired and the real-data comparison completed successfully.
+This remains a historical-development experiment, not a promoted method or a
+fresh confirmatory paper result.
+
+The selected DP correction scored **7.576843 mm**, versus **7.240300 mm** for
+existing ridge: **4.6482% worse**, with one win out of eight validation
+trajectories. ExtraTrees scored **6.603346 mm**: **8.7973% better** than ridge,
+with eight wins out of eight. The evidence supports investigating the ordinary
+nonlinear residual comparator, not promoting this DP implementation.
 
 - Experiment branch: `experiment/dp-local-residual-pilot-20260907`
-- Execution revision: `6bb78cbe02adc307bd54a0aa9f45a2ee70024325`
-- Workflow run: https://github.com/IPS-Stuttgart/BayesianPhysTwin/actions/runs/34053321725
-- Workflow job: `101540698844`
-- Workflow: [dp-local-residual-pilot.yml](../.github/workflows/dp-local-residual-pilot.yml)
-- Implementation: [pilot.py](../experiments/dp_local_residual_pilot/pilot.py)
-- Exporter: [export_development.py](../experiments/dp_local_residual_pilot/export_development.py)
+- Repair/execution commit: `40da25de732387d6f95478a666c307936f8eb7f1`
+- Successful workflow: https://github.com/IPS-Stuttgart/BayesianPhysTwin/actions/runs/34089074496
+- Job: `101638727116`; completed `2026-09-07T06:04:30Z`
+- Artifact: `10006236763`, `dp-local-residual-pilot-34089074496`
+- [Verified summary and all per-trajectory scores](../results/dp_local_residual_pilot_20260907/run_34089074496/summary.json)
+- [Workflow](../.github/workflows/dp-local-residual-pilot.yml)
+- [Model implementation](../experiments/dp_local_residual_pilot/pilot.py)
+- [Development exporter](../experiments/dp_local_residual_pilot/export_development.py)
 
-## Question
+## What was repaired
 
-Does input-conditioned DP Gaussian-mixture regression improve the residual
-correction of the existing DEFORM physics-plus-learned-GCN predictor, beyond
-both the existing local ridge correction and matched finite mixtures?
+The previous run, `34053321725`, failed before rollout because the workflow
+passed the nonexistent source directory
+`/home/florianpfaff/source-only/deform-bayesian-v1/DEFORM`.
+Its training record, source manifest and checkpoint identity checks actually
+passed; the initial concern about unmatched metadata was not the final blocker.
 
-No physical-data collection, active probing, robot access, new observation
-provider, or Causal4D integration is required.
+The repaired workflow reads the exact upstream revision from the existing v6
+protocol, validates the repository and full commit SHA, and uses a separate
+checkout at `$GITHUB_WORKSPACE/.dp-upstream/DEFORM`. Sparse checkout materializes
+root Python source files only, not `data_set`. The exporter receives that exact
+path. It still loads permitted trajectories using the existing manifest paths.
 
-## Implemented comparison
+No server data, baseline checkpoint, selection grid, model code, or scientific
+protocol was substituted. The upstream revision remains
+`b73b8b8ecc033caefa693fab7898741d4e6dbeff`, with a clean tracked checkout.
+The existing SHA-256 checks, data-read restrictions and baseline reproduction
+gate remain in force. The source checkout is isolated from the preserved server
+workspaces.
 
-The exporter reuses the existing local-residual feature builder and physical
-rollout. The mixture fits a joint distribution of input features and 3-D
-residuals independently for each free material node. At prediction time,
-component weights depend only on the input marginal, and Gaussian conditioning
-produces each expert's residual prediction. No future free-node residual enters
-the predictor. Prescribed-node coordinates remain byte-exact.
+Offline regression checks on the exact committed workflow blob passed for YAML,
+shell and embedded-Python syntax, protocol-driven commit output, rejection of a
+branch name instead of a full SHA, rejection of an unexpected repository, and
+agreement between checkout and exporter paths. A constructed local Git fixture
+verified that the sparse pattern omits datasets while keeping tracked status
+clean. These are repair checks, not scientific evidence.
 
-Models: existing baseline; existing ridge correction; maximum-likelihood finite
-Gaussian mixtures (K=1,2,4,8); finite Bayesian Gaussian mixtures (K=2,4,8); a
-truncated DP mixture (Kmax=8, alpha=0.1,1,10); and an ExtraTrees nonlinear
-residual comparator. Mixture input preprocessing is training-fitted scaling and
-PCA with up to eight whitened components. Shrinkage is selected from
-0, 0.25, 0.5, and 1. A fixed DP alpha=1, shrinkage=0.25 arm is also retained.
+## Verified real-data results
 
-All mixture predictions use plug-in variational component moments, not exact
-posterior-predictive integration. This pilot makes no calibration claim.
+Metric: mean over eight trajectories of the mean absolute coordinate error
+across rollout times, all nodes and three coordinates, in millimetres. Lower is
+better. Improvement is relative to existing ridge; a negative number is worse.
 
-## Data and selection boundary
+| Method | Mean L1 (mm) | Improvement vs ridge | Wins vs ridge |
+|---|---:|---:|---:|
+| Frozen DEFORM hybrid baseline | 7.912030 | -9.2776% | 1/8 |
+| Existing ridge correction | 7.240300 | reference | 8 ties |
+| Selected finite Gaussian mixture | 7.554476 | -4.3393% | 1/8 |
+| Selected finite Bayesian mixture | 7.592074 | -4.8586% | 1/8 |
+| Selected DP mixture | 7.576843 | -4.6482% | 1/8 |
+| Fixed DP, alpha=1, shrinkage=0.25 | 7.558611 | -4.3964% | 1/8 |
+| ExtraTrees residual correction | **6.603346** | **+8.7973%** | **8/8** |
 
-The required data are the pinned historical DLO2 fit40 and validation8 splits.
-Exact duplicate causal queries in fit40 are grouped before an inner 80/20 split.
-Hyperparameters and shrinkage are selected on this inner split; selected models
-are refitted on fit40 before scoring the historical validation8 trajectories.
-That validation set was previously used for checkpoint selection, so this is
-not fresh confirmation. Frames and nodes are not independent test cases.
+The inner split selected finite K=4 with shrinkage 0.5; finite Bayesian K=8
+with concentration 1 and shrinkage 0.5; DP truncation 8 with concentration 10
+and shrinkage 0.5; and ExtraTrees with shrinkage 1. The ExtraTrees improvement
+relative to the uncorrected hybrid baseline is 16.5404%.
 
-The source-test8 split and official evaluation are excluded. The exporter
-requires exact training-record, source-manifest and checkpoint SHA-256 matches
-from the existing v6 protocol, verifies the upstream revision, installs a
-pickle-read allowlist, and checks baseline validation-error reproduction before
-writing model inputs. Initial cache inventory returned metadata inconsistent
-with the pinned protocol; those files must not silently be treated as equivalent.
-The workflow's complete identity check has not yet produced an outcome here.
+The baseline reproduction gate passed:
 
-## Checks actually completed
+- Recorded expected validation L1: `0.007912029745057225 m`.
+- Reproduced validation L1: `0.007912029512226582 m`.
+- Permitted difference: `1e-7 m`.
 
-Local checks passed for the analytic conditional mean of a Gaussian, normalized
-finite input-only component gates, a constructed two-regime regression positive
-control, and the complete fit/select/refit/score software path on synthetic
-48-sequence arrays. The latter exercised all model families and prescribed-node
-preservation. These checks establish implementation behavior only; their toy
-accuracy is not DEFORM evidence.
+The downloaded artifact ZIP's SHA-256 matches GitHub's digest:
+`bd815c07ed9774a44a0566ccc1c1262957b667122b2e9c5b55bce987202b07ab`.
+The full artifact `results/result.json` has SHA-256
+`e708fceaaa897f0439fef45d9d40f3afadb96036c6d0058d357bc760af1c2061`.
+All per-trajectory scores, means and win counts were independently recomputed
+from saved predictions. Float64 recomputation differs from the original
+float32 reductions by at most `8.7408694e-7 mm`, below the `5e-6 mm` roundoff
+check tolerance. Prescribed-node predictions are exactly equal to baseline for
+all methods, and the exported input NPZ's recorded hash verifies.
 
-The workflow retains `identity_audit.json`, any `failure.json`, fitted-model
-diagnostics, inner scores, frozen selections, per-case validation predictions,
-and a final `result.json` when execution reaches those stages. A cache or runtime
-failure must remain a technical failure, not a rejection of the DP hypothesis.
+## Important limitations
 
-## Interpretation
+The selected DP's final fits converged for six of eight free-node models;
+two reached the configured 150-iteration limit. The fixed DP reference also
+converged for six of eight. The finite Bayesian mixture converged for four
+of eight, while the selected ordinary finite mixture converged for all eight.
+These warnings are retained in the artifact rather than hidden by workflow
+success. No post-score iteration-budget or hyperparameter retuning was done.
 
-A DP-specific claim requires improvement over the matched finite-mixture
-comparators, not merely over one linear correction. Any successful comparison
-here remains historical development evidence. No existing canonical result,
-main-branch predictor, or manuscript claim was replaced by this pilot.
+Every selected DP node model retained all eight components above weight 0.01.
+Thus this pilot does not demonstrate adaptive pruning below its truncation cap.
+Its input features are reduced to eight whitened principal components, whereas
+the ExtraTrees comparator uses the original feature vector. The result concerns
+these specific implementations; it is not an isolated proof that the DP prior
+causes worse prediction, nor a general rejection of Dirichlet-process models.
+
+The eight validation trajectories were previously used for baseline checkpoint
+selection. They are historical development evidence, not fresh confirmation.
+No uncertainty calibration or physical-parameter recovery claim follows.
+
+## Implemented comparison and information boundary
+
+The mixture fits a joint distribution of local input features and 3-D residuals
+independently for each free material node. Prediction-time component weights
+use only the input marginal; Gaussian conditioning supplies the residual mean.
+Future free-node residuals never enter the predictor. Prescribed nodes remain
+unchanged. The model uses plug-in variational mixture moments, not exact
+posterior-predictive integration.
+
+The existing 40 fit trajectories contain 40 distinct causal queries. An inner
+32/8 trajectory split selects hyperparameters and shrinkage; selected models
+are refitted on the full fit40 before historical validation8 scoring. No causal
+query is duplicated across fit40 and validation8. The source-test8 and official
+evaluation are excluded by the exporter. No robot, new physical measurements,
+active probing, new observation provider or Causal4D integration is involved.
+
+The candidate bank was fixed before scoring: finite mixtures K=1,2,4,8;
+finite Bayesian mixtures K=2,4,8; DP truncation 8 with concentration 0.1,1,10;
+ExtraTrees; and shrinkages 0,0.25,0.5,1. The current ridge and a fixed DP
+alpha=1/shrinkage=0.25 arm provide additional references.
+
+The artifact contains the provenance audit, exported development inputs,
+software self-tests, inner scores, frozen selections, final fit diagnostics,
+per-trajectory validation predictions and full result JSON. No main-branch
+predictor, canonical result or manuscript claim was replaced or promoted.
