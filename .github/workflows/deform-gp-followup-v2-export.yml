@@ -1,0 +1,45 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP follow-up v2 development query export
+on:
+  push:
+    branches: ['research/deform-gp-residual-trial-v1']
+    paths: ['.github/workflows/deform-gp-followup-v2-export.yml']
+permissions:
+  contents: read
+concurrency:
+  group: deform-gp-residual-fixed-development-v1
+  cancel-in-progress: false
+jobs:
+  export:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    env:
+      DEFORM_GP_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      DEFORM_GP_UPSTREAM_ROOT: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      PYTHONDONTWRITEBYTECODE: '1'
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing numerical and data-boundary tests
+        run: "$DEFORM_GP_PYTHON -m pytest -c /dev/null -q -p no:cacheprovider experiments/deform_gp_residual_trial_v1/tests"
+      - name: Replay unchanged v1 and retain only approved development tensors
+        run: |
+          "$DEFORM_GP_PYTHON" experiments/deform_gp_residual_trial_v1/followup_v2/export_development.py \
+            --upstream-root "$DEFORM_GP_UPSTREAM_ROOT" \
+            --output "$RUNNER_TEMP/deform-gp-v2-export-${GITHUB_RUN_ID}"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: deform-gp-v2-development-${{ github.run_id }}
+          path: ${{ runner.temp }}/deform-gp-v2-export-${{ github.run_id }}/
+          if-no-files-found: warn
