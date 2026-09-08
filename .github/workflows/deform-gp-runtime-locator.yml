@@ -1,0 +1,42 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP runtime location metadata
+on:
+  push:
+    branches: ['research/deform-gp-residual-trial-v1']
+    paths: ['.github/workflows/deform-gp-runtime-locator.yml']
+permissions:
+  contents: read
+jobs:
+  locate:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 3
+    steps:
+      - name: Inspect runtime paths and existing source metadata only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, sys, json, stat
+          from pathlib import Path
+          print('SYSTEM', sys.executable, sys.version, 'uid', os.getuid())
+          for root in [Path('/home/florianpfaff/causal-rope'),Path('/home/florianpfaff/source-only')]:
+              print('ROOT', str(root), root.exists(), oct(root.stat().st_mode) if root.exists() else None)
+              if not root.is_dir(): continue
+              for current, dirs, files in os.walk(root):
+                  p=Path(current); depth=len(p.relative_to(root).parts)
+                  if depth>4:
+                      dirs[:]=[]; continue
+                  if depth<2: print('DIR', str(p), dirs)
+                  if 'pyvenv.cfg' in files:
+                      py=p/'bin/python'
+                      print('PYTHON', str(py), 'exists',py.exists(),'executable',os.access(py,os.X_OK),'cfg',(p/'pyvenv.cfg').read_text())
+                      dirs[:]=[]; continue
+                  if 'DEFORM' in dirs: print('UPSTREAM_CANDIDATE',str(p/'DEFORM'))
+                  if 'DEFT_func.py' in files: print('DEFORM_SOURCE',str(p))
+                  dirs[:]=[d for d in dirs if d not in ('.git','data_set','__pycache__','site-packages','checkpoints') and not d.startswith('evaluate')]
+          path=Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run/source_manifest.json')
+          m=json.loads(path.read_text()); rows={r['name']:r for r in m['files']}
+          print('UPSTREAM_METADATA',m.get('upstream_root'),m.get('upstream_commit'))
+          for key in ('fit','validation','source_test'):
+              print('SPLIT_IDENTITIES',key,[{'name':n,'sha256':rows[n].get('sha256'),'array_sha256':rows[n].get('array_sha256')} for n in m['split'][key]])
+          PY
