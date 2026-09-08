@@ -12,31 +12,41 @@ jobs:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 3
     steps:
-      - name: Inspect runtime paths and existing source metadata only
+      - name: Read DEFORM runtime configuration and split identities only
         shell: bash
         run: |
           python3 - <<'PY'
-          import os, sys, json, stat
+          import os, sys, json, subprocess
           from pathlib import Path
-          print('SYSTEM', sys.executable, sys.version, 'uid', os.getuid())
-          for root in [Path('/home/florianpfaff/causal-rope'),Path('/home/florianpfaff/source-only')]:
-              print('ROOT', str(root), root.exists(), oct(root.stat().st_mode) if root.exists() else None)
-              if not root.is_dir(): continue
-              for current, dirs, files in os.walk(root):
-                  p=Path(current); depth=len(p.relative_to(root).parts)
-                  if depth>4:
-                      dirs[:]=[]; continue
-                  if depth<2: print('DIR', str(p), dirs)
-                  if 'pyvenv.cfg' in files:
-                      py=p/'bin/python'
-                      print('PYTHON', str(py), 'exists',py.exists(),'executable',os.access(py,os.X_OK),'cfg',(p/'pyvenv.cfg').read_text())
-                      dirs[:]=[]; continue
-                  if 'DEFORM' in dirs: print('UPSTREAM_CANDIDATE',str(p/'DEFORM'))
-                  if 'DEFT_func.py' in files: print('DEFORM_SOURCE',str(p))
-                  dirs[:]=[d for d in dirs if d not in ('.git','data_set','__pycache__','site-packages','checkpoints') and not d.startswith('evaluate')]
+          print('SYSTEM',sys.executable,sys.version)
           path=Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run/source_manifest.json')
           m=json.loads(path.read_text()); rows={r['name']:r for r in m['files']}
           print('UPSTREAM_METADATA',m.get('upstream_root'),m.get('upstream_commit'))
-          for key in ('fit','validation','source_test'):
-              print('SPLIT_IDENTITIES',key,[{'name':n,'sha256':rows[n].get('sha256'),'array_sha256':rows[n].get('array_sha256')} for n in m['split'][key]])
+          identities={key:{n:rows[n].get('array_sha256') for n in m['split'][key]} for key in ('fit','validation')}
+          print('SPLIT_IDENTITIES',json.dumps(identities))
+          for candidate in ('/home/florianpfaff/.venvs','/home/florianpfaff/venvs','/home/florianpfaff/miniconda3/envs','/home/florianpfaff/miniforge3/envs','/home/github-runner/.venvs'):
+              p=Path(candidate)
+              try:
+                  if p.is_dir(): print('ENV_DIRECTORY',candidate,sorted(q.name for q in p.iterdir()))
+              except PermissionError: print('INACCESSIBLE',candidate)
+          root=Path('/home/florianpfaff/source-only')
+          for start in sorted(root.iterdir()):
+              if 'deform' not in start.name.lower() or 'deform360' in start.name.lower(): continue
+              try:
+                  if not start.is_dir(): continue
+                  for current,dirs,files in os.walk(start):
+                      p=Path(current); depth=len(p.relative_to(start).parts)
+                      if depth>3: dirs[:]=[];continue
+                      if depth==0: print('DEFORM_DIRECTORY',str(p),dirs)
+                      if 'pyvenv.cfg' in files:
+                          py=p/'bin/python'
+                          print('PYTHON',str(py),'executable',os.access(py,os.X_OK))
+                          if os.access(py,os.X_OK): print('PYTHON_CFG',(p/'pyvenv.cfg').read_text())
+                          dirs[:]=[];continue
+                      if 'DEFT_func.py' in files or 'DEFORM_func.py' in files: print('DEFORM_SOURCE',str(p))
+                      dirs[:]=[d for d in dirs if d not in ('.git','data_set','__pycache__','site-packages','checkpoints','results','evidence') and not d.startswith('evaluate')]
+              except PermissionError: print('INACCESSIBLE',str(start))
+          script='import numpy, scipy, torch, pytest; print(numpy.__version__,scipy.__version__,torch.__version__,torch.cuda.is_available())'
+          p=subprocess.run([sys.executable,'-c',script],capture_output=True,text=True,timeout=30)
+          print('SYSTEM_IMPORTS',p.returncode,p.stdout,p.stderr)
           PY
