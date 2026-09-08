@@ -1,0 +1,31 @@
+{
+  "contract": "deform-query-posterior-reproduction-request-v1",
+  "status": "authorized",
+  "expected_base_revision": "cb3e8d1d4af8a8808b8159972fc537a7f6c56cec",
+  "frozen_scientific_revision": "0e13401eab716f9dda9b578f89d844214b55e39e",
+  "historical_run_id": 33985128557,
+  "historical_artifact_id": 9974939619,
+  "historical_artifact_sha256": "e7e182e009ac234fb611afb6ca03eb1006ee65da2688ec2a084105667fa4e591",
+  "runner_labels": ["self-hosted", "gpuserver4090"],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "official_eval_access": false,
+  "new_acquisition": false,
+  "dataset_mutation": false,
+  "fresh_confirmation": false,
+  "retuning": false,
+  "purpose": "Owner-requested raw-data reproduction of completed PR 940; not a repeat of compact-score-only auditing or a new scientific confirmation.",
+  "technical_failure": {
+    "run_id": 34052441452,
+    "reason": "Verifier blob receipt differed from committed verifier; failure occurred before dataset contents, original artifact, tests, or scientific computation were accessed.",
+    "correction": "Bind the unchanged verifier to its actual fetched Git blob. Scientific code and protocol remain unchanged."
+  },
+  "primary_source_size": 32,
+  "secondary_source_sizes": [8, 16],
+  "calibration_trajectories_per_object": 12,
+  "git_blobs": {
+    "experiments/deform_conditional_query_posterior_v1/run.py": "57f9aff414f39f52a4ef346e525f40342554e75e",
+    "experiments/deform_conditional_query_posterior_v1/test_run.py": "440be8438d270e8a3f57006e60db6ff9034499f0",
+    "experiments/deform_query_reproduction_v1/verify.py": "ba85dc58d7332c86832cbb22e51a813c55f3e439",
+    ".github/workflows/deform-query-posterior-reproduction-v1.yml": "b0561737cf0b3a227baf30867adce485d0bb9291"
+  }
+}
