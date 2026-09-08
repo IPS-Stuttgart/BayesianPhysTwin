@@ -1,0 +1,23 @@
+{
+  "contract": "passive-occlusion-covariance-v1",
+  "status": "completed-mixed-primary-superiority-not-supported",
+  "workflow_run_id": 33985322554,
+  "workflow_job_id": 101357648964,
+  "evaluated_commit": "e813fd62261760158cfb591d774cc95aac530f7f",
+  "artifact_id": 9974969297,
+  "artifact_sha256": "3cc248ab83592902465872acb8a614155a3ef7b58baa6bf978d35dd4ce986e5b",
+  "summary_sha256": "91caaf3b19c56583877ae980a55b0a84aa4709e11616d4a4fa5e6e73ad8f908e",
+  "trajectory_csv_sha256": "1ee801c065c59c7e6afdb146565f92395aaf381dca1abce6d4d42b957166aecb",
+  "trajectory_count": 28,
+  "source_trajectory_count": 16,
+  "trajectory_metric_rows": 3360,
+  "primary_three_control_gate_passed": false,
+  "primary_full_vs_diagonal_positive": true,
+  "primary_full_vs_scrambled_positive": true,
+  "primary_full_vs_source_tuned_interpolation_positive": false,
+  "target_fitting": false,
+  "retrospective": true,
+  "interpretation": "Meaningful joint dependence improves hidden geometry over diagonal and scrambled dependence, but full covariance does not beat source-tuned interpolation on the fixed primary endpoint. The stronger superiority hypothesis is not supported. No tuning or replacement evaluation was performed after observing this result.",
+  "secondary_caution": "At 250 and 500 ms the nonnegative source-fitted gains of both simple controls are zero. Apparent long-horizon gains do not establish superiority to a signed-gain temporal interpolation control.",
+  "independent_local_checks": "Verified all six prediction-archive hashes, diagonal hidden-coordinate invariance, and all 120 means aggregated from 3360 trajectory-level rows. This is artifact verification, not independent rerunning of raw-data scoring."
+}

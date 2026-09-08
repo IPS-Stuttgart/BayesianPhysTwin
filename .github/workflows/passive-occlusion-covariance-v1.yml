@@ -1,0 +1,96 @@
+name: Passive occlusion covariance v1
+
+on:
+  push:
+    branches: [experiment/passive-occlusion-covariance-v1]
+    paths: [.github/requests/passive-occlusion-covariance-v1.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passive-occlusion-covariance-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  REQUEST: .github/requests/passive-occlusion-covariance-v1.json
+
+jobs:
+  experiment:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Initialize isolated output and validate request
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/passive-occlusion-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$OUT"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads(Path(os.environ['REQUEST']).read_text())
+          assert r['runner'] == 'gpuserver4090'
+          assert r['dataset_mutation'] is False
+          assert r['new_physical_data'] is False
+          assert r['active_measurement_selection'] is False
+          assert r['mode'] in ['inventory', 'evaluate']
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('MODE=' + r['mode'] + '\n')
+          PY
+      - name: Inspect retained forecast identities without opening trajectory outcomes
+        if: env.MODE == 'inventory'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1')
+          result = {'root': str(root), 'exists': root.is_dir(), 'files': [], 'records': {}, 'outcomes_opened': False}
+          if root.is_dir():
+              for p in sorted(root.glob('*/*')):
+                  if p.is_file() and p.suffix in ['.json', '.npz']:
+                      result['files'].append({'path': str(p), 'bytes': p.stat().st_size})
+                      if p.name in ['prediction_seal.json', 'method_seal.json', 'source_manifest.json', 'eval_manifest.json']:
+                          result['records'][str(p)] = json.loads(p.read_text())
+          destination = Path(os.environ['OUT']) / 'inventory.json'
+          destination.write_text(json.dumps(result, indent=2, sort_keys=True))
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+      - name: Install isolated numerical environment
+        if: env.MODE == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$OUT/venv"
+          "$OUT/venv/bin/python" -m pip install --disable-pip-version-check 'numpy==2.2.6'
+      - name: Validate invariants and execute frozen passive test
+        if: env.MODE == 'evaluate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$OUT/venv/bin/python" scripts/remote/run_passive_occlusion_covariance_v1.py --self-test
+          "$OUT/venv/bin/python" scripts/remote/run_passive_occlusion_covariance_v1.py --request "$REQUEST" --output "$OUT/results"
+          cat "$OUT/results/summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: passive-occlusion-covariance-v1-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/inventory.json
+            ${{ env.OUT }}/results/
+          if-no-files-found: warn
+          retention-days: 90
