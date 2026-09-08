@@ -16,9 +16,9 @@ jobs:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 30
     env:
-      # Paths verified from retained development metadata; no package upgrades.
-      DEFORM_GP_PYTHON: /home/florianpfaff/causal-rope/bpt-deform-dlo-stage1/.venv-deform/bin/python
-      DEFORM_GP_UPSTREAM_ROOT: /home/florianpfaff/causal-rope/bpt-deform-dlo-stage1/DEFORM
+      # Paths from retained training metadata, not a newly installed runtime.
+      DEFORM_GP_PYTHON: /home/florianpfaff/causal-rope/deform-source-only/.venv-deform/bin/python
+      DEFORM_GP_UPSTREAM_ROOT: /home/florianpfaff/causal-rope/deform-source-only/DEFORM
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
