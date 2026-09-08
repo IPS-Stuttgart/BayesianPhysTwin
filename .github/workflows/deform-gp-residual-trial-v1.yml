@@ -1,0 +1,64 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP residual fixed development trial v1
+on:
+  push:
+    branches: ['research/deform-gp-residual-trial-v1']
+    paths: ['.github/requests/deform-gp-residual-trial-v1.json']
+permissions:
+  contents: read
+concurrency:
+  group: deform-gp-residual-fixed-development-v1
+  cancel-in-progress: false
+jobs:
+  development:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    env:
+      # Paths verified from retained development metadata; no package upgrades.
+      DEFORM_GP_PYTHON: /home/florianpfaff/causal-rope/bpt-deform-dlo-stage1/.venv-deform/bin/python
+      DEFORM_GP_UPSTREAM_ROOT: /home/florianpfaff/causal-rope/bpt-deform-dlo-stage1/DEFORM
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate retained runtime configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$DEFORM_GP_PYTHON"
+          test -d "$DEFORM_GP_UPSTREAM_ROOT"
+          "$DEFORM_GP_PYTHON" -c 'import numpy, scipy, torch, pytest; assert torch.cuda.is_available()'
+      - name: Numerical and boundary tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$DEFORM_GP_PYTHON" -m pytest -q -p no:cacheprovider experiments/deform_gp_residual_trial_v1/tests
+      - name: Fixed GP versus existing ridge on historical DLO2 development only
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$DEFORM_GP_PYTHON" experiments/deform_gp_residual_trial_v1/run_development.py \
+            --upstream-root "$DEFORM_GP_UPSTREAM_ROOT" \
+            --output "$RUNNER_TEMP/deform-gp-trial-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+      - name: Print retained outcome
+        if: always()
+        shell: bash
+        run: |
+          out="$RUNNER_TEMP/deform-gp-trial-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          for name in report.json trajectory_metrics.csv technical_failure.json; do
+            if test -f "$out/$name"; then echo "RESULT_FILE=$name"; cat "$out/$name"; fi
+          done
+      - name: Retain result or preflight record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: deform-gp-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deform-gp-trial-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: warn
