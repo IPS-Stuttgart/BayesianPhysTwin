@@ -1,0 +1,140 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Passive noise conditioning v2
+on:
+  push:
+    branches: [science/passive-noise-conditioning-v2]
+    paths: [.github/requests/passive-noise-conditioning-v2.json]
+permissions:
+  contents: read
+concurrency:
+  group: passive-noise-conditioning-v2
+  cancel-in-progress: false
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.request.outputs.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate isolated request-only commit
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          path='.github/requests/passive-noise-conditioning-v2.json'
+          request=json.loads(Path(path).read_text())
+          event=json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+          assert request['contract']=='passive-noise-conditioning-v2'
+          assert request['mode'] in ('prepare','evaluate')
+          assert request['dataset_mutation'] is False
+          assert os.environ['GITHUB_REF_NAME']=='science/passive-noise-conditioning-v2'
+          assert event['before'] != '0'*40
+          changed=subprocess.check_output(['git','diff','--name-only',event['before'],os.environ['GITHUB_SHA']],text=True).splitlines()
+          assert changed==[path], changed
+          if request['mode']=='evaluate':
+              assert request['source_revision']==event['before']
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('mode='+request['mode']+'\n')
+          PY
+  prepare:
+    needs: gate
+    if: needs.gate.outputs.mode == 'prepare'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Format and test only the new experiment, with no dataset access
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+        run: |
+          python -m pip install 'numpy==2.2.6' 'pytest==8.3.5' 'ruff==0.14.14'
+          python -m ruff check --fix experiments/passive_noise_conditioning_v2
+          python -m ruff format experiments/passive_noise_conditioning_v2
+          python -m pytest -q -o addopts='' experiments/passive_noise_conditioning_v2/test_core.py
+      - name: Commit formatting only on this experiment branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = science/passive-noise-conditioning-v2
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add experiments/passive_noise_conditioning_v2/run.py experiments/passive_noise_conditioning_v2/test_core.py
+          if ! git diff --cached --quiet; then
+            git commit -m 'Format passive conditioning capsule before scientific execution'
+            gh auth setup-git
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+          git rev-parse HEAD
+  evaluate:
+    needs: gate
+    if: >-
+      needs.gate.outputs.mode == 'evaluate' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, gpuserver4090]
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OUT: /home/github-runner/.cache/workflows/passive-noise-conditioning-v2/runs/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          path: passive-noise-v2
+      - name: Isolated numerical runtime and tests
+        working-directory: passive-noise-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          venv="$RUNNER_TEMP/passive-noise-v2-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install --disable-pip-version-check 'numpy==2.2.6' 'pytest==8.3.5' 'ruff==0.14.14'
+          echo "PY=$venv/bin/python" >> "$GITHUB_ENV"
+          "$venv/bin/python" -m ruff check experiments/passive_noise_conditioning_v2
+          "$venv/bin/python" -m ruff format --check experiments/passive_noise_conditioning_v2
+          "$venv/bin/python" -m pytest -q -o addopts='' experiments/passive_noise_conditioning_v2/test_core.py
+      - name: Execute source-frozen real-trajectory replay
+        working-directory: passive-noise-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PY" experiments/passive_noise_conditioning_v2/run.py \
+            --data /mnt/seagate10tb/florianpfaff/datasets/deform/data_set \
+            --parent /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1 \
+            --output "$OUT"
+          cp experiments/passive_noise_conditioning_v2/protocol.json "$OUT/protocol.json"
+          cat "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain all results and technical failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: passive-noise-conditioning-v2-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/*.json
+            ${{ env.OUT }}/*.csv
+            ${{ env.OUT }}/*.md
+          if-no-files-found: warn
+          retention-days: 90
