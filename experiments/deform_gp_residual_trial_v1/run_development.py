@@ -33,7 +33,7 @@ DEFAULT_TRAINING = Path('/home/florianpfaff/source-only/deform-dlo2-local-residu
 CONFIG = GPConfig()
 SHRINKAGE = 0.25
 VARIANCE_FLOOR = 1e-6
-REFERENCE_VALIDATION_BASELINE_M = 0.00817261882312534
+REFERENCE_VALIDATION_BASELINE_M = 0.007912038893007275
 
 
 def sha256(path: Path) -> str:
@@ -185,7 +185,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     fit_names, val_names = split_names(manifest)
     opened = install_read_guard(manifest, fit_names+val_names, args.upstream_root)
     upstream_revision = protocol['upstream']['commit']
-    if manifest['upstream']['commit'] != upstream_revision:
+    if manifest['upstream_commit'] != upstream_revision:
         raise ValueError('manifest and protocol disagree on upstream revision')
     source_runtime._assert_upstream(args.upstream_root, upstream_revision)
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
