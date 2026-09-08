@@ -16,13 +16,16 @@ jobs:
     runs-on: [self-hosted, Linux, X64, gpuserver4090]
     timeout-minutes: 30
     env:
-      # Paths from retained training metadata, not a newly installed runtime.
-      DEFORM_GP_PYTHON: /home/florianpfaff/causal-rope/deform-source-only/.venv-deform/bin/python
-      DEFORM_GP_UPSTREAM_ROOT: /home/florianpfaff/causal-rope/deform-source-only/DEFORM
+      DEFORM_GP_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      DEFORM_GP_UPSTREAM_ROOT: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
       CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      PYTHONDONTWRITEBYTECODE: '1'
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /home/florianpfaff/source-only/deform-bayesian-v1/DEFORM-b73b8b8
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -31,15 +34,15 @@ jobs:
       - name: Validate retained runtime configuration
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           test -x "$DEFORM_GP_PYTHON"
           test -d "$DEFORM_GP_UPSTREAM_ROOT"
-          "$DEFORM_GP_PYTHON" -c 'import numpy, scipy, torch, pytest; assert torch.cuda.is_available()'
+          "$DEFORM_GP_PYTHON" -c 'import numpy, scipy, torch, pytest; print(numpy.__version__, scipy.__version__, torch.__version__); assert torch.cuda.is_available()'
       - name: Numerical and boundary tests
         shell: bash
         run: |
           set -euo pipefail
-          "$DEFORM_GP_PYTHON" -m pytest -q -p no:cacheprovider experiments/deform_gp_residual_trial_v1/tests
+          "$DEFORM_GP_PYTHON" -m pytest -c /dev/null -q -p no:cacheprovider experiments/deform_gp_residual_trial_v1/tests
       - name: Fixed GP versus existing ridge on historical DLO2 development only
         shell: bash
         run: |
