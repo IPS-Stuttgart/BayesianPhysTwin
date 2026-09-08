@@ -33,7 +33,7 @@ DEFAULT_TRAINING = Path('/home/florianpfaff/source-only/deform-dlo2-local-residu
 CONFIG = GPConfig()
 SHRINKAGE = 0.25
 VARIANCE_FLOOR = 1e-6
-REFERENCE_VALIDATION_BASELINE_M = 0.007912038893007275
+REFERENCE_VALIDATION_BASELINE_M = 0.007912029745057225
 
 
 def sha256(path: Path) -> str:
@@ -54,17 +54,13 @@ def require_identity(path: Path, expected: str) -> None:
 
 
 def trajectory_records(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """Read the native manifest's list of file identities, without opening data."""
-    rows = manifest.get('files')
-    if not isinstance(rows, list) or not rows:
-        raise ValueError('native manifest must contain a nonempty files list')
-    records = {}
-    for row in rows:
-        if not isinstance(row, dict) or not row.get('name') or not row.get('path'):
+    """Validate the native name-to-identity mapping without opening data."""
+    records = manifest.get('trajectories')
+    if not isinstance(records, dict) or not records:
+        raise ValueError('native manifest must contain a trajectories mapping')
+    for name, row in records.items():
+        if not isinstance(name, str) or not name or not isinstance(row, dict) or not row.get('path'):
             raise ValueError('invalid trajectory file identity')
-        if row['name'] in records:
-            raise ValueError('duplicate trajectory name in manifest')
-        records[row['name']] = row
     return records
 
 
@@ -185,8 +181,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     fit_names, val_names = split_names(manifest)
     opened = install_read_guard(manifest, fit_names+val_names, args.upstream_root)
     upstream_revision = protocol['upstream']['commit']
-    if manifest['upstream_commit'] != upstream_revision:
-        raise ValueError('manifest and protocol disagree on upstream revision')
+    if training['upstream']['commit'] != upstream_revision:
+        raise ValueError('training record and protocol disagree on upstream revision')
     source_runtime._assert_upstream(args.upstream_root, upstream_revision)
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     import torch
