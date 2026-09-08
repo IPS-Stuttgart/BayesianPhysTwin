@@ -1,0 +1,59 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP runtime location metadata
+on:
+  push:
+    branches: ['research/deform-gp-residual-trial-v1']
+    paths: ['.github/workflows/deform-gp-runtime-locator.yml']
+permissions:
+  contents: read
+jobs:
+  locate:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 3
+    steps:
+      - name: Inspect metadata and retained DEFORM runtime directories
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, sys, json, subprocess, shutil
+          from pathlib import Path
+          out=Path(os.environ['RUNNER_TEMP'])/'deform-gp-exact-metadata';out.mkdir(exist_ok=True)
+          base=Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run')
+          for name in ('source_manifest.json','training_validation_result.json','preflight.json'):
+              source=base/name
+              data=json.loads(source.read_text())
+              shutil.copyfile(source,out/name)
+              print('METADATA_KEYS',name,[(k,type(v).__name__) for k,v in data.items()])
+              for k,v in data.items():
+                  if k in ('upstream','upstream_root','upstream_commit','selected_checkpoint','runtime'):
+                      print('METADATA_VALUE',name,k,json.dumps(v))
+          print('SYSTEM',sys.executable,sys.version)
+          for candidate in ('/home/florianpfaff/.venvs','/home/florianpfaff/venvs','/home/florianpfaff/miniconda3/envs','/home/florianpfaff/miniforge3/envs','/home/github-runner/.venvs'):
+              p=Path(candidate)
+              try:
+                  if p.is_dir(): print('ENV_DIRECTORY',candidate,sorted(q.name for q in p.iterdir()))
+              except PermissionError: print('INACCESSIBLE',candidate)
+          root=Path('/home/florianpfaff/source-only')
+          for start in sorted(root.iterdir()):
+              if 'deform' not in start.name.lower() or 'deform360' in start.name.lower(): continue
+              try:
+                  if not start.is_dir(): continue
+                  for current,dirs,files in os.walk(start):
+                      p=Path(current); depth=len(p.relative_to(start).parts)
+                      if depth>3: dirs[:]=[];continue
+                      if depth==0: print('DEFORM_DIRECTORY',str(p),dirs)
+                      if 'pyvenv.cfg' in files:
+                          py=p/'bin/python'; print('PYTHON',str(py),'executable',os.access(py,os.X_OK))
+                          dirs[:]=[];continue
+                      dirs[:]=[d for d in dirs if d not in ('.git','data_set','__pycache__','site-packages','checkpoints','results','evidence') and not d.startswith('evaluate')]
+              except PermissionError: print('INACCESSIBLE',str(start))
+          script='import numpy, scipy, torch, pytest; print(numpy.__version__,scipy.__version__,torch.__version__,torch.cuda.is_available())'
+          p=subprocess.run([sys.executable,'-c',script],capture_output=True,text=True,timeout=30)
+          print('SYSTEM_IMPORTS',p.returncode,p.stdout,p.stderr)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: deform-gp-metadata-${{ github.run_id }}
+          path: ${{ runner.temp }}/deform-gp-exact-metadata/

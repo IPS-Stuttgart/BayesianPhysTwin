@@ -1,0 +1,62 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP covariance and passive-prefix audit v2
+on:
+  push:
+    branches: ['research/deform-gp-residual-trial-v1']
+    paths: ['.github/workflows/deform-gp-followup-v2-audit.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: deform-gp-followup-v2-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 15
+    env:
+      PY: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Numerical and information-boundary tests
+        run: |
+          "$PY" -m pytest -c /dev/null -q -p no:cacheprovider \
+            experiments/deform_gp_residual_trial_v1/tests \
+            experiments/deform_gp_residual_trial_v1/followup_v2/test_audit.py
+      - name: Download only the retained development cache
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: deform-gp-v2-development-34258802512
+          run-id: 34258802512
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/deform-gp-v2-cache
+      - name: Verify immutable cache manifest
+        run: |
+          cd "$RUNNER_TEMP/deform-gp-v2-cache"
+          echo 'ff24ae708753febd0282c77c3f310a7ead21e981f2dd8464ee35ed0bb8d8c2dc  cache_manifest.json' | sha256sum -c -
+      - name: Run fit-only covariance calibration and prefix comparison
+        run: |
+          "$PY" experiments/deform_gp_residual_trial_v1/followup_v2/audit.py \
+            --cache "$RUNNER_TEMP/deform-gp-v2-cache" \
+            --output "$RUNNER_TEMP/deform-gp-v2-audit-${GITHUB_RUN_ID}"
+      - name: Retain execution identity and source
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/deform-gp-v2-audit-${GITHUB_RUN_ID}"
+          mkdir -p "$out/source"
+          cp experiments/deform_gp_residual_trial_v1/followup_v2/{audit.py,test_audit.py,PROTOCOL.md} "$out/source/"
+          cp experiments/deform_gp_residual_trial_v1/gp.py "$out/source/"
+          printf '{"execution_commit":"%s","run_id":"%s","source_cache_run":34258802512,"source_cache_artifact":10069073833}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > "$out/execution_identity.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: deform-gp-v2-audit-${{ github.run_id }}
+          path: ${{ runner.temp }}/deform-gp-v2-audit-${{ github.run_id }}/
+          if-no-files-found: error

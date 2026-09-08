@@ -1,0 +1,37 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM fixed GP trial metadata preflight
+on:
+  push:
+    branches: ['research/deform-gp-residual-trial-v1']
+    paths: ['.github/workflows/deform-gp-trial-preflight.yml']
+permissions:
+  contents: read
+jobs:
+  metadata:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 3
+    steps:
+      - name: Read retained development metadata only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5')
+          train = root/'train-8cc85de7/training_run'
+          print('RUNNER', os.environ.get('RUNNER_NAME'))
+          for name in ('preflight.json', 'training_validation_result.json'):
+              p = train/name
+              print('METADATA', str(p), p.read_text())
+          m = json.loads((train/'source_manifest.json').read_text())
+          print('MANIFEST_METADATA', json.dumps({k:v for k,v in m.items() if k != 'trajectories'}))
+          for name in ('inference_cache_6400_action_frame', 'inference_cache_6400'):
+              d = root/name
+              print('CACHE_FILES', str(d), [(n, (d/n).exists()) for n in ('fit.npz','validation.npz')])
+          for d in (Path('/home/florianpfaff/.venvs'), root/'source-8cc85de7', Path('/home/florianpfaff/source-only')):
+              if d.is_dir():
+                  print('RUNTIME_DIRECTORY_NAMES', str(d), sorted(p.name for p in d.iterdir() if p.is_dir()))
+          PY
