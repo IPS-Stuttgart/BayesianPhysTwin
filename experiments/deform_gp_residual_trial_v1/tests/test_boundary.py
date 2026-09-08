@@ -14,7 +14,7 @@ def manifest(tmp_path):
     source=[f'source_{i}' for i in range(8)]
     return {'dlo_type':'DLO2','partition':'train','official_eval_read':False,
             'split':{'fit':fit,'validation':validation,'source_test':source},
-            'files':[{'name':n,'path':str(tmp_path/(n+'.pkl'))} for n in fit+validation+source]}
+            'trajectories':{n:{'path':str(tmp_path/(n+'.pkl'))} for n in fit+validation+source}}
 
 
 def test_historical_split(tmp_path):
@@ -106,22 +106,22 @@ assert len(opened)==2
     assert completed.returncode==0,completed.stderr
 
 
-def test_native_file_list_does_not_need_source_opened_flag(tmp_path):
+def test_native_mapping_does_not_need_source_opened_flag(tmp_path):
     m=manifest(tmp_path)
     assert 'source_test_opened' not in m
     assert len(trajectory_records(m)) == 56
     assert len(split_names(m)[0]) == 40
 
 
-def test_duplicate_file_identity_rejected(tmp_path):
+def test_malformed_file_identity_rejected(tmp_path):
     m=manifest(tmp_path)
-    m['files'].append(dict(m['files'][0]))
+    m['trajectories']['fit_0'] = []
     with pytest.raises(ValueError):
         split_names(m)
 
 
 def test_non_native_manifest_rejected(tmp_path):
     m=manifest(tmp_path)
-    m['files']={r['name']:r for r in m['files']}
+    m['trajectories']=list(m['trajectories'].values())
     with pytest.raises(ValueError):
         split_names(m)
