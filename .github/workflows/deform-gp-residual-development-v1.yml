@@ -1,0 +1,83 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM GP residual development v1
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/deform-gp-residual-development-v1.yml'
+      - 'scripts/science/deform_gp_residual_development_v1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-gp-residual-development-v1
+  cancel-in-progress: false
+
+jobs:
+  trial:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.ref == 'science/gp-deform-residual-development-v1'))
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 40
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      OUT: /home/github-runner/.cache/workflows/deform-gp-residual-development-v1/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Inspect only approved development artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT"
+          python3 - <<'PY' | tee "$OUT/inventory.json"
+          import json
+          from pathlib import Path
+          root = Path('/home/florianpfaff/source-only/deform-dlo2-local-residual-v5/train-8cc85de7/training_run')
+          paths = [root / 'training_validation_result.json', root / 'source_manifest.json', root / 'checkpoints/update_6400.pt']
+          records = []
+          for path in paths:
+              record = {'path': str(path), 'exists': path.is_file()}
+              if path.is_file() and path.suffix == '.json':
+                  record['record'] = json.loads(path.read_text())
+              records.append(record)
+          envroot = Path('/home/florianpfaff/source-only/deform-bayesian-v1')
+          print(json.dumps({'files': records, 'environment_entries': sorted(p.name for p in envroot.iterdir()) if envroot.is_dir() else [], 'official_eval_read': False}, indent=2))
+          PY
+      - name: Run GP comparison when implementation is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          script=scripts/science/deform_gp_residual_development_v1.py
+          if [ -f "$script" ]; then
+            py=/home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+            test -x "$py"
+            "$py" "$script" --self-test
+            "$py" "$script" --output "$OUT" | tee "$OUT/trial.log"
+          else
+            echo 'Development-artifact inventory only; no empirical GP claim.'
+          fi
+      - name: Retain diagnostic records
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: deform-gp-residual-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUT }}
+          if-no-files-found: error
+          retention-days: 30
