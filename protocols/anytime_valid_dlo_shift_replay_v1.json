@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "contract": "anytime-valid-dlo-backend-operator-shift-replay-v1",
+  "status": "frozen-before-retrospective-replay-execution",
+  "scientific_question": "Does an anytime-valid controller admit one fixed DLO3 discrepancy field on the previously supported DEFORM-to-PyElastica transfer axis and subsequently revoke it when the same field becomes harmful after a shift to DLO4/DLO5?",
+  "evidence_class": "retrospective-replay-of-previously-opened-sealed-predictions",
+  "candidate": {
+    "identity": "equal-weight-mean-of-dlo3-local-residual-models-seeds-42-43-44",
+    "coefficients_change_across_domains": false,
+    "pyelastica_refit": false,
+    "dlo4_or_dlo5_refit": false,
+    "source_models": [42, 43, 44]
+  },
+  "artifacts": {
+    "dlo45": {
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "workflow_run_id": 33361441865,
+      "artifact_id": 9811788200,
+      "artifact_sha256": "84ec488d3326d8ff1e81e627775c076ca562d8b2a542f2807d246fe6a75910c4",
+      "result_json_sha256": "2c9ada966aba3b969a9797f8760c932771457b26f1e0c1d6b36323fb13998432"
+    },
+    "hierarchical_transfer": {
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "workflow_run_id": 33536420739,
+      "artifact_id": 9811886089,
+      "artifact_sha256": "bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0",
+      "summary_json_sha256": "636a261a58bcc4a61d42eec5399ebbcb1f4e82b5f5ff2863792e4ede2412915d"
+    }
+  },
+  "registered_aggregate_identities": {
+    "pyelastica": {
+      "fallback_mean_l1_m": 0.0228547,
+      "candidate_mean_l1_m": 0.0221726,
+      "relative_improvement": 0.029845440010081936,
+      "trajectory_wins": 8,
+      "trajectory_count": 8
+    },
+    "dlo4_procedure": {
+      "fallback_mean_l1_m": 0.009954855613252654,
+      "candidate_mean_l1_m": 0.00895317154556605,
+      "trajectory_wins": 14,
+      "trajectory_count": 14
+    },
+    "dlo5_procedure": {
+      "fallback_mean_l1_m": 0.008050080783977408,
+      "candidate_mean_l1_m": 0.007826805297017975,
+      "trajectory_wins": 14,
+      "trajectory_count": 14
+    },
+    "dlo3_coefficients_on_dlo45": {
+      "equal_dlo_relative_improvement": -0.16590098017389865,
+      "trajectory_wins": 0,
+      "trajectory_ties": 0,
+      "trajectory_losses": 28,
+      "maximum_case_ratio": 1.577831130359562
+    }
+  },
+  "stream": {
+    "order": [
+      "pyelastica-source-test-case-order-and-chronological-frame-order",
+      "dlo4-official-case-order-and-chronological-frame-order",
+      "dlo5-official-case-order-and-chronological-frame-order"
+    ],
+    "shift_boundary": "first-DLO4-predicted-frame",
+    "loss": "per-frame-mean-coordinate-l1-m-all-predicted-nodes",
+    "loss_cap_m": 0.05,
+    "loss_cap_origin": "Predeclared conservative geometric scale for a retrospective behavior audit; not selected to authorize a fresh target claim.",
+    "gain_margin": 0.0,
+    "harm_margin": 0.0,
+    "alpha": 0.05,
+    "beta": 0.05,
+    "allow_reentry": false,
+    "lambdas": [0.01, 0.025, 0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9]
+  },
+  "registered_decision": {
+    "mechanism_supported_only_if": [
+      "the controller first admits during the PyElastica panel",
+      "the controller subsequently revokes after the DLO4 shift",
+      "the controller never reconstructs the physical fallback",
+      "the guarded post-shift candidate exposure is strictly smaller than unguarded exposure",
+      "the guarded post-shift cumulative regret is strictly smaller than unguarded post-shift cumulative regret"
+    ],
+    "negative_outcome": "If admission or revocation does not occur under the frozen stream, retain only the theorem and controlled-simulation result. Do not tune cap, margins, betting fractions, ordering, or artifact selection."
+  },
+  "information_boundary": {
+    "all_prediction_outcomes_previously_opened": true,
+    "target_tuning": false,
+    "artifact_or_array_selected_by_replay_outcome": false,
+    "new_physical_acquisition": false,
+    "fresh_sequential_confirmation": false,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A pass is a retrospective real-data mechanism replay showing admission followed by revocation for one fixed coefficient field across one registered backend-to-operator shift. It does not establish prospective anytime validity, arbitrary shift detection, universal transport, zero harm, physical correctness, deployment safety, or state of the art."
+}

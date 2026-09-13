@@ -1,0 +1,186 @@
+{
+  "schema_version": 3,
+  "contract": "anytime-switching-admission-stress-v3",
+  "status": "frozen-before-controlled-execution",
+  "scientific_question": "Can a conservative pointwise-minimum e-process retain anytime validity when the active reason for rejecting a correction switches within an epoch, while a more efficient latched intersection-union rule is explicitly shown to require its stable-component-null assumption?",
+  "design": {
+    "total_alpha": 0.05,
+    "epoch_alpha_continuation": 0.5,
+    "minimum_resolved_trials": 20,
+    "maximum_harm_rate": 0.1,
+    "gain_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "harm_alternative_fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "robust_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "replication_count": {
+      "null": 20000,
+      "alternative": 10000
+    },
+    "seed_base": 2026090300
+  },
+  "scenarios": {
+    "stable_gain_boundary": {
+      "group": "null",
+      "registered_null": "mean-gain component holds throughout",
+      "phases": [
+        {
+          "name": "gain-boundary-low-harm",
+          "duration": 500,
+          "active_null_component": "mean-gain",
+          "probabilities": [
+            0.95,
+            0.05
+          ],
+          "gain_scores": [
+            0.05,
+            -0.95
+          ],
+          "harmful": [
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    "stable_harm_boundary": {
+      "group": "null",
+      "registered_null": "harm-rate component holds throughout",
+      "phases": [
+        {
+          "name": "positive-gain-harm-boundary",
+          "duration": 500,
+          "active_null_component": "harm-rate",
+          "probabilities": [
+            0.9,
+            0.1
+          ],
+          "gain_scores": [
+            0.2,
+            -0.1
+          ],
+          "harmful": [
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    "switching_invalidity": {
+      "group": "null",
+      "registered_null": "at every reveal one component null holds, but the active component changes after observation 50",
+      "phases": [
+        {
+          "name": "useful-but-excessively-harmful",
+          "duration": 50,
+          "active_null_component": "harm-rate",
+          "probabilities": [
+            0.8,
+            0.2
+          ],
+          "gain_scores": [
+            0.5,
+            -0.05
+          ],
+          "harmful": [
+            false,
+            true
+          ]
+        },
+        {
+          "name": "harmless-but-negative-gain",
+          "duration": 450,
+          "active_null_component": "mean-gain",
+          "probabilities": [
+            1.0
+          ],
+          "gain_scores": [
+            -0.05
+          ],
+          "harmful": [
+            false
+          ]
+        }
+      ]
+    },
+    "moderate_safe_benefit": {
+      "group": "alternative",
+      "registered_null": null,
+      "phases": [
+        {
+          "name": "moderate-positive-low-harm",
+          "duration": 500,
+          "active_null_component": null,
+          "probabilities": [
+            0.95,
+            0.05
+          ],
+          "gain_scores": [
+            0.1,
+            -0.05
+          ],
+          "harmful": [
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    "strong_safe_benefit": {
+      "group": "alternative",
+      "registered_null": null,
+      "phases": [
+        {
+          "name": "strong-positive-low-harm",
+          "duration": 500,
+          "active_null_component": null,
+          "probabilities": [
+            0.98,
+            0.02
+          ],
+          "gain_scores": [
+            0.1,
+            -0.05
+          ],
+          "harmful": [
+            false,
+            true
+          ]
+        }
+      ]
+    }
+  },
+  "mechanism_gate": {
+    "maximum_robust_null_wilson_upper": 0.025,
+    "minimum_switching_null_iut_crossing": 0.95,
+    "maximum_switching_null_robust_crossing": 0.025,
+    "minimum_moderate_robust_power": 0.7,
+    "minimum_strong_robust_power": 0.99,
+    "decision": "conjunctive"
+  },
+  "information_boundary": {
+    "controlled_synthetic_study": true,
+    "real_outcomes_used": false,
+    "scenario_parameters_frozen_before_execution": true,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A positive result supports a pointwise-switching-null anytime certificate and demonstrates the necessity of the stable-component assumption for the more efficient latched intersection-union rule under the registered controlled distributions. It does not establish fresh real-world validity, universal power, physical safety, or validity after data-dependent score or candidate changes."
+}

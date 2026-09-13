@@ -1,0 +1,9 @@
+scenario,group,null_component,expected_gain_score,expected_harm_rate,method,component_alpha,e_value_threshold,replication_count,crossing_count,crossing_probability,wilson_95_lower,wilson_95_upper,median_first_crossing,first_crossing_q10,first_crossing_q90
+gain_boundary_low_harm,null,mean-gain,0.0,0.05,shared_alpha_iut,0.025,40.0,20000,167,0.00835,0.007179888553562395,0.009708940500405282,237.0,132.0,431.0
+gain_boundary_low_harm,null,mean-gain,0.0,0.05,bonferroni_split,0.0125,80.0,20000,72,0.0036,0.0028599057300619343,0.004530747666438737,257.0,187.0,424.0
+harm_boundary_positive_gain,null,harm-rate,0.17,0.1,shared_alpha_iut,0.025,40.0,20000,296,0.0148,0.013217242781221848,0.016569109007622082,94.0,51.0,301.0
+harm_boundary_positive_gain,null,harm-rate,0.17,0.1,bonferroni_split,0.0125,80.0,20000,141,0.00705,0.005981362480713051,0.0083079658670005,103.0,59.0,315.0
+moderate_safe_benefit,alternative,,0.0925,0.05,shared_alpha_iut,0.025,40.0,10000,8999,0.8999,0.893863059890281,0.9056298182128519,214.0,73.0,396.0
+moderate_safe_benefit,alternative,,0.0925,0.05,bonferroni_split,0.0125,80.0,10000,8501,0.8501,0.842969064327551,0.8569620600133011,242.0,81.0,425.0
+strong_safe_benefit,alternative,,0.097,0.02,shared_alpha_iut,0.025,40.0,10000,10000,1.0,0.9996160016293234,1.0,73.0,67.0,132.0
+strong_safe_benefit,alternative,,0.097,0.02,bonferroni_split,0.0125,80.0,10000,10000,1.0,0.9996160016293234,1.0,81.0,77.0,160.0

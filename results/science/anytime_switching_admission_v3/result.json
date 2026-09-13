@@ -1,0 +1,342 @@
+{
+  "claim_boundary": "Controlled stress evidence for the switching-null certificate and for the necessity of the stable-null assumption behind the more efficient latched intersection--union rule. It is not fresh real-world validation or a physical-safety guarantee.",
+  "contract": "anytime-switching-admission-stress-result-v3",
+  "decision": "switching-null-robustness-supported",
+  "derived_comparison": {
+    "maximum_robust_null_wilson_upper": 0.012808408857821536,
+    "moderate_robust_power": 0.7359,
+    "strong_robust_power": 1.0,
+    "switching_null_latched_iut_crossing_probability": 1.0,
+    "switching_null_robust_crossing_probability": 0.0
+  },
+  "design": {
+    "e_value_threshold": 40.0,
+    "epoch_alpha_continuation": 0.5,
+    "first_epoch_alpha": 0.025,
+    "gain_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "harm_alternative_fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "maximum_harm_rate": 0.1,
+    "minimum_resolved_trials": 20,
+    "replication_count": {
+      "alternative": 10000,
+      "null": 20000
+    },
+    "robust_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "seed_base": 2026090300,
+    "total_alpha": 0.05
+  },
+  "mechanism_gate": {
+    "passed": true,
+    "requirements": {
+      "decision": "conjunctive",
+      "maximum_robust_null_wilson_upper": 0.025,
+      "maximum_switching_null_robust_crossing": 0.025,
+      "minimum_moderate_robust_power": 0.7,
+      "minimum_strong_robust_power": 0.99,
+      "minimum_switching_null_iut_crossing": 0.95
+    },
+    "results": {
+      "latched_iut_failure_outside_assumptions": true,
+      "moderate_robust_power": true,
+      "robust_null_control": true,
+      "strong_robust_power": true,
+      "switching_robust_control": true
+    }
+  },
+  "protocol_sha256": "83384c2f214a4c4aad01282645910c40fcd3b6c22a557818e1e99d3b8baf4193",
+  "runtime": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "python": "3.12.14"
+  },
+  "scenarios": {
+    "moderate_safe_benefit": {
+      "group": "alternative",
+      "horizon": 500,
+      "latched_shared_alpha_iut": {
+        "assumption": "one fixed component null must hold throughout the epoch",
+        "component_alpha": 0.025,
+        "crossing_count": 8947,
+        "crossing_probability": 0.8947,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          73.0,
+          410.0
+        ],
+        "median_first_crossing": 214.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.8885317763353614,
+          0.9005650953508265
+        ]
+      },
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": null,
+          "duration": 500,
+          "expected_gain_score": 0.0925,
+          "expected_harm_rate": 0.05,
+          "expected_robust_score": 0.045,
+          "name": "moderate-positive-low-harm",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": null,
+      "switching_union_min_score": {
+        "assumption": "at each reveal at least one component null holds; the active component may switch predictably or adversarially",
+        "component_alpha": 0.025,
+        "crossing_count": 7359,
+        "crossing_probability": 0.7359,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          108.0,
+          437.0
+        ],
+        "median_first_crossing": 252.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.7271700429333284,
+          0.7444487866353863
+        ]
+      }
+    },
+    "stable_gain_boundary": {
+      "group": "null",
+      "horizon": 500,
+      "latched_shared_alpha_iut": {
+        "assumption": "one fixed component null must hold throughout the epoch",
+        "component_alpha": 0.025,
+        "crossing_count": 159,
+        "crossing_probability": 0.00795,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          167.0,
+          400.0
+        ],
+        "median_first_crossing": 237.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.0068101987906726315,
+          0.00927878389213993
+        ]
+      },
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": "mean-gain",
+          "duration": 500,
+          "expected_gain_score": 0.0,
+          "expected_harm_rate": 0.05,
+          "expected_robust_score": -0.0025000000000000022,
+          "name": "gain-boundary-low-harm",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": "mean-gain component holds throughout",
+      "switching_union_min_score": {
+        "assumption": "at each reveal at least one component null holds; the active component may switch predictably or adversarially",
+        "component_alpha": 0.025,
+        "crossing_count": 106,
+        "crossing_probability": 0.0053,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          132.0,
+          372.0
+        ],
+        "median_first_crossing": 210.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.004384346067834761,
+          0.006405654406075155
+        ]
+      }
+    },
+    "stable_harm_boundary": {
+      "group": "null",
+      "horizon": 500,
+      "latched_shared_alpha_iut": {
+        "assumption": "one fixed component null must hold throughout the epoch",
+        "component_alpha": 0.025,
+        "crossing_count": 296,
+        "crossing_probability": 0.0148,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          51.0,
+          329.0
+        ],
+        "median_first_crossing": 94.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.013217242781221848,
+          0.016569109007622082
+        ]
+      },
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": "harm-rate",
+          "duration": 500,
+          "expected_gain_score": 0.17,
+          "expected_harm_rate": 0.1,
+          "expected_robust_score": 0.0,
+          "name": "positive-gain-harm-boundary",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": "harm-rate component holds throughout",
+      "switching_union_min_score": {
+        "assumption": "at each reveal at least one component null holds; the active component may switch predictably or adversarially",
+        "component_alpha": 0.025,
+        "crossing_count": 225,
+        "crossing_probability": 0.01125,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          61.0,
+          383.0
+        ],
+        "median_first_crossing": 150.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.009879306387020732,
+          0.012808408857821536
+        ]
+      }
+    },
+    "strong_safe_benefit": {
+      "group": "alternative",
+      "horizon": 500,
+      "latched_shared_alpha_iut": {
+        "assumption": "one fixed component null must hold throughout the epoch",
+        "component_alpha": 0.025,
+        "crossing_count": 10000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          67.0,
+          133.80000000000655
+        ],
+        "median_first_crossing": 73.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.9996160016293234,
+          1.0
+        ]
+      },
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": null,
+          "duration": 500,
+          "expected_gain_score": 0.097,
+          "expected_harm_rate": 0.02,
+          "expected_robust_score": 0.078,
+          "name": "strong-positive-low-harm",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": null,
+      "switching_union_min_score": {
+        "assumption": "at each reveal at least one component null holds; the active component may switch predictably or adversarially",
+        "component_alpha": 0.025,
+        "crossing_count": 10000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          67.0,
+          166.0
+        ],
+        "median_first_crossing": 108.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.9996160016293234,
+          1.0
+        ]
+      }
+    },
+    "switching_invalidity": {
+      "group": "null",
+      "horizon": 500,
+      "latched_shared_alpha_iut": {
+        "assumption": "one fixed component null must hold throughout the epoch",
+        "component_alpha": 0.025,
+        "crossing_count": 20000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": [
+          167.0,
+          287.0
+        ],
+        "median_first_crossing": 229.0,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.9998079639438954,
+          0.9999999999999999
+        ]
+      },
+      "phase_count": 2,
+      "phase_expectations": [
+        {
+          "active_null_component": "harm-rate",
+          "duration": 50,
+          "expected_gain_score": 0.39,
+          "expected_harm_rate": 0.2,
+          "expected_robust_score": -0.1111111111111111,
+          "name": "useful-but-excessively-harmful",
+          "phase_index": 0
+        },
+        {
+          "active_null_component": "mean-gain",
+          "duration": 450,
+          "expected_gain_score": -0.05,
+          "expected_harm_rate": 0.0,
+          "expected_robust_score": -0.05,
+          "name": "harmless-but-negative-gain",
+          "phase_index": 1
+        }
+      ],
+      "registered_null": "at every reveal one component null holds, but the active component changes after observation 50",
+      "switching_union_min_score": {
+        "assumption": "at each reveal at least one component null holds; the active component may switch predictably or adversarially",
+        "component_alpha": 0.025,
+        "crossing_count": 0,
+        "crossing_probability": 0.0,
+        "e_value_threshold": 40.0,
+        "first_crossing_quantiles_10_90": null,
+        "median_first_crossing": null,
+        "replication_count": 20000,
+        "wilson_95_interval": [
+          0.0,
+          0.00019203605610462553
+        ]
+      }
+    }
+  },
+  "schema": "bayesian-phystwin.anytime-switching-admission-study-v3",
+  "schema_version": 3,
+  "theorem_boundary": {
+    "key_inequality": "min(gain_score, harm_score) is no larger than whichever component score has nonpositive conditional expectation",
+    "not_covered": "unregistered adaptation of candidate, fallback, score, harm definition, information set, or betting fractions",
+    "stable_component_iut": "efficient but requires one component null to hold throughout the admission epoch",
+    "switching_union_certificate": "valid when at every reveal at least one component null holds, even if the active component changes over time"
+  }
+}

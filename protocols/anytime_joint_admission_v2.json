@@ -1,0 +1,133 @@
+{
+  "schema_version": 2,
+  "contract": "anytime-joint-admission-power-v2",
+  "status": "frozen-before-controlled-execution",
+  "scientific_question": "Can a shared-alpha intersection-union admission rule retain the same epoch-wise false-admission bound while improving power and time-to-admission relative to splitting alpha across mean-gain and harm-rate gates?",
+  "design": {
+    "total_alpha": 0.05,
+    "epoch_alpha_continuation": 0.5,
+    "horizon": 500,
+    "minimum_resolved_trials": 20,
+    "maximum_harm_rate": 0.1,
+    "gain_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "harm_alternative_fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "replication_count": {
+      "null": 20000,
+      "alternative": 10000
+    },
+    "seed_base": 2026090200,
+    "comparison": {
+      "shared_alpha_iut": "Both latched component e-processes use the full first-epoch alpha allocation.",
+      "bonferroni_split": "Each component e-process receives half of the same first-epoch alpha allocation."
+    }
+  },
+  "scenarios": {
+    "gain_boundary_low_harm": {
+      "group": "null",
+      "null_component": "mean-gain",
+      "probabilities": [
+        0.95,
+        0.05
+      ],
+      "gain_scores": [
+        0.05,
+        -0.95
+      ],
+      "harmful": [
+        false,
+        true
+      ],
+      "registered_expectation": {
+        "mean_gain_score": 0.0,
+        "harm_rate": 0.05
+      }
+    },
+    "harm_boundary_positive_gain": {
+      "group": "null",
+      "null_component": "harm-rate",
+      "probabilities": [
+        0.9,
+        0.1
+      ],
+      "gain_scores": [
+        0.2,
+        -0.1
+      ],
+      "harmful": [
+        false,
+        true
+      ],
+      "registered_expectation": {
+        "mean_gain_score": 0.17,
+        "harm_rate": 0.1
+      }
+    },
+    "moderate_safe_benefit": {
+      "group": "alternative",
+      "null_component": null,
+      "probabilities": [
+        0.95,
+        0.05
+      ],
+      "gain_scores": [
+        0.1,
+        -0.05
+      ],
+      "harmful": [
+        false,
+        true
+      ],
+      "registered_expectation": {
+        "mean_gain_score": 0.0925,
+        "harm_rate": 0.05
+      }
+    },
+    "strong_safe_benefit": {
+      "group": "alternative",
+      "null_component": null,
+      "probabilities": [
+        0.98,
+        0.02
+      ],
+      "gain_scores": [
+        0.1,
+        -0.05
+      ],
+      "harmful": [
+        false,
+        true
+      ],
+      "registered_expectation": {
+        "mean_gain_score": 0.097,
+        "harm_rate": 0.02
+      }
+    }
+  },
+  "mechanism_gate": {
+    "maximum_null_wilson_upper": 0.025,
+    "minimum_moderate_power_gain": 0.03,
+    "maximum_moderate_median_crossing_ratio": 0.9,
+    "minimum_strong_power": 0.99,
+    "decision": "conjunctive"
+  },
+  "information_boundary": {
+    "controlled_synthetic_study": true,
+    "real_outcomes_used": false,
+    "scenario_parameters_frozen_before_execution": true,
+    "paper_claim_authorized": false
+  },
+  "claim_boundary": "A positive result supports the efficiency of the shared-alpha intersection-union admission rule under the registered controlled distributions. It does not establish fresh real-world validity, universal power, arbitrary nonstationarity, deployment safety, or physical-cause identification."
+}

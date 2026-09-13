@@ -1,0 +1,362 @@
+{
+  "claim_boundary": "Controlled confirmation evidence for the independently tuned factor-envelope construction. Scenario families were inherited from the already observed version-3 controlled study. A separate version-4 pilot roster was used only to choose the frozen gates; the retained confirmation seed roster was not opened before this protocol was committed. No real outcomes are used.",
+  "contract": "anytime-factor-envelope-development-result-v4",
+  "decision": "factor-envelope-efficiency-supported",
+  "derived_comparison": {
+    "maximum_envelope_null_wilson_upper": 0.010166104196610706,
+    "moderate_envelope_power": 0.8334,
+    "moderate_median_crossing_ratio_envelope_over_min_score": 1.1111111111111112,
+    "moderate_min_score_power": 0.743,
+    "moderate_power_gain_envelope_minus_min_score": 0.09040000000000004,
+    "strong_envelope_power": 1.0,
+    "switching_null_envelope_crossing_probability": 0.0
+  },
+  "design": {
+    "e_value_threshold": 40.0,
+    "epoch_alpha_continuation": 0.5,
+    "factor_envelope_component_count": 30,
+    "first_epoch_alpha": 0.025,
+    "gain_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "harm_alternative_fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "maximum_harm_rate": 0.1,
+    "minimum_resolved_trials": 20,
+    "replication_count": {
+      "alternative": 5000,
+      "null": 10000
+    },
+    "robust_bet_fractions": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "seed_base": 2026091400,
+    "total_alpha": 0.05
+  },
+  "mechanism_gate": {
+    "passed": true,
+    "requirements": {
+      "decision": "conjunctive",
+      "maximum_envelope_null_wilson_upper": 0.025,
+      "maximum_moderate_median_crossing_ratio": 1.15,
+      "maximum_switching_null_envelope_crossing": 0.025,
+      "minimum_moderate_envelope_power": 0.78,
+      "minimum_moderate_power_gain": 0.05,
+      "minimum_strong_envelope_power": 0.99
+    },
+    "results": {
+      "factor_envelope_null_control": true,
+      "moderate_crossing_speed": true,
+      "moderate_power": true,
+      "moderate_power_gain": true,
+      "strong_power": true,
+      "switching_null_control": true
+    }
+  },
+  "protocol_sha256": "8d7a406a944e0a5c38cdd2b4670a10a9f6424b0aad0e6b775194e3901492b026",
+  "runtime": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "python": "3.12.14"
+  },
+  "scenarios": {
+    "moderate_safe_benefit": {
+      "group": "alternative",
+      "horizon": 500,
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": null,
+          "duration": 500,
+          "expected_gain_score": 0.0925,
+          "expected_harm_rate": 0.05,
+          "expected_min_score": 0.045,
+          "maximum_expected_envelope_factor": 1.0385,
+          "minimum_expected_envelope_factor": 0.9597499999999999,
+          "name": "moderate-positive-low-harm",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": null,
+      "switching_union_factor_envelope_v4": {
+        "component_alpha": 0.025,
+        "component_count": 30,
+        "crossing_count": 4167,
+        "crossing_probability": 0.8334,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda_g G, BernoulliLR(q_h; rho)) mixed over the Cartesian product of independently fixed parameters",
+        "first_crossing_quantiles_10_90": [
+          140.0,
+          444.0
+        ],
+        "median_first_crossing": 280.0,
+        "replication_count": 5000,
+        "wilson_95_interval": [
+          0.8228165771361255,
+          0.8434715192069104
+        ]
+      },
+      "switching_union_min_score_v3": {
+        "component_alpha": 0.025,
+        "crossing_count": 3715,
+        "crossing_probability": 0.743,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda G, 1 + lambda S) with one shared lambda",
+        "first_crossing_quantiles_10_90": [
+          108.0,
+          437.0
+        ],
+        "median_first_crossing": 252.0,
+        "replication_count": 5000,
+        "wilson_95_interval": [
+          0.7307044329595329,
+          0.7549224638951693
+        ]
+      }
+    },
+    "stable_gain_boundary": {
+      "group": "null",
+      "horizon": 500,
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": "mean-gain",
+          "duration": 500,
+          "expected_gain_score": 0.0,
+          "expected_harm_rate": 0.05,
+          "expected_min_score": -0.0025000000000000022,
+          "maximum_expected_envelope_factor": 1.0,
+          "minimum_expected_envelope_factor": 0.9573749999999999,
+          "name": "gain-boundary-low-harm",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": "mean-gain component holds throughout",
+      "switching_union_factor_envelope_v4": {
+        "component_alpha": 0.025,
+        "component_count": 30,
+        "crossing_count": 28,
+        "crossing_probability": 0.0028,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda_g G, BernoulliLR(q_h; rho)) mixed over the Cartesian product of independently fixed parameters",
+        "first_crossing_quantiles_10_90": [
+          142.0,
+          439.0
+        ],
+        "median_first_crossing": 226.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.001938005730685637,
+          0.004043842249115168
+        ]
+      },
+      "switching_union_min_score_v3": {
+        "component_alpha": 0.025,
+        "crossing_count": 46,
+        "crossing_probability": 0.0046,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda G, 1 + lambda S) with one shared lambda",
+        "first_crossing_quantiles_10_90": [
+          132.0,
+          438.5
+        ],
+        "median_first_crossing": 210.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.0034506598701977897,
+          0.006129805715468581
+        ]
+      }
+    },
+    "stable_harm_boundary": {
+      "group": "null",
+      "horizon": 500,
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": "harm-rate",
+          "duration": 500,
+          "expected_gain_score": 0.17,
+          "expected_harm_rate": 0.1,
+          "expected_min_score": 0.0,
+          "maximum_expected_envelope_factor": 1.0000000000000002,
+          "minimum_expected_envelope_factor": 0.919,
+          "name": "positive-gain-harm-boundary",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": "harm-rate component holds throughout",
+      "switching_union_factor_envelope_v4": {
+        "component_alpha": 0.025,
+        "component_count": 30,
+        "crossing_count": 82,
+        "crossing_probability": 0.0082,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda_g G, BernoulliLR(q_h; rho)) mixed over the Cartesian product of independently fixed parameters",
+        "first_crossing_quantiles_10_90": [
+          60.0,
+          314.0
+        ],
+        "median_first_crossing": 124.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.006611596600786796,
+          0.010166104196610706
+        ]
+      },
+      "switching_union_min_score_v3": {
+        "component_alpha": 0.025,
+        "crossing_count": 128,
+        "crossing_probability": 0.0128,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda G, 1 + lambda S) with one shared lambda",
+        "first_crossing_quantiles_10_90": [
+          61.0,
+          332.19999999999993
+        ],
+        "median_first_crossing": 116.0,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.010776367996168325,
+          0.015197800016218949
+        ]
+      }
+    },
+    "strong_safe_benefit": {
+      "group": "alternative",
+      "horizon": 500,
+      "phase_count": 1,
+      "phase_expectations": [
+        {
+          "active_null_component": null,
+          "duration": 500,
+          "expected_gain_score": 0.097,
+          "expected_harm_rate": 0.02,
+          "expected_min_score": 0.078,
+          "maximum_expected_envelope_factor": 1.0634,
+          "minimum_expected_envelope_factor": 0.9868999999999999,
+          "name": "strong-positive-low-harm",
+          "phase_index": 0
+        }
+      ],
+      "registered_null": null,
+      "switching_union_factor_envelope_v4": {
+        "component_alpha": 0.025,
+        "component_count": 30,
+        "crossing_count": 5000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda_g G, BernoulliLR(q_h; rho)) mixed over the Cartesian product of independently fixed parameters",
+        "first_crossing_quantiles_10_90": [
+          78.0,
+          191.0
+        ],
+        "median_first_crossing": 122.0,
+        "replication_count": 5000,
+        "wilson_95_interval": [
+          0.9992322980549431,
+          1.0
+        ]
+      },
+      "switching_union_min_score_v3": {
+        "component_alpha": 0.025,
+        "crossing_count": 5000,
+        "crossing_probability": 1.0,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda G, 1 + lambda S) with one shared lambda",
+        "first_crossing_quantiles_10_90": [
+          67.0,
+          166.0
+        ],
+        "median_first_crossing": 108.0,
+        "replication_count": 5000,
+        "wilson_95_interval": [
+          0.9992322980549431,
+          1.0
+        ]
+      }
+    },
+    "switching_invalidity": {
+      "group": "null",
+      "horizon": 500,
+      "phase_count": 2,
+      "phase_expectations": [
+        {
+          "active_null_component": "harm-rate",
+          "duration": 50,
+          "expected_gain_score": 0.39,
+          "expected_harm_rate": 0.2,
+          "expected_min_score": -0.1111111111111111,
+          "maximum_expected_envelope_factor": 0.9888888888888889,
+          "minimum_expected_envelope_factor": 0.84,
+          "name": "useful-but-excessively-harmful",
+          "phase_index": 0
+        },
+        {
+          "active_null_component": "mean-gain",
+          "duration": 450,
+          "expected_gain_score": -0.05,
+          "expected_harm_rate": 0.0,
+          "expected_min_score": -0.05,
+          "maximum_expected_envelope_factor": 0.9975,
+          "minimum_expected_envelope_factor": 0.96,
+          "name": "harmless-but-negative-gain",
+          "phase_index": 1
+        }
+      ],
+      "registered_null": "at every reveal one component null holds, but the active component changes after observation 50",
+      "switching_union_factor_envelope_v4": {
+        "component_alpha": 0.025,
+        "component_count": 30,
+        "crossing_count": 0,
+        "crossing_probability": 0.0,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda_g G, BernoulliLR(q_h; rho)) mixed over the Cartesian product of independently fixed parameters",
+        "first_crossing_quantiles_10_90": null,
+        "median_first_crossing": null,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.0,
+          0.00038399837067659573
+        ]
+      },
+      "switching_union_min_score_v3": {
+        "component_alpha": 0.025,
+        "crossing_count": 0,
+        "crossing_probability": 0.0,
+        "e_value_threshold": 40.0,
+        "factor_family": "min(1 + lambda G, 1 + lambda S) with one shared lambda",
+        "first_crossing_quantiles_10_90": null,
+        "median_first_crossing": null,
+        "replication_count": 10000,
+        "wilson_95_interval": [
+          0.0,
+          0.00038399837067659573
+        ]
+      }
+    }
+  },
+  "schema": "bayesian-phystwin.anytime-factor-envelope-study-v4",
+  "schema_version": 4,
+  "theorem_boundary": {
+    "general_composition": "under a pointwise union of component nulls, the minimum of independently fixed component e-factors is dominated by the factor associated with whichever null is active",
+    "not_covered": "outcome-dependent factor-grid redesign, unregistered candidate or fallback changes, physical safety, or real-world validity",
+    "parameter_mixture": "an outcome-independent mixture over fixed component-parameter tuples preserves the e-process property",
+    "relation_to_v3": "version 3 is the shared-fraction diagonal restriction after expressing the Bernoulli factor as a linear harm-score factor",
+    "time_product": "products remain test supermartingales even when the active component changes arbitrarily with the past"
+  }
+}

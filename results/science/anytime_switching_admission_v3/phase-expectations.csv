@@ -1,0 +1,7 @@
+scenario,phase_index,phase_name,duration,active_null_component,expected_gain_score,expected_harm_rate,expected_robust_score
+stable_gain_boundary,0,gain-boundary-low-harm,500,mean-gain,0.0,0.05,-0.0025000000000000022
+stable_harm_boundary,0,positive-gain-harm-boundary,500,harm-rate,0.17,0.1,0.0
+switching_invalidity,0,useful-but-excessively-harmful,50,harm-rate,0.39,0.2,-0.1111111111111111
+switching_invalidity,1,harmless-but-negative-gain,450,mean-gain,-0.05,0.0,-0.05
+moderate_safe_benefit,0,moderate-positive-low-harm,500,,0.0925,0.05,0.045
+strong_safe_benefit,0,strong-positive-low-harm,500,,0.097,0.02,0.078

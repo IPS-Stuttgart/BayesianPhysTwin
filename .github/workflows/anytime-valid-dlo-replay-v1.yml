@@ -1,0 +1,136 @@
+# workflow-lifecycle: temporary-one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Anytime-valid DLO replay v1
+
+on:
+  push:
+    branches: [science/anytime-valid-simulator-admission-v1]
+    paths:
+      - ".github/workflows/anytime-valid-dlo-replay-v1.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: anytime-valid-dlo-replay-v1
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out frozen branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/anytime-valid-simulator-admission-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest==9.0.2 ruff==0.16.5
+
+      - name: Validate replay implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/remote/run_anytime_valid_dlo_replay_v1.py
+            src/bayesian_phystwin_experiments/anytime_valid_admission_v1.py
+            tests/test_anytime_valid_dlo_replay_v1.py
+          )
+          ruff check "${files[@]}"
+          ruff format --check "${files[@]}"
+          python -m pytest -q \
+            tests/test_anytime_valid_admission_v1.py \
+            tests/test_anytime_valid_dlo_replay_v1.py
+
+      - name: Download and verify terminal evidence artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/anytime-dlo/dlo45 /tmp/anytime-dlo/hierarchy
+          curl -L --fail --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/artifacts/9811788200/zip" \
+            -o /tmp/anytime-dlo/dlo45.zip
+          curl -L --fail --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/artifacts/9811886089/zip" \
+            -o /tmp/anytime-dlo/hierarchy.zip
+          echo "84ec488d3326d8ff1e81e627775c076ca562d8b2a542f2807d246fe6a75910c4  /tmp/anytime-dlo/dlo45.zip" \
+            | sha256sum -c -
+          echo "bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0  /tmp/anytime-dlo/hierarchy.zip" \
+            | sha256sum -c -
+          unzip -q /tmp/anytime-dlo/dlo45.zip -d /tmp/anytime-dlo/dlo45
+          unzip -q /tmp/anytime-dlo/hierarchy.zip -d /tmp/anytime-dlo/hierarchy
+
+      - name: Execute frozen retrospective replay
+        id: replay
+        shell: bash
+        run: |
+          set +e
+          python scripts/remote/run_anytime_valid_dlo_replay_v1.py \
+            --protocol protocols/anytime_valid_dlo_replay_v1.json \
+            --dlo45-root /tmp/anytime-dlo/dlo45 \
+            --hierarchy-root /tmp/anytime-dlo/hierarchy \
+            --output-root results/science/anytime_valid_dlo_replay_v1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Retain replay and exact provenance
+        shell: bash
+        env:
+          REPLAY_STATUS: ${{ steps.replay.outputs.status }}
+        run: |
+          set -euo pipefail
+          result_root=results/science/anytime_valid_dlo_replay_v1
+          test -f "$result_root/result.json"
+          test -f "$result_root/report.md"
+          test -f "$result_root/case-sequence.csv"
+          {
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "execution_sha=${GITHUB_SHA}"
+            echo "dlo45_artifact_id=9811788200"
+            echo "dlo45_artifact_sha256=84ec488d3326d8ff1e81e627775c076ca562d8b2a542f2807d246fe6a75910c4"
+            echo "hierarchy_artifact_id=9811886089"
+            echo "hierarchy_artifact_sha256=bb3db2474a7f91e0bf1df869cb48f1105913f7b56aca7c98b6557323dde588b0"
+            echo "python=$(python --version 2>&1)"
+            echo "numpy=$(python -c 'import numpy; print(numpy.__version__)')"
+            echo "replay_exit_status=${REPLAY_STATUS}"
+          } > "$result_root/execution.txt"
+          sha256sum \
+            "$result_root/result.json" \
+            "$result_root/report.md" \
+            "$result_root/case-sequence.csv" \
+            "$result_root/execution.txt" \
+            > "$result_root/SHA256SUMS"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$result_root"
+          git diff --cached --check
+          git commit -m 'Record retrospective anytime-valid DLO replay'
+          git push origin HEAD:science/anytime-valid-simulator-admission-v1
+          if [[ "$REPLAY_STATUS" != "0" ]]; then
+            echo "The registered retrospective replay gate failed; result was retained." >&2
+            exit "$REPLAY_STATUS"
+          fi
