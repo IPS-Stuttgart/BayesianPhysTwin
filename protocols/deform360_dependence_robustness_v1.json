@@ -1,0 +1,64 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-robustness-protocol-v1",
+  "schema_version": 1,
+  "protocol_id": "deform360-same-mean-dependence-robustness-v1",
+  "status": "frozen-before-trigger",
+  "parent": {
+    "recovery_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "recovery_runner_sha256": "6cca5314d3748304904ec97d97c7cd023956faf30a9fe48415684602a5add7ee",
+    "reference_run_id": 33528032875,
+    "reference_artifact_id": 9811194776,
+    "reference_artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+    "reference_result_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+    "object_count": 92,
+    "query_count": 5
+  },
+  "evaluation": {
+    "inferential_unit": "physical object",
+    "covariance_arms": [
+      "full_low_rank",
+      "diagonal_marginal_matched",
+      "scrambled_marginal_matched"
+    ],
+    "calibration_regimes": [
+      "equal_budget_query",
+      "heldout_query_transfer"
+    ],
+    "equal_budget_query": "Fit one scalar variance multiplier and one central-90% radius per covariance arm and query family from all source episodes only, pooled across physical objects.",
+    "heldout_query_transfer": "For each evaluated query family and covariance arm, fit the same two scalar calibration quantities from the other four query families only, using source episodes only.",
+    "fallback_cost": 0.1,
+    "matched_coverage": 0.4,
+    "probability_clip": 1e-09,
+    "bootstrap_repetitions": 10000,
+    "random_seed": 260903,
+    "source_frozen_policy": "For each object and arm, select the 40% event-probability quantile on source query-windows and apply that threshold unchanged to target query-windows.",
+    "target_rank_policy": "Descriptive only: within each object and arm, accept exactly the 40% target query-windows with lowest predicted adverse-event probability; stable index resolves ties without reading labels.",
+    "scientific_outcome_may_fail_workflow": false
+  },
+  "questions": {
+    "equal_calibration_budget": "Does full low-rank dependence retain lower Brier score and finite-decision loss when both dependence-destruction controls receive their own equally parameterized source-only calibration?",
+    "matched_coverage": "At common 40% target-ranked coverage, does full dependence reduce decision loss or harmful accepted events?",
+    "source_frozen_threshold": "Does the ordering persist when thresholds are chosen from source probabilities only?",
+    "query_transfer": "Does the dependence advantage survive calibration that excludes the evaluated query family?"
+  },
+  "information_boundary": {
+    "retrospective_target_reuse": true,
+    "parent_scientific_projection_must_reproduce": true,
+    "point_predictor_may_change": false,
+    "predictive_means_may_change": false,
+    "coordinate_marginals_may_change": false,
+    "query_bank_may_change": false,
+    "target_outcomes_may_tune_predictor": false,
+    "target_outcomes_may_tune_queries": false,
+    "target_outcomes_may_tune_calibration": false,
+    "new_measurements_collected": false,
+    "fresh_confirmation_claimed": false,
+    "paper_claim_authorized": false
+  },
+  "runner": {
+    "labels": ["self-hosted", "Linux", "X64", "gpuserver4090"],
+    "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+    "timeout_minutes": 240
+  },
+  "claim_boundary": "Retrospective robustness evidence on the already-open 92-object Deform360 cohort. It may strengthen or weaken the interpretation that cross-coordinate dependence has decision value under equal calibration budgets and matched coverage. It does not provide fresh confirmation, calibrated field uncertainty, real Prob4D runtime evidence, unseen-object transfer, robot-control safety, or permission to retune the parent predictor or query bank."
+}
