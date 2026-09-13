@@ -1,0 +1,295 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: Deform360 exact same-mean query covariance v7
+
+on:
+  push:
+    branches:
+      - science/deform360-same-mean-query-covariance-v6
+    paths:
+      - .github/requests/deform360-exact-same-mean-query-covariance-v7-r2.json
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-exact-same-mean-query-covariance-v7
+  cancel-in-progress: false
+
+env:
+  REQUEST_PATH: .github/requests/deform360-exact-same-mean-query-covariance-v7-r2.json
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform360
+  CONFIRMATION_RUN_ID: "33335779766"
+  CONFIRMATION_ARTIFACT_ID: "9738998271"
+  CONFIRMATION_ARTIFACT_SHA256: e98f9e2687f568d0d0fcabec9ce0393a7e1b34ca3019acb1e14fdf894885a948
+  CONFIRMATION_REVISION: e409527b8499a225bde8bd7f8c532a30e96548c6
+  FROZEN_MEAN_REVISION: 25ba91c021124569c4dcf84c66eda5ec088868e0
+  FOLD_COUNT: "5"
+  MAXIMUM_QUERIES: "12"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Authorize one exact-reproduction request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.event.forced }}" = false
+          test "${{ github.event.before }}" != 0000000000000000000000000000000000000000
+          mapfile -t changed < <(git diff --name-status "${{ github.event.before }}" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t'"${REQUEST_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(Path(os.environ["REQUEST_PATH"]).read_text())
+          parent = subprocess.check_output(
+              ["git", "rev-parse", "HEAD^"], text=True
+          ).strip()
+          expected = {
+              "schema": "deform360-exact-same-mean-query-covariance-request-v7",
+              "mode": "reexecute-exact-frozen-mean-and-crossfit-query-covariance",
+              "dataset_root": os.environ["DATASET_ROOT"],
+              "runner_label": "gpuserver4090",
+              "prior_confirmation_run_id": int(os.environ["CONFIRMATION_RUN_ID"]),
+              "prior_confirmation_artifact_id": int(
+                  os.environ["CONFIRMATION_ARTIFACT_ID"]
+              ),
+              "prior_confirmation_artifact_sha256": os.environ[
+                  "CONFIRMATION_ARTIFACT_SHA256"
+              ],
+              "confirmation_revision": os.environ["CONFIRMATION_REVISION"],
+              "frozen_mean_revision": os.environ["FROZEN_MEAN_REVISION"],
+              "fold_count": int(os.environ["FOLD_COUNT"]),
+              "maximum_queries": int(os.environ["MAXIMUM_QUERIES"]),
+              "exact_reproduction_required": True,
+              "same_mean_required": True,
+              "equal_object_weighting_required": True,
+              "marginal_preserving_dependence_controls_required": True,
+              "existing_target_payload_reexecution_authorized": True,
+              "new_measurements_authorized": False,
+              "paper_claim_authorized": False,
+              "expected_source_revision": parent,
+          }
+          if request != expected:
+              raise SystemExit("request differs from the frozen v7 contract")
+          PY
+
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install frozen numerical and quality runtime
+        run: python -m pip install numpy==1.26.4 ruff==0.14.14
+      - name: Format, lint, and self-test exact-reproduction implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/deform360_query_covariance_v7.py
+            scripts/science/deform360_exact_confirmation_capture_v7.py
+            scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py \
+            --self-test
+      - name: Upload canonical formatted sources
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-v7-formatted-sources-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            scripts/science/deform360_query_covariance_v7.py
+            scripts/science/deform360_exact_confirmation_capture_v7.py
+            scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py
+          retention-days: 7
+
+  real-output-study:
+    needs: [authorize, contracts]
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 300
+    env:
+      OUT: /home/github-runner/.cache/workflows/deform360-exact-same-mean-query-covariance-v7/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out current control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Check out immutable confirmation control
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.CONFIRMATION_REVISION }}
+          path: _confirmation_v5
+          persist-credentials: false
+          clean: true
+      - name: Check out exact frozen mean method
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.FROZEN_MEAN_REVISION }}
+          path: _frozen_v3
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install exact numerical runtime
+        run: python -m pip install numpy==1.26.4
+      - name: Bind data and create fresh custody root
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "$DATASET_ROOT")" = "$DATASET_ROOT"
+          test "$(git -C _confirmation_v5 rev-parse HEAD)" = "$CONFIRMATION_REVISION"
+          test "$(git -C _frozen_v3 rev-parse HEAD)" = "$FROZEN_MEAN_REVISION"
+          test ! -e "$OUT"
+          mkdir -p "$OUT/confirmation-artifact" "$OUT/artifact-audit" "$OUT/result"
+          chmod 700 "$OUT"
+      - name: Download and verify immutable 92-object confirmation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${CONFIRMATION_ARTIFACT_ID}/zip" \
+            --output "$OUT/confirmation-artifact.zip"
+          printf '%s  %s\n' \
+            "$CONFIRMATION_ARTIFACT_SHA256" \
+            "$OUT/confirmation-artifact.zip" \
+            | sha256sum --check --strict
+          unzip -q "$OUT/confirmation-artifact.zip" -d "$OUT/confirmation-artifact"
+          test -s "$OUT/confirmation-artifact/result.json"
+          test -s "$OUT/confirmation-artifact/bound-readiness.json"
+          test -s "$OUT/confirmation-artifact/confirmation-protocol.json"
+      - name: Prove the public artifact lacks retained sufficient statistics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/run_deform360_same_mean_query_covariance_v6.py \
+            --root "$OUT/confirmation-artifact" \
+            --output-root "$OUT/artifact-audit" \
+            --maximum-files-per-root 100 \
+            --maximum-queries "$MAXIMUM_QUERIES" \
+            --fold-count "$FOLD_COUNT"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUT"])
+          audit = json.loads((root / "artifact-audit" / "audit.json").read_text())
+          result = json.loads((root / "artifact-audit" / "result.json").read_text())
+          assert audit["decision"] == "no-retained-sufficient-statistics"
+          assert audit["candidate_count"] == 0
+          assert result["status"] == "no-retained-sufficient-statistics"
+          assert audit["information_boundary"][
+              "mounted_dataset_numeric_payload_opened"
+          ] is False
+          PY
+      - name: Reproduce exact frozen means and cross-fit query covariance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/run_deform360_exact_same_mean_query_covariance_v7.py \
+            --confirmation-artifact-root "$OUT/confirmation-artifact" \
+            --confirmation-root _confirmation_v5 \
+            --frozen-root _frozen_v3 \
+            --data-root "$DATASET_ROOT" \
+            --output-root "$OUT/result" \
+            --maximum-queries "$MAXIMUM_QUERIES" \
+            --fold-count "$FOLD_COUNT" \
+            | tee "$OUT/console.log"
+          cat "$OUT/result/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify exact reproduction and unchanged claim boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUT"])
+          result = json.loads((root / "result" / "result.json").read_text())
+          manifest = json.loads(
+              (root / "result" / "statistics-manifest.json").read_text()
+          )
+          assert result["status"] == "completed"
+          assert result["exact_reproduction"]["object_count"] == 92
+          assert result["exact_reproduction"][
+              "scientific_payload_matches_immutable_artifact"
+          ] is True
+          assert result["exact_reproduction"][
+              "maximum_absolute_numeric_difference"
+          ] <= 1e-10
+          assert result["same_mean_contract"]["predictive_mean_changed"] is False
+          assert result["same_mean_contract"]["only_covariance_arm_changes"] is True
+          assert result["study"]["independent_group_count"] == 92
+          assert result["study"]["query_dimension"] == int(
+              os.environ["MAXIMUM_QUERIES"]
+          )
+          assert result["paper_claim_authorized"] is False
+          assert result["globally_fresh_confirmation_authorized"] is False
+          assert manifest["object_count"] == 92
+          assert manifest["paper_claim_authorized"] is False
+          PY
+          sha256sum "$OUT/result"/* > "$OUT/result/sha256sums.txt"
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git -C _confirmation_v5 diff --exit-code
+          test -z "$(git -C _confirmation_v5 status --porcelain --untracked-files=all)"
+          git -C _frozen_v3 diff --exit-code
+          test -z "$(git -C _frozen_v3 status --porcelain --untracked-files=all)"
+      - name: Upload compact query-covariance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-exact-same-mean-query-covariance-v7-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUT }}/artifact-audit/audit.json
+            ${{ env.OUT }}/artifact-audit/result.json
+            ${{ env.OUT }}/result/result.json
+            ${{ env.OUT }}/result/report.md
+            ${{ env.OUT }}/result/statistics-manifest.json
+            ${{ env.OUT }}/result/query-sufficient-statistics-v7.npz
+            ${{ env.OUT }}/result/sha256sums.txt
+            ${{ env.OUT }}/console.log
+            ${{ env.REQUEST_PATH }}
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Preserve private originals
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -d "$OUT"; then chmod -R go-rwx "$OUT"; fi
