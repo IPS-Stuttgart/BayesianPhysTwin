@@ -1,0 +1,66 @@
+{
+  "claim_boundary": "Controlled finite-hypothesis mechanism evidence only. It establishes exact active decision certification and a strict sensing-cost separation from full-state identification under the registered deterministic probe model. It does not validate a learned provider, camera model, physical experiment, held-out transport, continuous control, deployment safety, or state of the art.",
+  "comparators": [
+    "minimum global decision-identifying probe set",
+    "full-state-identifying probe set",
+    "greedy hypothesis-entropy acquisition",
+    "all fixed probe orders"
+  ],
+  "probes": {
+    "decision-probe-0": {
+      "cost": 1.0,
+      "semantics": "separate action group zero from groups one and two"
+    },
+    "decision-probe-1": {
+      "cost": 1.0,
+      "semantics": "separate action group two from groups zero and one"
+    },
+    "nuisance-bit-0": {
+      "cost": 1.0
+    },
+    "nuisance-bit-1": {
+      "cost": 1.0
+    },
+    "nuisance-bit-2": {
+      "cost": 1.0
+    },
+    "nuisance-bit-3": {
+      "cost": 1.0
+    }
+  },
+  "protocol_id": "a92a25fc107f77e510061324eb3a31ed1dcf8e8125182491dc468f4c12016fdd",
+  "required_checks": {
+    "active_uniform_expected_cost": 1.3333333333333333,
+    "active_worst_case_cost": 2.0,
+    "entropy_expected_cost": 3.3333333333333335,
+    "full_state_probe_cost": 6.0,
+    "global_decision_probe_cost": 2.0,
+    "loss_radius_0_49_feasible": true,
+    "loss_radius_0_51_feasible": false,
+    "unresolvable_control_feasible": false
+  },
+  "robustness": {
+    "simultaneous_loss_radius_sweep": [
+      0.0,
+      0.25,
+      0.49,
+      0.51
+    ],
+    "unresolvable_control": "remove decision-probe-1"
+  },
+  "schema": "bayesian-phystwin.active-decision-acquisition-study",
+  "schema_version": 1,
+  "study": {
+    "action_count": 3,
+    "action_group_sizes": [
+      16,
+      4,
+      4
+    ],
+    "hypothesis_count": 24,
+    "initial_quotient": "one unresolved class",
+    "loss": "zero for the hypothesis action group and one otherwise",
+    "prior": "uniform over all hypotheses",
+    "regret_tolerance": 0.0
+  }
+}
