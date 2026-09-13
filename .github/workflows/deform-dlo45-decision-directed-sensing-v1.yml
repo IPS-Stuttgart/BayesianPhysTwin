@@ -4,19 +4,26 @@ on:
   push:
     branches:
       - science/deform-dlo45-decision-directed-sensing-v1
+      - science/deform-dlo45-adapter-controls-v1
     paths:
       - ".github/requests/deform-dlo45-decision-directed-sensing-v1.json"
+      - ".github/requests/deform-dlo45-adapter-controls-v1.json"
 
 permissions:
   contents: read
 
 concurrency:
-  group: deform-dlo45-decision-directed-sensing-v1-${{ github.ref }}
+  group: deform-dlo45-retained-data-study-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   REQUEST: .github/requests/deform-dlo45-decision-directed-sensing-v1.json
   PROTOCOL: experiments/deform_dlo45_decision_directed_sensing_v1/protocol.json
+  ADAPTER_REQUEST: .github/requests/deform-dlo45-adapter-controls-v1.json
+  ADAPTER_PROTOCOL: experiments/deform_dlo45_adapter_controls_v1/protocol.json
+  ADAPTER_PARENT_ROOT: /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+  ADAPTER_UPSTREAM_ROOT: /home/florianpfaff/source-only/DEFORM-b73b8b8
+  ADAPTER_FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
   DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -29,6 +36,7 @@ env:
 jobs:
   contract:
     name: Validate source-test-only sensing capsule
+    if: github.ref_name == 'science/deform-dlo45-decision-directed-sensing-v1'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -315,3 +323,289 @@ jobs:
           rm -rf -- \
             "$RUNNER_TEMP/deform-dlo45-source-only-$GITHUB_RUN_ID" \
             "$RUNNER_TEMP/deform-dlo45-sensing-venv-$GITHUB_RUN_ID"
+
+  adapter_contract:
+    name: Validate retrospective adapter-control capsule
+    if: github.ref_name == 'science/deform-dlo45-adapter-controls-v1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require a request-only trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="${{ github.event.before }}"
+          test -n "$before"
+          test "$before" != "0000000000000000000000000000000000000000"
+          mapfile -t changed < <(git diff --name-only "$before" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$ADAPTER_REQUEST"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate implementation, protocol, and request
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            experiments/deform_dlo45_adapter_controls_v1/evaluate.py \
+            tests/test_deform_dlo45_adapter_controls_v1.py
+          python -m ruff format --check \
+            experiments/deform_dlo45_adapter_controls_v1/evaluate.py \
+            tests/test_deform_dlo45_adapter_controls_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform_dlo45_adapter_controls_v1.py
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path(os.environ["ADAPTER_REQUEST"])
+          request = json.loads(path.read_text(encoding="utf-8"))
+          supplied = request.pop("request_id")
+          payload = json.dumps(
+              request,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode()
+          assert hashlib.sha256(payload).hexdigest() == supplied
+          expected = {
+              "schema_version": 1,
+              "contract": "deform-dlo45-adapter-controls-request-v1",
+              "status": "authorized",
+              "branch": "science/deform-dlo45-adapter-controls-v1",
+              "runner_labels": [
+                  "self-hosted",
+                  "Linux",
+                  "X64",
+                  "gpuserver4090",
+              ],
+              "registered_runner_name": "workstation1",
+              "dataset_root": os.environ["DATASET_ROOT"],
+              "upstream_root": os.environ["ADAPTER_UPSTREAM_ROOT"],
+              "parent_run_root": os.environ["ADAPTER_PARENT_ROOT"],
+              "parent_workflow_run_id": 33361441865,
+              "parent_head_sha": (
+                  "0376ece871d7c3d9355788f812a3c4cc1c9165b0"
+              ),
+              "protocol_path": os.environ["ADAPTER_PROTOCOL"],
+              "retrospective_post_open": True,
+              "new_data_collection_authorized": False,
+              "dataset_mutation_authorized": False,
+              "target_selection_authorized": False,
+              "target_calibration_authorized": False,
+              "scientific_outcome_may_fail_workflow": False,
+              "result_publication_authorized": True,
+          }
+          for key, value in expected.items():
+              assert request[key] == value, (key, request[key], value)
+          assert isinstance(request["execution_sequence"], int)
+          assert request["execution_sequence"] >= 1
+          assert set(request) == set(expected) | {
+              "execution_sequence",
+              "protocol_git_blob_sha1",
+          }
+          protocol_blob = subprocess.check_output(
+              ["git", "hash-object", os.environ["ADAPTER_PROTOCOL"]],
+              text=True,
+          ).strip()
+          assert request["protocol_git_blob_sha1"] == protocol_blob
+          PY
+
+  adapter_controls:
+    name: Recompute and test DLO4/DLO5 adapter controls
+    needs: adapter_contract
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.adapter_contract.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 360
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+      CUBLAS_WORKSPACE_CONFIG: ":4096:8"
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Bind runner, public data, parent evidence, and frozen runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = "workstation1"
+          test "$RUNNER_OS" = "Linux"
+          test "$RUNNER_ARCH" = "X64"
+          test -x "$ADAPTER_FROZEN_PYTHON"
+          test -d "$DATASET_ROOT/DLO4/train"
+          test -d "$DATASET_ROOT/DLO4/eval"
+          test -d "$DATASET_ROOT/DLO5/train"
+          test -d "$DATASET_ROOT/DLO5/eval"
+          test -d "$ADAPTER_PARENT_ROOT/dlo4-source"
+          test -d "$ADAPTER_PARENT_ROOT/dlo5-source"
+          test -d "$ADAPTER_PARENT_ROOT/dlo4-target"
+          test -d "$ADAPTER_PARENT_ROOT/dlo5-target"
+          test -d "$ADAPTER_UPSTREAM_ROOT/.git"
+          test "$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)" -ge 2
+          safe_git_config="$RUNNER_TEMP/deform-adapter-controls-gitconfig-$GITHUB_RUN_ID"
+          : > "$safe_git_config"
+          git config --file "$safe_git_config" --add safe.directory "$ADAPTER_UPSTREAM_ROOT"
+          export GIT_CONFIG_GLOBAL="$safe_git_config"
+          test "$(git -C "$ADAPTER_UPSTREAM_ROOT" rev-parse HEAD)" = \
+            b73b8b8ecc033caefa693fab7898741d4e6dbeff
+          echo "GIT_CONFIG_GLOBAL=$safe_git_config" >> "$GITHUB_ENV"
+          echo "ADAPTER_GIT_CONFIG=$safe_git_config" >> "$GITHUB_ENV"
+          out="$RUNNER_TEMP/deform-dlo45-adapter-controls-$GITHUB_RUN_ID"
+          rm -rf -- "$out"
+          mkdir -p "$out/logs"
+          echo "ADAPTER_OUTPUT=$out" >> "$GITHUB_ENV"
+
+      - name: Run DLO4 and DLO5 controls in parallel
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ADAPTER_FROZEN_PYTHON" -m \
+            experiments.deform_dlo45_adapter_controls_v1.evaluate run \
+            --protocol "$ADAPTER_PROTOCOL" \
+            --dataset-root "$DATASET_ROOT" \
+            --upstream-root "$ADAPTER_UPSTREAM_ROOT" \
+            --parent-run-root "$ADAPTER_PARENT_ROOT" \
+            --output-dir "$ADAPTER_OUTPUT/dlo4" \
+            --dlo DLO4 --device cuda:0 \
+            --source-revision "$GITHUB_SHA" \
+            >"$ADAPTER_OUTPUT/logs/dlo4.log" 2>&1 & p4=$!
+          "$ADAPTER_FROZEN_PYTHON" -m \
+            experiments.deform_dlo45_adapter_controls_v1.evaluate run \
+            --protocol "$ADAPTER_PROTOCOL" \
+            --dataset-root "$DATASET_ROOT" \
+            --upstream-root "$ADAPTER_UPSTREAM_ROOT" \
+            --parent-run-root "$ADAPTER_PARENT_ROOT" \
+            --output-dir "$ADAPTER_OUTPUT/dlo5" \
+            --dlo DLO5 --device cuda:1 \
+            --source-revision "$GITHUB_SHA" \
+            >"$ADAPTER_OUTPUT/logs/dlo5.log" 2>&1 & p5=$!
+          while kill -0 "$p4" 2>/dev/null || kill -0 "$p5" 2>/dev/null; do
+            sleep 300
+            for log in "$ADAPTER_OUTPUT/logs/dlo4.log" \
+              "$ADAPTER_OUTPUT/logs/dlo5.log"; do
+              test -s "$log" && tail -n 2 "$log" || true
+            done
+          done
+          s4=0; s5=0
+          wait "$p4" || s4=$?
+          wait "$p5" || s5=$?
+          test "$s4" -eq 0 && test "$s5" -eq 0
+
+      - name: Combine equal-DLO evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ADAPTER_FROZEN_PYTHON" -m \
+            experiments.deform_dlo45_adapter_controls_v1.evaluate combine \
+            --protocol "$ADAPTER_PROTOCOL" \
+            --dlo4-result "$ADAPTER_OUTPUT/dlo4/result.json" \
+            --dlo5-result "$ADAPTER_OUTPUT/dlo5/result.json" \
+            --output-dir "$ADAPTER_OUTPUT/combined" \
+            --source-revision "$GITHUB_SHA"
+
+      - name: Validate custody, parity, and complete outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT="$ADAPTER_OUTPUT" "$ADAPTER_FROZEN_PYTHON" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT"])
+          expected_methods = {
+              "primary_full_adapter",
+              "compute_matched_physical",
+              "global_bias",
+              "node_bias",
+              "time_node_mean",
+              "global_frame_linear",
+              "no_explicit_action_linear",
+              "initial_action_only_linear",
+          }
+          for dlo in ("dlo4", "dlo5"):
+              result = json.loads((root / dlo / "result.json").read_text())
+              assert result["contract"] == (
+                  "deform-dlo45-adapter-controls-result-v1"
+              )
+              assert set(result["methods"]) == expected_methods
+              assert result["parent"]["target_outcomes_previously_opened"] is True
+              assert result["information_boundary"]["new_data_collected"] is False
+              assert result["information_boundary"]["target_selection"] is False
+              threshold = result["parity"]["threshold_m"]
+              assert result["parity"]["physical_max_abs_m"] <= threshold
+              assert result["parity"]["candidate_max_abs_m"] <= threshold
+              assert result["parity"]["generic_max_abs_m"] <= threshold
+              assert len(result["data_efficiency"]) == 49
+          combined = json.loads((root / "combined" / "result.json").read_text())
+          assert combined["contract"] == (
+              "deform-dlo45-adapter-controls-combined-v1"
+          )
+          assert set(combined["methods"]) == expected_methods
+          assert combined["target_outcomes_previously_opened"] is True
+          assert combined["scientific_outcome_controls_workflow_success"] is False
+          print(json.dumps({
+              "result_id": combined["result_id"],
+              "methods": combined["methods"],
+          }, indent=2, sort_keys=True))
+          PY
+          cat "$ADAPTER_OUTPUT/combined/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload complete retrospective control evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-adapter-controls-v1-${{ github.run_id }}
+          path: |
+            ${{ env.ADAPTER_OUTPUT }}/dlo4/result.json
+            ${{ env.ADAPTER_OUTPUT }}/dlo4/SUMMARY.md
+            ${{ env.ADAPTER_OUTPUT }}/dlo4/trajectory_metrics.csv
+            ${{ env.ADAPTER_OUTPUT }}/dlo4/data_efficiency.csv
+            ${{ env.ADAPTER_OUTPUT }}/dlo5/result.json
+            ${{ env.ADAPTER_OUTPUT }}/dlo5/SUMMARY.md
+            ${{ env.ADAPTER_OUTPUT }}/dlo5/trajectory_metrics.csv
+            ${{ env.ADAPTER_OUTPUT }}/dlo5/data_efficiency.csv
+            ${{ env.ADAPTER_OUTPUT }}/combined/result.json
+            ${{ env.ADAPTER_OUTPUT }}/combined/SUMMARY.md
+            ${{ env.ADAPTER_OUTPUT }}/logs
+            experiments/deform_dlo45_adapter_controls_v1/protocol.json
+            experiments/deform_dlo45_adapter_controls_v1/README.md
+            .github/requests/deform-dlo45-adapter-controls-v1.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove temporary trust configuration
+        if: always()
+        shell: bash
+        run: |
+          test -z "${ADAPTER_GIT_CONFIG:-}" || rm -f "$ADAPTER_GIT_CONFIG"
