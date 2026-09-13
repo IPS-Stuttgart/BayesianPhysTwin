@@ -1,0 +1,327 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM post-hoc adapter controls v1
+
+on:
+  push:
+    branches:
+      - science/deform-posthoc-adapter-controls-v1-20260903
+    paths:
+      - .github/requests/deform-dlo-posthoc-controls-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo-posthoc-controls-v1
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: experiments/deform_dlo_posthoc_controls_v1/protocol.json
+  DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+  UPSTREAM_ROOT: /home/florianpfaff/source-only/DEFORM-b73b8b8
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+  PARENT_ROOT: /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+  RESULT_ROOT: /home/github-runner/.cache/workflows/deform-dlo-posthoc-controls-v1
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Require a request-only trigger commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
+          printf 'changed: %s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = ".github/requests/deform-dlo-posthoc-controls-v1.json"
+
+      - name: Validate request and frozen protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(
+              Path(".github/requests/deform-dlo-posthoc-controls-v1.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          expected = {
+              "schema_version": 1,
+              "contract": "deform-dlo-posthoc-controls-request-v1",
+              "protocol": "experiments/deform_dlo_posthoc_controls_v1/protocol.json",
+              "runner_tag": "gpuserver4090",
+              "parent_workflow_run_id": 33361441865,
+              "execute": True,
+          }
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f"request field {key!r} differs")
+          if request.get("new_data_collection") is not False:
+              raise SystemExit("request attempted new data collection")
+          if request.get("backbone_retraining") is not False:
+              raise SystemExit("request attempted backbone retraining")
+          if request.get("target_results_already_open") is not True:
+              raise SystemExit("request concealed the post-open evidence class")
+          protocol = json.loads(Path(request["protocol"]).read_text(encoding="utf-8"))
+          if protocol.get("contract") != "deform-dlo-posthoc-controls-v1":
+              raise SystemExit("wrong protocol contract")
+          if protocol.get("evidence_class") != "retrospective-post-open-control-study":
+              raise SystemExit("wrong evidence class")
+          if protocol["runtime"]["runner_labels"][-1] != request["runner_tag"]:
+              raise SystemExit("request/protocol runner mismatch")
+          PY
+
+      - name: Run focused quality and contract tests
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install and test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e . pytest ruff
+          files=(
+            experiments/deform_dlo_posthoc_controls_v1/__init__.py
+            experiments/deform_dlo_posthoc_controls_v1/evaluate.py
+            experiments/deform_dlo_posthoc_controls_v1/model.py
+            tests/test_deform_dlo_posthoc_controls_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q tests/test_deform_dlo_posthoc_controls_v1.py
+          python experiments/deform_dlo_posthoc_controls_v1/evaluate.py --help >/dev/null
+
+  evaluate:
+    needs: contracts
+    if: needs.contracts.result == 'success'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 720
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Bind runner, data, runtime, and parent evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = "workstation1"
+          test -x "$FROZEN_PYTHON"
+          test -d "$DATASET_ROOT"
+          test -d "$UPSTREAM_ROOT"
+          test -f "$PARENT_ROOT/joint/joint_prediction_seal.json"
+          for dlo in dlo4 dlo5; do
+            test -f "$PARENT_ROOT/$dlo-target/prediction_seal.json"
+            test -f "$PARENT_ROOT/$dlo-target/method_seal.json"
+            test -f "$PARENT_ROOT/$dlo-target/target_predictions.npz"
+            test -f "$PARENT_ROOT/$dlo-target/full_covariance_model.npz"
+            test -f "$PARENT_ROOT/$dlo-target/alltrain/physical_update_6400.pt"
+          done
+          nvidia-smi
+          "$FROZEN_PYTHON" - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("/mnt/seagate10tb/florianpfaff/datasets/deform/data_set")
+          for dlo in ("DLO4", "DLO5"):
+              train = sorted((root / dlo / "train").glob("*.pkl"))
+              evaluate = sorted((root / dlo / "eval").glob("*.pkl"))
+              if len(train) != 56 or len(evaluate) != 14:
+                  raise SystemExit(
+                      f"{dlo} roster differs: train={len(train)}, eval={len(evaluate)}"
+                  )
+          protocol = json.loads(
+              Path("experiments/deform_dlo_posthoc_controls_v1/protocol.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if protocol["parent"]["workflow_run_id"] != 33361441865:
+              raise SystemExit("parent binding changed")
+          PY
+
+      - name: Create immutable run directory and custody record
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RUN_ROOT="$RESULT_ROOT/runs/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "$RUN_ROOT"
+          mkdir -p "$RUN_ROOT"
+          printf '%s\n' "$RUN_ROOT" > "$RUNNER_TEMP/deform-posthoc-run-root.txt"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RESULT_ROOT"]) / "runs" / (
+              f"{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}"
+          )
+          record = {
+              "schema_version": 1,
+              "contract": "deform-dlo-posthoc-controls-custody-v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "request_revision": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "runner_labels": ["self-hosted", "Linux", "X64", "gpuserver4090"],
+              "parent_workflow_run_id": 33361441865,
+              "parent_root": os.environ["PARENT_ROOT"],
+              "dataset_root": os.environ["DATASET_ROOT"],
+              "upstream_root": os.environ["UPSTREAM_ROOT"],
+              "new_data_collection": False,
+              "backbone_retraining": False,
+              "target_results_already_open": True,
+              "target_outcomes_used_to_select_source_subsets": False,
+          }
+          (root / "custody.json").write_text(
+              json.dumps(record, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Recompute source rollouts and run both DLO control panels
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ROOT="$(cat "$RUNNER_TEMP/deform-posthoc-run-root.txt")"
+          export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/scripts/remote:$GITHUB_WORKSPACE"
+          set +e
+          "$FROZEN_PYTHON" \
+            experiments/deform_dlo_posthoc_controls_v1/evaluate.py run-dlo \
+            --protocol "$PROTOCOL" \
+            --dlo DLO4 \
+            --dataset-root "$DATASET_ROOT" \
+            --upstream-root "$UPSTREAM_ROOT" \
+            --device cuda:0 \
+            --output-dir "$RUN_ROOT/dlo4" \
+            >"$RUN_ROOT/dlo4.log" 2>&1 &
+          dlo4_pid=$!
+          "$FROZEN_PYTHON" \
+            experiments/deform_dlo_posthoc_controls_v1/evaluate.py run-dlo \
+            --protocol "$PROTOCOL" \
+            --dlo DLO5 \
+            --dataset-root "$DATASET_ROOT" \
+            --upstream-root "$UPSTREAM_ROOT" \
+            --device cuda:1 \
+            --output-dir "$RUN_ROOT/dlo5" \
+            >"$RUN_ROOT/dlo5.log" 2>&1 &
+          dlo5_pid=$!
+          wait "$dlo4_pid"
+          dlo4_status=$?
+          wait "$dlo5_pid"
+          dlo5_status=$?
+          set -e
+          cat "$RUN_ROOT/dlo4.log"
+          cat "$RUN_ROOT/dlo5.log"
+          test "$dlo4_status" -eq 0
+          test "$dlo5_status" -eq 0
+
+      - name: Aggregate and independently validate retained results
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ROOT="$(cat "$RUNNER_TEMP/deform-posthoc-run-root.txt")"
+          export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/scripts/remote:$GITHUB_WORKSPACE"
+          "$FROZEN_PYTHON" \
+            experiments/deform_dlo_posthoc_controls_v1/evaluate.py aggregate \
+            --protocol "$PROTOCOL" \
+            --input-root "$RUN_ROOT" \
+            --output-dir "$RUN_ROOT/aggregate" \
+            | tee "$RUN_ROOT/aggregate.log"
+          RESULT="$RUN_ROOT/aggregate/result.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          if result["contract"] != "deform-dlo-posthoc-controls-v1":
+              raise SystemExit("wrong aggregate contract")
+          if result["status"] != "completed-aggregate":
+              raise SystemExit("aggregate is incomplete")
+          accounting = result["accounting"]
+          if accounting["new_data_collected"] or accounting["backbone_training_updates"]:
+              raise SystemExit("execution crossed the no-data/no-retraining boundary")
+          if accounting["target_selected_source_subsets"]:
+              raise SystemExit("target outcomes selected source subsets")
+          if set(result["dlo_results"]) != {"DLO4", "DLO5"}:
+              raise SystemExit("aggregate DLO roster differs")
+          for dlo in ("DLO4", "DLO5"):
+              if not result["dlo_results"][dlo]["sha256"]:
+                  raise SystemExit(f"{dlo} result identity missing")
+          print(json.dumps({
+              "primary_gate": result["primary_gate"],
+              "reference": result["reference"],
+              "comparative_findings": result["comparative_findings"],
+          }, indent=2, sort_keys=True))
+          PY
+          if find "$RUN_ROOT" -type f \( -name '*.npz' -o -name '*.pkl' -o -name '*.pt' \) -print -quit | grep -q .; then
+            echo "raw arrays or checkpoints entered retained output" >&2
+            exit 1
+          fi
+
+      - name: Seal environment and file identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ROOT="$(cat "$RUNNER_TEMP/deform-posthoc-run-root.txt")"
+          RUN_ROOT="$RUN_ROOT" "$FROZEN_PYTHON" - <<'PY'
+          import json
+          import os
+          import platform
+          import subprocess
+          from pathlib import Path
+
+          import numpy
+          import torch
+
+          root = Path(os.environ["RUN_ROOT"])
+          record = {
+              "schema_version": 1,
+              "contract": "deform-dlo-posthoc-controls-environment-v1",
+              "python": platform.python_version(),
+              "numpy": numpy.__version__,
+              "torch": torch.__version__,
+              "cuda": torch.version.cuda,
+              "gpus": [torch.cuda.get_device_name(index) for index in range(torch.cuda.device_count())],
+              "nvidia_smi": subprocess.check_output(
+                  ["nvidia-smi", "--query-gpu=name,driver_version", "--format=csv,noheader"],
+                  text=True,
+              ).strip().splitlines(),
+          }
+          (root / "environment.json").write_text(
+              json.dumps(record, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          find "$RUN_ROOT" -type f -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "$RUN_ROOT/SHA256SUMS"
+          cat "$RUN_ROOT/aggregate/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compact evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: deform-dlo-posthoc-controls-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /home/github-runner/.cache/workflows/deform-dlo-posthoc-controls-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 6
