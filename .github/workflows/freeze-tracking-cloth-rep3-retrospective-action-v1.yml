@@ -1,0 +1,295 @@
+# workflow-lifecycle: one-shot
+# workflow-owner: IPS-Stuttgart maintainers
+name: Freeze Tracking Cloth rep3 retrospective action protocol v1
+
+on:
+  push:
+    branches: [science/tracking-cloth-action-source-evidence-v1]
+    paths:
+      - ".github/requests/freeze-tracking-cloth-rep3-retrospective-action-v1.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: freeze-tracking-cloth-rep3-retrospective-action-v1
+  cancel-in-progress: false
+
+env:
+  EVIDENCE_ROOT: results/science/tracking_cloth_action_feasibility_v1/source-only-20260902-v1
+  PROTOCOL_ROOT: experiments/tracking_cloth_rep3_retrospective_action_v1
+  FREEZE_ROOT: results/science/tracking_cloth_rep3_retrospective_action_v1/protocol-freeze-20260902-v1
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+          clean: true
+      - name: Authorize one add-only target-closed freeze request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "${PUSH_FORCED}" = false
+          mapfile -t changed < <(git diff --name-status "${BEFORE_SHA}" "${GITHUB_SHA}")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/freeze-tracking-cloth-rep3-retrospective-action-v1.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          request = json.loads(Path(
+              ".github/requests/freeze-tracking-cloth-rep3-retrospective-action-v1.json"
+          ).read_text(encoding="utf-8"))
+          expected = {
+              "schema": "bayesian-phystwin/freeze-tracking-cloth-rep3-retrospective-action-request-v1",
+              "request_id": "freeze-tracking-cloth-rep3-retrospective-action-v1-20260902",
+              "source_evidence_path": "results/science/tracking_cloth_action_feasibility_v1/source-only-20260902-v1",
+              "reserved_target_repetition": 3,
+              "read_target_data": False,
+              "execute_target": False,
+              "retrospective_reset_assumption": True,
+              "sequential_probe_claim_authorized": False,
+              "automatic_follow_on": False,
+              "paper_claim_authorized": False,
+          }
+          if request != expected:
+              raise SystemExit("protocol-freeze request changed")
+          PY
+      - name: Freeze the strongest admissible next protocol or a stop record
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${EVIDENCE_ROOT}/source_result.json"
+          test -f "${EVIDENCE_ROOT}/promotion.json"
+          rm -rf -- "${PROTOCOL_ROOT}" "${FREEZE_ROOT}"
+          mkdir -p -- "${FREEZE_ROOT}"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          protocol_root = Path(os.environ["PROTOCOL_ROOT"])
+          freeze_root = Path(os.environ["FREEZE_ROOT"])
+          result = json.loads((evidence / "source_result.json").read_text(encoding="utf-8"))
+          promotion = json.loads((evidence / "promotion.json").read_text(encoding="utf-8"))
+          if promotion["source_result_id"] != result["result_id"]:
+              raise SystemExit("promotion/source result identity mismatch")
+          if promotion["rep3_numeric_outcomes_read"] is not False:
+              raise SystemExit("rep3 was opened before protocol freeze")
+          if promotion["rep3_retrospective_benchmark_authorized"] is not False:
+              raise SystemExit("source workflow unexpectedly authorized rep3")
+          if promotion["sequential_probe_identified_by_dataset"] is not False:
+              raise SystemExit("source evidence overstates sequential identification")
+
+          numerical_candidate = bool(
+              promotion["numerical_action_factorial_candidate"]
+          )
+          freeze = {
+              "schema": "bayesian-phystwin.tracking-cloth-rep3-retrospective-action-protocol-freeze.v1",
+              "schema_version": 1,
+              "source_result_id": result["result_id"],
+              "source_promotion_id": promotion["promotion_id"],
+              "source_numerical_candidate": numerical_candidate,
+              "rep3_numeric_outcomes_read": False,
+              "target_execution_authorized": False,
+              "automatic_follow_on": False,
+              "paper_claim_authorized": False,
+          }
+
+          if numerical_candidate:
+              selected = result["decision_summary"]["selected_source_setting"]
+              if "mode_counts" not in selected:
+                  raise SystemExit("positive promotion lacks a selected source setting")
+              protocol_root.mkdir(parents=True, exist_ok=False)
+              protocol = {
+                  "schema": "bayesian-phystwin.tracking-cloth-rep3-retrospective-action.v1",
+                  "schema_version": 1,
+                  "study_id": "tracking-cloth-rep3-retrospective-action-v1",
+                  "dataset_record": result["dataset_record"],
+                  "source_result_id": result["result_id"],
+                  "source_promotion_id": promotion["promotion_id"],
+                  "actions": result["action_names"],
+                  "source_repetitions": [1, 2],
+                  "reserved_target_repetition": 3,
+                  "target_block": "material",
+                  "target_block_count": 4,
+                  "source_frozen_fallback_action": result["decision_summary"][
+                      "fallback_action"
+                  ],
+                  "source_frozen_setting": selected,
+                  "task_loss": {
+                      "contact_term": "normalized-self-contact-penetration-rms",
+                      "edge_term": "0.25-times-95th-percentile-absolute-edge-strain",
+                      "aggregation": "trajectory-level-per-material-action",
+                  },
+                  "evaluation": {
+                      "primary": "mean-selected-loss-versus-source-frozen-fallback",
+                      "secondary": [
+                          "per-material-realized-regret-versus-best-executed-action",
+                          "win-count-versus-fallback",
+                          "harm-count-versus-fallback",
+                          "act-sense-fallback-mode-counts",
+                      ],
+                      "positive_descriptive_gate": {
+                          "maximum_mean_loss_ratio_vs_fallback": 0.99,
+                          "minimum_material_wins_vs_fallback": 3,
+                          "maximum_material_harms_vs_fallback": 1,
+                      },
+                      "inferential_unit": "material",
+                      "target_block_count_warning": 4,
+                  },
+                  "two_phase_target_custody": {
+                      "prepare": (
+                          "Read only the causal prefix of a source-frozen designated "
+                          "probe interaction where the source policy requests sensing; "
+                          "otherwise read no future target coordinate. Freeze one "
+                          "terminal action per material and seal all four decisions."
+                      ),
+                      "score": (
+                          "After verifying the decision seal, read the future portions "
+                          "of the three separately executed rep3 action trajectories "
+                          "once to construct the held action-loss vector and score the "
+                          "already frozen terminal action."
+                      ),
+                      "target_tuning": False,
+                      "target_retries": False,
+                  },
+                  "retrospective_semantics": {
+                      "probe_and_terminal_action_same_trajectory": False,
+                      "reset_verified": False,
+                      "cross_trial_action_lookup": True,
+                      "sequential_physical_probe_claim": False,
+                      "online_robot_execution_claim": False,
+                      "interpretation": (
+                          "Held-out retrospective policy emulation under an explicit "
+                          "same-material/reset assumption, not a prospective physical "
+                          "probe followed by intervention."
+                      ),
+                  },
+                  "information_boundary": {
+                      "rep3_numeric_outcomes_read_at_freeze": False,
+                      "target_execution_authorized": False,
+                      "automatic_follow_on": False,
+                      "raw_trajectory_upload": False,
+                      "paper_claim_authorized": False,
+                  },
+                  "claim_boundary": (
+                      "A future authorized run may provide held-out retrospective "
+                      "action-selection evidence on four material blocks. It cannot "
+                      "establish reset-valid sequential probing, online closed-loop "
+                      "control, unseen-material generalization, calibrated support-miss "
+                      "probability, simulator validity, deployment safety, or state of "
+                      "the art."
+                  ),
+              }
+              payload = json.dumps(
+                  protocol, sort_keys=True, separators=(",", ":"), allow_nan=False
+              ).encode("utf-8")
+              protocol["protocol_id"] = hashlib.sha256(payload).hexdigest()
+              (protocol_root / "protocol.json").write_text(
+                  json.dumps(protocol, indent=2, sort_keys=True, allow_nan=False) + "\n",
+                  encoding="utf-8",
+              )
+              readme = """# Tracking Cloth rep3 retrospective action protocol\n\n"
+              readme += "This target-closed protocol was generated only after the source "
+              readme += "action-factorial promotion gate. It freezes the exact source "
+              readme += "act/sense/fallback setting and a two-phase prepare/score boundary.\n\n"
+              readme += "The protocol is deliberately labeled **retrospective**. The "
+              readme += "candidate probe trajectory and terminal-action trajectory are "
+              readme += "separate physical trials, and reset equivalence is not verified. "
+              readme += "Therefore the protocol cannot validate a prospective sequential "
+              readme += "probe-then-act controller.\n\n"
+              readme += "Repetition 3 remains numerically unopened and execution remains "
+              readme += "unauthorized. A later run requires a separate reviewed request.\n"
+              (protocol_root / "README.md").write_text(readme, encoding="utf-8")
+              freeze.update({
+                  "decision": "freeze-retrospective-protocol-for-review",
+                  "protocol_path": str(protocol_root / "protocol.json"),
+                  "protocol_id": protocol["protocol_id"],
+                  "sequential_probe_claim_authorized": False,
+              })
+          else:
+              stop = """# Stop before repetition 3\n\n"
+              stop += "The registered source feasibility gate did not promote the "
+              stop += "physical-action factorial. Repetition 3 remains numerically "
+              stop += "unopened. No retrospective or sequential target protocol was "
+              stop += "created, and no outcome-driven repair is authorized.\n"
+              (freeze_root / "STOP.md").write_text(stop, encoding="utf-8")
+              freeze.update({
+                  "decision": "stop-before-rep3-source-gate-failed",
+                  "protocol_path": None,
+                  "protocol_id": None,
+                  "sequential_probe_claim_authorized": False,
+              })
+
+          payload = json.dumps(
+              freeze, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          freeze["freeze_id"] = hashlib.sha256(payload).hexdigest()
+          (freeze_root / "freeze.json").write_text(
+              json.dumps(freeze, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(freeze, indent=2, sort_keys=True))
+          PY
+      - name: Verify the freeze remains target-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["FREEZE_ROOT"])
+          freeze = json.loads((root / "freeze.json").read_text(encoding="utf-8"))
+          assert freeze["rep3_numeric_outcomes_read"] is False
+          assert freeze["target_execution_authorized"] is False
+          assert freeze["automatic_follow_on"] is False
+          assert freeze["paper_claim_authorized"] is False
+          assert freeze["sequential_probe_claim_authorized"] is False
+          if freeze["protocol_path"] is not None:
+              protocol = json.loads(
+                  Path(freeze["protocol_path"]).read_text(encoding="utf-8")
+              )
+              assert protocol["reserved_target_repetition"] == 3
+              assert protocol["information_boundary"][
+                  "rep3_numeric_outcomes_read_at_freeze"
+              ] is False
+              assert protocol["information_boundary"][
+                  "target_execution_authorized"
+              ] is False
+              assert protocol["retrospective_semantics"][
+                  "sequential_physical_probe_claim"
+              ] is False
+          PY
+      - name: Retire request and launcher, then commit protocol freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p archive/github-actions/retired-one-shot-v1
+          cp .github/workflows/freeze-tracking-cloth-rep3-retrospective-action-v1.yml \
+            archive/github-actions/retired-one-shot-v1/freeze-tracking-cloth-rep3-retrospective-action-v1.yml
+          rm -f \
+            .github/workflows/freeze-tracking-cloth-rep3-retrospective-action-v1.yml \
+            .github/requests/freeze-tracking-cloth-rep3-retrospective-action-v1.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            "${FREEZE_ROOT}" \
+            "${PROTOCOL_ROOT}" \
+            archive/github-actions/retired-one-shot-v1/freeze-tracking-cloth-rep3-retrospective-action-v1.yml \
+            .github/workflows/freeze-tracking-cloth-rep3-retrospective-action-v1.yml \
+            .github/requests/freeze-tracking-cloth-rep3-retrospective-action-v1.json
+          git commit -m 'Freeze target-closed retrospective cloth action protocol'
+          git push origin HEAD:science/tracking-cloth-action-source-evidence-v1
