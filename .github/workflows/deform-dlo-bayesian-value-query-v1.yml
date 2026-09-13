@@ -1,0 +1,98 @@
+# workflow-lifecycle: experimental-retrospective-diagnostic
+# workflow-owner: IPS-Stuttgart maintainers
+name: deform-dlo-bayesian-value-query-v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/bayesian-value-nonlinear-query-v1
+    paths:
+      - .github/workflows/deform-dlo-bayesian-value-query-v1.yml
+      - experiments/deform_dlo_bayesian_value_query_v1/**
+      - scripts/remote/run_deform_dlo_bayesian_value_query_v1.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-dlo-bayesian-value-query-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONHASHSEED: "0"
+  PROTOCOL: experiments/deform_dlo_bayesian_value_query_v1/protocol.json
+  OUTPUT_ROOT: build/deform-dlo-bayesian-value-query-v1
+  FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install contract dependencies
+        run: python -m pip install -e .
+      - name: Validate frozen protocol and implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python scripts/remote/run_deform_dlo_bayesian_value_query_v1.py --self-test
+          python scripts/remote/run_deform_dlo_bayesian_value_query_v1.py \
+            --protocol "$PROTOCOL" --validate-only >/dev/null
+
+  evaluate:
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Bind exact retained parent and data roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -x "$FROZEN_PYTHON"
+          test -d /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          test -d /mnt/seagate10tb/florianpfaff/datasets/deform/data_set/DLO4/eval
+          test -d /mnt/seagate10tb/florianpfaff/datasets/deform/data_set/DLO5/eval
+      - name: Evaluate nonlinear Bayesian query value
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$OUTPUT_ROOT"
+          "$FROZEN_PYTHON" \
+            scripts/remote/run_deform_dlo_bayesian_value_query_v1.py \
+            --protocol "$PROTOCOL" \
+            --output-dir "$OUTPUT_ROOT" \
+            | tee "$RUNNER_TEMP/deform-dlo-bayesian-value-query-v1.log"
+          test -s "$OUTPUT_ROOT/result.json"
+          test -s "$OUTPUT_ROOT/trajectory_records.json"
+          test -s "$OUTPUT_ROOT/trajectory_records.csv"
+          test -s "$OUTPUT_ROOT/summary.md"
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo-bayesian-value-query-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.OUTPUT_ROOT }}
+            ${{ env.PROTOCOL }}
+            ${{ runner.temp }}/deform-dlo-bayesian-value-query-v1.log
+          retention-days: 30
+          if-no-files-found: error
