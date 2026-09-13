@@ -1,0 +1,18 @@
+{
+  "study_id": "passive-gap-recovery-real-v1",
+  "protocol_sha256": "a8cc959bc03bae47a48ebdc49b9a8c966a54a28fe921f6ae70deb4b4d007d054",
+  "scientific_implementation_commit": "2d4af6997aeb907e59a13ac9ef0de4f6d724b8ec",
+  "script_git_blob": "dac16cdcb8fe476a86e14bf66f87733fd8107425",
+  "runner_label": "gpuserver4090",
+  "retrospective_already_open_free_hanging_only": true,
+  "source_recordings": 32,
+  "target_recordings": 32,
+  "gap_seconds": [0.1, 0.3, 0.6],
+  "recovery_seconds": 0.3,
+  "new_robot_actions": false,
+  "new_physical_data": false,
+  "collision_recordings_numerically_opened": false,
+  "target_tuning": false,
+  "raw_data_upload": false,
+  "purpose": "Test whether recursive covariance improves passive gap/recovery forecasts over source-selected deterministic methods, stationary gain, and covariance reset; independently verify Gaussian MAP parity."
+}
