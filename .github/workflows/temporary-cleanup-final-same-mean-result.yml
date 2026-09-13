@@ -1,0 +1,75 @@
+name: Cleanup final same-mean audit orchestration
+
+on:
+  push:
+    branches:
+      - ops/dispatch-same-mean-query-covariance-v6-final
+    paths:
+      - "evidence/deform360/deform360_same_mean_query_covariance_final_v6/result.json"
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact result branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ops/dispatch-same-mean-query-covariance-v6-final
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Validate retained evidence before cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path(
+              "evidence/deform360/deform360_same_mean_query_covariance_final_v6"
+          )
+          result = json.loads((root / "result.json").read_text(encoding="utf-8"))
+          assert result["artifact_kind"] in {
+              "Deform360SameMeanQueryCovarianceRetainedResult",
+              "Deform360SameMeanQueryCovarianceFinalRetainedResult",
+          }
+          assert result["schema_version"] in {1, 2}
+          expected = result["result_sha256"]
+          canonical = dict(result)
+          canonical.pop("result_sha256")
+          payload = json.dumps(
+              canonical,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          assert hashlib.sha256(payload).hexdigest() == expected
+          assert (root / "RESULT.md").is_file()
+          assert (root / "run.json").is_file()
+          PY
+
+      - name: Remove all one-shot orchestration surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f --ignore-unmatch \
+            .github/workflows/temporary-orchestrate-final-same-mean-audit.yml \
+            .github/workflows/temporary-retain-final-same-mean-result.yml \
+            .github/workflows/temporary-final-same-mean-audit-v2.yml \
+            .github/workflows/temporary-cleanup-final-same-mean-result.yml \
+            .github/workflows/dispatch-deform360-same-mean-query-covariance.yml \
+            .github/requests/deform360-same-mean-query-covariance-v6.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Remove one-shot same-mean audit orchestration"
+          git push origin HEAD:ops/dispatch-same-mean-query-covariance-v6-final

@@ -1,0 +1,322 @@
+name: Retain final same-mean Deform360 result
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-retain-final-same-mean-result.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  retain:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'ops/dispatch-same-mean-query-covariance-v6-final'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out result branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Find the scientific workflow and completed run
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf main-tree
+          git clone --depth 1 --branch main \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            main-tree
+          mapfile -t candidates < <(
+            for path in main-tree/.github/workflows/*.yml main-tree/.github/workflows/*.yaml; do
+              [[ -f "${path}" ]] || continue
+              lower="$(tr '[:upper:]' '[:lower:]' < "${path}")"
+              name="$(basename "${path}" | tr '[:upper:]' '[:lower:]')"
+              if [[ "${lower}" == *deform360* && "${lower}" == *same* && \
+                    "${lower}" == *mean* && "${lower}" == *covariance* ]]; then
+                printf '%s\n' "${path#main-tree/}"
+              elif [[ "${name}" == *deform360* && "${name}" == *same* && \
+                      "${name}" == *mean* && "${name}" == *covariance* ]]; then
+                printf '%s\n' "${path#main-tree/}"
+              fi
+            done | grep -v '^.github/workflows/dispatch-' | sort -u
+          )
+          test "${#candidates[@]}" -eq 1
+          target="${candidates[0]}"
+          workflow_id="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows" \
+            --jq ".workflows[] | select(.path == \"${target}\") | .id")"
+          test -n "${workflow_id}"
+          run_id=''
+          for _ in $(seq 1 120); do
+            candidate="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_id}/runs?event=workflow_dispatch&per_page=10" \
+              --jq '.workflow_runs[] | select(.status == "completed") | .id' | head -n1)"
+            if [[ -n "${candidate}" ]]; then
+              run_id="${candidate}"
+              break
+            fi
+            sleep 15
+          done
+          test -n "${run_id}"
+          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
+          echo "workflow=${target}" >> "${GITHUB_OUTPUT}"
+
+      - name: Download all scientific artifacts and logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf downloaded final-retained
+          mkdir -p downloaded final-retained
+          gh run download "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --dir downloaded
+          gh run view "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --log > \
+            final-retained/scientific-run.log || true
+          gh run view "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --json \
+            databaseId,status,conclusion,headSha,url,workflowName,createdAt,updatedAt > \
+            final-retained/run.json
+
+      - name: Build schema-tolerant scientific summary
+        env:
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+          TARGET_WORKFLOW: ${{ steps.run.outputs.workflow }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import math
+          import os
+          from pathlib import Path
+          from typing import Any
+
+          root = Path("downloaded")
+          out = Path("final-retained")
+          out.mkdir(exist_ok=True)
+
+          def flatten(value: Any, prefix: str = "") -> list[tuple[str, Any]]:
+              rows: list[tuple[str, Any]] = []
+              if isinstance(value, dict):
+                  for key in sorted(value):
+                      path = f"{prefix}.{key}" if prefix else str(key)
+                      rows.extend(flatten(value[key], path))
+              elif isinstance(value, list):
+                  for index, item in enumerate(value):
+                      rows.extend(flatten(item, f"{prefix}[{index}]"))
+              else:
+                  rows.append((prefix, value))
+              return rows
+
+          records = []
+          for path in sorted(root.rglob("*.json")):
+              try:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+              except Exception:
+                  continue
+              flat = flatten(value)
+              keyword_rows = []
+              for key, item in flat:
+                  lower = key.lower()
+                  if any(
+                      token in lower
+                      for token in (
+                          "nll",
+                          "anees",
+                          "coverage",
+                          "diagonal",
+                          "permut",
+                          "depend",
+                          "hybrid",
+                          "full_cov",
+                          "shared",
+                          "gate",
+                          "decision",
+                          "passed",
+                          "same_mean",
+                          "same-mean",
+                          "query",
+                      )
+                  ):
+                      if isinstance(item, float) and not math.isfinite(item):
+                          item = str(item)
+                      keyword_rows.append({"path": key, "value": item})
+              score = len(keyword_rows)
+              records.append(
+                  {
+                      "file": path.relative_to(root).as_posix(),
+                      "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                      "score": score,
+                      "keywords": keyword_rows,
+                      "payload": value,
+                  }
+              )
+
+          records.sort(key=lambda row: (-row["score"], row["file"]))
+          explicit_decisions = []
+          for record in records:
+              for row in record["keywords"]:
+                  lower = row["path"].lower()
+                  if any(token in lower for token in ("decision", "passed", "gate")):
+                      explicit_decisions.append(
+                          {
+                              "file": record["file"],
+                              "path": row["path"],
+                              "value": row["value"],
+                          }
+                      )
+
+          status = "result-artifact-present" if records else "no-json-result-artifact"
+          blocker_tokens = (
+              "blocker",
+              "insufficient",
+              "missing",
+              "unavailable",
+              "not found",
+              "no compatible",
+          )
+          blocker_hits = []
+          for record in records:
+              text = json.dumps(record["payload"], sort_keys=True).lower()
+              for token in blocker_tokens:
+                  if token in text:
+                      blocker_hits.append({"file": record["file"], "token": token})
+          if blocker_hits:
+              status = "technical-or-sufficient-statistics-blocker"
+
+          retained = {
+              "artifact_kind": "Deform360SameMeanQueryCovarianceRetainedResult",
+              "schema_version": 1,
+              "scientific_run_id": int(os.environ["RUN_ID"]),
+              "target_workflow": os.environ["TARGET_WORKFLOW"],
+              "status": status,
+              "json_file_count": len(records),
+              "ranked_json_files": [
+                  {
+                      "file": row["file"],
+                      "sha256": row["sha256"],
+                      "keyword_count": row["score"],
+                      "keywords": row["keywords"],
+                  }
+                  for row in records[:20]
+              ],
+              "explicit_decisions": explicit_decisions[:200],
+              "blocker_hits": blocker_hits[:100],
+              "claim_boundary": (
+                  "Same-mean retrospective public-data evidence only; no point-SOTA, "
+                  "fresh-confirmation, strict-counterfactual, or deployment-safety claim."
+              ),
+          }
+          canonical = json.dumps(
+              retained, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode("utf-8")
+          retained["result_sha256"] = hashlib.sha256(canonical).hexdigest()
+          (out / "result.json").write_text(
+              json.dumps(retained, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          lines = [
+              "# Final same-mean Deform360 query-covariance audit",
+              "",
+              f"- Scientific run: `{retained['scientific_run_id']}`",
+              f"- Workflow: `{retained['target_workflow']}`",
+              f"- Retention status: **{retained['status']}**",
+              f"- JSON result candidates: `{retained['json_file_count']}`",
+              f"- Result identity: `{retained['result_sha256']}`",
+              "",
+              "## Explicit decisions and gates",
+              "",
+          ]
+          if explicit_decisions:
+              for row in explicit_decisions[:80]:
+                  lines.append(
+                      f"- `{row['file']} :: {row['path']}` = `{row['value']}`"
+                  )
+          else:
+              lines.append("- No explicit decision/gate fields were found.")
+          lines.extend(["", "## NLL, calibration, and dependence fields", ""])
+          emitted = 0
+          for record in records[:10]:
+              for row in record["keywords"]:
+                  lower = row["path"].lower()
+                  if any(
+                      token in lower
+                      for token in (
+                          "nll",
+                          "anees",
+                          "coverage",
+                          "diagonal",
+                          "permut",
+                          "depend",
+                          "hybrid",
+                          "full_cov",
+                          "shared",
+                      )
+                  ):
+                      lines.append(
+                          f"- `{record['file']} :: {row['path']}` = `{row['value']}`"
+                      )
+                      emitted += 1
+                      if emitted >= 160:
+                          break
+              if emitted >= 160:
+                  break
+          if emitted == 0:
+              lines.append("- No matching scientific metric fields were found.")
+          if blocker_hits:
+              lines.extend(["", "## Blocker indicators", ""])
+              for row in blocker_hits:
+                  lines.append(f"- `{row['file']}` contains `{row['token']}`")
+          lines.extend(
+              [
+                  "",
+                  "## Claim boundary",
+                  "",
+                  retained["claim_boundary"],
+                  "",
+              ]
+          )
+          (out / "RESULT.md").write_text("\n".join(lines), encoding="utf-8")
+          PY
+
+      - name: Commit compact retained evidence to the result branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination=evidence/deform360/deform360_same_mean_query_covariance_final_v6
+          rm -rf "${destination}"
+          mkdir -p "${destination}"
+          cp final-retained/result.json "${destination}/result.json"
+          cp final-retained/RESULT.md "${destination}/RESULT.md"
+          cp final-retained/run.json "${destination}/run.json"
+          git add -- "${destination}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Retain final same-mean Deform360 audit result'
+          git pull --rebase origin "${HEAD_REF}"
+          git push origin "HEAD:${HEAD_REF}"
+
+      - name: Upload compact retained evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: final-same-mean-query-covariance-result-${{ github.run_id }}
+          path: final-retained/
+          if-no-files-found: warn
+          retention-days: 90

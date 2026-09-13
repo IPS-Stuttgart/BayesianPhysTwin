@@ -1,0 +1,327 @@
+name: Final Deform360 same-mean audit v2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-final-same-mean-audit-v2.yml"
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  execute-and-retain:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'ops/dispatch-same-mean-query-covariance-v6-final'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out result branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Ensure implementation PR 834 is on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 80); do
+            state="$(gh pr view 834 --repo "${GITHUB_REPOSITORY}" --json state --jq .state)"
+            if [[ "${state}" == MERGED ]]; then
+              exit 0
+            fi
+            if [[ "${state}" == OPEN ]]; then
+              if [[ "$(gh pr view 834 --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft)" == true ]]; then
+                gh pr ready 834 --repo "${GITHUB_REPOSITORY}" || true
+              fi
+              if gh pr checks 834 --repo "${GITHUB_REPOSITORY}" --required >/dev/null 2>&1; then
+                gh pr merge 834 --repo "${GITHUB_REPOSITORY}" --squash \
+                  --subject 'Add same-mean Deform360 query-covariance audit' \
+                  --body 'Preserve the frozen mean and isolate correlated uncertainty.' || true
+              fi
+            fi
+            sleep 15
+          done
+          test "$(gh pr view 834 --repo "${GITHUB_REPOSITORY}" --json state --jq .state)" = MERGED
+
+      - name: Discover target workflow on main
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=''
+          workflow_id=''
+          for _ in $(seq 1 40); do
+            rm -rf main-tree
+            git clone --depth 1 --branch main \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+              main-tree >/dev/null 2>&1
+            mapfile -t candidates < <(
+              for path in main-tree/.github/workflows/*.yml main-tree/.github/workflows/*.yaml; do
+                [[ -f "${path}" ]] || continue
+                lower="$(tr '[:upper:]' '[:lower:]' < "${path}")"
+                name="$(basename "${path}" | tr '[:upper:]' '[:lower:]')"
+                if [[ "${lower}" == *deform360* && "${lower}" == *same* && \
+                      "${lower}" == *mean* && "${lower}" == *covariance* ]]; then
+                  printf '%s\n' "${path#main-tree/}"
+                elif [[ "${name}" == *deform360* && "${name}" == *same* && \
+                        "${name}" == *mean* && "${name}" == *covariance* ]]; then
+                  printf '%s\n' "${path#main-tree/}"
+                fi
+              done | grep -v '^.github/workflows/dispatch-' | \
+                grep -v '^.github/workflows/temporary-' | sort -u
+            )
+            if [[ "${#candidates[@]}" -eq 1 ]]; then
+              target="${candidates[0]}"
+              workflow_id="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows" \
+                --jq ".workflows[] | select(.path == \"${target}\") | .id")"
+              [[ -n "${workflow_id}" ]] && break
+            fi
+            sleep 15
+          done
+          test -n "${target}"
+          test -n "${workflow_id}"
+          echo "path=${target}" >> "${GITHUB_OUTPUT}"
+          echo "id=${workflow_id}" >> "${GITHUB_OUTPUT}"
+
+      - name: Dispatch target and capture the new run
+        id: scientific
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_ID: ${{ steps.target.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?per_page=1" --jq '.workflow_runs[0].id // 0')"
+          gh api --method POST \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/dispatches" \
+            -f ref=main
+          run_id=''
+          for _ in $(seq 1 60); do
+            sleep 5
+            run_id="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?event=workflow_dispatch&per_page=10" \
+              --jq ".workflow_runs[] | select(.id > ${before}) | .id" | head -n1)"
+            [[ -n "${run_id}" ]] && break
+          done
+          test -n "${run_id}"
+          echo "id=${run_id}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for scientific completion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.scientific.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p final-retained downloaded
+          set +e
+          gh run watch "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --exit-status
+          watch_status=$?
+          set -e
+          gh run view "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --json \
+            databaseId,status,conclusion,headSha,url,workflowName,createdAt,updatedAt > \
+            final-retained/run.json
+          gh run view "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --log > \
+            final-retained/scientific-run.log || true
+          gh run download "${RUN_ID}" --repo "${GITHUB_REPOSITORY}" --dir downloaded || true
+          echo "${watch_status}" > final-retained/watch-exit-status.txt
+
+      - name: Classify and retain all relevant scientific fields
+        env:
+          RUN_ID: ${{ steps.scientific.outputs.id }}
+          TARGET_WORKFLOW: ${{ steps.target.outputs.path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import math
+          import os
+          import re
+          from pathlib import Path
+          from typing import Any
+
+          source = Path("downloaded")
+          output = Path("final-retained")
+
+          def flatten(value: Any, prefix: str = "") -> list[tuple[str, Any]]:
+              if isinstance(value, dict):
+                  rows = []
+                  for key in sorted(value):
+                      rows.extend(flatten(value[key], f"{prefix}.{key}" if prefix else str(key)))
+                  return rows
+              if isinstance(value, list):
+                  rows = []
+                  for index, item in enumerate(value):
+                      rows.extend(flatten(item, f"{prefix}[{index}]"))
+                  return rows
+              return [(prefix, value)]
+
+          documents = []
+          for path in sorted(source.rglob("*.json")):
+              try:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+              except Exception:
+                  continue
+              rows = flatten(value)
+              relevant = []
+              for key, item in rows:
+                  lower = key.lower()
+                  if any(token in lower for token in (
+                      "nll", "anees", "coverage", "diagonal", "permut", "depend",
+                      "hybrid", "shared", "full_cov", "same_mean", "same-mean",
+                      "query", "gate", "passed", "decision", "blocker", "sufficient",
+                  )):
+                      if isinstance(item, float) and not math.isfinite(item):
+                          item = str(item)
+                      relevant.append({"path": key, "value": item})
+              documents.append({
+                  "file": path.relative_to(source).as_posix(),
+                  "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                  "relevant": relevant,
+                  "score": len(relevant),
+                  "payload": value,
+              })
+          documents.sort(key=lambda row: (-row["score"], row["file"]))
+
+          run = json.loads((output / "run.json").read_text(encoding="utf-8"))
+          log = (output / "scientific-run.log").read_text(encoding="utf-8", errors="replace")
+          blocker_pattern = re.compile(
+              r"insufficient|missing sufficient|no compatible|blocker|not available",
+              re.IGNORECASE,
+          )
+          blockers = []
+          for row in blocker_pattern.finditer(log):
+              blockers.append(row.group(0))
+          for document in documents:
+              text = json.dumps(document["payload"], sort_keys=True)
+              blockers.extend(match.group(0) for match in blocker_pattern.finditer(text))
+
+          explicit = []
+          metrics = []
+          for document in documents[:30]:
+              for row in document["relevant"]:
+                  lower = row["path"].lower()
+                  record = {"file": document["file"], **row}
+                  if any(token in lower for token in ("gate", "passed", "decision", "blocker")):
+                      explicit.append(record)
+                  if any(token in lower for token in (
+                      "nll", "anees", "coverage", "diagonal", "permut", "depend",
+                      "hybrid", "shared", "full_cov",
+                  )):
+                      metrics.append(record)
+
+          status = "scientific-result-present" if documents else "no-json-scientific-artifact"
+          if run.get("conclusion") != "success":
+              status = "scientific-workflow-nonsuccess"
+          if blockers:
+              status = "sufficient-statistics-or-technical-blocker"
+
+          result = {
+              "artifact_kind": "Deform360SameMeanQueryCovarianceFinalRetainedResult",
+              "schema_version": 2,
+              "scientific_run_id": int(os.environ["RUN_ID"]),
+              "target_workflow": os.environ["TARGET_WORKFLOW"],
+              "run": run,
+              "status": status,
+              "json_document_count": len(documents),
+              "documents": [
+                  {k: v for k, v in document.items() if k != "payload"}
+                  for document in documents[:30]
+              ],
+              "explicit_decisions": explicit[:300],
+              "scientific_metrics": metrics[:600],
+              "blocker_matches": blockers[:100],
+              "registered_gates": {
+                  "candidate_nll_below_diagonal": "extract-from-explicit-result",
+                  "candidate_nll_below_dependence_permutation": "extract-from-explicit-result",
+                  "normalized_anees_interval": [0.8, 1.2],
+                  "nominal_90_coverage_interval": [0.87, 0.93],
+              },
+              "claim_boundary": (
+                  "Retrospective public-data same-mean evidence only; no point-SOTA, "
+                  "fresh-confirmation, strict-counterfactual, or deployment-safety claim."
+              ),
+          }
+          canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+          result["result_sha256"] = hashlib.sha256(canonical).hexdigest()
+          (output / "result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+
+          lines = [
+              "# Final Deform360 same-mean query-covariance result",
+              "",
+              f"- Scientific run: `{result['scientific_run_id']}`",
+              f"- Workflow conclusion: `{run.get('conclusion')}`",
+              f"- Classification: **{status}**",
+              f"- JSON scientific documents: `{len(documents)}`",
+              f"- Result identity: `{result['result_sha256']}`",
+              "",
+              "## Explicit decisions",
+              "",
+          ]
+          lines.extend(
+              f"- `{row['file']} :: {row['path']}` = `{row['value']}`"
+              for row in explicit[:120]
+          )
+          if not explicit:
+              lines.append("- No explicit decision fields were retained.")
+          lines.extend(["", "## NLL, ANEES, coverage, and dependence metrics", ""])
+          lines.extend(
+              f"- `{row['file']} :: {row['path']}` = `{row['value']}`"
+              for row in metrics[:240]
+          )
+          if not metrics:
+              lines.append("- No matching metric fields were retained.")
+          if blockers:
+              lines.extend(["", "## Blocker indicators", ""])
+              for item in sorted(set(blockers)):
+                  lines.append(f"- `{item}`")
+          lines.extend(["", "## Claim boundary", "", result["claim_boundary"], ""])
+          (output / "RESULT.md").write_text("\n".join(lines), encoding="utf-8")
+          PY
+
+      - name: Commit retained result to branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination=evidence/deform360/deform360_same_mean_query_covariance_final_v6
+          rm -rf "${destination}"
+          mkdir -p "${destination}"
+          cp final-retained/result.json "${destination}/result.json"
+          cp final-retained/RESULT.md "${destination}/RESULT.md"
+          cp final-retained/run.json "${destination}/run.json"
+          git add -- "${destination}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Retain final same-mean Deform360 audit result v2'
+          git pull --rebase origin "${HEAD_REF}"
+          git push origin "HEAD:${HEAD_REF}"
+
+      - name: Upload retained evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: final-same-mean-query-covariance-v2-${{ github.run_id }}
+          path: final-retained/
+          if-no-files-found: warn
+          retention-days: 90
