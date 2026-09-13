@@ -1,0 +1,51 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+name: Run and record Tracking Cloth cost-aware V2 source evidence D
+
+on:
+  push:
+    branches: [science/tracking-cloth-active-decision-rep3-v1]
+    paths:
+      - ".github/requests/run-and-record-tracking-cloth-action-costed-v2d.json"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: run-and-record-tracking-cloth-action-costed-v2d
+  cancel-in-progress: false
+
+jobs:
+  source:
+    name: Validate, execute, record, and merge source-only V2
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONHASHSEED: "0"
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+          clean: true
+
+      - name: Run fail-closed source evidence orchestrator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/_temporary_run_tracking_cloth_action_costed_v2d.py
+
+      - name: Remove isolated execution state
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${V2D_VENV:-}" "${V2D_OUTPUT:-}"

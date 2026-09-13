@@ -1,0 +1,83 @@
+  action_audit_v2:
+    name: Cost-aware support-robust action audit V2 / gpuserver4090
+    needs: [contracts, classify_push]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.classify_push.result == 'success' &&
+      needs.classify_push.outputs.action_audit == 'true'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact merged revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      - name: Execute source-only cost-aware support-robust audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          venv="$RUNNER_TEMP/tracking-action-costed-v2-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$RUNNER_TEMP/tracking-action-costed-v2-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          test ! -e "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install -e .
+          "$venv/bin/python" -m \
+            experiments.tracking_cloth_action_feasibility_costed_v2.run \
+            --dataset-root "$DATASET_ROOT" \
+            --protocol "$ACTION_V2_PROTOCOL_PATH" \
+            --output "$output"
+          echo "ACTION_V2_OUTPUT=$output" >> "$GITHUB_ENV"
+          echo "ACTION_V2_VENV=$venv" >> "$GITHUB_ENV"
+      - name: Verify source gate and target closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["ACTION_V2_OUTPUT"]) / "result.json").read_text()
+          )
+          assert result["rep3_numeric_outcomes_read"] is False
+          assert result["rep3_protocol_authorized"] is False
+          assert result["source_gate"]["automatic_target_follow_on"] is False
+          print(json.dumps({
+              "result_id": result["result_id"],
+              "source_gate": result["source_gate"],
+              "primary": result["decision_summary"][
+                  "selected_primary_source_setting"
+              ],
+          }, sort_keys=True))
+          PY
+          cat "$ACTION_V2_OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload compact V2 source evidence
+        if: always() && env.ACTION_V2_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-action-costed-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.ACTION_V2_OUTPUT }}/result.json
+            ${{ env.ACTION_V2_OUTPUT }}/source_cases.csv
+            ${{ env.ACTION_V2_OUTPUT }}/SUMMARY.md
+            ${{ env.ACTION_V2_OUTPUT }}/protocol.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Remove source execution
+        if: always()
+        shell: bash
+        run: rm -rf "${ACTION_V2_OUTPUT:-}" "${ACTION_V2_VENV:-}"

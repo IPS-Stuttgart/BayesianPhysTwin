@@ -1,0 +1,344 @@
+name: Repair Tracking Cloth cost-aware V2
+
+on:
+  push:
+    branches: [science/tracking-cloth-active-decision-rep3-v1]
+    paths:
+      - ".github/requests/repair-tracking-cloth-costed-v2.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-tracking-cloth-costed-v2
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+          clean: true
+
+      - name: Authorize exact add-only repair request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$PUSH_FORCED" = false
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/repair-tracking-cloth-costed-v2.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(
+              Path('.github/requests/repair-tracking-cloth-costed-v2.json').read_text()
+          )
+          expected = {
+              'schema': 'bayesian-phystwin/source-repair-request-v1',
+              'request_id': 'repair-tracking-cloth-costed-v2-20260902',
+              'pull_request': 893,
+              'target_outcomes_opened': False,
+              'repair_scope': [
+                  'same-plan-support-miss-budget',
+                  'canonical-python-formatting',
+                  'single-permanent-workflow-custody',
+              ],
+              'scientific_protocol_changed': False,
+          }
+          for key, value in expected.items():
+              if request.get(key) != value:
+                  raise SystemExit(f'invalid {key}: {request.get(key)!r}')
+          if set(request) != set(expected) | {'expected_source_revision'}:
+              raise SystemExit('repair request fields changed')
+          parent = subprocess.check_output(
+              ['git', 'rev-parse', f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          if request['expected_source_revision'] != parent:
+              raise SystemExit('repair request is not bound to its exact parent')
+          PY
+
+      - name: Consolidate source workflow and fix exact certificate edge case
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          def replace_required(text: str, old: str, new: str, *, count: int | None = None) -> str:
+              observed = text.count(old)
+              if observed == 0:
+                  raise SystemExit(f'missing patch marker: {old!r}')
+              if count is not None and observed != count:
+                  raise SystemExit(
+                      f'unexpected marker count {observed}, expected {count}: {old!r}'
+                  )
+              return text.replace(old, new)
+
+          decision_path = Path(
+              'experiments/tracking_cloth_action_feasibility_costed_v2/_decision.py'
+          )
+          decision = decision_path.read_text(encoding='utf-8')
+          marker = (
+              '    unknown_gap = unknown_plan_upper[:, None] - unknown_plan_lower[None, :]\n'
+              '    slope = np.maximum(0.0, unknown_gap - represented_pairwise_gap)\n'
+          )
+          replacement = (
+              '    unknown_gap = unknown_plan_upper[:, None] - unknown_plan_lower[None, :]\n'
+              '    # A complete plan compared with itself has identically zero loss gap,\n'
+              '    # including on unrepresented physics. Its own interval width must not\n'
+              '    # consume the plan\'s admissible support-miss budget.\n'
+              '    np.fill_diagonal(unknown_gap, 0.0)\n'
+              '    slope = np.maximum(0.0, unknown_gap - represented_pairwise_gap)\n'
+          )
+          decision = replace_required(decision, marker, replacement, count=1)
+          decision_path.write_text(decision, encoding='utf-8')
+
+          workflow_path = Path(
+              '.github/workflows/tracking-cloth-self-collision-selective-twin-v1.yml'
+          )
+          workflow = subprocess.check_output(
+              [
+                  'git',
+                  'show',
+                  'origin/main:.github/workflows/'
+                  'tracking-cloth-self-collision-selective-twin-v1.yml',
+              ],
+              text=True,
+          )
+          workflow = replace_required(
+              workflow,
+              '      - "experiments/tracking_cloth_action_feasibility_v1/**"\n',
+              '      - "experiments/tracking_cloth_action_feasibility_v1/**"\n'
+              '      - "experiments/tracking_cloth_action_feasibility_costed_v2/**"\n',
+              count=2,
+          )
+          workflow = replace_required(
+              workflow,
+              '      - "tests/test_tracking_cloth_action_feasibility_v1.py"\n',
+              '      - "tests/test_tracking_cloth_action_feasibility_v1.py"\n'
+              '      - "tests/test_tracking_cloth_action_feasibility_costed_v2.py"\n',
+              count=2,
+          )
+          workflow = replace_required(
+              workflow,
+              '  ACTION_PROTOCOL_PATH: experiments/tracking_cloth_action_feasibility_v1/protocol.json\n',
+              '  ACTION_PROTOCOL_PATH: experiments/tracking_cloth_action_feasibility_v1/protocol.json\n'
+              '  ACTION_V2_PROTOCOL_PATH: experiments/tracking_cloth_action_feasibility_costed_v2/protocol.json\n',
+              count=1,
+          )
+          workflow = replace_required(
+              workflow,
+              '              experiments/tracking_cloth_action_feasibility_v1/*)\n'
+              '                action_audit=true\n'
+              '                ;;\n',
+              '              experiments/tracking_cloth_action_feasibility_v1/*)\n'
+              '                action_audit=true\n'
+              '                ;;\n'
+              '              experiments/tracking_cloth_action_feasibility_costed_v2/*)\n'
+              '                action_audit=true\n'
+              '                ;;\n',
+              count=1,
+          )
+          workflow = replace_required(
+              workflow,
+              '              tests/test_tracking_cloth_action_feasibility_v1.py)\n'
+              '                action_audit=true\n'
+              '                ;;\n',
+              '              tests/test_tracking_cloth_action_feasibility_v1.py)\n'
+              '                action_audit=true\n'
+              '                ;;\n'
+              '              tests/test_tracking_cloth_action_feasibility_costed_v2.py)\n'
+              '                action_audit=true\n'
+              '                ;;\n',
+              count=1,
+          )
+          workflow = replace_required(
+              workflow,
+              '            tests/test_tracking_cloth_action_feasibility_v1.py \\\n'
+              '            tests/test_tracking_cloth_action_actual_time_v1.py\n',
+              '            tests/test_tracking_cloth_action_feasibility_v1.py \\\n'
+              '            tests/test_tracking_cloth_action_feasibility_costed_v2.py \\\n'
+              '            tests/test_tracking_cloth_action_actual_time_v1.py\n',
+              count=1,
+          )
+          workflow = replace_required(
+              workflow,
+              '            experiments/tracking_cloth_action_feasibility_v1 \\\n',
+              '            experiments/tracking_cloth_action_feasibility_v1 \\\n'
+              '            experiments/tracking_cloth_action_feasibility_costed_v2 \\\n',
+              count=2,
+          )
+          workflow = replace_required(
+              workflow,
+              '            tests/test_tracking_cloth_action_feasibility_v1.py \\\n',
+              '            tests/test_tracking_cloth_action_feasibility_v1.py \\\n'
+              '            tests/test_tracking_cloth_action_feasibility_costed_v2.py \\\n',
+              count=2,
+          )
+
+          v2_job = r'''
+
+  action_audit_v2:
+    name: Cost-aware support-robust action audit V2 / gpuserver4090
+    needs: [contracts, classify_push]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      needs.contracts.result == 'success' &&
+      needs.classify_push.result == 'success' &&
+      needs.classify_push.outputs.action_audit == 'true'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact merged revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      - name: Execute source-only cost-aware support-robust audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DATASET_ROOT"
+          venv="$RUNNER_TEMP/tracking-action-costed-v2-venv-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          output="$RUNNER_TEMP/tracking-action-costed-v2-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$venv"
+          test ! -e "$output"
+          python -m venv "$venv"
+          "$venv/bin/python" -m pip install -e .
+          "$venv/bin/python" -m \
+            experiments.tracking_cloth_action_feasibility_costed_v2.run \
+            --dataset-root "$DATASET_ROOT" \
+            --protocol "$ACTION_V2_PROTOCOL_PATH" \
+            --output "$output"
+          echo "ACTION_V2_OUTPUT=$output" >> "$GITHUB_ENV"
+          echo "ACTION_V2_VENV=$venv" >> "$GITHUB_ENV"
+      - name: Verify source gate and target closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["ACTION_V2_OUTPUT"]) / "result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if result["rep3_numeric_outcomes_read"] is not False:
+              raise SystemExit("rep3 numeric outcomes were opened")
+          if result["rep3_protocol_authorized"] is not False:
+              raise SystemExit("source audit authorized the held repetition")
+          if result["source_gate"]["automatic_target_follow_on"] is not False:
+              raise SystemExit("automatic target follow-on became enabled")
+          print(
+              json.dumps(
+                  {
+                      "result_id": result["result_id"],
+                      "source_gate": result["source_gate"],
+                      "primary": result["decision_summary"][
+                          "selected_primary_source_setting"
+                      ],
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
+          cat "$ACTION_V2_OUTPUT/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload compact V2 source evidence
+        if: always() && env.ACTION_V2_OUTPUT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: tracking-cloth-action-costed-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.ACTION_V2_OUTPUT }}/result.json
+            ${{ env.ACTION_V2_OUTPUT }}/source_cases.csv
+            ${{ env.ACTION_V2_OUTPUT }}/SUMMARY.md
+            ${{ env.ACTION_V2_OUTPUT }}/protocol.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Remove source execution
+        if: always()
+        shell: bash
+        run: rm -rf "${ACTION_V2_OUTPUT:-}" "${ACTION_V2_VENV:-}"
+'''
+          if '\n  action_audit_v2:' in workflow:
+              raise SystemExit('V2 action job already exists in the permanent workflow')
+          workflow_path.write_text(workflow.rstrip() + v2_job, encoding='utf-8')
+
+          for pattern in (
+              '.github/workflows/finalize-tracking-cloth-action-costed-v2*.yml',
+              '.github/workflows/run-and-record-tracking-cloth-action-costed-v2*.yml',
+              '.github/workflows/tracking-cloth-action-feasibility-costed-v2.yml',
+              '.github/requests/finalize-tracking-cloth-action-costed-v2*.json',
+              '.github/requests/run-and-record-tracking-cloth-action-costed-v2*.json',
+              'tools/_temporary_run_tracking_cloth_action_costed_v2*.py',
+          ):
+              for path in Path('.').glob(pattern):
+                  path.unlink()
+          PY
+
+      - name: Canonicalize and validate focused change
+        shell: bash
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m ruff check --fix \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m ruff format \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_workflow_inventory_budget.py \
+            tests/test_workflow_manifest_trigger_policy.py
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in Path('.github/workflows').glob('*.yml'):
+              yaml.safe_load(path.read_text(encoding='utf-8'))
+          PY
+          git diff --check
+
+      - name: Commit reviewed scientific repair and retire one-shot files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/repair-tracking-cloth-costed-v2.yml \
+            .github/requests/repair-tracking-cloth-costed-v2.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Repair cost-aware support-robust cloth source audit'
+          git push origin HEAD:science/tracking-cloth-active-decision-rep3-v1

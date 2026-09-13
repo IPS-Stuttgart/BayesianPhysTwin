@@ -1,0 +1,110 @@
+name: Repair Tracking Cloth cost-aware V2d
+
+on:
+  push:
+    branches: [science/tracking-cloth-active-decision-rep3-v1]
+    paths:
+      - ".github/requests/repair-tracking-cloth-costed-v2d.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-tracking-cloth-costed-v2d
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+          clean: true
+
+      - name: Authorize exact add-only recovery request
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_FORCED: ${{ github.event.forced }}
+        run: |
+          set -euo pipefail
+          test "$PUSH_FORCED" = false
+          mapfile -t changed < <(git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA")
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = $'A\t.github/requests/repair-tracking-cloth-costed-v2d.json'
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          request = json.loads(
+              Path(".github/requests/repair-tracking-cloth-costed-v2d.json").read_text()
+          )
+          parent = subprocess.check_output(
+              ["git", "rev-parse", f"{os.environ['GITHUB_SHA']}^"], text=True
+          ).strip()
+          assert request == {
+              "schema": "bayesian-phystwin/source-repair-request-v1",
+              "request_id": "repair-tracking-cloth-costed-v2d-20260902",
+              "pull_request": 893,
+              "target_outcomes_opened": False,
+              "scientific_protocol_changed": False,
+              "expected_source_revision": parent,
+          }
+          PY
+
+      - name: Apply consolidated source repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          python tools/_repair_tracking_cloth_costed_v2c.py
+
+      - name: Canonicalize and validate the final branch
+        shell: bash
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m ruff check --fix \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m ruff format \
+            experiments/tracking_cloth_action_feasibility_costed_v2 \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py
+          python -m pytest -q \
+            tests/test_tracking_cloth_action_feasibility_costed_v2.py \
+            tests/test_tracking_cloth_action_feasibility_v1.py \
+            tests/test_tracking_cloth_action_actual_time_v1.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_workflow_inventory_budget.py \
+            tests/test_workflow_manifest_trigger_policy.py
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in Path(".github/workflows").glob("*.yml"):
+              yaml.safe_load(path.read_text(encoding="utf-8"))
+          PY
+          git diff --check
+
+      - name: Commit validated cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/repair-tracking-cloth-costed-v2c.yml \
+            .github/requests/repair-tracking-cloth-costed-v2c.json \
+            .github/requests/repair-tracking-cloth-costed-v2d.json \
+            tools/_repair_tracking_cloth_costed_v2c.py \
+            tools/_tracking_cloth_v2_job.ymlfrag
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair cost-aware support-robust cloth source audit"
+          git push origin HEAD:science/tracking-cloth-active-decision-rep3-v1
