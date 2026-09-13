@@ -1,0 +1,66 @@
+{
+  "schema": "bayesian-phystwin/deform360-dependence-robustness-request-v7",
+  "schema_version": 7,
+  "status": "frozen-before-execution",
+  "request_id": "deform360-dependence-robustness-v7-20260903",
+  "expected_source_revision": "5aba9e03b1b3e62b1bb4de5b2e545588898df8b7",
+  "technical_retry_of_workflow_run_id": 33750165627,
+  "scientific_configuration_changed": false,
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "gpuserver4090"
+  ],
+  "dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform360",
+  "reference_v6_result": {
+    "workflow_run_id": 33528032875,
+    "artifact_id": 9811194776,
+    "artifact_sha256": "8b3bad2bc0620228ebe32027028b1666ea7772a1850f0ab45d525e30e4ced82a",
+    "result_file_sha256": "c73659af65c2b87923f7bd668f9717afab03e449a5b3abd3a5b597ec60898fd1",
+    "result_internal_sha256": "d430731e56ce470a5e0df8fbd3bc13dea83763beccd2df06d86cde2365d4ee36"
+  },
+  "control_plane": {
+    "recovery_revision": "28e8a44bfbab9e1556e0f51c53b46e91b8352481",
+    "recovery_runner_sha256": "6cca5314d3748304904ec97d97c7cd023956faf30a9fe48415684602a5add7ee",
+    "original_v6_revision": "954538832106d8ded13f1101b3a2b2e855b40513",
+    "original_v6_runner_sha256": "06c22fc3fe667c4f2f11eddee3dcb1b78b5465b6312136efb010611e1ebab91c"
+  },
+  "matched_coverage_grid": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.0
+  ],
+  "primary_matched_coverage": 0.4,
+  "temperature_schemes": [
+    "arm_global_loo",
+    "arm_query_loo"
+  ],
+  "bootstrap_repetitions": 10000,
+  "random_seed": 260903,
+  "rerun_exact_v6_recovery": true,
+  "compare_exact_scientific_projection": true,
+  "source_only_temperature_fitting": true,
+  "leave_target_object_out_of_temperature_fit": true,
+  "target_outcomes_may_select_scale_or_coverage": false,
+  "new_measurements_collected": false,
+  "paper_claim_authorized": false
+}
