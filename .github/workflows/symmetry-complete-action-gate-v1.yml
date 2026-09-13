@@ -1,0 +1,139 @@
+name: Symmetry-complete action gate v1
+
+on:
+  push:
+    branches:
+      - research/symmetry-complete-action-gate-v1
+      - main
+    paths:
+      - ".github/workflows/symmetry-complete-action-gate-v1.yml"
+      - "docs/symmetry-complete-action-gate-v1.md"
+      - "protocols/symmetry-complete-action-gate-v1.json"
+      - "scripts/science/run_symmetry_complete_action_gate_v1.py"
+      - "src/bayesian_phystwin/symmetry_complete_action_gate_v1.py"
+      - "tests/test_symmetry_complete_action_gate_v1.py"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/symmetry-complete-action-gate-v1.yml"
+      - "docs/symmetry-complete-action-gate-v1.md"
+      - "protocols/symmetry-complete-action-gate-v1.json"
+      - "scripts/science/run_symmetry_complete_action_gate_v1.py"
+      - "src/bayesian_phystwin/symmetry_complete_action_gate_v1.py"
+      - "tests/test_symmetry_complete_action_gate_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: symmetry-complete-action-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  verify:
+    name: Gate contract / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12", "3.14"]
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+      - name: Verify implementation and tests
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/symmetry_complete_action_gate_v1.py \
+            scripts/science/run_symmetry_complete_action_gate_v1.py \
+            tests/test_symmetry_complete_action_gate_v1.py
+          python -m pytest -q tests/test_symmetry_complete_action_gate_v1.py
+
+  controlled-study:
+    name: Byte-identical end-to-end gate result
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install package
+        run: |
+          python -m pip install -e .
+          python -m pip check
+      - name: Execute twice and verify the registered result
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/symmetry-complete-action-gate-v1"
+          mkdir -p "$root"
+          python scripts/science/run_symmetry_complete_action_gate_v1.py \
+            --output "$root/result-a.json"
+          python scripts/science/run_symmetry_complete_action_gate_v1.py \
+            --output "$root/result-b.json"
+          cmp "$root/result-a.json" "$root/result-b.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "symmetry-complete-action-gate-v1"
+          result = json.loads((root / "result-a.json").read_text(encoding="utf-8"))
+          protocol = json.loads(
+              Path("protocols/symmetry-complete-action-gate-v1.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          assert result["decision"] == "controlled-symmetry-complete-action-gate-passed"
+          assert all(result["checks"].values())
+          assert result["action_names"] == [
+              action["name"] for action in protocol["actions"]
+          ]
+          assert result["realization_radii"] == protocol["causal4d_receipt"][
+              "realization_radii_for_action_0"
+          ]
+          assert result["zero_tolerance_sweep"][-1]["selected_action"] == 2
+          assert result["zero_tolerance_sweep"][-1]["exact_fallback"] is True
+          assert result["bounded_regret_case"]["selected_action"] == 0
+          assert result["transport_margin_case"]["exact_fallback"] is True
+          assert result["tampered_receipt_case"]["status"] == "invalid-fail-closed"
+          assert result["cross_context_receipt_case"]["status"] == "invalid-fail-closed"
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+          sha256sum \
+            protocols/symmetry-complete-action-gate-v1.json \
+            "$root/result-a.json"
+      - name: Upload controlled evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: symmetry-complete-action-gate-${{ github.sha }}
+          path: ${{ runner.temp }}/symmetry-complete-action-gate-v1/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

@@ -1,0 +1,61 @@
+{
+  "schema": "bayesian-phystwin.symmetry-complete-action-gate-protocol",
+  "schema_version": 1,
+  "protocol_id": "symmetry-complete-action-gate-v1",
+  "scientific_question": "Can a physical twin consume a complete-orbit structural certificate and a content-addressed shared-gauge intervention receipt, then execute only when total regret is admissible and otherwise return exact fallback?",
+  "actions": [
+    {
+      "index": 0,
+      "name": "track-shared-frame"
+    },
+    {
+      "index": 1,
+      "name": "orthogonal-shared-frame"
+    },
+    {
+      "index": 2,
+      "name": "fallback",
+      "fallback_id": "nominal-controller-v1"
+    }
+  ],
+  "prob4d_structural_pairwise_upper_bound": [
+    [0.0, -2.0, -1.0],
+    [2.0, 0.0, 1.0],
+    [1.0, -1.0, 0.0]
+  ],
+  "causal4d_receipt": {
+    "schema_version": 1,
+    "radius_scope": "deterministic-complete",
+    "state_evidence_id": "state-evidence-v1",
+    "action_template_id": "action-bank-v1",
+    "loss_id": "registered-loss-v1",
+    "fallback_id": "nominal-controller-v1",
+    "realization_radii_for_action_0": [0.0, 0.2, 0.8, 1.0, 1.2],
+    "realization_radii_for_other_actions": 0.0,
+    "action_loss_lipschitz": [1.0, 1.0, 1.0]
+  },
+  "transport_control": {
+    "pairwise_margin": [
+      [0.0, 0.0, 1.1],
+      [0.0, 0.0, 0.0],
+      [1.1, 0.0, 0.0]
+    ],
+    "certificate_id": "object-calibration-v1"
+  },
+  "adversarial_controls": [
+    "tampered realization radius with stale receipt identifier",
+    "content-valid receipt bound to a different state-evidence identity"
+  ],
+  "registered_requirements": {
+    "radii_through_1_0_select_exact_action_0": true,
+    "radius_1_2_zero_tolerance_selects_exact_fallback": true,
+    "radius_1_2_action_0_regret_upper": 0.2,
+    "radius_1_2_tolerance_0_25_selects_bounded_action_0": true,
+    "transport_margin_remains_separate_and_forces_fallback": true,
+    "tampered_receipt_invalid_fails_closed": true,
+    "cross_context_receipt_invalid_fails_closed": true,
+    "byte_identical_replay_required": true
+  },
+  "statistical_status": "deterministic controlled cross-repository contract study",
+  "claim_boundary": "The structural gap, intervention receipt and optional transport margin are supplied. The protocol does not validate the physical symmetry, learned state provider, actuator, target calibration, loss constants, deployment safety, or state of the art."
+}
