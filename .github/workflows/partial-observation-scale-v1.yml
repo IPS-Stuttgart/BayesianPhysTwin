@@ -1,0 +1,135 @@
+# workflow-lifecycle: experimental
+# workflow-owner: IPS-Stuttgart maintainers
+name: Partial observation uncertainty scale v1
+on:
+  push:
+    branches: [research/partial-observation-conditioning-20260906]
+    paths:
+      - '.github/requests/partial-observation-scale-v1.json'
+permissions:
+  contents: read
+concurrency:
+  group: partial-observation-scale-v1
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 50
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      CUBLAS_WORKSPACE_CONFIG: ':4096:8'
+      PYTHONHASHSEED: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      PARENT_STUDY: experiments/partial_observation_conditioning_v1
+      STUDY: experiments/partial_observation_scale_v1
+      REQUEST: .github/requests/partial-observation-scale-v1.json
+      PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts/remote:${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate request-only trigger and bind isolated runtime
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          test "$RUNNER_NAME" = workstation1
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git diff --name-only "$BEFORE" "$GITHUB_SHA")" = "$REQUEST"
+          python3 - <<'PY'
+          import json, os, subprocess
+          request = json.load(open(os.environ['REQUEST']))
+          assert request['contract'] == 'partial-observation-scale-v1'
+          assert request['execution'] == 1
+          assert request['code_commit'] == subprocess.check_output(['git','rev-parse','HEAD^'],text=True).strip()
+          assert request['target_tuning'] is False
+          assert request['reserved_cohort_access'] is False
+          PY
+          export OUT="$RUNNER_TEMP/partial-scale-${GITHUB_RUN_ID}"
+          export SCRATCH="/home/github-runner/.cache/workflows/partial-observation-scale-v1/${GITHUB_RUN_ID}"
+          test ! -e "$SCRATCH"
+          mkdir -p "$OUT" "$SCRATCH"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          echo "SCRATCH=$SCRATCH" >> "$GITHUB_ENV"
+          cp "$REQUEST" "$OUT/execution_request.json"
+          cp "$STUDY/protocol.json" "$OUT/protocol.json"
+          cp "$PARENT_STUDY/request.json" "$OUT/parent_request.json"
+          test -x "$FROZEN_PYTHON"
+          safe="$RUNNER_TEMP/partial-scale-gitconfig-${GITHUB_RUN_ID}"
+          git config --file "$safe" --add safe.directory /home/florianpfaff/source-only/DEFORM-b73b8b8
+          echo "GIT_CONFIG_GLOBAL=$safe" >> "$GITHUB_ENV"
+          device=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -t, -k2,2nr | head -1 | cut -d, -f1 | tr -d ' ')
+          echo "PARTIAL_DEVICE=cuda:$device" >> "$GITHUB_ENV"
+          venv="$RUNNER_TEMP/partial-scale-venv-${GITHUB_RUN_ID}"
+          python3 -m venv "$venv"
+          "$venv/bin/pip" install 'numpy==2.2.6' 'scipy==1.15.3'
+          echo "NUMERIC_PYTHON=$venv/bin/python" >> "$GITHUB_ENV"
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "run=$GITHUB_RUN_ID"
+            echo "runner=$RUNNER_NAME"
+            echo "device=cuda:$device"
+            sha256sum "$STUDY/run.py" "$STUDY/test_scale.py" "$STUDY/verify.py" "$STUDY/protocol.json" "$PARENT_STUDY/run.py" "$PARENT_STUDY/request.json"
+            "$venv/bin/python" -c 'import numpy,scipy,sys;print(sys.version);print(numpy.__version__,scipy.__version__)'
+            nvidia-smi
+          } > "$OUT/environment.txt"
+      - name: Validate analytic scores, conjugacy and information exclusion
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMERIC_PYTHON" -m py_compile "$STUDY/run.py" "$STUDY/test_scale.py" "$STUDY/verify.py"
+          "$NUMERIC_PYTHON" -m unittest discover -v -s "$PARENT_STUDY" -p test_experiment.py 2>&1 | tee "$OUT/parent_tests.log"
+          "$NUMERIC_PYTHON" -m unittest discover -v -s "$STUDY" -p test_scale.py 2>&1 | tee "$OUT/scale_tests.log"
+      - name: Replay unchanged DEFORM checkpoints on source trajectories only
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -u "$PARENT_STUDY/run.py" source --request "$PARENT_STUDY/request.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/source.log"
+      - name: Fit source-only common means and all uncertainty competitors
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMERIC_PYTHON" -u "$STUDY/run.py" fit --protocol "$STUDY/protocol.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/fit.log"
+      - name: Upload source seal before evaluation outcomes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: partial-scale-source-seal-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/source_seal.json
+            ${{ env.OUT }}/scale_selection.json
+            ${{ env.OUT }}/*_scale_model.npz
+            ${{ env.OUT }}/protocol.json
+            ${{ env.OUT }}/execution_request.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Prepare previously opened targets with original baseline checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" -u "$PARENT_STUDY/run.py" target --request "$PARENT_STUDY/request.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/target.log"
+      - name: Score the fixed uncertainty hypothesis without target fitting
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMERIC_PYTHON" -u "$STUDY/run.py" score --protocol "$STUDY/protocol.json" --scratch "$SCRATCH" --output "$OUT" 2>&1 | tee "$OUT/score.log"
+          cat "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Independently verify actual densities and report arithmetic
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$NUMERIC_PYTHON" -u "$STUDY/verify.py" --output "$OUT" --scratch "$SCRATCH" 2>&1 | tee "$OUT/verification.log"
+      - name: Retain positive negative and technical outcomes
+        if: always() && env.OUT != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: partial-observation-scale-v1-${{ github.run_id }}
+          path: ${{ env.OUT }}
+          if-no-files-found: error
+          retention-days: 90
