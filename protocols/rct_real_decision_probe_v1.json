@@ -1,0 +1,280 @@
+{
+  "claim_boundary": {
+    "authorized_if_confirmation_passes": "On previously unseen physical material samples, decision-directed selection among logged robot presses reduces held-contact decision regret more efficiently than task-agnostic system identification while abstaining when no indentation is certified.",
+    "not_authorized": [
+      "arbitrary household-object generalization",
+      "online robot execution",
+      "safety certification outside the released RCT force range",
+      "causal identification of material parameters",
+      "state-of-the-art tactile recognition"
+    ],
+    "physical_unit": "one RCT industrial reference material sample"
+  },
+  "cohort": {
+    "calibration": {
+      "material_ids": [
+        "0700120",
+        "0700300",
+        "0700340",
+        "0700490",
+        "0700680",
+        "0700750",
+        "0700830",
+        "0700970",
+        "0701320",
+        "0701430",
+        "0701650",
+        "0701850",
+        "0710070",
+        "0710100",
+        "0710200",
+        "0710310",
+        "0710330",
+        "0710530",
+        "0710550",
+        "710320"
+      ],
+      "official_split": "matholdout_K20_bal_seed7",
+      "role": "calibrate one universal material-level upper-force residual without selecting the method"
+    },
+    "confirmation": {
+      "material_ids": [
+        "0700070",
+        "0700160",
+        "0700220",
+        "0700510",
+        "0700520",
+        "0700600",
+        "0700640",
+        "0700690",
+        "0700790",
+        "0700800",
+        "0701110",
+        "0701380",
+        "0701420",
+        "0701490",
+        "0701610",
+        "0701710",
+        "0710210",
+        "0710380",
+        "0710390",
+        "0710510"
+      ],
+      "official_split": "matholdout_K20_bal_seed42",
+      "role": "one-shot confirmation after every source gate and artifact seal passes"
+    },
+    "fit": {
+      "expected_material_count": 62,
+      "rule": "all released material IDs outside calibration, source_test, and confirmation"
+    },
+    "pairwise_disjoint": true,
+    "source_test": {
+      "material_ids": [
+        "0700140",
+        "0700170",
+        "070020",
+        "0700210",
+        "0700320",
+        "0700610",
+        "0700660",
+        "0701280",
+        "0701290",
+        "0701460",
+        "0701990",
+        "0710140",
+        "0710150",
+        "0710240",
+        "0710280",
+        "0710360",
+        "0710520",
+        "0710580",
+        "700870",
+        "700920"
+      ],
+      "official_split": "matholdout_K20_bal_seed0",
+      "role": "single source-side promotion decision with no method changes afterward"
+    }
+  },
+  "contract": "rct-real-decision-probe-protocol-v1",
+  "dataset": {
+    "archive": {
+      "expected_sha256": null,
+      "file_id": 65037834,
+      "file_name": "rct_dataset.zip",
+      "last_modified_utc": "2026-05-28T13:59:05Z",
+      "s3_version_id": "u6LkDcjtV3IDCCMUkKoiBFe7BwjjrqdR",
+      "size_bytes": 9905561734,
+      "status": "download-in-progress-hash-required-before-extraction"
+    },
+    "code_repository": "https://github.com/faerber-lab/RCT",
+    "code_revision": "8d2f2de96b08d7c1e4d754e327b974f3e41283b8",
+    "counts": {
+      "force_traces": 1827,
+      "material_samples": 122,
+      "robot_press_sequences": 1832,
+      "tactile_frames": 29279,
+      "tactile_sensors": 3
+    },
+    "landing_page": "https://faerber-lab.github.io/RCT/",
+    "license": "CC BY 4.0",
+    "name": "RCT: A Robot-Collected Touch-Vision-Language Dataset for Tactile Generalization",
+    "official_split_manifests": {
+      "matholdout_K20_bal_seed0": "2813cbf7f76cfe4fc4116ce3abb5b1fc7edc8f5a0a2996f5016952cce6531111",
+      "matholdout_K20_bal_seed42": "862d5c51d67265f661f330c93a116c6abb4c0eee6b4c3c53bbc8069b6b965421",
+      "matholdout_K20_bal_seed7": "921c1799c3f70c4ff5e6c27bd6081deda8ed931fed17a80896c709ae65084adb"
+    },
+    "share_url": "https://figshare.com/s/a5ed417ba6602ccad0f6"
+  },
+  "decision": {
+    "action_indentation_mm": [
+      0.0,
+      0.4,
+      0.8,
+      1.2
+    ],
+    "abstention_action_mm": 0.0,
+    "force_limit": {
+      "definition": "empirical 0.60 quantile across fit materials of held p3/s3 normal-force increments at 1.2 mm",
+      "fit_only": true,
+      "quantile": 0.6
+    },
+    "held_intervention": {
+      "position": 3,
+      "sensor": 3
+    },
+    "policy": "choose the deepest action whose simultaneous conformal upper force bound is at or below the fit-only force limit; abstain if no nonzero action is certified",
+    "regret": {
+      "oracle": "deepest action whose realized held force is at or below the force limit",
+      "safe_utility": "indentation_mm / 1.2",
+      "unsafe_utility": "-1 - max(0, realized_force - force_limit) / force_limit",
+      "value": "oracle_utility - realized_policy_utility"
+    }
+  },
+  "evaluation": {
+    "budgets": {
+      "additional_probe_counts": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cost_unit": "one 1.2 mm logged robot press after the mandatory anchor",
+      "primary_summary": "trapezoidal area under material-level regret versus additional-probe count"
+    },
+    "confirmation_success": {
+      "decision_directed_auc_below_system_identification": true,
+      "maximum_false_safe_rate": 0.1,
+      "minimum_simultaneous_force_coverage": 0.9,
+      "one_sided_exact_paired_sign_flip_p_max": 0.05,
+      "unsafe_action_rate_not_above_system_identification_by_more_than": 0.05
+    },
+    "controls": [
+      "task-agnostic Gaussian system-identification information gain",
+      "exact average over all selectable-probe permutations",
+      "lexicographic fixed probe order",
+      "mandatory-anchor-only no-additional-probe policy",
+      "held-outcome oracle diagnostic"
+    ],
+    "primary_contrast": "decision-directed regret AUC minus task-agnostic system-identification regret AUC",
+    "secondary_metrics": [
+      "regret at each matched probe count",
+      "material wins ties losses",
+      "simultaneous upper-force coverage",
+      "false-safe and unsafe-action rates",
+      "certified nonzero-action coverage",
+      "abstention rate",
+      "selected-probe diversity"
+    ],
+    "statistical_inference": {
+      "bootstrap_repetitions": 10000,
+      "bootstrap_seed": 20260902,
+      "exact_sign_flip_alternatives": 1048576,
+      "primary_test": "one-sided exact paired sign-flip test over 20 confirmation materials",
+      "statistical_unit": "material sample"
+    }
+  },
+  "information_boundary": {
+    "calibration_force_rows_open_before_protocol_freeze": false,
+    "confirmation_descriptor_labels_used": false,
+    "confirmation_force_rows_open_before_authorization": false,
+    "confirmation_material_ids_are_public_split_metadata": true,
+    "confirmation_tactile_frames_used": false,
+    "held_v8_access_allowed": false,
+    "method_changes_after_source_test": false,
+    "source_test_force_rows_open_before_protocol_freeze": false,
+    "target_open_requires_archive_hash": true,
+    "target_open_requires_implementation_seal": true,
+    "target_open_requires_source_gate": true,
+    "target_open_requires_write_once_authorization": true
+  },
+  "method": {
+    "fit": {
+      "covariance": "material-level empirical covariance of the 15 registered force coordinates",
+      "covariance_diagonal_shrinkage": 0.25,
+      "jitter_fraction_of_median_variance": 1e-08,
+      "mean": "fit-material arithmetic mean",
+      "response_coordinates": "five registered press trajectories times indentation levels 0.4, 0.8, and 1.2 mm"
+    },
+    "force_observation": {
+      "alignment": "within each trajectory, indentation is maximum z_frame minus z_frame and is matched to the nearest registered indentation with maximum absolute mismatch 0.051 mm",
+      "normal_force": "absolute raw_fz minus the trajectory's shallowest-frame raw_fz",
+      "nonfinite_policy": "fail the material",
+      "units": "newtons"
+    },
+    "mandatory_anchor": {
+      "position": 1,
+      "sensor": 1
+    },
+    "posterior": "exact conditional Gaussian with registered shrinkage and jitter; observed probe coordinates are conditioned without target outcomes",
+    "probe_selectors": {
+      "decision_directed": {
+        "common_random_numbers": true,
+        "objective": "maximum expected reduction in posterior Bayes decision regret per probe",
+        "predictive_draw_count": 4096,
+        "predictive_seed": 20260902,
+        "tie_break": "lexicographic position then sensor"
+      },
+      "system_identification": {
+        "objective": "maximum Gaussian mutual information about every still-unobserved registered force coordinate, independent of the downstream utility",
+        "tie_break": "lexicographic position then sensor"
+      }
+    },
+    "selectable_probes": [
+      {
+        "position": 1,
+        "sensor": 2
+      },
+      {
+        "position": 2,
+        "sensor": 1
+      },
+      {
+        "position": 2,
+        "sensor": 2
+      }
+    ],
+    "universal_conformal_guard": {
+      "calibration_unit": "material sample",
+      "coverage": 0.9,
+      "score": "maximum standardized upper-force residual over every registered selector, budget, and nonzero action",
+      "shared_across_methods": true,
+      "tie_rule": "conservative higher rank",
+      "uses_confirmation": false
+    }
+  },
+  "promotion": {
+    "source_gate": {
+      "decision_directed_auc_relative_improvement_min": 0.05,
+      "maximum_false_safe_rate": 0.1,
+      "minimum_material_improvement_count": 12,
+      "minimum_selected_probe_count": 2,
+      "minimum_simultaneous_force_coverage": 0.9,
+      "unsafe_action_rate_not_above_system_identification_by_more_than": 0.05
+    },
+    "target_attempt_limit": 1,
+    "target_authorized": false,
+    "target_failure_policy": "freeze and report without retry, replacement, calibration, or method change"
+  },
+  "schema_version": 1,
+  "status": "frozen-before-force-outcome-access"
+}

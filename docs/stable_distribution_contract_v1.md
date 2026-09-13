@@ -147,6 +147,14 @@ therefore raised narrowly from 614 to 618. These members define certificate,
 cohort, and source-custody contracts; they do not package datasets, simulator
 runtimes, physical outcomes, or a competence result.
 
+The support-robust certificate work, its subsequent hardening, and the public
+RCT real-decision study add six NumPy-only installed modules after the previous
+619-member ratchet. A deterministic integrated build contains 625 wheel members
+and 2,573,574 compressed wheel bytes. The wheel ratchets are therefore raised
+narrowly to 625 members and 2,600,000 bytes. The RCT modules package the frozen
+decision rule and protocol constants only; they do not package the public
+dataset, source-test outcomes, confirmation outcomes, or a scientific result.
+
 The repository test suite is broader than the release self-test subset and may
 use CI helpers, workflow files, private operational state, optional dependencies,
 or large research fixtures that are intentionally not publication artifacts.
