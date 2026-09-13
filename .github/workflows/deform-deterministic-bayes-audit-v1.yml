@@ -1,0 +1,132 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM deterministic/Bayesian point-equivalence audit v1
+
+on:
+  push:
+    branches:
+      - science/deform-deterministic-bayes-audit-v1
+    paths:
+      - ".github/requests/deform-deterministic-bayes-audit-v1.json"
+      - ".github/workflows/deform-deterministic-bayes-audit-v1.yml"
+      - "scripts/science/audit_deform_deterministic_bayes_v1.py"
+      - "tests/test_deform_deterministic_bayes_v1.py"
+      - "results/science/deform_deterministic_bayes_audit_v1/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform-deterministic-bayes-audit-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contracts:
+    name: Audit contracts and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12.14
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.14"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development environment
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate the bounded audit implementation
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/audit_deform_deterministic_bayes_v1.py \
+            tests/test_deform_deterministic_bayes_v1.py
+          python -m pytest -q tests/test_deform_deterministic_bayes_v1.py
+          python scripts/science/audit_deform_deterministic_bayes_v1.py --help
+          git diff --check
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+  real-data-audit:
+    name: Read-only four-operator audit on gpuserver4090
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 30
+    env:
+      FROZEN_PYTHON: /home/florianpfaff/source-only/deform-bayesian-v1/venv/bin/python
+      OUTPUT_ROOT: /home/github-runner/.cache/workflows/deform-deterministic-bayes-audit-v1/runs/${{ github.run_id }}-${{ github.run_attempt }}
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Verify runner and immutable inputs
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          test -x "$FROZEN_PYTHON"
+          test -d /home/florianpfaff/source-only
+          test -d /home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1
+          test ! -e "$OUTPUT_ROOT"
+          "$FROZEN_PYTHON" - <<'PY'
+          import numpy as np
+          import sys
+
+          print({"python": sys.version, "numpy": np.__version__})
+          PY
+          nvidia-smi --query-gpu=name,uuid --format=csv,noheader || true
+
+      - name: Reconstruct the covariance-free deterministic point mean
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          set -euo pipefail
+          "$FROZEN_PYTHON" \
+            scripts/science/audit_deform_deterministic_bayes_v1.py \
+            --request .github/requests/deform-deterministic-bayes-audit-v1.json \
+            --output-dir "$OUTPUT_ROOT"
+
+      - name: Record execution environment
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          {
+            echo "github_sha=$GITHUB_SHA"
+            echo "github_run_id=$GITHUB_RUN_ID"
+            echo "github_run_attempt=$GITHUB_RUN_ATTEMPT"
+            echo "runner_name=$RUNNER_NAME"
+            "$FROZEN_PYTHON" --version
+            "$FROZEN_PYTHON" -c 'import numpy as np; print("numpy=" + np.__version__)'
+          } > "$OUTPUT_ROOT/environment.txt"
+
+      - name: Upload compact audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-deterministic-bayes-audit-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 90

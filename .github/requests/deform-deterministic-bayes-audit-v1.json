@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "contract": "deform-deterministic-bayes-audit-request-v1",
+  "audit_id": "deform-deterministic-bayes-audit-v1-2026-09-03",
+  "runner_label": "gpuserver4090",
+  "search_roots": [
+    "/home/florianpfaff/source-only",
+    "/home/github-runner/.cache/workflows"
+  ],
+  "panels": {
+    "DLO2": {
+      "root": "",
+      "prediction_sha256": "431c778022bfb7b602512e5e6c2132a3f42e5959c959368e5203059bd2ce223b",
+      "prediction_size_bytes": 5082164,
+      "model_sha256": "0376e95bc144d435d61fed14f5d40222978958dd2954ac43c9117588437f8034"
+    },
+    "DLO3": {
+      "root": "/home/florianpfaff/source-only/deform-dlo3-robustness-v3/official-eval-da487c26-runtime-v1"
+    },
+    "DLO4": {
+      "root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo4-target"
+    },
+    "DLO5": {
+      "root": "/home/github-runner/.cache/workflows/deform-dlo45-time-budget-recovery-v3/runs/33361441865-1/dlo5-target"
+    }
+  },
+  "expected": {
+    "DLO2": {
+      "base_mean_l1_m": 0.008746962326219684,
+      "candidate_mean_l1_m": 0.007860559253359958,
+      "wins": 14
+    },
+    "DLO3": {
+      "base_mean_l1_m": 0.0070518,
+      "candidate_mean_l1_m": 0.0063467,
+      "wins": 14
+    },
+    "DLO4": {
+      "base_mean_l1_m": 0.0099549,
+      "candidate_mean_l1_m": 0.0089532,
+      "wins": 14
+    },
+    "DLO5": {
+      "base_mean_l1_m": 0.0080501,
+      "candidate_mean_l1_m": 0.0078268,
+      "wins": 14
+    }
+  },
+  "tolerances": {
+    "point_mean_max_abs_difference_m": 1e-12,
+    "score_max_abs_difference_m": 5e-7
+  }
+}
