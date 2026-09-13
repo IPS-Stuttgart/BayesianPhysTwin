@@ -1,0 +1,121 @@
+{
+  "cause_plans": [
+    {
+      "cause_id": "observation_bias",
+      "minimal_robust_intervention_sets": [
+        [
+          "action-1",
+          "action-2"
+        ]
+      ],
+      "minimum_robust_intervention_cost": 2.0,
+      "minimum_robust_intervention_count": 2
+    },
+    {
+      "cause_id": "physical_parameter",
+      "minimal_robust_intervention_sets": [
+        [
+          "action-1",
+          "action-2"
+        ]
+      ],
+      "minimum_robust_intervention_cost": 2.0,
+      "minimum_robust_intervention_count": 2
+    },
+    {
+      "cause_id": "physical_state",
+      "minimal_robust_intervention_sets": [
+        [
+          "action-1",
+          "action-2"
+        ]
+      ],
+      "minimum_robust_intervention_cost": 2.0,
+      "minimum_robust_intervention_count": 2
+    },
+    {
+      "cause_id": "realized_intervention",
+      "minimal_robust_intervention_sets": [
+        [
+          "action-1",
+          "action-2"
+        ]
+      ],
+      "minimum_robust_intervention_cost": 2.0,
+      "minimum_robust_intervention_count": 2
+    },
+    {
+      "cause_id": "source_local_discrepancy",
+      "minimal_robust_intervention_sets": [
+        [
+          "action-0",
+          "action-1",
+          "action-2"
+        ]
+      ],
+      "minimum_robust_intervention_cost": 3.0,
+      "minimum_robust_intervention_count": 3
+    }
+  ],
+  "claim_boundary": "Controlled finite-family mechanism evidence. It does not establish natural real-world cause labels, family completeness, unseen-object transfer, or safety.",
+  "criteria": {
+    "closed_set_unknown_recall_zero": true,
+    "near_confounding_not_promoted": true,
+    "robust_bound_coverage_one": true,
+    "robust_overall_accuracy_at_least_0_99": true,
+    "unknown_detection_recall_at_least_0_99": true,
+    "wrong_action_accuracy_below_robust": true
+  },
+  "decision": "robust-open-set-attribution-supported",
+  "metrics": {
+    "closed_interventional": {
+      "false_physical_promotion_on_unknown": 0.6002400960384153,
+      "overall_accuracy": 0.8334,
+      "registered_held_intervention_rmse": 0.0031362535487493306,
+      "resolved_coverage": 1.0,
+      "unknown_detection_recall": 0.0
+    },
+    "factual": {
+      "false_physical_promotion_on_unknown": 0.698079231692677,
+      "overall_accuracy": 0.1696,
+      "registered_held_intervention_rmse": 0.8641454607725596,
+      "resolved_coverage": 1.0,
+      "unknown_detection_recall": 0.0
+    },
+    "robust_open_set": {
+      "false_physical_promotion_on_unknown": 0.0,
+      "overall_accuracy": 1.0,
+      "registered_held_intervention_rmse": 0.004004636054250799,
+      "resolved_coverage": 1.0,
+      "unknown_detection_recall": 1.0
+    },
+    "wrong_action": {
+      "false_physical_promotion_on_unknown": 1.0,
+      "overall_accuracy": 0.3333,
+      "registered_held_intervention_rmse": 0.8303232775058883,
+      "resolved_coverage": 1.0,
+      "unknown_detection_recall": 0.0
+    }
+  },
+  "near_confounding_stress": {
+    "closed_set_point_label": "cause_b",
+    "family_falsified": false,
+    "robust_cause_a_status": "identifiable_but_unstable",
+    "robust_cause_b_status": "identifiable_but_unstable"
+  },
+  "plan_id": "a8dbcd606f944ce18203abc04e850531038ad1ed18e441d8d02b0d2f0e2d6fa2",
+  "registered_causes": [
+    "observation_bias",
+    "physical_parameter",
+    "physical_state",
+    "realized_intervention",
+    "source_local_discrepancy"
+  ],
+  "result_id": "193c892d6b4806781abfff37a408896fb73dab13203f2a3830307658a2c5b796",
+  "robust_bound_coverage": 1.0,
+  "robust_bound_evaluated_trials": 8334,
+  "schema": "why-is-the-twin-wrong-robust-controlled-v1",
+  "seed": 20260902,
+  "trials": 10000,
+  "unknown_trial_fraction": 0.16666666666666666
+}
