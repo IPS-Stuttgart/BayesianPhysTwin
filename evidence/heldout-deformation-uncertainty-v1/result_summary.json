@@ -1,0 +1,67 @@
+{
+  "schema": "heldout-deformation-uncertainty-result-summary-v1",
+  "status": "complete",
+  "hypothesis_supported": false,
+  "workflow_run_id": 33985033404,
+  "workflow_conclusion": "success",
+  "trigger_commit": "ecbe195997dcc00419555c9c853a4a7fcc73f557",
+  "artifact_id": 9974910819,
+  "artifact_sha256": "fc69cc01f014a7591ae2d3de3dc9a1d8acb76ca06c76a902cb06937b827c457c",
+  "result_sha256": "1c051bc95d9d19e1209ff3a2dc0c71b741340be7c5044f5718673e290dd1a77e",
+  "protocol_sha256": "a502252119d6d257068cfedc3dd9aaf35078ac2277063de78865059975db6e95",
+  "evaluator_sha256": "562b5b21535eedd01f3191ace7d3583d550f26a8d10818f32169d16566800633",
+  "evidence_class": "retrospective-source-only-fixed-twin-covariance-layer-pilot",
+  "dlo_count": 2,
+  "test_trajectory_count": 16,
+  "query_count": 99,
+  "calibration_query_count": 12,
+  "heldout_query_count": 87,
+  "point_mean_parity_max_abs": 0.0,
+  "source_replay_parity_max_abs_m": {"DLO4": 0.0, "DLO5": 0.0},
+  "heldout_macro_brier": {
+    "joint_student": 0.09309066717499231,
+    "diagonal_student": 0.1323838520307436,
+    "trajectory_bootstrap": 0.09499075979271453,
+    "symmetric_bootstrap": 0.08724166714296601,
+    "joint_gaussian": 0.09409015926523763
+  },
+  "primary_paired_brier_comparisons": {
+    "diagonal_student": {
+      "joint_minus_control": -0.03929318485575131,
+      "ci97_5": [-0.04645128243435091, -0.033494845678578584],
+      "DLO4_difference": -0.04036410790329914,
+      "DLO5_difference": -0.038222261808203484,
+      "gate_passed": true
+    },
+    "trajectory_bootstrap": {
+      "joint_minus_control": -0.0019000926177222236,
+      "ci97_5": [-0.0065498294001428755, 0.003125495990868555],
+      "DLO4_difference": -0.006566675106651441,
+      "DLO5_difference": 0.002766489871206994,
+      "gate_passed": false
+    }
+  },
+  "secondary_paired_brier_point_differences": {
+    "joint_minus_symmetric_bootstrap": 0.0058490000320263,
+    "joint_minus_joint_gaussian": -0.000999492090245318
+  },
+  "independent_compact_score_verification": {
+    "status": "passed",
+    "event_rows": 23760,
+    "unique_recorded_events": 4752,
+    "scope": "result hash, same event labels, all Brier aggregates, paired trajectory bootstrap intervals, and primary decision recomputed from artifact CSVs; not another simulator or source-fit rerun"
+  },
+  "pre_scoring_technical_failure": {
+    "workflow_run_id": 33984874637,
+    "artifact_id": 9974850196,
+    "artifact_sha256": "b16d025230e265220bcb5088e8e871cd92ad43b0be4b5b8ca8ec38c5b1b14a5b",
+    "cause": "Git dubious ownership for the exact shared upstream checkout",
+    "scientific_scoring_started": false,
+    "repair": "process-local safe.directory for the exact authorized path; scientific code and protocol unchanged"
+  },
+  "original_bpt_covariance_tested": false,
+  "new_joint_covariance_layer_tested": true,
+  "official_eval_opened": false,
+  "new_measurements": false,
+  "claim": "The tested joint uncertainty transfers better than calibrated diagonal uncertainty, but superiority over credible empirical trajectory distributions is not established. The primary hypothesis is not supported by this pilot."
+}

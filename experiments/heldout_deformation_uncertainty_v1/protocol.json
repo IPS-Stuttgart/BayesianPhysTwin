@@ -1,0 +1,70 @@
+{
+  "schema": "heldout-deformation-uncertainty-protocol-v1",
+  "hypothesis": "Joint covariance-only predictive belief transfers to held-out deformation query families better than independently calibrated diagonal and whole-trajectory bootstrap uncertainty at identical means.",
+  "evidence_class": "retrospective-source-only-fixed-twin-covariance-layer-pilot",
+  "source_parent_run": 33361441865,
+  "source_counts": {
+    "fit": 39,
+    "calibration": 9,
+    "source_test": 8
+  },
+  "dlos": [
+    "DLO4",
+    "DLO5"
+  ],
+  "point_mean": "frozen source-qualified DEFORM hybrid plus original BayesianPhysTwin local ridge residual, shrinkage 0.25",
+  "new_covariance_layer": true,
+  "original_stored_covariance_tested": false,
+  "horizon_indices": [
+    49,
+    99,
+    249,
+    497
+  ],
+  "methods": [
+    "joint_student",
+    "diagonal_student",
+    "trajectory_bootstrap",
+    "symmetric_bootstrap",
+    "joint_gaussian"
+  ],
+  "primary_controls": [
+    "diagonal_student",
+    "trajectory_bootstrap"
+  ],
+  "scale_grid": [
+    0.25,
+    0.375,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0
+  ],
+  "thresholds_m": [
+    0.005,
+    0.01,
+    0.02
+  ],
+  "calibration_family": "centroid",
+  "heldout_families": [
+    "relative",
+    "bending",
+    "temporal"
+  ],
+  "scale_objective": "leave-one-calibration-trajectory-out centroid CRPS, independent scale per arm",
+  "prior": "known-zero residual mean inverse-Wishart; nu0=d+3; Psi0=2*diagonal fit-trajectory second moments, floor 1e-8 m^2",
+  "primary_metric": "equal-family, equal-trajectory, equal-DLO heldout Brier",
+  "primary_gate": "upper 97.5% two-sided stratified trajectory-bootstrap bound below zero versus BOTH primary controls AND negative mean difference on each DLO",
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20260906,
+  "statistical_unit": "whole trajectory conditional on two fixed objects",
+  "official_eval_access": false,
+  "reserved_campaign_access": false,
+  "new_physical_measurements": false,
+  "scientific_failure_is_completed_result": true,
+  "retry_after_scoring": false,
+  "continuous_crps_quantiles": 513
+}
