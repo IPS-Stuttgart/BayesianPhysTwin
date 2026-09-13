@@ -1,0 +1,104 @@
+{
+  "budgets": [
+    1,
+    2,
+    4
+  ],
+  "claim_boundary": "Retrospective fixed-mask predictive-discrepancy conditioning on already-open real DEFORM DLO4/DLO5 trajectories. Not fresh confirmation, not a latent physical-state correction, not universal Bayesian superiority. Original frozen parent study remains unchanged.",
+  "contract": "partial-observation-covariance-v1",
+  "controls": [
+    "physical-plus-GCN hybrid",
+    "frozen local-residual candidate",
+    "common mean only",
+    "marginal-matched diagonal",
+    "translation",
+    "linear interpolation with zero-discrepancy clamped boundaries",
+    "RBF kernel conditioning",
+    "empirical Gaussian conditioning",
+    "independently solved direct ridge",
+    "rod modes",
+    "rod marginal-preserving sign scramble",
+    "source-selected strongest conventional"
+  ],
+  "cutoffs_prediction_index": [
+    25,
+    50,
+    75,
+    100,
+    125,
+    150,
+    175,
+    200,
+    225,
+    250,
+    275,
+    300,
+    325,
+    350,
+    375,
+    400,
+    425,
+    450
+  ],
+  "future_information": "No future internal-node outcomes; known recorded clamped-node trajectories and two full initialization frames inherited from cached predictions for every arm. No further full-state observations.",
+  "horizons": [
+    0,
+    1,
+    5,
+    10,
+    25
+  ],
+  "likelihood_regularizer_relative_to_mean_source_current_variance": [
+    0.0001,
+    0.01,
+    0.1,
+    1.0
+  ],
+  "pins": {
+    "DLO4": {
+      "source": {
+        "hybrid_l1_m": 0.01253017906857404,
+        "manifest": "1001cdb688072675eafdba34c8dc7f937be2fb7800c65d756e31214bc244fa17",
+        "predictions": "b858c2f4c0e107d367857dc2c4e17e753b6853e4593af64c4ce489564ae88fca"
+      },
+      "target": {
+        "hybrid_l1_m": 0.009954855613252654,
+        "manifest": "10ce91fc82df072cdbf36ce4f4f4bc1a0b57fc112f8f0b356b3aecafee26306d",
+        "predictions": "b28f0bde14fdef1bc557cc3a8b7cde2b87832b06ba971aa4d8d82afb2905364b"
+      }
+    },
+    "DLO5": {
+      "source": {
+        "hybrid_l1_m": 0.00918328492025507,
+        "manifest": "6bc72a4b3c7dae13c39181d28aebe9228fb1049fbe4bf26871b95fb518997a04",
+        "predictions": "a8f8b3253f2588eed3fb0e92a8812ce534dba857c82a3af9d3f0fe0dadab39b6"
+      },
+      "target": {
+        "manifest": "48bd004dbba2161609ada67ec76369a9271fa6899624c1ba1a84b747654e6b7d",
+        "predictions": "86b5fd6cde97594e96640c98e071862260941bebb21b82d4b65cbd9abdd0f612"
+      }
+    }
+  },
+  "posterior_semantics": "Source-fitted joint predictive residual covariance across nodes and time. Rod-mode variant projects onto two or four sine modes and adds 5 percent diagonal discrepancy, preserving coordinate marginal variances. This is not simulator-parameter posterior propagation.",
+  "primary": {
+    "both_DLOs_improve": true,
+    "horizon_frames": 25,
+    "metric": "equal-DLO mean per-trajectory hidden coordinate RMSE",
+    "minimum_gain_percent": 1.0,
+    "observed_free_nodes": 2,
+    "positive_paired_95_interval_required": true
+  },
+  "prior_mean": "Cached source/target candidate = DEFORM physics+GCN hybrid plus existing frozen local residual. Same additional source empirical residual mean for all conditioning arms.",
+  "raw_loader": "Checksum-bound official pickle; float32; transpose (500,3,12) to (500,12,3); clip z to [0.002001,10000]; cached predictions align with frames [2,500).",
+  "rbf_lengths_in_node_index": [
+    1.0,
+    2.0,
+    4.0
+  ],
+  "rod_ranks": [
+    2,
+    4
+  ],
+  "selection": "Leave-one-complete-source-trajectory-out; equal current and +25-frame hidden MSE; equal masks/windows; each family and budget tuned independently; eight source-test trajectories per DLO excluded from original physical training; final fit all eight; no target tuning.",
+  "statistics": "10000 paired whole-trajectory bootstrap draws stratified within each DLO; conditional-on-two-objects intervals; windows/nodes/masks are not independent trials."
+}
