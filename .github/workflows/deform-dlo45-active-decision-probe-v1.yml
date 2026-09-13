@@ -1,0 +1,144 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
+name: DEFORM active decision-identifying probe pilot
+
+on:
+  push:
+    paths:
+      - "src/bayesian_phystwin/active_decision_probe_v1.py"
+      - "experiments/deform_dlo45_active_decision_probe_v1/**"
+      - "tests/test_deform_dlo45_active_decision_probe_v1.py"
+      - ".github/workflows/deform-dlo45-active-decision-probe-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deform-dlo45-active-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  DEFORM_UPSTREAM_REPOSITORY: roahmlab/DEFORM
+  DEFORM_UPSTREAM_COMMIT: b73b8b8ecc033caefa693fab7898741d4e6dbeff
+  NUMPY_VERSION: "2.2.6"
+  RESULT: results/development/deform_dlo45_active_decision_probe_v1/result.json
+
+jobs:
+  retrospective-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact evaluation revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Check out pinned public DEFORM trajectories
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.DEFORM_UPSTREAM_REPOSITORY }}
+          ref: ${{ env.DEFORM_UPSTREAM_COMMIT }}
+          path: upstream-DEFORM
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+          sparse-checkout: |
+            data_set/DLO4/train
+            data_set/DLO4/eval
+            data_set/DLO5/train
+            data_set/DLO5/eval
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install and run retrospective pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==${NUMPY_VERSION}"
+          python -m pip install --no-deps -e .
+          python -m pip install \
+            "pytest>=8.0" \
+            "ruff>=0.6"
+          python -m pip check
+
+          files=(
+            src/bayesian_phystwin/active_decision_probe_v1.py
+            experiments/deform_dlo45_active_decision_probe_v1/_core.py
+            experiments/deform_dlo45_active_decision_probe_v1/run.py
+            experiments/deform_dlo45_active_decision_probe_v1/validate_result.py
+            tests/test_deform_dlo45_active_decision_probe_v1.py
+          )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_active_decision_probe_v1.py \
+            tests/test_deform_dlo45_active_decision_probe_v1.py
+
+          root="${GITHUB_WORKSPACE}/upstream-DEFORM/data_set"
+          for dlo in DLO4 DLO5; do
+            test "$(find "${root}/${dlo}/train" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 56
+            test "$(find "${root}/${dlo}/eval" -maxdepth 1 -type f \
+              -name '*.pkl' | wc -l)" -eq 14
+          done
+
+          mkdir -p "$(dirname "${RESULT}")"
+          python -m experiments.deform_dlo45_active_decision_probe_v1.run \
+            --dataset-root "${root}" \
+            --output "${RESULT}"
+          python -m experiments.deform_dlo45_active_decision_probe_v1.validate_result \
+            "${RESULT}"
+
+      - name: Upload exact result
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform-dlo45-active-probe-${{ github.run_id }}
+          path: ${{ env.RESULT }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit compact retrospective result to the research branch
+        if: github.event_name == 'push' && github.ref_type == 'branch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_files=(
+            src/bayesian_phystwin/active_decision_probe_v1.py
+            experiments/deform_dlo45_active_decision_probe_v1/_core.py
+            experiments/deform_dlo45_active_decision_probe_v1/run.py
+            experiments/deform_dlo45_active_decision_probe_v1/validate_result.py
+            tests/test_deform_dlo45_active_decision_probe_v1.py
+          )
+          if git diff --quiet -- "${source_files[@]}" "${RESULT}" && git ls-files \
+            --error-unmatch "${RESULT}" >/dev/null 2>&1; then
+            echo "Source formatting and result are unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${source_files[@]}" "${RESULT}"
+          git commit -m "Record retrospective DEFORM active-probe pilot"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

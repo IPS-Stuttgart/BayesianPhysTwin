@@ -1,0 +1,34 @@
+{
+  "contract": "deform-dlo45-active-decision-probe-v1",
+  "schema_version": 1,
+  "status": "frozen-retrospective-development-pilot",
+  "dataset": {
+    "name": "DEFORM",
+    "dlos": ["DLO4", "DLO5"],
+    "upstream_repository": "roahmlab/DEFORM",
+    "upstream_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "evaluation_scope": "within-dlo-official-held-trajectories"
+  },
+  "source_model": {
+    "response_quotient_classes": 16,
+    "neighbors": 16,
+    "temperature_scale": 1.0,
+    "regret_tolerance": 0.05,
+    "target_tuning": false
+  },
+  "probe": {
+    "frames": [0, 3, 6, 12],
+    "outcome_count": 3,
+    "target_support_multiplier": 2.0,
+    "duration_selected_before_target_internal_response": true,
+    "outcome_observed_after_probe": true,
+    "terminal_horizon_frames": 25,
+    "alternative_probe_directions_evaluated": false
+  },
+  "bootstrap": {
+    "unit": "complete_trajectory",
+    "replicates": 2000,
+    "seed": 20260902
+  },
+  "claim_boundary": "This retrospective mechanism pilot chooses how long to observe the prefix of an already recorded endpoint motion. It does not compare counterfactual physical probe directions, use learned perception, establish unseen-object generalization, certify target-domain regret, or authorize deployment."
+}
