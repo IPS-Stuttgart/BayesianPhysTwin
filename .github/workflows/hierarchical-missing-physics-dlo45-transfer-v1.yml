@@ -1,0 +1,317 @@
+name: Hierarchical missing-physics DLO4/DLO5 transfer v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_dlo45_transfer_v1.json
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-dlo45-transfer-v1
+  cancel-in-progress: false
+
+jobs:
+  predict-and-seal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PARENT_RUN_ID: 33361441865
+      AUTHORIZATION: evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json
+      TARGET_PLAN: evidence/hierarchical_missing_physics/dlo45_target_plan_v1/result.json
+      SOURCE_MODEL_PREFIX: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model
+      SEALED_DIR: ${{ runner.temp }}/hierarchical-missing-physics-dlo45-sealed
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Install bounded evaluator dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input numpy==2.2.6
+          python3 -m py_compile \
+            scripts/science/hierarchical_missing_physics_diagnosis.py \
+            scripts/science/evaluate_hierarchical_missing_physics_transfer.py \
+            scripts/science/build_deform_dlo23_hierarchical_panel.py \
+            scripts/science/evaluate_dlo45_hierarchical_transfer.py
+
+      - name: Verify frozen authorization, plan, and source model
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in \
+            "$AUTHORIZATION" \
+            "$TARGET_PLAN" \
+            "$SOURCE_MODEL_PREFIX.json" \
+            "$SOURCE_MODEL_PREFIX.npz"; do
+            test -f "$path"
+          done
+          python3 -m json.tool "$AUTHORIZATION" >/dev/null
+          python3 -m json.tool "$TARGET_PLAN" >/dev/null
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_dlo45_transfer_v1.json >/dev/null
+          AUTH="$AUTHORIZATION" PLAN="$TARGET_PLAN" MODEL="$SOURCE_MODEL_PREFIX.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          authorization = json.loads(Path(os.environ["AUTH"]).read_text(encoding="utf-8"))
+          plan = json.loads(Path(os.environ["PLAN"]).read_text(encoding="utf-8"))
+          model = json.loads(Path(os.environ["MODEL"]).read_text(encoding="utf-8"))
+          if authorization["source_model_id"] != model["model_id"]:
+              raise SystemExit("authorization/source-model mismatch")
+          if plan["source_model_id"] != model["model_id"]:
+              raise SystemExit("target-plan/source-model mismatch")
+          if plan["authorization_id"] != authorization["authorization_id"]:
+              raise SystemExit("target-plan/authorization mismatch")
+          if plan["ready_for_prediction_seal"] is not True:
+              raise SystemExit("target plan is not ready")
+          if sorted(plan["selected_carriers"]) != ["DLO4", "DLO5"]:
+              raise SystemExit("target plan did not select DLO4 and DLO5")
+          if authorization["coefficient_refit_authorized"] is not False:
+              raise SystemExit("authorization permits coefficient refit")
+          if authorization["standardizer_refit_authorized"] is not False:
+              raise SystemExit("authorization permits standardizer refit")
+          PY
+
+      - name: Download exact retained parent artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.PARENT_RUN_ID }}
+          path: ${{ runner.temp }}/hmp-dlo45-parent-artifacts
+          merge-multiple: false
+
+      - name: Generate all frozen target predictions without loading outcomes
+        id: predict
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$SEALED_DIR"
+          python3 scripts/science/evaluate_dlo45_hierarchical_transfer.py predict \
+            --artifact-root "$RUNNER_TEMP/hmp-dlo45-parent-artifacts" \
+            --authorization "$AUTHORIZATION" \
+            --target-plan "$TARGET_PLAN" \
+            --model-prefix "$SOURCE_MODEL_PREFIX" \
+            --output-directory "$SEALED_DIR" \
+            | tee "$SEALED_DIR/prediction_summary.log"
+          SEAL="$SEALED_DIR/prediction_seal.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["SEAL"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          if value["target_outcome_arrays_loaded"] is not False:
+              raise SystemExit("target outcomes were loaded before sealing")
+          if value["target_performance_metric_computed"] is not False:
+              raise SystemExit("target performance was computed before sealing")
+          if value["coefficient_refit"] is not False:
+              raise SystemExit("source coefficients were refitted")
+          if value["standardizer_refit"] is not False:
+              raise SystemExit("source standardizers were refitted")
+          if value["target_group_selection"] is not False:
+              raise SystemExit("target influenced group selection")
+          if value["sensor_to_physical_rollout"] is not False:
+              raise SystemExit("sensor discrepancy entered physical rollout")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"seal_id={value['seal_id']}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Pre-score DLO4/DLO5 prediction seal\n\n")
+              summary.write(f"Seal ID: `{value['seal_id']}`\n\n")
+              summary.write(f"Source model: `{value['source_model_id']}`\n\n")
+              summary.write(f"Frozen groups: `{value['selected_groups_frozen_source_only']}`\n\n")
+              for dlo, record in sorted(value["per_dlo"].items()):
+                  summary.write(
+                      f"- **{dlo}:** {record['selected_predictor_rows']} rows, "
+                      f"{record['trajectory_count']} trajectories, prediction hash "
+                      f"`{record['prediction_file_sha256']}`\n"
+                  )
+          PY
+
+      - name: Upload immutable prediction seal before scoring
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-dlo45-prediction-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.SEALED_DIR }}/
+          if-no-files-found: error
+          retention-days: 90
+
+  score:
+    needs: predict-and-seal
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PARENT_RUN_ID: 33361441865
+      AUTHORIZATION: evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json
+      TARGET_PLAN: evidence/hierarchical_missing_physics/dlo45_target_plan_v1/result.json
+      SOURCE_MODEL_PREFIX: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/model
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/dlo45_transfer_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Install bounded evaluator dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input numpy==2.2.6
+          python3 -m py_compile scripts/science/evaluate_dlo45_hierarchical_transfer.py
+
+      - name: Download the pre-score prediction seal from this run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: hierarchical-missing-physics-dlo45-prediction-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/hierarchical-missing-physics-dlo45-sealed
+
+      - name: Download exact retained parent artifacts for scoring
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.PARENT_RUN_ID }}
+          path: ${{ runner.temp }}/hmp-dlo45-parent-artifacts
+          merge-multiple: false
+
+      - name: Verify seal, then open and score DLO4/DLO5 separately
+        id: score
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-dlo45-score"
+          mkdir -p "$work"
+          output="$work/result.json"
+          python3 scripts/science/evaluate_dlo45_hierarchical_transfer.py score \
+            --artifact-root "$RUNNER_TEMP/hmp-dlo45-parent-artifacts" \
+            --authorization "$AUTHORIZATION" \
+            --target-plan "$TARGET_PLAN" \
+            --model-prefix "$SOURCE_MODEL_PREFIX" \
+            --sealed-directory "$RUNNER_TEMP/hierarchical-missing-physics-dlo45-sealed" \
+            --output "$output" \
+            | tee "$work/score_summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          boundary = value["information_boundary"]
+          if boundary["target_outcome_arrays_loaded_only_after_prediction_seal"] is not True:
+              raise SystemExit("target outcomes were not opened after a verified seal")
+          for key in (
+              "target_used_for_group_selection",
+              "target_used_for_coefficient_refit",
+              "target_used_for_standardization",
+              "target_used_for_feature_semantics",
+              "target_used_for_retry_or_case_replacement",
+              "sensor_discrepancy_injected_into_physical_rollout",
+          ):
+              if boundary[key] is not False:
+                  raise SystemExit(f"target boundary violation: {key}")
+          if sorted(value["per_dlo"]) != ["DLO4", "DLO5"]:
+              raise SystemExit("DLO4/DLO5 were not reported separately")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output_stream:
+              output_stream.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Frozen diagnosis-guided DLO4/DLO5 transfer\n\n")
+              summary.write(f"Result ID: `{value['result_id']}`\n\n")
+              summary.write(f"Prediction seal: `{value['prediction_seal_id']}`\n\n")
+              summary.write(f"Claim decision: `{value['claim_authorization']}`\n\n")
+              summary.write("| DLO | Physical RMSE | Guided RMSE | Improvement | Wins | Worst ratio | All-components RMSE | Gate |\n")
+              summary.write("|---|---:|---:|---:|---:|---:|---:|---:|\n")
+              for dlo, record in sorted(value["per_dlo"].items()):
+                  aggregate = record["aggregate"]
+                  gate = record["gate"]
+                  summary.write(
+                      f"| {dlo} | {aggregate['physical']['rmse']:.8g} | "
+                      f"{aggregate['diagnosis_guided']['rmse']:.8g} | "
+                      f"{100.0 * aggregate['diagnosis_guided']['relative_improvement_vs_physical']:.3f}% | "
+                      f"{gate['trajectory_wins_vs_physical']}/{record['trajectory_count']} | "
+                      f"{gate['worst_trajectory_ratio']:.4f} | "
+                      f"{aggregate['all_components']['rmse']:.8g} | "
+                      f"{gate['passed']} |\n"
+                  )
+          PY
+
+      - name: Publish positive, mixed, or negative target evidence unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.score.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          cp "$RUNNER_TEMP/hierarchical-missing-physics-dlo45-sealed/prediction_seal.json" "$EVIDENCE_DIR/prediction_seal.json"
+          RESULT="$EVIDENCE_DIR/result.json" SEAL="$EVIDENCE_DIR/prediction_seal.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["RESULT"])
+          seal_path = Path(os.environ["SEAL"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          seal = json.loads(seal_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-transfer-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "result_id": result["result_id"],
+              "result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "prediction_seal_id": seal["seal_id"],
+              "prediction_seal_sha256": hashlib.sha256(seal_path.read_bytes()).hexdigest(),
+              "source_model_id": result["source_model_id"],
+              "target_plan_id": result["target_plan_id"],
+              "all_target_gates_pass": result["all_target_gates_pass"],
+              "claim_authorization": result["claim_authorization"],
+              "target_opened_only_after_seal": True,
+              "target_refit": False,
+              "target_retry": False,
+              "DLO4_and_DLO5_reported_separately": True
+          }
+          unsigned = json.dumps(
+              receipt, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical DLO45 transfer evidence already committed."
+          else
+            git commit -m "Record diagnosis-guided DLO4/DLO5 transfer"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload complete scored transfer evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-dlo45-transfer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-dlo45-score/
+            ${{ runner.temp }}/hierarchical-missing-physics-dlo45-sealed/
+            evidence/hierarchical_missing_physics/dlo45_transfer_v1/
+          if-no-files-found: error
+          retention-days: 90

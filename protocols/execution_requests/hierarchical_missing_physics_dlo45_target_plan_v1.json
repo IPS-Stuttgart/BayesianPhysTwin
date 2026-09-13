@@ -1,0 +1,25 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-dlo45-target-plan-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-dlo45-target-plan-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "authorization": "evidence/hierarchical_missing_physics/dlo45_target_authorization_v1/authorization.json",
+  "target_census": "evidence/hierarchical_missing_physics/dlo45_artifact_census_v1/result.json",
+  "source_plan": "evidence/hierarchical_missing_physics/source_panel_plan_v1/result.json",
+  "target_objects": ["DLO4", "DLO5"],
+  "mapping_constraints": {
+    "reuse_source_semantic_vocabulary": true,
+    "reuse_source_residual_construction_mode": true,
+    "use_names_roles_shapes_dtypes_only": true,
+    "source_shape_compatibility_allowed": true,
+    "target_numerical_values_allowed": false,
+    "target_scores_allowed": false,
+    "minimum_top_to_runner_up_score_margin": 5,
+    "same_logical_artifact_group_required": true,
+    "ambiguous_auto_selection_allowed": false
+  },
+  "coefficient_refit_authorized": false,
+  "standardizer_refit_authorized": false,
+  "source_group_selection_change_authorized": false,
+  "failure_policy": "Publish an incomplete or ambiguous target plan unchanged. Do not use target values or errors to resolve mapping ambiguity."
+}

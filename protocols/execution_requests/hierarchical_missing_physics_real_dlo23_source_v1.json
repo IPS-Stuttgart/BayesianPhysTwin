@@ -1,0 +1,32 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-real-dlo23-source-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-real-dlo23-source-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "source_panel_plan": "evidence/hierarchical_missing_physics/source_panel_plan_v1/result.json",
+  "authorized_source_objects": ["DLO2", "DLO3"],
+  "forbidden_target_objects": ["DLO4", "DLO5"],
+  "trajectory_bootstrap_repetitions": 200,
+  "maximum_rows_per_complete_trajectory": 2000,
+  "feature_policy": {
+    "shared_physics": "physical/state carrier plus frozen local first/second ordered differences and norms",
+    "object": "DLO2/DLO3 identity and fixed low-order interactions",
+    "actuation": "explicit selected action carrier only",
+    "contact": "explicit selected contact/force carrier only",
+    "backend": "include only when more than one source backend is explicitly present",
+    "sensor": "omit unless an explicit non-physical sensor-calibration carrier exists; never derive it from residual targets"
+  },
+  "source_gate_policy": {
+    "shared_vs_physical_min_relative_improvement": 0.01,
+    "minimum_source_bootstrap_shared_diagnosis_frequency": 0.70,
+    "minimum_complete_trajectory_win_fraction": 0.60,
+    "maximum_worst_trajectory_ratio_vs_physical": 1.10,
+    "fallback_identity_violations_allowed": 0
+  },
+  "target_payload_read_authorized": false,
+  "protected_parent_result_read_authorized": false,
+  "target_coefficient_refit_authorized": false,
+  "target_group_selection_authorized": false,
+  "failure_policy": "Publish the source diagnosis whether positive, negative, or mixed. A failed source gate forbids DLO4/DLO5 opening under this protocol version."
+}

@@ -1,0 +1,17 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-source-pipeline-discovery-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-source-pipeline-discovery-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "scope": "static repository analysis",
+  "required_outputs": [
+    "ranked source-safe Python entry points",
+    "CLI arguments and structured artifact names",
+    "alternate-backend entry points",
+    "candidate adapters for physical residual extraction"
+  ],
+  "dataset_payload_authorized": false,
+  "dlo4_dlo5_payload_authorized": false,
+  "target_result_authorized": false,
+  "failure_policy": "Retain an empty or negative discovery result; do not inspect protected target data to improve ranking."
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-controlled-transfer-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-controlled-transfer-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "seed": 19,
+  "trajectory_bootstrap_repetitions": 100,
+  "required_checks": [
+    "source diagnosis sealed before target scoring",
+    "held-out objects differ from source objects",
+    "held-out backends differ from source backends",
+    "diagnosis-guided transfer beats physical fallback",
+    "diagnosis-guided transfer beats all-components transfer",
+    "shared physics beats wrong-diagnosis transfer",
+    "sensor discrepancy causes zero physical-rollout change",
+    "exact fallback identity"
+  ],
+  "real_target_payloads_authorized": false,
+  "dlo4_dlo5_target_scores_authorized": false,
+  "claim_scope": "controlled falsification and implementation validation only"
+}

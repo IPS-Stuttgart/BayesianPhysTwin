@@ -1,0 +1,36 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-runtime-census-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-runtime-census-gpuserver4090-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "execution_attempt": 2,
+  "repairs_run": 33646339589,
+  "repair_scope": "Provide an isolated pinned NumPy runtime only; do not widen data roots, payload identity, model selection, or target access.",
+  "authorized_roots": [
+    "/home/github-runner/.cache",
+    "/home/florianpfaff",
+    "/mnt/seagate10tb/florianpfaff/datasets/deform"
+  ],
+  "authorized_payload_identity": [
+    "DLO2",
+    "DLO3",
+    "source-only metadata and array schemas"
+  ],
+  "forbidden_payload_identity": [
+    "DLO4",
+    "DLO5",
+    "protected run 33361441865 target artifacts"
+  ],
+  "required_outputs": [
+    "ranked residual and physical-prediction artifacts",
+    "ranked frozen coefficient artifacts",
+    "ranked alternate-backend artifacts",
+    "array keys, shapes, dtypes, hashes, and allow-listed source metadata",
+    "content-addressed source-only census receipt"
+  ],
+  "pickle_deserialization_authorized": false,
+  "target_score_read_authorized": false,
+  "target_dependent_model_selection_authorized": false,
+  "failure_policy": "Fail closed before enumerating children of any DLO4/DLO5 or protected DLO45 path. Retain an empty census without widening the search to target data."
+}

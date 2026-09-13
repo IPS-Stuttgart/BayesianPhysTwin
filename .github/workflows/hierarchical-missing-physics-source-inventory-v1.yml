@@ -1,0 +1,196 @@
+name: Hierarchical missing-physics diagnosis source inventory v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_source_inventory_v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hierarchical-missing-physics-source-inventory-v1
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Validate registered protocol and source-only programs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool protocols/hierarchical_missing_physics_diagnosis_v1.json >/dev/null
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_source_inventory_v1.json >/dev/null
+          python3 -m py_compile \
+            scripts/science/hierarchical_missing_physics_diagnosis.py \
+            scripts/science/inventory_deform_dlo23_source_schema.py
+          grep -F '"development_objects": ["DLO2", "DLO3"]' \
+            protocols/hierarchical_missing_physics_diagnosis_v1.json
+          grep -F '"protected_parent_run": 33361441865' \
+            protocols/hierarchical_missing_physics_diagnosis_v1.json
+          grep -F '"dlo4_payload_read": False' \
+            scripts/science/inventory_deform_dlo23_source_schema.py
+          grep -F '"dlo5_payload_read": False' \
+            scripts/science/inventory_deform_dlo23_source_schema.py
+
+  source-inventory-and-smoke:
+    needs: contract
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 120
+    env:
+      DATASET_ROOT: /mnt/seagate10tb/florianpfaff/datasets/deform/data_set
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Verify runner and protect DLO4/DLO5 target custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test -d "$DATASET_ROOT"
+          test ! -L "$DATASET_ROOT"
+          test -f protocols/hierarchical_missing_physics_diagnosis_v1.json
+          request_sha="$(sha256sum protocols/execution_requests/hierarchical_missing_physics_source_inventory_v1.json | cut -d' ' -f1)"
+          protocol_sha="$(sha256sum protocols/hierarchical_missing_physics_diagnosis_v1.json | cut -d' ' -f1)"
+          printf 'request_sha256=%s\nprotocol_sha256=%s\n' "$request_sha" "$protocol_sha" | tee "$RUNNER_TEMP/custody-receipt.txt"
+
+      - name: Run deterministic synthetic mechanism falsification
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/hierarchical-missing-physics"
+          python3 scripts/science/hierarchical_missing_physics_diagnosis.py \
+            --synthetic-smoke \
+            --bootstrap 50 \
+            --seed 7 \
+            --output "$RUNNER_TEMP/hierarchical-missing-physics/synthetic-result.json" \
+            | tee "$RUNNER_TEMP/hierarchical-missing-physics/synthetic-summary.log"
+          RESULT="$RUNNER_TEMP/hierarchical-missing-physics/synthetic-result.json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          if result["information_boundary"]["target_outcomes_read"] is not False:
+              raise SystemExit("synthetic smoke crossed target boundary")
+          if result["source_gate"]["fallback_identity_violations"] != 0:
+              raise SystemExit("exact fallback audit failed")
+          if "shared_physics" not in result["transferable_groups_selected_source_only"]:
+              raise SystemExit("known shared mechanism was not diagnosed")
+          if not result["source_gate"]["passed"]:
+              raise SystemExit("known synthetic mechanism did not pass source gate")
+          PY
+
+      - name: Inventory only the already-open DLO2/DLO3 source schema
+        id: inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/hierarchical-missing-physics/dlo23-source-inventory.json"
+          python3 scripts/science/inventory_deform_dlo23_source_schema.py \
+            --dataset-root "$DATASET_ROOT" \
+            --repository "$GITHUB_WORKSPACE" \
+            --output "$output" \
+            | tee "$RUNNER_TEMP/hierarchical-missing-physics/dlo23-source-inventory-summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          result = json.loads(path.read_text(encoding="utf-8"))
+          boundary = result["information_boundary"]
+          required_false = (
+              "dlo4_path_enumerated",
+              "dlo4_payload_read",
+              "dlo5_path_enumerated",
+              "dlo5_payload_read",
+              "protected_parent_target_result_read",
+              "target_dependent_model_choice",
+          )
+          if any(boundary[key] is not False for key in required_false):
+              raise SystemExit("source inventory crossed a protected boundary")
+          if sorted(result["source_dlos"]) != ["DLO2", "DLO3"]:
+              raise SystemExit("source inventory did not resolve exactly DLO2 and DLO3")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+              stream.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Hierarchical missing-physics source inventory\n\n")
+              summary.write(f"Inventory ID: `{result['inventory_id']}`\n\n")
+              for dlo, value in sorted(result["source_dlos"].items()):
+                  summary.write(
+                      f"- **{dlo}:** {value['file_count']} files, "
+                      f"{value['total_bytes']} bytes, suffixes "
+                      f"`{value['suffix_counts']}`\n"
+                  )
+              summary.write(
+                  f"\nRepository adapter matches: "
+                  f"{len(result['repository_adapter_matches'])}\n"
+              )
+          PY
+
+      - name: Bind source-only execution receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT="$RUNNER_TEMP/hierarchical-missing-physics/dlo23-source-inventory.json" \
+          RECEIPT="$RUNNER_TEMP/hierarchical-missing-physics/execution-receipt.json" \
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result = Path(os.environ["RESULT"])
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-source-inventory-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "inventory_sha256": hashlib.sha256(result.read_bytes()).hexdigest(),
+              "synthetic_result_sha256": hashlib.sha256(
+                  Path(os.environ["RUNNER_TEMP"])
+                  .joinpath("hierarchical-missing-physics/synthetic-result.json")
+                  .read_bytes()
+              ).hexdigest(),
+              "target_outcomes_read": False,
+              "dlo4_dlo5_payload_read": False,
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          Path(os.environ["RECEIPT"]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload source-only diagnosis evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-source-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics/
+            ${{ runner.temp }}/custody-receipt.txt
+          if-no-files-found: error
+          retention-days: 90

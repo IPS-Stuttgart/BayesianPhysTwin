@@ -1,0 +1,235 @@
+name: Seal hierarchical missing-physics real DLO2/DLO3 source v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_seal_real_dlo23_source_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-seal-real-dlo23-source-v1
+  cancel-in-progress: false
+
+jobs:
+  seal-source:
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, gpuserver4090]
+    timeout-minutes: 7200
+    env:
+      PLAN: evidence/hierarchical_missing_physics/source_panel_plan_v1/result.json
+      SOURCE_RESULT: evidence/hierarchical_missing_physics/real_dlo23_source_v1/result.json
+      SOURCE_PANEL_MANIFEST: evidence/hierarchical_missing_physics/real_dlo23_source_v1/panel_manifest.json
+      SOURCE_RECEIPT: evidence/hierarchical_missing_physics/real_dlo23_source_v1/receipt.json
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Verify the published source gate and implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          for path in "$PLAN" "$SOURCE_RESULT" "$SOURCE_PANEL_MANIFEST" "$SOURCE_RECEIPT"; do
+            test -f "$path"
+            python3 -m json.tool "$path" >/dev/null
+          done
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_seal_real_dlo23_source_v1.json >/dev/null
+          python3 -m py_compile \
+            scripts/science/build_deform_dlo23_hierarchical_panel.py \
+            scripts/science/hierarchical_missing_physics_diagnosis.py \
+            scripts/science/evaluate_hierarchical_missing_physics_transfer.py
+          SOURCE_RESULT="$SOURCE_RESULT" SOURCE_PANEL_MANIFEST="$SOURCE_PANEL_MANIFEST" SOURCE_RECEIPT="$SOURCE_RECEIPT" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["SOURCE_RESULT"])
+          manifest_path = Path(os.environ["SOURCE_PANEL_MANIFEST"])
+          receipt = json.loads(Path(os.environ["SOURCE_RECEIPT"]).read_text(encoding="utf-8"))
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          if result["source_gate"]["passed"] is not True:
+              raise SystemExit("published real source gate did not pass")
+          if "shared_physics" not in result["transferable_groups_selected_source_only"]:
+              raise SystemExit("published source diagnosis did not authorize shared_physics")
+          if result["result_id"] != receipt["result_id"]:
+              raise SystemExit("source result ID/receipt mismatch")
+          if hashlib.sha256(result_path.read_bytes()).hexdigest() != receipt["result_sha256"]:
+              raise SystemExit("source result hash/receipt mismatch")
+          if manifest["panel_id"] != receipt["panel_id"]:
+              raise SystemExit("source panel ID/receipt mismatch")
+          if receipt["dlo4_dlo5_payload_read"] is not False:
+              raise SystemExit("source evidence crossed target boundary")
+          if receipt["protected_target_result_read"] is not False:
+              raise SystemExit("source evidence read protected target result")
+          PY
+
+      - name: Rebuild and verify the exact published source panel
+        id: panel
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-seal-source"
+          mkdir -p "$work"
+          prefix="$work/dlo23_source_panel"
+          python3 scripts/science/build_deform_dlo23_hierarchical_panel.py \
+            --plan "$PLAN" \
+            --output-prefix "$prefix" \
+            --max-rows-per-trajectory 2000 \
+            | tee "$work/panel_summary.log"
+          BUILT="$prefix.json" PUBLISHED="$SOURCE_PANEL_MANIFEST" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          built = json.loads(Path(os.environ["BUILT"]).read_text(encoding="utf-8"))
+          published = json.loads(Path(os.environ["PUBLISHED"]).read_text(encoding="utf-8"))
+          for key in (
+              "panel_id",
+              "serialized_npz_sha256",
+              "source_plan_id",
+              "source_census_id",
+              "sample_count",
+              "trajectory_count",
+              "block_dimensions",
+              "array_content_sha256",
+          ):
+              if built[key] != published[key]:
+                  raise SystemExit(f"rebuilt source panel differs at {key}")
+          PY
+          echo "panel=$prefix.npz" >> "$GITHUB_OUTPUT"
+          echo "manifest=$prefix.json" >> "$GITHUB_OUTPUT"
+          echo "prefix=$work/sealed_source_model" >> "$GITHUB_OUTPUT"
+
+      - name: Seal source diagnosis, standardizers, and coefficients
+        id: seal
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hierarchical-missing-physics-seal-source"
+          python3 scripts/science/evaluate_hierarchical_missing_physics_transfer.py \
+            --source-panel "${{ steps.panel.outputs.panel }}" \
+            --source-manifest "${{ steps.panel.outputs.manifest }}" \
+            --model-prefix "${{ steps.panel.outputs.prefix }}" \
+            --bootstrap 200 \
+            --seed 73 \
+            | tee "$work/seal_summary.log"
+          GENERATED="${{ steps.panel.outputs.prefix }}_source_result.json" PUBLISHED="$SOURCE_RESULT" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          generated = json.loads(Path(os.environ["GENERATED"]).read_text(encoding="utf-8"))
+          published = json.loads(Path(os.environ["PUBLISHED"]).read_text(encoding="utf-8"))
+          if generated["result_id"] != published["result_id"]:
+              raise SystemExit("sealed-source diagnosis does not reproduce published result ID")
+          if generated["source_gate"] != published["source_gate"]:
+              raise SystemExit("sealed-source gate differs from published source gate")
+          if generated["transferable_groups_selected_source_only"] != published[
+              "transferable_groups_selected_source_only"
+          ]:
+              raise SystemExit("sealed-source selected groups differ from published diagnosis")
+          PY
+          model_json="${{ steps.panel.outputs.prefix }}.json"
+          model_npz="${{ steps.panel.outputs.prefix }}.npz"
+          test -f "$model_json"
+          test -f "$model_npz"
+          MODEL="$model_json" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["MODEL"]).read_text(encoding="utf-8"))
+          if "shared_physics" not in value["selected_groups"]:
+              raise SystemExit("sealed model does not authorize shared_physics")
+          if "sensor" in value["selected_groups"]:
+              raise SystemExit("sealed model illegally authorizes sensor discrepancy")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"model_json={os.environ['MODEL']}\n")
+              output.write(f"model_id={value['model_id']}\n")
+          PY
+          echo "model_npz=$model_npz" >> "$GITHUB_OUTPUT"
+          echo "generated_source_result=${{ steps.panel.outputs.prefix }}_source_result.json" >> "$GITHUB_OUTPUT"
+
+      - name: Publish immutable source-model seal
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.seal.outputs.model_json }}" "$EVIDENCE_DIR/model.json"
+          cp "${{ steps.seal.outputs.model_npz }}" "$EVIDENCE_DIR/model.npz"
+          cp "${{ steps.seal.outputs.generated_source_result }}" "$EVIDENCE_DIR/source_result.json"
+          MODEL="$EVIDENCE_DIR/model.json" ARRAYS="$EVIDENCE_DIR/model.npz" RESULT="$EVIDENCE_DIR/source_result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          model_path = Path(os.environ["MODEL"])
+          arrays_path = Path(os.environ["ARRAYS"])
+          result_path = Path(os.environ["RESULT"])
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          model = json.loads(model_path.read_text(encoding="utf-8"))
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.hierarchical-missing-physics-sealed-real-source-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "runner_name": os.environ["RUNNER_NAME"],
+              "model_id": model["model_id"],
+              "model_manifest_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
+              "model_arrays_sha256": hashlib.sha256(arrays_path.read_bytes()).hexdigest(),
+              "source_result_id": result["result_id"],
+              "source_result_sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              "source_panel_sha256": model["source_panel_sha256"],
+              "selected_groups_frozen_before_target": model["selected_groups"],
+              "wrong_diagnosis_group_frozen_before_target": model["wrong_diagnosis_group"],
+              "source_gate_passed": result["source_gate"]["passed"],
+              "dlo4_dlo5_payload_read": False,
+              "target_result_read": False,
+              "target_scoring_authorized": False,
+              "claim_scope": "sealed DLO2/DLO3 source diagnosis and coefficients"
+          }
+          unsigned = json.dumps(
+              receipt, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical source-model seal already committed."
+          else
+            git commit -m "Seal real DLO2/DLO3 missing-physics diagnosis"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload complete source-model seal evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-sealed-real-dlo23-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-seal-source/
+            evidence/hierarchical_missing_physics/sealed_real_dlo23_source_v1/
+          if-no-files-found: error
+          retention-days: 90

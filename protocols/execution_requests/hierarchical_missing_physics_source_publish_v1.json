@@ -1,0 +1,20 @@
+{
+  "schema": "bayesian-phystwin.hierarchical-missing-physics-source-publish-request",
+  "schema_version": 1,
+  "request_id": "hierarchical-missing-physics-source-publish-v1",
+  "protocol_id": "hierarchical-missing-physics-diagnosis-v1",
+  "requested_runner": "gpuserver4090",
+  "source_dataset_root": "/mnt/seagate10tb/florianpfaff/datasets/deform/data_set",
+  "authorized_numerical_payloads": ["DLO2", "DLO3"],
+  "forbidden_numerical_payloads": ["DLO4", "DLO5"],
+  "protected_parent_run": 33361441865,
+  "publish": [
+    "source schema inventory",
+    "synthetic known-mechanism recovery result",
+    "content-addressed source-only evidence receipt"
+  ],
+  "target_opening_authorized": false,
+  "target_score_read_authorized": false,
+  "target_model_selection_authorized": false,
+  "overwrite_prior_evidence_authorized": false
+}

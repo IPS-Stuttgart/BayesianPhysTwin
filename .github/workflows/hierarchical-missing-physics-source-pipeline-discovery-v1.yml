@@ -1,0 +1,129 @@
+name: Hierarchical missing-physics source-pipeline discovery v1
+
+on:
+  push:
+    branches:
+      - science/hierarchical-missing-physics-diagnosis-v1
+    paths:
+      - protocols/execution_requests/hierarchical_missing_physics_source_pipeline_discovery_v1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hierarchical-missing-physics-source-pipeline-discovery-v1
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EVIDENCE_DIR: evidence/hierarchical_missing_physics/source_pipeline_discovery_v1
+    steps:
+      - name: Check out exact request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: science/hierarchical-missing-physics-diagnosis-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Validate discovery program and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool protocols/execution_requests/hierarchical_missing_physics_source_pipeline_discovery_v1.json >/dev/null
+          python3 -m py_compile scripts/science/discover_deform_source_pipeline.py
+
+      - name: Discover reusable source-only entry points
+        id: discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/hierarchical-missing-physics-discovery"
+          output="$RUNNER_TEMP/hierarchical-missing-physics-discovery/result.json"
+          python3 scripts/science/discover_deform_source_pipeline.py \
+            --repository "$GITHUB_WORKSPACE" \
+            --output "$output" \
+            | tee "$RUNNER_TEMP/hierarchical-missing-physics-discovery/summary.log"
+          RESULT="$output" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RESULT"])
+          result = json.loads(path.read_text(encoding="utf-8"))
+          boundary = result["information_boundary"]
+          if boundary["dataset_payload_read"] is not False:
+              raise SystemExit("discovery opened dataset payload")
+          if boundary["dlo4_payload_read"] is not False or boundary["dlo5_payload_read"] is not False:
+              raise SystemExit("discovery crossed protected target boundary")
+          if not result["adapter_recommendations"]:
+              raise SystemExit("no reusable adapter candidate was found")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output_stream:
+              output_stream.write(f"result={path}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Reusable DLO source-pipeline candidates\n\n")
+              summary.write(f"Discovery ID: `{result['discovery_id']}`\n\n")
+              summary.write("| Rank | File | Score | Reasons |\n")
+              summary.write("|---:|---|---:|---|\n")
+              for rank, candidate in enumerate(result["adapter_recommendations"][:20], start=1):
+                  summary.write(
+                      f"| {rank} | `{candidate['path']}` | {candidate['adapter_score']} | "
+                      f"{', '.join(candidate['reasons'])} |\n"
+                  )
+          PY
+
+      - name: Publish immutable discovery evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp "${{ steps.discovery.outputs.result }}" "$EVIDENCE_DIR/result.json"
+          RESULT="$EVIDENCE_DIR/result.json" EVIDENCE_DIR="$EVIDENCE_DIR" python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          result = json.loads(Path(os.environ["RESULT"]).read_text(encoding="utf-8"))
+          receipt = {
+              "schema": "bayesian-phystwin.deform-source-pipeline-discovery-receipt",
+              "schema_version": 1,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "evaluated_commit_sha": os.environ["GITHUB_SHA"],
+              "discovery_id": result["discovery_id"],
+              "result_sha256": hashlib.sha256(Path(os.environ["RESULT"]).read_bytes()).hexdigest(),
+              "dataset_payload_read": False,
+              "target_payload_read": False,
+              "claim_scope": "static source-pipeline discovery only"
+          }
+          unsigned = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_id"] = hashlib.sha256(unsigned).hexdigest()
+          (evidence / "receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$EVIDENCE_DIR"
+          if git diff --cached --quiet; then
+            echo "Identical discovery evidence already committed."
+          else
+            git commit -m "Record reusable DLO source-pipeline discovery"
+            git push origin HEAD:science/hierarchical-missing-physics-diagnosis-v1
+          fi
+
+      - name: Upload complete discovery evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: hierarchical-missing-physics-source-pipeline-discovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/hierarchical-missing-physics-discovery/
+            evidence/hierarchical_missing_physics/source_pipeline_discovery_v1/
+          if-no-files-found: error
+          retention-days: 90
