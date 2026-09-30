@@ -171,3 +171,18 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m \
   --cache /path/to/fit-only-cache --output /new/run/path \
   --freeze-commit EXACT_PRE_OUTCOME_COMMIT
 ```
+
+## Pre-Outcome Technical Amendment A1
+
+The first execution of source 2322357331d6c09a0c67285b48562ab5c1e74396
+stopped at load_source before any fitting, candidate construction or held
+scoring. An added check incorrectly required the unchanged native simulator's
+four excluded clamp coordinates to equal all four recorded action coordinates.
+They do not: the paired clamp coordinates can differ in the released native
+rollout (maximum 14.8230195 mm on allowed boundary inputs); this does not concern
+future free-node truth. The correct parity contract is that every forecast arm
+leaves the native B clamp coordinates byte-identical, not that B itself equals
+the recorded command. A1 checks boundary dimensions and retains checksum-bound
+inputs unchanged. world_forecast still enforces exact native clamp parity for
+every B/C pair. No data, forecast, covariance, fold, selector or gate is altered.
+The failed preflight is retained; A1 is frozen before the first source fit.

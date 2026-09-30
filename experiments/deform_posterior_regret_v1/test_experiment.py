@@ -152,6 +152,14 @@ def test_controls_features_do_not_accept_outcomes():
     assert np.isfinite(z).all()
 
 
+def test_native_clamp_parity_is_relative_to_baseline_not_action():
+    baseline = np.zeros((25, 12, 3))
+    action = np.ones((25, 4, 3)) * 0.01
+    candidate = world_forecast(baseline, np.ones((25, 8, 3)), np.eye(3))
+    assert not np.array_equal(baseline[:, [0, 1, -2, -1]], action)
+    assert np.array_equal(candidate[:, [0, 1, -2, -1]], baseline[:, [0, 1, -2, -1]])
+
+
 def test_recording_fold_partition():
     outer = folds(np.arange(40), 5, 0)
     assert all(len(a) == 8 for a in outer)
