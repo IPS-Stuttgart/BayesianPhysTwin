@@ -1,0 +1,3530 @@
+[
+  {
+    "endpoint": 50,
+    "expected_score": -38.373424408015275,
+    "horizon": 100,
+    "key": "2.pkl:50:100",
+    "posterior_uncalibrated": 3.2441526293790355e-15,
+    "probability": {
+      "constant_diagonal": 0.13454060815055097,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.218379948661885,
+      "posterior": 0.218379948661885,
+      "ridge_risk": 0.16680581420501045,
+      "sandwich": 0.20186262372926908,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 4.8253865961202986e-08,
+      "empirical_regret": 0.029411764705882353,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.05865848240044959,
+      "posterior": 0.05865848240044959,
+      "ridge_risk": 0.22664359861591696,
+      "sandwich": 0.04786143419117996,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.05865848240044959,
+      "regret_mean_mm2": -38.373424408015275,
+      "regret_variance_mm4": 632.0448032300409,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13454060815055097,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": -38.373424408015275,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.218379948661885,
+      "posterior": 0.218379948661885,
+      "ridge_risk": 0.16680581420501045,
+      "sandwich": 0.20186262372926908,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -125.02165530415448,
+    "horizon": 25,
+    "key": "2.pkl:50:25",
+    "posterior_uncalibrated": 5.375605364184914e-13,
+    "probability": {
+      "constant_diagonal": 0.1345643419302698,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1446984433487586,
+      "matched_distribution": 0.21820570789631036,
+      "posterior": 0.21820570789631036,
+      "ridge_risk": 0.1795965278149584,
+      "sandwich": 0.20020711440302025,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 1.2540598988846694e-06,
+      "empirical_regret": 0.029411764705882353,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.18858131487889274,
+      "matched_distribution": 0.05845248276003666,
+      "posterior": 0.05845248276003666,
+      "ridge_risk": 0.29238754325259514,
+      "sandwich": 0.0460241698270869,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.05845248276003666,
+      "regret_mean_mm2": -125.02165530415448,
+      "regret_variance_mm4": 6460.331612929809,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345643419302698,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": -125.02165530415448,
+      "kernel_risk": 0.1446984433487586,
+      "matched_distribution": 0.21820570789631036,
+      "posterior": 0.21820570789631036,
+      "ridge_risk": 0.1795965278149584,
+      "sandwich": 0.20020711440302025,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -23.577818791356805,
+    "horizon": 200,
+    "key": "2.pkl:50:200",
+    "posterior_uncalibrated": 4.2561375698103754e-18,
+    "probability": {
+      "constant_diagonal": 0.1345396711712826,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12963867650383,
+      "matched_distribution": 0.23647174498025086,
+      "posterior": 0.23647174498025086,
+      "ridge_risk": 0.16609015535208135,
+      "sandwich": 0.2169485163016029,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 6.636471695976808e-10,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.17128027681660898,
+      "matched_distribution": 0.0831499002965903,
+      "posterior": 0.0831499002965903,
+      "ridge_risk": 0.2231833910034602,
+      "sandwich": 0.06727254497346685,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0831499002965903,
+      "regret_mean_mm2": -23.577818791356805,
+      "regret_variance_mm4": 315.2784371419838,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396711712826,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -23.577818791356805,
+      "kernel_risk": 0.12963867650383,
+      "matched_distribution": 0.23647174498025086,
+      "posterior": 0.23647174498025086,
+      "ridge_risk": 0.16609015535208135,
+      "sandwich": 0.2169485163016029,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -21.92087562564255,
+    "horizon": 100,
+    "key": "2.pkl:150:100",
+    "posterior_uncalibrated": 2.2943051473578788e-10,
+    "probability": {
+      "constant_diagonal": 0.1346327005579921,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.06964635827003768,
+      "matched_distribution": 0.21765569188594608,
+      "posterior": 0.21765569188594608,
+      "ridge_risk": 0.22036263357081531,
+      "sandwich": 0.20934760774023062,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 4.7307206110074604e-06,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.0986159169550173,
+      "matched_distribution": 0.057805753233360346,
+      "posterior": 0.057805753233360346,
+      "ridge_risk": 0.5242214532871973,
+      "sandwich": 0.05687078216199136,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.057805753233360346,
+      "regret_mean_mm2": -21.92087562564255,
+      "regret_variance_mm4": 212.2017683640201,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1346327005579921,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -21.92087562564255,
+      "kernel_risk": 0.06964635827003768,
+      "matched_distribution": 0.21765569188594608,
+      "posterior": 0.21765569188594608,
+      "ridge_risk": 0.22036263357081531,
+      "sandwich": 0.20934760774023062,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -30.32510962484564,
+    "horizon": 25,
+    "key": "2.pkl:150:25",
+    "posterior_uncalibrated": 8.354939427144626e-05,
+    "probability": {
+      "constant_diagonal": 0.18170879721368904,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.20578636478707663,
+      "posterior": 0.20578636478707663,
+      "ridge_risk": 0.20639662584136015,
+      "sandwich": 0.2079030591260978,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.004101707217949831,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.157439446366782,
+      "matched_distribution": 0.045107072544730564,
+      "posterior": 0.045107072544730564,
+      "ridge_risk": 0.444636678200692,
+      "sandwich": 0.05503978521680405,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.045107072544730564,
+      "regret_mean_mm2": -30.32510962484564,
+      "regret_variance_mm4": 341.83803211862033,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.18170879721368904,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -30.32510962484564,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.20578636478707663,
+      "posterior": 0.20578636478707663,
+      "ridge_risk": 0.20639662584136015,
+      "sandwich": 0.2079030591260978,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -18.256126134817457,
+    "horizon": 200,
+    "key": "2.pkl:150:200",
+    "posterior_uncalibrated": 1.5697085747121714e-16,
+    "probability": {
+      "constant_diagonal": 0.13453970654071445,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.07786279242891578,
+      "matched_distribution": 0.2313782815645959,
+      "posterior": 0.2313782815645959,
+      "ridge_risk": 0.21180163388482592,
+      "sandwich": 0.21653336830758288,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 2.4600813710167325e-09,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.10899653979238755,
+      "matched_distribution": 0.07561033635542275,
+      "posterior": 0.07561033635542275,
+      "ridge_risk": 0.4757785467128028,
+      "sandwich": 0.06667012924266605,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.07561033635542275,
+      "regret_mean_mm2": -18.256126134817457,
+      "regret_variance_mm4": 180.00846808324195,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453970654071445,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -18.256126134817457,
+      "kernel_risk": 0.07786279242891578,
+      "matched_distribution": 0.2313782815645959,
+      "posterior": 0.2313782815645959,
+      "ridge_risk": 0.21180163388482592,
+      "sandwich": 0.21653336830758288,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -47.261570672282396,
+    "horizon": 100,
+    "key": "2.pkl:250:100",
+    "posterior_uncalibrated": 1.4581519777906394e-39,
+    "probability": {
+      "constant_diagonal": 0.13453965810493404,
+      "empirical_regret": 0.2379653319571203,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.14774291934561923,
+      "matched_distribution": 0.09442147738170137,
+      "posterior": 0.09442147738170137,
+      "ridge_risk": 0.14187049129943116,
+      "sandwich": 0.0964870361930893,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 2.7554328541144422e-17,
+      "empirical_regret": 0.2647058823529412,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.19204152249134948,
+      "matched_distribution": 0.0001833153407179361,
+      "posterior": 0.0001833153407179361,
+      "ridge_risk": 0.12283737024221453,
+      "sandwich": 0.00014946971091834427,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0001833153407179361,
+      "regret_mean_mm2": -47.261570672282396,
+      "regret_variance_mm4": 183.47188151130052,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965810493404,
+      "empirical_regret": 0.2379653319571203,
+      "expected_regret": -47.261570672282396,
+      "kernel_risk": 0.14774291934561923,
+      "matched_distribution": 0.09442147738170137,
+      "posterior": 0.09442147738170137,
+      "ridge_risk": 0.14187049129943116,
+      "sandwich": 0.0964870361930893,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -27.600195326537115,
+    "horizon": 25,
+    "key": "2.pkl:250:25",
+    "posterior_uncalibrated": 1.5685224317783786e-08,
+    "probability": {
+      "constant_diagonal": 0.1432014396015759,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1416646774612855,
+      "matched_distribution": 0.18308108356555733,
+      "posterior": 0.18308108356555733,
+      "ridge_risk": 0.1601539842020107,
+      "sandwich": 0.16374890795419877,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.0004858603989520063,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.185121107266436,
+      "matched_distribution": 0.026745756072166393,
+      "posterior": 0.026745756072166393,
+      "ridge_risk": 0.19550173010380623,
+      "sandwich": 0.017378418149018016,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.026745756072166393,
+      "regret_mean_mm2": -27.600195326537115,
+      "regret_variance_mm4": 219.38363095411958,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1432014396015759,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -27.600195326537115,
+      "kernel_risk": 0.1416646774612855,
+      "matched_distribution": 0.18308108356555733,
+      "posterior": 0.18308108356555733,
+      "ridge_risk": 0.1601539842020107,
+      "sandwich": 0.16374890795419877,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -61.41508308802916,
+    "horizon": 200,
+    "key": "2.pkl:250:200",
+    "posterior_uncalibrated": 4.3420053740542875e-77,
+    "probability": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.14774291934561923,
+      "matched_distribution": 0.09821689126082335,
+      "posterior": 0.09821689126082335,
+      "ridge_risk": 0.14187049129943116,
+      "sandwich": 0.09604699690138287,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 2.182883236755021e-37,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.19204152249134948,
+      "matched_distribution": 0.0005049667954703626,
+      "posterior": 0.0005049667954703626,
+      "ridge_risk": 0.12283737024221453,
+      "sandwich": 0.00011318368002116133,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "2.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0005049667954703626,
+      "regret_mean_mm2": -61.41508308802916,
+      "regret_variance_mm4": 360.39845371395154,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -61.41508308802916,
+      "kernel_risk": 0.14774291934561923,
+      "matched_distribution": 0.09821689126082335,
+      "posterior": 0.09821689126082335,
+      "ridge_risk": 0.14187049129943116,
+      "sandwich": 0.09604699690138287,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -41.47873190905597,
+    "horizon": 100,
+    "key": "117.pkl:50:100",
+    "posterior_uncalibrated": 2.841592643625985e-17,
+    "probability": {
+      "constant_diagonal": 0.1345396627181847,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.0862056132878007,
+      "matched_distribution": 0.14936514359734296,
+      "posterior": 0.14936514359734296,
+      "ridge_risk": 0.2185061591524813,
+      "sandwich": 0.13400086380382364,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 2.34309582234069e-10,
+      "empirical_regret": 0.029411764705882353,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.11937716262975778,
+      "matched_distribution": 0.01041363704506544,
+      "posterior": 0.01041363704506544,
+      "ridge_risk": 0.513840830449827,
+      "sandwich": 0.0060758737457341705,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.01041363704506544,
+      "regret_mean_mm2": -41.47873190905597,
+      "regret_variance_mm4": 337.8354488591805,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396627181847,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": -41.47873190905597,
+      "kernel_risk": 0.0862056132878007,
+      "matched_distribution": 0.14936514359734296,
+      "posterior": 0.14936514359734296,
+      "ridge_risk": 0.2185061591524813,
+      "sandwich": 0.13400086380382364,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -100.63236533190661,
+    "horizon": 25,
+    "key": "117.pkl:50:25",
+    "posterior_uncalibrated": 3.778966213110374e-11,
+    "probability": {
+      "constant_diagonal": 0.13455406831698094,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.16629432268307484,
+      "posterior": 0.16629432268307484,
+      "ridge_risk": 0.2312188940405227,
+      "sandwich": 0.14583917189928958,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 7.320235265584282e-07,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.017258769226582857,
+      "posterior": 0.017258769226582857,
+      "ridge_risk": 0.583044982698962,
+      "sandwich": 0.009633032830711123,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.017258769226582857,
+      "regret_mean_mm2": -100.63236533190661,
+      "regret_variance_mm4": 2311.346335969251,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13455406831698094,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -100.63236533190661,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.16629432268307484,
+      "posterior": 0.16629432268307484,
+      "ridge_risk": 0.2312188940405227,
+      "sandwich": 0.14583917189928958,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -29.66306617637037,
+    "horizon": 200,
+    "key": "117.pkl:50:200",
+    "posterior_uncalibrated": 9.380815390334787e-24,
+    "probability": {
+      "constant_diagonal": 0.1345396581057059,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.10902970059350221,
+      "matched_distribution": 0.15721697529026255,
+      "posterior": 0.15721697529026255,
+      "ridge_risk": 0.20639662584136015,
+      "sandwich": 0.13348237323639764,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 3.922862573942209e-14,
+      "empirical_regret": 0.029411764705882353,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.14705882352941177,
+      "matched_distribution": 0.013290266393003647,
+      "posterior": 0.013290266393003647,
+      "ridge_risk": 0.444636678200692,
+      "sandwich": 0.005943482701694854,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.013290266393003647,
+      "regret_mean_mm2": -29.66306617637037,
+      "regret_variance_mm4": 191.18580188082865,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581057059,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": -29.66306617637037,
+      "kernel_risk": 0.10902970059350221,
+      "matched_distribution": 0.15721697529026255,
+      "posterior": 0.15721697529026255,
+      "ridge_risk": 0.20639662584136015,
+      "sandwich": 0.13348237323639764,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -33.75896275815516,
+    "horizon": 100,
+    "key": "117.pkl:150:100",
+    "posterior_uncalibrated": 1.016310485708245e-15,
+    "probability": {
+      "constant_diagonal": 0.13453971115702926,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1416646774612855,
+      "matched_distribution": 0.10803872671678226,
+      "posterior": 0.10803872671678226,
+      "ridge_risk": 0.2105959490727406,
+      "sandwich": 0.0962326720550036,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 2.694546815231085e-09,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.185121107266436,
+      "matched_distribution": 0.0015320587568942946,
+      "posterior": 0.0015320587568942946,
+      "ridge_risk": 0.4688581314878893,
+      "sandwich": 0.00012842688318912603,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0015320587568942946,
+      "regret_mean_mm2": -33.75896275815516,
+      "regret_variance_mm4": 137.7808819937095,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453971115702926,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -33.75896275815516,
+      "kernel_risk": 0.1416646774612855,
+      "matched_distribution": 0.10803872671678226,
+      "posterior": 0.10803872671678226,
+      "ridge_risk": 0.2105959490727406,
+      "sandwich": 0.0962326720550036,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -20.966652869285063,
+    "horizon": 25,
+    "key": "117.pkl:150:25",
+    "posterior_uncalibrated": 0.00021547218574406482,
+    "probability": {
+      "constant_diagonal": 0.1991355288399231,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1946365164169032,
+      "matched_distribution": 0.23251927098507233,
+      "posterior": 0.23251927098507233,
+      "ridge_risk": 0.23796942323511555,
+      "sandwich": 0.19720850233701845,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.006828012351900681,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.24394463667820068,
+      "matched_distribution": 0.07725375655694762,
+      "posterior": 0.07725375655694762,
+      "ridge_risk": 0.6176470588235294,
+      "sandwich": 0.042832973915020535,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.07725375655694762,
+      "regret_mean_mm2": -20.966652869285063,
+      "regret_variance_mm4": 238.03258164233202,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1991355288399231,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -20.966652869285063,
+      "kernel_risk": 0.1946365164169032,
+      "matched_distribution": 0.23251927098507233,
+      "posterior": 0.23251927098507233,
+      "ridge_risk": 0.23796942323511555,
+      "sandwich": 0.19720850233701845,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -31.783277941574802,
+    "horizon": 200,
+    "key": "117.pkl:150:200",
+    "posterior_uncalibrated": 5.240427040917855e-29,
+    "probability": {
+      "constant_diagonal": 0.1345396581049358,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.09834606220666209,
+      "posterior": 0.09834606220666209,
+      "ridge_risk": 0.20340903632913612,
+      "sandwich": 0.09485103447894785,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 1.1650554137384424e-16,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.000516599608142231,
+      "posterior": 0.000516599608142231,
+      "ridge_risk": 0.4273356401384083,
+      "sandwich": 1.733631701838383e-05,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.000516599608142231,
+      "regret_mean_mm2": -31.783277941574802,
+      "regret_variance_mm4": 99.81728526011293,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049358,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -31.783277941574802,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.09834606220666209,
+      "posterior": 0.09834606220666209,
+      "ridge_risk": 0.20340903632913612,
+      "sandwich": 0.09485103447894785,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -34.349451477424594,
+    "horizon": 100,
+    "key": "117.pkl:250:100",
+    "posterior_uncalibrated": 8.642322599296803e-19,
+    "probability": {
+      "constant_diagonal": 0.13453967045171047,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12369256687743445,
+      "matched_distribution": 0.14798334755788733,
+      "posterior": 0.14798334755788733,
+      "ridge_risk": 0.17437264206630965,
+      "sandwich": 0.11328406033178456,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 6.27099694097262e-10,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.1643598615916955,
+      "matched_distribution": 0.009955880542451851,
+      "posterior": 0.009955880542451851,
+      "ridge_risk": 0.2647058823529412,
+      "sandwich": 0.002015986570078502,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.009955880542451851,
+      "regret_mean_mm2": -34.349451477424594,
+      "regret_variance_mm4": 230.56692057673268,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453967045171047,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -34.349451477424594,
+      "kernel_risk": 0.12369256687743445,
+      "matched_distribution": 0.14798334755788733,
+      "posterior": 0.14798334755788733,
+      "ridge_risk": 0.17437264206630965,
+      "sandwich": 0.11328406033178456,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -28.289025394412366,
+    "horizon": 25,
+    "key": "117.pkl:250:25",
+    "posterior_uncalibrated": 2.88517783631337e-06,
+    "probability": {
+      "constant_diagonal": 0.15702760883180514,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.20108346916331307,
+      "posterior": 0.20108346916331307,
+      "ridge_risk": 0.16961839373855425,
+      "sandwich": 0.17257840302659108,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.0014776222626612045,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12629757785467127,
+      "matched_distribution": 0.04070329726422215,
+      "posterior": 0.04070329726422215,
+      "ridge_risk": 0.24048442906574394,
+      "sandwich": 0.022508986826394458,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.04070329726422215,
+      "regret_mean_mm2": -28.289025394412366,
+      "regret_variance_mm4": 282.5030995670614,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.15702760883180514,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -28.289025394412366,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.20108346916331307,
+      "posterior": 0.20108346916331307,
+      "ridge_risk": 0.16961839373855425,
+      "sandwich": 0.17257840302659108,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -28.74902294679986,
+    "horizon": 200,
+    "key": "117.pkl:250:200",
+    "posterior_uncalibrated": 1.1150370020975574e-29,
+    "probability": {
+      "constant_diagonal": 0.1345396581049639,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12963867650383,
+      "matched_distribution": 0.17162974214245186,
+      "posterior": 0.17162974214245186,
+      "ridge_risk": 0.17503669908044805,
+      "sandwich": 0.13823713544315286,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 1.543078136517848e-15,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.17128027681660898,
+      "matched_distribution": 0.01995091341681505,
+      "posterior": 0.01995091341681505,
+      "ridge_risk": 0.2681660899653979,
+      "sandwich": 0.00722748871655613,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "117.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.01995091341681505,
+      "regret_mean_mm2": -28.74902294679986,
+      "regret_variance_mm4": 209.6146405982376,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049639,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -28.74902294679986,
+      "kernel_risk": 0.12963867650383,
+      "matched_distribution": 0.17162974214245186,
+      "posterior": 0.17162974214245186,
+      "ridge_risk": 0.17503669908044805,
+      "sandwich": 0.13823713544315286,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -47.14595222267636,
+    "horizon": 100,
+    "key": "42.pkl:50:100",
+    "posterior_uncalibrated": 3.163017193466636e-18,
+    "probability": {
+      "constant_diagonal": 0.13453965875887952,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.17875721535203903,
+      "matched_distribution": 0.13357999283216887,
+      "posterior": 0.13357999283216887,
+      "ridge_risk": 0.22036263357081531,
+      "sandwich": 0.12174688206907676,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 3.3214276708604324e-11,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.22664359861591696,
+      "matched_distribution": 0.00594462998707817,
+      "posterior": 0.00594462998707817,
+      "ridge_risk": 0.5242214532871973,
+      "sandwich": 0.0033940960906222923,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.00594462998707817,
+      "regret_mean_mm2": -47.14595222267636,
+      "regret_variance_mm4": 366.35365754955114,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965875887952,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -47.14595222267636,
+      "kernel_risk": 0.17875721535203903,
+      "matched_distribution": 0.13357999283216887,
+      "posterior": 0.13357999283216887,
+      "ridge_risk": 0.22036263357081531,
+      "sandwich": 0.12174688206907676,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -64.6935028739495,
+    "horizon": 25,
+    "key": "42.pkl:50:25",
+    "posterior_uncalibrated": 4.282143238667535e-08,
+    "probability": {
+      "constant_diagonal": 0.13524839971630723,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1356296628571617,
+      "matched_distribution": 0.1464536001123237,
+      "posterior": 0.1464536001123237,
+      "ridge_risk": 0.2046034266712552,
+      "sandwich": 0.1227351757870052,
+      "trajectory_bootstrap": 0.05979182594136668
+    },
+    "raw": {
+      "constant_diagonal": 3.629104395639674e-05,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.1782006920415225,
+      "matched_distribution": 0.009465079737029357,
+      "posterior": 0.009465079737029357,
+      "ridge_risk": 0.4342560553633218,
+      "sandwich": 0.0035782525842850336,
+      "trajectory_bootstrap": 0.1
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.009465079737029357,
+      "regret_mean_mm2": -64.6935028739495,
+      "regret_variance_mm4": 783.5277694007084,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13524839971630723,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -64.6935028739495,
+      "kernel_risk": 0.1356296628571617,
+      "matched_distribution": 0.1464536001123237,
+      "posterior": 0.1464536001123237,
+      "ridge_risk": 0.2046034266712552,
+      "sandwich": 0.1227351757870052,
+      "trajectory_bootstrap": 0.05979182594136668
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -33.7987390040459,
+    "horizon": 200,
+    "key": "42.pkl:50:200",
+    "posterior_uncalibrated": 1.0640703633601425e-24,
+    "probability": {
+      "constant_diagonal": 0.1345396581049755,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1819137847758199,
+      "matched_distribution": 0.1541283949478306,
+      "posterior": 0.1541283949478306,
+      "ridge_risk": 0.1956338891714648,
+      "sandwich": 0.14707259433392897,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 2.132672218574787e-15,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2301038062283737,
+      "matched_distribution": 0.012100978753809041,
+      "posterior": 0.012100978753809041,
+      "ridge_risk": 0.38235294117647056,
+      "sandwich": 0.010067927621014274,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.012100978753809041,
+      "regret_mean_mm2": -33.7987390040459,
+      "regret_variance_mm4": 238.3716764582339,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049755,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -33.7987390040459,
+      "kernel_risk": 0.1819137847758199,
+      "matched_distribution": 0.1541283949478306,
+      "posterior": 0.1541283949478306,
+      "ridge_risk": 0.1956338891714648,
+      "sandwich": 0.14707259433392897,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -83.26905007289474,
+    "horizon": 100,
+    "key": "42.pkl:150:100",
+    "posterior_uncalibrated": 2.2271495551941664e-29,
+    "probability": {
+      "constant_diagonal": 0.13453965810493393,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.220530645953997,
+      "matched_distribution": 0.10179251339389382,
+      "posterior": 0.10179251339389382,
+      "ridge_risk": 0.15938218021261322,
+      "sandwich": 0.09874813774440293,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 1.9712934162584332e-17,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.27162629757785467,
+      "matched_distribution": 0.0008445935856539643,
+      "posterior": 0.0008445935856539643,
+      "ridge_risk": 0.19204152249134948,
+      "sandwich": 0.0003448743531827566,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0008445935856539643,
+      "regret_mean_mm2": -83.26905007289474,
+      "regret_variance_mm4": 720.2162784474289,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965810493393,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -83.26905007289474,
+      "kernel_risk": 0.220530645953997,
+      "matched_distribution": 0.10179251339389382,
+      "posterior": 0.10179251339389382,
+      "ridge_risk": 0.15938218021261322,
+      "sandwich": 0.09874813774440293,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -101.60960460473473,
+    "horizon": 25,
+    "key": "42.pkl:150:25",
+    "posterior_uncalibrated": 2.3985358508134417e-12,
+    "probability": {
+      "constant_diagonal": 0.13454468138895354,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.23700635937014436,
+      "matched_distribution": 0.13333992880723405,
+      "posterior": 0.13333992880723405,
+      "ridge_risk": 0.14671191330507438,
+      "sandwich": 0.11800919581317662,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 2.5515005591251235e-07,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2889273356401384,
+      "matched_distribution": 0.0058885085421709294,
+      "posterior": 0.0058885085421709294,
+      "ridge_risk": 0.14013840830449828,
+      "sandwich": 0.002743051576098955,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0058885085421709294,
+      "regret_mean_mm2": -101.60960460473473,
+      "regret_variance_mm4": 1659.6012904271429,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13454468138895354,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -101.60960460473473,
+      "kernel_risk": 0.23700635937014436,
+      "matched_distribution": 0.13333992880723405,
+      "posterior": 0.13333992880723405,
+      "ridge_risk": 0.14671191330507438,
+      "sandwich": 0.11800919581317662,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -60.23412565876166,
+    "horizon": 200,
+    "key": "42.pkl:150:200",
+    "posterior_uncalibrated": 1.9962900570212933e-39,
+    "probability": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.23700635937014436,
+      "matched_distribution": 0.11668533014788204,
+      "posterior": 0.11668533014788204,
+      "ridge_risk": 0.16680581420501045,
+      "sandwich": 0.11642128529321945,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 4.6181921975620724e-24,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2889273356401384,
+      "matched_distribution": 0.002709079515341189,
+      "posterior": 0.002709079515341189,
+      "ridge_risk": 0.22664359861591696,
+      "sandwich": 0.002487230232346952,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.002709079515341189,
+      "regret_mean_mm2": -60.23412565876166,
+      "regret_variance_mm4": 484.80386995086235,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -60.23412565876166,
+      "kernel_risk": 0.23700635937014436,
+      "matched_distribution": 0.11668533014788204,
+      "posterior": 0.11668533014788204,
+      "ridge_risk": 0.16680581420501045,
+      "sandwich": 0.11642128529321945,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -65.60328325809947,
+    "horizon": 100,
+    "key": "42.pkl:250:100",
+    "posterior_uncalibrated": 6.271699873774602e-18,
+    "probability": {
+      "constant_diagonal": 0.13453965832066878,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1914415078550486,
+      "matched_distribution": 0.10901295730741438,
+      "posterior": 0.10901295730741438,
+      "ridge_risk": 0.14482270972418224,
+      "sandwich": 0.12024214185946572,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 1.09573125909542e-11,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.24048442906574394,
+      "matched_distribution": 0.0016509420464243987,
+      "posterior": 0.0016509420464243987,
+      "ridge_risk": 0.13321799307958476,
+      "sandwich": 0.003123509805857719,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0016509420464243987,
+      "regret_mean_mm2": -65.60328325809947,
+      "regret_variance_mm4": 513.8619396816179,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965832066878,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -65.60328325809947,
+      "kernel_risk": 0.1914415078550486,
+      "matched_distribution": 0.10901295730741438,
+      "posterior": 0.10901295730741438,
+      "ridge_risk": 0.14482270972418224,
+      "sandwich": 0.12024214185946572,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -30.839564635813556,
+    "horizon": 25,
+    "key": "42.pkl:250:25",
+    "posterior_uncalibrated": 0.00030943090227235803,
+    "probability": {
+      "constant_diagonal": 0.18676165520811797,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.20105476945769749,
+      "matched_distribution": 0.228035082573366,
+      "posterior": 0.228035082573366,
+      "ridge_risk": 0.15621719936556105,
+      "sandwich": 0.21784133481921925,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.004806786439405097,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2508650519031142,
+      "matched_distribution": 0.0709431371878605,
+      "posterior": 0.0709431371878605,
+      "ridge_risk": 0.1782006920415225,
+      "sandwich": 0.06858190188940605,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0709431371878605,
+      "regret_mean_mm2": -30.839564635813556,
+      "regret_variance_mm4": 469.9019378558465,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.18676165520811797,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -30.839564635813556,
+      "kernel_risk": 0.20105476945769749,
+      "matched_distribution": 0.228035082573366,
+      "posterior": 0.228035082573366,
+      "ridge_risk": 0.15621719936556105,
+      "sandwich": 0.21784133481921925,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -53.499662131005444,
+    "horizon": 200,
+    "key": "42.pkl:250:200",
+    "posterior_uncalibrated": 3.441655428914938e-27,
+    "probability": {
+      "constant_diagonal": 0.13453965810493365,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.17247352434757762,
+      "matched_distribution": 0.14711094226220336,
+      "posterior": 0.14711094226220336,
+      "ridge_risk": 0.14187049129943116,
+      "sandwich": 0.16367358294868023,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 6.974416415128872e-18,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.21972318339100347,
+      "matched_distribution": 0.009673949036518194,
+      "posterior": 0.009673949036518194,
+      "ridge_risk": 0.12283737024221453,
+      "sandwich": 0.017338752480639687,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "42.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.009673949036518194,
+      "regret_mean_mm2": -53.499662131005444,
+      "regret_variance_mm4": 543.0209592171776,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965810493365,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -53.499662131005444,
+      "kernel_risk": 0.17247352434757762,
+      "matched_distribution": 0.14711094226220336,
+      "posterior": 0.14711094226220336,
+      "ridge_risk": 0.14187049129943116,
+      "sandwich": 0.16367358294868023,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -15.11285521017036,
+    "horizon": 100,
+    "key": "18.pkl:50:100",
+    "posterior_uncalibrated": 2.6765121711779016e-07,
+    "probability": {
+      "constant_diagonal": 0.13722880193325135,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1356296628571617,
+      "matched_distribution": 0.22862841132156578,
+      "posterior": 0.22862841132156578,
+      "ridge_risk": 0.18465133745794593,
+      "sandwich": 0.20663635912971257,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.00014085935559658355,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.1782006920415225,
+      "matched_distribution": 0.07175547708113794,
+      "posterior": 0.07175547708113794,
+      "ridge_risk": 0.32006920415224915,
+      "sandwich": 0.053471171702756906,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.07175547708113794,
+      "regret_mean_mm2": -15.11285521017036,
+      "regret_variance_mm4": 121.32516686916448,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13722880193325135,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -15.11285521017036,
+      "kernel_risk": 0.1356296628571617,
+      "matched_distribution": 0.22862841132156578,
+      "posterior": 0.22862841132156578,
+      "ridge_risk": 0.18465133745794593,
+      "sandwich": 0.20663635912971257,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -21.829438356032487,
+    "horizon": 25,
+    "key": "18.pkl:50:25",
+    "posterior_uncalibrated": 0.0029694768714251993,
+    "probability": {
+      "constant_diagonal": 0.2502917631543537,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.14774291934561923,
+      "matched_distribution": 0.2523663343312606,
+      "posterior": 0.2523663343312606,
+      "ridge_risk": 0.2028119989402234,
+      "sandwich": 0.23573229183123992,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.021329625433629255,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.19204152249134948,
+      "matched_distribution": 0.11019749620582786,
+      "posterior": 0.11019749620582786,
+      "ridge_risk": 0.42387543252595156,
+      "sandwich": 0.0990219683226457,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.11019749620582786,
+      "regret_mean_mm2": -21.829438356032487,
+      "regret_variance_mm4": 347.039631899239,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.2502917631543537,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -21.829438356032487,
+      "kernel_risk": 0.14774291934561923,
+      "matched_distribution": 0.2523663343312606,
+      "posterior": 0.2523663343312606,
+      "ridge_risk": 0.2028119989402234,
+      "sandwich": 0.23573229183123992,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -11.060138934540614,
+    "horizon": 200,
+    "key": "18.pkl:50:200",
+    "posterior_uncalibrated": 1.1242108339073219e-10,
+    "probability": {
+      "constant_diagonal": 0.13458091177545708,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.2094972882694494,
+      "posterior": 0.2094972882694494,
+      "ridge_risk": 0.17700898554641195,
+      "sandwich": 0.1933037943124442,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 2.0962877991280994e-06,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.04882632343939137,
+      "posterior": 0.04882632343939137,
+      "ridge_risk": 0.27854671280276816,
+      "sandwich": 0.03893228548146467,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.04882632343939137,
+      "regret_mean_mm2": -11.060138934540614,
+      "regret_variance_mm4": 53.0157326489878,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13458091177545708,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -11.060138934540614,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.2094972882694494,
+      "posterior": 0.2094972882694494,
+      "ridge_risk": 0.17700898554641195,
+      "sandwich": 0.1933037943124442,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -25.993788966538066,
+    "horizon": 100,
+    "key": "18.pkl:150:100",
+    "posterior_uncalibrated": 9.835182698379552e-10,
+    "probability": {
+      "constant_diagonal": 0.13472144733014685,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.08901361933922676,
+      "matched_distribution": 0.1857732143812434,
+      "posterior": 0.1857732143812434,
+      "ridge_risk": 0.15540493719047474,
+      "sandwich": 0.17680105680010672,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 9.252436759970057e-06,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12283737024221453,
+      "matched_distribution": 0.028563079861466386,
+      "posterior": 0.028563079861466386,
+      "ridge_risk": 0.17474048442906576,
+      "sandwich": 0.02532426711391915,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.028563079861466386,
+      "regret_mean_mm2": -25.993788966538066,
+      "regret_variance_mm4": 201.34899239335894,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13472144733014685,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -25.993788966538066,
+      "kernel_risk": 0.08901361933922676,
+      "matched_distribution": 0.1857732143812434,
+      "posterior": 0.1857732143812434,
+      "ridge_risk": 0.15540493719047474,
+      "sandwich": 0.17680105680010672,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -53.431240369708455,
+    "horizon": 25,
+    "key": "18.pkl:150:25",
+    "posterior_uncalibrated": 4.103722358690408e-06,
+    "probability": {
+      "constant_diagonal": 0.14953216182105053,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.20844754677241095,
+      "posterior": 0.20844754677241095,
+      "ridge_risk": 0.14085146672327023,
+      "sandwich": 0.18818305876433947,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.0009042080781179986,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.157439446366782,
+      "matched_distribution": 0.04775178794954005,
+      "posterior": 0.04775178794954005,
+      "ridge_risk": 0.11937716262975778,
+      "sandwich": 0.034231924489276096,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.04775178794954005,
+      "regret_mean_mm2": -53.431240369708455,
+      "regret_variance_mm4": 1066.0974030812845,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.14953216182105053,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -53.431240369708455,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.20844754677241095,
+      "posterior": 0.20844754677241095,
+      "ridge_risk": 0.14085146672327023,
+      "sandwich": 0.18818305876433947,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -17.886394574188834,
+    "horizon": 200,
+    "key": "18.pkl:150:200",
+    "posterior_uncalibrated": 1.8840767468477883e-12,
+    "probability": {
+      "constant_diagonal": 0.1345446278996526,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.10613283247528837,
+      "matched_distribution": 0.20738027970675654,
+      "posterior": 0.20738027970675654,
+      "ridge_risk": 0.16391016165176273,
+      "sandwich": 0.2043922017172036,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 2.524329936058785e-07,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.14359861591695502,
+      "matched_distribution": 0.04667756182084261,
+      "posterior": 0.04667756182084261,
+      "ridge_risk": 0.21280276816608998,
+      "sandwich": 0.050775376449441544,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.04667756182084261,
+      "regret_mean_mm2": -17.886394574188834,
+      "regret_variance_mm4": 126.68800047464555,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345446278996526,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -17.886394574188834,
+      "kernel_risk": 0.10613283247528837,
+      "matched_distribution": 0.20738027970675654,
+      "posterior": 0.20738027970675654,
+      "ridge_risk": 0.16391016165176273,
+      "sandwich": 0.2043922017172036,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -5.947284805787407,
+    "horizon": 100,
+    "key": "18.pkl:250:100",
+    "posterior_uncalibrated": 0.00041031685579785883,
+    "probability": {
+      "constant_diagonal": 0.21650857671284846,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.06964635827003768,
+      "matched_distribution": 0.27159789871226536,
+      "posterior": 0.27159789871226536,
+      "ridge_risk": 0.1239207828170051,
+      "sandwich": 0.2562989091012383,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "raw": {
+      "constant_diagonal": 0.010497057544874951,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.0986159169550173,
+      "matched_distribution": 0.15055688108780663,
+      "posterior": 0.15055688108780663,
+      "ridge_risk": 0.07093425605536333,
+      "sandwich": 0.1448447657334796,
+      "trajectory_bootstrap": 0.3
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.15055688108780663,
+      "regret_mean_mm2": -5.947284805787407,
+      "regret_variance_mm4": 45.13868231366074,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.21650857671284846,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -5.947284805787407,
+      "kernel_risk": 0.06964635827003768,
+      "matched_distribution": 0.27159789871226536,
+      "posterior": 0.27159789871226536,
+      "ridge_risk": 0.1239207828170051,
+      "sandwich": 0.2562989091012383,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -3.651209282308464,
+    "horizon": 25,
+    "key": "18.pkl:250:25",
+    "posterior_uncalibrated": 0.07792219740855608,
+    "probability": {
+      "constant_diagonal": 0.3809076013798509,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.29740202827372064,
+      "posterior": 0.29740202827372064,
+      "ridge_risk": 0.13544714304444658,
+      "sandwich": 0.2868104255528099,
+      "trajectory_bootstrap": 0.05979182594136668
+    },
+    "raw": {
+      "constant_diagonal": 0.1581176118523816,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12975778546712802,
+      "matched_distribution": 0.2184035614874656,
+      "posterior": 0.2184035614874656,
+      "ridge_risk": 0.10207612456747404,
+      "sandwich": 0.23565548405188474,
+      "trajectory_bootstrap": 0.1
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.2184035614874656,
+      "regret_mean_mm2": -3.651209282308464,
+      "regret_variance_mm4": 35.7786164862778,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.3809076013798509,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -3.651209282308464,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.29740202827372064,
+      "posterior": 0.29740202827372064,
+      "ridge_risk": 0.13544714304444658,
+      "sandwich": 0.2868104255528099,
+      "trajectory_bootstrap": 0.05979182594136668
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -7.628473834482336,
+    "horizon": 200,
+    "key": "18.pkl:250:200",
+    "posterior_uncalibrated": 1.0585245416658489e-07,
+    "probability": {
+      "constant_diagonal": 0.13793564939658245,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.06964635827003768,
+      "matched_distribution": 0.2404997493875884,
+      "posterior": 0.2404997493875884,
+      "ridge_risk": 0.11764344682173211,
+      "sandwich": 0.23404212002769442,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.00017933189042506262,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.0986159169550173,
+      "matched_distribution": 0.08949025497769453,
+      "posterior": 0.08949025497769453,
+      "ridge_risk": 0.05709342560553633,
+      "sandwich": 0.09578804219882492,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "18.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.08949025497769453,
+      "regret_mean_mm2": -7.628473834482336,
+      "regret_variance_mm4": 41.2224341782365,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13793564939658245,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -7.628473834482336,
+      "kernel_risk": 0.06964635827003768,
+      "matched_distribution": 0.2404997493875884,
+      "posterior": 0.2404997493875884,
+      "ridge_risk": 0.11764344682173211,
+      "sandwich": 0.23404212002769442,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -70.99698241021125,
+    "horizon": 100,
+    "key": "60.pkl:50:100",
+    "posterior_uncalibrated": 3.502338386288061e-58,
+    "probability": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.23038980955626362,
+      "matched_distribution": 0.0921160315497589,
+      "posterior": 0.0921160315497589,
+      "ridge_risk": 0.23659228535590637,
+      "sandwich": 0.09463043695801297,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 9.551730067330719e-24,
+      "empirical_regret": 0.029411764705882353,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2820069204152249,
+      "matched_distribution": 6.089610090283299e-06,
+      "posterior": 6.089610090283299e-06,
+      "ridge_risk": 0.610726643598616,
+      "sandwich": 9.28252090688133e-08,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 6.089610090283299e-06,
+      "regret_mean_mm2": -70.99698241021125,
+      "regret_variance_mm4": 270.89475366042683,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": -70.99698241021125,
+      "kernel_risk": 0.23038980955626362,
+      "matched_distribution": 0.0921160315497589,
+      "posterior": 0.0921160315497589,
+      "ridge_risk": 0.23659228535590637,
+      "sandwich": 0.09463043695801297,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -93.39311487480545,
+    "horizon": 25,
+    "key": "60.pkl:50:25",
+    "posterior_uncalibrated": 2.4612364435515422e-17,
+    "probability": {
+      "constant_diagonal": 0.1345411577945076,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.27400115477594456,
+      "matched_distribution": 0.12784857100521294,
+      "posterior": 0.12784857100521294,
+      "ridge_risk": 0.24076956969509603,
+      "sandwich": 0.10271674180676502,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 7.617136938922596e-08,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.32698961937716264,
+      "matched_distribution": 0.0046900741874275845,
+      "posterior": 0.0046900741874275845,
+      "ridge_risk": 0.6314878892733564,
+      "sandwich": 0.0007262111770518916,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0046900741874275845,
+      "regret_mean_mm2": -93.39311487480545,
+      "regret_variance_mm4": 1320.2091128826282,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345411577945076,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -93.39311487480545,
+      "kernel_risk": 0.27400115477594456,
+      "matched_distribution": 0.12784857100521294,
+      "posterior": 0.12784857100521294,
+      "ridge_risk": 0.24076956969509603,
+      "sandwich": 0.10271674180676502,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -37.85479800040664,
+    "horizon": 200,
+    "key": "60.pkl:50:200",
+    "posterior_uncalibrated": 5.21972259684605e-63,
+    "probability": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.2172620096111075,
+      "matched_distribution": 0.09212689691911248,
+      "posterior": 0.09212689691911248,
+      "ridge_risk": 0.24076956969509603,
+      "sandwich": 0.09463117131292181,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 7.953596977635224e-26,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2681660899653979,
+      "matched_distribution": 6.894161641184639e-06,
+      "posterior": 6.894161641184639e-06,
+      "ridge_risk": 0.6314878892733564,
+      "sandwich": 1.5000532023496715e-07,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 6.894161641184639e-06,
+      "regret_mean_mm2": -37.85479800040664,
+      "regret_variance_mm4": 79.8856985242481,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -37.85479800040664,
+      "kernel_risk": 0.2172620096111075,
+      "matched_distribution": 0.09212689691911248,
+      "posterior": 0.09212689691911248,
+      "ridge_risk": 0.24076956969509603,
+      "sandwich": 0.09463117131292181,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -39.80509081912659,
+    "horizon": 100,
+    "key": "60.pkl:150:100",
+    "posterior_uncalibrated": 2.4327548193917807e-19,
+    "probability": {
+      "constant_diagonal": 0.13453976216072566,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.23038980955626362,
+      "matched_distribution": 0.11779805368607901,
+      "posterior": 0.11779805368607901,
+      "ridge_risk": 0.13429544572277843,
+      "sandwich": 0.09586010017640827,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 5.285057327321754e-09,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2820069204152249,
+      "matched_distribution": 0.002881721239332428,
+      "posterior": 0.002881721239332428,
+      "ridge_risk": 0.0986159169550173,
+      "sandwich": 9.793951500885997e-05,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.002881721239332428,
+      "regret_mean_mm2": -39.80509081912659,
+      "regret_variance_mm4": 218.43049219156302,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453976216072566,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -39.80509081912659,
+      "kernel_risk": 0.23038980955626362,
+      "matched_distribution": 0.11779805368607901,
+      "posterior": 0.11779805368607901,
+      "ridge_risk": 0.13429544572277843,
+      "sandwich": 0.09586010017640827,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -43.78834340819918,
+    "horizon": 25,
+    "key": "60.pkl:150:25",
+    "posterior_uncalibrated": 2.853049933503117e-06,
+    "probability": {
+      "constant_diagonal": 0.16067447418894715,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.25706095097461396,
+      "matched_distribution": 0.19478985351386777,
+      "posterior": 0.19478985351386777,
+      "ridge_risk": 0.14763506408411584,
+      "sandwich": 0.15745980390388492,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "raw": {
+      "constant_diagonal": 0.0017902233485976053,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.3096885813148789,
+      "matched_distribution": 0.03532322099007624,
+      "posterior": 0.03532322099007624,
+      "ridge_risk": 0.14359861591695502,
+      "sandwich": 0.014286594042640703,
+      "trajectory_bootstrap": 0.3
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.03532322099007624,
+      "regret_mean_mm2": -43.78834340819918,
+      "regret_variance_mm4": 613.8417391276465,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.16067447418894715,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -43.78834340819918,
+      "kernel_risk": 0.25706095097461396,
+      "matched_distribution": 0.19478985351386777,
+      "posterior": 0.19478985351386777,
+      "ridge_risk": 0.14763506408411584,
+      "sandwich": 0.15745980390388492,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -29.102092579624596,
+    "horizon": 200,
+    "key": "60.pkl:150:200",
+    "posterior_uncalibrated": 7.405914268214049e-28,
+    "probability": {
+      "constant_diagonal": 0.13453965812630989,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.2336937468659521,
+      "matched_distribution": 0.13549072675720097,
+      "posterior": 0.13549072675720097,
+      "ridge_risk": 0.1267428146524973,
+      "sandwich": 0.0964019036555826,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 1.0857171085845887e-12,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.28546712802768165,
+      "matched_distribution": 0.006402971581232282,
+      "posterior": 0.006402971581232282,
+      "ridge_risk": 0.07785467128027682,
+      "sandwich": 0.0001424062103128799,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.006402971581232282,
+      "regret_mean_mm2": -29.102092579624596,
+      "regret_variance_mm4": 146.2518648810905,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965812630989,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -29.102092579624596,
+      "kernel_risk": 0.2336937468659521,
+      "matched_distribution": 0.13549072675720097,
+      "posterior": 0.13549072675720097,
+      "ridge_risk": 0.1267428146524973,
+      "sandwich": 0.0964019036555826,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -20.35496211262579,
+    "horizon": 100,
+    "key": "60.pkl:250:100",
+    "posterior_uncalibrated": 3.350562752352454e-24,
+    "probability": {
+      "constant_diagonal": 0.1345396643046125,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.16934655433700485,
+      "matched_distribution": 0.0995597485867336,
+      "posterior": 0.0995597485867336,
+      "ridge_risk": 0.19382848440002137,
+      "sandwich": 0.09499711507877334,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "raw": {
+      "constant_diagonal": 3.1488513424783617e-10,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.21626297577854672,
+      "matched_distribution": 0.0006281924336183226,
+      "posterior": 0.0006281924336183226,
+      "ridge_risk": 0.3719723183391003,
+      "sandwich": 2.882903556485726e-05,
+      "trajectory_bootstrap": 0.3
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0006281924336183226,
+      "regret_mean_mm2": -20.35496211262579,
+      "regret_variance_mm4": 43.82615779077146,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396643046125,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -20.35496211262579,
+      "kernel_risk": 0.16934655433700485,
+      "matched_distribution": 0.0995597485867336,
+      "posterior": 0.0995597485867336,
+      "ridge_risk": 0.19382848440002137,
+      "sandwich": 0.09499711507877334,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -13.011228800258287,
+    "horizon": 25,
+    "key": "60.pkl:250:25",
+    "posterior_uncalibrated": 2.1808392102711833e-05,
+    "probability": {
+      "constant_diagonal": 0.18818930287281505,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1946365164169032,
+      "matched_distribution": 0.21612309101323188,
+      "posterior": 0.21612309101323188,
+      "ridge_risk": 0.20340903632913612,
+      "sandwich": 0.17845319682390773,
+      "trajectory_bootstrap": 0.05979182594136668
+    },
+    "raw": {
+      "constant_diagonal": 0.0050179879555937576,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.24394463667820068,
+      "matched_distribution": 0.05603181284868373,
+      "posterior": 0.05603181284868373,
+      "ridge_risk": 0.4273356401384083,
+      "sandwich": 0.026494415179184203,
+      "trajectory_bootstrap": 0.1
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.05603181284868373,
+      "regret_mean_mm2": -13.011228800258287,
+      "regret_variance_mm4": 77.75216367661771,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.18818930287281505,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -13.011228800258287,
+      "kernel_risk": 0.1946365164169032,
+      "matched_distribution": 0.21612309101323188,
+      "posterior": 0.21612309101323188,
+      "ridge_risk": 0.20340903632913612,
+      "sandwich": 0.17845319682390773,
+      "trajectory_bootstrap": 0.05979182594136668
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -19.27801245276082,
+    "horizon": 200,
+    "key": "60.pkl:250:200",
+    "posterior_uncalibrated": 7.499588371144994e-44,
+    "probability": {
+      "constant_diagonal": 0.13453965810493365,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.17247352434757762,
+      "matched_distribution": 0.10017491617417802,
+      "posterior": 0.10017491617417802,
+      "ridge_risk": 0.1901931034334123,
+      "sandwich": 0.09489907605192874,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 6.767367579071534e-18,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.21972318339100347,
+      "matched_distribution": 0.0006863590176949917,
+      "posterior": 0.0006863590176949917,
+      "ridge_risk": 0.35121107266435986,
+      "sandwich": 2.1109408291675338e-05,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "60.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0006863590176949917,
+      "regret_mean_mm2": -19.27801245276082,
+      "regret_variance_mm4": 40.14783128616231,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965810493365,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -19.27801245276082,
+      "kernel_risk": 0.17247352434757762,
+      "matched_distribution": 0.10017491617417802,
+      "posterior": 0.10017491617417802,
+      "ridge_risk": 0.1901931034334123,
+      "sandwich": 0.09489907605192874,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -38.90689380353886,
+    "horizon": 100,
+    "key": "24.pkl:50:100",
+    "posterior_uncalibrated": 7.009224962956476e-11,
+    "probability": {
+      "constant_diagonal": 0.134542864754709,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.16496563465383896,
+      "posterior": 0.16496563465383896,
+      "ridge_risk": 0.22036263357081531,
+      "sandwich": 0.16827049611693393,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 1.6287349622920124e-07,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12629757785467127,
+      "matched_distribution": 0.016631312153319477,
+      "posterior": 0.016631312153319477,
+      "ridge_risk": 0.5242214532871973,
+      "sandwich": 0.019883650017806787,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.016631312153319477,
+      "regret_mean_mm2": -38.90689380353886,
+      "regret_variance_mm4": 351.3870629930434,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.134542864754709,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -38.90689380353886,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.16496563465383896,
+      "posterior": 0.16496563465383896,
+      "ridge_risk": 0.22036263357081531,
+      "sandwich": 0.16827049611693393,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -10.590213554292816,
+    "horizon": 25,
+    "key": "24.pkl:50:25",
+    "posterior_uncalibrated": 0.004614573327254359,
+    "probability": {
+      "constant_diagonal": 0.2656581435126128,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.24610102468162812,
+      "posterior": 0.24610102468162812,
+      "ridge_risk": 0.22412241933733784,
+      "sandwich": 0.22154258716972508,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.02838168153934662,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.09888005090518381,
+      "posterior": 0.09888005090518381,
+      "ridge_risk": 0.5449826989619377,
+      "sandwich": 0.07421405123931263,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.09888005090518381,
+      "regret_mean_mm2": -10.590213554292816,
+      "regret_variance_mm4": 80.98014319615221,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.2656581435126128,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -10.590213554292816,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.24610102468162812,
+      "posterior": 0.24610102468162812,
+      "ridge_risk": 0.22412241933733784,
+      "sandwich": 0.22154258716972508,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -26.74925171510665,
+    "horizon": 200,
+    "key": "24.pkl:50:200",
+    "posterior_uncalibrated": 2.1594849881838305e-14,
+    "probability": {
+      "constant_diagonal": 0.13453967311452467,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12963867650383,
+      "matched_distribution": 0.16650545244070863,
+      "posterior": 0.16650545244070863,
+      "ridge_risk": 0.23522939052522046,
+      "sandwich": 0.16769643309002702,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 7.62345535260461e-10,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.17128027681660898,
+      "matched_distribution": 0.017360011644248146,
+      "posterior": 0.017360011644248146,
+      "ridge_risk": 0.6038062283737025,
+      "sandwich": 0.019551745568800592,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.017360011644248146,
+      "regret_mean_mm2": -26.74925171510665,
+      "regret_variance_mm4": 172.69336655221937,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453967311452467,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -26.74925171510665,
+      "kernel_risk": 0.12963867650383,
+      "matched_distribution": 0.16650545244070863,
+      "posterior": 0.16650545244070863,
+      "ridge_risk": 0.23522939052522046,
+      "sandwich": 0.16769643309002702,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -19.287270223011646,
+    "horizon": 100,
+    "key": "24.pkl:150:100",
+    "posterior_uncalibrated": 1.5806562671027306e-13,
+    "probability": {
+      "constant_diagonal": 0.13454361956515512,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.16934655433700485,
+      "matched_distribution": 0.12700762294794826,
+      "posterior": 0.12700762294794826,
+      "ridge_risk": 0.20340903632913612,
+      "sandwich": 0.11271863170515546,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "raw": {
+      "constant_diagonal": 2.0121388510420615e-07,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.21626297577854672,
+      "matched_distribution": 0.004520421061191133,
+      "posterior": 0.004520421061191133,
+      "ridge_risk": 0.4273356401384083,
+      "sandwich": 0.0019356914363036085,
+      "trajectory_bootstrap": 0.3
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.004520421061191133,
+      "regret_mean_mm2": -19.287270223011646,
+      "regret_variance_mm4": 60.394568235786785,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13454361956515512,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -19.287270223011646,
+      "kernel_risk": 0.16934655433700485,
+      "matched_distribution": 0.12700762294794826,
+      "posterior": 0.12700762294794826,
+      "ridge_risk": 0.20340903632913612,
+      "sandwich": 0.11271863170515546,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -41.65924890517416,
+    "horizon": 25,
+    "key": "24.pkl:150:25",
+    "posterior_uncalibrated": 1.0871101703602849e-07,
+    "probability": {
+      "constant_diagonal": 0.13751711486409207,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.128352548497554,
+      "posterior": 0.128352548497554,
+      "ridge_risk": 0.19140913894195713,
+      "sandwich": 0.11431141458294006,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "raw": {
+      "constant_diagonal": 0.0001564777536709511,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.157439446366782,
+      "matched_distribution": 0.004793459657229373,
+      "posterior": 0.004793459657229373,
+      "ridge_risk": 0.35813148788927335,
+      "sandwich": 0.002165445632452938,
+      "trajectory_bootstrap": 0.3
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.004793459657229373,
+      "regret_mean_mm2": -41.65924890517416,
+      "regret_variance_mm4": 271.2054631136048,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13751711486409207,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -41.65924890517416,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.128352548497554,
+      "posterior": 0.128352548497554,
+      "ridge_risk": 0.19140913894195713,
+      "sandwich": 0.11431141458294006,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -20.014419450903397,
+    "horizon": 200,
+    "key": "24.pkl:150:200",
+    "posterior_uncalibrated": 2.7367513550116764e-19,
+    "probability": {
+      "constant_diagonal": 0.13453965925953834,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1446984433487586,
+      "matched_distribution": 0.13984055752914296,
+      "posterior": 0.13984055752914296,
+      "ridge_risk": 0.18897211030213054,
+      "sandwich": 0.1247477322254683,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 5.864301588226258e-11,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.18858131487889274,
+      "matched_distribution": 0.0075266456077164685,
+      "posterior": 0.0075266456077164685,
+      "ridge_risk": 0.34429065743944637,
+      "sandwich": 0.003969571601351618,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0075266456077164685,
+      "regret_mean_mm2": -20.014419450903397,
+      "regret_variance_mm4": 74.71901548604588,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965925953834,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -20.014419450903397,
+      "kernel_risk": 0.1446984433487586,
+      "matched_distribution": 0.13984055752914296,
+      "posterior": 0.13984055752914296,
+      "ridge_risk": 0.18897211030213054,
+      "sandwich": 0.1247477322254683,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -19.305293798834914,
+    "horizon": 100,
+    "key": "24.pkl:250:100",
+    "posterior_uncalibrated": 2.9954385639858446e-15,
+    "probability": {
+      "constant_diagonal": 0.13454049365362084,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.14037659671398497,
+      "posterior": 0.14037659671398497,
+      "ridge_risk": 0.1920154672662925,
+      "sandwich": 0.11939357189414626,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 4.243838474710883e-08,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.007673145013264062,
+      "posterior": 0.007673145013264062,
+      "ridge_risk": 0.3615916955017301,
+      "sandwich": 0.0029760114485318182,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.007673145013264062,
+      "regret_mean_mm2": -19.305293798834914,
+      "regret_variance_mm4": 70.16438741275884,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13454049365362084,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -19.305293798834914,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.14037659671398497,
+      "posterior": 0.14037659671398497,
+      "ridge_risk": 0.1920154672662925,
+      "sandwich": 0.11939357189414626,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -41.48383800327576,
+    "horizon": 25,
+    "key": "24.pkl:250:25",
+    "posterior_uncalibrated": 3.0998267611868986e-08,
+    "probability": {
+      "constant_diagonal": 0.13615234491179765,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1416646774612855,
+      "matched_distribution": 0.1828443292686577,
+      "posterior": 0.1828443292686577,
+      "ridge_risk": 0.1858942202714199,
+      "sandwich": 0.16012807899612466,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 8.343766539510397e-05,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.185121107266436,
+      "matched_distribution": 0.026590139162968675,
+      "posterior": 0.026590139162968675,
+      "ridge_risk": 0.32698961937716264,
+      "sandwich": 0.01554505094363184,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.026590139162968675,
+      "regret_mean_mm2": -41.48383800327576,
+      "regret_variance_mm4": 482.8138737603398,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13615234491179765,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -41.48383800327576,
+      "kernel_risk": 0.1416646774612855,
+      "matched_distribution": 0.1828443292686577,
+      "posterior": 0.1828443292686577,
+      "ridge_risk": 0.1858942202714199,
+      "sandwich": 0.16012807899612466,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -15.088591527689445,
+    "horizon": 200,
+    "key": "24.pkl:250:200",
+    "posterior_uncalibrated": 8.914571277219585e-20,
+    "probability": {
+      "constant_diagonal": 0.1345396596641594,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1446984433487586,
+      "matched_distribution": 0.1443276479935527,
+      "posterior": 0.1443276479935527,
+      "ridge_risk": 0.18651299552333167,
+      "sandwich": 0.1713318782261023,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 7.919394341325872e-11,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.18858131487889274,
+      "matched_distribution": 0.008810102525778851,
+      "posterior": 0.008810102525778851,
+      "ridge_risk": 0.3304498269896194,
+      "sandwich": 0.02172442284833445,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "24.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.008810102525778851,
+      "regret_mean_mm2": -15.088591527689445,
+      "regret_variance_mm4": 45.946891732604556,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396596641594,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -15.088591527689445,
+      "kernel_risk": 0.1446984433487586,
+      "matched_distribution": 0.1443276479935527,
+      "posterior": 0.1443276479935527,
+      "ridge_risk": 0.18651299552333167,
+      "sandwich": 0.1713318782261023,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -19.627879977906716,
+    "horizon": 100,
+    "key": "78.pkl:50:100",
+    "posterior_uncalibrated": 4.1787985297328907e-11,
+    "probability": {
+      "constant_diagonal": 0.13456532586227132,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.15217079170268558,
+      "posterior": 0.15217079170268558,
+      "ridge_risk": 0.2046034266712552,
+      "sandwich": 0.12850767105738425,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 1.304063199676217e-06,
+      "empirical_regret": 0.029411764705882353,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12975778546712802,
+      "matched_distribution": 0.011386526554941392,
+      "posterior": 0.011386526554941392,
+      "ridge_risk": 0.4342560553633218,
+      "sandwich": 0.0047621365086343796,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.011386526554941392,
+      "regret_mean_mm2": -19.627879977906716,
+      "regret_variance_mm4": 82.05385094802409,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13456532586227132,
+      "empirical_regret": 0.057317103110588435,
+      "expected_regret": -19.627879977906716,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.15217079170268558,
+      "posterior": 0.15217079170268558,
+      "ridge_risk": 0.2046034266712552,
+      "sandwich": 0.12850767105738425,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -14.673069463703534,
+    "horizon": 25,
+    "key": "78.pkl:50:25",
+    "posterior_uncalibrated": 0.00013421741628885927,
+    "probability": {
+      "constant_diagonal": 0.194599801064504,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.21753557826954686,
+      "posterior": 0.21753557826954686,
+      "ridge_risk": 0.21422371455907863,
+      "sandwich": 0.18091100168265054,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.0060355504960508755,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.16782006920415224,
+      "matched_distribution": 0.05766523213185827,
+      "posterior": 0.05766523213185827,
+      "ridge_risk": 0.48961937716262977,
+      "sandwich": 0.028309661207090702,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.05766523213185827,
+      "regret_mean_mm2": -14.673069463703534,
+      "regret_variance_mm4": 99.06581634321815,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.194599801064504,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -14.673069463703534,
+      "kernel_risk": 0.12665995705243124,
+      "matched_distribution": 0.21753557826954686,
+      "posterior": 0.21753557826954686,
+      "ridge_risk": 0.21422371455907863,
+      "sandwich": 0.18091100168265054,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -18.021155285505763,
+    "horizon": 200,
+    "key": "78.pkl:50:200",
+    "posterior_uncalibrated": 5.6317395346075e-18,
+    "probability": {
+      "constant_diagonal": 0.13453966195503164,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.1678405210657837,
+      "posterior": 0.1678405210657837,
+      "ridge_risk": 0.2040061605289987,
+      "sandwich": 0.15418468968185847,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 1.9554861357576173e-10,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.157439446366782,
+      "matched_distribution": 0.01801012193488649,
+      "posterior": 0.01801012193488649,
+      "ridge_risk": 0.43079584775086505,
+      "sandwich": 0.01284363562080194,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.01801012193488649,
+      "regret_mean_mm2": -18.021155285505763,
+      "regret_variance_mm4": 82.30034867457869,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453966195503164,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -18.021155285505763,
+      "kernel_risk": 0.11779223611896884,
+      "matched_distribution": 0.1678405210657837,
+      "posterior": 0.1678405210657837,
+      "ridge_risk": 0.2040061605289987,
+      "sandwich": 0.15418468968185847,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -11.231271615785882,
+    "horizon": 100,
+    "key": "78.pkl:150:100",
+    "posterior_uncalibrated": 2.543094918958548e-07,
+    "probability": {
+      "constant_diagonal": 0.13595902942030647,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.16856577217675967,
+      "posterior": 0.16856577217675967,
+      "ridge_risk": 0.20639662584136015,
+      "sandwich": 0.16698197919706068,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 7.327328195131366e-05,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12629757785467127,
+      "matched_distribution": 0.018370533938663145,
+      "posterior": 0.018370533938663145,
+      "ridge_risk": 0.444636678200692,
+      "sandwich": 0.019144391961122095,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.018370533938663145,
+      "regret_mean_mm2": -11.231271615785882,
+      "regret_variance_mm4": 34.294171455257526,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13595902942030647,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -11.231271615785882,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.16856577217675967,
+      "posterior": 0.16856577217675967,
+      "ridge_risk": 0.20639662584136015,
+      "sandwich": 0.16698197919706068,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -11.701546610360614,
+    "horizon": 25,
+    "key": "78.pkl:150:25",
+    "posterior_uncalibrated": 0.0020081254349154443,
+    "probability": {
+      "constant_diagonal": 0.24092738561600685,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.10613283247528837,
+      "matched_distribution": 0.2414789080459425,
+      "posterior": 0.2414789080459425,
+      "ridge_risk": 0.2185061591524813,
+      "sandwich": 0.21140741919907147,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.017746425433783304,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.14359861591695502,
+      "matched_distribution": 0.09108310527929364,
+      "posterior": 0.09108310527929364,
+      "ridge_risk": 0.513840830449827,
+      "sandwich": 0.05956066105091996,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.09108310527929364,
+      "regret_mean_mm2": -11.701546610360614,
+      "regret_variance_mm4": 90.64143188726554,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.24092738561600685,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -11.701546610360614,
+      "kernel_risk": 0.10613283247528837,
+      "matched_distribution": 0.2414789080459425,
+      "posterior": 0.2414789080459425,
+      "ridge_risk": 0.2185061591524813,
+      "sandwich": 0.21140741919907147,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -7.277456111870201,
+    "horizon": 200,
+    "key": "78.pkl:150:200",
+    "posterior_uncalibrated": 3.1089113673114415e-10,
+    "probability": {
+      "constant_diagonal": 0.13456931131193253,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.1947783761678698,
+      "posterior": 0.1947783761678698,
+      "ridge_risk": 0.2046034266712552,
+      "sandwich": 0.18230481376363894,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 1.5066147879414113e-06,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12975778546712802,
+      "matched_distribution": 0.035313924210932456,
+      "posterior": 0.035313924210932456,
+      "ridge_risk": 0.4342560553633218,
+      "sandwich": 0.029379741333152836,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.035313924210932456,
+      "regret_mean_mm2": -7.277456111870201,
+      "regret_variance_mm4": 20.963452601419064,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13456931131193253,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -7.277456111870201,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.1947783761678698,
+      "posterior": 0.1947783761678698,
+      "ridge_risk": 0.2046034266712552,
+      "sandwich": 0.18230481376363894,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -7.800283500698698,
+    "horizon": 100,
+    "key": "78.pkl:250:100",
+    "posterior_uncalibrated": 8.874237466777928e-08,
+    "probability": {
+      "constant_diagonal": 0.13860652910010213,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.10613283247528837,
+      "matched_distribution": 0.27268834656392854,
+      "posterior": 0.27268834656392854,
+      "ridge_risk": 0.19863048797836882,
+      "sandwich": 0.2746645601819844,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 0.0002164170710767449,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.14359861591695502,
+      "matched_distribution": 0.15310589408086345,
+      "posterior": 0.15310589408086345,
+      "ridge_risk": 0.39965397923875434,
+      "sandwich": 0.19627044675904642,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.15310589408086345,
+      "regret_mean_mm2": -7.800283500698698,
+      "regret_variance_mm4": 73.97237473970517,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13860652910010213,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -7.800283500698698,
+      "kernel_risk": 0.10613283247528837,
+      "matched_distribution": 0.27268834656392854,
+      "posterior": 0.27268834656392854,
+      "ridge_risk": 0.19863048797836882,
+      "sandwich": 0.2746645601819844,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -10.56946449375241,
+    "horizon": 25,
+    "key": "78.pkl:250:25",
+    "posterior_uncalibrated": 0.002586680083893353,
+    "probability": {
+      "constant_diagonal": 0.26948363335503916,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.26604308272189936,
+      "posterior": 0.26604308272189936,
+      "ridge_risk": 0.1901931034334123,
+      "sandwich": 0.2715594554854952,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 0.030389755439486865,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12629757785467127,
+      "matched_distribution": 0.1380100029647201,
+      "posterior": 0.1380100029647201,
+      "ridge_risk": 0.35121107266435986,
+      "sandwich": 0.1868761781812766,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.1380100029647201,
+      "regret_mean_mm2": -10.56946449375241,
+      "regret_variance_mm4": 112.80506534975625,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.26948363335503916,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -10.56946449375241,
+      "kernel_risk": 0.09183483019594585,
+      "matched_distribution": 0.26604308272189936,
+      "posterior": 0.26604308272189936,
+      "ridge_risk": 0.1901931034334123,
+      "sandwich": 0.2715594554854952,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -9.662174599181759,
+    "horizon": 200,
+    "key": "78.pkl:250:200",
+    "posterior_uncalibrated": 2.001164410433739e-18,
+    "probability": {
+      "constant_diagonal": 0.13453972124392133,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.2164815338204376,
+      "posterior": 0.2164815338204376,
+      "ridge_risk": 0.19140913894195713,
+      "sandwich": 0.23313601931582398,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 3.2068663049209225e-09,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.12975778546712802,
+      "matched_distribution": 0.0564430081306963,
+      "posterior": 0.0564430081306963,
+      "ridge_risk": 0.35813148788927335,
+      "sandwich": 0.09408625210698496,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "78.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0564430081306963,
+      "regret_mean_mm2": -9.662174599181759,
+      "regret_variance_mm4": 45.231323072880706,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453972124392133,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -9.662174599181759,
+      "kernel_risk": 0.09466906296434405,
+      "matched_distribution": 0.2164815338204376,
+      "posterior": 0.2164815338204376,
+      "ridge_risk": 0.19140913894195713,
+      "sandwich": 0.23313601931582398,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -43.701414339427316,
+    "horizon": 100,
+    "key": "124.pkl:50:100",
+    "posterior_uncalibrated": 7.0353374652627186e-34,
+    "probability": {
+      "constant_diagonal": 0.13453965810500296,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1914415078550486,
+      "matched_distribution": 0.09385770958754168,
+      "posterior": 0.09385770958754168,
+      "ridge_risk": 0.25841890918181437,
+      "sandwich": 0.0947367215248909,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 3.5271504555970964e-15,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.24048442906574394,
+      "matched_distribution": 0.00013875168018793587,
+      "posterior": 0.00013875168018793587,
+      "ridge_risk": 0.7110726643598616,
+      "sandwich": 8.384044713955003e-06,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.00013875168018793587,
+      "regret_mean_mm2": -43.701414339427316,
+      "regret_variance_mm4": 151.19166561476837,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965810500296,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -43.701414339427316,
+      "kernel_risk": 0.1914415078550486,
+      "matched_distribution": 0.09385770958754168,
+      "posterior": 0.09385770958754168,
+      "ridge_risk": 0.25841890918181437,
+      "sandwich": 0.0947367215248909,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -40.53926336189668,
+    "horizon": 25,
+    "key": "124.pkl:50:25",
+    "posterior_uncalibrated": 1.5562245010178112e-09,
+    "probability": {
+      "constant_diagonal": 0.1358996958701154,
+      "empirical_regret": 0.2379653319571203,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.1946365164169032,
+      "matched_distribution": 0.15836838460985142,
+      "posterior": 0.15836838460985142,
+      "ridge_risk": 0.26631938486630186,
+      "sandwich": 0.1241629925581438,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 7.016251938921818e-05,
+      "empirical_regret": 0.2647058823529412,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.24394463667820068,
+      "matched_distribution": 0.013753705907852446,
+      "posterior": 0.013753705907852446,
+      "ridge_risk": 0.7422145328719724,
+      "sandwich": 0.003853582513790287,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.013753705907852446,
+      "regret_mean_mm2": -40.53926336189668,
+      "regret_variance_mm4": 355.1399231759719,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1358996958701154,
+      "empirical_regret": 0.2379653319571203,
+      "expected_regret": -40.53926336189668,
+      "kernel_risk": 0.1946365164169032,
+      "matched_distribution": 0.15836838460985142,
+      "posterior": 0.15836838460985142,
+      "ridge_risk": 0.26631938486630186,
+      "sandwich": 0.1241629925581438,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 50,
+    "expected_score": -27.606189681474007,
+    "horizon": 200,
+    "key": "124.pkl:50:200",
+    "posterior_uncalibrated": 3.1671238420347976e-42,
+    "probability": {
+      "constant_diagonal": 0.13453965810493354,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.20105476945769749,
+      "matched_distribution": 0.10707228803146171,
+      "posterior": 0.10707228803146171,
+      "ridge_risk": 0.24076956969509603,
+      "sandwich": 0.09556603874370706,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 6.826399888100114e-19,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2508650519031142,
+      "matched_distribution": 0.0014173504442121726,
+      "posterior": 0.0014173504442121726,
+      "ridge_risk": 0.6314878892733564,
+      "sandwich": 7.415507397831726e-05,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.0014173504442121726,
+      "regret_mean_mm2": -27.606189681474007,
+      "regret_variance_mm4": 91.83270549350817,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13453965810493354,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -27.606189681474007,
+      "kernel_risk": 0.20105476945769749,
+      "matched_distribution": 0.10707228803146171,
+      "posterior": 0.10707228803146171,
+      "ridge_risk": 0.24076956969509603,
+      "sandwich": 0.09556603874370706,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -34.04745404930194,
+    "horizon": 100,
+    "key": "124.pkl:150:100",
+    "posterior_uncalibrated": 1.544689920084885e-14,
+    "probability": {
+      "constant_diagonal": 0.13454004937257072,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.24699566184274843,
+      "matched_distribution": 0.17209361076921245,
+      "posterior": 0.17209361076921245,
+      "ridge_risk": 0.13767551757261057,
+      "sandwich": 0.14716334550168153,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "raw": {
+      "constant_diagonal": 1.987278803599561e-08,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.29930795847750863,
+      "matched_distribution": 0.02019847953000713,
+      "posterior": 0.02019847953000713,
+      "ridge_risk": 0.10899653979238755,
+      "sandwich": 0.010100445410811442,
+      "trajectory_bootstrap": 0.5
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.02019847953000713,
+      "regret_mean_mm2": -34.04745404930194,
+      "regret_variance_mm4": 292.3791681572298,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13454004937257072,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -34.04745404930194,
+      "kernel_risk": 0.24699566184274843,
+      "matched_distribution": 0.17209361076921245,
+      "posterior": 0.17209361076921245,
+      "ridge_risk": 0.13767551757261057,
+      "sandwich": 0.14716334550168153,
+      "trajectory_bootstrap": 0.14539583437627737
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -85.29082434905301,
+    "horizon": 25,
+    "key": "124.pkl:150:25",
+    "posterior_uncalibrated": 8.731652451020199e-09,
+    "probability": {
+      "constant_diagonal": 0.13493805434688294,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.2336937468659521,
+      "matched_distribution": 0.17846998357398047,
+      "posterior": 0.17846998357398047,
+      "ridge_risk": 0.14763506408411584,
+      "sandwich": 0.16559041375051287,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "raw": {
+      "constant_diagonal": 2.032739079573681e-05,
+      "empirical_regret": 0.08823529411764706,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.28546712802768165,
+      "matched_distribution": 0.023833388844276118,
+      "posterior": 0.023833388844276118,
+      "ridge_risk": 0.14359861591695502,
+      "sandwich": 0.01836892557657619,
+      "trajectory_bootstrap": 0.3
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.023833388844276118,
+      "regret_mean_mm2": -85.29082434905301,
+      "regret_variance_mm4": 1898.6955986536204,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.13493805434688294,
+      "empirical_regret": 0.11488266694160955,
+      "expected_regret": -85.29082434905301,
+      "kernel_risk": 0.2336937468659521,
+      "matched_distribution": 0.17846998357398047,
+      "posterior": 0.17846998357398047,
+      "ridge_risk": 0.14763506408411584,
+      "sandwich": 0.16559041375051287,
+      "trajectory_bootstrap": 0.10416088075735039
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 150,
+    "expected_score": -23.058037425767616,
+    "horizon": 200,
+    "key": "124.pkl:150:200",
+    "posterior_uncalibrated": 2.5097563018327387e-20,
+    "probability": {
+      "constant_diagonal": 0.1345396585488974,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.23038980955626362,
+      "matched_distribution": 0.1552242298947539,
+      "posterior": 0.1552242298947539,
+      "ridge_risk": 0.11409482112102924,
+      "sandwich": 0.13329731150089918,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 2.2549170952349074e-11,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.2820069204152249,
+      "matched_distribution": 0.012514104716688724,
+      "posterior": 0.012514104716688724,
+      "ridge_risk": 0.050173010380622836,
+      "sandwich": 0.005896666469246275,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.012514104716688724,
+      "regret_mean_mm2": -23.058037425767616,
+      "regret_variance_mm4": 115.25226003831374,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396585488974,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -23.058037425767616,
+      "kernel_risk": 0.23038980955626362,
+      "matched_distribution": 0.1552242298947539,
+      "posterior": 0.1552242298947539,
+      "ridge_risk": 0.11409482112102924,
+      "sandwich": 0.13329731150089918,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -129.9928234251502,
+    "horizon": 100,
+    "key": "124.pkl:250:100",
+    "posterior_uncalibrated": 7.359568873530002e-44,
+    "probability": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.27741340548547144,
+      "matched_distribution": 0.09232031446297234,
+      "posterior": 0.09232031446297234,
+      "ridge_risk": 0.18465133745794593,
+      "sandwich": 0.09472566377040902,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 5.449854966210128e-23,
+      "empirical_regret": 0.20588235294117646,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.3304498269896194,
+      "matched_distribution": 2.1264072331547908e-05,
+      "posterior": 2.1264072331547908e-05,
+      "ridge_risk": 0.32006920415224915,
+      "sandwich": 7.5199834660904605e-06,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 2.1264072331547908e-05,
+      "regret_mean_mm2": -129.9928234251502,
+      "regret_variance_mm4": 1024.1141810415502,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.20034549827903628,
+      "expected_regret": -129.9928234251502,
+      "kernel_risk": 0.27741340548547144,
+      "matched_distribution": 0.09232031446297234,
+      "posterior": 0.09232031446297234,
+      "ridge_risk": 0.18465133745794593,
+      "sandwich": 0.09472566377040902,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -128.96057139114825,
+    "horizon": 25,
+    "key": "124.pkl:250:25",
+    "posterior_uncalibrated": 1.7926024287668154e-11,
+    "probability": {
+      "constant_diagonal": 0.1345585470949513,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.28426168019006554,
+      "matched_distribution": 0.1271716181848562,
+      "posterior": 0.1271716181848562,
+      "ridge_risk": 0.19382848440002137,
+      "sandwich": 0.12142334723159284,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "raw": {
+      "constant_diagonal": 9.5958997633977e-07,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.3373702422145329,
+      "matched_distribution": 0.004553226988451982,
+      "posterior": 0.004553226988451982,
+      "ridge_risk": 0.3719723183391003,
+      "sandwich": 0.003334927957913894,
+      "trajectory_bootstrap": 0.7
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 0.004553226988451982,
+      "regret_mean_mm2": -128.96057139114825,
+      "regret_variance_mm4": 2483.1189054353426,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345585470949513,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -128.96057139114825,
+      "kernel_risk": 0.28426168019006554,
+      "matched_distribution": 0.1271716181848562,
+      "posterior": 0.1271716181848562,
+      "ridge_risk": 0.19382848440002137,
+      "sandwich": 0.12142334723159284,
+      "trajectory_bootstrap": 0.19932271895393952
+    },
+    "valid": true
+  },
+  {
+    "endpoint": 250,
+    "expected_score": -186.776663226816,
+    "horizon": 200,
+    "key": "124.pkl:250:200",
+    "posterior_uncalibrated": 3.4823311083531114e-109,
+    "probability": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": 0.1501678988311622,
+      "kernel_risk": 0.27400115477594456,
+      "matched_distribution": 0.09203697834404197,
+      "posterior": 0.09203697834404197,
+      "ridge_risk": 0.1895832610576525,
+      "sandwich": 0.09463948020401261,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "raw": {
+      "constant_diagonal": 2.5679904866184654e-60,
+      "empirical_regret": 0.14705882352941177,
+      "expected_regret": 0.0,
+      "kernel_risk": 0.32698961937716264,
+      "matched_distribution": 2.445224892243778e-07,
+      "posterior": 2.445224892243778e-07,
+      "ridge_risk": 0.3477508650519031,
+      "sandwich": 7.970755070534845e-07,
+      "trajectory_bootstrap": 0.9
+    },
+    "recording": "124.pkl",
+    "risk": {
+      "failure": null,
+      "harm_probability": 2.445224892243778e-07,
+      "regret_mean_mm2": -186.776663226816,
+      "regret_variance_mm4": 1393.318088184844,
+      "valid": true
+    },
+    "score": {
+      "constant_diagonal": 0.1345396581049335,
+      "empirical_regret": 0.16013759543108613,
+      "expected_regret": -186.776663226816,
+      "kernel_risk": 0.27400115477594456,
+      "matched_distribution": 0.09203697834404197,
+      "posterior": 0.09203697834404197,
+      "ridge_risk": 0.1895832610576525,
+      "sandwich": 0.09463948020401261,
+      "trajectory_bootstrap": 0.31278640381786443
+    },
+    "valid": true
+  }
+]
