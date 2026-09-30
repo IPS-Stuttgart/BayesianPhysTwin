@@ -186,3 +186,14 @@ the recorded command. A1 checks boundary dimensions and retains checksum-bound
 inputs unchanged. world_forecast still enforces exact native clamp parity for
 every B/C pair. No data, forecast, covariance, fold, selector or gate is altered.
 The failed preflight is retained; A1 is frozen before the first source fit.
+
+## Pre-Outcome Numerical Optimization A2
+
+A1 was interrupted during the initial training-only GP cross-fit, before any
+held-fold pair, risk or selection artifact existed. Inspection identified
+unoptimized four-index covariance contractions. A2 changes only contraction
+order to optimized matrix multiplication in the sandwich coefficient covariance
+and its temporal readout. GP means, parameters, partitions and all gates are
+unchanged. A synthetic contraction-parity regression is required before restart;
+the interrupted training-only attempt remains retained. This is not outcome-
+based selection or a retry of a completed source gate.

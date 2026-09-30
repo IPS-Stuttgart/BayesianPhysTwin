@@ -237,7 +237,9 @@ def fit_gp(
     variance = np.mean(error * error, axis=0)
     scores = np.stack([design[groups == g].T @ error[groups == g] for g in unique])
     meat = np.einsum("gpc,gqc->cpq", scores, scores) * len(unique) / (len(unique) - 1)
-    robust_covariance = np.einsum("ip,cpq,qj->cij", inverse, meat, inverse)
+    robust_covariance = np.einsum(
+        "ip,cpq,qj->cij", inverse, meat, inverse, optimize=True
+    )
     model.weights = weights
     model.precision_inverse = (inverse + inverse.T) / 2
     model.residual_variance = variance

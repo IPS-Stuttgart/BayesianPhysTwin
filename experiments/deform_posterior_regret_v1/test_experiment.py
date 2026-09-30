@@ -277,3 +277,19 @@ def test_same_candidate_arrays_across_selectors():
     for operator in (full, raw, TemporalBlocks(full.blocks.copy())):
         assert forecast_risk(b, c, c, operator).valid
         assert b.tobytes() == b_bytes and c.tobytes() == c_bytes
+
+
+def test_optimized_covariance_contractions_match_original_algebra():
+    rng = np.random.default_rng(7)
+    d = rng.normal(size=(13, 9))
+    scores = rng.normal(size=(4, 9, 3))
+    inverse = np.linalg.inv(d.T @ d + np.eye(9))
+    meat = np.einsum("gpc,gqc->cpq", scores, scores)
+    original = np.einsum("ip,cpq,qj->cij", inverse, meat, inverse)
+    optimized = np.einsum("ip,cpq,qj->cij", inverse, meat, inverse, optimize=True)
+    np.testing.assert_allclose(optimized, original, rtol=1e-12, atol=1e-12)
+    original_readout = np.einsum("tp,cpq,sq->cts", d, original, d)
+    optimized_readout = np.einsum("tp,cpq,sq->cts", d, optimized, d, optimize=True)
+    np.testing.assert_allclose(
+        optimized_readout, original_readout, rtol=1e-11, atol=1e-12
+    )

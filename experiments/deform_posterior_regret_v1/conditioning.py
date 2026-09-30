@@ -47,7 +47,7 @@ def covariance_shapes(models, features, indices, robust=False):
         d = model.design(features[indices, j])
         if robust:
             cov = SHRINKAGE**2 * np.einsum(
-                "tp,cpq,sq->cts", d, model.cluster_covariance, d
+                "tp,cpq,sq->cts", d, model.cluster_covariance, d, optimize=True
             )
         else:
             shape = SHRINKAGE**2 * d @ model.precision_inverse @ d.T
