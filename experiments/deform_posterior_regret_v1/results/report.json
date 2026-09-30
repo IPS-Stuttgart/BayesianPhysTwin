@@ -1,0 +1,1634 @@
+{
+  "cache_manifest_sha256": "ff24ae708753febd0282c77c3f310a7ead21e981f2dd8464ee35ed0bb8d8c2dc",
+  "comparators_by_horizon": {
+    "100": {
+      "constant_diagonal": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.14958345896520645,
+        "deployed_rmse_mm": 19.12397046264462,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.18306926402801127
+      },
+      "empirical_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15712081540974274,
+        "deployed_rmse_mm": 19.25558786363769,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.16138606363519858
+      },
+      "expected_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15080063643728656,
+        "deployed_rmse_mm": 18.471421855111608,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.18333333333333332
+      },
+      "kernel_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15054830085998427,
+        "deployed_rmse_mm": 19.155361055825967,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.14915071259523552
+      },
+      "matched_distribution": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.147964950670094,
+        "deployed_rmse_mm": 18.430898260970405,
+        "fallback_count": 60,
+        "harmful_accepted": 8,
+        "raw_brier": 0.17261769008239086
+      },
+      "posterior": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.147964950670094,
+        "deployed_rmse_mm": 18.430898260970405,
+        "fallback_count": 60,
+        "harmful_accepted": 8,
+        "raw_brier": 0.17261769008239086
+      },
+      "ridge_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16126755734884693,
+        "deployed_rmse_mm": 18.833696063486773,
+        "fallback_count": 60,
+        "harmful_accepted": 14,
+        "raw_brier": 0.21604347010532282
+      },
+      "sandwich": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.14885877391606897,
+        "deployed_rmse_mm": 18.480779597994772,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.17294262072908034
+      },
+      "trajectory_bootstrap": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15164638467414002,
+        "deployed_rmse_mm": 19.11303038648482,
+        "fallback_count": 60,
+        "harmful_accepted": 10,
+        "raw_brier": 0.4066666666666666
+      }
+    },
+    "200": {
+      "constant_diagonal": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16245514264064978,
+        "deployed_rmse_mm": 20.704991245439697,
+        "fallback_count": 60,
+        "harmful_accepted": 11,
+        "raw_brier": 0.1999863784005599
+      },
+      "empirical_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16308094775112386,
+        "deployed_rmse_mm": 20.418051206219896,
+        "fallback_count": 60,
+        "harmful_accepted": 10,
+        "raw_brier": 0.16550685633730616
+      },
+      "expected_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.1618530454976342,
+        "deployed_rmse_mm": 19.818341216326292,
+        "fallback_count": 60,
+        "harmful_accepted": 11,
+        "raw_brier": 0.2
+      },
+      "kernel_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16121616188572954,
+        "deployed_rmse_mm": 20.73270134481455,
+        "fallback_count": 60,
+        "harmful_accepted": 11,
+        "raw_brier": 0.1604452772356653
+      },
+      "matched_distribution": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16205669813371582,
+        "deployed_rmse_mm": 19.889619470171553,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.19102648249596108
+      },
+      "posterior": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16205669813371582,
+        "deployed_rmse_mm": 19.889619470171553,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.19102648249596108
+      },
+      "ridge_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.17043574511339418,
+        "deployed_rmse_mm": 20.14985911889607,
+        "fallback_count": 60,
+        "harmful_accepted": 15,
+        "raw_brier": 0.21609475461261238
+      },
+      "sandwich": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16384265193489184,
+        "deployed_rmse_mm": 19.94411203731519,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.19274033119305364
+      },
+      "trajectory_bootstrap": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.1593615507719323,
+        "deployed_rmse_mm": 20.667968228742588,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.4126666666666667
+      }
+    },
+    "25": {
+      "constant_diagonal": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.18806184121924552,
+        "deployed_rmse_mm": 19.373188229102322,
+        "fallback_count": 60,
+        "harmful_accepted": 16,
+        "raw_brier": 0.222593826447658
+      },
+      "empirical_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.18251215123257838,
+        "deployed_rmse_mm": 19.10048436947791,
+        "fallback_count": 60,
+        "harmful_accepted": 18,
+        "raw_brier": 0.18508472583653457
+      },
+      "expected_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.17917859761200208,
+        "deployed_rmse_mm": 19.318858131090234,
+        "fallback_count": 60,
+        "harmful_accepted": 14,
+        "raw_brier": 0.225
+      },
+      "kernel_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.17367693298435433,
+        "deployed_rmse_mm": 18.64859593578615,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.1680786867973324
+      },
+      "matched_distribution": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.18722016151548376,
+        "deployed_rmse_mm": 19.461944738345856,
+        "fallback_count": 60,
+        "harmful_accepted": 17,
+        "raw_brier": 0.2124416775127328
+      },
+      "posterior": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.18722016151548376,
+        "deployed_rmse_mm": 19.461944738345856,
+        "fallback_count": 60,
+        "harmful_accepted": 17,
+        "raw_brier": 0.2124416775127328
+      },
+      "ridge_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.17737275698083044,
+        "deployed_rmse_mm": 19.528984088007828,
+        "fallback_count": 60,
+        "harmful_accepted": 10,
+        "raw_brier": 0.20958860645825603
+      },
+      "sandwich": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.18924278799437347,
+        "deployed_rmse_mm": 19.484235269810924,
+        "fallback_count": 60,
+        "harmful_accepted": 16,
+        "raw_brier": 0.216430072731095
+      },
+      "trajectory_bootstrap": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.1652306481967584,
+        "deployed_rmse_mm": 18.73124940925243,
+        "fallback_count": 60,
+        "harmful_accepted": 8,
+        "raw_brier": 0.3406666666666666
+      }
+    }
+  },
+  "contexts": 360,
+  "contract": "deform-posterior-regret-source-result-v1",
+  "elapsed_seconds": 886.8049504184164,
+  "fit_cache_sha256": "b99f34a577f8616c4873df846866a01edd44dc9afd37cda68eeee3330a18cfa8",
+  "held_v8_accessed": false,
+  "historical_validation_read": false,
+  "implementation_controls": {
+    "all_selectors_same_forecasts": true,
+    "clamped_nodes_exact": true,
+    "fallback_bit_exact": true,
+    "matched_distribution_exact": true
+  },
+  "official_evaluation_read": false,
+  "replication_gate": {
+    "status": "not_run"
+  },
+  "risk_coverage_curves": {
+    "100": {
+      "0.1": {
+        "constant_diagonal": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.14958345896520645,
+          "deployed_rmse_mm": 19.641718016724848,
+          "fallback_count": 108,
+          "harmful_accepted": 1,
+          "raw_brier": 0.18306926402801127
+        },
+        "empirical_regret": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.15712081540974274,
+          "deployed_rmse_mm": 19.711251702746434,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.16138606363519858
+        },
+        "expected_regret": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.15080063643728656,
+          "deployed_rmse_mm": 19.143418016474445,
+          "fallback_count": 108,
+          "harmful_accepted": 4,
+          "raw_brier": 0.18333333333333332
+        },
+        "kernel_risk": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.15054830085998427,
+          "deployed_rmse_mm": 19.635931506980054,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.14915071259523552
+        },
+        "matched_distribution": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 19.59664375656277,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.17261769008239086
+        },
+        "posterior": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 19.59664375656277,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.17261769008239086
+        },
+        "ridge_risk": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16126755734884693,
+          "deployed_rmse_mm": 19.44662009081556,
+          "fallback_count": 108,
+          "harmful_accepted": 5,
+          "raw_brier": 0.21604347010532282
+        },
+        "sandwich": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.14885877391606897,
+          "deployed_rmse_mm": 19.651616919774213,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.17294262072908034
+        },
+        "trajectory_bootstrap": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.15164638467414002,
+          "deployed_rmse_mm": 19.690885803433734,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.4066666666666666
+        }
+      },
+      "0.25": {
+        "constant_diagonal": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.14958345896520645,
+          "deployed_rmse_mm": 19.44344039887458,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.18306926402801127
+        },
+        "empirical_regret": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.15712081540974274,
+          "deployed_rmse_mm": 19.56511077103399,
+          "fallback_count": 90,
+          "harmful_accepted": 8,
+          "raw_brier": 0.16138606363519858
+        },
+        "expected_regret": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.15080063643728656,
+          "deployed_rmse_mm": 18.792131626916465,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.18333333333333332
+        },
+        "kernel_risk": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.15054830085998427,
+          "deployed_rmse_mm": 19.492242549931962,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.14915071259523552
+        },
+        "matched_distribution": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.920518966916937,
+          "fallback_count": 90,
+          "harmful_accepted": 2,
+          "raw_brier": 0.17261769008239086
+        },
+        "posterior": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.920518966916937,
+          "fallback_count": 90,
+          "harmful_accepted": 2,
+          "raw_brier": 0.17261769008239086
+        },
+        "ridge_risk": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16126755734884693,
+          "deployed_rmse_mm": 19.179099316523672,
+          "fallback_count": 90,
+          "harmful_accepted": 8,
+          "raw_brier": 0.21604347010532282
+        },
+        "sandwich": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.14885877391606897,
+          "deployed_rmse_mm": 19.000596134367402,
+          "fallback_count": 90,
+          "harmful_accepted": 4,
+          "raw_brier": 0.17294262072908034
+        },
+        "trajectory_bootstrap": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.15164638467414002,
+          "deployed_rmse_mm": 19.523170936206743,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.4066666666666666
+        }
+      },
+      "0.5": {
+        "constant_diagonal": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.14958345896520645,
+          "deployed_rmse_mm": 19.12397046264462,
+          "fallback_count": 60,
+          "harmful_accepted": 9,
+          "raw_brier": 0.18306926402801127
+        },
+        "empirical_regret": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.15712081540974274,
+          "deployed_rmse_mm": 19.25558786363769,
+          "fallback_count": 60,
+          "harmful_accepted": 12,
+          "raw_brier": 0.16138606363519858
+        },
+        "expected_regret": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.15080063643728656,
+          "deployed_rmse_mm": 18.471421855111608,
+          "fallback_count": 60,
+          "harmful_accepted": 12,
+          "raw_brier": 0.18333333333333332
+        },
+        "kernel_risk": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.15054830085998427,
+          "deployed_rmse_mm": 19.155361055825967,
+          "fallback_count": 60,
+          "harmful_accepted": 9,
+          "raw_brier": 0.14915071259523552
+        },
+        "matched_distribution": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.430898260970405,
+          "fallback_count": 60,
+          "harmful_accepted": 8,
+          "raw_brier": 0.17261769008239086
+        },
+        "posterior": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.430898260970405,
+          "fallback_count": 60,
+          "harmful_accepted": 8,
+          "raw_brier": 0.17261769008239086
+        },
+        "ridge_risk": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16126755734884693,
+          "deployed_rmse_mm": 18.833696063486773,
+          "fallback_count": 60,
+          "harmful_accepted": 14,
+          "raw_brier": 0.21604347010532282
+        },
+        "sandwich": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.14885877391606897,
+          "deployed_rmse_mm": 18.480779597994772,
+          "fallback_count": 60,
+          "harmful_accepted": 9,
+          "raw_brier": 0.17294262072908034
+        },
+        "trajectory_bootstrap": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.15164638467414002,
+          "deployed_rmse_mm": 19.11303038648482,
+          "fallback_count": 60,
+          "harmful_accepted": 10,
+          "raw_brier": 0.4066666666666666
+        }
+      },
+      "0.75": {
+        "constant_diagonal": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.14958345896520645,
+          "deployed_rmse_mm": 18.42800858897951,
+          "fallback_count": 30,
+          "harmful_accepted": 12,
+          "raw_brier": 0.18306926402801127
+        },
+        "empirical_regret": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.15712081540974274,
+          "deployed_rmse_mm": 18.661226559207453,
+          "fallback_count": 30,
+          "harmful_accepted": 20,
+          "raw_brier": 0.16138606363519858
+        },
+        "expected_regret": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.15080063643728656,
+          "deployed_rmse_mm": 18.186605296040714,
+          "fallback_count": 30,
+          "harmful_accepted": 16,
+          "raw_brier": 0.18333333333333332
+        },
+        "kernel_risk": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.15054830085998427,
+          "deployed_rmse_mm": 18.86201327977861,
+          "fallback_count": 30,
+          "harmful_accepted": 15,
+          "raw_brier": 0.14915071259523552
+        },
+        "matched_distribution": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.22292786153667,
+          "fallback_count": 30,
+          "harmful_accepted": 15,
+          "raw_brier": 0.17261769008239086
+        },
+        "posterior": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.22292786153667,
+          "fallback_count": 30,
+          "harmful_accepted": 15,
+          "raw_brier": 0.17261769008239086
+        },
+        "ridge_risk": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16126755734884693,
+          "deployed_rmse_mm": 18.562788102594112,
+          "fallback_count": 30,
+          "harmful_accepted": 16,
+          "raw_brier": 0.21604347010532282
+        },
+        "sandwich": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.14885877391606897,
+          "deployed_rmse_mm": 18.258295618277838,
+          "fallback_count": 30,
+          "harmful_accepted": 15,
+          "raw_brier": 0.17294262072908034
+        },
+        "trajectory_bootstrap": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.15164638467414002,
+          "deployed_rmse_mm": 18.4297304042353,
+          "fallback_count": 30,
+          "harmful_accepted": 16,
+          "raw_brier": 0.4066666666666666
+        }
+      },
+      "1.0": {
+        "constant_diagonal": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.14958345896520645,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.18306926402801127
+        },
+        "empirical_regret": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.15712081540974274,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.16138606363519858
+        },
+        "expected_regret": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.15080063643728656,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.18333333333333332
+        },
+        "kernel_risk": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.15054830085998427,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.14915071259523552
+        },
+        "matched_distribution": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.17261769008239086
+        },
+        "posterior": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.147964950670094,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.17261769008239086
+        },
+        "ridge_risk": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16126755734884693,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.21604347010532282
+        },
+        "sandwich": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.14885877391606897,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.17294262072908034
+        },
+        "trajectory_bootstrap": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.15164638467414002,
+          "deployed_rmse_mm": 18.038659328348064,
+          "fallback_count": 0,
+          "harmful_accepted": 22,
+          "raw_brier": 0.4066666666666666
+        }
+      }
+    },
+    "200": {
+      "0.1": {
+        "constant_diagonal": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16245514264064978,
+          "deployed_rmse_mm": 21.089884086138795,
+          "fallback_count": 108,
+          "harmful_accepted": 1,
+          "raw_brier": 0.1999863784005599
+        },
+        "empirical_regret": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16308094775112386,
+          "deployed_rmse_mm": 21.085989798411234,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.16550685633730616
+        },
+        "expected_regret": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.1618530454976342,
+          "deployed_rmse_mm": 20.40406477389176,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.2
+        },
+        "kernel_risk": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16121616188572954,
+          "deployed_rmse_mm": 21.101935694857723,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.1604452772356653
+        },
+        "matched_distribution": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 20.925849313776443,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.19102648249596108
+        },
+        "posterior": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 20.925849313776443,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.19102648249596108
+        },
+        "ridge_risk": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.17043574511339418,
+          "deployed_rmse_mm": 20.62713808370935,
+          "fallback_count": 108,
+          "harmful_accepted": 5,
+          "raw_brier": 0.21609475461261238
+        },
+        "sandwich": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.16384265193489184,
+          "deployed_rmse_mm": 21.09542100646518,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.19274033119305364
+        },
+        "trajectory_bootstrap": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.1593615507719323,
+          "deployed_rmse_mm": 21.155787710501325,
+          "fallback_count": 108,
+          "harmful_accepted": 5,
+          "raw_brier": 0.4126666666666667
+        }
+      },
+      "0.25": {
+        "constant_diagonal": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16245514264064978,
+          "deployed_rmse_mm": 20.934192078217738,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.1999863784005599
+        },
+        "empirical_regret": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16308094775112386,
+          "deployed_rmse_mm": 20.69388832776448,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.16550685633730616
+        },
+        "expected_regret": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.1618530454976342,
+          "deployed_rmse_mm": 20.114664896349836,
+          "fallback_count": 90,
+          "harmful_accepted": 7,
+          "raw_brier": 0.2
+        },
+        "kernel_risk": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16121616188572954,
+          "deployed_rmse_mm": 20.948906785506555,
+          "fallback_count": 90,
+          "harmful_accepted": 5,
+          "raw_brier": 0.1604452772356653
+        },
+        "matched_distribution": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 20.01239568794179,
+          "fallback_count": 90,
+          "harmful_accepted": 3,
+          "raw_brier": 0.19102648249596108
+        },
+        "posterior": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 20.01239568794179,
+          "fallback_count": 90,
+          "harmful_accepted": 3,
+          "raw_brier": 0.19102648249596108
+        },
+        "ridge_risk": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.17043574511339418,
+          "deployed_rmse_mm": 20.36773581807895,
+          "fallback_count": 90,
+          "harmful_accepted": 7,
+          "raw_brier": 0.21609475461261238
+        },
+        "sandwich": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.16384265193489184,
+          "deployed_rmse_mm": 20.145682041937135,
+          "fallback_count": 90,
+          "harmful_accepted": 5,
+          "raw_brier": 0.19274033119305364
+        },
+        "trajectory_bootstrap": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.1593615507719323,
+          "deployed_rmse_mm": 21.014103475337524,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.4126666666666667
+        }
+      },
+      "0.5": {
+        "constant_diagonal": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16245514264064978,
+          "deployed_rmse_mm": 20.704991245439697,
+          "fallback_count": 60,
+          "harmful_accepted": 11,
+          "raw_brier": 0.1999863784005599
+        },
+        "empirical_regret": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16308094775112386,
+          "deployed_rmse_mm": 20.418051206219896,
+          "fallback_count": 60,
+          "harmful_accepted": 10,
+          "raw_brier": 0.16550685633730616
+        },
+        "expected_regret": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.1618530454976342,
+          "deployed_rmse_mm": 19.818341216326292,
+          "fallback_count": 60,
+          "harmful_accepted": 11,
+          "raw_brier": 0.2
+        },
+        "kernel_risk": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16121616188572954,
+          "deployed_rmse_mm": 20.73270134481455,
+          "fallback_count": 60,
+          "harmful_accepted": 11,
+          "raw_brier": 0.1604452772356653
+        },
+        "matched_distribution": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 19.889619470171553,
+          "fallback_count": 60,
+          "harmful_accepted": 12,
+          "raw_brier": 0.19102648249596108
+        },
+        "posterior": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 19.889619470171553,
+          "fallback_count": 60,
+          "harmful_accepted": 12,
+          "raw_brier": 0.19102648249596108
+        },
+        "ridge_risk": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.17043574511339418,
+          "deployed_rmse_mm": 20.14985911889607,
+          "fallback_count": 60,
+          "harmful_accepted": 15,
+          "raw_brier": 0.21609475461261238
+        },
+        "sandwich": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.16384265193489184,
+          "deployed_rmse_mm": 19.94411203731519,
+          "fallback_count": 60,
+          "harmful_accepted": 12,
+          "raw_brier": 0.19274033119305364
+        },
+        "trajectory_bootstrap": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.1593615507719323,
+          "deployed_rmse_mm": 20.667968228742588,
+          "fallback_count": 60,
+          "harmful_accepted": 9,
+          "raw_brier": 0.4126666666666667
+        }
+      },
+      "0.75": {
+        "constant_diagonal": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16245514264064978,
+          "deployed_rmse_mm": 20.11649431721151,
+          "fallback_count": 30,
+          "harmful_accepted": 13,
+          "raw_brier": 0.1999863784005599
+        },
+        "empirical_regret": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16308094775112386,
+          "deployed_rmse_mm": 20.256287092198995,
+          "fallback_count": 30,
+          "harmful_accepted": 18,
+          "raw_brier": 0.16550685633730616
+        },
+        "expected_regret": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.1618530454976342,
+          "deployed_rmse_mm": 19.67247360924198,
+          "fallback_count": 30,
+          "harmful_accepted": 20,
+          "raw_brier": 0.2
+        },
+        "kernel_risk": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16121616188572954,
+          "deployed_rmse_mm": 20.4548028525211,
+          "fallback_count": 30,
+          "harmful_accepted": 16,
+          "raw_brier": 0.1604452772356653
+        },
+        "matched_distribution": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 19.677336948620948,
+          "fallback_count": 30,
+          "harmful_accepted": 17,
+          "raw_brier": 0.19102648249596108
+        },
+        "posterior": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 19.677336948620948,
+          "fallback_count": 30,
+          "harmful_accepted": 17,
+          "raw_brier": 0.19102648249596108
+        },
+        "ridge_risk": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.17043574511339418,
+          "deployed_rmse_mm": 19.91118811517456,
+          "fallback_count": 30,
+          "harmful_accepted": 17,
+          "raw_brier": 0.21609475461261238
+        },
+        "sandwich": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.16384265193489184,
+          "deployed_rmse_mm": 19.710668850160328,
+          "fallback_count": 30,
+          "harmful_accepted": 18,
+          "raw_brier": 0.19274033119305364
+        },
+        "trajectory_bootstrap": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.1593615507719323,
+          "deployed_rmse_mm": 20.209533777981893,
+          "fallback_count": 30,
+          "harmful_accepted": 16,
+          "raw_brier": 0.4126666666666667
+        }
+      },
+      "1.0": {
+        "constant_diagonal": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16245514264064978,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.1999863784005599
+        },
+        "empirical_regret": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16308094775112386,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.16550685633730616
+        },
+        "expected_regret": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.1618530454976342,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.2
+        },
+        "kernel_risk": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16121616188572954,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.1604452772356653
+        },
+        "matched_distribution": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.19102648249596108
+        },
+        "posterior": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16205669813371582,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.19102648249596108
+        },
+        "ridge_risk": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.17043574511339418,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.21609475461261238
+        },
+        "sandwich": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.16384265193489184,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.19274033119305364
+        },
+        "trajectory_bootstrap": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.1593615507719323,
+          "deployed_rmse_mm": 19.549423296801063,
+          "fallback_count": 0,
+          "harmful_accepted": 24,
+          "raw_brier": 0.4126666666666667
+        }
+      }
+    },
+    "25": {
+      "0.1": {
+        "constant_diagonal": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.18806184121924552,
+          "deployed_rmse_mm": 19.43233821017384,
+          "fallback_count": 108,
+          "harmful_accepted": 5,
+          "raw_brier": 0.222593826447658
+        },
+        "empirical_regret": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.18251215123257838,
+          "deployed_rmse_mm": 19.345154652804865,
+          "fallback_count": 108,
+          "harmful_accepted": 4,
+          "raw_brier": 0.18508472583653457
+        },
+        "expected_regret": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.17917859761200208,
+          "deployed_rmse_mm": 20.0461884285211,
+          "fallback_count": 108,
+          "harmful_accepted": 4,
+          "raw_brier": 0.225
+        },
+        "kernel_risk": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.17367693298435433,
+          "deployed_rmse_mm": 19.377999074774205,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.1680786867973324
+        },
+        "matched_distribution": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 20.13111162177965,
+          "fallback_count": 108,
+          "harmful_accepted": 4,
+          "raw_brier": 0.2124416775127328
+        },
+        "posterior": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 20.13111162177965,
+          "fallback_count": 108,
+          "harmful_accepted": 4,
+          "raw_brier": 0.2124416775127328
+        },
+        "ridge_risk": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.17737275698083044,
+          "deployed_rmse_mm": 20.08090031838593,
+          "fallback_count": 108,
+          "harmful_accepted": 3,
+          "raw_brier": 0.20958860645825603
+        },
+        "sandwich": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.18924278799437347,
+          "deployed_rmse_mm": 20.288739721562376,
+          "fallback_count": 108,
+          "harmful_accepted": 4,
+          "raw_brier": 0.216430072731095
+        },
+        "trajectory_bootstrap": {
+          "accepted": 12,
+          "actual_acceptance": 0.1,
+          "brier": 0.1652306481967584,
+          "deployed_rmse_mm": 19.22312959624282,
+          "fallback_count": 108,
+          "harmful_accepted": 2,
+          "raw_brier": 0.3406666666666666
+        }
+      },
+      "0.25": {
+        "constant_diagonal": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.18806184121924552,
+          "deployed_rmse_mm": 20.069544463679996,
+          "fallback_count": 90,
+          "harmful_accepted": 10,
+          "raw_brier": 0.222593826447658
+        },
+        "empirical_regret": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.18251215123257838,
+          "deployed_rmse_mm": 19.258487763769168,
+          "fallback_count": 90,
+          "harmful_accepted": 7,
+          "raw_brier": 0.18508472583653457
+        },
+        "expected_regret": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.17917859761200208,
+          "deployed_rmse_mm": 19.78560341243604,
+          "fallback_count": 90,
+          "harmful_accepted": 9,
+          "raw_brier": 0.225
+        },
+        "kernel_risk": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.17367693298435433,
+          "deployed_rmse_mm": 19.197356529064862,
+          "fallback_count": 90,
+          "harmful_accepted": 6,
+          "raw_brier": 0.1680786867973324
+        },
+        "matched_distribution": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 19.781331632032582,
+          "fallback_count": 90,
+          "harmful_accepted": 9,
+          "raw_brier": 0.2124416775127328
+        },
+        "posterior": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 19.781331632032582,
+          "fallback_count": 90,
+          "harmful_accepted": 9,
+          "raw_brier": 0.2124416775127328
+        },
+        "ridge_risk": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.17737275698083044,
+          "deployed_rmse_mm": 19.806681581126067,
+          "fallback_count": 90,
+          "harmful_accepted": 5,
+          "raw_brier": 0.20958860645825603
+        },
+        "sandwich": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.18924278799437347,
+          "deployed_rmse_mm": 19.805156418803325,
+          "fallback_count": 90,
+          "harmful_accepted": 9,
+          "raw_brier": 0.216430072731095
+        },
+        "trajectory_bootstrap": {
+          "accepted": 30,
+          "actual_acceptance": 0.25,
+          "brier": 0.1652306481967584,
+          "deployed_rmse_mm": 19.08633537431864,
+          "fallback_count": 90,
+          "harmful_accepted": 4,
+          "raw_brier": 0.3406666666666666
+        }
+      },
+      "0.5": {
+        "constant_diagonal": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.18806184121924552,
+          "deployed_rmse_mm": 19.373188229102322,
+          "fallback_count": 60,
+          "harmful_accepted": 16,
+          "raw_brier": 0.222593826447658
+        },
+        "empirical_regret": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.18251215123257838,
+          "deployed_rmse_mm": 19.10048436947791,
+          "fallback_count": 60,
+          "harmful_accepted": 18,
+          "raw_brier": 0.18508472583653457
+        },
+        "expected_regret": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.17917859761200208,
+          "deployed_rmse_mm": 19.318858131090234,
+          "fallback_count": 60,
+          "harmful_accepted": 14,
+          "raw_brier": 0.225
+        },
+        "kernel_risk": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.17367693298435433,
+          "deployed_rmse_mm": 18.64859593578615,
+          "fallback_count": 60,
+          "harmful_accepted": 9,
+          "raw_brier": 0.1680786867973324
+        },
+        "matched_distribution": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 19.461944738345856,
+          "fallback_count": 60,
+          "harmful_accepted": 17,
+          "raw_brier": 0.2124416775127328
+        },
+        "posterior": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 19.461944738345856,
+          "fallback_count": 60,
+          "harmful_accepted": 17,
+          "raw_brier": 0.2124416775127328
+        },
+        "ridge_risk": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.17737275698083044,
+          "deployed_rmse_mm": 19.528984088007828,
+          "fallback_count": 60,
+          "harmful_accepted": 10,
+          "raw_brier": 0.20958860645825603
+        },
+        "sandwich": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.18924278799437347,
+          "deployed_rmse_mm": 19.484235269810924,
+          "fallback_count": 60,
+          "harmful_accepted": 16,
+          "raw_brier": 0.216430072731095
+        },
+        "trajectory_bootstrap": {
+          "accepted": 60,
+          "actual_acceptance": 0.5,
+          "brier": 0.1652306481967584,
+          "deployed_rmse_mm": 18.73124940925243,
+          "fallback_count": 60,
+          "harmful_accepted": 8,
+          "raw_brier": 0.3406666666666666
+        }
+      },
+      "0.75": {
+        "constant_diagonal": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.18806184121924552,
+          "deployed_rmse_mm": 19.152479594866914,
+          "fallback_count": 30,
+          "harmful_accepted": 24,
+          "raw_brier": 0.222593826447658
+        },
+        "empirical_regret": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.18251215123257838,
+          "deployed_rmse_mm": 19.519164338545487,
+          "fallback_count": 30,
+          "harmful_accepted": 22,
+          "raw_brier": 0.18508472583653457
+        },
+        "expected_regret": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.17917859761200208,
+          "deployed_rmse_mm": 19.086061586254228,
+          "fallback_count": 30,
+          "harmful_accepted": 23,
+          "raw_brier": 0.225
+        },
+        "kernel_risk": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.17367693298435433,
+          "deployed_rmse_mm": 18.337114563041276,
+          "fallback_count": 30,
+          "harmful_accepted": 17,
+          "raw_brier": 0.1680786867973324
+        },
+        "matched_distribution": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 19.190812505894336,
+          "fallback_count": 30,
+          "harmful_accepted": 23,
+          "raw_brier": 0.2124416775127328
+        },
+        "posterior": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 19.190812505894336,
+          "fallback_count": 30,
+          "harmful_accepted": 23,
+          "raw_brier": 0.2124416775127328
+        },
+        "ridge_risk": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.17737275698083044,
+          "deployed_rmse_mm": 19.330883353083976,
+          "fallback_count": 30,
+          "harmful_accepted": 18,
+          "raw_brier": 0.20958860645825603
+        },
+        "sandwich": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.18924278799437347,
+          "deployed_rmse_mm": 19.228268838892724,
+          "fallback_count": 30,
+          "harmful_accepted": 24,
+          "raw_brier": 0.216430072731095
+        },
+        "trajectory_bootstrap": {
+          "accepted": 90,
+          "actual_acceptance": 0.75,
+          "brier": 0.1652306481967584,
+          "deployed_rmse_mm": 18.28438545516088,
+          "fallback_count": 30,
+          "harmful_accepted": 15,
+          "raw_brier": 0.3406666666666666
+        }
+      },
+      "1.0": {
+        "constant_diagonal": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.18806184121924552,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.222593826447658
+        },
+        "empirical_regret": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.18251215123257838,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.18508472583653457
+        },
+        "expected_regret": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.17917859761200208,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.225
+        },
+        "kernel_risk": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.17367693298435433,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.1680786867973324
+        },
+        "matched_distribution": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.2124416775127328
+        },
+        "posterior": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.18722016151548376,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.2124416775127328
+        },
+        "ridge_risk": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.17737275698083044,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.20958860645825603
+        },
+        "sandwich": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.18924278799437347,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.216430072731095
+        },
+        "trajectory_bootstrap": {
+          "accepted": 120,
+          "actual_acceptance": 1.0,
+          "brier": 0.1652306481967584,
+          "deployed_rmse_mm": 18.952558830999383,
+          "fallback_count": 0,
+          "harmful_accepted": 27,
+          "raw_brier": 0.3406666666666666
+        }
+      }
+    }
+  },
+  "simulator_training_exposure": "historically trained on source; only residual/risk learners cross-fitted",
+  "source": {
+    "PROTOCOL.md": "31ae43117914d44db27c4d1903c668c3b35f26d53785c92282f2a00489e5f374",
+    "__init__.py": "36741d7ef8ad78c0fe91b5e1e8562c7c3f0fb4825fab8611da14b119857a699a",
+    "conditioning.py": "288289b96a2fc4cea9eb5672ddfaa2eb58c0d8d35e2c07dfd0a39f4c48bfe623",
+    "controls.py": "8118133e909f37ecef83bb3cc10d02cf54f60802c0daf90f1f39d57e86069294",
+    "gp.py": "65c2191068e5f188fb7d34a8ff4d6c6e0421bf10bf5e482193433df019e23acc",
+    "replication.py": "a91e024e6a7adf4fbdb3cc70f9256c7e01d324e70e0240eb5f87b46fa0b0da1b",
+    "risk.py": "c094e4937e1ddba1e237eb1a1d278d1faf18e388124b1d5f8bffe32e327c7f46",
+    "study.py": "a3c759b976bb2e13420f33f98a00aa6fb757442e078dfa0afde1c5feecc6bbda",
+    "test_experiment.py": "129e3c603e539833bc3aa93d31f0eaf022047299ba6a45dd084e81b53806f210"
+  },
+  "source_gate": {
+    "beneficial_contexts": 98,
+    "brier_improvement": 0.0008938232459749784,
+    "discovery_not_significance": true,
+    "harm_reduction_fraction": 0.11111111111111116,
+    "materially_harmful_contexts": 22,
+    "passed": false,
+    "primary_comparators": {
+      "constant_diagonal": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.14958345896520645,
+        "deployed_rmse_mm": 19.12397046264462,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.18306926402801127
+      },
+      "empirical_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15712081540974274,
+        "deployed_rmse_mm": 19.25558786363769,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.16138606363519858
+      },
+      "expected_regret": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15080063643728656,
+        "deployed_rmse_mm": 18.471421855111608,
+        "fallback_count": 60,
+        "harmful_accepted": 12,
+        "raw_brier": 0.18333333333333332
+      },
+      "kernel_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15054830085998427,
+        "deployed_rmse_mm": 19.155361055825967,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.14915071259523552
+      },
+      "matched_distribution": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.147964950670094,
+        "deployed_rmse_mm": 18.430898260970405,
+        "fallback_count": 60,
+        "harmful_accepted": 8,
+        "raw_brier": 0.17261769008239086
+      },
+      "posterior": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.147964950670094,
+        "deployed_rmse_mm": 18.430898260970405,
+        "fallback_count": 60,
+        "harmful_accepted": 8,
+        "raw_brier": 0.17261769008239086
+      },
+      "ridge_risk": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.16126755734884693,
+        "deployed_rmse_mm": 18.833696063486773,
+        "fallback_count": 60,
+        "harmful_accepted": 14,
+        "raw_brier": 0.21604347010532282
+      },
+      "sandwich": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.14885877391606897,
+        "deployed_rmse_mm": 18.480779597994772,
+        "fallback_count": 60,
+        "harmful_accepted": 9,
+        "raw_brier": 0.17294262072908034
+      },
+      "trajectory_bootstrap": {
+        "accepted": 60,
+        "actual_acceptance": 0.5,
+        "brier": 0.15164638467414002,
+        "deployed_rmse_mm": 19.11303038648482,
+        "fallback_count": 60,
+        "harmful_accepted": 10,
+        "raw_brier": 0.4066666666666666
+      }
+    },
+    "replication_authorized": false,
+    "stop_reason": "registered_source_gate_failed",
+    "strongest_independent_control": "sandwich"
+  },
+  "source_recordings": 40,
+  "source_test_read": false,
+  "statistical_unit": "complete_recording",
+  "status": "completed",
+  "technical_failures": 0
+}

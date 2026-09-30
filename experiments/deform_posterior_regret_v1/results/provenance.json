@@ -1,0 +1,67 @@
+{
+  "contract": "deform-posterior-regret-provenance-v1",
+  "date": "2026-10-01",
+  "repository": "IPS-Stuttgart/BayesianPhysTwin",
+  "branch": "research/deform-posterior-regret-v1",
+  "initial_freeze_commit": "2322357331d6c09a0c67285b48562ab5c1e74396",
+  "pre_outcome_a1_commit": "f8ca6f49100dcaea1e022c8748c535918255c8eb",
+  "execution_commit": "9600807f9bba6c0d0aaa6f9db3c93c6b41968c0a",
+  "parent_main_commit": "541495918f655b664a60ba2dc46153cf234f4b4b",
+  "original_gp_commit": "1b0622c823d6d927ab9d4863911caab67e98ebaf",
+  "source_cache_export_run": 34258802512,
+  "source_cache_export_artifact": 10069073833,
+  "cache_manifest_sha256": "ff24ae708753febd0282c77c3f310a7ead21e981f2dd8464ee35ed0bb8d8c2dc",
+  "fit_cache_sha256": "b99f34a577f8616c4873df846866a01edd44dc9afd37cda68eeee3330a18cfa8",
+  "extracted_source_files": ["cache_manifest.json", "fit_queries.npz"],
+  "runtime": {
+    "host": "gpuserver6000",
+    "python": "3.12.3",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pytest": "9.1.1",
+    "ruff": "0.16.9",
+    "blas_threads": 1,
+    "gpu_used": false,
+    "elapsed_seconds": 886.8049504184164,
+    "checkout": "/home/florianpfaff/source-only/deform-posterior-regret-v1-2322357",
+    "output": "/home/florianpfaff/source-only/deform-posterior-regret-v1-9600807-result",
+    "cache": "/home/florianpfaff/source-only/deform-posterior-regret-v1-2322357-cache",
+    "python_path": "/home/florianpfaff/source-only/deform-posterior-regret-v1-20261001-venv/bin/python"
+  },
+  "retained_pre_outcome_attempts": [
+    {
+      "commit": "2322357331d6c09a0c67285b48562ab5c1e74396",
+      "output": "/home/florianpfaff/source-only/deform-posterior-regret-v1-2322357-result",
+      "disposition": "clamp-admission failure before fitting or held predictions"
+    },
+    {
+      "commit": "f8ca6f49100dcaea1e022c8748c535918255c8eb",
+      "output": "/home/florianpfaff/source-only/deform-posterior-regret-v1-f8ca6f4-result",
+      "disposition": "training-only interruption before held predictions to freeze algebra-equivalent contraction optimization"
+    }
+  ],
+  "verification": {
+    "focused_local_passed": 24,
+    "focused_native_linux_passed": 24,
+    "full_local_passed": 8202,
+    "full_local_skipped": 50,
+    "full_local_elapsed_seconds": 95.84,
+    "ruff_changed_python_passed": true,
+    "ruff_format_passed": true,
+    "diff_check_passed": true,
+    "github_test_run": 36789668199,
+    "github_preflight_run": 36789668198,
+    "github_security_run": 36789668087,
+    "github_full_python_matrices_passed": ["3.10", "3.12", "3.14"],
+    "github_quality_and_preflight_blocker": ".github/workflows/deform360-v6-source-camera-reuse.yml expired on 2026-09-15; unchanged inherited main artifact",
+    "github_build_and_installed_package_smoke": "skipped after quality failure",
+    "all_ci_green": false
+  },
+  "source_gate": "failed",
+  "replication_gate": "not_run_source_gate_failed",
+  "replication_data_read": false,
+  "held_v8_accessed": false,
+  "production_defaults_or_original_gp_workflows_changed": false,
+  "stop_rule_enforced": true
+}
