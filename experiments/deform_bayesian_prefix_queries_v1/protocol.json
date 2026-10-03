@@ -1,0 +1,50 @@
+{
+  "contract": "deform-bayesian-prefix-queries-v1",
+  "dataset": "DEFORM-DLO3",
+  "split_counts": {"fit": 39, "calibration": 9, "source_test": 8},
+  "source_manifest": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/deform-dlo3-source-manifest-bbf75a0b.json",
+    "sha256": "bbf75a0b8d6f307320ff7e39224a031b81f5385467ae8b91c6031ded1d1f44fb"
+  },
+  "checkpoint": {
+    "path": "/home/florianpfaff/source-only/deform-dlo3-robustness-v2/seed-42-run-bd5cfb14/checkpoints/registered_update_6400.pt",
+    "sha256": "b5fd24eb2297e64490a115926e7b78467be88f32de6d4be33d42542017cde818"
+  },
+  "upstream_root": "/home/florianpfaff/source-only/DEFORM-b73b8b8",
+  "upstream_commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+  "frame_count": 500,
+  "node_count": 12,
+  "gp": {"ridge": 1.0, "amplitude": 3.0, "length_multiplier": 1.0, "max_anchors": 128, "seed": 20260907},
+  "shrinkage": 0.25,
+  "endpoints": [50, 150, 250],
+  "prefix_offsets": [-46, -41, -36, -31, -26, -21, -16, -11, -6, -1],
+  "primary_budget": 2,
+  "secondary_budgets": [1, 4],
+  "primary_horizon": 100,
+  "secondary_horizons": [25, 200],
+  "panels": [[2, 4, 6, 8], [3, 5, 7, 9]],
+  "noise_inflations": [0.25, 1.0, 4.0, 16.0],
+  "noise_selection": "minimum_joint_prefix_nll_on_nine_DEFORM_validation_recordings",
+  "variance_floor_m2": 1e-12,
+  "headroom": {
+    "backend": "DEFORM-seed42-registered-update6400",
+    "metric": "sqrt_mean_coordinate_squared_error_equal_recording_context_panel",
+    "fixed_pair": "one_validation_optimal_pair_per_panel_shared_across_endpoints",
+    "oracle": "minimum_actual_mse_pair_per_context_scoring_only",
+    "minimum_relative_rmse_improvement": 0.10,
+    "all_nine_recordings_required": true
+  },
+  "source_gate": {
+    "minimum_relative_rmse_improvement": 0.05,
+    "minimum_recording_wins": 6,
+    "maximum_recording_ratio": 1.10,
+    "late_horizon_nondegradation": true,
+    "no_query_improvement": true,
+    "no_independent_control_better": true,
+    "complete_eight_recordings_required": true
+  },
+  "technical_failure": "retain_without_replacement_or_automatic_retry",
+  "prohibited": ["official_evaluation", "DLO4", "DLO5", "held-v8", "Prob4D", "robot_execution"],
+  "claim": "source-only paper-potential screen; not confirmation or SOTA",
+  "headroom_failure_action": "stop_before_building_large_selector_pipeline_and_before_source_test_access"
+}
