@@ -4,6 +4,11 @@ This research-only implementation starts with the nine-recording validation
 headroom screen. Failure is terminal for this setting: the larger selector
 pipeline is conditional, and no source-test loader is exposed here.
 
+The [execution receipt](execution_receipt.json) records the completed source
+screen's terminal stop. The eight-case evaluation and selector tournament were
+not authorized. Full results and interpretation belong to the private paper
+repository under `experiments/gaussian-processes/dlo3-prefix-query-headroom`.
+
 ## Scientific boundary
 
 Can a source-trained correlated posterior select useful point histories after
@@ -61,12 +66,15 @@ output root; never overwrite or automatically retry a technical failure.
 ```bash
 export PYTHONPATH="$PWD:$PWD/src:$PWD/scripts/remote"
 python -m experiments.deform_bayesian_prefix_queries_v1.prepare \
-  --revision "$COMMIT" --output "$ROOT/cache" --device cpu --threads 4
+  --revision "$COMMIT" --output "$ROOT/cache" --device cuda:0 --threads 4
 python -m experiments.deform_bayesian_prefix_queries_v1.run \
   --revision "$COMMIT" --cache "$ROOT/cache" --output "$ROOT/headroom"
 ```
 
-The exporter uses the retained native DEFORM environment. The GP stage needs
+The exporter uses the retained native DEFORM environment, whose registered
+backend requires CUDA. The first CPU invocation failed before any replay and
+is retained as a setup failure; an explicitly authorized CUDA export uses a
+separate output directory without changing the checkpoint or method. The GP stage needs
 only NumPy/SciPy, not a GPU. The method seal binds model/calibration/cache/source;
 the prediction seal binds all 324 validation candidates before future scoring.
 
